@@ -29,7 +29,8 @@ bool InputConflictHandler::CanUseConcurrentlyWithOtherDevice(const std::shared_p
     CHECK_AND_RETURN_RET(device != nullptr, false);
     return device->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET ||
         device->deviceType_ == DEVICE_TYPE_ACCESSORY ||
-        device->deviceType_ == DEVICE_TYPE_BT_SPP;
+        device->deviceType_ == DEVICE_TYPE_BT_SPP ||
+        device->deviceType_ == DEVICE_TYPE_NEARLINK_PORT;
 }
 
 void InputConflictHandler::FindHighestPriorityDevice()
