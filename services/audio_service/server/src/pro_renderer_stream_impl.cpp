@@ -751,6 +751,9 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
         // 3DA: shared memory holds whole frames magic|size1|metadata|align|size2|pcm; span = whole-frame count
         size_t frameSize = byteSizePerFrame_;
+        CHECK_AND_RETURN_RET_LOG(frameSize != 0, ERR_INVALID_PARAM,
+            "3DA: invalid byteSizePerFrame_, format %{public}d channels %{public}u",
+            streamInfo.format, streamInfo.channels);
         size_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
         spanSizeInFrame_ = AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES + metaAligned / frameSize;
         minBufferSize_ = (AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize + metaAligned;

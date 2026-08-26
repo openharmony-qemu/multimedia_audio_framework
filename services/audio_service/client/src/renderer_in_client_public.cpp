@@ -266,10 +266,9 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}u, channels: %{public}d, "
         "format: %{public}d, stream type: %{public}d, encoding type: %{public}d, "
-        "channelLayout: %{public}llx, remoteLayout: %{public}llx, isRemoteSpatialChannel: %{public}d",
+        "remoteLayout: %{public}llx, isRemoteSpatialChannel: %{public}d",
         info.customSampleRate == 0 ? info.samplingRate : info.customSampleRate,
         info.channels, info.format, eStreamType_, info.encoding,
-        static_cast<unsigned long long>(info.channelLayout),
         static_cast<unsigned long long>(info.remoteChannelLayout), info.isRemoteSpatialChannel);
 
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
@@ -300,6 +299,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
             const char *layoutSource = "adopted";
             if (!Is3DAChannelLayoutMatched(channels3DA, layout3DA)) {
                 layout3DA = info.remoteChannelLayout;
+                layoutSource = "remote";
                 if (!Is3DAChannelLayoutMatched(channels3DA, layout3DA)) {
                     layout3DA = IAudioStream::ConvertChannelsToDefaultChannelLayout(
                         static_cast<AudioChannel>(channels3DA), CH_LAYOUT_UNKNOWN);
@@ -307,12 +307,12 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
                 }
             }
             CHECK_AND_RETURN_RET_LOG(Is3DAChannelLayoutMatched(channels3DA, layout3DA),
-                ERR_NOT_SUPPORTED, "3DA direct layout mismatch, channels:%{public}u layout:%{public}llx",
-                channels3DA, static_cast<unsigned long long>(layout3DA));
+                ERR_NOT_SUPPORTED, "3DA direct layout mismatch, channels:%{public}u layout:%{public}" PRIx64,
+                channels3DA, layout3DA);
             curStreamParams_.channelLayout = layout3DA;
             streamParams_.channelLayout = layout3DA; // keep GetAudioStreamInfo readback consistent
-            AUDIO_INFO_LOG("3DA direct layout %{public}s, channels:%{public}u layout:%{public}llx",
-                layoutSource, channels3DA, static_cast<unsigned long long>(layout3DA));
+            AUDIO_INFO_LOG("3DA direct layout %{public}s, channels:%{public}u layout:%{public}" PRIx64,
+                layoutSource, channels3DA, layout3DA);
         } else {
             converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
         }

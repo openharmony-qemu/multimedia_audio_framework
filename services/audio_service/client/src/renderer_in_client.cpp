@@ -86,6 +86,9 @@ static const int32_t VOIP_DIRECT_BUFFER_DURATION_IN_US = 120000;
 static const int64_t ONWRITEDATA_TIMEOUT_NS = 40000000;
 // 3DA HDI frame header: magic + size1 + size2 = 3 frames
 static constexpr int32_t THREE_DA_HDI_HEADER_FRAMES = 3;
+// Whole-frame contract fixed by the HDI format: metadata size and PCM frames per block
+static constexpr int32_t AVS3METADATA_SIZE = 19824;
+static constexpr int32_t AUDIO_VIVID_SAMPLES = 1024;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -551,6 +554,16 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
     const size_t metaLen = bufferDesc.metaLength;
     const size_t metaAligned = (metaLen + frameSize - 1) / frameSize * frameSize;
     const size_t totalSize = static_cast<size_t>(THREE_DA_HDI_HEADER_FRAMES) * frameSize + metaAligned + pcmLen;
+
+    // Whole-frame contract: the frame geometry is fixed (metadata size, PCM frames per block)
+    // on both client and server (spanSizeInFrame_). Any other length would desync blockFrames
+    // from the server span and poison the ring alignment, and would allow the uint16_t
+    // size1/size2 header fields to overflow.
+    CHECK_AND_RETURN_RET_LOG(metaLen == static_cast<size_t>(AVS3METADATA_SIZE), ERR_INVALID_PARAM,
+        "3DA: unexpected metaLength=%{public}zu, want %{public}d", metaLen, AVS3METADATA_SIZE);
+    CHECK_AND_RETURN_RET_LOG(pcmLen == static_cast<size_t>(AUDIO_VIVID_SAMPLES) * frameSize,
+        ERR_INVALID_PARAM, "3DA: bufLength=%{public}zu is not one PCM block of %{public}d frames",
+        pcmLen, AUDIO_VIVID_SAMPLES);
 
     uint64_t writePos = clientBuffer_->GetCurWriteFrame();
     RingBufferWrapper ringBuffer;
