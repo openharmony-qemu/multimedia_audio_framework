@@ -974,6 +974,9 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     param.interleaved = true;
     param.streamId = static_cast<int32_t>(GetUniqueId());
     param.type = AUDIO_IN_MEDIA;
+    if (attr_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
+        param.type = AUDIO_D2D;
+    }
     param.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     param.isBigEndian = false;
     param.isSignedData = true;
