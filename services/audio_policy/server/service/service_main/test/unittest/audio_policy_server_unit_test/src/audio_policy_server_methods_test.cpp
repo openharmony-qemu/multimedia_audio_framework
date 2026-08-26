@@ -106,23 +106,6 @@ HWTEST_F(AudioPolicyServerMethodsTest, ReloadLoudVolumeMode_001, TestSize.Level1
     EXPECT_FALSE(ret);
 }
 
-// /**
-//  * @tc.name  : ReloadLoudVolumeMode_002
-//  * @tc.desc  : Test ReloadLoudVolumeMode with valid mode returns AUDIO_OK
-//  */
-// HWTEST_F(AudioPolicyServerMethodsTest, ReloadLoudVolumeMode_002, TestSize.Level1)
-// {
-//     audioPolicyServer_->loudVolumeSupportMode_ = LOUD_VOLUME_SUPPORT;
-//     audioPolicyServer_->audioVolumeManager_.SetLoudVolumeConfig(
-//         AudioStreamType::STREAM_MUSIC, SetLoudVolMode::SET_LOUD_VOL_HIGH);
-//     bool ret = false;
-//     int32_t result = audioPolicyServer_->ReloadLoudVolumeMode(
-//         static_cast<int32_t>(AudioStreamType::STREAM_MUSIC),
-//         static_cast<int32_t>(SetLoudVolMode::SET_LOUD_VOL_HIGH), ret);
-//     EXPECT_EQ(result, AUDIO_OK);
-//     EXPECT_TRUE(ret);
-// }
-
 /**
  * @tc.name  : ReloadLoudVolumeMode_003
  * @tc.desc  : Test ReloadLoudVolumeMode returns AUDIO_INVALID_PARAM when fails
@@ -160,22 +143,6 @@ HWTEST_F(AudioPolicyServerMethodsTest, RegisterVoipMuteDeathRecipient_001, TestS
     EXPECT_NO_THROW(audioPolicyServer_->RegisterVoipMuteDeathRecipient(callerUid, nullptr));
 }
 
-// /**
-//  * @tc.name  : RegisterVoipMuteDeathRecipient_002
-//  * @tc.desc  : Test already registered callerUid
-//  */
-// HWTEST_F(AudioPolicyServerMethodsTest, RegisterVoipMuteDeathRecipient_002, TestSize.Level1)
-// {
-//     sptr<IRemoteObject> obj = new RemoteObjectTestStub();
-//     int32_t callerUid = 200;
-//     sptr<IRemoteObject::DeathRecipient> dr =
-//         new VoipMuteDeathRecipient([this, callerUid]() {});
-//     audioPolicyServer_->voipMuteDeathRecipients_[callerUid] = dr;
-//     EXPECT_NO_THROW(audioPolicyServer_->RegisterVoipMuteDeathRecipient(callerUid, obj));
-//     EXPECT_EQ(audioPolicyServer_->voipMuteDeathRecipients_.size(), 1u);
-//     audioPolicyServer_->voipMuteDeathRecipients_.clear();
-// }
-
 /**
  * @tc.name  : RegisterVoipMuteDeathRecipient_003
  * @tc.desc  : Test AddDeathRecipient fails
@@ -204,20 +171,6 @@ HWTEST_F(AudioPolicyServerMethodsTest, RegisterVoipMuteDeathRecipient_004, TestS
     EXPECT_EQ(audioPolicyServer_->voipMuteDeathRecipients_.size(), 1u);
     audioPolicyServer_->voipMuteDeathRecipients_.clear();
 }
-
-// /**
-//  * @tc.name  : OnVoipMuteCallerDied_001
-//  * @tc.desc  : Test callerUid found in map
-//  */
-// HWTEST_F(AudioPolicyServerMethodsTest, OnVoipMuteCallerDied_001, TestSize.Level1)
-// {
-//     int32_t callerUid = 500;
-//     sptr<IRemoteObject::DeathRecipient> dr =
-//         new VoipMuteDeathRecipient([this, callerUid]() {});
-//     audioPolicyServer_->voipMuteDeathRecipients_[callerUid] = dr;
-//     EXPECT_NO_THROW(audioPolicyServer_->OnVoipMuteCallerDied(callerUid));
-//     EXPECT_EQ(audioPolicyServer_->voipMuteDeathRecipients_.count(callerUid), 0u);
-// }
 
 /**
  * @tc.name  : OnVoipMuteCallerDied_002
@@ -535,18 +488,6 @@ HWTEST_F(AudioPolicyServerMethodsTest, SetRegisterStateChangeCallbackFlag_002, T
     EXPECT_EQ(ret, SUCCESS);
 }
 
-// /**
-//  * @tc.name  : GetCurrentCapturerChangeInfos_001
-//  * @tc.desc  : Test with eventEntry_ nullptr returns error
-//  */
-// HWTEST_F(AudioPolicyServerMethodsTest, GetCurrentCapturerChangeInfos_001, TestSize.Level1)
-// {
-//     audioPolicyServer_->eventEntry_.reset();
-//     std::vector<shared_ptr<AudioCapturerChangeInfo>> infos;
-//     int32_t ret = audioPolicyServer_->GetCurrentCapturerChangeInfos(infos);
-//     EXPECT_NE(ret, SUCCESS);
-// }
-
 /**
  * @tc.name  : GetCurrentCapturerChangeInfos_002
  * @tc.desc  : Test with nullptr element in capturerInfos
@@ -653,34 +594,6 @@ HWTEST_F(AudioPolicyServerMethodsTest, SetA2dpDeviceVolume_001, TestSize.Level1)
     EXPECT_EQ(ret, ERROR);
 }
 
-// /**
-//  * @tc.name  : SetA2dpDeviceVolume_002
-//  * @tc.desc  : Test invalid volume level
-//  */
-// HWTEST_F(AudioPolicyServerMethodsTest, SetA2dpDeviceVolume_002, TestSize.Level1)
-// {
-//     int32_t selfUid = getuid();
-//     setuid(UID_BLUETOOTH_SA);
-//     int32_t ret = audioPolicyServer_->SetA2dpDeviceVolume("00:00:00:00", -1, true);
-//     setuid(selfUid);
-//     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-// }
-
-// /**
-//  * @tc.name  : SetA2dpDeviceVolume_003
-//  * @tc.desc  : Test valid volume with non-A2DP output device
-//  */
-// HWTEST_F(AudioPolicyServerMethodsTest, SetA2dpDeviceVolume_003, TestSize.Level1)
-// {
-//     int32_t selfUid = getuid();
-//     setuid(UID_BLUETOOTH_SA);
-//     audioPolicyServer_->audioActiveDevice_.UpdateCurrentOutputDevice(
-//         DEVICE_TYPE_SPEAKER, "");
-//     int32_t ret = audioPolicyServer_->SetA2dpDeviceVolume("00:00:00:00", 5, true);
-//     setuid(selfUid);
-//     EXPECT_NE(ret, ERROR);
-// }
-
 /**
  * @tc.name  : SetNearlinkDeviceVolume_001
  * @tc.desc  : Test uid check fails
@@ -694,49 +607,6 @@ HWTEST_F(AudioPolicyServerMethodsTest, SetNearlinkDeviceVolume_001, TestSize.Lev
     setuid(selfUid);
     EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
-
-// /**
-//  * @tc.name  : SetNearlinkDeviceVolume_002
-//  * @tc.desc  : Test invalid volume level
-//  */
-// HWTEST_F(AudioPolicyServerMethodsTest, SetNearlinkDeviceVolume_002, TestSize.Level1)
-// {
-//     int32_t selfUid = getuid();
-//     setuid(UID_NEARLINK_SA);
-//     int32_t ret = audioPolicyServer_->SetNearlinkDeviceVolume(
-//         "00:00:00:00", static_cast<int32_t>(STREAM_MUSIC), -1, true);
-//     setuid(selfUid);
-//     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-// }
-
-// /**
-//  * @tc.name  : SetNearlinkDeviceVolume_003
-//  * @tc.desc  : Test non-STREAM_MUSIC delegates to SetSystemVolumeLevelWithDeviceInternal
-//  */
-// HWTEST_F(AudioPolicyServerMethodsTest, SetNearlinkDeviceVolume_003, TestSize.Level1)
-// {
-//     int32_t selfUid = getuid();
-//     setuid(UID_NEARLINK_SA);
-//     int32_t ret = audioPolicyServer_->SetNearlinkDeviceVolume(
-//         "00:00:00:00", static_cast<int32_t>(STREAM_RING), 5, true);
-//     setuid(selfUid);
-//     EXPECT_NE(ret, ERR_PERMISSION_DENIED);
-// }
-
-// /**
-//  * @tc.name  : SetNearlinkDeviceVolume_004
-//  * @tc.desc  : Test audioPolicyServerHandler_ is nullptr
-//  */
-// HWTEST_F(AudioPolicyServerMethodsTest, SetNearlinkDeviceVolume_004, TestSize.Level1)
-// {
-//     int32_t selfUid = getuid();
-//     setuid(UID_NEARLINK_SA);
-//     audioPolicyServer_->audioPolicyServerHandler_.reset();
-//     int32_t ret = audioPolicyServer_->SetNearlinkDeviceVolume(
-//         "00:00:00:00", static_cast<int32_t>(STREAM_MUSIC), 5, true);
-//     setuid(selfUid);
-//     EXPECT_EQ(ret, ERROR);
-// }
 
 /**
  * @tc.name  : RegisterAppStateObserver_001
@@ -806,36 +676,6 @@ HWTEST_F(AudioPolicyServerMethodsTest, IsAudioLoopbackSupported_001, TestSize.Le
         static_cast<int32_t>(DEVICE_TYPE_SPEAKER), ret);
     EXPECT_EQ(result, SUCCESS);
 }
-
-// /**
-//  * @tc.name  : IsAudioLoopbackSupported_002
-//  * @tc.desc  : Test NEARLINK device not current output device
-//  */
-// HWTEST_F(AudioPolicyServerMethodsTest, IsAudioLoopbackSupported_002, TestSize.Level1)
-// {
-//     audioPolicyServer_->audioActiveDevice_.UpdateCurrentOutputDevice(
-//         DEVICE_TYPE_SPEAKER, "");
-//     bool ret = false;
-//     int32_t result = audioPolicyServer_->IsAudioLoopbackSupported(
-//         static_cast<int32_t>(LOOPBACK_HARDWARE),
-//         static_cast<int32_t>(DEVICE_TYPE_NEARLINK), ret);
-//     EXPECT_EQ(result, SUCCESS);
-// }
-
-// /**
-//  * @tc.name  : IsAudioLoopbackSupported_003
-//  * @tc.desc  : Test NEARLINK device as current output device
-//  */
-// HWTEST_F(AudioPolicyServerMethodsTest, IsAudioLoopbackSupported_003, TestSize.Level1)
-// {
-//     audioPolicyServer_->audioActiveDevice_.UpdateCurrentOutputDevice(
-//         DEVICE_TYPE_NEARLINK, "00:11:22:33");
-//     bool ret = true;
-//     int32_t result = audioPolicyServer_->IsAudioLoopbackSupported(
-//         static_cast<int32_t>(LOOPBACK_HARDWARE),
-//         static_cast<int32_t>(DEVICE_TYPE_NEARLINK), ret);
-//     EXPECT_EQ(result, SUCCESS);
-// }
 
 /**
  * @tc.name  : IsCollaborativePlaybackSupportedForDevice_001
@@ -950,29 +790,6 @@ HWTEST_F(AudioPolicyServerMethodsTest, SetAudioSeparationEffectEnabled_001, Test
     setuid(selfUid);
     EXPECT_EQ(ret, ERROR);
 }
-
-// /**
-//  * @tc.name  : SetAudioSeparationEffectEnabled_002
-//  * @tc.desc  : Test no system permission after MANAGE_SYSTEM_AUDIO_EFFECTS pass
-//  */
-// HWTEST_F(AudioPolicyServerMethodsTest, SetAudioSeparationEffectEnabled_002, TestSize.Level1)
-// {
-//     int32_t selfUid = getuid();
-//     setuid(9999);
-//     const char *perms[] = {"ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS"};
-//     NativeTokenInfoParams infoInstance = {
-//         .dcapsNum = 0, .permsNum = 1, .aclsNum = 0,
-//         .dcaps = nullptr, .perms = perms, .acls = nullptr,
-//         .processName = "audio_unit_test", .aplStr = "normal",
-//     };
-//     uint64_t tokenId = GetAccessTokenId(&infoInstance);
-//     SetSelfTokenID(tokenId);
-//     OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
-//     int32_t ret = audioPolicyServer_->SetAudioSeparationEffectEnabled(true, 0, 0);
-//     setuid(selfUid);
-//     GetPermission();
-//     EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
-// }
 
 /**
  * @tc.name  : SetAudioSeparationEffectEnabled_003
