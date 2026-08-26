@@ -300,6 +300,28 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : InitParams_Direct3DA_003
+ * @tc.type  : FUNC
+ * @tc.number: Test InitParams 3DA direct stream with zero channels returns ERR_INVALID_PARAM
+ */
+HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.channels = CHANNEL_UNKNOW; // zero byteSizePerFrame_
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
+    rendererStreamImpl->status_ = I_STATUS_INVALID;
+
+    // zero channels -> zero byteSizePerFrame_ -> guard rejects before any division
+    int32_t ret = rendererStreamImpl->InitParams();
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
  * @tc.name  : Test Start API
  * @tc.type  : FUNC
  * @tc.number:Start_001
@@ -895,6 +917,62 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_010, TestSize.Level3)
     rendererStreamImpl->bufferInfo_.format = 24;
     rendererStreamImpl->EnqueueBuffer(bufferDesc);
     EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 6);
+}
+
+/**
+* @tc.name  : EnqueueBuffer_Direct3DA_011
+* @tc.type  : FUNC
+* @tc.number: Test EnqueueBuffer 3DA direct passthrough: whole frame copied byte-identical,
+*             oversize buffer dropped without overflowing the slot
+*/
+HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_Direct3DA_011, TestSize.Level3)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.channels = CHANNEL_8;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
+    rendererStreamImpl->status_ = I_STATUS_INVALID;
+    ASSERT_EQ(rendererStreamImpl->InitParams(), SUCCESS);
+
+    uint32_t frameSize = 2 * 8; // S16LE 2 bytes per sample * 8 channels
+    uint32_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
+    size_t slotSize = static_cast<size_t>((AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize
+        + metaAligned);
+    ASSERT_EQ(rendererStreamImpl->sinkBuffer_[0].size(), slotSize);
+
+    // one whole frame passes through byte-identical
+    std::vector<uint8_t> wholeFrame(slotSize, 0x5A);
+    BufferDesc bufferDesc;
+    bufferDesc.buffer = wholeFrame.data();
+    bufferDesc.bufLength = slotSize;
+    EXPECT_EQ(rendererStreamImpl->EnqueueBuffer(bufferDesc), SUCCESS);
+    int32_t writeIndex = rendererStreamImpl->readQueue_.front();
+    bool identical = true;
+    for (size_t i = 0; i < slotSize; i++) {
+        if (static_cast<uint8_t>(rendererStreamImpl->sinkBuffer_[writeIndex][i]) != wholeFrame[i]) {
+            identical = false;
+            break;
+        }
+    }
+    EXPECT_TRUE(identical);
+
+    // oversize buffer is dropped, never overflows the slot
+    std::vector<uint8_t> oversize(slotSize + 1, 0xA5);
+    bufferDesc.buffer = oversize.data();
+    bufferDesc.bufLength = oversize.size();
+    EXPECT_EQ(rendererStreamImpl->EnqueueBuffer(bufferDesc), SUCCESS);
+    writeIndex = rendererStreamImpl->readQueue_.back();
+    bool slotUntouched = true;
+    for (size_t i = 0; i < slotSize; i++) {
+        if (rendererStreamImpl->sinkBuffer_[writeIndex][i] != 0) {
+            slotUntouched = false;
+            break;
+        }
+    }
+    EXPECT_TRUE(slotUntouched);
 }
 
 /**

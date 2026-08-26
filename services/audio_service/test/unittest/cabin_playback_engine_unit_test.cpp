@@ -28,6 +28,8 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
     constexpr int32_t DEFAULT_STREAM_ID = 10;
+    // keep in sync with AUDIO_DEFAULT_LATENCY_US in cabin_playback_engine.cpp
+    constexpr uint32_t EXPECTED_DEFAULT_LATENCY_US = 160000;
 class CabinPlayBackEngineUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -761,6 +763,93 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_019, TestSize.Level1)
 
     playbackEngine_->isStart_ = false;
     EXPECT_FALSE(playbackEngine_->IsPlaybackEngineRunning());
+}
+
+ /**
+ * @tc.name  : Test CabinPlayabackEngine API
+ * @tc.type  : FUNC
+ * @tc.number: CabinPlayBackEngine_Start_020
+ * @tc.desc  : Test Start returns ERR_NOT_STARTED when the sink exists but is not inited
+ */
+HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_Start_020, TestSize.Level1)
+{
+    // unique info string isolates this case from sinks registered by other cases
+    playbackEngine_->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
+        HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT, "ut_start_uninit", true);
+    auto sink = HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_, true);
+    ASSERT_NE(sink, nullptr);
+    ASSERT_FALSE(sink->IsInited());
+
+    int32_t ret = playbackEngine_->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+    EXPECT_FALSE(playbackEngine_->isStart_);
+}
+
+ /**
+ * @tc.name  : Test CabinPlayabackEngine API
+ * @tc.type  : FUNC
+ * @tc.number: CabinPlayBackEngine_GetLatency_021
+ * @tc.desc  : Test GetLatency falls back to the default value when the sink latency is unsupported
+ */
+HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_GetLatency_021, TestSize.Level1)
+{
+    playbackEngine_->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
+        HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT, "ut_latency_default", true);
+    ASSERT_NE(HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_, true), nullptr);
+    playbackEngine_->isStart_ = true;
+    playbackEngine_->latency_ = 0;
+    // cabin sink GetLatency is ERR_NOT_SUPPORTED, so the engine uses the default latency
+    EXPECT_EQ(playbackEngine_->GetLatency(), EXPECTED_DEFAULT_LATENCY_US);
+    playbackEngine_->isStart_ = false;
+}
+
+ /**
+ * @tc.name  : CabinPlayabackEngine_PollAndWrite_022
+ * @tc.type  : FUNC
+ * @tc.number: CabinPlayBackEngine_PollAndWrite_022
+ * @tc.desc  : Test PollAndWrite success path: Peek returns a buffer, writeCount_ increments,
+ *             StandbySleep takes the absolute branch, and the null-sink guards stop
+ *             AdjustVolume/DoRenderFrame without side effects
+ */
+HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_PollAndWrite_022, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamType = STREAM_MUSIC;
+    auto stream = std::make_shared<ProRendererStreamImpl>(config, false);
+    ASSERT_EQ(stream->InitParams(), SUCCESS);
+    stream->SetStreamIndex(101);
+
+    int32_t writeIndex = stream->PopWriteBufferIndex();
+    ASSERT_GE(writeIndex, 0);
+    uint32_t dataLen = 1024 * 2 * 2;
+    stream->sinkBuffer_[writeIndex].resize(dataLen);
+    uint8_t *testData = new uint8_t[dataLen];
+    memset_s(testData, dataLen, 0xAA, dataLen);
+    memcpy_s(stream->sinkBuffer_[writeIndex].data(), dataLen, testData, dataLen);
+    BufferDesc buffer;
+    buffer.buffer = testData;
+    buffer.bufLength = dataLen;
+    ASSERT_EQ(stream->EnqueueBuffer(buffer), SUCCESS);
+    delete[] testData;
+    stream->isBlock_ = false; // unblock Peek
+
+    // unique info string: no sink registered for this id, keeping the case HDI-free
+    playbackEngine_->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
+        HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT, "ut_pollwrite_orphan", true);
+    playbackEngine_->stream_ = stream;
+    playbackEngine_->firstSetVolume_ = true;
+    // due time already in the past: StandbySleep absolute branch returns immediately
+    playbackEngine_->fwkSyncTime_ = static_cast<uint64_t>(ClockTime::GetCurNano()) - 40ULL * 1000 * 1000;
+
+    uint64_t countBefore = playbackEngine_->writeCount_;
+    playbackEngine_->PollAndWrite();
+    EXPECT_EQ(playbackEngine_->writeCount_, countBefore + 1);
+    EXPECT_TRUE(playbackEngine_->firstSetVolume_); // null-sink guard stops AdjustVolume
+
+    playbackEngine_->stream_ = nullptr;
 }
 }
 }
