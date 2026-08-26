@@ -17,6 +17,7 @@
 #include <functional>
 #include <any>
 #include <future>
+#include <optional>
 #include "audio_module_info.h"
 #include "hpae_capturer_manager.h"
 #include "hpae_virtual_capturer_manager.h"
@@ -229,6 +230,7 @@ public:
     int32_t SetAissEnabledSync(uint32_t sessionId, bool enabled) override;
     int32_t SetVocalRatioSync(float ratio) override;
     int32_t SetAissEnabledByUidSync(int32_t uid, bool enabled) override;
+    int32_t DisableAissByUidWhenStreamInactiveSync(int32_t uid) override;
     uint64_t PostDelayedTask(uint64_t delayMs, std::function<void()> task);
     void CancelDelayedTask(uint64_t taskId);
     HpaeDelayedTaskQueue &GetDelayedTaskQueue();
@@ -242,9 +244,14 @@ private:
     int32_t BindAndCreateAiss(uint32_t sessionId, bool aissSwitchEnabled = false);
     void TryBindSessionEffectOnStart(uint32_t sessionId);
     uint32_t FindRunningMusicSession(int32_t uid);
+    int32_t UnbindAissFromOldUid(int32_t oldUid);
+    int32_t BindAissToRunningSession(int32_t uid, int32_t oldUid, uint32_t targetSessionId);
     int32_t EnableAissByUid(int32_t uid);
     int32_t DisableAissByUid(int32_t uid);
     int32_t ClearAissSession(uint32_t sessionId, bool clearUidBinding = false, bool finalizeNow = false);
+    // Deferred AISS-disable helpers (see DisableAissByUidWhenStreamInactiveSync).
+    void FinishPendingAissDisable();
+    bool IsPendingAissDisableFor(uint32_t sessionId) const;
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);
     template <typename... Args>
@@ -343,6 +350,16 @@ private:
 private:
     static constexpr uint32_t UNBOUND_SESSION_ID = 0;
 
+    // Deferred AISS-disable request: close AISS once the bound play stream of `uid` reaches a
+    // terminal state. `generation` ties the request to the control epoch (aissControlGeneration_)
+    // captured at registration, so any later Enable / immediate Disable / different-uid preempt /
+    // session-level AISS control - each bumps aissControlGeneration_ - invalidates it.
+    struct PendingAissDisable {
+        int32_t uid { -1 };
+        uint32_t sessionId { 0 };
+        uint64_t generation { 0 };
+    };
+
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
     std::unordered_map<std::string, std::shared_ptr<IHpaeCapturerManager>> capturerManagerMap_;
     std::unordered_map<std::string, std::shared_ptr<IHpaeRendererManager>> rendererManagerMap_;
@@ -401,6 +418,8 @@ private:
 
     int32_t boundUid_ = -1;
     uint32_t boundSessionId_ = UNBOUND_SESSION_ID;
+    std::optional<PendingAissDisable> pendingAissDisable_;
+    uint64_t aissControlGeneration_ = 0;
     CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
     CollaborationRouteMode collaborationRouteMode_ = COLLABORATION_INVALID_ROUTE_MODE;
 };

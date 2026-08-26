@@ -604,6 +604,388 @@ HWTEST_F(HpaeManagerSeTest, DestroyStream_resetsToPending, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
 }
 
+// --- Deferred AISS-disable (DisableAissByUidWhenStreamInactiveSync) ---
+// Design ref: 2026-08-12-aiss-deferred-disable-on-inactive-design.md §2/§7.
+// Sync entry points marshal onto the manager thread and block until settled, so state is stable on
+// return. Private members/handlers are reached directly via -fno-access-control, consistent with
+// the rest of this file. The manager thread is idle between Sync calls (no pending transitions are
+// enqueued here), so terminal triggers are driven through HandleUpdateStatus / SetMovingPlayStreamState
+// deterministically.
+
+// Scenario 1: a RUNNING bound stream registers the deferred request; AISS stays active (no early close).
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_runningStream_registersPendingAndStaysActive, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+    ASSERT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+
+    int32_t ret = hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID);
+
+    EXPECT_EQ(ret, SUCCESS);
+    ASSERT_TRUE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->pendingAissDisable_->uid, TEST_UID);
+    EXPECT_EQ(hpaeManager_->pendingAissDisable_->sessionId, TEST_SESSION_ID);
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+}
+
+// Scenario 12 (error uid): a mismatched uid is refused and leaves all state untouched.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_uidMismatch_refused, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    uint64_t genBefore = hpaeManager_->aissControlGeneration_;
+
+    int32_t ret = hpaeManager_->DisableAissByUidWhenStreamInactiveSync(OTHER_UID);
+
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+    EXPECT_EQ(hpaeManager_->aissControlGeneration_, genBefore);
+}
+
+// Scenario 12 (idempotent): registering twice for the same {uid, session} is idempotent.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_duplicateRegistration_isIdempotent, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+    uint64_t firstGen = hpaeManager_->pendingAissDisable_->generation;
+
+    int32_t ret = hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID);
+
+    EXPECT_EQ(ret, SUCCESS);
+    ASSERT_TRUE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->pendingAissDisable_->generation, firstGen);
+}
+
+// Scenario 2 (armed -> off): no physical binding, so the armed uid is cancelled directly.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_armedUid_cancelsDirectly, TestSize.Level0)
+{
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    ASSERT_EQ(hpaeManager_->boundSessionId_, 0u);
+
+    int32_t ret = hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+}
+
+// Scenario 2 (already terminal): a bound stream already PAUSED/STOPPED closes immediately.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_alreadyTerminal_closesImmediately, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID].state = HPAE_SESSION_STOPPED;
+
+    int32_t ret = hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), 0u);
+}
+
+// Scenario 2 (inconsistent): a bound stream in NEW/PREPARED/INVALID is refused.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_inconsistentState_refused, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID].state = HPAE_SESSION_PREPARED;
+
+    int32_t ret = hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID);
+
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+}
+
+// Scenario 3 & 13: a valid PAUSED terminal flushes the request exactly once.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_pausedTerminal_closesOnce, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+    ASSERT_TRUE(hpaeManager_->pendingAissDisable_.has_value());
+
+    // IsValidUpdateStatus requires state PAUSING for OPERATION_PAUSED.
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID].state = HPAE_SESSION_PAUSING;
+    hpaeManager_->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID,
+        HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), 0u);
+
+    // A duplicate terminal must not re-trigger (state is now PAUSED -> IsValidUpdateStatus drops it).
+    hpaeManager_->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID,
+        HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+}
+
+// Scenario 3 (STOPPED): a valid STOPPED terminal flushes the request.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_stoppedTerminal_closesOnce, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID].state = HPAE_SESSION_STOPPING;
+    hpaeManager_->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID,
+        HPAE_SESSION_STOPPED, OPERATION_STOPPED);
+
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+}
+
+// Scenario 13 (stale generation): a pending request whose captured generation no longer matches the
+// control epoch must not fire on a terminal. (Normally unreachable: every generation bump also
+// resets the request. We inject a superseded request directly to exercise the guard's epoch check.)
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_staleGeneration_doesNotClose, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_GE(hpaeManager_->aissControlGeneration_, 1u);
+    // Inject a request tied to a superseded (older) generation.
+    hpaeManager_->pendingAissDisable_ = HpaeManager::PendingAissDisable{TEST_UID, TEST_SESSION_ID, 0};
+
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID].state = HPAE_SESSION_PAUSING;
+    hpaeManager_->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID,
+        HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+
+    // Epoch mismatch -> guard does not fire; AISS stays active.
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+}
+
+// Scenario 13 (other session): a terminal for an unrelated session must not flush the request.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_otherSessionTerminal_doesNotClose, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+
+    HpaeStreamInfo other = MakeStereoMusicStream(OTHER_SESSION_ID);
+    hpaeManager_->rendererIdStreamInfoMap_[OTHER_SESSION_ID] = {other, HPAE_SESSION_PAUSING};
+    hpaeManager_->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, OTHER_SESSION_ID,
+        HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+
+    EXPECT_TRUE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+}
+
+// Scenario 6 (normal release): DestroyStream flushes the request before tearing down the renderer.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_normalRelease_closes, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+
+    hpaeManager_->DestroyStream(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID);
+    WaitForMsgProcessing();
+
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+}
+
+// Scenario 6 (moving pause/stop) & 7: SetMovingPlayStreamState flushes on PAUSED/STOPPED/RELEASED.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_movingPause_closes, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+    hpaeManager_->movingIds_[TEST_SESSION_ID] = HPAE_SESSION_RUNNING;
+
+    hpaeManager_->SetMovingPlayStreamState(TEST_SESSION_ID, HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+}
+
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_movingRelease_closes, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+    hpaeManager_->movingIds_[TEST_SESSION_ID] = HPAE_SESSION_RUNNING;
+
+    hpaeManager_->SetMovingPlayStreamState(TEST_SESSION_ID, HPAE_SESSION_RELEASED, OPERATION_RELEASED);
+
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+}
+
+// Scenario 7 (Flush/Drain do not trigger): a non-terminal moving operation keeps the request.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_movingFlush_keepsPending, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+    hpaeManager_->movingIds_[TEST_SESSION_ID] = HPAE_SESSION_RUNNING;
+
+    hpaeManager_->SetMovingPlayStreamState(TEST_SESSION_ID, HPAE_SESSION_RUNNING, OPERATION_FLUSHED);
+
+    EXPECT_TRUE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+}
+
+// Scenario 5 & §4.2: while the request is pending, a same-uid Start must not migrate AISS.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_pendingBlocksStartMigration, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+
+    HpaeStreamInfo other = MakeStereoMusicStream(OTHER_SESSION_ID);
+    other.uid = TEST_UID;
+    hpaeManager_->rendererIdStreamInfoMap_[OTHER_SESSION_ID] = {other, HPAE_SESSION_RUNNING};
+    hpaeManager_->TryBindSessionEffectOnStart(OTHER_SESSION_ID);
+
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+}
+
+// Scenario 9: same-uid Enable cancels the request; a later terminal must not close AISS.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_sameUidEnable_cancelsPending, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+    ASSERT_TRUE(hpaeManager_->pendingAissDisable_.has_value());
+
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+
+    // The old request's terminal must not close AISS (generation invalidated).
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID].state = HPAE_SESSION_PAUSING;
+    hpaeManager_->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID,
+        HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+}
+
+// Scenario 10: different-uid Enable closes old AISS immediately and switches owner; the old
+// session's later terminal must not affect the new binding.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_differentUidEnable_closesOldAndSwitches, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+
+    HpaeStreamInfo newStream = MakeStereoMusicStream(OTHER_SESSION_ID);
+    newStream.uid = OTHER_UID;
+    hpaeManager_->rendererIdSinkNameMap_[OTHER_SESSION_ID] = "file_io";
+    hpaeManager_->rendererIdStreamInfoMap_[OTHER_SESSION_ID] = {newStream, HPAE_SESSION_RUNNING};
+
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(OTHER_UID, true), SUCCESS);
+
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, OTHER_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, OTHER_SESSION_ID);
+
+    // Old session terminal must not close the new binding.
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID].state = HPAE_SESSION_PAUSING;
+    hpaeManager_->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID,
+        HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+    EXPECT_EQ(hpaeManager_->boundUid_, OTHER_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, OTHER_SESSION_ID);
+}
+
+// Scenario 11: immediate Disable invalidates the request (immediate close outranks deferred).
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_immediateDisable_invalidatesPending, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, false), SUCCESS);
+
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+}
+
+// Scenario 11: session-level AISS control invalidates the uid-level deferred request.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_sessionLevelControl_invalidatesPending, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+
+    ASSERT_EQ(hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true), SUCCESS);
+
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    // A later terminal of the old request must not close AISS.
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID].state = HPAE_SESSION_PAUSING;
+    hpaeManager_->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID,
+        HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+}
+
+namespace {
+// Reports the SendRequestSync timeout sentinel from PostDestroySessionEffect without a busy RM
+// thread: makes ClearAissSession take its "destroy timed out, keep binding" early return.
+class TimeoutDestroyRendererManager : public HpaeRendererManager {
+public:
+    explicit TimeoutDestroyRendererManager(HpaeSinkInfo &sinkInfo) : HpaeRendererManager(sinkInfo) {}
+
+    int32_t PostDestroySessionEffect(uint32_t /*sessionId*/, bool /*finalizeNow*/) override
+    {
+        return ERR_OPERATION_FAILED; // sync-timeout sentinel: request still queued, not executed
+    }
+};
+} // namespace
+
+// Scenario (destroy timeout): the terminal flush hits the sync-timeout sentinel inside
+// ClearAissSession. FinishPendingAissDisable must still drop the logical state (DisableAissByUid
+// semantics): pending cleared, uid/session binding reset, generation bumped. The physical effect
+// binding is kept (keep-binding contract) — the queued late destroy finishes the identity-gated
+// teardown.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_destroyTimeout_stillClearsLogicalState, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+    ASSERT_TRUE(hpaeManager_->pendingAissDisable_.has_value());
+    uint64_t genBefore = hpaeManager_->aissControlGeneration_;
+
+    // Swap in a manager whose destroy always reports the sync-timeout sentinel.
+    HpaeSinkInfo sinkInfo = GetTestSinkInfo();
+    hpaeManager_->rendererManagerMap_["file_io"] =
+        std::make_shared<TimeoutDestroyRendererManager>(sinkInfo);
+
+    // IsValidUpdateStatus requires state PAUSING for OPERATION_PAUSED.
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID].state = HPAE_SESSION_PAUSING;
+    hpaeManager_->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID,
+        HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+
+    // Logical state went OFF even though the destroy timed out.
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+    EXPECT_GT(hpaeManager_->aissControlGeneration_, genBefore);
+    // Physical binding is kept for the queued late destroy (identity-gated teardown).
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+}
+
 // CH-1: BindAndCreateAiss rejects non-stereo streams
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_multiChannelRejected, TestSize.Level0)
 {
@@ -1583,6 +1965,34 @@ HWTEST_F(HpaeManagerSeE2eTest, ChannelOverride_RouteMigrationNoneSmoke, TestSize
 
     // No crash, map untouched (singleton not init'd -> ClearChannelOverride no-op).
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.size(), 0u);
+}
+
+// --- Deferred AISS-disable: move-in attach-state guard (Scenario 8 & §4.4) ---
+//
+// When AISS is logically closed mid-move, the migrating node keeps its attach-state while the
+// logical binding no longer points at the session. That is exactly the two-condition gate the
+// move-in guard (HandleMoveSinkInput / HandleMoveAllSinkInputs) uses to call
+// ClearSessionEffectAttachState and prevent AISS reviving from the old attach-state within the 3s
+// lazy-release window. A full device-to-device move flow is not drivable under this fixture, so
+// this test verifies the gate's preconditions; ClearSessionEffectAttachState itself is exercised by
+// the ChannelOverride materialize-failure tests above.
+HWTEST_F(HpaeManagerSeE2eTest, DisableWhenInactive_midMoveClose_attachStateSurvivesBindingCleared, TestSize.Level0)
+{
+    ASSERT_TRUE(SetupStreamWithSE(hpaeManager_, rendererManager_));
+    auto sinkInputNode = rendererManager_->sinkInputNodeMap_[TEST_SESSION_ID];
+    ASSERT_NE(sinkInputNode, nullptr);
+    ASSERT_TRUE(sinkInputNode->HasSessionEffectAttachState());
+    ASSERT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+
+    // Simulate the logical-only half of a mid-move close: unbind without driving the renderer-side
+    // DestroySessionEffect (which, during a real move, cannot reach the already-migrated node and so
+    // leaves the attach-state intact on the node).
+    hpaeManager_->sessionEffectManager_->UnbindSessionEffect(TEST_SESSION_ID);
+
+    // Guard gate #2: the logical binding no longer points at this session.
+    EXPECT_NE(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+    // Guard gate #1: the migrating node still carries the attach-state -> the move-in guard fires.
+    EXPECT_TRUE(sinkInputNode->HasSessionEffectAttachState());
 }
 
 }  // namespace HPAE
