@@ -370,12 +370,6 @@ napi_value NapiAudioLoopback::GetVolume(napi_env env, napi_callback_info info)
 {
     size_t argc = PARAM0;
     NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_NO_MEMORY),
-        "napiLoopback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr,
-        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_NO_MEMORY),
-        "loopback_ is nullptr");
 
     double volume = static_cast<double>(napiLoopback->loopback_->GetVolume());
     napi_value result = nullptr;
