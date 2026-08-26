@@ -976,6 +976,59 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_Direct3DA_011, TestSize.Leve
 }
 
 /**
+* @tc.name  : Test WriteToSinkBuffer passes the 3DA whole frame through untouched
+* @tc.type  : FUNC
+* @tc.number: WriteToSinkBuffer_3DA_Direct_001
+* @tc.desc  : The client assembles the whole 3DA HDI frame; the server side copies it into
+*             the sink slot byte-identically and never assembles PCM/metadata itself
+*/
+HWTEST(ProRendererStreamImplUnitTest, WriteToSinkBuffer_3DA_Direct_001, TestSize.Level3)
+{
+    constexpr uint8_t FRAME_SENTINEL = 0x5A;
+
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.channels = CHANNEL_8;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    processConfig.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
+    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
+    rendererStreamImpl->status_ = I_STATUS_INVALID;
+    ASSERT_EQ(rendererStreamImpl->InitParams(), SUCCESS);
+    EXPECT_FALSE(rendererStreamImpl->isNeedResample_);
+    EXPECT_FALSE(rendererStreamImpl->isNeedMcr_);
+
+    const uint32_t frameSize = static_cast<uint32_t>(processConfig.streamInfo.channels) * sizeof(int16_t);
+    const uint32_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
+    const uint32_t wholeFrameLen = (AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize
+        + metaAligned; // one whole HDI frame, 36256 bytes for 8ch S16LE
+
+    // The client (Write3DADirectBuffer) assembles magic|size1|metadata|align|size2|pcm; the
+    // server side only passes it through, so the slot must be a byte-identical copy.
+    std::vector<uint8_t> wholeFrame(wholeFrameLen, FRAME_SENTINEL);
+    BufferDesc bufferDesc;
+    bufferDesc.buffer = wholeFrame.data();
+    bufferDesc.bufLength = wholeFrameLen;
+
+    int32_t writeIndex = rendererStreamImpl->PopWriteBufferIndex();
+    ASSERT_GE(writeIndex, 0);
+    rendererStreamImpl->WriteToSinkBuffer(bufferDesc, static_cast<uint32_t>(writeIndex));
+
+    const auto &sinkSlot = rendererStreamImpl->sinkBuffer_[static_cast<size_t>(writeIndex)];
+    ASSERT_EQ(sinkSlot.size(), wholeFrameLen);
+    bool identical = true;
+    for (uint32_t i = 0; i < wholeFrameLen; i++) {
+        if (static_cast<uint8_t>(sinkSlot[i]) != FRAME_SENTINEL) {
+            identical = false;
+            break;
+        }
+    }
+    EXPECT_TRUE(identical);
+}
+
+/**
  * @tc.name  : Test GetMinimumBufferSize API
  * @tc.type  : FUNC
  * @tc.number: GetMinimumBufferSize
