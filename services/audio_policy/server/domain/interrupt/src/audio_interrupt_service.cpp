@@ -51,6 +51,7 @@ const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
 constexpr int32_t RETRY_TIME_S = 5;
 constexpr int64_t SLEEP_TIME_S = 1;
 constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
+constexpr uint32_t MAX_STREAMS_IN_DEACTIVATE_SESSION = 128;
 
 static const map<InterruptHint, AudioFocuState> HINT_STATE_MAP = {
     {INTERRUPT_HINT_PAUSE, PAUSE},
@@ -305,6 +306,9 @@ void AudioInterruptService::ActivateAudioSessionErrorEvent(const int32_t zoneId,
 
 void AudioInterruptService::AddStreamByPid(const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession)
 {
+    if (streamsInDeactivateAudioSession_.size() + streamsInSession.size() > MAX_STREAMS_IN_DEACTIVATE_SESSION) {
+        return;
+    }
     std::copy_if(streamsInSession.begin(), streamsInSession.end(), std::back_inserter(streamsInDeactivateAudioSession_),
         [callerPid](const AudioInterrupt &item) { return item.pid == callerPid; });
 }
@@ -319,6 +323,7 @@ void AudioInterruptService::RemoveStreamByPid(const int32_t callerPid)
 
 void AudioInterruptService::DeactivateAudioSessionErrorEvent(const int32_t callerPid)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (interruptDfx_ != nullptr) {
         interruptDfx_->DeactivateAudioSessionErrorEvent(streamsInDeactivateAudioSession_, callerPid);
     }
@@ -545,7 +550,6 @@ void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
         if (audioInterruptService == nullptr) {
             StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
                 SESSION_STOP_NULL_POINTER, "audioInterruptService is nullptr", false);
-            audioInterruptService->RemoveStreamByPid(callerPid);
             return;
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
