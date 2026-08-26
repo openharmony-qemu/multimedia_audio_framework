@@ -244,7 +244,7 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_003, TestSize.Level1)
 /**
  * @tc.name  : InitParams_Direct3DA_001
  * @tc.type  : FUNC
- * @tc.number: Test InitParams when direct3DATestFlag is 1 to verify bypass logic and buffer allocation
+ * @tc.number: Test InitParams 3DA direct stream to verify bypass logic and whole-frame buffer allocation
  */
 HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_001, TestSize.Level1)
 {
@@ -263,12 +263,14 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_FALSE(rendererStreamImpl->isNeedResample_);
     EXPECT_FALSE(rendererStreamImpl->isNeedMcr_);
+    // Each sinkBuffer slot holds one whole 3DA HDI frame: (1024 PCM + 3 header) frames + aligned metadata
+    EXPECT_EQ(rendererStreamImpl->sinkBuffer_[0].size(), static_cast<size_t>((1024 + 3) * 2 * 8 + 19824));
 }
 
 /**
  * @tc.name  : InitParams_Direct3DA_002
  * @tc.type  : FUNC
- * @tc.number: Test InitParams when direct3DATestFlag is 0 to verify bypass logic and buffer allocation
+ * @tc.number: Test InitParams AUDIOVIVID stream without 3DA direct flag goes the resample and mixer path
  */
 HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_002, TestSize.Level1)
 {
@@ -1584,10 +1586,14 @@ HWTEST(ProRendererStreamImplUnitTest, InitBasicInfo_002, TestSize.Level0)
         std::make_shared<ProRendererStreamImpl>(processConfig, false);
 
     rendererStreamImpl->InitBasicInfo(processConfig.streamInfo);
+    // Whole-frame geometry: frameSize = 2 bytes * 8 ch = 16; metadata 19824 is already 16-aligned,
+    // span = 1024 PCM frames + 3 header frames + metadata frames, minBufferSize = one whole frame.
+    uint32_t frameSize = 2 * 8; // S16LE sample 2 bytes * 8 channels
     uint32_t metadataSize = 19824;
-    uint32_t audiovividSamples = 1024;
-    uint32_t expectedMinBufSize = audiovividSamples * 8 * 2 + metadataSize; // 8 for channel 2 bit format
-    EXPECT_EQ(rendererStreamImpl->spanSizeInFrame_, audiovividSamples);
+    uint32_t metaAligned = (metadataSize + frameSize - 1) / frameSize * frameSize;
+    uint32_t expectedSpanSize = 1024 + 3 + metaAligned / frameSize;
+    uint32_t expectedMinBufSize = (1024 + 3) * frameSize + metaAligned;
+    EXPECT_EQ(rendererStreamImpl->spanSizeInFrame_, expectedSpanSize);
     EXPECT_EQ(rendererStreamImpl->minBufferSize_, expectedMinBufSize);
 }
 

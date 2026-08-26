@@ -743,5 +743,24 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_018, TestSize.Level1)
     EXPECT_EQ(playbackEngine_->GetFormatByteSize(SAMPLE_S24LE), 3u);
     EXPECT_EQ(playbackEngine_->GetFormatByteSize(SAMPLE_S32LE), sizeof(int32_t));
 }
+
+ /**
+ * @tc.name  : Test CabinPlayabackEngine API
+ * @tc.type  : FUNC
+ * @tc.number: CabinPlayBackEngine_019
+ * @tc.desc  : Test IsPlaybackEngineRunning tracks isStart_; without the override the base class
+ *             always returned false and TriggerStartIfNecessary re-Start()ed on every client write
+ */
+HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_019, TestSize.Level1)
+{
+    EXPECT_FALSE(playbackEngine_->isStart_);
+    EXPECT_FALSE(playbackEngine_->IsPlaybackEngineRunning());
+
+    playbackEngine_->isStart_ = true;
+    EXPECT_TRUE(playbackEngine_->IsPlaybackEngineRunning());
+
+    playbackEngine_->isStart_ = false;
+    EXPECT_FALSE(playbackEngine_->IsPlaybackEngineRunning());
+}
 }
 }

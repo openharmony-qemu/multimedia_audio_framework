@@ -62,6 +62,24 @@ HWTEST_F(CabinAudioRenderSinkUnitTest, FormatConversion_Test, TestSize.Level1)
 }
 
 /**
+* @tc.name   : Init_FormatWhitelist_001
+* @tc.type   : FUNC
+* @tc.desc   : Init rejects formats unsupported by the 3DA HDI render; S16LE passes the whitelist
+*/
+HWTEST_F(CabinAudioRenderSinkUnitTest, Init_FormatWhitelist_001, TestSize.Level1)
+{
+    IAudioSinkAttr attr;
+    attr.format = SAMPLE_S24LE;
+    // Rejected before CreateRender, so it is testable without HDI
+    EXPECT_EQ(sink_->Init(attr), ERR_NOT_SUPPORTED);
+
+    attr.format = SAMPLE_S16LE;
+    // Passes the whitelist; the later CreateRender result depends on the HDI environment,
+    // so only assert the format itself was not rejected.
+    EXPECT_NE(sink_->Init(attr), ERR_NOT_SUPPORTED);
+}
+
+/**
 * @tc.name   : GetPresentationPosition_001
 * @tc.type   : FUNC
 * @tc.desc   : Test GetPresentationPosition to ensure it returns 0 as currently implemented
