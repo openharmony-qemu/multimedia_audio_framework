@@ -733,5 +733,19 @@ void AudioInterruptService::CheckInterruptResponseAfterDelay(const int32_t zoneI
     CHECK_AND_RETURN(interruptDfx_ != nullptr);
     interruptDfx_->CheckInterruptResponse(info, currentFocusList);
 }
+
+int32_t AudioInterruptService::SetDuckPassthroughMode(bool enable)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    duckPassthroughMode_.store(enable);
+    AUDIO_INFO_LOG("SetDuckPassthroughMode: %{public}d", enable);
+    if (enable) {
+        for (const auto &zonePair : zonesMap_) {
+            CHECK_AND_CONTINUE_LOG(zonePair.second != nullptr, "audioInterruptZone is nullptr");
+            ResumeAudioFocusList(zonePair.first, false);
+        }
+    }
+    return SUCCESS;
+}
 }
 } // namespace OHOS

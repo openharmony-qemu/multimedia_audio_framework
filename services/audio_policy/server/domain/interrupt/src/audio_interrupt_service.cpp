@@ -2110,21 +2110,39 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
         if (modeUpdate && sessionService_.IsSystemApp(incomingInterrupt.pid)) {
             const auto &modeToHint = modeToHintMap.find(concurrencyMode);
             if (modeToHint != modeToHintMap.end()) {
-                AUDIO_INFO_LOG("Update hint type for system app anyway, pid: %{public}d, strategy: %{public}d",
-                    incomingInterrupt.pid, static_cast<int32_t>(concurrencyMode));
-                focusEntry.hintType = modeToHint->second;
+                if (duckPassthroughMode_ && modeToHint->second == INTERRUPT_HINT_DUCK) {
+                    AUDIO_INFO_LOG("change duck to mix for enable duckPassthroughMode");
+                    focusEntry.hintType = INTERRUPT_HINT_NONE;
+                    focusEntry.actionOn = INCOMING;
+                } else {
+                    AUDIO_INFO_LOG("Update hint type for system app anyway, pid: %{public}d, strategy: %{public}d",
+                        incomingInterrupt.pid, static_cast<int32_t>(concurrencyMode));
+                    focusEntry.hintType = modeToHint->second;
+                }
                 return;
             }
         }
     }
 
+    UpdateHintTypeByConcurrencyMode(concurrencyMode, focusEntry);
+}
+
+void AudioInterruptService::UpdateHintTypeByConcurrencyMode(AudioConcurrencyMode concurrencyMode,
+    AudioFocusEntry &focusEntry)
+{
     switch (concurrencyMode) {
         case AudioConcurrencyMode::DUCK_OTHERS:
             if (focusEntry.hintType == INTERRUPT_HINT_DUCK ||
                 focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
                 focusEntry.hintType == INTERRUPT_HINT_STOP) {
-                AUDIO_INFO_LOG("The concurrency mode is DUCK_OTHERS. Use INTERRUPT_HINT_DUCK.");
-                focusEntry.hintType = INTERRUPT_HINT_DUCK;
+                if (duckPassthroughMode_) {
+                    AUDIO_INFO_LOG("change duck to mix for enable duckPassthroughMode");
+                    focusEntry.hintType = INTERRUPT_HINT_NONE;
+                    focusEntry.actionOn = INCOMING;
+                } else {
+                    AUDIO_INFO_LOG("The concurrency mode is DUCK_OTHERS. Use INTERRUPT_HINT_DUCK.");
+                    focusEntry.hintType = INTERRUPT_HINT_DUCK;
+                }
             }
             break;
         case AudioConcurrencyMode::PAUSE_OTHERS:
@@ -2595,6 +2613,11 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     }
     if (interruptCustom_ != nullptr) {
         interruptCustom_->UpdateCustomFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    }
+    if (duckPassthroughMode_ && focusEntry.hintType == INTERRUPT_HINT_DUCK) {
+        AUDIO_INFO_LOG("change duck to mix for enable duckPassthroughMode");
+        focusEntry.hintType = INTERRUPT_HINT_NONE;
+        focusEntry.actionOn = INCOMING;
     }
 }
 

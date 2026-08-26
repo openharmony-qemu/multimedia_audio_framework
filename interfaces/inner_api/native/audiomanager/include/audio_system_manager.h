@@ -950,6 +950,15 @@ public:
     int32_t ActivatePreemptMode() const;
 
     /**
+     * @brief Set duck passthrough mode. When enabled, DUCK is treated as concurrent mix.
+     *
+     * @param enable True to enable duck passthrough mode, false to disable.
+     * @return Returns {@link SUCCESS} if successful; returns an error code otherwise.
+     * @since 26.0.0
+     */
+    int32_t SetDuckPassthroughMode(bool enable) const;
+
+    /**
      * @brief registers the Interrupt callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code

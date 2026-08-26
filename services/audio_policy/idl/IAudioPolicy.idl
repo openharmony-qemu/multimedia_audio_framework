@@ -372,4 +372,5 @@ interface IAudioPolicy {
     void SetVoipRendererMute([in] int appUid, [in] long streamId, [in] boolean muted, [in] IRemoteObject callerObj);
     void SetVoipCapturerMute([in] int appUid, [in] long streamId, [in] boolean muted, [in] IRemoteObject callerObj);
     void SetStopStreamInfoWhenDisconnect([in] String networkId, [in] List<int> usages, [in] List<int> uids);
+    void SetDuckPassthroughMode([in] boolean enable);
 }
