@@ -61,6 +61,7 @@
 #include "audio_record_controller.h"
 #include "ipc_skeleton.h"
 #include "securec.h"
+#include "audio_schedule.h"
 
 
 #undef LOG_DOMAIN
@@ -3452,6 +3453,7 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChan
 int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChangeInfo &streamChangeInfoIn)
 {
     Trace trace("AudioPolicyServer::UpdateTracker");
+    ScheduleReportData(getpid(), gettid(), "audio_server");
     AudioMode mode = static_cast<AudioMode>(modeIn);
     AudioStreamChangeInfo streamChangeInfo = streamChangeInfoIn;
 
@@ -3493,6 +3495,7 @@ int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChange
         // ReEvaluate bypass whenever capturer state changes, including non-running -> running transition.
         coreService_->ReEvaluateVoipBypassByAppMuteHint();
     }
+    UnscheduleReportData(getpid(), gettid(), "audio_server");
     return ret;
 }
 
