@@ -1582,6 +1582,8 @@ void AudioPolicyServerHandler::ProcessPreferredOutputDeviceForClient(int32_t cli
         auto deviceDescs = AudioCoreService::GetCoreService()->
             GetPreferredOutputDeviceDescInner(rendererFilter.rendererInfo, LOCAL_NETWORK_ID, rendererFilter.uid);
         ValidatePreferredOutputDeviceCallback(clientPid, deviceDescs);
+        AudioCoreService::GetCoreService()->UpdateSinkLatencyForOutputDevices(rendererFilter.rendererInfo,
+            static_cast<uint32_t>(rendererFilter.streamId), deviceDescs);
         for (auto &desc : deviceDescs) {
             CHECK_AND_CONTINUE(desc != nullptr);
             desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;

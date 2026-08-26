@@ -458,6 +458,8 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
         AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = INVALID_UID,
         const uint32_t streamId = INVALID_STREAM_ID);
+    void UpdateSinkLatencyForOutputDevices(const AudioRendererInfo &rendererInfo, uint32_t streamId,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceList);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = INVALID_UID,
         const uint32_t streamId = INVALID_STREAM_ID);

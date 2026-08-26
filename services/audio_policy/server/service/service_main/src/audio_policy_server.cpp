@@ -2116,6 +2116,10 @@ int32_t AudioPolicyServer::GetOutputDevice(const sptr<AudioRendererFilter> &audi
         return ERR_INVALID_OPERATION;
     }
     deviceDescs = audioPolicyService_.GetOutputDevice(audioRendererFilter);
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "AudioCoreService is null");
+    coreService->UpdateSinkLatencyForOutputDevices(audioRendererFilter->rendererInfo,
+        static_cast<uint32_t>(audioRendererFilter->streamId), deviceDescs);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
@@ -2180,6 +2184,9 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     AudioRendererInfo newRendererInfo = rendererInfo;
     deviceDescs = eventEntry_->GetPreferredOutputDeviceDescriptors(newRendererInfo, IPCSkeleton::GetCallingUid(),
         LOCAL_NETWORK_ID);
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "AudioCoreService is null");
+    coreService->UpdateSinkLatencyForOutputDevices(newRendererInfo, INVALID_STREAM_ID, deviceDescs);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
 
     bool hasBTPermission = false;
