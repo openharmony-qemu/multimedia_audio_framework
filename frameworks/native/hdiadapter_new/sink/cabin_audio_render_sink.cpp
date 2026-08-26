@@ -76,6 +76,10 @@ int32_t CabinAudioRenderSink::Init(const IAudioSinkAttr &attr)
     }
     Trace trace("CabinAudioRenderSink::Init");
     attr_ = attr;
+    // The 3DA HDI render supports S16LE/F32LE only; reject other formats explicitly instead
+    // of letting ConvertToHdiFormat silently downgrade them to 16-bit.
+    CHECK_AND_RETURN_RET_LOG(attr.format == SAMPLE_S16LE || attr.format == SAMPLE_F32LE,
+        ERR_NOT_SUPPORTED, "3DA sink unsupported format %{public}d", attr.format);
     int32_t ret = CreateRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
     sinkInited_ = true;
@@ -140,7 +144,10 @@ int32_t CabinAudioRenderSink::Stop(void)
     AudioXCollie audioXCollie("CabinAudioRenderSink::Stop", TIMEOUT_SECONDS_10,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     if (audioRender_ != nullptr) {
-        audioRender_->Stop(audioRender_);
+        int32_t ret = audioRender_->Stop(audioRender_);
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("audioRender_ Stop fail, ret: %{public}d", ret);
+        }
     }
 #ifdef MULTI_BUS_ENABLE
     playingAppManager_.Stop();
