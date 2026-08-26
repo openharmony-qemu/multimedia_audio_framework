@@ -1009,6 +1009,9 @@ void AudioPolicyService::GetSupportedEffectProperty(AudioEffectPropertyArray &pr
     for (auto &item : descriptor) {
         audioEffectService_.AddSupportedAudioEffectPropertyByDevice(item->getType(), mergedSet);
     }
+
+    audioEffectService_.AddSupportedAudioEffectPropertyByDevice(DEVICE_TYPE_BLUETOOTH_A2DP, mergedSet);
+    audioEffectService_.AddSupportedAudioEffectPropertyByDevice(DEVICE_TYPE_NEARLINK, mergedSet);
     propertyArray.property.reserve(mergedSet.size());
     std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),
         [](const std::pair<std::string, std::string>& p) {
