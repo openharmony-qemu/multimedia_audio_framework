@@ -26,6 +26,10 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t DEFAULT_STREAM_ID = 10;
+// 3DA HDI whole-frame contract, keep in sync with the constants in pro_renderer_stream_impl.cpp
+constexpr uint32_t AVS3METADATA_SIZE = 19824;
+constexpr uint32_t AUDIO_VIVID_SAMPLES = 1024;
+constexpr uint32_t THREE_DA_HDI_HEADER_FRAMES = 3;
 void ProRendererStreamImplUnitTest::SetUpTestCase(void)
 {
     // input testsuit setup step，setup invoked before all testcases
@@ -263,8 +267,11 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_FALSE(rendererStreamImpl->isNeedResample_);
     EXPECT_FALSE(rendererStreamImpl->isNeedMcr_);
-    // Each sinkBuffer slot holds one whole 3DA HDI frame: (1024 PCM + 3 header) frames + aligned metadata
-    EXPECT_EQ(rendererStreamImpl->sinkBuffer_[0].size(), static_cast<size_t>((1024 + 3) * 2 * 8 + 19824));
+    // Each sinkBuffer slot holds one whole 3DA HDI frame: (PCM + header) frames + aligned metadata
+    uint32_t frameSize = 2 * 8; // S16LE 2 bytes per sample * 8 channels
+    uint32_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
+    size_t expectedSlotSize = (AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize + metaAligned;
+    EXPECT_EQ(rendererStreamImpl->sinkBuffer_[0].size(), expectedSlotSize);
 }
 
 /**
@@ -1587,12 +1594,11 @@ HWTEST(ProRendererStreamImplUnitTest, InitBasicInfo_002, TestSize.Level0)
 
     rendererStreamImpl->InitBasicInfo(processConfig.streamInfo);
     // Whole-frame geometry: frameSize = 2 bytes * 8 ch = 16; metadata 19824 is already 16-aligned,
-    // span = 1024 PCM frames + 3 header frames + metadata frames, minBufferSize = one whole frame.
-    uint32_t frameSize = 2 * 8; // S16LE sample 2 bytes * 8 channels
-    uint32_t metadataSize = 19824;
-    uint32_t metaAligned = (metadataSize + frameSize - 1) / frameSize * frameSize;
-    uint32_t expectedSpanSize = 1024 + 3 + metaAligned / frameSize;
-    uint32_t expectedMinBufSize = (1024 + 3) * frameSize + metaAligned;
+    // span = PCM frames + header frames + metadata frames, minBufferSize = one whole frame.
+    uint32_t frameSize = 2 * 8; // S16LE 2 bytes per sample * 8 channels
+    uint32_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
+    uint32_t expectedSpanSize = AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES + metaAligned / frameSize;
+    uint32_t expectedMinBufSize = (AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize + metaAligned;
     EXPECT_EQ(rendererStreamImpl->spanSizeInFrame_, expectedSpanSize);
     EXPECT_EQ(rendererStreamImpl->minBufferSize_, expectedMinBufSize);
 }
