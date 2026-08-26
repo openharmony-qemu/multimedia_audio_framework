@@ -140,6 +140,9 @@ int32_t ProRendererStreamImpl::InitParams()
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
         // 3DA HDI frame layout magic|size1|metadata|align|size2|pcm; sinkBuffer must hold the whole frame
         size_t frameSize = byteSizePerFrame_;
+        CHECK_AND_RETURN_RET_LOG(frameSize != 0, ERR_INVALID_PARAM,
+            "3DA: invalid byteSizePerFrame_, format %{public}d channels %{public}u",
+            streamInfo.format, streamInfo.channels);
         size_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
         bufferSize = static_cast<uint32_t>((AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize
             + metaAligned);
@@ -751,7 +754,9 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
         // 3DA: shared memory holds whole frames magic|size1|metadata|align|size2|pcm; span = whole-frame count
         size_t frameSize = byteSizePerFrame_;
-        CHECK_AND_RETURN_RET_LOG(frameSize != 0, ERR_INVALID_PARAM,
+        // InitBasicInfo is void: log-and-return here; the matching guard in InitParams returns
+        // ERR_INVALID_PARAM to the caller before any division by frameSize.
+        CHECK_AND_RETURN_LOG(frameSize != 0,
             "3DA: invalid byteSizePerFrame_, format %{public}d channels %{public}u",
             streamInfo.format, streamInfo.channels);
         size_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
