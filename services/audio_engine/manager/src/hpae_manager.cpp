@@ -78,7 +78,9 @@ void HpaeManagerThread::ActivateThread(HpaeManager *hpaeManager)
 void HpaeManagerThread::Run()
 {
     running_.store(true);
+#ifndef HPAE_UT_SKIP_RSS_REPORT
     ScheduleThreadInServer(getpid(), gettid());
+#endif
     while (running_.load() && m_hpaeManager != nullptr) {
         {
             std::unique_lock<std::mutex> lock(mutex_);
@@ -102,7 +104,9 @@ void HpaeManagerThread::Run()
         m_hpaeManager->HandleMsg();
         recvSignal_.store(false);
     }
+#ifndef HPAE_UT_SKIP_RSS_REPORT
     UnscheduleThreadInServer(getpid(), gettid());
+#endif
 }
 
 void HpaeManagerThread::Notify()

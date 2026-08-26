@@ -66,6 +66,36 @@ engine_test_external_deps = [
   "samgr:samgr_proxy",
 ]
 
+# UT-only HpaeManager compilation. HPAE_UT_SKIP_RSS_REPORT drops the manager worker thread's
+# ScheduleThreadInServer/UnscheduleThreadInServer calls: their res-sched binder transaction can
+# stall indefinitely and wedge the worker's unbounded join() on teardown, hanging the whole run
+# (probabilistic; observed on hpae_manager_se_test). The define lives here so product builds are
+# untouched. Compiling config mirrors the hpae_engine_manager target (audio_engine_node_config +
+# the lib's own include dirs), so this object's class layouts match the other
+# hpae_engine_manager_static archive members; the archive's own hpae_manager.o is never pulled
+# because this object already defines those symbols.
+ohos_source_set("hpae_manager_ut_src") {
+  sources = [ "../../manager/src/hpae_manager.cpp" ]
+  defines = [ "HPAE_UT_SKIP_RSS_REPORT" ]
+  configs = [ "../../:audio_engine_node_config" ]
+  include_dirs = [
+    "../../frameworks/native/audioschedule/include",
+    "../../frameworks/native/audioqosmanager/include",
+    "../audio_policy/server/infra/datashare/include",
+  ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
 ohos_unittest("hpae_render_manager_test") {
   module_out_path = module_output_path
   sources = [
@@ -76,7 +106,8 @@ ohos_unittest("hpae_render_manager_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -107,7 +138,8 @@ ohos_unittest("hpae_injector_renderer_manager_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -137,7 +169,8 @@ ohos_unittest("hpae_capturer_manager_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -168,7 +201,8 @@ ohos_unittest("hpae_virtual_capturer_manager_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -199,7 +233,8 @@ ohos_unittest("hpae_manager_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -231,7 +266,8 @@ ohos_unittest("hpae_manager_audio_paramters_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -263,7 +299,8 @@ ohos_unittest("hpae_soft_link_unit_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -294,7 +331,8 @@ ohos_unittest("hpae_inner_capturer_unit_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -323,7 +361,8 @@ ohos_unittest("hpae_render_effect_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -352,7 +391,8 @@ ohos_unittest("hpae_sink_output_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -384,7 +424,8 @@ ohos_unittest("hpae_sink_virtual_output_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -414,7 +455,8 @@ ohos_unittest("hpae_virtual_process_cluster_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -444,7 +486,8 @@ ohos_unittest("hpae_source_process_cluster_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -473,7 +516,8 @@ ohos_unittest("hpae_policy_manager_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_plugins",
     "../../:audio_engine_utils",
@@ -505,7 +549,8 @@ ohos_unittest("hpae_signal_process_thread_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -536,7 +581,8 @@ ohos_unittest("hpae_gain_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -567,7 +613,8 @@ ohos_unittest("hpae_converter_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_plugins",
     "../../:audio_engine_utils",
@@ -590,7 +637,8 @@ ohos_unittest("hpae_converter_cluster_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_plugins",
     "../../:audio_engine_utils",
@@ -623,7 +671,8 @@ ohos_unittest("hpae_loudness_gain_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_plugins",
     "../../:audio_engine_utils",
@@ -655,7 +704,8 @@ ohos_unittest("hpae_mixer_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_plugins",
     "../../:audio_engine_utils",
@@ -687,7 +737,8 @@ ohos_unittest("hpae_node_common_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_plugins",
     "../../:audio_engine_utils",
@@ -719,7 +770,8 @@ ohos_unittest("hpae_remote_output_cluster_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -750,7 +802,8 @@ ohos_unittest("hpae_remote_sink_output_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_plugins",
     "../../:audio_engine_utils",
@@ -781,7 +834,8 @@ ohos_unittest("hpae_offload_sinkoutput_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_plugins",
     "../../:audio_engine_utils",
@@ -814,7 +868,8 @@ ohos_unittest("hpae_output_cluster_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_plugins",
     "../../:audio_engine_utils",
@@ -846,7 +901,8 @@ ohos_unittest("hpae_pcm_buffer_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -877,7 +933,8 @@ ohos_unittest("hpae_pcm_process_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -908,7 +965,8 @@ ohos_unittest("hpae_process_cluster_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -939,7 +997,8 @@ ohos_unittest("hpae_sink_input_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -970,7 +1029,8 @@ ohos_unittest("hpae_source_input_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1002,7 +1062,8 @@ ohos_unittest("hpae_source_output_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1036,7 +1097,8 @@ ohos_unittest("audio_engine_unit_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_plugins",
     "../../:audio_engine_utils",
@@ -1068,7 +1130,8 @@ ohos_unittest("hpae_capture_effect_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1099,7 +1162,8 @@ ohos_unittest("hpae_source_input_cluster_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1172,7 +1236,8 @@ ohos_unittest("hpae_co_buffer_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1202,7 +1267,8 @@ ohos_unittest("hpae_source_output_node_highpass_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1233,7 +1299,8 @@ ohos_unittest("hpae_limiter_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1291,7 +1358,8 @@ ohos_unittest("hpae_volume_sync_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1324,7 +1392,8 @@ ohos_unittest("hpae_direct_renderer_manager_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1357,7 +1426,8 @@ ohos_unittest("hpae_direct_sinkoutput_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_plugins",
     "../../:audio_engine_utils",
@@ -1390,7 +1460,8 @@ ohos_unittest("hpae_direct_renderer_manager_session_effect_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1445,7 +1516,8 @@ ohos_unittest("effect_instance_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
     "../../../../frameworks/native/audioeffect:audio_effect",
@@ -1498,7 +1570,8 @@ ohos_unittest("session_effect_manager_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
     "../../../../frameworks/native/audioeffect:audio_effect",
@@ -1528,7 +1601,8 @@ ohos_unittest("hpae_session_effect_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1559,7 +1633,8 @@ ohos_unittest("hpae_inner_cap_sink_node_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1590,7 +1665,8 @@ ohos_unittest("hpae_offload_se_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1621,7 +1697,8 @@ ohos_unittest("hpae_offload_renderer_manager_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1651,7 +1728,8 @@ ohos_unittest("hpae_manager_se_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1707,7 +1785,8 @@ ohos_unittest("hpae_process_cluster_se_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1789,7 +1868,8 @@ ohos_unittest("session_effect_e2e_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
+    ":hpae_manager_ut_src",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
