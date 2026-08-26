@@ -72,6 +72,7 @@ int32_t CabinAudioRenderSink::Init(const IAudioSinkAttr &attr)
             deviceManager->DestroyRender(attr_.adapterName, hdiRenderId_);
         }
         audioRender_ = nullptr;
+        hdiRenderId_ = 0;
         sinkInited_ = false;
     }
     Trace trace("CabinAudioRenderSink::Init");
@@ -99,6 +100,8 @@ void CabinAudioRenderSink::DeInit(void)
         deviceManager->DestroyRender(attr_.adapterName, hdiRenderId_);
     }
     audioRender_ = nullptr;
+    // reset the destroyed render id so a later re-init cannot destroy a stale id again
+    hdiRenderId_ = 0;
     hdiCallback_ = {};
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
