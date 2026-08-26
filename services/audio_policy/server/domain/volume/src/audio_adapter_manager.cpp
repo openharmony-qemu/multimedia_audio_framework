@@ -1568,7 +1568,7 @@ AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo
         (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT &&
         pipeInfo->moduleInfo_.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos)) {
         paIndex = static_cast<uint32_t>(ioHandle);
-        HILOG_COMM_INFO("[PipeExecInfo] Open %{public}u port (3da direct, skip hpae), paIndex: %{public}u end",
+        AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port (3da direct, skip hpae), paIndex: %{public}u end",
             ioHandle, paIndex);
         return ioHandle;
     }
@@ -1845,7 +1845,7 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     if (audioModuleInfo.name.find(HDI_BUS_KEYWORD_3DA) != std::string::npos ||
         audioModuleInfo.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
         paIndex = static_cast<uint32_t>(ioHandle);
-        HILOG_COMM_INFO("[PipeExecInfo] Open %{public}u port (3da direct, skip hpae), paIndex: %{public}u end",
+        AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port (3da direct, skip hpae), paIndex: %{public}u end",
             ioHandle, paIndex);
         return ioHandle;
     }
