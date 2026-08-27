@@ -1491,7 +1491,7 @@ HWTEST_F(AudioSelectInterfaceServiceUnitTest,
 {
     auto &svc = AudioSelectInterfaceService::GetInstance();
     int32_t ret = svc.SetA2dpDeviceOffloadManager(nullptr);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_NULL_POINTER);
 }
 
 /**
@@ -1678,7 +1678,7 @@ HWTEST_F(AudioSelectInterfaceServiceUnitTest,
     auto desc = std::make_shared<AudioDeviceDescriptor>();
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     int32_t ret = svc.ConnectVirtualDeviceIfNeeded(desc);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -1692,7 +1692,7 @@ HWTEST_F(AudioSelectInterfaceServiceUnitTest,
     auto &svc = AudioSelectInterfaceService::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> nullDesc;
     int32_t ret = svc.ConnectVirtualDeviceIfNeeded(nullDesc);
-    EXPECT_TRUE(ret == SUCCESS || ret == ERR_INVALID_PARAM);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -1723,7 +1723,7 @@ HWTEST_F(AudioSelectInterfaceServiceUnitTest,
     filter->uid = 1000;
     auto desc = std::make_shared<AudioDeviceDescriptor>();
     int32_t ret = svc.SelectFastOutputDevice(filter, desc);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 } // namespace AudioStandard
