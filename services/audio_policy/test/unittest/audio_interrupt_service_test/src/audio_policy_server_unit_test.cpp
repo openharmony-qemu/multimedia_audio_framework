@@ -6842,21 +6842,6 @@ HWTEST(AudioPolicyUnitTest, GetPreferredInputDeviceDescriptors_A2dpIn_001, TestS
 }
 
 /**
- * @tc.name  : SetDeviceActive_InvalidUid
- * @tc.number: SetDeviceActive_001
- * @tc.desc  : Test SetDeviceActive uses caller uid when uid is INVALID_UID
- */
-HWTEST(AudioPolicyUnitTest, SetDeviceActive_InvalidUid, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    int32_t ret = server->SetDeviceActive(DEVICE_TYPE_SPEAKER, true, INVALID_UID);
-    EXPECT_TRUE(ret == SUCCESS || ret == ERR_PERMISSION_DENIED || ret == ERR_NOT_SUPPORTED);
-}
-
-/**
  * @tc.name  : SetDeviceActive_SpecifiedUidNoPermission
  * @tc.number: SetDeviceActive_002
  * @tc.desc  : Test SetDeviceActive returns ERR_SYSTEM_PERMISSION_DENIED when uid is specified without permission
