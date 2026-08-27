@@ -131,7 +131,7 @@ private:
     void DelayCallReleaseEndpoint(std::string endpointName);
     ReuseEndpointType GetReuseEndpointType(const std::string &deviceKey, const AudioStreamInfo &streamInfo);
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
-    void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
+    int32_t InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
 #ifdef HAS_FEATURE_INNERCAPTURER
     // for inner-capturer
     void CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);

@@ -145,7 +145,7 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
         uint32_t sessionId = 0;
         std::shared_ptr<CapturerInServer> capturer = ipcStreamInServer->GetCapturer();
         if (capturer != nullptr && capturer->GetSessionId(sessionId) == SUCCESS) {
-            InsertCapturer(sessionId, capturer); // for all renderers
+            CHECK_AND_RETURN_RET_LOG(InsertCapturer(sessionId, capturer) == SUCCESS, nullptr, "InsertCapturer fail.")
             CheckCaptureSessionMuteState(sessionId, capturer);
             CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId, SESSION_OPERATION_CREATE);
         }
@@ -339,12 +339,14 @@ void AudioService::RemoveRenderer(uint32_t sessionId, bool isSwitchStream)
     AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
 }
 
-void AudioService::InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer)
+int32_t AudioService::InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer)
 {
     std::unique_lock<std::mutex> lock(capturerMapMutex_);
     AUDIO_INFO_LOG("Insert capturer:%{public}u into map", sessionId);
-    CHECK_AND_RETURN(!allCapturerMap_.count(sessionId));
+    CHECK_AND_RETURN_RET_LOG(!allCapturerMap_.count(sessionId), ERROR,
+        "%{public}u already insert.", sessionId);
     allCapturerMap_[sessionId] = capturer;
+    return SUCCESS;
 }
 
 void AudioService::RemoveCapturer(uint32_t sessionId, bool isSwitchStream)
