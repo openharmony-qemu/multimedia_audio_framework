@@ -845,6 +845,8 @@ public:
         const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback);
     int32_t OffAudioSeparationEffectEnabledChange();
     int32_t GetAppBackGroundState(int32_t pid, bool &isBack);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesByFilter(
+        StreamUsage usage, RouterType bypass);
 
 private:
     AudioPolicyManager() {}

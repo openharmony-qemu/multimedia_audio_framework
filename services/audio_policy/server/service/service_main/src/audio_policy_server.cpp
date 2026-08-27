@@ -6505,5 +6505,17 @@ int32_t AudioPolicyServer::EnableSystemRecordController(bool show, const SystemR
     }
     return AudioRecordController::GetInstance().EnableSystemRecordController(show, config, uid, pid);
 }
+
+int32_t AudioPolicyServer::FetchOutputDevicesByFilter(int32_t usage, int32_t bypass,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
+    FetchDeviceInfo info = {static_cast<StreamUsage>(usage), "FetchOutputDevicesByFilter",
+                            static_cast<RouterType>(bypass)};
+    descs = audioRouterCenter_.FetchOutputDevices(info);
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

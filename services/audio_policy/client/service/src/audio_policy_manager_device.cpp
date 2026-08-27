@@ -875,5 +875,17 @@ int32_t AudioPolicyManager::GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrap
 
     return SUCCESS;
 }
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::FetchOutputDevicesByFilter(
+    StreamUsage usage, RouterType bypass)
+{
+    std::vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, descs, "audio policy manager proxy is null");
+    
+    gsp->FetchOutputDevicesByFilter(usage, bypass, descs);
+    return descs;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
