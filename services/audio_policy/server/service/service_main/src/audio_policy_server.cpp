@@ -62,7 +62,7 @@
 #include "ipc_skeleton.h"
 #include "securec.h"
 #include "audio_schedule.h"
-
+#include "parameter.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -147,6 +147,9 @@ const std::string NEARLINK_LIST = "audio_nearlink_list";
 constexpr const char* SCENE_BOARD_PACKAGE_NAME = "com.ohos.sceneboard";
 constexpr int32_t MIN_VOLUME_PERCENTAGE = 0;
 constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
+const char RINGTONE_PARAMETER_SCANNER_FIRST_KEY[] = "ringtone.scanner.first";
+const char RINGTONE_PARAMETER_SCANNER_FIRST_TRUE[] = "true";
+const int32_t RINGTONEPARA_SIZE = 64;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -6188,8 +6191,9 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
 {
     Trace trace("AudioPolicyServer::CallRingtoneLibrary");
     AUDIO_INFO_LOG("Enter CallRingtoneLibrary");
+    int32_t ret = ERROR;
     auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(saManager != nullptr, ERROR, "Get system ability manager failed.");
+    CHECK_AND_RETURN_RET_LOG(saManager != nullptr, ret, "Get system ability manager failed.");
 
     AudioXCollie audioXCollie("CallRingtoneLibrary::start", DATASHARE_SERVICE_TIMEOUT_SECONDS,
         [](void *) {
@@ -6197,13 +6201,19 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     auto remoteObj = saManager->GetSystemAbility(STORAGE_MANAGER_MANAGER_ID);
-    CHECK_AND_RETURN_RET_LOG(remoteObj != nullptr, ERROR, "Get system ability failed.");
+    CHECK_AND_RETURN_RET_LOG(remoteObj != nullptr, ret, "Get system ability failed.");
 
     auto dataShareHelper = DataShare::DataShareHelper::Creator(remoteObj, "datashare:///ringtone", "",
         DATASHARE_SERVICE_TIMEOUT_SECONDS);
-    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
+    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ret, "Create dataShare failed, datashare or library error.");
     dataShareHelper->Release();
-    return SUCCESS;
+    char paramValue[RINGTONEPARA_SIZE] = {0};
+    GetParameter(RINGTONE_PARAMETER_SCANNER_FIRST_KEY, "", paramValue, RINGTONEPARA_SIZE);
+    if (strcmp(paramValue, RINGTONE_PARAMETER_SCANNER_FIRST_TRUE) == 0) {
+        ret = SUCCESS;
+    }
+    AUDIO_WARNING_LOG("Exit CallRingtoneLibrary, ret:%{public}d", ret);
+    return ret;
 }
 
 int32_t AudioPolicyServer::GetVADeviceBroker(sptr<IRemoteObject> &client)
