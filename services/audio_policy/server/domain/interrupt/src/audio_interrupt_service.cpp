@@ -552,7 +552,6 @@ void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
             return;
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        audioInterruptService->DeactivateAudioSessionErrorEvent(callerPid);
         int32_t ret = audioInterruptService->DeactivateStreamsInAudioSession(zoneId, callerPid, streamsInSession);
         if (ret != SUCCESS) {
             HILOG_COMM_ERROR("[DelayToDeactivateStreamsInAudioSession]Deactivate streams in audio session failed, "
@@ -585,9 +584,11 @@ int32_t AudioInterruptService::DeactivateStreamsInAudioSession(
             "interrupt, pid %{public}d", callerPid);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             SESSION_STOP_ILLEGAL_STATE, "Session is reactivated, no need to deactivate interrupt", false);
+        RemoveStreamByPid(callerPid);
         return ERROR;
     }
 
+    DeactivateAudioSessionErrorEvent(callerPid);
     // If the application deactivates a session, the streams managed by session needs to be stoped.
     // and be unmuted if the session is muted.
     if (handler_ != nullptr) {
