@@ -343,6 +343,7 @@ void AudioService::InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerIn
 {
     std::unique_lock<std::mutex> lock(capturerMapMutex_);
     AUDIO_INFO_LOG("Insert capturer:%{public}u into map", sessionId);
+    CHECK_AND_RETURN(!allCapturerMap_.count(sessionId));
     allCapturerMap_[sessionId] = capturer;
 }
 
