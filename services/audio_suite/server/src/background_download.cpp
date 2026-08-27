@@ -169,6 +169,7 @@ const DownloadConditionConfig& BackgroundDownload::GetFeatureConfig(const std::s
     static const DownloadConditionConfig defaultConfig;
     static const std::unordered_map<std::string, DownloadConditionConfig> featureConfigs = {
         {"AudioSourceSeparationAlgoRes", DownloadConditionConfig {true, false, false, false}},
+        {"RecordDefinition", DownloadConditionConfig {true, false, false, false}},
     };
     auto it = featureConfigs.find(featureName);
     if (it != featureConfigs.end()) {
