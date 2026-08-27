@@ -2224,22 +2224,10 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
     AudioCapturerInfo captureInfo = captureInfoIn;
     deviceDescs = eventEntry_->GetPreferredInputDeviceDescriptors(captureInfo, IPCSkeleton::GetCallingUid());
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
-    for (auto &desc : deviceDescs) {
-        CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-        bool isA2dpIn = (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
-        bool isSppUnidirectional = (desc->deviceType_ == DEVICE_TYPE_BT_SPP && desc->isUnidirectional_);
-        if (isA2dpIn) {
-            auto sco = std::make_shared<AudioDeviceDescriptor>(desc);
-            sco->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-            auto descPtr = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(sco);
-            desc = descPtr && descPtr->deviceType_ != DEVICE_TYPE_NONE ?
-                std::make_shared<AudioDeviceDescriptor>(descPtr) : desc;
-            desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-            desc->highQualityRecordingSupported_ = true;
-        } else if (isSppUnidirectional) {
-            desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-        }
-    }
+
+    audioPolicyService_.SyncInputDeviceScoId(deviceDescs);
+    AudioDeviceDescriptor::MapInputDeviceType(deviceDescs);
+
     bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
