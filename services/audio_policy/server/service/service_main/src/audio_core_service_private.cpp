@@ -3394,8 +3394,12 @@ void AudioCoreService::HandleSceneChangePreferredDevice(AudioScene audioScene, A
     SetSleVoiceStatusFlag(audioScene);
     OnAudioSceneChange(audioScene);
     auto currentOutputDevice = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
-    if (Util::IsEnhancedRoutingSupported() || (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
-        lastAudioScene == AUDIO_SCENE_DEFAULT && audioScene != AUDIO_SCENE_DEFAULT)) {
+    if (Util::IsEnhancedRoutingSupported()) {
+        OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN);
+        OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(uid), "",
+            AudioStreamDeviceChangeReason::UNKNOWN);
+    } else if (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        lastAudioScene == AUDIO_SCENE_DEFAULT && audioScene != AUDIO_SCENE_DEFAULT) {
         OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN);
     }
     if (audioScene == AUDIO_SCENE_DEFAULT && currentOutputDevice.IsRemoteDevice()) {
