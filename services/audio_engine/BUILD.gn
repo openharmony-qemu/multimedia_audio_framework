@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("../../config.gni")
+import("../../../audio_framework_test_sources.gni")
 
 ohos_shared_library("audio_engine_utils") {
   branch_protector_ret = "pac_ret"
@@ -257,7 +258,7 @@ ohos_shared_library("audio_engine_node") {
   part_name = "audio_framework"
 }
 
-ohos_shared_library("hpae_engine_manager") {
+audio_ohos_library("hpae_engine_manager") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -327,6 +328,8 @@ ohos_shared_library("hpae_engine_manager") {
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
+
+  static_defines = [ "HPAE_UT_SKIP_RSS_REPORT" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
