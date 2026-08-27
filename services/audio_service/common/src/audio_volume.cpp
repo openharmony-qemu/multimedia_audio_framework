@@ -1058,11 +1058,6 @@ void AudioVolume::RemoveStopFadeoutState(uint32_t streamIndex)
     stopFadeoutState_.erase(streamIndex);
 }
 
-void AudioVolume::SetScoActive(bool isActive)
-{
-    isScoActive_ = isActive;
-}
-
 void AudioVolume::SetCurrentActiveDevice(DeviceType currentActiveDevice)
 {
     AUDIO_DEBUG_LOG("SetCurrentActiveDevice %{public}d", currentActiveDevice);
