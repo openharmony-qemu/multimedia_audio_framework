@@ -78,7 +78,9 @@ void HpaeManagerThread::ActivateThread(HpaeManager *hpaeManager)
 void HpaeManagerThread::Run()
 {
     running_.store(true);
+#ifndef HPAE_UT_SKIP_RSS_REPORT
     ScheduleThreadInServer(getpid(), gettid());
+#endif
     while (running_.load() && m_hpaeManager != nullptr) {
         {
             std::unique_lock<std::mutex> lock(mutex_);
@@ -102,7 +104,9 @@ void HpaeManagerThread::Run()
         m_hpaeManager->HandleMsg();
         recvSignal_.store(false);
     }
+#ifndef HPAE_UT_SKIP_RSS_REPORT
     UnscheduleThreadInServer(getpid(), gettid());
+#endif
 }
 
 void HpaeManagerThread::Notify()
@@ -1188,6 +1192,14 @@ void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> s
         }
         return;
     }
+    // Deferred AISS-disable: if AISS was closed while this stream was moving, the migrating node
+    // still carries the old attach-state and would re-materialize AISS once connected to the new
+    // sink (within the 3s lazy-release window). Drop it when the logical binding no longer points
+    // at this session. A pure move keeps the binding, so the attach-state is preserved.
+    if (sessionEffectManager_ != nullptr && sinkInputNode->HasSessionEffectAttachState() &&
+        sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME) != sessionId) {
+        sinkInputNode->ClearSessionEffectAttachState();
+    }
     rendererManager->AddNodeToSink(sinkInputNode);
     // MoveIn: recreate SE on new device if session has active SE binding
     auto boundSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
@@ -1288,6 +1300,20 @@ void HpaeManager::HandleMoveAllSinkInputs(
         }
         return;
     }
+    // Deferred AISS-disable: drop attach-state on any migrating node whose AISS logical binding was
+    // cleared mid-move (see HandleMoveSinkInput). Only the AISS-bound session's node carries
+    // attach-state, and its binding is preserved on a pure move, so this is a no-op except after a
+    // mid-move close.
+    if (sessionEffectManager_ != nullptr) {
+        for (const auto &sinkInput : sinkInputs) {
+            CHECK_AND_CONTINUE(sinkInput != nullptr);
+            uint32_t sid = sinkInput->GetNodeInfo().sessionId;
+            if (sinkInput->HasSessionEffectAttachState() &&
+                sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME) != sid) {
+                sinkInput->ClearSessionEffectAttachState();
+            }
+        }
+    }
     rendererManagerMap_[sinkName]->AddAllNodesToSink(sinkInputs, true);
     for (const auto &sinkInput : sinkInputs) {
         CHECK_AND_CONTINUE_LOG(sinkInput, "sinkInput is nullptr");
@@ -1369,6 +1395,12 @@ void HpaeManager::HandleUpdateStatus(
         if (operation == OPERATION_PAUSED || operation == OPERATION_STOPPED) {
             DequeuePendingTransition(sessionId);
             it->second.state = status;
+            // Deferred AISS-disable: a play stream reaching PAUSED/STOPPED flushes a pending request
+            // before forwarding the callback. The 60ms pending-transition fallback re-enters here,
+            // so timeout-confirmed terminals are covered too.
+            if (IsPendingAissDisableFor(sessionId)) {
+                FinishPendingAissDisable();
+            }
         }
         UpdateStatus(it->second.statusCallback, operation, sessionId);
     } else {
@@ -1674,6 +1706,13 @@ bool HpaeManager::SetMovingPlayStreamState(uint32_t sessionId, HpaeSessionState 
         rendererInfoIt->second.state = state;
     }
     UpdateStatus(rendererInfoIt->second.statusCallback, operation, sessionId);
+    // During a move, Pause/Stop/Release bypass HandleUpdateStatus; flush a pending deferred
+    // AISS-disable here. Start is intentionally excluded so a pending request is retained.
+    if (operation == OPERATION_PAUSED || operation == OPERATION_STOPPED || operation == OPERATION_RELEASED) {
+        if (IsPendingAissDisableFor(sessionId)) {
+            FinishPendingAissDisable();
+        }
+    }
     if (operation == OPERATION_RELEASED) {
         if (sessionEffectManager_) {
             sessionEffectManager_->OnSessionDestroyed(sessionId);
@@ -1723,6 +1762,11 @@ int32_t HpaeManager::DestroyStream(HpaeStreamClassType streamClassType, uint32_t
             return;
         }
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
+            // Deferred AISS-disable: flush before the renderer (and its effect instance handle) is
+            // destroyed so PostDestroySessionEffect can still address it.
+            if (IsPendingAissDisableFor(sessionId)) {
+                FinishPendingAissDisable();
+            }
             std::shared_ptr<IHpaeRendererManager> renderManager = GetRendererManagerById(sessionId);
             if (renderManager!= nullptr) {
                 renderManager->DestroyStream(sessionId);
@@ -3270,6 +3314,11 @@ void HpaeManager::TryBindSessionEffectOnStart(uint32_t sessionId)
     if (boundUid_ == -1 || sessionEffectManager_ == nullptr) {
         return;
     }
+    // A deferred disable is pending for the currently bound session: do not auto-migrate AISS to a
+    // newly started stream of the same uid. The close target stays fixed to the registered session.
+    if (pendingAissDisable_.has_value()) {
+        return;
+    }
     auto it = rendererIdStreamInfoMap_.find(sessionId);
     if (it == rendererIdStreamInfoMap_.end()) {
         return;
@@ -3347,6 +3396,36 @@ int32_t HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding, 
     return SUCCESS;
 }
 
+bool HpaeManager::IsPendingAissDisableFor(uint32_t sessionId) const
+{
+    return pendingAissDisable_.has_value() && pendingAissDisable_->sessionId == sessionId &&
+        pendingAissDisable_->uid == boundUid_ && pendingAissDisable_->generation == aissControlGeneration_;
+}
+
+// Flush a registered deferred AISS-disable request by tearing down AISS through the existing close
+// path (ClearAissSession). ClearAissSession tolerates a renderer that is already gone - the
+// PostDestroy becomes a no-op and UnbindSessionEffect is idempotent - which is exactly the mid-move
+// situation where the physical effect node was already destroyed at move-out. The pending request
+// is cleared and the control epoch bumped so any in-flight stale event is invalidated.
+void HpaeManager::FinishPendingAissDisable()
+{
+    pendingAissDisable_.reset();
+    if (boundSessionId_ != UNBOUND_SESSION_ID) {
+        ClearAissSession(boundSessionId_, true); // clears boundSessionId_ + boundUid_ when matched
+        // Destroy-timeout: ClearAissSession aborts before unbinding (keep-binding contract for
+        // switch retries). A deferred-disable terminal has no retry event (the stream stops here),
+        // so unlike the switch paths the logical state is dropped unconditionally - mirroring
+        // DisableAissByUid - and the queued late destroy finishes the identity-gated physical
+        // teardown.
+        boundUid_ = -1;
+        boundSessionId_ = UNBOUND_SESSION_ID;
+    } else if (boundUid_ != -1) {
+        boundUid_ = -1; // armed -> off, no physical binding to tear down
+    }
+    ++aissControlGeneration_;
+    AUDIO_INFO_LOG("FinishPendingAissDisable: AISS closed, generation %{public}" PRIu64, aissControlGeneration_);
+}
+
 uint32_t HpaeManager::FindRunningMusicSession(int32_t uid)
 {
     uint32_t targetSessionId = UNBOUND_SESSION_ID;
@@ -3370,28 +3449,26 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
         "EnableAissByUid: sessionEffectManager_ is null");
 
     int32_t oldUid = boundUid_;
-    CHECK_AND_RETURN_RET(boundUid_ != uid || boundSessionId_ == UNBOUND_SESSION_ID, SUCCESS);
-
-    if (boundUid_ != -1 && boundUid_ != uid) {
-        uint32_t oldSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
-        if (oldSessionId == UNBOUND_SESSION_ID) {
-            oldSessionId = boundSessionId_;
-            if (oldSessionId != UNBOUND_SESSION_ID) {
-                AUDIO_INFO_LOG(
-                    "EnableAissByUid: no bound AISS session for old uid %{public}d, fallback to session %{public}u",
-                    oldUid, oldSessionId);
-            }
+    if (boundUid_ == uid && boundSessionId_ != UNBOUND_SESSION_ID) {
+        // Same uid already active. An explicit re-enable cancels any pending deferred disable and
+        // reuses the current AISS instance (no destroy/recreate).
+        if (pendingAissDisable_.has_value()) {
+            pendingAissDisable_.reset();
+            ++aissControlGeneration_;
+            AUDIO_INFO_LOG("EnableAissByUid: cancelled pending disable for uid %{public}d", uid);
         }
-        if (oldSessionId != UNBOUND_SESSION_ID) {
-            int32_t clearRet = ClearAissSession(oldSessionId, true, true);
-            CHECK_AND_RETURN_RET_LOG(clearRet == SUCCESS, clearRet,
-                "EnableAissByUid: clear old session %{public}u failed ret=%{public}d, abort switch",
-                oldSessionId, clearRet);
-        }
-        boundUid_ = -1;
-        boundSessionId_ = UNBOUND_SESSION_ID;
+        return SUCCESS;
     }
 
+    if (boundUid_ != -1 && boundUid_ != uid) {
+        int32_t unbindRet = UnbindAissFromOldUid(oldUid);
+        CHECK_AND_RETURN_RET_LOG(unbindRet == SUCCESS, unbindRet,
+            "EnableAissByUid: unbind old uid %{public}d failed, abort switch", oldUid);
+    }
+
+    // Claiming (or re-claiming while armed) the uid invalidates any prior deferred-disable request.
+    pendingAissDisable_.reset();
+    ++aissControlGeneration_;
     boundUid_ = uid;
     boundSessionId_ = UNBOUND_SESSION_ID;
 
@@ -3399,9 +3476,36 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
     CHECK_AND_RETURN_RET(targetSessionId != UNBOUND_SESSION_ID, SUCCESS,
         "EnableAissByUid: no running music stream for uid %{public}d, pending", uid);
 
+    return BindAissToRunningSession(uid, oldUid, targetSessionId);
+}
+
+int32_t HpaeManager::UnbindAissFromOldUid(int32_t oldUid)
+{
+    uint32_t oldSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
+    if (oldSessionId == UNBOUND_SESSION_ID) {
+        oldSessionId = boundSessionId_;
+        if (oldSessionId != UNBOUND_SESSION_ID) {
+            AUDIO_INFO_LOG(
+                "UnbindAissFromOldUid: no bound AISS session for old uid %{public}d, fallback to session %{public}u",
+                oldUid, oldSessionId);
+        }
+    }
+    if (oldSessionId != UNBOUND_SESSION_ID) {
+        int32_t clearRet = ClearAissSession(oldSessionId, true, true);
+        CHECK_AND_RETURN_RET_LOG(clearRet == SUCCESS, clearRet,
+            "UnbindAissFromOldUid: clear old session %{public}u failed ret=%{public}d, abort switch",
+            oldSessionId, clearRet);
+    }
+    boundUid_ = -1;
+    boundSessionId_ = UNBOUND_SESSION_ID;
+    return SUCCESS;
+}
+
+int32_t HpaeManager::BindAissToRunningSession(int32_t uid, int32_t oldUid, uint32_t targetSessionId)
+{
     int32_t ret = BindAndCreateAiss(targetSessionId, true);
     if (ret == static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED)) {
-        AUDIO_INFO_LOG("EnableAissByUid: running music stream %{public}u is unsupported, keep pending",
+        AUDIO_INFO_LOG("BindAissToRunningSession: running music stream %{public}u is unsupported, keep pending",
             targetSessionId);
         return SUCCESS;
     }
@@ -3413,7 +3517,7 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
     boundUid_ = -1;
     boundSessionId_ = UNBOUND_SESSION_ID;
     AUDIO_ERR_LOG(
-        "EnableAissByUid: BindAndCreateAiss failed for uid %{public}d (old uid %{public}d), "
+        "BindAissToRunningSession: BindAndCreateAiss failed for uid %{public}d (old uid %{public}d), "
         "session %{public}u, ret %{public}d",
         uid, oldUid, targetSessionId, ret);
     return ret;
@@ -3424,6 +3528,9 @@ int32_t HpaeManager::DisableAissByUid(int32_t uid)
     CHECK_AND_RETURN_RET_LOG(boundUid_ == uid, ERR_OPERATION_FAILED,
         "DisableAissByUid: uid %{public}d not bound (current: %{public}d)", uid, boundUid_);
 
+    // Immediate disable outranks any deferred-disable request: invalidate it before closing.
+    pendingAissDisable_.reset();
+    ++aissControlGeneration_;
     ClearAissSession(boundSessionId_, true);
     boundUid_ = -1;
     boundSessionId_ = UNBOUND_SESSION_ID;
@@ -3436,6 +3543,10 @@ int32_t HpaeManager::SetAissEnabledSync(uint32_t sessionId, bool enabled)
         "SetAissEnabledSync: sessionEffectManager_ is null");
 
     auto request = [this, sessionId, enabled]() -> int32_t {
+        // Session-level AISS control invalidates any uid-level deferred-disable request so the old
+        // uid's terminal events cannot affect the new session binding.
+        pendingAissDisable_.reset();
+        ++aissControlGeneration_;
         auto rendererManager = GetRendererManagerById(sessionId);
         CHECK_AND_RETURN_RET_LOG(rendererManager != nullptr,
             static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND),
@@ -3478,6 +3589,58 @@ int32_t HpaeManager::SetAissEnabledByUidSync(int32_t uid, bool enabled)
 
     auto request = [this, uid, enabled]() -> int32_t {
         return enabled ? EnableAissByUid(uid) : DisableAissByUid(uid);
+    };
+    return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
+}
+
+int32_t HpaeManager::DisableAissByUidWhenStreamInactiveSync(int32_t uid)
+{
+    CHECK_AND_RETURN_RET_LOG(sessionEffectManager_ != nullptr, ERR_OPERATION_FAILED,
+        "DisableAissByUidWhenStreamInactiveSync: sessionEffectManager_ is null");
+
+    auto request = [this, uid]() -> int32_t {
+        // uid mismatch: refuse without touching the existing binding.
+        if (boundUid_ != uid) {
+            AUDIO_WARNING_LOG("DisableAissByUidWhenStreamInactiveSync: uid %{public}d not bound (current: %{public}d)",
+                uid, boundUid_);
+            return ERR_OPERATION_FAILED;
+        }
+        // same {uid, sessionId} already pending: idempotent.
+        if (IsPendingAissDisableFor(boundSessionId_)) {
+            return SUCCESS;
+        }
+        // bound uid but no physical binding (UID_ARMED): cancel the armed state and go OFF.
+        if (boundSessionId_ == UNBOUND_SESSION_ID) {
+            boundUid_ = -1;
+            pendingAissDisable_.reset();
+            ++aissControlGeneration_;
+            AUDIO_INFO_LOG("DisableAissByUidWhenStreamInactiveSync: armed uid %{public}d cancelled", uid);
+            return SUCCESS;
+        }
+        // a physical binding exists: decide by its current state.
+        auto it = rendererIdStreamInfoMap_.find(boundSessionId_);
+        if (it == rendererIdStreamInfoMap_.end() ||
+            it->second.state == HPAE_SESSION_PAUSED || it->second.state == HPAE_SESSION_STOPPED ||
+            it->second.state == HPAE_SESSION_RELEASED) {
+            // stream record gone or already terminal: close now.
+            FinishPendingAissDisable();
+            return SUCCESS;
+        }
+        HpaeSessionState state = it->second.state;
+        if (state == HPAE_SESSION_RUNNING || state == HPAE_SESSION_PAUSING ||
+            state == HPAE_SESSION_STOPPING) {
+            // still active or transitioning: register the deferred request at the current epoch.
+            pendingAissDisable_ = PendingAissDisable{ uid, boundSessionId_, aissControlGeneration_ };
+            AUDIO_INFO_LOG("DisableAissByUidWhenStreamInactiveSync: registered pending disable uid %{public}d "
+                "session %{public}u state %{public}d generation %{public}" PRIu64,
+                uid, boundSessionId_, state, aissControlGeneration_);
+            return SUCCESS;
+        }
+        // NEW/PREPARED/INVALID with an existing physical binding: inconsistent, refuse and do not
+        // wait or close other bindings.
+        AUDIO_ERR_LOG("DisableAissByUidWhenStreamInactiveSync: bound session %{public}u in inconsistent state "
+            "%{public}d", boundSessionId_, state);
+        return ERR_OPERATION_FAILED;
     };
     return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
 }

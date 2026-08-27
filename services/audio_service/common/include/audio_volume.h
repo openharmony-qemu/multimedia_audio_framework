@@ -95,7 +95,6 @@ public:
     void SetDefaultAppVolume(int32_t level);
     std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime, uint32_t code);
-    void SetScoActive(bool isActive);
     void SetCurrentActiveDevice(DeviceType currentActiveDevice);
     DeviceType GetCurrentActiveDevice();
     void SetDoNotDisturbStatusVolume(uint32_t sessionId, float volume);
@@ -149,7 +148,6 @@ private:
     std::shared_ptr<FixedSizeList<AdjustStreamVolumeInfo>> setDuckVolumeInfo_ =
         std::make_shared<FixedSizeList<AdjustStreamVolumeInfo>>(MAX_STREAM_CACHE_AMOUNT);
 
-    bool isScoActive_ = false;
     std::shared_ptr<std::unordered_set<uint32_t>> doNotDisturbStatusWhiteList_ =
         std::make_shared<std::unordered_set<uint32_t>>();
     std::atomic<bool> isDoNotDisturbStatus_{false};

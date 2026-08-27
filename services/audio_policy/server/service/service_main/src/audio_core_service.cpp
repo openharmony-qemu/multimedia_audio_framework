@@ -21,6 +21,7 @@
 #include "system_ability.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_module_info.h"
 #include "audio_definition_adapter_info.h"
 #include "iservice_registry.h"
 #include "hdi_adapter_info.h"
@@ -1979,6 +1980,55 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
     return deviceList;
 }
 
+void AudioCoreService::UpdateSinkLatencyForOutputDevices(const AudioRendererInfo &rendererInfo, uint32_t streamId,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceList)
+{
+    for (const auto &deviceDesc : deviceList) {
+        if (deviceDesc == nullptr) {
+            continue;
+        }
+
+        // The value is refreshed on every query so a stale value cannot survive
+        // a device switch or a failed HDI lookup.
+        deviceDesc->sinkLatencyMs_ = 0;
+        deviceDesc->sinkLatencyValid_ = false;
+        if (deviceDesc->deviceRole_ != OUTPUT_DEVICE) {
+            continue;
+        }
+
+        std::string sinkName;
+        if (streamId != INVALID_STREAM_ID) {
+            sinkName = AudioPolicyUtils::GetInstance().GetSinkName(*deviceDesc, static_cast<int32_t>(streamId));
+        } else if (deviceDesc->networkId_ == LOCAL_NETWORK_ID) {
+            sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceDesc->deviceType_, rendererInfo.pipeType);
+        } else {
+            sinkName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(
+                deviceDesc->networkId_, deviceDesc->deviceRole_);
+        }
+        if (sinkName.empty() || sinkName == PORT_NONE) {
+            continue;
+        }
+
+        AudioIOHandle renderId = HDI_INVALID_ID;
+        if (!audioIOHandleMap_.GetModuleIdByKey(sinkName, renderId)) {
+            AUDIO_DEBUG_LOG("No render handle for sink %{public}s", sinkName.c_str());
+            continue;
+        }
+
+        uint32_t sinkLatencyMs = 0;
+        int32_t ret = AudioServerProxy::GetInstance().GetSinkLatencyProxy(renderId, sinkLatencyMs);
+        if (ret != SUCCESS) {
+            AUDIO_DEBUG_LOG("Get sink latency failed, sink %{public}s renderId %{public}u ret %{public}d",
+                sinkName.c_str(), renderId, ret);
+            continue;
+        }
+        AUDIO_INFO_LOG("sink %{public}s renderId %{public}u latency %{public}u",
+            sinkName.c_str(), renderId, sinkLatencyMs);
+        deviceDesc->sinkLatencyMs_ = sinkLatencyMs;
+        deviceDesc->sinkLatencyValid_ = true;
+    }
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferredInputDeviceDescInner(
     AudioCapturerInfo &captureInfo, std::string networkId, const int32_t uid, const uint32_t streamId)
 {
@@ -2890,8 +2940,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
     std::vector<FetchDeviceInfo> infos;
     PrepareInputFetchInfos(inputStreamDescs, infos);
 
-    AudioRouterCenter::InputDeviceMap inputDeviceDescs =
-        audioRouterCenter_.FetchInputDeviceForAllInputStreams(infos);
+    AudioRouterCenter::InputDeviceMap inputDeviceDescs = audioRouterCenter_.FetchInputDeviceForAllInputStreams(infos);
 
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
@@ -2921,9 +2970,10 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
         }
     }
 #else
-        if (needUpdateActiveDevice) {
-            isUpdateActiveDevice = UpdateInputDevice(inputDeviceDesc, GetRealUid(streamDesc));
-            needUpdateActiveDevice = false;
+        if (Util::IsEnhancedRoutingSupported() || needUpdateActiveDevice) {
+            isUpdateActiveDevice = UpdateInputDevice(inputDeviceDesc, GetRealUid(streamDesc),
+                reason) || isUpdateActiveDevice;
+            needUpdateActiveDevice = !isUpdateActiveDevice;
         }
     }
     audioActiveDevice_.UpdateStreamDeviceMapForInput("fetchInputDevice");

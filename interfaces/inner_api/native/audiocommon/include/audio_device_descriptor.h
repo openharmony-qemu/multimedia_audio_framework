@@ -264,6 +264,11 @@ public:
     bool isSupportMultiZone_ = false;
     VisibleMode visibleMode_ = GLOBAL_VISIBLE;
 
+    // Raw sink/HDI baseline latency. The value is in milliseconds and is usable
+    // only when sinkLatencyValid_ is true. It does not include pipeline latency.
+    uint32_t sinkLatencyMs_ = 0;
+    bool sinkLatencyValid_ = false;
+
     uint32_t glassesWearCount_ = 0;
     static constexpr int64_t TEN_YEARS_MS = 10LL*365*24*3600*1000;
     static constexpr uint32_t WEAR_FIRST = 1;

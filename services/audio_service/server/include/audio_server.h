@@ -222,6 +222,8 @@ public:
 
     int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeData) override;
 
+    int32_t GetSinkLatency(uint32_t renderId, uint32_t &sinkLatency) override;
+
     int32_t UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer) override;
 
     int32_t GetEffectOffloadEnabled(bool& isEffectOffloadEnabled) override;

@@ -1112,6 +1112,8 @@ int32_t AudioCoreService::FetchCapturerPipeAndExecute(std::shared_ptr<AudioStrea
     CHECK_AND_RETURN_RET_LOG(!(pipeInfos.empty() && streamDesc->GetRouteSelectRejectedFlag()), ERR_OPERATION_FAILED,
         "route select rejected capturer create for stream %{public}u", sessionId);
 
+    CheckNeedPreRemoveUnusedPipe(pipeInfos);
+
     for (auto &pipeInfo : pipeInfos) {
         HILOG_COMM_INFO("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
@@ -3392,8 +3394,12 @@ void AudioCoreService::HandleSceneChangePreferredDevice(AudioScene audioScene, A
     SetSleVoiceStatusFlag(audioScene);
     OnAudioSceneChange(audioScene);
     auto currentOutputDevice = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
-    if (Util::IsEnhancedRoutingSupported() || (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
-        lastAudioScene == AUDIO_SCENE_DEFAULT && audioScene != AUDIO_SCENE_DEFAULT)) {
+    if (Util::IsEnhancedRoutingSupported()) {
+        OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN);
+        OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(uid), "",
+            AudioStreamDeviceChangeReason::UNKNOWN);
+    } else if (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        lastAudioScene == AUDIO_SCENE_DEFAULT && audioScene != AUDIO_SCENE_DEFAULT) {
         OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN);
     }
     if (audioScene == AUDIO_SCENE_DEFAULT && currentOutputDevice.IsRemoteDevice()) {

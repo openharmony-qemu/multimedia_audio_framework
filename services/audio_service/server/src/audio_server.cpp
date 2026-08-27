@@ -3247,6 +3247,18 @@ int32_t AudioServer::GetVolumeDataCount(const std::string &sinkName, int64_t &vo
     return sink->GetVolumeDataCount(volumeData);
 }
 
+int32_t AudioServer::GetSinkLatency(uint32_t renderId, uint32_t &sinkLatency)
+{
+    sinkLatency = 0;
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "refused for %{public}d",
+        IPCSkeleton::GetCallingUid());
+
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_OPERATION_FAILED,
+        "can not find render sink for renderId %{public}u", renderId);
+    return sink->GetLatency(sinkLatency);
+}
+
 int32_t AudioServer::UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer)
 {
     static bool isEnabled = AudioLatencyMeasurement::CheckIfEnabled();

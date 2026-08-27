@@ -131,7 +131,9 @@ static bool IsAudioDeviceDescriptorEqual(const AudioDeviceDescriptor &a, const A
         a.descriptorType_ == b.descriptorType_ &&
         a.spatializationSupported_ == b.spatializationSupported_ &&
         a.hasPair_ == b.hasPair_ &&
-        a.isVrSupported_ == b.isVrSupported_;
+        a.isVrSupported_ == b.isVrSupported_ &&
+        a.sinkLatencyMs_ == b.sinkLatencyMs_ &&
+        a.sinkLatencyValid_ == b.sinkLatencyValid_;
 }
 
 static bool IsAudioProcessConfigEqual(const AudioProcessConfig &a, const AudioProcessConfig &b)
@@ -498,11 +500,52 @@ HWTEST(AudioIpcSerializationUnitTest, AudioDeviceDescriptor_001, TestSize.Level1
     descriptor.hasPair_ = false;
     descriptor.routerType_ = ROUTER_TYPE_COCKPIT_PHONE;
     descriptor.isVrSupported_ = true;
+    descriptor.sinkLatencyMs_ = TEST_VALUE_4 * 10;
+    descriptor.sinkLatencyValid_ = true;
 
     EXPECT_TRUE(descriptor.Marshalling(parcel));
     auto newDescriptor = std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel));
     ASSERT_NE(newDescriptor, nullptr);
     EXPECT_TRUE(IsAudioDeviceDescriptorEqual(*newDescriptor, descriptor));
+}
+
+/**
+ * @tc.name  : Test AudioDeviceDescriptor sink latency copy and DeviceInfo serialization.
+ * @tc.number: AudioDeviceDescriptor_SinkLatency_001
+ * @tc.desc  : Test sink latency fields are copied and serialized through the DeviceInfo path.
+ */
+HWTEST(AudioIpcSerializationUnitTest, AudioDeviceDescriptor_SinkLatency_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor defaultDescriptor;
+    EXPECT_EQ(defaultDescriptor.sinkLatencyMs_, 0U);
+    EXPECT_FALSE(defaultDescriptor.sinkLatencyValid_);
+
+    AudioDeviceDescriptor explicitDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 1, 2, LOCAL_NETWORK_ID);
+    EXPECT_EQ(explicitDescriptor.sinkLatencyMs_, 0U);
+    EXPECT_FALSE(explicitDescriptor.sinkLatencyValid_);
+
+    AudioDeviceDescriptor source(AudioDeviceDescriptor::DEVICE_INFO);
+    source.deviceType_ = DEVICE_TYPE_SPEAKER;
+    source.deviceRole_ = OUTPUT_DEVICE;
+    source.sinkLatencyMs_ = 37;
+    source.sinkLatencyValid_ = true;
+
+    AudioDeviceDescriptor copied(source);
+    EXPECT_EQ(copied.sinkLatencyMs_, source.sinkLatencyMs_);
+    EXPECT_EQ(copied.sinkLatencyValid_, source.sinkLatencyValid_);
+
+    auto sourcePtr = std::make_shared<AudioDeviceDescriptor>(source);
+    AudioDeviceDescriptor copiedFromPtr(sourcePtr);
+    EXPECT_EQ(copiedFromPtr.sinkLatencyMs_, source.sinkLatencyMs_);
+    EXPECT_EQ(copiedFromPtr.sinkLatencyValid_, source.sinkLatencyValid_);
+
+    source.SetClientInfo(AudioDeviceDescriptor::ClientInfo(true, true, API_11));
+    Parcel parcel;
+    ASSERT_TRUE(source.Marshalling(parcel));
+    auto unmarshalled = std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel));
+    ASSERT_NE(unmarshalled, nullptr);
+    EXPECT_EQ(unmarshalled->sinkLatencyMs_, source.sinkLatencyMs_);
+    EXPECT_EQ(unmarshalled->sinkLatencyValid_, source.sinkLatencyValid_);
 }
 
 /**
@@ -1272,4 +1315,3 @@ HWTEST(AudioIpcSerializationUnitTest, SystemRecordControllerChangeInfo_003, Test
 }
 } // namespace AudioStandard
 } // namespace OHOS
- 

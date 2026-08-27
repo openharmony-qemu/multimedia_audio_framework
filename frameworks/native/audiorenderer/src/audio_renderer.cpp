@@ -1908,9 +1908,9 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume, bool setVo
         if (currentState == RUNNING && !noNeedActive) {
             AudioInterrupt audioInterrupt = audioInterrupt_;
             AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume,  volume=%{public}f", volume);
-            audioStream_->ResetNotifyStreamSilentChangeFlag();
             int ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt, 0, true);
             CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed at SetVolume");
+            audioStream_->ResetNotifyStreamSilentChangeFlag();
         }
     }
 }
@@ -2375,6 +2375,7 @@ void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
                 StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                     PLAY_PAUSE_OPERATION_FAILED, "ActivateAudioInterrupt Failed", false),
                 HILOG_COMM_ERROR("[SetSilentModeAndMixWithOthers]ActivateAudioInterrupt Failed"));
+            audioStream_->ResetNotifyStreamSilentChangeFlag();
         }
         audioStream_->SetSilentModeAndMixWithOthers(on);
         return;

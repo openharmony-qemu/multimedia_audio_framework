@@ -51,6 +51,7 @@ public:
     float GetMaxAmplitudeProxy(bool flag, std::string portName, SourceType sourceType = SOURCE_TYPE_INVALID);
     float GetInputMaxAmplitudeProxy(std::string sourceName);
     int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeData);
+    int32_t GetSinkLatencyProxy(uint32_t renderId, uint32_t &sinkLatency);
     void UpdateEffectBtOffloadSupportedProxy(const bool &isSupported);
     void SetOutputDeviceSinkProxy(DeviceType deviceType, std::string sinkName);
     void SetActiveOutputDeviceProxy(DeviceType deviceType);

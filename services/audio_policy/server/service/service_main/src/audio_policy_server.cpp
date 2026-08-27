@@ -2116,6 +2116,10 @@ int32_t AudioPolicyServer::GetOutputDevice(const sptr<AudioRendererFilter> &audi
         return ERR_INVALID_OPERATION;
     }
     deviceDescs = audioPolicyService_.GetOutputDevice(audioRendererFilter);
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "AudioCoreService is null");
+    coreService->UpdateSinkLatencyForOutputDevices(audioRendererFilter->rendererInfo,
+        static_cast<uint32_t>(audioRendererFilter->streamId), deviceDescs);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
@@ -2180,6 +2184,9 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     AudioRendererInfo newRendererInfo = rendererInfo;
     deviceDescs = eventEntry_->GetPreferredOutputDeviceDescriptors(newRendererInfo, IPCSkeleton::GetCallingUid(),
         LOCAL_NETWORK_ID);
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "AudioCoreService is null");
+    coreService->UpdateSinkLatencyForOutputDevices(newRendererInfo, INVALID_STREAM_ID, deviceDescs);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
 
     bool hasBTPermission = false;
@@ -2217,22 +2224,10 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
     AudioCapturerInfo captureInfo = captureInfoIn;
     deviceDescs = eventEntry_->GetPreferredInputDeviceDescriptors(captureInfo, IPCSkeleton::GetCallingUid());
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
-    for (auto &desc : deviceDescs) {
-        CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-        bool isA2dpIn = (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
-        bool isSppUnidirectional = (desc->deviceType_ == DEVICE_TYPE_BT_SPP && desc->isUnidirectional_);
-        if (isA2dpIn) {
-            auto sco = std::make_shared<AudioDeviceDescriptor>(desc);
-            sco->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-            auto descPtr = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(sco);
-            desc = descPtr && descPtr->deviceType_ != DEVICE_TYPE_NONE ?
-                std::make_shared<AudioDeviceDescriptor>(descPtr) : desc;
-            desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-            desc->highQualityRecordingSupported_ = true;
-        } else if (isSppUnidirectional) {
-            desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-        }
-    }
+
+    audioPolicyService_.SyncInputDeviceScoId(deviceDescs);
+    AudioDeviceDescriptor::MapInputDeviceType(deviceDescs);
+
     bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
@@ -6520,5 +6515,17 @@ int32_t AudioPolicyServer::EnableSystemRecordController(bool show, const SystemR
     }
     return AudioRecordController::GetInstance().EnableSystemRecordController(show, config, uid, pid);
 }
+
+int32_t AudioPolicyServer::FetchOutputDevicesByFilter(int32_t usage, int32_t bypass,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
+    FetchDeviceInfo info = {static_cast<StreamUsage>(usage), "FetchOutputDevicesByFilter",
+                            static_cast<RouterType>(bypass)};
+    descs = audioRouterCenter_.FetchOutputDevices(info);
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

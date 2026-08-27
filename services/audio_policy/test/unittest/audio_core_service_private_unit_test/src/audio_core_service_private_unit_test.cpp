@@ -5502,5 +5502,95 @@ HWTEST_F(AudioCoreServicePrivateTest, HasRunningScoRecognitionCapturerStream_VrN
     EXPECT_FALSE(testCoreService_->HasRunningScoRecognitionCapturerStream(streamDescs));
 }
 
+/**
+ * @tc.name  : UpdateSinkLatencyForOutputDevices_InvalidDescriptors
+ * @tc.number: AudioCoreServicePrivate_UpdateSinkLatency_001
+ * @tc.desc  : Test null, input and unsupported output descriptors are reset safely.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, UpdateSinkLatencyForOutputDevices_InvalidDescriptors, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+
+    auto inputDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    inputDevice->sinkLatencyMs_ = 11;
+    inputDevice->sinkLatencyValid_ = true;
+
+    auto unsupportedOutput = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, OUTPUT_DEVICE);
+    unsupportedOutput->sinkLatencyMs_ = 22;
+    unsupportedOutput->sinkLatencyValid_ = true;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    devices.push_back(nullptr);
+    devices.push_back(inputDevice);
+    devices.push_back(unsupportedOutput);
+
+    AudioRendererInfo rendererInfo;
+    testCoreService_->UpdateSinkLatencyForOutputDevices(rendererInfo, INVALID_STREAM_ID, devices);
+
+    EXPECT_EQ(inputDevice->sinkLatencyMs_, 0U);
+    EXPECT_FALSE(inputDevice->sinkLatencyValid_);
+    EXPECT_EQ(unsupportedOutput->sinkLatencyMs_, 0U);
+    EXPECT_FALSE(unsupportedOutput->sinkLatencyValid_);
+}
+
+/**
+ * @tc.name  : UpdateSinkLatencyForOutputDevices_QueryFailure
+ * @tc.number: AudioCoreServicePrivate_UpdateSinkLatency_002
+ * @tc.desc  : Test local, remote and stream-specific sink lookup failures do not retain stale latency.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, UpdateSinkLatencyForOutputDevices_QueryFailure, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    auto &ioHandleMap = testCoreService_->audioIOHandleMap_;
+
+    AudioIOHandle oldHandle = HDI_INVALID_ID;
+    const bool hadOldHandle = ioHandleMap.GetModuleIdByKey(PRIMARY_SPEAKER, oldHandle);
+    ioHandleMap.DelIOHandleInfo(PRIMARY_SPEAKER);
+
+    auto localDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    localDevice->sinkLatencyMs_ = 33;
+    localDevice->sinkLatencyValid_ = true;
+    auto remoteDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    remoteDevice->networkId_ = "remote_network_for_latency_test";
+    remoteDevice->sinkLatencyMs_ = 44;
+    remoteDevice->sinkLatencyValid_ = true;
+    AudioIOHandle oldRemoteHandle = HDI_INVALID_ID;
+    const std::string remoteSinkName = remoteDevice->networkId_ + "_out";
+    const bool hadOldRemoteHandle = ioHandleMap.GetModuleIdByKey(remoteSinkName, oldRemoteHandle);
+    ioHandleMap.DelIOHandleInfo(remoteSinkName);
+    auto streamDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    streamDevice->networkId_ = "stream_remote_network_for_latency_test";
+    streamDevice->sinkLatencyMs_ = 55;
+    streamDevice->sinkLatencyValid_ = true;
+    AudioIOHandle oldStreamHandle = HDI_INVALID_ID;
+    const std::string streamSinkName = streamDevice->networkId_ + "_out";
+    const bool hadOldStreamHandle = ioHandleMap.GetModuleIdByKey(streamSinkName, oldStreamHandle);
+    ioHandleMap.DelIOHandleInfo(streamSinkName);
+
+    AudioRendererInfo rendererInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = {
+        localDevice, remoteDevice, streamDevice
+    };
+    testCoreService_->UpdateSinkLatencyForOutputDevices(rendererInfo, INVALID_STREAM_ID, devices);
+    testCoreService_->UpdateSinkLatencyForOutputDevices(rendererInfo, 1001, devices);
+
+    EXPECT_EQ(localDevice->sinkLatencyMs_, 0U);
+    EXPECT_FALSE(localDevice->sinkLatencyValid_);
+    EXPECT_EQ(remoteDevice->sinkLatencyMs_, 0U);
+    EXPECT_FALSE(remoteDevice->sinkLatencyValid_);
+    EXPECT_EQ(streamDevice->sinkLatencyMs_, 0U);
+    EXPECT_FALSE(streamDevice->sinkLatencyValid_);
+
+    if (hadOldHandle) {
+        ioHandleMap.AddIOHandleInfo(PRIMARY_SPEAKER, oldHandle);
+    }
+    if (hadOldRemoteHandle) {
+        ioHandleMap.AddIOHandleInfo(remoteSinkName, oldRemoteHandle);
+    }
+    if (hadOldStreamHandle) {
+        ioHandleMap.AddIOHandleInfo(streamSinkName, oldStreamHandle);
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

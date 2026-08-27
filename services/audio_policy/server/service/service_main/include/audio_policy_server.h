@@ -739,6 +739,9 @@ public:
 
     bool IsPublishCalled() const;
 
+    int32_t FetchOutputDevicesByFilter(int32_t usage, int32_t bypass,
+         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

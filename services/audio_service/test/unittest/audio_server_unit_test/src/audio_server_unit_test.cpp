@@ -31,6 +31,7 @@
 #include "audio_service_types.h"
 #include "audio_server_hpae_dump.h"
 #include "manager/hdi_adapter_manager.h"
+#include "sink/i_audio_render_sink.h"
 #include "audio_stream_enum.h"
 #include "audio_module_info.h"
 
@@ -41,6 +42,51 @@ namespace AudioStandard {
 const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
 constexpr int32_t INVALID_VALUE = -1;
+
+namespace {
+class TestLatencyRenderSink final : public IAudioRenderSink {
+public:
+    explicit TestLatencyRenderSink(uint32_t latency) : latency_(latency) {}
+
+    int32_t Init(const IAudioSinkAttr &attr) override { return SUCCESS; }
+    void DeInit(void) override {}
+    bool IsInited(void) override { return true; }
+    int32_t Start(void) override { return SUCCESS; }
+    int32_t Stop(void) override { return SUCCESS; }
+    int32_t Resume(void) override { return SUCCESS; }
+    int32_t Pause(void) override { return SUCCESS; }
+    int32_t Flush(void) override { return SUCCESS; }
+    int32_t Reset(void) override { return SUCCESS; }
+    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override
+    {
+        writeLen = len;
+        return SUCCESS;
+    }
+    int32_t GetVolumeDataCount(int64_t &volumeData) override { return SUCCESS; }
+    int32_t SetVolume(float left, float right) override { return SUCCESS; }
+    int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) override { return SUCCESS; }
+    int32_t GetVolume(float &left, float &right) override { return SUCCESS; }
+    int32_t GetLatency(uint32_t &latency) override
+    {
+        ++getLatencyCalls_;
+        latency = latency_;
+        return SUCCESS;
+    }
+    int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override
+    {
+        return SUCCESS;
+    }
+    float GetMaxAmplitude(void) override { return 0.0f; }
+    void SetAudioMonoState(bool audioMono) override {}
+    void SetAudioBalanceValue(float audioBalance) override {}
+    int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) override { return SUCCESS; }
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) override { return SUCCESS; }
+    void DumpInfo(std::string &dumpString) override {}
+
+    uint32_t latency_;
+    uint32_t getLatencyCalls_ = 0;
+};
+} // namespace
 
 sptr<AudioServer> audioServer;
 
@@ -1505,6 +1551,51 @@ HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_002, TestSize.Level1)
     int64_t volueDataCount = INVALID_VALUE;
     audioServer->GetVolumeDataCount(testName, volueDataCount);
     EXPECT_EQ(volueDataCount, 0);
+}
+
+/**
+ * @tc.name  : Test GetSinkLatency API with a registered render sink.
+ * @tc.type  : FUNC
+ * @tc.number: GetSinkLatency_001
+ * @tc.desc  : Test render id lookup and latency forwarding to the render sink.
+ */
+HWTEST_F(AudioServerUnitTest, GetSinkLatency_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, audioServer);
+
+    auto &manager = HdiAdapterManager::GetInstance();
+    const uint32_t renderId = manager.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_HWDECODE,
+        "sink_latency_unit_test", true);
+    ASSERT_NE(renderId, HDI_INVALID_ID);
+
+    auto sink = std::make_shared<TestLatencyRenderSink>(37);
+    manager.renderSinks_[renderId].sink_ = sink;
+    manager.renderSinks_[renderId].refCount_ = 1;
+
+    uint32_t latency = 999;
+    const int32_t ret = audioServer->GetSinkLatency(renderId, latency);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 37U);
+    EXPECT_EQ(sink->getLatencyCalls_, 1U);
+    manager.renderSinks_.erase(renderId);
+}
+
+/**
+ * @tc.name  : Test GetSinkLatency API with an invalid render id.
+ * @tc.type  : FUNC
+ * @tc.number: GetSinkLatency_002
+ * @tc.desc  : Test missing render sink returns an error and clears latency.
+ */
+HWTEST_F(AudioServerUnitTest, GetSinkLatency_002, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, audioServer);
+
+    uint32_t latency = 999;
+    const int32_t ret = audioServer->GetSinkLatency(HDI_INVALID_ID, latency);
+
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(latency, 0U);
 }
 
 /**

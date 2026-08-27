@@ -199,7 +199,7 @@ ohos_unittest("hpae_manager_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -208,7 +208,7 @@ ohos_unittest("hpae_manager_test") {
 
   sanitize = {
     cfi = true
-    cfi_cross_dso = false
+    cfi_cross_dso = true
     boundary_sanitize = true
     debug = false
     integer_overflow = true
@@ -1651,7 +1651,7 @@ ohos_unittest("hpae_manager_se_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
