@@ -15,9 +15,15 @@ import("//build/ohos.gni")
 
 template("audio_ohos_library") {
   ohos_shared_library(target_name) {
-    forward_variables_from(invoker, "*")
+    forward_variables_from(invoker, "*", [ "static_defines" ])
   }
   ohos_static_library("${target_name}_static") {
-    forward_variables_from(invoker, "*", [ "version_script" ])
+    forward_variables_from(invoker, "*", [ "version_script", "static_defines" ])
+    if (defined(invoker.static_defines)) {
+      if (!defined(defines)) {
+        defines = []
+      }
+      defines += invoker.static_defines
+    }
   }
 }
