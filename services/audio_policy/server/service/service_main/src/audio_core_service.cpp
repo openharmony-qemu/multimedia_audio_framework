@@ -2940,8 +2940,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
     std::vector<FetchDeviceInfo> infos;
     PrepareInputFetchInfos(inputStreamDescs, infos);
 
-    AudioRouterCenter::InputDeviceMap inputDeviceDescs =
-        audioRouterCenter_.FetchInputDeviceForAllInputStreams(infos);
+    AudioRouterCenter::InputDeviceMap inputDeviceDescs = audioRouterCenter_.FetchInputDeviceForAllInputStreams(infos);
 
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
@@ -2971,9 +2970,10 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
         }
     }
 #else
-        if (needUpdateActiveDevice) {
-            isUpdateActiveDevice = UpdateInputDevice(inputDeviceDesc, GetRealUid(streamDesc));
-            needUpdateActiveDevice = false;
+        if (Util::IsEnhancedRoutingSupported() || needUpdateActiveDevice) {
+            isUpdateActiveDevice = UpdateInputDevice(inputDeviceDesc, GetRealUid(streamDesc),
+                reason) || isUpdateActiveDevice;
+            needUpdateActiveDevice = !isUpdateActiveDevice;
         }
     }
     audioActiveDevice_.UpdateStreamDeviceMapForInput("fetchInputDevice");
