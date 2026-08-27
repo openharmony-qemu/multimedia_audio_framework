@@ -18,7 +18,7 @@ template("audio_ohos_library") {
     forward_variables_from(invoker, "*", [ "static_defines" ])
   }
   ohos_static_library("${target_name}_static") {
-    forward_variables_from(invoker, "*", [ "version_script" , "static_defines" ])
+    forward_variables_from(invoker, "*", [ "version_script", "static_defines" ])
     if (defined(invoker.static_defines)) {
       if (!defined(defines)) {
         defines = []

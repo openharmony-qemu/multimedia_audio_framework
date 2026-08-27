@@ -13,7 +13,7 @@
 
 import("//build/ohos.gni")
 import("../../config.gni")
-import("../../../audio_framework_test_sources.gni")
+import("../../audio_framework_test_sources.gni")
 
 ohos_shared_library("audio_engine_utils") {
   branch_protector_ret = "pac_ret"
