@@ -145,7 +145,7 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
         uint32_t sessionId = 0;
         std::shared_ptr<CapturerInServer> capturer = ipcStreamInServer->GetCapturer();
         if (capturer != nullptr && capturer->GetSessionId(sessionId) == SUCCESS) {
-            CHECK_AND_RETURN_RET_LOG(InsertCapturer(sessionId, capturer) == SUCCESS, nullptr, "InsertCapturer fail.")
+            CHECK_AND_RETURN_RET_LOG(InsertCapturer(sessionId, capturer) == SUCCESS, nullptr, "InsertCapturer fail.");
             CheckCaptureSessionMuteState(sessionId, capturer);
             CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId, SESSION_OPERATION_CREATE);
         }
