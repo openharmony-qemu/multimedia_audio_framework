@@ -251,6 +251,9 @@ private:
     int32_t ClearAissSession(uint32_t sessionId, bool clearUidBinding = false, bool finalizeNow = false);
     // Deferred AISS-disable helpers (see DisableAissByUidWhenStreamInactiveSync).
     void FinishPendingAissDisable();
+    // Cancel the backstop task, drop the request and bump the control epoch. Central helper for
+    // every path that invalidates a pending deferred AISS-disable request.
+    void InvalidatePendingAissDisable();
     bool IsPendingAissDisableFor(uint32_t sessionId) const;
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);
@@ -351,13 +354,15 @@ private:
     static constexpr uint32_t UNBOUND_SESSION_ID = 0;
 
     // Deferred AISS-disable request: close AISS once the bound play stream of `uid` reaches a
-    // terminal state. `generation` ties the request to the control epoch (aissControlGeneration_)
-    // captured at registration, so any later Enable / immediate Disable / different-uid preempt /
-    // session-level AISS control - each bumps aissControlGeneration_ - invalidates it.
+    // terminal state, or the 1s backstop delayed task expires - whichever comes first.
+    // `generation` ties the request to the control epoch (aissControlGeneration_) captured at
+    // registration, so any later Enable / immediate Disable / different-uid preempt / session-level
+    // AISS control - each bumps aissControlGeneration_ - invalidates it.
     struct PendingAissDisable {
         int32_t uid { -1 };
         uint32_t sessionId { 0 };
         uint64_t generation { 0 };
+        uint64_t taskId { 0 };  // backstop task in delayedTaskQueue_; 0 = none (ids start at 1)
     };
 
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
