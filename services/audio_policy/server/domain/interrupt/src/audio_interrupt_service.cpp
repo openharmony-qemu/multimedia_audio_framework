@@ -306,9 +306,9 @@ void AudioInterruptService::ActivateAudioSessionErrorEvent(const int32_t zoneId,
 
 void AudioInterruptService::AddStreamByPid(const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession)
 {
-    if (streamsInDeactivateAudioSession_.size() + streamsInSession.size() > MAX_STREAMS_IN_DEACTIVATE_SESSION) {
-        return;
-    }
+    auto streamSize = streamsInDeactivateAudioSession_.size() + streamsInSession.size();
+    CHECK_AND_RETURN_LOG(streamSize < MAX_STREAMS_IN_DEACTIVATE_SESSION, "streamSize too big");
+
     std::copy_if(streamsInSession.begin(), streamsInSession.end(), std::back_inserter(streamsInDeactivateAudioSession_),
         [callerPid](const AudioInterrupt &item) { return item.pid == callerPid; });
 }
@@ -323,7 +323,6 @@ void AudioInterruptService::RemoveStreamByPid(const int32_t callerPid)
 
 void AudioInterruptService::DeactivateAudioSessionErrorEvent(const int32_t callerPid)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     if (interruptDfx_ != nullptr) {
         interruptDfx_->DeactivateAudioSessionErrorEvent(streamsInDeactivateAudioSession_, callerPid);
     }
