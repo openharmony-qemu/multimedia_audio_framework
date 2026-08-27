@@ -125,6 +125,7 @@ ohos_executable("audio_capturer_test") {
   deps = [ ":audio_capturer" ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
   ]
