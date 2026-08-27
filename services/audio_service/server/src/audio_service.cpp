@@ -133,7 +133,7 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
         uint32_t sessionId = 0;
         std::shared_ptr<RendererInServer> renderer = ipcStreamInServer->GetRenderer();
         if (renderer != nullptr && renderer->GetSessionId(sessionId) == SUCCESS) {
-            InsertRenderer(sessionId, renderer); // for all renderers
+            CHECK_AND_RETURN_RET_LOG(InsertRenderer(sessionId, renderer) == SUCCESS, nullptr, "InsertRenderer fail.");
 #ifdef HAS_FEATURE_INNERCAPTURER
             CheckInnerCapForRenderer(sessionId, renderer);
 #endif
@@ -216,11 +216,14 @@ bool AudioService::IsMuteSwitchStream(uint32_t sessionId)
     return false;
 }
 
-void AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
+int32_t AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
     AUDIO_INFO_LOG("Insert renderer:%{public}u into map", sessionId);
+    CHECK_AND_RETURN_RET_LOG(!allRendererMap_.count(sessionId), ERROR,
+        "%{public}u already insert.", sessionId);
     allRendererMap_[sessionId] = renderer;
+    return SUCCESS;
 }
 
 void AudioService::SaveForegroundList(std::vector<std::string> list)
