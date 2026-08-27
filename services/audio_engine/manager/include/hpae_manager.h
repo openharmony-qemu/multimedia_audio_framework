@@ -255,6 +255,14 @@ private:
     // every path that invalidates a pending deferred AISS-disable request.
     void InvalidatePendingAissDisable();
     bool IsPendingAissDisableFor(uint32_t sessionId) const;
+    // Engine-thread body of DisableAissByUidWhenStreamInactiveSync: close AISS now when the bound
+    // stream is already terminal, otherwise defer.
+    int32_t DisableAissByUidWhenStreamInactive(int32_t uid);
+    // Register a deferred AISS-disable request for an active/transitioning stream and arm the 1s
+    // backstop delayed task.
+    int32_t RegisterPendingAissDisable(int32_t uid, uint32_t sessionId, HpaeSessionState state);
+    // Body of the 1s backstop delayed task of a registered deferred AISS-disable request.
+    void RunAissDisableBackstop(uint32_t sessionId, uint64_t generation);
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);
     template <typename... Args>
