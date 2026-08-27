@@ -978,11 +978,15 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_Direct3DA_011, TestSize.Leve
 /**
 * @tc.name  : Test WriteToSinkBuffer passes the 3DA whole frame through untouched
 * @tc.type  : FUNC
-* @tc.number: WriteToSinkBuffer_3DA_Direct_001
+* @tc.number: WriteToSinkBuffer_3DA_Direct_Passthrough_001
 * @tc.desc  : The client assembles the whole 3DA HDI frame; the server side copies it into
-*             the sink slot byte-identically and never assembles PCM/metadata itself
+*             the sink slot byte-identically and never assembles PCM/metadata itself.
+*             Named differently from master's WriteToSinkBuffer_3DA_Direct_001 (which tests
+*             the removed server-side [PCM|meta] assembly): the two insertion points do not
+*             overlap, so a merge would silently keep both and break the build with a
+*             duplicate gtest definition. Master's version is deleted at the master sync.
 */
-HWTEST(ProRendererStreamImplUnitTest, WriteToSinkBuffer_3DA_Direct_001, TestSize.Level3)
+HWTEST(ProRendererStreamImplUnitTest, WriteToSinkBuffer_3DA_Direct_Passthrough_001, TestSize.Level3)
 {
     constexpr uint8_t FRAME_SENTINEL = 0x5A;
 
