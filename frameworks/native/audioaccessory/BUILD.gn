@@ -55,6 +55,7 @@ ohos_shared_library("audio_accessory") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
     "c_utils:utils",
     "ipc:ipc_core",
