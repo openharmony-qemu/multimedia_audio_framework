@@ -24,6 +24,7 @@
 #include "audio_core_config_manager.h"
 #include "audio_select_interface_service.h"
 #include "audio_router_infra.h"
+#include "audio_router_center.h"
 #include "audio_router_select_strategy.h"
 #include "i_hpae_manager.h"
 #include "audio_volume.h"
@@ -434,7 +435,7 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_005, TestSize.Level1)
         AudioSourceStrategyType {
         "AUDIO_INPUT_VOICE_RECOGNITION_TYPE", // hdiSource
         "primary", // adapterName
-        "primary_input", // pipeName
+        "primary_input_voice_recognition", // pipeName
         AUDIO_INPUT_FLAG_VOICE_RECOGNITION, // audioFlag
         1 // priority
         });
@@ -4043,8 +4044,23 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_017, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
 
+    // Use the currently routed VoIP devices as the target, so the result does not depend on
+    // whether the environment has router strategy configuration and default devices.
     AudioDeviceDescriptor inputDevice;
+    FetchDeviceInfo captureInfo;
+    captureInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    captureInfo.clientUID = -1;
+    auto inputDesc = AudioRouterCenter::GetAudioRouterCenter().FetchInputDevice(captureInfo);
+    if (inputDesc != nullptr) {
+        inputDevice = *inputDesc;
+    }
+
     AudioDeviceDescriptor outputDevice;
+    FetchDeviceInfo renderInfo = { STREAM_USAGE_VOICE_COMMUNICATION, "AudioCapturerSession_017" };
+    auto outputDescs = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(renderInfo);
+    if (!outputDescs.empty() && outputDescs.front() != nullptr) {
+        outputDevice = *outputDescs.front();
+    }
 
     auto ret = audioCoreService->IsVoipDeviceChanged(inputDevice, outputDevice);
     EXPECT_EQ(ret, true);

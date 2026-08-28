@@ -26,7 +26,7 @@
 #include "util/callback_wrapper.h"
 #include "util/kv_pair.h"
 #include "util/audio_hdi_version_manager.h"
-#include "audio_stream_num.h"
+#include "audio_stream_enum.h"
 
 using namespace testing::ext;
 
