@@ -621,6 +621,228 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetVolumeReductionRatio_001, TestSize.Leve
 }
 
 /**
+ * @tc.name: Test DepressMediaVolumeForHeadSet
+ * @tc.number: DepressMediaVolumeForHeadSet_001
+ * @tc.type: FUNC
+ * @tc.desc: media volume exceeds the product of limit and reduction, returns reduction
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressMediaVolumeForHeadSet_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    float result = audioAdapterManager->DepressMediaVolumeForHeadSet(0.6f, 0.5f, 1.0f);
+    EXPECT_FLOAT_EQ(result, 0.5f);
+}
+
+/**
+ * @tc.name: Test DepressMediaVolumeForHeadSet
+ * @tc.number: DepressMediaVolumeForHeadSet_002
+ * @tc.type: FUNC
+ * @tc.desc: zero volume limit returns reduction to avoid invalid division
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressMediaVolumeForHeadSet_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    float result = audioAdapterManager->DepressMediaVolumeForHeadSet(0.0f, 0.5f, 0.0f);
+    EXPECT_FLOAT_EQ(result, 0.5f);
+}
+
+/**
+ * @tc.name: Test DepressMediaVolumeForHeadSet
+ * @tc.number: DepressMediaVolumeForHeadSet_003
+ * @tc.type: FUNC
+ * @tc.desc: volume limit smaller than media volume with reduction larger than one, returns reduction
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressMediaVolumeForHeadSet_003, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    float result = audioAdapterManager->DepressMediaVolumeForHeadSet(0.5f, 1.5f, 0.4f);
+    EXPECT_FLOAT_EQ(result, 1.5f);
+}
+
+/**
+ * @tc.name: Test DepressMediaVolumeForHeadSet
+ * @tc.number: DepressMediaVolumeForHeadSet_004
+ * @tc.type: FUNC
+ * @tc.desc: normal path returns the ratio of media volume to volume limit
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressMediaVolumeForHeadSet_004, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    float result = audioAdapterManager->DepressMediaVolumeForHeadSet(0.4f, 0.8f, 1.0f);
+    EXPECT_FLOAT_EQ(result, 0.4f);
+}
+
+/**
+ * @tc.name: Test DepressMediaVolumeForHeadSet
+ * @tc.number: DepressMediaVolumeForHeadSet_005
+ * @tc.type: FUNC
+ * @tc.desc: ratio equals reduction at the boundary
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressMediaVolumeForHeadSet_005, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    float result = audioAdapterManager->DepressMediaVolumeForHeadSet(0.5f, 0.5f, 1.0f);
+    EXPECT_FLOAT_EQ(result, 0.5f);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: DepressVolume_NullDevice_001
+ * @tc.type: FUNC
+ * @tc.desc: null device descriptor leaves volume unchanged
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressVolume_NullDevice_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    float volume = 0.5f;
+    std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_MUSIC, desc);
+    EXPECT_FLOAT_EQ(volume, 0.5f);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: DepressVolume_SpecialStream_001
+ * @tc.type: FUNC
+ * @tc.desc: voice call assistant and ultrasonic streams are skipped before depressing
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressVolume_SpecialStream_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+    ASSERT_NE(desc, nullptr);
+    float volume = 0.5f;
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_VOICE_CALL_ASSISTANT, desc);
+    EXPECT_FLOAT_EQ(volume, 0.5f);
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_ULTRASONIC, desc);
+    EXPECT_FLOAT_EQ(volume, 0.5f);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: DepressVolume_DefaultScene_001
+ * @tc.type: FUNC
+ * @tc.desc: out of call resets limit to max and clamps volume to the limit
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressVolume_DefaultScene_001, TestSize.Level1)
+{
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+    ASSERT_NE(desc, nullptr);
+    float volume = 1.5f;
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_MUSIC, desc);
+    EXPECT_FLOAT_EQ(volume, AudioAdapterManager::MAX_STREAM_VOLUME);
+
+    float lowVolume = 0.5f;
+    audioAdapterManager->DepressVolume(lowVolume, TEST_VOLUME_LEVEL, STREAM_MUSIC, desc);
+    EXPECT_FLOAT_EQ(lowVolume, 0.5f);
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: DepressVolume_ReductionNonHeadset_001
+ * @tc.type: FUNC
+ * @tc.desc: in call non-headset device depresses volume by limit times reduction ratio
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressVolume_ReductionNonHeadset_001, TestSize.Level1)
+{
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+    ASSERT_NE(desc, nullptr);
+    audioAdapterManager->volumeLimit_ = 0.5f;
+
+    auto info = std::make_shared<LowerVolumeInfo>();
+    ASSERT_NE(info, nullptr);
+    info->streamType = STREAM_RING;
+    info->duckedDb = -6;
+    audioAdapterManager->lowerVolumeInfos_[info->streamType] = info;
+
+    float volume = 0.6f;
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_RING, desc);
+    float reduction = audioAdapterManager->GetVolumeReductionRatio(STREAM_RING);
+    EXPECT_FLOAT_EQ(volume, 0.5f * reduction);
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: DepressVolume_ScoHeadset_001
+ * @tc.type: FUNC
+ * @tc.desc: in call bluetooth sco headset depresses media volume through headset path
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressVolume_ScoHeadset_001, TestSize.Level1)
+{
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+    ASSERT_NE(desc, nullptr);
+    DeviceType oldType = desc->deviceType_;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioAdapterManager->isVgsVolumeSupported_ = true;
+    audioAdapterManager->volumeLimit_ = 0.5f;
+
+    auto info = std::make_shared<LowerVolumeInfo>();
+    ASSERT_NE(info, nullptr);
+    info->streamType = STREAM_MUSIC;
+    info->duckedDb = -6;
+    audioAdapterManager->lowerVolumeInfos_[info->streamType] = info;
+
+    float volume = 0.6f;
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_MUSIC, desc);
+    EXPECT_FLOAT_EQ(volume, audioAdapterManager->GetVolumeReductionRatio(STREAM_MUSIC));
+
+    desc->deviceType_ = oldType;
+    audioAdapterManager->isVgsVolumeSupported_ = false;
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: DepressVolume_NearlinkHeadset_001
+ * @tc.type: FUNC
+ * @tc.desc: in call nearlink headset depresses media volume through headset path
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressVolume_NearlinkHeadset_001, TestSize.Level1)
+{
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+    ASSERT_NE(desc, nullptr);
+    DeviceType oldType = desc->deviceType_;
+    desc->deviceType_ = DEVICE_TYPE_NEARLINK;
+    audioAdapterManager->isSleVoiceStatus_ = true;
+    audioAdapterManager->volumeLimit_ = 0.5f;
+
+    auto info = std::make_shared<LowerVolumeInfo>();
+    ASSERT_NE(info, nullptr);
+    info->streamType = STREAM_MUSIC;
+    info->duckedDb = -6;
+    audioAdapterManager->lowerVolumeInfos_[info->streamType] = info;
+
+    float volume = 0.6f;
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_MUSIC, desc);
+    EXPECT_FLOAT_EQ(volume, audioAdapterManager->GetVolumeReductionRatio(STREAM_MUSIC));
+
+    desc->deviceType_ = oldType;
+    audioAdapterManager->isSleVoiceStatus_ = false;
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+}
+
+/**
  * @tc.name: Test GetMaxVolumeLevel_New
  * @tc.number: GetMaxVolumeLevel_New
  * @tc.type: FUNC
