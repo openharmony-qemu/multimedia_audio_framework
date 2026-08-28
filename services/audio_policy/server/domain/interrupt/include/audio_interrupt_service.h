@@ -354,6 +354,7 @@ private:
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void UpdateHintTypeByConcurrencyMode(AudioConcurrencyMode concurrencyMode, AudioFocusEntry &focusEntry);
+    void ApplyDuckPassthroughMode(AudioFocusEntry &focusEntry);
     void HandleSessionTimeOutEvent(const int32_t pid);
     int32_t GetAudioSessionZoneidByPid(const int32_t pid);
     bool HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
