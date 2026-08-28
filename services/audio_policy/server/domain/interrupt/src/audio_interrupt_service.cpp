@@ -1515,11 +1515,11 @@ void AudioInterruptService::ResetNonInterruptControl(AudioInterrupt audioInterru
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-void AudioInterruptService::RemoveStreamBySessionId(const uint32_t sessionId)
+void AudioInterruptService::RemoveStreamBySessionId(const uint32_t streamId)
 {
     streamsInDeactivateAudioSession_.erase(std::remove_if(streamsInDeactivateAudioSession_.begin(),
-        streamsInDeactivateAudioSession_.end(), [sessionId](const AudioInterrupt &item) {
-            return item.sessionId == sessionId;
+        streamsInDeactivateAudioSession_.end(), [streamId](const AudioInterrupt &item) {
+            return item.streamId == streamId;
         }), streamsInDeactivateAudioSession_.end());
 }
 
@@ -1540,7 +1540,7 @@ AudioInterruptResult AudioInterruptService::DeactivateAudioInterrupt(const int32
         "usage: %{public}d source: %{public}d",
         incomingStreamId, currAudioInterrupt.pid, (currAudioInterrupt.audioFocusType).streamType,
         currAudioInterrupt.streamUsage, incomingSourceType);
-    RemoveStreamBySessionId(audioInterrupt.sessionId);
+    RemoveStreamBySessionId(audioInterrupt.streamId);
 
     if (interruptDfx_ != nullptr) {
         interruptDfx_->CheckInterruptEvent(currAudioInterrupt.streamId);
