@@ -1617,7 +1617,8 @@ int32_t SingleStagePolyphaseResamplerSetRate(SingleStagePolyphaseResamplerState*
     state->interpolateFactor /= fact;
 
     if (oldInterpolateFactor > 0) {
-        state->subfilterNum = state->subfilterNum * state->interpolateFactor / oldInterpolateFactor;
+        state->subfilterNum = (uint32_t)((uint64_t)state->subfilterNum * state->interpolateFactor /
+            oldInterpolateFactor);
 
         /* Safety net */
         if (state->subfilterNum >= state->interpolateFactor) {

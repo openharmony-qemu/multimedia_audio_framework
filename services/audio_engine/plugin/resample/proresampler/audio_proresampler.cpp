@@ -29,9 +29,9 @@ constexpr uint32_t FRAME_LEN_20MS = (20 * SOURCE_PERIOD_SIZE);
 
 constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t MAX_CHANNELS = 16;
-constexpr uint32_t MAX_SAMPLE_RATE = SAMPLE_RATE_384000;
+constexpr uint32_t MAX_SAMPLE_RATE = 5644800; // plugin capability for audio editing; framework API stays 384000
 constexpr uint32_t MIN_SAMPLE_RATE = SAMPLE_RATE_8000;
-constexpr uint32_t MAX_FRAME_LEN = SAMPLE_RATE_384000 * 10; // max frame size, max sample rate, 10s duration
+constexpr uint32_t MAX_FRAME_LEN = SAMPLE_RATE_384000 * 10; // frame length guard, covers 100ms at 5644800
 constexpr uint32_t MAX_QUALITY = 10;
 }
 // Unified Process: accepts arbitrary input frame counts, outputs resampled data in one call.
@@ -44,7 +44,7 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     
     CHECK_AND_RETURN_LOG((inRate_ >= MIN_SAMPLE_RATE) && (inRate_ <= MAX_SAMPLE_RATE) &&
         (outRate_ >= MIN_SAMPLE_RATE) && (outRate_ <= MAX_SAMPLE_RATE),
-        "resampler input and output sample rate should be within [8000, 384000]. "
+        "resampler input and output sample rate should be within [8000, 5644800]. "
         "inRate_ %{public}d, outRate_ %{public}d is not valid", inRate_, outRate_);
     
     CHECK_AND_RETURN_LOG((channels_ > 0) && (channels_ <= MAX_CHANNELS), "invalid channel number: %{public}d, "
@@ -109,7 +109,7 @@ int32_t ProResampler::CheckRateAndChannelParam()
     if ((inRate_ < MIN_SAMPLE_RATE) || (inRate_ > MAX_SAMPLE_RATE) || (outRate_ < MIN_SAMPLE_RATE) ||
         (outRate_ > MAX_SAMPLE_RATE) || (inRate_ == outRate_) || (channels_ <= 0) || (channels_ > MAX_CHANNELS)) {
         AUDIO_ERR_LOG("resampler set to invalid state, because inRate %{public}u Hz and outRate %{public}u Hz "
-            "should be within [8000, 384000] and be different, or channel number %{public}u should be within [1, 16]",
+            "should be within [8000, 5644800] and be different, or channel number %{public}u should be within [1, 16]",
             inRate_, outRate_, channels_);
         CHECK_AND_RETURN_RET(state_ != nullptr, RESAMPLER_ERR_INVALID_ARG);
         SingleStagePolyphaseResamplerFree(state_);
