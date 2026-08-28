@@ -98,6 +98,11 @@ bool AudioSpatialChannelConverter::Init(const AudioStreamParams info, const Conv
     return true;
 }
 
+bool AudioSpatialChannelConverter::IsAlgoLoaded()
+{
+    return loadSuccess_;
+}
+
 void AudioSpatialChannelConverter::ConverterChannels(uint8_t &channels, uint64_t &channelLayout)
 {
     channels = outChannel_;

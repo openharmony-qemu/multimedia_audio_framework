@@ -72,6 +72,20 @@ constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
 const std::vector<int32_t> STOP_FLUSH_UIDS = {1013}; // MEDIA_SERVICE_UID
 static const int64_t DUCK_UNDUCK_DURATION_MS = 500; // 500ms
 static const int64_t MIN_INTERVAL_IN_NS = 150000000;
+
+// HOA layouts encode the ambisonic order in the layout bitfield: channel count = (order + 1) ^ 2
+static bool IsHoaChannelLayout(uint64_t channelLayout)
+{
+    return ((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) ==
+        static_cast<uint64_t>(CHANNEL_MDOE_AMBISONIC);
+}
+
+static bool IsHoaChannelCountMatched(uint64_t channelLayout, uint8_t channels)
+{
+    uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
+    uint64_t expectedChannels = (order + 1) * (order + 1);
+    return expectedChannels == static_cast<uint64_t>(channels);
+}
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -264,6 +278,13 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     streamParams_ = curStreamParams_ = info; // keep it for later use
     isHWDecodingType_ = IsHWDecodingType(static_cast<AudioEncodingType>(streamParams_.encoding));
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+        if (IsHoaChannelLayout(curStreamParams_.channelLayout) &&
+            !IsHoaChannelCountMatched(curStreamParams_.channelLayout, curStreamParams_.channels)) {
+            AUDIO_ERR_LOG("AudioStream: HOA layout %{public}llx does not match channels %{public}d",
+                static_cast<unsigned long long>(curStreamParams_.channelLayout),
+                static_cast<int32_t>(curStreamParams_.channels));
+            return ERR_INVALID_PARAM;
+        }
         ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
         if (info.isRemoteSpatialChannel) {
             cfg.outChannelLayout = info.remoteChannelLayout;
@@ -274,6 +295,15 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         if (converter_ == nullptr || !converter_->Init(curStreamParams_, cfg) || !converter_->AllocateMem()) {
             AUDIO_ERR_LOG("AudioStream: converter construct error");
             return ERR_NOT_SUPPORTED;
+        }
+        if (!converter_->IsAlgoLoaded()) {
+            // HOA pcm must be rendered by MCR before downstream, passthrough keeps wrong channel semantics
+            if (IsHoaChannelLayout(curStreamParams_.channelLayout)) {
+                AUDIO_ERR_LOG("AudioStream: MCR algo unavailable, HOA stream is not supported");
+                converter_ = nullptr;
+                return ERR_NOT_SUPPORTED;
+            }
+            AUDIO_WARNING_LOG("AudioStream: MCR algo unavailable, degrade to passthrough");
         }
 
         AUDIO_INFO_LOG("rendererInfo rendererFlags: %{public}u", rendererInfo_.rendererFlags);
