@@ -114,7 +114,7 @@ void AudioToneParser::ParseCustom(std::shared_ptr<AudioXmlNode> curNode,
             curNode->MoveToNext();
             continue;
         }
-        if (curNode->CompareName("CountryInfo")) {
+        if (curNode->CompareName("CountryOrRegionInfo")) {
             std::string pCountryName;
             int32_t ret = curNode->GetProp("names", pCountryName);
             if (ret != SUCCESS) {

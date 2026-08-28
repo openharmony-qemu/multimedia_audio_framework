@@ -90,6 +90,7 @@ HWTEST_F(AudioToneManagerUnitTest, LoadToneDtmfConfig_Success_002, TestSize.Leve
 HWTEST_F(AudioToneManagerUnitTest, GetSupportedTones_Empty_001, TestSize.Level4)
 {
     AudioToneManager manager;
+    manager.isToneDtmfConfigLoaded_ = true;
 
     auto result = manager.GetSupportedTones("CN");
     EXPECT_TRUE(result.empty());
@@ -106,6 +107,7 @@ HWTEST_F(AudioToneManagerUnitTest, GetSupportedTones_CustomFound_002, TestSize.L
 
     manager.toneDescriptorMap_[100] = std::make_shared<ToneInfo>();
     manager.toneDescriptorMap_[200] = std::make_shared<ToneInfo>();
+    manager.isToneDtmfConfigLoaded_ = true;
 
     std::string country = "CN";
     manager.customToneDescriptorMap_[country][200] = std::make_shared<ToneInfo>();
@@ -131,6 +133,7 @@ HWTEST_F(AudioToneManagerUnitTest, GetSupportedTones_CustomNotFound_002, TestSiz
 
     manager.toneDescriptorMap_[100] = std::make_shared<ToneInfo>();
     manager.toneDescriptorMap_[200] = std::make_shared<ToneInfo>();
+    manager.isToneDtmfConfigLoaded_ = true;
 
     manager.customToneDescriptorMap_["US"][300] = std::make_shared<ToneInfo>();
 
@@ -151,6 +154,7 @@ HWTEST_F(AudioToneManagerUnitTest, GetSupportedTones_CustomNotFound_002, TestSiz
 HWTEST_F(AudioToneManagerUnitTest, GetToneConfig_NotFound_001, TestSize.Level4)
 {
     AudioToneManager manager;
+    manager.isToneDtmfConfigLoaded_ = true;
     std::string country = "FR";
     int32_t toneType = 999;
 
@@ -166,6 +170,7 @@ HWTEST_F(AudioToneManagerUnitTest, GetToneConfig_NotFound_001, TestSize.Level4)
 HWTEST_F(AudioToneManagerUnitTest, GetToneConfig_CustomHit_002, TestSize.Level4)
 {
     AudioToneManager manager;
+    manager.isToneDtmfConfigLoaded_ = true;
     std::string country = "CN";
     int32_t toneType = 100;
 
@@ -184,6 +189,7 @@ HWTEST_F(AudioToneManagerUnitTest, GetToneConfig_CustomHit_002, TestSize.Level4)
 HWTEST_F(AudioToneManagerUnitTest, GetToneConfig_CustomMissDefaultHit_003, TestSize.Level4)
 {
     AudioToneManager manager;
+    manager.isToneDtmfConfigLoaded_ = true;
     std::string country = "CN";
     int32_t toneType = 200;
 
@@ -203,6 +209,7 @@ HWTEST_F(AudioToneManagerUnitTest, GetToneConfig_CustomMissDefaultHit_003, TestS
 HWTEST_F(AudioToneManagerUnitTest, GetToneConfig_DefaultOnly_004, TestSize.Level4)
 {
     AudioToneManager manager;
+    manager.isToneDtmfConfigLoaded_ = true;
     std::string country = "US";
     int32_t toneType = 300;
 
@@ -211,6 +218,61 @@ HWTEST_F(AudioToneManagerUnitTest, GetToneConfig_DefaultOnly_004, TestSize.Level
 
     auto result = manager.GetToneConfig(toneType, country);
     EXPECT_EQ(result, defaultTone);
+}
+
+/**
+ * @tc.name  : Test EnsureToneDtmfConfigLoaded
+ * @tc.number: EnsureToneDtmfConfigLoaded_RetryWithinInterval_001
+ * @tc.desc  : Test retry is skipped when called within RETRY_INTERVAL_SEC after failure.
+ */
+HWTEST_F(AudioToneManagerUnitTest, EnsureToneDtmfConfigLoaded_RetryWithinInterval_001, TestSize.Level4)
+{
+    AudioToneManager manager;
+    manager.lastLoadFailTime_ = std::chrono::steady_clock::now();
+
+    std::ofstream file("/system/etc/audio/audio_tone_dtmf_config.xml");
+    file << "<INVALID></INVALID>";
+    file.close();
+
+    auto lastFailTime = manager.lastLoadFailTime_;
+    auto result = manager.GetSupportedTones("CN");
+    EXPECT_TRUE(result.empty());
+    EXPECT_EQ(manager.lastLoadFailTime_, lastFailTime);
+}
+
+/**
+ * @tc.name  : Test EnsureToneDtmfConfigLoaded
+ * @tc.number: EnsureToneDtmfConfigLoaded_RetryAfterInterval_002
+ * @tc.desc  : Test retry is triggered when called after RETRY_INTERVAL_SEC since last failure.
+ */
+HWTEST_F(AudioToneManagerUnitTest, EnsureToneDtmfConfigLoaded_RetryAfterInterval_002, TestSize.Level4)
+{
+    AudioToneManager manager;
+    auto oldFailTime = std::chrono::steady_clock::now() - std::chrono::seconds(60);
+    manager.lastLoadFailTime_ = oldFailTime;
+
+    std::ofstream file("/system/etc/audio/audio_tone_dtmf_config.xml");
+    file << "<INVALID></INVALID>";
+    file.close();
+
+    auto result = manager.GetSupportedTones("CN");
+    EXPECT_TRUE(result.empty());
+    EXPECT_GT(manager.lastLoadFailTime_, oldFailTime);
+}
+
+/**
+ * @tc.name  : Test EnsureToneDtmfConfigLoaded
+ * @tc.number: EnsureToneDtmfConfigLoaded_AlreadyLoaded_003
+ * @tc.desc  : Test returns true directly when config is already loaded.
+ */
+HWTEST_F(AudioToneManagerUnitTest, EnsureToneDtmfConfigLoaded_AlreadyLoaded_003, TestSize.Level4)
+{
+    AudioToneManager manager;
+    manager.isToneDtmfConfigLoaded_ = true;
+    manager.toneDescriptorMap_[100] = std::make_shared<ToneInfo>();
+
+    auto result = manager.GetSupportedTones("CN");
+    EXPECT_EQ(result.size(), 1);
 }
 
 #endif

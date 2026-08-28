@@ -98,12 +98,6 @@ bool AudioPolicyService::Init(void)
     audioGlobalConfigManager_.ParseGlobalConfigXml();
     RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_POLICY_GLOBAL_CONFIG, ClockTime::GetCurMilli());
 
-#ifdef FEATURE_DTMF_TONE
-    bool ret = audioToneManager_.LoadToneDtmfConfig();
-    RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_TONE_DTMF_CONFIG, ClockTime::GetCurMilli());
-    CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Tone Load Configuration failed");
-#endif
-
     CreateRecoveryThread();
     std::string versionType = OHOS::system::GetParameter("const.logsystem.versiontype", "commercial");
     AudioDump::GetInstance().SetVersionType(versionType);
