@@ -206,7 +206,8 @@ void AudioInterruptStrategy::UpdatePauseAudioFocusStrategy(const AudioInterrupt 
         return;
     }
 
-    if (focusEntry.hintType == INTERRUPT_HINT_STOP) {
+    if (focusEntry.hintType == INTERRUPT_HINT_STOP &&
+        incomingInterrupt.audioFocusType.streamType != STREAM_INTERNAL_FORCE_STOP) {
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
         AUDIO_INFO_LOG("Change STOP to PAUSE for streamId:%{public}u with PAUSE_WHEN_INTERRUPTED flag",
             currentInterrupt.streamId);
