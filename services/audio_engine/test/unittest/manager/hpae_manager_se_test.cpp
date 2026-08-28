@@ -986,6 +986,79 @@ HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_destroyTimeout_stillClearsLogica
     EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
 }
 
+// --- Deferred AISS-disable 1s backstop (delayed task queue based) ---
+// Design ref: 2026-08-27-hpae-delayed-task-priority-queue-design.md §2.
+// The manager thread pumps the delayed task queue itself (Run's wait_for uses GetNextDelayMs), so
+// sleeping past the backstop deadline lets the real thread fire it; no manual pumping needed.
+
+// Backstop: a stream still RUNNING after the 1s deadline is force-closed by the backstop timer.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_backstopTimeout_forcesCloseWhileRunning, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+    ASSERT_TRUE(hpaeManager_->pendingAissDisable_.has_value());
+    // The backstop timer must be pending in the delayed task queue.
+    EXPECT_GT(hpaeManager_->GetDelayedTaskQueue().GetNextDelayMs(), 0u);
+
+    // Stream stays RUNNING the whole time; only the 1s backstop can close AISS.
+    std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), 0u);
+}
+
+// Backstop cancel on terminal flush: after the fast-path close, the 1s timer must not re-fire.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_terminalFlush_cancelsBackstopTimer, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+    ASSERT_TRUE(hpaeManager_->pendingAissDisable_.has_value());
+
+    // IsValidUpdateStatus requires state PAUSING for OPERATION_PAUSED.
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID].state = HPAE_SESSION_PAUSING;
+    hpaeManager_->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID,
+        HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    uint64_t genAfterFlush = hpaeManager_->aissControlGeneration_;
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+
+    // The cancelled backstop must not re-fire: state and generation stay put.
+    EXPECT_EQ(hpaeManager_->aissControlGeneration_, genAfterFlush);
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+}
+
+// Backstop invalidation on re-enable: a same-uid re-enable cancels the pending request; the stale
+// 1s timer must not close the re-enabled binding.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_reenable_invalidatesBackstopTimer, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+    ASSERT_TRUE(hpaeManager_->pendingAissDisable_.has_value());
+
+    // Same-uid re-enable cancels the pending deferred disable and keeps the current binding.
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+
+    // The stale backstop must not close the re-enabled binding.
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+}
+
 // CH-1: BindAndCreateAiss rejects non-stereo streams
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_multiChannelRejected, TestSize.Level0)
 {
