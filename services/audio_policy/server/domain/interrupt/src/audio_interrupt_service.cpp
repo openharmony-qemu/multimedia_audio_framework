@@ -2603,11 +2603,7 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     if (interruptCustom_ != nullptr) {
         interruptCustom_->UpdateCustomFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     }
-    if (duckPassthroughMode_ && focusEntry.hintType == INTERRUPT_HINT_DUCK) {
-        AUDIO_INFO_LOG("change duck to mix for enable duckPassthroughMode");
-        focusEntry.hintType = INTERRUPT_HINT_NONE;
-        focusEntry.actionOn = INCOMING;
-    }
+    ApplyDuckPassthroughMode(focusEntry);
 }
 
 bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
