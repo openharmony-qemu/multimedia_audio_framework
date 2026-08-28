@@ -2148,6 +2148,15 @@ void AudioInterruptService::UpdateHintTypeByConcurrencyMode(AudioConcurrencyMode
     }
 }
 
+void AudioInterruptService::ApplyDuckPassthroughMode(AudioFocusEntry &focusEntry)
+{
+    if (duckPassthroughMode_ && focusEntry.hintType == INTERRUPT_HINT_DUCK) {
+        AUDIO_INFO_LOG("change duck to mix for enable duckPassthroughMode");
+        focusEntry.hintType = INTERRUPT_HINT_NONE;
+        focusEntry.actionOn = INCOMING;
+    }
+}
+
 bool AudioInterruptService::CheckAudioConcurrencyForInterrupt(const AudioInterrupt &activateInterrupt,
     const AudioInterrupt &incomingInterrupt)
 {
