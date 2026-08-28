@@ -290,6 +290,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchDupDevices_002, TestSize.Level1)
 HWTEST(AudioRouterCenterUnitTest, FetchRingRenderDevices_001, TestSize.Level1)
 {
     AudioRouterCenter audioRouterCenter;
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPublicDevices_.clear();
     StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
     int32_t clientUID = 1000;
     RouterType routerType;
