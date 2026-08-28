@@ -985,6 +985,38 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, CallInputDeviceTypeNone_001, TestSiz
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
 }
 
+HWTEST_F(AudioRouterFollowStrategyUnitTest, SetCallInputDevice_001, TestSize.Level1)
+{
+    AudioRouterFollowStrategy strategy;
+    auto &devMan = AudioDeviceManager::GetAudioDeviceManager();
+    std::shared_ptr<AudioDeviceDescriptor> device;
+    strategy.SetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, device);
+
+    device = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_HEADSET, INPUT_DEVICE);
+    strategy.SetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, device);
+
+    device = AddDeviceDescriptor(DEVICE_TYPE_USB_HEADSET, INPUT_DEVICE, "");
+    strategy.SetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, device);
+    devMan.RemoveNewDevice(device);
+
+    auto pair = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_HEADSET, OUTPUT_DEVICE);
+    AddPairDeviceDescriptor(device, pair);
+    strategy.SetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, device);
+    devMan.RemoveNewDevice(device);
+    devMan.RemoveNewDevice(pair);
+
+    pair = CreateDeviceDescriptor(DEVICE_TYPE_USB_HEADSET, OUTPUT_DEVICE, "");
+    AddPairDeviceDescriptor(device, pair);
+    strategy.UpdateCurrentOutputDevice(SYSTEM_UID, {pair});
+    strategy.SetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, device);
+
+    auto output = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, "");
+    strategy.UpdateCurrentOutputDevice(SYSTEM_UID, {output});
+    strategy.SetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, device);
+    output = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    EXPECT_EQ(pair->deviceId_, output->deviceId_);
+}
+
 HWTEST_F(AudioRouterFollowStrategyUnitTest, MediaInputInvalidUidDeviceTypeNone_001, TestSize.Level1)
 {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();

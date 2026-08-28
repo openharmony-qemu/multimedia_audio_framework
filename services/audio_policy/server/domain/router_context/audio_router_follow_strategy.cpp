@@ -226,6 +226,14 @@ void AudioRouterFollowStrategy::SetCallInputDevice(int32_t uid, uint32_t streamI
     uint32_t deviceTokenId = device ? device->deviceTokenId_ : 0;
     AudioRouterInfra::GetInstance().RefreshSelectDevice(SelectDeviceType::CALL_INPUT, SYSTEM_UID, simpleDesc,
         deviceTokenId);
+    CHECK_AND_RETURN_LOG(simpleDesc != nullptr, "simpleDesc is nullptr");
+    auto tempDesc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(simpleDesc->deviceId_);
+    auto pairDesc = tempDesc ? tempDesc->pairDeviceDescriptor_ : nullptr;
+    if (pairDesc && pairDesc->deviceId_ > 0 &&
+        pairDesc->deviceId_ != Get1stCurrentOutputDevice(SYSTEM_UID).deviceId_) {
+        AUDIO_INFO_LOG("Set call output[%{public}d] follows input", pairDesc->deviceId_);
+        RefreshCallOutputDevice(SYSTEM_UID, streamId, pairDesc);
+    }
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallOutputDevice(int32_t uid, uint32_t streamId)
