@@ -149,7 +149,6 @@ int32_t FastAudioRenderSink::Start(void)
         return SUCCESS;
     }
     if (currentActiveDevice_ != DEVICE_TYPE_NONE) {
-        forceSetRouteFlag_ = true;
         std::vector<DeviceType> devices = { currentActiveDevice_ };
         UpdateActiveDevice(devices);
     }
