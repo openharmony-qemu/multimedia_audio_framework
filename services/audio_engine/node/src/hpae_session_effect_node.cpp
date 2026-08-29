@@ -120,7 +120,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::SignalProcess(const std::vector<HpaePcmBuf
     // --- Phase 3C: Close SE crossfade ---
     if (closeCrossfadePending_) {
         HpaePcmBuffer *crossfadeOut = ProcessCloseCrossfade(inputs);
-        // The close block is done (mixed or passed through): notify the manager so the
+        // The close block is done (mixed, passed through, or skipped): notify the manager so the
         // deferred FinalizeClose runs on its message thread. Exactly once — the pending
         // flag was consumed at ProcessCloseCrossfade entry.
         auto statusCallback = GetNodeStatusCallback().lock();

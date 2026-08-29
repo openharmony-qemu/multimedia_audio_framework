@@ -2551,7 +2551,7 @@ HWTEST_F(SessionEffectNodeStateTest, closeCrossfade_mixPath_firesCallbackOnce, T
 HWTEST_F(SessionEffectNodeStateTest, closeCrossfade_earlyExit_firesCallbackOnce, TestSize.Level0)
 {
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
-    node_->audioConfig_.inputCfg.channels = 4;  // mismatch vs dry buffer (2ch) -> early return
+    node_->audioConfig_.inputCfg.channels = 4;  // inputCfg 4ch vs outputCfg 2ch -> config-mismatch early exit
     EXPECT_CALL(*mockCallback_, OnCloseCrossfadeDone(TEST_SESSION_ID)).Times(1);
     node_->StartCloseCrossfade();
     node_->DoProcess();
