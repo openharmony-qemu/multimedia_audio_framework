@@ -546,12 +546,14 @@ HWTEST_F(HpaeOffloadSeTest, pauseRescuesPendingCloseCrossfade, TestSize.Level0)
     EXPECT_EQ(manager_->pendingCloseSessionId_, 0u);
 }
 
-// OSE-7: Same-instance rapid recreate -> Finalize detaches old node without Flush/Stop
+// OSE-7: Same-instance rapid recreate -> Finalize detaches old node without StopEffect
+// (one Flush via CloseSessionEffectCore)
 HWTEST_F(HpaeOffloadSeTest, destroyThenCreate_sameInstance_finalizesWithoutStop, TestSize.Level0)
 {
     auto mockInst = std::make_shared<testing::NiceMock<MockEffectInstance>>();
     ON_CALL(*mockInst, GetPreheatFrames()).WillByDefault(testing::Return(0));
-    // Same-instance reuse path must NOT disable/flush the shared algorithm instance.
+    // Same-instance reuse path must NOT stop the shared algorithm instance (one Flush is
+    // expected via CloseSessionEffectCore).
     EXPECT_CALL(*mockInst, StopEffect()).Times(0);
     EXPECT_CALL(*mockInst, Flush()).Times(1);
 
@@ -571,7 +573,8 @@ HWTEST_F(HpaeOffloadSeTest, destroyThenCreate_sameInstance_finalizesWithoutStop,
     manager_->isInit_.store(true);  // OnCloseCrossfadeDone uses SendRequest (queues, manual drain)
     manager_->OnCloseCrossfadeDone(CUR_SESSION_ID);  // queues finalize BEHIND the retry
     // Batch 1: retry re-defers, then the finalize runs — the pending create names the SAME
-    // instance, so the old node is detached via CloseSessionEffectCore (no Flush/Stop).
+    // instance, so the old node is detached via CloseSessionEffectCore (StopEffect skipped,
+    // one Flush).
     manager_->HandleMsg();
     // Batch 2: the retried Create materializes a new node holding the same instance.
     manager_->HandleMsg();
@@ -976,7 +979,8 @@ HWTEST_F(HpaeOffloadSeDataflowTest, remove_restoresPassthrough, TestSize.Level0)
     probe_->DoProcess();  // close frame while STOPPING (fixture node has no status callback wired)
 
     // Deliver the callback (queued via SendRequest) and run the Finalize on the message thread:
-    // deletes the node and restores the bypass chain.
+    // deletes the node and restores the bypass chain. The thread object must exist — SendRequest
+    // reports a queue exception when it is null; never activated, so draining stays manual.
     manager_->hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     manager_->isInit_.store(true);
     manager_->OnCloseCrossfadeDone(CUR_SESSION_ID);
@@ -1391,8 +1395,9 @@ HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_finalizeNow_thenCreateSucceeds,
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
 }
 
-// OSE-F3: finalizeNow on an already-STOPPING node (a plain Destroy queued a Finalize first):
-// STOPPING branch finalizes directly; exactly one DISABLED in total; further destroy is a no-op.
+// OSE-F3: finalizeNow on an already-STOPPING node (a plain Destroy left the close waiting on
+// its crossfade callback): STOPPING branch finalizes directly; exactly one DISABLED in total;
+// further destroy is a no-op.
 HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_finalizeNow_onStoppingNode_finalizesOnce, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
