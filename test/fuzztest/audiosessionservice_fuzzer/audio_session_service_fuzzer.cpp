@@ -133,7 +133,7 @@ void AudioSessionServiceActivateAudioSessionFuzzTest()
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
     audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
     audioSessionService.ActivateAudioSession(callerPid, strategy);
-    audioSessionService.sessionMap_.erase(callerPid);
+    audioSessionService.DeactivateAudioSession(callerPid);
 }
 
 void AudioSessionServiceDeactivateAudioSessionFuzzTest()
