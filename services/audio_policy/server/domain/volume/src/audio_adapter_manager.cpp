@@ -1404,7 +1404,7 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
         volumeReduction < MAX_STREAM_VOLUME + std::numeric_limits<float>::epsilon()) {
         if (volumeType == STREAM_MUSIC &&
             ((deviceType == DEVICE_TYPE_BLUETOOTH_SCO && isVgsVolumeSupported_) ||
-            deviceType == DEVICE_TYPE_NEARLINK)) {
+            (deviceType == DEVICE_TYPE_NEARLINK && isSleVoiceStatus_.load()))) {
             // For nearlink and sco device, the media stream will be additionally affected by the voice call volume.
             // Therefore, special processing is required to prevent the media volume from being too low.
             volume = DepressMediaVolumeForHeadSet(volume, volumeReduction, volumeLimit_.load());
