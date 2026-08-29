@@ -165,9 +165,9 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId, bool final
     return ret;
 }
 
-// STOPPING + finalizeNow: the earlier BeginClose queued a Finalize for the next batch; run it
-// now so the old session is fully closed before the new one is created. The queued copy later
-// no-ops on the identity check in FinalizeDestroySessionEffectNode. Reuses the route built at
+// STOPPING + finalizeNow: finalize the close a prior BeginClose left waiting on its crossfade
+// callback right now, so the old session is fully closed before the new one is created. A late
+// OnCloseCrossfadeDone no-ops on the cleared token / identity check. Reuses the route built at
 // destroy entry (single-threaded request, nothing re-routes in between).
 void HpaeRendererManager::FinalizeStoppingSessionEffect(uint32_t sessionId,
     std::optional<ChannelOverrideRoute> route, HpaeSessionState state,
@@ -190,6 +190,10 @@ void HpaeRendererManager::RewindAndClearSessionEffectAttach(uint32_t sessionId, 
     AUDIO_INFO_LOG("[SE::RendererManager] AttachState cleared sessionId=%{public}u", sessionId);
 }
 
+// Marshal-only: the finalize must not run inline here (this callback fires inside the node's
+// DoProcess stack). Caveat: the INTERPHONE + null-thread SendRequest branch drains inline on the
+// caller thread — unreachable today (interphone chains are never pulled); must stay that way, or
+// this callback would finalize inside the node's process stack.
 void HpaeRendererManager::OnCloseCrossfadeDone(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
@@ -212,8 +216,10 @@ bool HpaeRendererManager::FinalizePendingSessionEffectClose(uint32_t sessionId)
     CHECK_AND_RETURN_RET(closingNode != nullptr, false);
     HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
     auto processCluster = SafeGetMap(sceneClusterMap_, sceneType);
-    CHECK_AND_RETURN_RET(processCluster != nullptr &&
-        processCluster->GetSessionEffectNode(sessionId) == closingNode, false);
+    if (processCluster == nullptr || processCluster->GetSessionEffectNode(sessionId) != closingNode) {
+        AUDIO_WARNING_LOG("[SE::RendererManager] PendingClose identity mismatch sessionId=%{public}u", sessionId);
+        return false;
+    }
     auto sessionIt = sessionNodeMap_.find(sessionId);
     HpaeSessionState state = sessionIt != sessionNodeMap_.end() ?
         sessionIt->second.state : HPAE_SESSION_NEW;
@@ -225,8 +231,9 @@ void HpaeRendererManager::FinalizeSessionEffectClose(uint32_t sessionId,
     std::optional<ChannelOverrideRoute> route, HpaeSessionState state,
     const std::weak_ptr<HpaeSessionEffectNode> &closingNode)
 {
-    // Any finalize attempt ends the pending-close window for this session (identity gates below
-    // stay as the last line of defense for races the token cannot express).
+    // Any finalize attempt ends the pending-close window for this session: erased deliberately
+    // BEFORE the identity checks below (the token window ends at the first finalize attempt;
+    // the identity gates stay as the last line of defense for races the token cannot express).
     pendingSeFinalizeMap_.erase(sessionId);
     HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
     auto processCluster = SafeGetMap(sceneClusterMap_, sceneType);

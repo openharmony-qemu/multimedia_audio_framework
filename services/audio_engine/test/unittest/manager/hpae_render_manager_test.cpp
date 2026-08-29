@@ -5872,7 +5872,7 @@ HWTEST_F(HpaeRendererManagerTest, N_Fin_PendingAbsent, TestSize.Level1)
 }
 
 // N_Fin_DirectWhenNoPending: IDLE node has no crossfade pending -> destroy finalizes inside
-// the same request (batch N), DISABLED exactly once.
+// the same (synchronous) request, DISABLED exactly once.
 HWTEST_F(HpaeRendererManagerTest, N_Fin_DirectWhenNoPending, TestSize.Level1)
 {
     constexpr uint32_t sessionId = 90017;
@@ -5892,9 +5892,8 @@ HWTEST_F(HpaeRendererManagerTest, N_Fin_DirectWhenNoPending, TestSize.Level1)
     ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
-    hpaeRendererManager_->isInit_.store(true);
-    hpaeRendererManager_->PostDestroySessionEffect(sessionId);
-    hpaeRendererManager_->HandleMsg();  // batch N: BeginClose + direct Finalize (no pending)
+    // Synchronous destroy on the test thread: IDLE node, no crossfade pending -> direct Finalize.
+    hpaeRendererManager_->DestroySessionEffect(sessionId);
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
     hpaeRendererManager_->HandleMsg();  // nothing queued -> no duplicate
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
@@ -5930,9 +5929,8 @@ HWTEST_F(HpaeRendererManagerTest, N_Fin_DeferredUntilCrossfadeDone, TestSize.Lev
     ASSERT_NE(node, nullptr);
     node->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
 
-    hpaeRendererManager_->isInit_.store(true);
-    hpaeRendererManager_->PostDestroySessionEffect(sessionId);
-    hpaeRendererManager_->HandleMsg();  // BeginClose; crossfade pending -> wait for callback
+    // Synchronous destroy on the test thread: BeginClose, crossfade pending -> wait for callback.
+    hpaeRendererManager_->DestroySessionEffect(sessionId);
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 0u);
     EXPECT_TRUE(cluster->IsSessionEffectNodeStopping(sessionId));
     EXPECT_EQ(hpaeRendererManager_->pendingSeFinalizeMap_.count(sessionId), 1u);
@@ -5974,9 +5972,8 @@ HWTEST_F(HpaeRendererManagerTest, N_Fin_PauseRescue, TestSize.Level1)
     ASSERT_NE(cluster, nullptr);
     cluster->GetSessionEffectNode(sessionId)->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
 
-    hpaeRendererManager_->isInit_.store(true);
-    hpaeRendererManager_->PostDestroySessionEffect(sessionId);
-    hpaeRendererManager_->HandleMsg();  // BeginClose, waiting on callback
+    // Synchronous destroy on the test thread: BeginClose, waiting on callback.
+    hpaeRendererManager_->DestroySessionEffect(sessionId);
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 0u);
 
     hpaeRendererManager_->Pause(sessionId);  // entry rescue finalizes instead of waiting
@@ -6016,9 +6013,8 @@ HWTEST_F(HpaeRendererManagerTest, N_Fin_OnFadeDoneRescue, TestSize.Level1)
     ASSERT_NE(cluster, nullptr);
     cluster->GetSessionEffectNode(sessionId)->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
 
-    hpaeRendererManager_->isInit_.store(true);
-    hpaeRendererManager_->PostDestroySessionEffect(sessionId);
-    hpaeRendererManager_->HandleMsg();  // BeginClose, waiting on callback
+    // Synchronous destroy on the test thread: BeginClose, waiting on callback.
+    hpaeRendererManager_->DestroySessionEffect(sessionId);
 
     // Fade done fires with the session pausing (state != RUNNING).
     hpaeRendererManager_->sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_PAUSING);

@@ -1096,7 +1096,7 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId, bool isStandby)
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
         // SE close-crossfade waiting on its callback: finalize now, the chain is about to stop
-        // being pulled (fade/teardown), the callback would never fire.
+        // being pulled (fade/teardown); the close cannot be guaranteed to complete before then.
         FinalizePendingSessionEffectClose(sessionId);
         HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_PAUSED, isStandby)) {
@@ -1186,7 +1186,7 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Stop not find sessionId %{public}u", sessionId);
         // SE close-crossfade waiting on its callback: finalize now, the chain is about to stop
-        // being pulled (fade/teardown), the callback would never fire.
+        // being pulled (fade/teardown); the close cannot be guaranteed to complete before then.
         FinalizePendingSessionEffectClose(sessionId);
         HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {

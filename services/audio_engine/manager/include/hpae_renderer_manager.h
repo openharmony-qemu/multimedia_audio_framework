@@ -206,8 +206,8 @@ private:
     void MaterializeSessionEffectFromAttachState(uint32_t sessionId, HpaeProcessorType sceneType);
     void HandleSessionEffectMaterializeFailure(uint32_t sessionId, int32_t ret,
         const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode);
-    // STOPPING + finalizeNow: run the Finalize a prior BeginClose queued for the next batch
-    // right now, so the old session is fully closed before the new one is created.
+    // STOPPING + finalizeNow: finalize the close a prior BeginClose left waiting on its crossfade
+    // callback right now, so the old session is fully closed before the new one is created.
     void FinalizeStoppingSessionEffect(uint32_t sessionId, std::optional<ChannelOverrideRoute> route,
         HpaeSessionState state, const std::shared_ptr<HpaeProcessCluster> &processCluster);
     // Rewind upstream history by the combined latency; clear the logical binding.
