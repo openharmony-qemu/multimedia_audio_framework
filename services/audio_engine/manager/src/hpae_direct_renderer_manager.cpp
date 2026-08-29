@@ -1394,7 +1394,10 @@ bool HpaeDirectRendererManager::FinalizePendingSessionEffectClose(uint32_t sessi
     CHECK_AND_RETURN_RET(pendingCloseSessionId_ == sessionId && !pendingCloseNode_.expired(), false);
     auto closingNode = pendingCloseNode_.lock();
     ClearPendingSessionEffectClose();
-    CHECK_AND_RETURN_RET(closingNode != nullptr && sessionEffectNode_ == closingNode, false);
+    if (closingNode == nullptr || sessionEffectNode_ != closingNode) {
+        AUDIO_WARNING_LOG("PendingClose identity mismatch: session %{public}u", sessionId);
+        return false;
+    }
     FinalizeSessionEffectClose(sessionId, closingNode);
     return true;
 }
@@ -1480,6 +1483,7 @@ void HpaeDirectRendererManager::DetachSessionEffectNodeForReload()
     // Do NOT clear attach state — it must survive reload so ConnectInputSession can re-materialize.
     // Only reset the physical cache (node + sessionId).
     CancelPendingSessionEffectCreate(sessionEffectSessionId_);
+    ClearPendingSessionEffectClose();
     if (sessionEffectNode_ != nullptr) {
         // Reload runs on SignalProcessThread after DisConnectInputSession has removed this node
         // from the processing chain, so CloseSessionEffectCore only resets local runtime state.

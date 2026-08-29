@@ -183,7 +183,8 @@ private:
     // pending, else deferred to the OnCloseCrossfadeDone callback
     void FinalizeSessionEffectClose(uint32_t sessionId,
         const std::weak_ptr<HpaeSessionEffectNode> &closingNode);
-    // Erase the pending-close token (single slot — direct RM is single-stream).
+    // Erase the pending-close token (single slot — at most one materialized SE node / one SE
+    // close at a time).
     void ClearPendingSessionEffectClose();
     // Rescue/delivery: finalize the tokened closing node if it is still the current node.
     // Returns true when this call finalized the close.

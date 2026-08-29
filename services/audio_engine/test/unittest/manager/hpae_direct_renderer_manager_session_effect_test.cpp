@@ -796,10 +796,11 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Remove_001, TestSize.Lev
     ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    // Test: Remove SE -> BeginClose (node enters STOPPING); FinalizeClose runs on the next batch.
+    // Test: Remove SE -> BeginClose (node enters STOPPING); IDLE node has no crossfade armed,
+    // so FinalizeClose runs in-request.
     int32_t ret = manager_->RemoveSessionEffectNode();
 
-    // Verify: Success; FinalizeClose is queued, let the signal thread drain it before asserting.
+    // Verify: Success; the finalize already ran in-request, drain for a clean slate.
     EXPECT_EQ(ret, 0);
     WaitForMsgProcessing(manager_);
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
@@ -2195,30 +2196,43 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Remove_004, TestSize.Lev
  * @tc.name    : DestroyThenCreate_RequeuesUntilFinalized
  * @tc.type    : FUNC
  * @tc.number  : SE_Remove_005
- * @tc.desc    : Rapid recreate while the old node is STOPPING is not rejected as duplicate;
- *               it requeues and materializes after FinalizeClose (Begin/Finalize two-phase).
+ * @tc.desc    : Rapid recreate while the old close waits on its crossfade callback is not
+ *               rejected as duplicate; it requeues and materializes after the callback finalize.
  */
 HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Remove_005, TestSize.Level0)
 {
     ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo(TEST_SESSION_ID)), SUCCESS);
     WaitForMsgProcessing(manager_);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
 
     auto oldInst = MakeTestEffectInstance(defaultConfig_);
     auto newInst = MakeTestEffectInstance(defaultConfig_);
-    ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "old", oldInst, defaultConfig_),
-        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    WaitForMsgProcessing(manager_);
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+    ASSERT_EQ(manager_->InsertSessionEffectNode("old", oldInst, defaultConfig_), 0);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    // Arm the smooth close: ACTIVE node -> crossfade pending -> destroy waits on the callback.
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+    ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);  // BeginClose: STOPPING + token, nothing queued
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+    EXPECT_EQ(manager_->pendingCloseSessionId_, TEST_SESSION_ID);
 
-    // Destroy then immediately Create the same session. The Create must NOT be rejected as a
-    // duplicate while the old node is STOPPING; it requeues and materializes after FinalizeClose.
-    manager_->PostDestroySessionEffect(TEST_SESSION_ID);
+    // Create while STOPPING defers + requeues (do NOT WaitFor here: the retry spins until the
+    // close finalizes; IsMsgProcessing never settles in that window).
     manager_->PostCreateSessionEffect(TEST_SESSION_ID, "new", newInst, defaultConfig_);
+
+    // Finisher: the crossfade-completion callback finalizes the old close (FIFO behind the
+    // spinning retries); the next retry then materializes the new node.
+    manager_->OnCloseCrossfadeDone(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
 
-    // Old finalized, new materialized: the recreate was not lost.
+    // Old finalized, new materialized: the recreate was not lost. Counts asserted BEFORE
+    // DestroyStream — the teardown DeleteInputSession emits its own DISABLED.
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectNode_->GetEffectName(), "new");
+    EXPECT_EQ(manager_->pendingCloseSessionId_, 0u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
     manager_->DestroyStream(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
@@ -2494,8 +2508,8 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_001, T
  * @tc.name    : DestroyFinalizeOnStoppingNode
  * @tc.type    : FUNC
  * @tc.number  : SE_SwitchFinalizeNow_002
- * @tc.desc    : finalizeNow destroy on an already-STOPPING node (pending finalize queued):
- *               STOPPING branch finalizes directly, following create still succeeds
+ * @tc.desc    : plain destroy on a non-ACTIVE node (no crossfade pending) finalizes in-request;
+ *               a following finalizeNow destroy is a safe no-op, the next create still succeeds
  */
 HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_002, TestSize.Level1)
 {
@@ -2514,8 +2528,8 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_002, T
     WaitForMsgProcessing(manager_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    // Test: plain destroy (BeginClose + queued finalize), then finalizeNow destroy (STOPPING
-    // branch -> direct finalize), then create — all back-to-back.
+    // Test: plain destroy (non-ACTIVE node -> in-request finalize), then finalizeNow destroy
+    // (no node left -> safe no-op), then create — all back-to-back.
     manager_->PostDestroySessionEffect(TEST_SESSION_ID);
     manager_->PostDestroySessionEffect(TEST_SESSION_ID, true);
     auto instance2 = MakeTestEffectInstance(defaultConfig_);
@@ -2523,7 +2537,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_002, T
     WaitForMsgProcessing(manager_);
 
     // Verify: create succeeded (old behavior: STOPPING skip left the node in place -> failure).
-    // Exactly one DISABLED (direct finalize; queued copy no-ops) and two ENABLED (both creates;
+    // Exactly one DISABLED (in-request finalize) and two ENABLED (both creates;
     // recorder registered before both, so both are recorded). Asserted at this drain point:
     // the later DestroyStream/DeleteInputSession teardown (Stop itself does not reset the
     // node) would add another DISABLED.
