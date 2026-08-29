@@ -243,8 +243,14 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
 {
     AUDIO_INFO_LOG("firstBoot %{public}d", isFirstBoot);
 #ifdef FEATURE_AUDIO_ZONE_VOLUME
+    std::vector<int32_t> ids;
+    ErrCode result = AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
+    CHECK_AND_RETURN_LOG(result == ERR_OK, "QueryActiveOsAccountIds failed, result: %{public}d", result);
+    CHECK_AND_RETURN_LOG(!ids.empty(), "QueryActiveOsAccountIds returned empty ids");
     int32_t subProfileId = -1;
-    AccountSA::OsAccountSubProfileClient::GetInstance().GetOsAccountForegroundSubProfileId(subProfileId);
+    ErrCode ret = AccountSA::OsAccountSubProfileClient::GetInstance()
+        .GetOsAccountForegroundSubProfileId(ids[0], subProfileId);
+    CHECK_AND_RETURN_LOG(ret == ERR_OK, "GetOsAccountForegroundSubProfileId failed, ret: %{public}d", ret);
     volumeDataMaintainer_.SetCurrentSubspaceId(subProfileId);
     AUDIO_INFO_LOG("Initial subspaceId: %{public}d", subProfileId);
 #endif
