@@ -546,6 +546,24 @@ HWTEST_F(HpaeOffloadSeTest, pauseRescuesPendingCloseCrossfade, TestSize.Level0)
     EXPECT_EQ(manager_->pendingCloseSessionId_, 0u);
 }
 
+// OSE-CB3: Stop while waiting -> entry rescue finalizes directly.
+HWTEST_F(HpaeOffloadSeTest, stopRescuesPendingCloseCrossfade, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+    manager_->isInit_.store(true);  // Stop uses SendRequest; drain manually below
+    ASSERT_EQ(manager_->DestroySessionEffect(CUR_SESSION_ID), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    manager_->Stop(CUR_SESSION_ID);  // SendRequest
+    manager_->HandleMsg();           // entry rescue finalizes + teardown
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_EQ(manager_->pendingCloseSessionId_, 0u);
+}
+
 // OSE-7: Same-instance rapid recreate -> Finalize detaches old node without StopEffect
 // (one Flush via CloseSessionEffectCore)
 HWTEST_F(HpaeOffloadSeTest, destroyThenCreate_sameInstance_finalizesWithoutStop, TestSize.Level0)

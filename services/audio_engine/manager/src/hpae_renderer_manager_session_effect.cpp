@@ -280,6 +280,7 @@ void HpaeRendererManager::DetachSessionEffectNodeForRefresh(uint32_t sessionId, 
 {
     // Invalidate any deferred Create so a stale retry cannot (re)materialize after the refresh.
     CancelPendingSessionEffectCreate(sessionId);
+    pendingSeFinalizeMap_.erase(sessionId);
     // Remove the physical SE node from the OLD cluster before a refresh-driven disconnect, WITHOUT
     // clearing attach state, so ConnectInputSession re-materializes it in the NEW cluster.
     auto processCluster = SafeGetMap(sceneClusterMap_, oldSceneType);

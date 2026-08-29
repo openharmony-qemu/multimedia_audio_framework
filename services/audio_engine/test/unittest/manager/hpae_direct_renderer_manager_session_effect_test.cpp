@@ -2709,3 +2709,63 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_CloseCB_StaleTokenNoOp, 
     manager_->DestroyStream(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
 }
+
+// SE_CloseCB_StopRescue: Stop while waiting -> entry rescue finalizes; late callback no-ops.
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_CloseCB_StopRescue, TestSize.Level0)
+{
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo()), SUCCESS);
+    WaitForMsgProcessing(manager_);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    auto instance = MakeTestEffectInstance(defaultConfig_);
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+    ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+    ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    manager_->Stop(TEST_SESSION_ID);  // rescue on the message thread
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    manager_->OnCloseCrossfadeDone(TEST_SESSION_ID);  // late: token cleared -> no-op
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}
+
+// SE_CloseCB_OnFadeDoneRescue: fade completion while waiting -> finalize before
+// DisConnectInputSession stops the chain being pulled.
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_CloseCB_OnFadeDoneRescue, TestSize.Level0)
+{
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo()), SUCCESS);
+    WaitForMsgProcessing(manager_);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    auto instance = MakeTestEffectInstance(defaultConfig_);
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+    ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+    ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    manager_->OnFadeDone(TEST_SESSION_ID);  // curNode_ matches -> rescue + disconnect + PAUSED
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    // Real OnFadeDone maps the session node's pre-state (PREPARED, not STOPPING) to PAUSED.
+    EXPECT_EQ(manager_->curNode_->GetState(), HPAE_SESSION_PAUSED);
+
+    manager_->OnCloseCrossfadeDone(TEST_SESSION_ID);  // late: no-op
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}
