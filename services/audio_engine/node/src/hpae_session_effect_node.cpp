@@ -203,7 +203,8 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessCloseCrossfade(const std::vector<Hp
     }
     tailOutputData_.Reset();
     AccountOutput(byteLen);
-    // Stay STOPPING — the manager-side FinalizeClose (delivered via the OnCloseCrossfadeDone callback) owns the actual node deletion.
+    // Stay STOPPING — the manager-side FinalizeClose (delivered via the OnCloseCrossfadeDone
+    // callback) owns the actual node deletion.
     return dryOutput;
 }
 
