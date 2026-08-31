@@ -145,8 +145,8 @@ public:
     int32_t UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName) override;
     int32_t SetAudioMonoState(bool audioMono) override;
     int32_t SetAudioBalanceValue(float audioBalance) override;
-    int32_t SuspendRenderSink(const std::string &sinkName) override;
-    int32_t RestoreRenderSink(const std::string &sinkName) override;
+    int32_t SuspendRenderSink(const std::string &sinkName, const std::string &macAddress) override;
+    int32_t RestoreRenderSink(const std::string &sinkName, const std::string &macAddress) override;
 
     int32_t SetAsrAecMode(int32_t asrAecMode) override;
     int32_t GetAsrAecMode(int32_t &asrAecMode) override;

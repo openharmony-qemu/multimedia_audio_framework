@@ -150,6 +150,9 @@ ohos_shared_library("hdiadapter_new") {
   if (audio_framework_feature_multi_bus) {
     defines += [ "MULTI_BUS_ENABLE" ]
   }
+  if (audio_framework_feature_multi_user_zone) {
+    defines += [ "MULTI_USER_ZONE" ]
+  }
   
   part_name = "audio_framework"
   subsystem_name = "multimedia"

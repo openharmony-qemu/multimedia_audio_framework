@@ -206,7 +206,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSuspendRenderSink_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    int32_t ret = audioServer->SuspendRenderSink("primary");
+    int32_t ret = audioServer->SuspendRenderSink("primary", "");
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -2767,7 +2767,7 @@ HWTEST_F(AudioServerUnitTest, RestoreRenderSink_001, TestSize.Level4)
 {
     EXPECT_NE(nullptr, audioServer);
     std::string sinkName = "primary";
-    int32_t ret = audioServer->RestoreRenderSink(sinkName);
+    int32_t ret = audioServer->RestoreRenderSink(sinkName, "");
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -3431,13 +3431,13 @@ HWTEST_F(AudioServerUnitTest, AudioServerSuspendRenderSink_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    int32_t ret = audioServer->SuspendRenderSink("usb");
+    int32_t ret = audioServer->SuspendRenderSink("usb", "");
     EXPECT_NE(SUCCESS, ret);
 
-    ret = audioServer->SuspendRenderSink("a2dp");
+    ret = audioServer->SuspendRenderSink("a2dp", "");
     EXPECT_NE(SUCCESS, ret);
 
-    ret = audioServer->SuspendRenderSink("offload");
+    ret = audioServer->SuspendRenderSink("offload", "");
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -3451,10 +3451,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerRestoreRenderSink_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    int32_t ret = audioServer->RestoreRenderSink("primary");
+    int32_t ret = audioServer->RestoreRenderSink("primary", "");
     EXPECT_NE(SUCCESS, ret);
 
-    ret = audioServer->RestoreRenderSink("usb");
+    ret = audioServer->RestoreRenderSink("usb", "");
     EXPECT_NE(SUCCESS, ret);
 }
 

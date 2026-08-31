@@ -211,6 +211,8 @@ private:
     bool IsPipeNotSupportReload(const std::shared_ptr<AudioPipeInfo> &pipe) const;
     void MatchCollaborativePipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    bool IsMultiA2dpPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::shared_ptr<AudioPipeInfo> &pipeInfo);
 
     std::shared_ptr<AudioPipeManager> pipeManager_;
     std::mutex callbackMutex_;

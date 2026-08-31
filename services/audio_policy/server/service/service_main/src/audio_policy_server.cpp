@@ -3687,6 +3687,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfosForZone(int32_t zoneId,
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId %{public}d is invalid", zoneId);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
 
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> allRendererChangeInfos;
     int32_t result = GetCurrentRendererChangeInfos(allRendererChangeInfos);

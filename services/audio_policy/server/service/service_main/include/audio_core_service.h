@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -110,6 +111,11 @@ struct ConcurrentCaptureDfxResult {
 struct RouteUpdateCallbackInfo {
     sptr<IStandardAudioPolicyManagerListener> listener;
     uid_t clientUid = 0;
+};
+
+struct A2dpSuspendState {
+    bool needSuspend = false;
+    std::chrono::steady_clock::time_point suspendUntil;
 };
 
 class AudioA2dpOffloadManager;
@@ -495,8 +501,9 @@ public:
         const std::string &caller);
     std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> PreviewInputDeviceSelection(
         const std::string &caller);
-    bool HandleA2dpSuspendWhenLoad();
-    void HandleA2dpRestore();
+    bool HandleA2dpSuspendWhenLoad(const std::string &macAddress);
+    void HandleA2dpRestore(const std::string &macAddress);
+    void EraseA2dpSuspendState(const std::string &macAddress);
     int32_t FetchInputDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     void SetAudioServerProxy();
@@ -802,7 +809,7 @@ private:
     bool IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs);
     bool HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeReasonExt &reason,
         const AudioDeviceDescriptor &actived, const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams);
-    void HandleA2dpSuspend();
+    void HandleA2dpSuspend(const std::string &macAddress);
     bool UpdateActiveDeviceAndVolumeBeforeMoveSession(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     void SyncVolWhenCurrentOutputDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &desc);
@@ -984,8 +991,7 @@ private:
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     std::mutex serviceFlagMutex_;
 
-    std::atomic<bool> a2dpNeedSuspend_ = { false };
-    std::chrono::steady_clock::time_point a2dpSuspendUntil_;
+    std::unordered_map<std::string, A2dpSuspendState> a2dpSuspendStates_;
     std::mutex a2dpSuspendMutex_;
     std::unordered_set<uint32_t> capturerSessionIdisRemovedSet_;
 
@@ -1112,10 +1118,13 @@ private:
 
 class RestoreA2dpSinkAction : public AsyncActionHandler::AsyncAction {
 public:
+    explicit RestoreA2dpSinkAction(const std::string &macAddress) : macAddress_(macAddress) {}
     void Exec() override
     {
-        AudioCoreService::GetCoreService()->HandleA2dpRestore();
+        AudioCoreService::GetCoreService()->HandleA2dpRestore(macAddress_);
     }
+private:
+    std::string macAddress_;
 };
 
 class RegisterSilentStreamCallbackAction : public AsyncActionHandler::AsyncAction {
