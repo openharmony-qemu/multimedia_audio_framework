@@ -1251,7 +1251,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_Create_001, TestSiz
     // Constructor with NearLink collaboration state
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_MCH_ROUTE_MODE);
     EXPECT_NE(node, nullptr);
-    EXPECT_NE(node->collaborationRouteMode_, COLLABORATION_MCH_ROUTE_MODE);
+    EXPECT_EQ(node->collaborationRouteMode_, COLLABORATION_MCH_ROUTE_MODE);
 }
 
 /**
@@ -1271,7 +1271,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_Bt_Create_002, TestSize.Leve
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     EXPECT_NE(node, nullptr);
-    EXPECT_NE(node->collaborationRouteMode_, COLLABORATION_DEFAULT_ROUTE_MODE);
+    EXPECT_EQ(node->collaborationRouteMode_, COLLABORATION_DEFAULT_ROUTE_MODE);
 }
 
 /**
