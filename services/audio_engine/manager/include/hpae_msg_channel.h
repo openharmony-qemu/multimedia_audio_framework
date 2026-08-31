@@ -197,6 +197,9 @@ struct HpaeNodeInfo : HpaeDfxNodeInfo {
     std::weak_ptr<INodeCallback> statusCallback;
     HpaeSourceBufferType sourceBufferType = HpaeSourceBufferType::HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
     HpaeSourceInputNodeType sourceInputNodeType = HpaeSourceInputNodeType::HPAE_SOURCE_DEFAULT;
+    // Set false on the normal path to keep processing invalid input and flush cached data;
+    // offload and other paths keep the default (true) and wait for valid input.
+    bool waitValidInput = true;
 
     SplitStreamType GetSplitStreamType() const
     {
