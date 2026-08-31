@@ -610,10 +610,10 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetVolumeReductionRatio_001, TestSize.Leve
     info->duckedDb = testDb;
 
     audioAdapterManager->lowerVolumeInfos_[STREAM_ALARM] = nullptr;
-    EXPECT_EQ(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 0);
+    EXPECT_EQ(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 1);
 
     audioAdapterManager->lowerVolumeInfos_[STREAM_ALARM] = info;
-    EXPECT_EQ(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 0);
+    EXPECT_EQ(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 1);
 
     info->duckedDb = testDb2;
     audioAdapterManager->lowerVolumeInfos_[STREAM_ALARM] = info;
