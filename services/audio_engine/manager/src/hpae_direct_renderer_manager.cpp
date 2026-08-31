@@ -229,7 +229,10 @@ void HpaeDirectRendererManager::DeleteInputSession(SessionEffectMoveMode moveMod
     if (sessionEffectNode_ != nullptr) {
         sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
     }
-    DisConnectInputSession();
+    // MoveStream: pass isStandby=true so StopDirectOutputNode skips the 160ms
+    // (PERIOD_NS * DIRECT_SINK_STANDBY_TIMES) standby wait — the stream is being
+    // handed to another sink, not parked; waiting here only delays the move.
+    DisConnectInputSession(moveMode == SessionEffectMoveMode::KEEP_ATTACH_STATE_FOR_MOVE);
 
     // Session Effect: clean up SE node. DisConnectInputSession already disconnected
     // the SE node from the chain (no bypass reconnect), so just clean up the physical node.
@@ -776,7 +779,7 @@ int32_t HpaeDirectRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkI
         Trace trace("HpaeDirectRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
         AUDIO_INFO_LOG("reload direct");
         if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
-            DisConnectInputSession();
+            DisConnectInputSession(true);
             DetachSessionEffectNodeForReload();  // Detach SE but keep attach state for reload
             DestroyDirectNodes();
         }
@@ -1023,18 +1026,12 @@ HpaeSinkInfo HpaeDirectRendererManager::GetSinkInfo()
 
 void HpaeDirectRendererManager::SendRequest(Request &&request, const std::string &funcName, bool isInit)
 {
-    if (!isInit && !IsInit()) {
-        AUDIO_ERR_LOG("HpaeDirectRendererManager not init, %{public}s excute failed", funcName.c_str());
-        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_DIRECT_MANAGER_TYPE, funcName,
-            "HpaeDirectRendererManager not init");
-        return;
-    }
-    hpaeNoLockQueue_.PushRequest(std::move(request));
     if (hpaeSignalProcessThread_ == nullptr) {
         AUDIO_ERR_LOG("hpaeSignalProcessThread_ is nullptr, %{public}s excute failed", funcName.c_str());
         HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_DIRECT_MANAGER_TYPE, funcName, "thread is nullptr");
         return;
     }
+    hpaeNoLockQueue_.PushRequest(std::move(request));
     hpaeSignalProcessThread_->Notify();
 }
 
