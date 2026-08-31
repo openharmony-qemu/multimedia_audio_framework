@@ -121,6 +121,7 @@ public:
     bool RestoreWirelessDeviceSilentState();
 
     bool HasSpecificDevicesConnected();
+    bool HasScoDevicesConnected();
 
 private:
     AudioDeviceManager();
