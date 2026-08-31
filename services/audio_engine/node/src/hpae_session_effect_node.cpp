@@ -119,7 +119,14 @@ HpaePcmBuffer *HpaeSessionEffectNode::SignalProcess(const std::vector<HpaePcmBuf
 
     // --- Phase 3C: Close SE crossfade ---
     if (closeCrossfadePending_) {
-        return ProcessCloseCrossfade(inputs);
+        HpaePcmBuffer *crossfadeOut = ProcessCloseCrossfade(inputs);
+        // The close block is done (mixed, passed through, or skipped): notify the manager so the
+        // deferred FinalizeClose runs on its message thread. Exactly once — the pending
+        // flag was consumed at ProcessCloseCrossfade entry.
+        auto statusCallback = GetNodeStatusCallback().lock();
+        CHECK_AND_RETURN_RET(statusCallback != nullptr, crossfadeOut);
+        statusCallback->OnCloseCrossfadeDone(GetSessionId());
+        return crossfadeOut;
     }
 
     HpaePcmBuffer *result = nullptr;
@@ -196,7 +203,8 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessCloseCrossfade(const std::vector<Hp
     }
     tailOutputData_.Reset();
     AccountOutput(byteLen);
-    // Stay STOPPING — FinalizeClose (next queue cycle) owns the actual node deletion.
+    // Stay STOPPING — the manager-side FinalizeClose (delivered via the OnCloseCrossfadeDone
+    // callback) owns the actual node deletion.
     return dryOutput;
 }
 

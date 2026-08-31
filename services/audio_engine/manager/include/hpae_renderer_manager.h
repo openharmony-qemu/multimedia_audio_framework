@@ -89,6 +89,7 @@ public:
     int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
     void OnFadeDone(uint32_t sessionId) override;
+    void OnCloseCrossfadeDone(uint32_t sessionId) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
     void OnRewindBuffer(uint32_t sessionId, uint64_t rewindTimeUs) override;
     void OnSessionEffectPreheatStateChanged(uint32_t sessionId, bool active) override;
@@ -205,18 +206,20 @@ private:
     void MaterializeSessionEffectFromAttachState(uint32_t sessionId, HpaeProcessorType sceneType);
     void HandleSessionEffectMaterializeFailure(uint32_t sessionId, int32_t ret,
         const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode);
-    // STOPPING + finalizeNow: run the Finalize a prior BeginClose queued for the next batch
-    // right now, so the old session is fully closed before the new one is created.
+    // STOPPING + finalizeNow: finalize the close a prior BeginClose left waiting on its crossfade
+    // callback right now, so the old session is fully closed before the new one is created.
     void FinalizeStoppingSessionEffect(uint32_t sessionId, std::optional<ChannelOverrideRoute> route,
         HpaeSessionState state, const std::shared_ptr<HpaeProcessCluster> &processCluster);
     // Rewind upstream history by the combined latency; clear the logical binding.
     void RewindAndClearSessionEffectAttach(uint32_t sessionId, uint64_t latency);
-    // Schedule the deferred Finalize close on the next queue batch.
-    void QueueSessionEffectFinalize(uint32_t sessionId, std::optional<ChannelOverrideRoute> route,
-        HpaeSessionState state, const std::weak_ptr<HpaeSessionEffectNode> &weakNode);
-    // Finalize close: deferred to the next HandleMsg batch (default) or run directly inside the
-    // destroy request (finalizeNow). Identity-checked: clears channel override + emits DISABLED
-    // only if the cluster actually finalized.
+    // Rescue/delivery: a close-crossfade is (or was) waiting on its completion callback —
+    // finalize now instead of waiting. Identity-checked against the pending-close token.
+    // Returns true when this call finalized the close.
+    bool FinalizePendingSessionEffectClose(uint32_t sessionId);
+    // Finalize close: driven by the OnCloseCrossfadeDone callback (smooth path), run directly
+    // inside the destroy request (finalizeNow, or non-ACTIVE node with no crossfade pending),
+    // or run by a Pause/Stop/OnFadeDone rescue. Identity-checked: clears channel override +
+    // emits DISABLED only if the cluster actually finalized.
     void FinalizeSessionEffectClose(uint32_t sessionId, std::optional<ChannelOverrideRoute> route,
         HpaeSessionState state, const std::weak_ptr<HpaeSessionEffectNode> &closingNode);
     uint64_t SetPendingSessionEffectCreate(uint32_t sessionId,
@@ -257,6 +260,11 @@ private:
     // per-session keyed so concurrent close+recreate on different sessions cannot drop a request.
     uint64_t pendingSeCreateGeneration_ = 0;
     std::unordered_map<uint32_t, std::pair<uint64_t, std::weak_ptr<IEffectInstance>>> pendingSeCreateMap_;
+
+    // Pending close-crossfade finalize waiting on OnCloseCrossfadeDone, per session:
+    // sessionId -> identity token of the closing node (guards late callbacks against
+    // finalizing a newer node after a rescue + recreate).
+    std::unordered_map<uint32_t, std::weak_ptr<HpaeSessionEffectNode>> pendingSeFinalizeMap_;
 
     int64_t lastOnUnderrunTime_ = 0;
     int64_t lastSessionStateChangeTime_ = 0;

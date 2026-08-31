@@ -162,6 +162,10 @@ public:
     virtual ~INodeCallback() = default;
     virtual void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation){};
     virtual void OnFadeDone(uint32_t sessionId){};
+    // SE close crossfade finished (the pending close block was consumed — mixed, passed through, or skipped);
+    // the manager owns the deferred FinalizeClose. Mirrors OnFadeDone dispatch: fired from the
+    // node's process context, the manager must marshal to its message thread.
+    virtual void OnCloseCrossfadeDone(uint32_t sessionId){};
     virtual void OnRequestLatency(uint32_t sessionId, uint64_t &latency){};
     virtual void OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition = 0){};
     virtual void OnRewindBuffer(uint32_t sessionId, uint64_t rewindTimeUs){};

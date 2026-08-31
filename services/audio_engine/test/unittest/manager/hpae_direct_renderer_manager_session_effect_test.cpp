@@ -796,10 +796,11 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Remove_001, TestSize.Lev
     ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    // Test: Remove SE -> BeginClose (node enters STOPPING); FinalizeClose runs on the next batch.
+    // Test: Remove SE -> BeginClose (node enters STOPPING); IDLE node has no crossfade armed,
+    // so FinalizeClose runs in-request.
     int32_t ret = manager_->RemoveSessionEffectNode();
 
-    // Verify: Success; FinalizeClose is queued, let the signal thread drain it before asserting.
+    // Verify: Success; the finalize already ran in-request, drain for a clean slate.
     EXPECT_EQ(ret, 0);
     WaitForMsgProcessing(manager_);
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
@@ -2195,30 +2196,43 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Remove_004, TestSize.Lev
  * @tc.name    : DestroyThenCreate_RequeuesUntilFinalized
  * @tc.type    : FUNC
  * @tc.number  : SE_Remove_005
- * @tc.desc    : Rapid recreate while the old node is STOPPING is not rejected as duplicate;
- *               it requeues and materializes after FinalizeClose (Begin/Finalize two-phase).
+ * @tc.desc    : Rapid recreate while the old close waits on its crossfade callback is not
+ *               rejected as duplicate; it requeues and materializes after the callback finalize.
  */
 HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Remove_005, TestSize.Level0)
 {
     ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo(TEST_SESSION_ID)), SUCCESS);
     WaitForMsgProcessing(manager_);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
 
     auto oldInst = MakeTestEffectInstance(defaultConfig_);
     auto newInst = MakeTestEffectInstance(defaultConfig_);
-    ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "old", oldInst, defaultConfig_),
-        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    WaitForMsgProcessing(manager_);
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+    ASSERT_EQ(manager_->InsertSessionEffectNode("old", oldInst, defaultConfig_), 0);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    // Arm the smooth close: ACTIVE node -> crossfade pending -> destroy waits on the callback.
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+    ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);  // BeginClose: STOPPING + token, nothing queued
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+    EXPECT_EQ(manager_->pendingCloseSessionId_, TEST_SESSION_ID);
 
-    // Destroy then immediately Create the same session. The Create must NOT be rejected as a
-    // duplicate while the old node is STOPPING; it requeues and materializes after FinalizeClose.
-    manager_->PostDestroySessionEffect(TEST_SESSION_ID);
+    // Create while STOPPING defers + requeues (do NOT WaitFor here: the retry spins until the
+    // close finalizes; IsMsgProcessing never settles in that window).
     manager_->PostCreateSessionEffect(TEST_SESSION_ID, "new", newInst, defaultConfig_);
+
+    // Finisher: the crossfade-completion callback finalizes the old close (FIFO behind the
+    // spinning retries); the next retry then materializes the new node.
+    manager_->OnCloseCrossfadeDone(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
 
-    // Old finalized, new materialized: the recreate was not lost.
+    // Old finalized, new materialized: the recreate was not lost. Counts asserted BEFORE
+    // DestroyStream — the teardown DeleteInputSession emits its own DISABLED.
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectNode_->GetEffectName(), "new");
+    EXPECT_EQ(manager_->pendingCloseSessionId_, 0u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
     manager_->DestroyStream(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
@@ -2383,11 +2397,12 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Destroy_StopShortCircuit
     manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
     ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
 
     auto callback = std::make_shared<StatusCallbackRecorder>();
     manager_->RegisterSendMsgCallback(callback);
 
-    // BeginClose drives the node into STOPPING and queues exactly ONE Finalize. Do NOT drain yet.
+    // BeginClose arms the crossfade + records the token. Do NOT drain yet.
     ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
@@ -2402,7 +2417,8 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Destroy_StopShortCircuit
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     EXPECT_EQ(manager_->pendingSeCreateSessionId_, 0u);
 
-    // Drain: exactly one Finalize runs -> node gone, exactly one DISABLED (no duplicate).
+    // Drain: the callback finalize runs once -> node gone, exactly one DISABLED (no duplicate).
+    manager_->OnCloseCrossfadeDone(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
@@ -2492,8 +2508,8 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_001, T
  * @tc.name    : DestroyFinalizeOnStoppingNode
  * @tc.type    : FUNC
  * @tc.number  : SE_SwitchFinalizeNow_002
- * @tc.desc    : finalizeNow destroy on an already-STOPPING node (pending finalize queued):
- *               STOPPING branch finalizes directly, following create still succeeds
+ * @tc.desc    : plain destroy on a non-ACTIVE node (no crossfade pending) finalizes in-request;
+ *               a following finalizeNow destroy is a safe no-op, the next create still succeeds
  */
 HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_002, TestSize.Level1)
 {
@@ -2512,8 +2528,8 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_002, T
     WaitForMsgProcessing(manager_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    // Test: plain destroy (BeginClose + queued finalize), then finalizeNow destroy (STOPPING
-    // branch -> direct finalize), then create — all back-to-back.
+    // Test: plain destroy (non-ACTIVE node -> in-request finalize), then finalizeNow destroy
+    // (no node left -> safe no-op), then create — all back-to-back.
     manager_->PostDestroySessionEffect(TEST_SESSION_ID);
     manager_->PostDestroySessionEffect(TEST_SESSION_ID, true);
     auto instance2 = MakeTestEffectInstance(defaultConfig_);
@@ -2521,7 +2537,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_002, T
     WaitForMsgProcessing(manager_);
 
     // Verify: create succeeded (old behavior: STOPPING skip left the node in place -> failure).
-    // Exactly one DISABLED (direct finalize; queued copy no-ops) and two ENABLED (both creates;
+    // Exactly one DISABLED (in-request finalize) and two ENABLED (both creates;
     // recorder registered before both, so both are recorded). Asserted at this drain point:
     // the later DestroyStream/DeleteInputSession teardown (Stop itself does not reset the
     // node) would add another DISABLED.
@@ -2541,9 +2557,9 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_002, T
  * @tc.name    : DestroyFinalizeOnStoppingNodeSync
  * @tc.type    : FUNC
  * @tc.number  : SE_SwitchFinalizeNow_003
- * @tc.desc    : finalizeNow destroy on an already-STOPPING node executes the STOPPING-branch
- *               direct finalize synchronously; the earlier-queued FinalizeClose no-ops on the
- *               identity check (exactly one DISABLED)
+ * @tc.desc    : finalizeNow destroy on an already-STOPPING node (close waiting on its crossfade
+ *               callback) executes the STOPPING-branch direct finalize synchronously, consuming
+ *               the pending-close token (exactly one DISABLED)
  */
 HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_003, TestSize.Level1)
 {
@@ -2562,8 +2578,10 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_003, T
     ASSERT_TRUE(manager_->DeactivateThread());
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    // BeginClose synchronously (plain): node enters STOPPING with exactly one Finalize queued,
-    // queue NOT drained yet — the state the switch-path destroy must handle inline.
+    // BeginClose synchronously (plain): node enters STOPPING with the close deferred to the
+    // crossfade callback (token recorded, nothing queued) — the state the switch-path destroy
+    // must handle inline.
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
     ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
@@ -2575,7 +2593,8 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_003, T
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 
-    // Drain: the stale queued FinalizeClose no-ops on the identity check (no second DISABLED).
+    // Drain: nothing further is queued — the finalizeNow destroy consumed the pending-close
+    // token (no second DISABLED).
     manager_->HandleMsg();
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
@@ -2584,4 +2603,169 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_003, T
     // Cleanup
     manager_->DestroyStream(TEST_SESSION_ID);
     manager_->HandleMsg();
+}
+
+// ---------------- SE close finalize driven by OnCloseCrossfadeDone (callback model) ----------------
+// Active-node destroy defers the finalize to the close-crossfade callback; Pause/Stop/OnFadeDone
+// rescue a still-waiting close (token-consumed); a late/stale callback no-ops on the cleared token.
+
+// SE_CloseCB_WaitAndCallback: ACTIVE node -> Remove arms crossfade + records token; the node
+// stays STOPPING until OnCloseCrossfadeDone lands, then Finalize runs on the message thread.
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_CloseCB_WaitAndCallback, TestSize.Level0)
+{
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo()), SUCCESS);
+    WaitForMsgProcessing(manager_);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    auto instance = MakeTestEffectInstance(defaultConfig_);
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+    ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+
+    ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);  // BeginClose, wait on callback
+    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+    EXPECT_EQ(manager_->pendingCloseSessionId_, TEST_SESSION_ID);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    WaitForMsgProcessing(manager_);  // nothing queued: still waiting
+    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+
+    manager_->OnCloseCrossfadeDone(TEST_SESSION_ID);  // SendRequest -> message thread
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}
+
+// SE_CloseCB_PauseRescue: Pause while waiting -> entry rescue finalizes; late callback no-ops.
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_CloseCB_PauseRescue, TestSize.Level0)
+{
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo()), SUCCESS);
+    WaitForMsgProcessing(manager_);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    auto instance = MakeTestEffectInstance(defaultConfig_);
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+    ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+    ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    manager_->Pause(TEST_SESSION_ID);  // rescue on the message thread
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    manager_->OnCloseCrossfadeDone(TEST_SESSION_ID);  // late: token cleared -> no-op
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}
+
+// SE_CloseCB_StaleTokenNoOp: rescue-then-recreate arms a NEW close on a NEW node; a callback
+// arriving after the rescue finalizes only the tokened (latest) close — the production guard
+// is the token-erase on rescue (see SE_CloseCB_PauseRescue); this test pins the convergence:
+// rescue-finalize + new close + one callback -> exactly two DISABLED total, node finalized.
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_CloseCB_StaleTokenNoOp, TestSize.Level0)
+{
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo()), SUCCESS);
+    WaitForMsgProcessing(manager_);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    auto instance = MakeTestEffectInstance(defaultConfig_);
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+    ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+    ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);  // old close waiting
+
+    manager_->Pause(TEST_SESSION_ID);  // rescue finalizes the old close
+    WaitForMsgProcessing(manager_);
+    ASSERT_EQ(manager_->sessionEffectNode_, nullptr);
+
+    // Recreate + arm a NEW close on a NEW node.
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+    ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+    ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+
+    // The OLD close's callback arrives late: the token names only the NEW close, so this call
+    // finalizes the NEW close (same session). Total DISABLED: rescue(1) + this finalize(1) = 2.
+    manager_->OnCloseCrossfadeDone(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 2u);
+
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}
+
+// SE_CloseCB_StopRescue: Stop while waiting -> entry rescue finalizes; late callback no-ops.
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_CloseCB_StopRescue, TestSize.Level0)
+{
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo()), SUCCESS);
+    WaitForMsgProcessing(manager_);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    auto instance = MakeTestEffectInstance(defaultConfig_);
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+    ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+    ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    manager_->Stop(TEST_SESSION_ID);  // rescue on the message thread
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    manager_->OnCloseCrossfadeDone(TEST_SESSION_ID);  // late: token cleared -> no-op
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}
+
+// SE_CloseCB_OnFadeDoneRescue: fade completion while waiting -> finalize before
+// DisConnectInputSession stops the chain being pulled.
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_CloseCB_OnFadeDoneRescue, TestSize.Level0)
+{
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo()), SUCCESS);
+    WaitForMsgProcessing(manager_);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    auto instance = MakeTestEffectInstance(defaultConfig_);
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+    ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
+    manager_->sessionEffectNode_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+    ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    manager_->OnFadeDone(TEST_SESSION_ID);  // curNode_ matches -> rescue + disconnect + PAUSED
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    // Real OnFadeDone maps the session node's pre-state (PREPARED, not STOPPING) to PAUSED.
+    EXPECT_EQ(manager_->curNode_->GetState(), HPAE_SESSION_PAUSED);
+
+    manager_->OnCloseCrossfadeDone(TEST_SESSION_ID);  // late: no-op
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
 }
