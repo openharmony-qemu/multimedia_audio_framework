@@ -146,8 +146,24 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneClient()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "register audio zone client failed.");
     client_ = temp;
     AudioPolicyManager::RegisterServerDiedCallBack([this]() {
-        CHECK_AND_RETURN_LOG(this->client_ != nullptr, "client_ is nullptr!");
-        this->client_->Restore();
+        sptr<AudioZoneClient> client;
+        sptr<IRemoteObject> object;
+        {
+            std::lock_guard<std::mutex> lock(clientMutex_);
+            CHECK_AND_RETURN_LOG(this->client_ != nullptr, "client_ is nullptr");
+            client = this->client_;
+            object = client->AsObject();
+        }
+        CHECK_AND_RETURN_LOG(object != nullptr, "client asobject is nullptr!");
+        int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioZoneClient(object);
+        AUDIO_INFO_LOG("Re-register audio zone client after server died, result: %{public}d", ret);
+        if (ret != SUCCESS) {
+            std::lock_guard<std::mutex> lock(clientMutex_);
+            client_ = nullptr;
+            AUDIO_WARNING_LOG("Re-register failed, clear client_ for next full registration");
+            return;
+        }
+        client->Restore();
     });
     return SUCCESS;
 }
