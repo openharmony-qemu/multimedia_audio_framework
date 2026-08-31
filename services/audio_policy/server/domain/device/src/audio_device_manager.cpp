@@ -1704,6 +1704,19 @@ bool AudioDeviceManager::HasSpecificDevicesConnected()
     return false;
 }
 
+bool AudioDeviceManager::HasScoDevicesConnected()
+{
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    for (const auto &deviceDesc : connectedDevices_) {
+        CHECK_AND_CONTINUE(deviceDesc != nullptr);
+        if (deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+            deviceDesc->connectState_ != VIRTUAL_CONNECTED) {
+            return true;
+        }
+    }
+    return false;
+}
+
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSingleMicSppDevice()
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);

@@ -857,6 +857,121 @@ HWTEST_F(AudioDeviceManagerUnitTest, HasSpecificDevicesConnected_NullptrDevice, 
 }
 
 /**
+ * @tc.name  : HasScoDevicesConnected_ScoConnected
+ * @tc.number: HasScoDevicesConnected_001
+ * @tc.desc  : Test HasScoDevicesConnected returns true for SCO device with non-virtual connect state
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasScoDevicesConnected_ScoConnected, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    desc->connectState_ = CONNECTED;
+    dm.connectedDevices_ = { desc };
+
+    bool result = dm.HasScoDevicesConnected();
+    EXPECT_TRUE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : HasScoDevicesConnected_ScoVirtualConnected
+ * @tc.number: HasScoDevicesConnected_002
+ * @tc.desc  : Test HasScoDevicesConnected returns false for SCO device with VIRTUAL_CONNECTED state
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasScoDevicesConnected_ScoVirtualConnected, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    dm.connectedDevices_ = { desc };
+
+    bool result = dm.HasScoDevicesConnected();
+    EXPECT_FALSE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : HasScoDevicesConnected_A2dpOnlyConnected
+ * @tc.number: HasScoDevicesConnected_003
+ * @tc.desc  : Test HasScoDevicesConnected returns false when only A2DP device is connected
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasScoDevicesConnected_A2dpOnlyConnected, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->connectState_ = CONNECTED;
+    dm.connectedDevices_ = { desc };
+
+    bool result = dm.HasScoDevicesConnected();
+    EXPECT_FALSE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : HasScoDevicesConnected_NoScoDevice
+ * @tc.number: HasScoDevicesConnected_004
+ * @tc.desc  : Test HasScoDevicesConnected returns false for non-SCO device
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasScoDevicesConnected_NoScoDevice, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    dm.connectedDevices_ = { desc };
+
+    bool result = dm.HasScoDevicesConnected();
+    EXPECT_FALSE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : HasScoDevicesConnected_EmptyDevices
+ * @tc.number: HasScoDevicesConnected_005
+ * @tc.desc  : Test HasScoDevicesConnected returns false when no devices connected
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasScoDevicesConnected_EmptyDevices, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    dm.connectedDevices_ = {};
+
+    bool result = dm.HasScoDevicesConnected();
+    EXPECT_FALSE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : HasScoDevicesConnected_NullptrDevice
+ * @tc.number: HasScoDevicesConnected_006
+ * @tc.desc  : Test HasScoDevicesConnected skips nullptr device in connectedDevices_
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasScoDevicesConnected_NullptrDevice, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    dm.connectedDevices_ = { nullptr };
+
+    bool result = dm.HasScoDevicesConnected();
+    EXPECT_FALSE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
  * @tc.name  : OnXmlParsingCompleted_NegativeDevice
  * @tc.number: OnXmlParsingCompleted_NegativeDevice_001
  * @tc.desc  : Test OnXmlParsingCompleted parses TYPE_NEGATIVE devices correctly
