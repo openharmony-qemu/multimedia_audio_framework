@@ -1970,7 +1970,7 @@ void AudioPipeSelector::MatchFastArmusbPipe(const std::shared_ptr<AudioPipeInfo>
     AUDIO_INFO_LOG("FastArmUsb pipe device changed, update moduleInfo with new device info");
     UpdateMouleInfoWitchDevice(deviceDesc, pipeInfo->moduleInfo_);
     pipeInfo->InitAudioStreamInfo();
-    pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD; 
+    pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
 }
 
 bool AudioPipeSelector::IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
