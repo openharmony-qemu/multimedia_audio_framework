@@ -287,6 +287,15 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     return isUpdateActiveDevice;
 }
 
+void AudioCoreService::SyncVolWhenCurrentOutputDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    CHECK_AND_RETURN(desc != nullptr && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP);
+
+#ifdef BLUETOOTH_ENABLE
+    Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(desc->macAddress_);
+#endif
+}
+
 void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
     CHECK_AND_RETURN(pipeInfo && pipeInfo->streamDescriptors_.size() > 0);
@@ -2686,6 +2695,7 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
     streamDesc->newDeviceDescs_ = descs;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
     ActivateOutputDevice(streamDesc, reason);
+    SyncVolWhenCurrentOutputDeviceChanged(descs.front());
 
     if (audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_DEFAULT) {
         audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
@@ -2734,6 +2744,7 @@ bool AudioCoreService::UpdateOutputDevice(std::shared_ptr<AudioDeviceDescriptor>
         WriteOutputRouteChangeEvent(desc, reason);
         audioRouterSelectStrategy_.UpdateCurrentOutputDevice(uid, {desc});
         AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
+        SyncVolWhenCurrentOutputDeviceChanged(desc);
         return true;
     }
     return false;
