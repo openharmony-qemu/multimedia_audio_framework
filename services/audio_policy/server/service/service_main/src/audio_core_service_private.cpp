@@ -703,8 +703,7 @@ void AudioCoreService::CheckAndCreateCallTransferForTransferCall(
 uint32_t AudioCoreService::GetVoiceCallMuteDuration(AudioDeviceDescriptor &curDesc, AudioDeviceDescriptor &newDesc)
 {
     uint32_t muteDuration = 0;
-    if (!curDesc.IsSameDeviceDesc(newDesc) &&
-        !(curDesc.IsSpeakerOrEarpiece() && newDesc.IsSpeakerOrEarpiece())) {
+    if (!curDesc.IsSameDeviceDesc(newDesc)) {
         muteDuration = VOICE_CALL_DEVICE_SWITCH_MUTE_US;
     }
     return muteDuration;
