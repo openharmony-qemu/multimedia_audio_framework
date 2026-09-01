@@ -4016,8 +4016,10 @@ bool AudioServer::AudioParameterValueCheck(const std::string &key, const std::st
 
 int32_t AudioServer::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice)
 {
-    bool ret = VerifyClientPermission(MANAGE_AUDIO_CONFIG_PERMISSION);
-    CHECK_AND_RETURN_RET_LOG(ret, false, "ReportPlaybackCaptureUserChoice failed: no permission.");
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    bool ret = VerifyClientPermission(CAPTURE_PLAYBACK_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No permission.");
     CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
     return AudioService::GetInstance()->ReportPlaybackCaptureUserChoice(sessionId, choice);
 }
