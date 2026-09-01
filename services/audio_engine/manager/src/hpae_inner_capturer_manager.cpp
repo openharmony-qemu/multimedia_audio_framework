@@ -311,8 +311,8 @@ int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkIn
         for (const auto &it: sinkInputNodeMap_) {
             HpaeProcessorType processorType =  it.second->GetSceneType();
             HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
-            nodeInfo.waitValidInput = false;
             if (!SafeGetMap(rendererSceneClusterMap_, processorType)) {
+                nodeInfo.waitValidInput = false;
                 rendererSceneClusterMap_[processorType] =
                     std::make_shared<HpaeProcessCluster>(BuildClusterNodeInfo(nodeInfo), sinkInfo_);
                 rendererSceneClusterMap_[processorType]->CreateNodes(it.second);
