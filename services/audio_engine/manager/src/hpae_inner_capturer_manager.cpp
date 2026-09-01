@@ -111,6 +111,7 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     OnNotifyDfxNodeAdmin(true, nodeInfo);
 #endif
     if (!SafeGetMap(rendererSceneClusterMap_, nodeInfo.sceneType)) {
+        nodeInfo.waitValidInput = false;
         rendererSceneClusterMap_[nodeInfo.sceneType] =
             std::make_shared<HpaeProcessCluster>(BuildClusterNodeInfo(nodeInfo), sinkInfo_);
     }
@@ -311,6 +312,7 @@ int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkIn
             HpaeProcessorType processorType =  it.second->GetSceneType();
             HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
             if (!SafeGetMap(rendererSceneClusterMap_, processorType)) {
+                nodeInfo.waitValidInput = false;
                 rendererSceneClusterMap_[processorType] =
                     std::make_shared<HpaeProcessCluster>(BuildClusterNodeInfo(nodeInfo), sinkInfo_);
                 rendererSceneClusterMap_[processorType]->CreateNodes(it.second);
@@ -790,6 +792,7 @@ int32_t HpaeInnerCapturerManager::CreateRendererInputSessionInner(const HpaeStre
     sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
 
     if (!SafeGetMap(rendererSceneClusterMap_, nodeInfo.sceneType)) {
+        nodeInfo.waitValidInput = false;
         rendererSceneClusterMap_[nodeInfo.sceneType] =
             std::make_shared<HpaeProcessCluster>(BuildClusterNodeInfo(nodeInfo), sinkInfo_);
         if (rendererSceneClusterMap_[nodeInfo.sceneType]->SetupAudioLimiter() != SUCCESS) {
