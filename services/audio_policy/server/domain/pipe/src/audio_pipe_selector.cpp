@@ -1973,7 +1973,7 @@ void AudioPipeSelector::MatchSpecialRemotePipe(const std::shared_ptr<PipeStreamP
     // special remote pipe need to reload if format is mismatching
     CHECK_AND_RETURN(!matchState && IsSpecialRemotePipe(pipeInfo));
 
-    AUDIO_INFO_LOG("mismatching special remote pipe need to recreate to match stream format");
+    AUDIO_INFO_LOG("mismatching special remote pipe need to recreate to match stream format.");
     UpdatePipeInfoFromStreamProp(streamDesc, streamPropInfo, *pipeInfo);
     pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
 }
