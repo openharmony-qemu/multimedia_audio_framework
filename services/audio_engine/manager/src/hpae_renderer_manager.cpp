@@ -87,9 +87,6 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
-    // Keep processing invalid input so the loudness node can flush its cache;
-    // offload/direct paths keep the default (true) and wait for valid input.
-    nodeInfo.waitValidInput = false;
     if (Util::IsEnhancedRoutingSupported()) {
         nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
         nodeInfo.renderId = renderId_;
@@ -241,6 +238,9 @@ void HpaeRendererManager::CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int3
 void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
 {
     Trace trace("HpaeRendererManager::CreateProcessCluster");
+    // Keep processing invalid input so the loudness node can flush its cache;
+    // offload/direct paths keep the default (true) and wait for valid input.
+    nodeInfo.waitValidInput = false;
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
     int32_t processClusterDecision;
     if (Util::IsEnhancedRoutingSupported()) {
