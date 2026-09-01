@@ -57,7 +57,7 @@ public:
     void OnUpdateRouteSupport(bool isSupported);
     void OnUpdateAnahsSupport(std::string anahsShowType);
     void OnUpdateEac3Support(bool isSupported);
-    void OnHasEarpiece();
+    void OnHasEarpieceParsed(bool hasEarpiece);
     void OnMultSupMode(bool supportMultSupMode);
     void OnSupportUltraFast(bool supportUltraFast);
     void OnIsSupportIndependentPipe(bool isSupportIndependentPipe);
@@ -96,8 +96,6 @@ public:
     bool GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info);
     bool GetHasEarpiece();
     bool GetUltraFastFlag();
-    void UpdateHasEarpieceForChipProp();
-    void OnIsChipGenneralConfig(bool isChipGeneral);
     bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool GetFastStreamSupport(AudioStreamInfo &streamInfo, std::shared_ptr<AdapterDeviceInfo> &deviceInfo);
@@ -176,7 +174,6 @@ private:
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     std::unordered_map<ClassType, AudioModuleInfo> dynamicCapturerConfig_ = {};
     bool hasEarpiece_ = false;
-    bool isChipGeneralConfig_ = false;
     bool isUpdateRouteSupported_ = true;
     bool isSupportEac3_ = false;
     std::unordered_map<std::string, std::string> volumeGroupData_;
