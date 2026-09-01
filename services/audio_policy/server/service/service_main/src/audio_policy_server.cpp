@@ -4989,6 +4989,20 @@ int32_t AudioPolicyServer::ResumeAudioFocusForExtAudioZone(const std::vector<int
     return AudioZoneService::GetInstance().ResumeAudioFocusForExtAudioZone(zoneIds);
 }
 
+int32_t AudioPolicyServer::ExcludeUidForExtZone(int32_t uid)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    return AudioZoneService::GetInstance().ExcludeUidForExtZone(uid);
+}
+
+int32_t AudioPolicyServer::UnexcludeUidForExtZone(int32_t uid)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    return AudioZoneService::GetInstance().UnexcludeUidForExtZone(uid);
+}
+
 int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
