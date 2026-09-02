@@ -13,6 +13,24 @@
 
 1.0 {
   global:
+    # ---- public factory (interfaces/inner_api/.../audio_loopback.h) ----
+    # AudioLoopback::CreateAudioLoopback x2 (audio_loopback.cpp:78/:84) is the
+    # entry point referenced BY NAME from the NAPI (napi_audio_loopback.cpp:
+    # 149/:152), Taihe FFI (taihe_audio_loopback.cpp:78) and the unit tests;
+    # the wrapper is reached via make_shared inside it and via the derived
+    # TestAudioLoopbackWrapper in audio_loopback_wrapper_unit_test.
+    *CreateAudioLoopback*;
+    *AudioLoopbackWrapper*;
+    *AudioLoopbackPrivate*;
+
+    # ---- abstract public base class AudioLoopback ----
+    # Key function (~AudioLoopback, audio_loopback.cpp:147) lives in this DSO,
+    # so the base vtable/typeinfo are emitted here (RC02). Anchored mangling
+    # patterns INSTEAD of a *AudioLoopback* class wildcard: that wildcard would
+    # also drag the TU-local AudioLoopbackDebugCallbackImpl (audio_loopback.
+    # cpp:46, not declared in any header) into the dynsym. The "12" length
+    # prefix pins the match to the base class exactly -- wrapper/private
+    # mangle as 20AudioLoopback....
     _ZN4OHOS13AudioStandard12AudioLoopbackD*;
     _ZTVN4OHOS13AudioStandard12AudioLoopbackE;
     _ZTIN4OHOS13AudioStandard12AudioLoopbackE;
