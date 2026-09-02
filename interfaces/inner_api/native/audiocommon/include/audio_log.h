@@ -117,6 +117,22 @@
         }                                              \
     } while (0)
 
+#define CHECK_AND_RETURN_RET_DLOG(cond, ret, fmt, ...)  \
+    do {                                               \
+        if (!(cond)) {                                 \
+            AUDIO_DEBUG_LOG(fmt, ##__VA_ARGS__);       \
+            return ret;                                \
+        }                                              \
+    } while (0)
+
+#define CHECK_AND_RETURN_RET_WLOG(cond, ret, fmt, ...)  \
+    do {                                               \
+        if (!(cond)) {                                 \
+            AUDIO_WARNING_LOG(fmt, ##__VA_ARGS__);     \
+            return ret;                                \
+        }                                              \
+    } while (0)
+
 #define CHECK_AND_CALL_FUNC_RETURN_RET_LOG(cond, ret, func, fmt, ...) \
     do {                                               \
         if (!(cond)) {                                 \

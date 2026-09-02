@@ -130,20 +130,16 @@ int32_t AuxiliarySink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
     Trace trace(logTag_ + "::RenderFrame len:" + std::to_string(len) + "curPos:" +
         std::to_string(curWritePos_) + "writeLen:" + std::to_string(writeLenth));
     int32_t ret = memcpy_s(writePtr, eachSpanFramesSize_, static_cast<void *>(&data), writeLenth);
-    if (ret != EOK) {
-        AUDIO_DEBUG_LOG("CogStream:%{public}d copy data fail, ret:%{public}d", sinkId_, ret);
-        return ERR_WRITE_FAILED;
-    }
+    CHECK_AND_RETURN_RET_DLOG(ret == EOK, ERR_WRITE_FAILED,
+        "CogStream:%{public}d copy data fail, ret:%{public}d", sinkId_, ret);
     writeLen = writeLenth;
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERR_INVALID_HANDLE, "deviceManager is null");
     ret = deviceManager->NotifyCognitionData("primary", sinkId_, writeLen, curWritePos_);
-    if (ret != SUCCESS) {
-        AUDIO_DEBUG_LOG("notify CogStream:%{public}d data fail, ret:%{public}d", sinkId_, ret);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_DLOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+        "notify CogStream:%{public}d data fail, ret:%{public}d", sinkId_, ret);
     curWritePos_ = (curWritePos_ == 0) ? eachSpanFramesSize_ : 0;
 
     HdiDfxUtils::PrintSinkVolInfo(static_cast<char *>(&data), writeLen, attr_, logTag_, volumeDataCount_);
