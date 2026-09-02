@@ -3283,7 +3283,6 @@ std::shared_ptr<IHpaeRendererManager> HpaeManager::GetAuxiliaryRendererManager()
 
 int32_t HpaeManager::SetAuxiliarySinkEnable(bool isEnabled)
 {
-    AUDIO_INFO_LOG("set to isEnabled:[%{public}s]", isEnabled ? "true" : "false");
     auxSinkEnable_ = isEnabled;
     
     auto request = [this, isEnabled]() {
