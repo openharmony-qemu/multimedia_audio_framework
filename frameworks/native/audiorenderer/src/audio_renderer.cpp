@@ -709,7 +709,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
     audioInterrupt_.streamUsage = rendererInfo_.streamUsage;
     audioInterrupt_.contentType = rendererInfo_.contentType;
     audioInterrupt_.sessionStrategy = strategy_;
-    audioInterrupt_.isCheckMuteStream = true;
+    audioInterrupt_.isCheckMuteStream = isHWDecodingType_ ? false : true;
     audioInterrupt_.api = rendererInfo_.playerType;
     audioInterrupt_.isCallWaitingTone = rendererInfo_.isCallWaitingTone;
     audioInterrupt_.bundleName = audioStream_->GetBundleName();
