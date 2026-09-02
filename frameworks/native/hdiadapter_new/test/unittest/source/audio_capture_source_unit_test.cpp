@@ -1465,6 +1465,26 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_015, TestSize.Level
 }
 
 /**
+ * @tc.name   : Test InitAudioSampleAttr for interphone routeFlag
+ * @tc.number : InitAudioSampleAttr_Interphone_001
+ * @tc.desc   : Test InitAudioSampleAttr sets param.type by interphone routeFlag
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, InitAudioSampleAttr_Interphone_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(TEST_CAPUTRE_ID);
+    ASSERT_NE(captureSource, nullptr);
+    struct AudioSampleAttributes param;
+    // true branch: routeFlag == AUDIO_INPUT_FLAG_INTERPHONE -> AUDIO_D2D
+    captureSource->attr_.routeFlag = AUDIO_INPUT_FLAG_INTERPHONE;
+    captureSource->InitAudioSampleAttr(param);
+    EXPECT_EQ(param.type, AUDIO_D2D);
+    // false branch: routeFlag != AUDIO_INPUT_FLAG_INTERPHONE -> AUDIO_IN_MEDIA
+    captureSource->attr_.routeFlag = AUDIO_INPUT_FLAG_NORMAL;
+    captureSource->InitAudioSampleAttr(param);
+    EXPECT_EQ(param.type, AUDIO_IN_MEDIA);
+}
+
+/**
  * @tc.name   : Test GetMultiDeviceUniqueId API
  * @tc.number : GetMultiDeviceUniqueId_001
  * @tc.desc   : Test GetMultiDeviceUniqueId for primary extra typec capturer
