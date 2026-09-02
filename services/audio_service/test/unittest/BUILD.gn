@@ -30,6 +30,7 @@ config("module_private_config") {
     "../../server/include",
     "../../../../frameworks/native/audioschedule/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../test/unittest/common/include",
     "../../../../../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
   ]
 }
@@ -474,6 +475,8 @@ ohos_unittest("audio_service_unit_test") {
     "./server/audio_server_unit_test.cpp",
     "./client/i_audio_stream_unit_test.cpp",
     "./client/audio_manager_listener_stub_unit_test.cpp",
+    "./client/audio_manager_listener_stub_impl_aiut.cpp",
+    "audio_stream_client_manager_aiut.cpp",
   ]
 
   deps = [
@@ -1327,7 +1330,10 @@ ohos_unittest("resource_manager_adapter_unit_test") {
   module_out_path = module_output_path
   include_dirs = [ "../../server/include" ]
 
-  sources = [ "resource_manager_adapter_unit_test.cpp" ]
+  sources = [
+    "resource_manager_adapter_unit_test.cpp",
+    "resource_manager_adapter_aiut.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -2491,6 +2497,7 @@ ohos_unittest("audio_system_client_policy_manager_unit_test") {
 
   sources = [
     "./client/src/policy/audio_system_client_policy_manager_unit_test.cpp",
+    "./client/src/policy/audio_system_client_policy_manager_aiut.cpp",
   ]
 
   configs = [ ":module_private_config" ]
