@@ -238,9 +238,6 @@ void HpaeRendererManager::CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int3
 void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
 {
     Trace trace("HpaeRendererManager::CreateProcessCluster");
-    // Keep processing invalid input so the loudness node can flush its cache;
-    // offload/direct paths keep the default (true) and wait for valid input.
-    nodeInfo.waitValidInput = false;
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
     int32_t processClusterDecision;
     if (Util::IsEnhancedRoutingSupported()) {
@@ -1430,7 +1427,6 @@ void HpaeRendererManager::InitDefaultNodeInfo()
     defaultNodeInfo.statusCallback = weak_from_this();
     defaultNodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
     defaultNodeInfo.renderId = renderId_;
-    defaultNodeInfo.waitValidInput = false;
     sceneClusterMap_[HPAE_SCENE_EFFECT_NONE] = std::make_shared<HpaeProcessCluster>(defaultNodeInfo, sinkInfo_);
     sceneTypeToProcessClusterCountMap_[HPAE_SCENE_EFFECT_NONE] = 1;
 }

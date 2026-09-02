@@ -194,6 +194,7 @@ void HpaeProcessCluster::CreateLoudnessGainNode(uint32_t sessionId, const HpaeNo
     CHECK_AND_RETURN_LOG(!SafeGetMap(idLoudnessGainNodeMap_, sessionId),
         "sessionId %{public}d loudnessGainNode already exist", sessionId);
     HpaeNodeInfo loudnessGainNodeInfo = preNodeInfo;
+    loudnessGainNodeInfo.waitValidInput = false;
     idLoudnessGainNodeMap_[sessionId] = std::make_shared<HpaeLoudnessGainNode>(loudnessGainNodeInfo);
 }
 
@@ -233,7 +234,6 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
     AUDIO_INFO_LOG("sessionId is %{public}u, streamType is %{public}d, sceneType is %{public}d",
         sessionId, preNode->GetNodeInfo().streamType, preNode->GetNodeInfo().sceneType);
     if (SafeGetMap(idConverterMap_, sessionId)) {
-        idConverterMap_[sessionId]->DisConnect(preNode);
         auto seNode = SafeGetMap(idSessionEffectMap_, sessionId);
         if (seNode) {
             seNode->PauseEffect();
@@ -241,6 +241,7 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
         } else {
             idLoudnessGainNodeMap_[sessionId]->DisConnect(idConverterMap_[sessionId]);
         }
+        idConverterMap_[sessionId]->DisConnect(preNode);
         idGainMap_[sessionId]->DisConnect(idLoudnessGainNodeMap_[sessionId]);
         mixerNode_->DisConnect(idGainMap_[sessionId]);
         AUDIO_INFO_LOG("Exist converterNode preOutNum is %{public}zu", mixerNode_->GetPreOutNum());
