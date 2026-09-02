@@ -23,9 +23,11 @@
 #include <mutex>
 #include <vector>
 #include <atomic>
+#include <functional>
 
 #include "i_audio_process_stream.h"
 #include "audio_info.h"
+#include "audio_capturer_types.h"
 #include "audio_device_descriptor.h"
 #include "ipc_stream_in_server.h"
 #include "playback_capturer_filter_listener.h"
@@ -47,6 +49,7 @@ enum ReuseEndpointType : uint32_t {
 } // anonymous namespace
 
 using MuteStateChangeCallbck = std::function<void(bool)>;
+using WakeupEventCallback = std::function<int32_t(const AudioWakeupTrackInfo &)>;
 
 class AudioService : public ICapturerFilterListener
 {
@@ -126,6 +129,8 @@ public:
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
     void SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList);
     void NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted);
+    int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo);
+    void RegisterWakeupEventCallback(WakeupEventCallback callback);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
@@ -168,6 +173,7 @@ private:
     int32_t DisableDualStreamForNormalStream(const uint32_t sessionId);
 private:
     std::mutex foregroundSetMutex_;
+    WakeupEventCallback wakeupEventCallback_;
     std::set<std::string> foregroundSet_;
     std::set<uint32_t> foregroundUidSet_;
     std::mutex processListMutex_;

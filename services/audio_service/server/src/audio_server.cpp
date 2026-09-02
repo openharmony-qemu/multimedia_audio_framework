@@ -964,6 +964,8 @@ void AudioServer::OnStart()
     }
     InitMaxRendererStreamCntPerUid();
     AudioInnerCall::GetInstance()->RegisterAudioServer(this);
+    AudioService::GetInstance()->RegisterWakeupEventCallback(
+        [this](const AudioWakeupTrackInfo &info) { return ReportWakeupEvent(info); });
     asyncHandler_ = std::make_shared<AsyncActionHandler>("OS_ASAsyncHandler");
 
     // After publish, other process can call audioserver functions through ipc
