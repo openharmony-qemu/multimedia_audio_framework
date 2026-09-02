@@ -768,7 +768,13 @@ void HpaeRendererManager::ConnectInputCluster(uint32_t sessionId, HpaeProcessorT
     std::shared_ptr<HpaeGainNode> sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
     if (sessionGainNode != nullptr) {
         sessionGainNode->ResetVolume();
-        sessionGainNode->ResetFadeState(); // clear stale fade (e.g. DONE_FADEOUT) on reconnect
+        // Arm fade-in only when the node resumes from a fade lifecycle (Pause->Start, stale
+        // DONE_FADEOUT); a hot re-plumb of a cleanly playing session keeps gain continuity.
+        if (sessionGainNode->HasPendingFade()) {
+            sessionGainNode->ResetFadeState();
+        } else {
+            sessionGainNode->ClearFadeState();
+        }
     }
     // Materialize physical SE node from attach-state (survives reload/disconnect).
     // CreateSessionEffectNode has a duplicate-guard, so calling it when the node already exists is safe.
@@ -917,12 +923,15 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
+        // Arm fade-in right after connect: SessionEffectStart below can take milliseconds and
+        // a client that pre-buffered data before Start would otherwise leak full-gain frames
+        // in the connect-to-arm window.
+        SetSessionFade(sessionId, OPERATION_STARTED);
         HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (HasSessionEffect(sessionId)) {
             sceneClusterMap_[sceneType]->SessionEffectStart(sessionId);
         }
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
-        SetSessionFade(sessionId, OPERATION_STARTED);
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = true;
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_RUNNING);
@@ -942,12 +951,13 @@ int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
+        // Arm fade-in right after connect, before SessionEffectStart (see Start for rationale).
+        SetSessionFade(sessionId, OPERATION_STARTED);
         HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (HasSessionEffect(sessionId)) {
             sceneClusterMap_[sceneType]->SessionEffectStart(sessionId);
         }
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
-        SetSessionFade(sessionId, OPERATION_STARTED);
         UpdateClusterStreamInfo(sceneType);
         if (syncId >= 0) {
             HandleSyncId(sessionId, syncId);

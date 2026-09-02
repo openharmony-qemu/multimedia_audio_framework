@@ -460,6 +460,47 @@ HWTEST_F(HpaeProcessClusterTest, DeferredStop_001, TestSize.Level0)
 }
 
 /**
+ * @tc.name  : CreateGainNode_ReuseBranchConditionalFade
+ * @tc.type  : FUNC
+ * @tc.number: CreateGainNode_001
+ * @tc.desc  : Reused gain node keeps continuity when cleanly playing (no fade-in armed) and keeps
+ *             the arm path when resuming from a fade lifecycle (stale DONE_FADEOUT).
+ */
+HWTEST_F(HpaeProcessClusterTest, CreateGainNode_ReuseBranchConditionalFade, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(cluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(cluster->CreateNodes(sinkInputNode), SUCCESS);
+    auto gainNode = cluster->GetGainNodeById(nodeInfo.sessionId);
+    ASSERT_NE(gainNode, nullptr);
+
+    // Cleanly playing node: the reuse branch must only clear, never arm (no duck on hot re-plumb).
+    gainNode->fadeInState_ = false;
+    gainNode->fadeOutState_ = FadeOutState::NO_FADEOUT;
+    cluster->CreateGainNode(nodeInfo.sessionId, nodeInfo);
+    EXPECT_EQ(gainNode->fadeInState_, false);
+
+    // Node resuming from a fade lifecycle (stale DONE_FADEOUT left by a Pause): the reuse branch
+    // keeps the legacy arm path so the node does not step to full volume uncompensated.
+    gainNode->fadeOutState_ = FadeOutState::DONE_FADEOUT;
+    cluster->CreateGainNode(nodeInfo.sessionId, nodeInfo);
+    EXPECT_EQ(gainNode->fadeInState_, true);
+
+    cluster->AudioRendererRelease(nodeInfo, sinkInfo);
+}
+
+/**
  * @tc.name  : DeferredStop_002
  * @tc.type  : FUNC
  * @tc.number: DeferredStop_002

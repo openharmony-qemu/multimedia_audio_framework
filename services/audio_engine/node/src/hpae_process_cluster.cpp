@@ -158,8 +158,13 @@ void HpaeProcessCluster::CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &
         idGainMap_[sessionId] = std::make_shared<HpaeGainNode>(gainNodeInfo);
     } else {
         // Reuse existing node: clear stale fade state (e.g. DONE_FADEOUT left by a previous
-        // Pause) so SignalProcess won't keep silencing data after the reconnect.
-        gainNode->ResetFadeState();
+        // Pause) so SignalProcess won't keep silencing data after the reconnect. Arm fade-in
+        // only when resuming from a fade lifecycle; keep continuity for a cleanly playing node.
+        if (gainNode->HasPendingFade()) {
+            gainNode->ResetFadeState();
+        } else {
+            gainNode->ClearFadeState();
+        }
         AUDIO_INFO_LOG("sessionId %{public}d gainNode already exist, reset fade state", sessionId);
     }
 }
