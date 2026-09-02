@@ -113,6 +113,7 @@ private:
     void RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener);
     int32_t GetCapturerFlagsByRoute(uint32_t routeFlag);
     bool CheckVoiceDownlinkPermission();
+    int32_t StartStream();
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;
