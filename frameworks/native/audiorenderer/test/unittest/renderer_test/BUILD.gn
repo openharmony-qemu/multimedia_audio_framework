@@ -33,6 +33,7 @@ ohos_unittest("audio_renderer_unit_test") {
     "../../../../../../services/audio_service/common/include/dfx",
     "../../../../../audio_utils/include",
     "../../../../audioschedule/include",
+    "../../../../../../test/unittest/common/include",
   ]
   cflags = [
     "-Wall",
@@ -45,6 +46,7 @@ ohos_unittest("audio_renderer_unit_test") {
     "src/audio_renderer_setter_unit_test.cpp",
     "src/audio_renderer_unit_test.cpp",
     "src/audio_renderer_third_unit_test.cpp",
+    "src/audio_renderer_pub_aiut.cpp",
   ]
 
   deps = [
