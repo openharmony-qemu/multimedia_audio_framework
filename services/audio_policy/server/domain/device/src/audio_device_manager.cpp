@@ -1655,6 +1655,20 @@ bool AudioDeviceManager::RestoreWirelessDeviceSilentState()
     return isStatusUpdated;
 }
 
+void AudioDeviceManager::UpdateDeviceVisibleMode(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    for (auto &desc : connectedDevices_) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+        CHECK_AND_CONTINUE(desc->networkId_ == devDesc->networkId_ &&
+            desc->deviceType_ == devDesc->deviceType_ &&
+            desc->macAddress_ == devDesc->macAddress_ &&
+            desc->deviceRole_ == devDesc->deviceRole_ &&
+            desc->visibleMode_ != devDesc->visibleMode_);
+        desc->visibleMode_ = devDesc->visibleMode_;
+    }
+}
+
 // Check whether all output streams are silent or standby
 bool AudioDeviceManager::CheckAllStreamsSilentOrStandByOnDevice()
 {
