@@ -2295,12 +2295,18 @@ ohos_unittest("audio_service_common_unit_test") {
     "../../../../services/audio_engine/manager/include",
     "../../../../services/audio_engine/plugin/resample/include",
     "../../../../services/audio_engine/node/include",
+    "../../../../test/unittest/audio_test_utils/include",
   ]
 
   sources = [
     "./common/src/audio_static_buffer_processor_unit_test.cpp",
     "./common/src/audio_mute_factor_manager_unit_test.cpp",
     "./common/src/audio_process_config_unit_test.cpp",
+    "./common/src/audio_resample_aiut.cpp",
+    "./common/src/audio_highpass_filter_aiut.cpp",
+    "./common/src/recorder_dfx_writer_aiut.cpp",
+    "./common/src/audio_stream_concurrency_detector_aiut.cpp",
+    "./common/src/app_bundle_manager_aiut.cpp",
   ]
 
   deps = [

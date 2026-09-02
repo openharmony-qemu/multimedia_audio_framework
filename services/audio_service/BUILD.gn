@@ -561,6 +561,7 @@ config("audio_service_config") {
     "../../services/audio_service/test/unittest:audio_server_extra_unit_test",
     "../../services/audio_service/test/unittest:audio_service_second_unit_test",
     "../../services/audio_service/test/unittest:audio_manager_stub_unit_test",
+    "../../services/audio_service/test/unittest:audio_service_common_unit_test",
   ]
 
   include_dirs = [
