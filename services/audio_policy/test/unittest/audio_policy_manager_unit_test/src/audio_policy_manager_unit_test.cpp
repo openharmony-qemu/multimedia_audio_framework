@@ -1359,5 +1359,29 @@ HWTEST(AudioPolicyManager, GetAudioPolicyProxyFromSamgr_004, TestSize.Level1)
     const sptr<IAudioPolicy> gspNonBlock = AudioPolicyManager::GetAudioPolicyManagerProxy(false);
     EXPECT_NE(gspNonBlock, nullptr);
 }
+
+/**
+* @tc.name  : Test notifying audio separation effect disabled when audio policy server dies.
+* @tc.number: NotifyAudioSeparationEffectDisabledForServerDied_001.
+* @tc.desc  : Test the registered callback receives false without changing its registration.
+*/
+HWTEST(AudioPolicyManager, NotifyAudioSeparationEffectDisabledForServerDied_001, TestSize.Level1)
+{
+    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager, nullptr);
+    audioPolicyManager->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    ASSERT_NE(audioPolicyManager->audioPolicyClientStubCB_, nullptr);
+
+    auto callback = std::make_shared<ConcreteAudioSeparationEffectEnabledChangeCallback>();
+    ASSERT_NE(callback, nullptr);
+    ASSERT_EQ(audioPolicyManager->audioPolicyClientStubCB_->AddAudioSeparationEffectEnabledChangeCallback(callback),
+        SUCCESS);
+
+    audioPolicyManager->NotifyAudioSeparationEffectDisabledForServerDied();
+
+    EXPECT_FALSE(callback->enabled_);
+    EXPECT_EQ(callback->callCount_, 1);
+    EXPECT_EQ(audioPolicyManager->audioPolicyClientStubCB_->GetAudioSeparationEffectEnabledChangeCallbackSize(), 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS
