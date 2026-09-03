@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifdef LOG_TAG
+#define LOG_TAG "AudioLoopbackManager"
+#endif
 
 #include "audio_loopback_manager.h"
 #include "loopback_in_server.h"
@@ -138,9 +141,9 @@ int32_t AudioLoopbackManager::DestroyLoopback(LoopbackType type, int32_t pid)
             if (handlerPid_ == pid) {
                 globalHandlerCallback_ = nullptr;
                 handlerPid_ = -1;
-                globalHandlerState_ = LOOPBACK_AVAILABLE_IDLE;
+                globalHandlerState_ = LOOPBACK_UNAVAILABLE_SCENE;
                 globalHandlerVolume_ = 0.0f;
-                BroadcastStatusChange(static_cast<int>(LOOPBACK_AVAILABLE_IDLE),
+                BroadcastStatusChange(static_cast<int>(globalHandlerState_),
                     static_cast<int>(LOOPBACK_REASON_HANDLER_DIED));
                 AUDIO_INFO_LOG("global handler destroyed for pid %{public}d", pid);
             }
@@ -189,25 +192,23 @@ int32_t AudioLoopbackManager::Enable(LoopbackType type, bool enable, int32_t pid
 
         globalHandlerCallback_->OnCommandResult(enable ? LOOPBACK_CMD_ENABLE : LOOPBACK_CMD_DISABLE, true, SUCCESS);
 
-        if (enable) {
-            globalHandlerState_ = LOOPBACK_AVAILABLE_RUNNING;
-        } else {
-            globalHandlerState_ = LOOPBACK_AVAILABLE_IDLE;
-        }
-
-        BroadcastToControls(enable ? static_cast<int>(LOOPBACK_CMD_ENABLE) : static_cast<int>(LOOPBACK_CMD_DISABLE),
-            true, SUCCESS);
         return SUCCESS;
     }
 
-    if (type == LOOPBACK_TYPE_GLOBAL_HANDLER) {
-        if (enable) {
-            globalHandlerState_ = LOOPBACK_AVAILABLE_RUNNING;
-        } else {
-            globalHandlerState_ = LOOPBACK_AVAILABLE_IDLE;
-        }
-    }
+    return SUCCESS;
+}
 
+int32_t AudioLoopbackManager::NotifyStatus(LoopbackType type, int32_t status, int32_t pid)
+{
+    CHECK_AND_RETURN_RET_LOG(type == LOOPBACK_TYPE_GLOBAL_HANDLER, ERR_INVALID_HANDLE, "not handler");
+    std::lock_guard<std::mutex> lock(mutex_);
+    globalHandlerState_ = static_cast<AudioLoopbackStatus>(status);
+    AUDIO_INFO_LOG("Current status is %{public}d", status);
+    for (auto &item : globalControlCallbacks_) {
+        auto loopbackCb = item.second;
+        CHECK_AND_CONTINUE(loopbackCb != nullptr);
+        loopbackCb->OnStatusNotify(status, CMD_FROM_SYSTEM);
+    }
     return SUCCESS;
 }
 
@@ -221,6 +222,8 @@ int32_t AudioLoopbackManager::GetStatus(LoopbackType type, int &status, int32_t 
             return ERROR_LOOPBACK_HANDLER_NOT_EXIST;
         }
         status = static_cast<int>(globalHandlerState_);
+        AUDIO_INFO_LOG("get status current is %{public}d", status);
+        globalHandlerCallback_->OnCommandResult(LOOPBACK_CMD_GETSTATUS, true, SUCCESS);
         return SUCCESS;
     }
 
@@ -252,10 +255,10 @@ void AudioLoopbackManager::OnHandlerDied()
     
     globalHandlerCallback_ = nullptr;
     handlerPid_ = -1;
-    globalHandlerState_ = LOOPBACK_AVAILABLE_IDLE;
+    globalHandlerState_ = LOOPBACK_UNAVAILABLE_SCENE;
     globalHandlerVolume_ = 0.0f;
 
-    BroadcastStatusChange(static_cast<int>(LOOPBACK_AVAILABLE_IDLE),
+    BroadcastStatusChange(static_cast<int>(LOOPBACK_UNAVAILABLE_SCENE),
         static_cast<int>(LOOPBACK_REASON_HANDLER_DIED));
 }
 
@@ -291,9 +294,9 @@ void AudioLoopbackManager::BroadcastToControls(int command, bool success, int er
         auto loopbackCb = item.second;
         if (loopbackCb != nullptr) {
             if (command == LOOPBACK_CMD_ENABLE) {
-                loopbackCb->OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
+                loopbackCb->OnStatusNotify(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
             } else if (command == LOOPBACK_CMD_DISABLE) {
-                loopbackCb->OnStatusChange(LOOPBACK_AVAILABLE_IDLE, CMD_FROM_SYSTEM);
+                loopbackCb->OnStatusNotify(LOOPBACK_AVAILABLE_IDLE, CMD_FROM_SYSTEM);
             }
         }
     }
@@ -304,7 +307,7 @@ void AudioLoopbackManager::BroadcastStatusChange(int status, int reason)
     for (auto &item : globalControlCallbacks_) {
         auto loopbackCb = item.second;
         if (loopbackCb != nullptr) {
-            loopbackCb->OnStatusChange(LOOPBACK_AVAILABLE_IDLE, CMD_FROM_SYSTEM);
+            loopbackCb->OnStatusNotify(status, CMD_FROM_SYSTEM);
         }
     }
 }

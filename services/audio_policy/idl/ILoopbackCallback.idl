@@ -17,5 +17,5 @@ package OHOS.AudioStandard;
 
 interface ILoopbackCallback {
     [ipccode 0, oneway] void OnCommandResult([in] int command, [in] boolean success, [in] int errorCode);
-    [oneway] void OnStatusChange([in] int status, [in] int reason);
+    [oneway] void OnStatusNotify([in] int status, [in] int reason);
 }
