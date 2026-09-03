@@ -1224,5 +1224,82 @@ HWTEST(AudioSettingProviderUnitTest, TrimLeft, TestSize.Level1)
     pder->TrimLeft(value);
     EXPECT_EQ(value, "1");
 }
+
+/**
+ * @tc.name  : Test RegisterObserver API
+ * @tc.type  : FUNC
+ * @tc.number: RegisterObserver_001
+ * @tc.desc  : Test RegisterObserver duplicate registration - same observer with same key should not register twice
+ */
+HWTEST(AudioSettingProviderUnitTest, RegisterObserver_001, TestSize.Level1)
+{
+    AudioSettingProvider* audioSettingProvider_ = nullptr;
+    int32_t systemAbilityId = 1;
+    audioSettingProvider_ = &AudioSettingProvider::GetInstance(systemAbilityId);
+    ASSERT_TRUE(audioSettingProvider_ != nullptr);
+ 
+    audioSettingProvider_->SetDataShareReady(true);
+ 
+    sptr<AudioSettingObserver> observerPtr = new AudioSettingObserver();
+    std::string testKey = "DUPLICATE_TEST_KEY";
+    observerPtr->SetKey(testKey);
+ 
+    // First registration should succeed
+    ErrCode ret1 = audioSettingProvider_->RegisterObserver(observerPtr, "system");
+    EXPECT_EQ(ret1, ERR_OK);
+ 
+    // Second registration of the same observer with same key should also succeed (duplicate check)
+    // and should not cause issues due to the fix in ea943c7db
+    ErrCode ret2 = audioSettingProvider_->RegisterObserver(observerPtr, "system");
+    EXPECT_EQ(ret2, ERR_OK);
+}
+ 
+/**
+ * @tc.name  : Test RegisterObserver API
+ * @tc.type  : FUNC
+ * @tc.number: RegisterObserver_002
+ * @tc.desc  : Test RegisterObserver with nullptr observer returns ERR_NO_INIT
+ */
+HWTEST(AudioSettingProviderUnitTest, RegisterObserver_002, TestSize.Level1)
+{
+    AudioSettingProvider* audioSettingProvider_ = nullptr;
+    int32_t systemAbilityId = 1;
+    audioSettingProvider_ = &AudioSettingProvider::GetInstance(systemAbilityId);
+    ASSERT_TRUE(audioSettingProvider_ != nullptr);
+ 
+    audioSettingProvider_->SetDataShareReady(true);
+ 
+    sptr<AudioSettingObserver> observerPtr = nullptr;
+    ErrCode ret = audioSettingProvider_->RegisterObserver(observerPtr, "TEST");
+    EXPECT_EQ(ret, ERR_NO_INIT);
+}
+ 
+/**
+ * @tc.name  : Test UnregisterObserver API
+ * @tc.type  : FUNC
+ * @tc.number: UnregisterObserver_003
+ * @tc.desc  : Test UnregisterObserver after RegisterObserver - observers map should be cleaned up
+ */
+HWTEST(AudioSettingProviderUnitTest, UnregisterObserver_003, TestSize.Level1)
+{
+    AudioSettingProvider* audioSettingProvider_ = nullptr;
+    int32_t systemAbilityId = 1;
+    audioSettingProvider_ = &AudioSettingProvider::GetInstance(systemAbilityId);
+    ASSERT_TRUE(audioSettingProvider_ != nullptr);
+ 
+    audioSettingProvider_->SetDataShareReady(true);
+ 
+    sptr<AudioSettingObserver> observerPtr = new AudioSettingObserver();
+    std::string testKey = "UNREG_TEST_KEY";
+    observerPtr->SetKey(testKey);
+ 
+    // First register the observer
+    ErrCode ret1 = audioSettingProvider_->RegisterObserver(observerPtr, "system");
+    EXPECT_EQ(ret1, ERR_OK);
+ 
+    // Then unregister should succeed and clean up registeredObservers_ map
+    ErrCode ret2 = audioSettingProvider_->UnregisterObserver(observerPtr, "system");
+    EXPECT_EQ(ret2, ERR_OK);
+}
 } // namespace AudioStandard
 } // namespace OHOS
