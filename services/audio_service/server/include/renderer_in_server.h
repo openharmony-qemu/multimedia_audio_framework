@@ -41,8 +41,6 @@ struct RendererLatestInfoForWorkgroup {
     bool isInSilentState;
     bool silentModeAndMixWithOthers;
     bool lastWriteStandbyEnableStatus;
-    float streamVolume;
-    float systemVolume;
 };
 class RendererInServer;
 
@@ -193,7 +191,7 @@ public:
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     int32_t StopSession();
     void dualToneStreamInStart();
-    bool CollectInfosForWorkgroup(float systemVolume);
+    bool CollectInfosForWorkgroup();
     void InitDupBuffer(int32_t innerCapId);
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
@@ -258,7 +256,7 @@ private:
     int32_t PauseDuringStandby();
     void StartStreamByType();
     void RecordStandbyTime(bool isStandby, bool isStart);
-    void UpdateLatestForWorkgroup(float systemVolume);
+    void UpdateLatestForWorkgroup();
     int32_t DisableInnerCapHandle(int32_t innerCapId);
     int32_t InitDupStreamVolume(uint32_t dupStreamIndex);
     int32_t FlushOhAudioBuffer();

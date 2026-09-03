@@ -157,7 +157,6 @@ private:
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
     void AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer);
     bool IsMuteSwitchStream(uint32_t sessionId);
-    float GetSystemVolumeForWorkgroup();
     bool IsStreamTypeFitWorkgroup(AudioStreamType streamType);
     void UpdateSystemVolumeForWorkgroup(AudioStreamType streamType, float volume);
     void UpdateSessionMuteStatus(const uint32_t sessionId, const bool muteFlag);
@@ -211,8 +210,6 @@ private:
     std::map<uint32_t, MuteStateChangeCallbck> muteStateCallbacks_{};
     std::mutex muteStateMapMutex_;
     std::map<uint32_t, bool> muteStateMap_{};
-    std::mutex audioWorkGroupSystemVolumeMutex_;
-    float audioWorkGroupSystemVolume_ = 0.0f;
 
     std::mutex dualStreamMutex_;
 };

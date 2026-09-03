@@ -39,6 +39,7 @@
 #include "audio_enhance_chain_manager.h"
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
+#include "audio_pipe_manager.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
 #include "audio_volume_c.h"
@@ -3254,39 +3255,37 @@ int32_t RendererInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
     return SUCCESS;
 }
 
-void RendererInServer::UpdateLatestForWorkgroup(float systemVolume)
+void RendererInServer::UpdateLatestForWorkgroup()
 {
     latestForWorkgroup_.status = status_.load();
     latestForWorkgroup_.isInSilentState = isInSilentState_;
     latestForWorkgroup_.silentModeAndMixWithOthers = silentModeAndMixWithOthers_.load();
     latestForWorkgroup_.lastWriteStandbyEnableStatus = lastWriteStandbyEnableStatus_;
-    latestForWorkgroup_.streamVolume = audioServerBuffer_->GetStreamVolume();
-    latestForWorkgroup_.systemVolume = systemVolume;
     AUDIO_INFO_LOG("[WorkgroupInServer] pid = %{public}d, status_ = %{public}d, "
         "isInSilentState_ = %{public}d, "
         "silentModeAndMixWithOthers_ = %{public}d, "
-        "lastWriteStandbyEnableStatus_ = %{public}d, "
-        "streamVolume = %{public}f, "
-        "systemVolume = %{public}f",
+        "lastWriteStandbyEnableStatus_ = %{public}d",
         processConfig_.appInfo.appPid, latestForWorkgroup_.status, latestForWorkgroup_.isInSilentState,
-        latestForWorkgroup_.silentModeAndMixWithOthers, latestForWorkgroup_.lastWriteStandbyEnableStatus,
-        latestForWorkgroup_.streamVolume, latestForWorkgroup_.systemVolume);
+        latestForWorkgroup_.silentModeAndMixWithOthers, latestForWorkgroup_.lastWriteStandbyEnableStatus);
 }
 
-bool RendererInServer::CollectInfosForWorkgroup(float systemVolume)
+bool RendererInServer::CollectInfosForWorkgroup()
 {
     bool running = (status_ == I_STATUS_STARTED) ? true : false;
-    float streamVolume = audioServerBuffer_->GetStreamVolume();
-    bool haveStreamSound = (fabs(streamVolume) > AUDIO_VOLOMUE_EPSILON) ? true : false;
-    bool haveSystemSound = (fabs(systemVolume) > AUDIO_VOLOMUE_EPSILON) ? true : false;
-
+    uint32_t pipeId = AudioPipeManager::GetPipeManager()->QueryPipeIdBySessionId(streamIndex_);
+    bool haveSound = false;
+    if (pipeId != HDI_INVALID_ID) {
+        struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0u};
+        float finalVolume = AudioVolume::GetInstance()->GetVolume(
+            streamIndex_, processConfig_.streamType, pipeId, &volumes);
+        haveSound = (fabs(finalVolume) > AUDIO_VOLOMUE_EPSILON) ? true : false;
+    }
     if (!latestForWorkgroupInited_) {
-        UpdateLatestForWorkgroup(systemVolume);
         latestForWorkgroupInited_ = true;
     }
-    UpdateLatestForWorkgroup(systemVolume);
+    UpdateLatestForWorkgroup();
 
-    return running && haveStreamSound && haveSystemSound &&
+    return running && haveSound &&
         !isInSilentState_ && !silentModeAndMixWithOthers_ && !lastWriteStandbyEnableStatus_;
 }
 

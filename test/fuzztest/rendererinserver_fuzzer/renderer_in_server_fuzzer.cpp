@@ -1041,9 +1041,8 @@ void UpdateLatestForWorkgroupFuzzTest()
     CHECK_AND_RETURN(RendererInServerPtr != nullptr);
 
     RendererInServerPtr->Init();
-    float systemVolume = 1.0;
 
-    RendererInServerPtr->UpdateLatestForWorkgroup(systemVolume);
+    RendererInServerPtr->UpdateLatestForWorkgroup();
 }
 
 void CollectInfosForWorkgroupFuzzTest()
@@ -1056,7 +1055,6 @@ void CollectInfosForWorkgroupFuzzTest()
     auto RendererInServerPtr = std::make_shared<RendererInServer>(config, weakListener);
     CHECK_AND_RETURN(RendererInServerPtr != nullptr);
     RendererInServerPtr->Init();
-    float systemVolume = 1.0;
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
     uint32_t totalSizeInFrame = 8;
     uint32_t byteSizePerFrame = 4;
@@ -1065,7 +1063,7 @@ void CollectInfosForWorkgroupFuzzTest()
         byteSizePerFrame);
     CHECK_AND_RETURN(RendererInServerPtr->audioServerBuffer_ != nullptr);
     RendererInServerPtr->latestForWorkgroupInited_ = false;
-    RendererInServerPtr->CollectInfosForWorkgroup(systemVolume);
+    RendererInServerPtr->CollectInfosForWorkgroup();
 }
 
 void InitDupBufferInnerFuzzTest()

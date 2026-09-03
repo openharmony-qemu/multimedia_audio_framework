@@ -634,20 +634,6 @@ HWTEST_F(AudioServiceSecondUnitTest, AudioServiceIsStreamTypeFitWorkgroup_002, T
 }
 
 /**
- * @tc.name  : Test AudioService::GetSystemVolumeForWorkgroup API
- * @tc.type  : FUNC
- * @tc.number: AudioServiceGetSystemVolumeForWorkgroup_001
- * @tc.desc  : Test GetSystemVolumeForWorkgroup interface.
- */
-HWTEST_F(AudioServiceSecondUnitTest, AudioServiceGetSystemVolumeForWorkgroup_001, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    ASSERT_NE(audioService, nullptr);
-    float volume = audioService->GetSystemVolumeForWorkgroup();
-    EXPECT_GE(volume, 0.0f);
-}
-
-/**
  * @tc.name  : Test AudioService::RegisterMuteStateChangeCallback API
  * @tc.type  : FUNC
  * @tc.number: AudioServiceRegisterMuteStateChangeCallback_001
