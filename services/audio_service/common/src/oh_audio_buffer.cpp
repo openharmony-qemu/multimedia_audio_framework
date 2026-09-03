@@ -292,7 +292,7 @@ bool OHAudioBuffer::CheckWriteOrReadFrame(uint64_t writeOrReadFrame)
 {
     uint32_t spanSizeInFrame = spanBasicInfo_.spanSizeInFrame_;
 
-    if ((spanSizeInFrame == 0) || ((writeOrReadFrame % spanSizeInFrame) != 0)) {
+    if (spanSizeInFrame == 0) {
         AUDIO_ERR_LOG("spanSizeInFrame: %{public}u writeOrReadFrame: %{public}" PRIu64 "", spanSizeInFrame,
             writeOrReadFrame);
         return false;
