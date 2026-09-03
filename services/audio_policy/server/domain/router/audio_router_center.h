@@ -46,6 +46,7 @@ public:
         return audioRouterCenter;
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo &info);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesNoArbiter(FetchDeviceInfo &info);
     OutputDeviceMap FetchOutputDevicesForAllOutputStreams(std::vector<FetchDeviceInfo> &infos);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(FetchDeviceInfo &info);
