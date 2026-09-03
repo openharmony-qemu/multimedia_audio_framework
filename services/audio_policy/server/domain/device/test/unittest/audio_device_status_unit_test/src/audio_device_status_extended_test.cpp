@@ -547,5 +547,25 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_029, TestSize.Level4)
 }
 #endif
 
+/**
+ * @tc.name  : Test AudioDeviceStatus.
+ * @tc.number: CheckNeedExclude_001
+ * @tc.desc  : Test OnDeviceStatusUpdated bluetooth disconnect, isNeedExclude==false.
+ *             Cover branch: if(isNeedExclude) false. Verify visibleMode_ == GLOBAL_VISIBLE.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, CheckNeedExclude_001, TestSize.Level4)
+{
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    updatedDesc.networkId_ = LOCAL_NETWORK_ID;
+    updatedDesc.macAddress_ = "00:11:22:33:44:55";
+    bool isActualConnection = true;
+    AudioStreamInfo streamInfo;
+    bool isConnected = false;
+    audioDeviceStatus_->OnDeviceStatusUpdated(updatedDesc, updatedDesc.deviceType_,
+        updatedDesc.macAddress_, "", isActualConnection, streamInfo, isConnected);
+    EXPECT_EQ(updatedDesc.visibleMode_, GLOBAL_VISIBLE);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
