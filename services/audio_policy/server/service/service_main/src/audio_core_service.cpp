@@ -1277,7 +1277,7 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
     if (!forceUpdate) {
         CHECK_AND_RETURN(!audioSceneManager_.IsVoiceCallRelatedScene());
     }
-    if (audioDeviceManager_.HasScoDevicesConnected()) {
+    if (audioDeviceManager_.HasScoDevicesRealConnected()) {
         auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModemCopy();
         auto inputStreamDescs = pipeManager_->GetAllInputStreamDescsCopy();
         FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);

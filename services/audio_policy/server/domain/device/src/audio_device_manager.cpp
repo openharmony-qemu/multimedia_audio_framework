@@ -1718,7 +1718,7 @@ bool AudioDeviceManager::HasSpecificDevicesConnected()
     return false;
 }
 
-bool AudioDeviceManager::HasScoDevicesConnected()
+bool AudioDeviceManager::HasScoDevicesRealConnected()
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &deviceDesc : connectedDevices_) {
