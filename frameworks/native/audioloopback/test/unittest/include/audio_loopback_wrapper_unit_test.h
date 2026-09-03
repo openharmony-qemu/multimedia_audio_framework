@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "audio_info.h"
 #include "audio_loopback_wrapper.h"
 #include "audio_loopback_private.h"
 #include "iloopback.h"
@@ -57,7 +56,6 @@ public:
 class MockAudioLoopbackCallback : public AudioLoopbackCallback {
 public:
     MOCK_METHOD(void, OnStatusChange, (const AudioLoopbackStatus status, const StateChangeCmdType cmdType), (override));
-    MOCK_METHOD(void, OnAvailableStatusChange, (const AudioLoopbackAvailableStatus &status), (override));
 };
 
 class TestAudioLoopbackWrapper : public AudioLoopbackWrapper {
