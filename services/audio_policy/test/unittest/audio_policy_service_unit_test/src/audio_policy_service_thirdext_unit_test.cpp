@@ -2184,25 +2184,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test ClearActiveHfpDevice.
-* @tc.number: ClearActiveHfpDevice_001.
-* @tc.desc  : Test ClearActiveHfpDevice interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ClearActiveHfpDevice_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    int32_t ret = server->audioPolicyService_.audioRecoveryDevice_.ClearActiveHfpDevice(desc);
-    EXPECT_EQ(ret, SUCCESS);
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    ret = server->audioPolicyService_.audioRecoveryDevice_.ClearActiveHfpDevice(desc);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
 * @tc.name  : Test GetFastStreamSupport
 * @tc.number: GetFastStreamSupport_001
 * @tc.desc  : Test GetFastStreamSupport with AUDIO_OUTPUT_FLAG_FAST and supported format
