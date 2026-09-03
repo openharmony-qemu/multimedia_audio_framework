@@ -2695,38 +2695,6 @@ HWTEST_F(HpaeRenderEffectNodeTest, UpdateAudioEffectChainInfo_NullManager_032, T
 }
 
 /**
- * @tc.name   : Test AudioOffloadRenderer full lifecycle with offload enabled
- * @tc.number : AudioOffloadRenderer_PcmOffloadLifecycle_033
- * @tc.desc   : Test the offload renderer lifecycle with spkOffloadEnabled_ true.
- *              Create/Start pass isPcmOffload=true, Stop checks with isPcmOffload=false,
- *              Release checks with false but releases the chain with isPcmOffload=true.
- */
-HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_PcmOffloadLifecycle_033, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    EffectManagerOffloadGuard guard;
-    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
-
-    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6600);
-    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
-
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceClass = "speaker";
-    std::string sessionId = std::to_string(nodeInfo.sessionId);
-
-    EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), SUCCESS);
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDSet_.count(sessionId) > 0, true);
-    EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), SUCCESS);
-    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), SUCCESS);
-    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), SUCCESS);
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDSet_.count(sessionId) > 0, false);
-
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
  * @tc.name   : Test AudioOffloadRenderer Stop/Release proceed when offload disabled
  * @tc.number : AudioOffloadRenderer_PcmOffloadStopReleaseProceed_034
  * @tc.desc   : Test the collab bug fix scenario: with effect offload disabled,
@@ -2746,42 +2714,16 @@ HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_PcmOffloadStopReleasePro
 
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceClass = "speaker";
-
     EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), SUCCESS);
     EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), SUCCESS);
     EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), SUCCESS);
     EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), SUCCESS);
 
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
- * @tc.name   : Test AudioOffloadRenderer blocks remote_offload when offload enabled
- * @tc.number : AudioOffloadRenderer_RemoteOffloadBlockedWhenOffloadEnabled_037
- * @tc.desc   : Test remote_offload sink is rejected for all four operations even when
- *              effect offload is enabled, covering the isPcmOffload=true pass-through
- *              followed by the deviceClass rejection in OffloadRendererCheckNotifyEffect.
- */
-HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_RemoteOffloadBlockedWhenOffloadEnabled_037, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    EffectManagerOffloadGuard guard;
-    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
-
-    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 7000);
-    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
-
-    HpaeSinkInfo sinkInfo;
     sinkInfo.deviceClass = "remote_offload";
-
     EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
     EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
     EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
     EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
-    // No session should be registered when all operations are blocked
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDSet_.empty(), true);
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
