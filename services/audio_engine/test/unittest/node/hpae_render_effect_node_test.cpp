@@ -1455,11 +1455,12 @@ HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_remote_offload_returnsEa
 }
 
 HWTEST_F(HpaeRenderEffectNodeTest,
-    AudioOffloadRenderer_nonOffloadDevice_returnsEarlyWhenOffloadDisabled, TestSize.Level1)
+    AudioOffloadRenderer_nonOffloadDevice_createStartEarlyStopReleaseProceed, TestSize.Level1)
 {
     // sinkInfo.deviceClass != "remote_offload" → OffloadRendererCheckNotifyEffect
-    // proceeds through GetOffloadEnabled() checks. In the unit-test environment
-    // effect offload is disabled, so all operations return ERR_INVALID_HANDLE.
+    // checks GetOffloadEnabled() only when isPcmOffload is true. With effect
+    // offload disabled, Create/Start (isPcmOffload=true) return ERR_INVALID_HANDLE,
+    // while Stop/Release (isPcmOffload=false) skip the offload check and proceed.
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID + 300;
     nodeInfo.frameLen = TEST_FRAMELEN1;
@@ -1473,8 +1474,8 @@ HWTEST_F(HpaeRenderEffectNodeTest,
 
     EXPECT_NE(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), 0);
     EXPECT_NE(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), 0);
-    EXPECT_NE(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), 0);
-    EXPECT_NE(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), 0);
 }
 
 HWTEST_F(HpaeRenderEffectNodeTest, ReconfigOutputBuffer_monoChannels, TestSize.Level1)
@@ -1705,7 +1706,7 @@ static void AddBufferedPreOutput(HpaeRenderEffectNode &node, OutputPort<HpaePcmB
     node.inputStream_.AddPreOutput(nullptr, &output);
 }
 
-HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_nonRemoteStillReturnsEarlyWithCurrentManager, TestSize.Level1)
+HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_nonRemote_createStartEarlyStopReleaseProceed, TestSize.Level1)
 {
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 1400);
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
@@ -1714,8 +1715,10 @@ HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_nonRemoteStillReturnsEar
 
     EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
     EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
-    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
-    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    // Stop/Release pass isPcmOffload=false to OffloadRendererCheckNotifyEffect,
+    // so the GetOffloadEnabled() guard is skipped and the call proceeds.
+    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), SUCCESS);
+    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), SUCCESS);
 }
 
 HWTEST_F(HpaeRenderEffectNodeTest, SignalProcess_offloadEnabledReturnsOriginalInput, TestSize.Level1)
@@ -2692,6 +2695,193 @@ HWTEST_F(HpaeRenderEffectNodeTest, UpdateAudioEffectChainInfo_NullManager_032, T
     // Should not crash even if manager operations fail
     node->UpdateAudioEffectChainInfo(nodeInfo);
     SUCCEED();
+}
+
+// ==================== UT for isPcmOffload param in offload renderer effect APIs ====================
+// Covers the collab offload bug fix: Stop/Release call OffloadRendererCheckNotifyEffect
+// with isPcmOffload=false so they proceed even when effect offload is disabled, while
+// Create/Start keep the offload gate with isPcmOffload=true, and
+// Create/ReleaseAudioEffectChain return early when called with isPcmOffload=true.
+
+/**
+ * @tc.name   : Test AudioOffloadRenderer full lifecycle with offload enabled
+ * @tc.number : AudioOffloadRenderer_PcmOffloadLifecycle_033
+ * @tc.desc   : Test the offload renderer lifecycle with spkOffloadEnabled_ true.
+ *              Create/Start pass isPcmOffload=true, Stop checks with isPcmOffload=false,
+ *              Release checks with false but releases the chain with isPcmOffload=true.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_PcmOffloadLifecycle_033, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    EffectManagerOffloadGuard guard;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6600);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "speaker";
+    std::string sessionId = std::to_string(nodeInfo.sessionId);
+
+    // Create/Start pass the offload gate and register the session
+    EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), SUCCESS);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDSet_.count(sessionId) > 0, true);
+    EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), SUCCESS);
+    // Stop proceeds via the isPcmOffload=false check path
+    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), SUCCESS);
+    // Release proceeds via the isPcmOffload=false check path and removes the session
+    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), SUCCESS);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDSet_.count(sessionId) > 0, false);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test AudioOffloadRenderer Stop/Release proceed when offload disabled
+ * @tc.number : AudioOffloadRenderer_PcmOffloadStopReleaseProceed_034
+ * @tc.desc   : Test the collab bug fix scenario: with effect offload disabled,
+ *              Stop/Release still proceed (isPcmOffload=false skips the offload gate)
+ *              while Create/Start are blocked (isPcmOffload=true keeps the gate).
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_PcmOffloadStopReleaseProceed_034, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    EffectManagerOffloadGuard guard;
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6700);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "speaker";
+
+    // Create/Start are blocked by the offload gate (isPcmOffload=true)
+    EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    // Stop/Release skip the offload gate (isPcmOffload=false) and succeed
+    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), SUCCESS);
+    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), SUCCESS);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test CreateAudioEffectChain early return with isPcmOffload true
+ * @tc.number : CreateAudioEffectChain_PcmOffloadEarlyReturn_035
+ * @tc.desc   : Test CreateAudioEffectChain with isPcmOffload=true returns early after
+ *              session registration even when effect offload is disabled.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, CreateAudioEffectChain_PcmOffloadEarlyReturn_035, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    EffectManagerOffloadGuard guard;
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6800);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    std::string sessionId = std::to_string(nodeInfo.sessionId);
+    size_t chainCountBefore = AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.size();
+
+    EXPECT_EQ(node->CreateAudioEffectChain(nodeInfo, true), SUCCESS);
+    // Session registered but chain creation skipped by the isPcmOffload early return
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDSet_.count(sessionId) > 0, true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.size(), chainCountBefore);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test ReleaseAudioEffectChain early return with isPcmOffload true
+ * @tc.number : ReleaseAudioEffectChain_PcmOffloadEarlyReturn_036
+ * @tc.desc   : Test ReleaseAudioEffectChain with isPcmOffload=true removes the session
+ *              and returns early before chain teardown even when offload is disabled.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, ReleaseAudioEffectChain_PcmOffloadEarlyReturn_036, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    EffectManagerOffloadGuard guard;
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6900);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    std::string sessionId = std::to_string(nodeInfo.sessionId);
+    size_t chainCountBefore = AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.size();
+
+    EXPECT_EQ(node->CreateAudioEffectChain(nodeInfo, true), SUCCESS);
+    EXPECT_EQ(node->ReleaseAudioEffectChain(nodeInfo, true), SUCCESS);
+    // Session removed, chain teardown skipped by the isPcmOffload early return
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDSet_.count(sessionId) > 0, false);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.size(), chainCountBefore);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test AudioOffloadRenderer blocks remote_offload when offload enabled
+ * @tc.number : AudioOffloadRenderer_RemoteOffloadBlockedWhenOffloadEnabled_037
+ * @tc.desc   : Test remote_offload sink is rejected for all four operations even when
+ *              effect offload is enabled, covering the isPcmOffload=true pass-through
+ *              followed by the deviceClass rejection in OffloadRendererCheckNotifyEffect.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_RemoteOffloadBlockedWhenOffloadEnabled_037, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    EffectManagerOffloadGuard guard;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 7000);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "remote_offload";
+
+    EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    // No session should be registered when all operations are blocked
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDSet_.empty(), true);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test AudioOffloadRenderer lifecycle with BT offload enabled
+ * @tc.number : AudioOffloadRenderer_BtOffloadLifecycle_038
+ * @tc.desc   : Test the offload renderer lifecycle when the current device is
+ *              bluetooth A2DP and btOffloadEnabled_ is true, covering the
+ *              non-speaker branch of GetOffloadEnabled.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_BtOffloadLifecycle_038, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    EffectManagerOffloadGuard guard;
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 7100);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "speaker";
+
+    EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), SUCCESS);
+    EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), SUCCESS);
+    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), SUCCESS);
+    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), SUCCESS);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 }  // namespace HPAE
