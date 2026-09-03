@@ -25,17 +25,17 @@
     # *AudioServiceAdapter* class wildcard: ProAudioServiceAdapterImpl /
     # PulseAudioServiceAdapterImpl contain that substring, so the wildcard
     # would drag ~100 internal implementation symbols back into the dynsym.
-    # The "18" length prefix pins the match to the base class exactly
+    # The "19" length prefix pins the match to the base class exactly
     # (impls mangle as 25Pro... / 27Pulse...).
     #
     # The prefix keeps the out-of-line destructor (D0/D1/D2, key function of
     # the interface) exported; the three exact names keep vtable/typeinfo
     # (RC02) available for any cross-DSO dynamic_cast/typeid under
     # cfi_cross_dso. No virtual bases -> no thunks to cover.
-    _ZN4OHOS13AudioStandard18AudioServiceAdapter*;
-    _ZTVN4OHOS13AudioStandard18AudioServiceAdapterE;
-    _ZTIN4OHOS13AudioStandard18AudioServiceAdapterE;
-    _ZTSN4OHOS13AudioStandard18AudioServiceAdapterE;
+    _ZN4OHOS13AudioStandard19AudioServiceAdapter*;
+    _ZTVN4OHOS13AudioStandard19AudioServiceAdapterE;
+    _ZTIN4OHOS13AudioStandard19AudioServiceAdapterE;
+    _ZTSN4OHOS13AudioStandard19AudioServiceAdapterE;
   local:
     *;
 };
