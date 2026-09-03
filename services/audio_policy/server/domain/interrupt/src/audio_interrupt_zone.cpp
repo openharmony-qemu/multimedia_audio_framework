@@ -270,15 +270,13 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
                 bool removeFocusInfo = false;
                 service_->SendInterruptEvent(itOld->second, itNew->second, itOld, removeFocusInfo);
             }
-            newFocusList.erase(itNew);
+            // restore strategy from old, prevent modified by sink
+            itNew->first.sessionStrategy = itOld->first.sessionStrategy;
+            itNew->first.independentStrategy = itOld->first.independentStrategy;
         }
     }
 
-    if (newFocusList.size() > 0) {
-        AUDIO_WARNING_LOG("has unexplained new focus for zone %{public}d", zoneId);
-    }
-
-    tempMap[zoneId]->audioFocusInfoList = interrupts;
+    tempMap[zoneId]->audioFocusInfoList = newFocusList;
     return SUCCESS;
 }
 
