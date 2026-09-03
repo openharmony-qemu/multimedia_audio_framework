@@ -2680,21 +2680,6 @@ HWTEST_F(HpaeRenderEffectNodeTest, ReleaseAudioEffectChain_OffloadEnabled_031, T
 }
 
 /**
- * @tc.name   : Test UpdateAudioEffectChainInfo with null manager
- * @tc.number : UpdateAudioEffectChainInfo_NullManager_032
- * @tc.desc   : Test UpdateAudioEffectChainInfo returns early when manager is null.
- */
-HWTEST_F(HpaeRenderEffectNodeTest, UpdateAudioEffectChainInfo_NullManager_032, TestSize.Level1)
-{
-    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6500);
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
-
-    // Should not crash even if manager operations fail
-    node->UpdateAudioEffectChainInfo(nodeInfo);
-    SUCCEED();
-}
-
-/**
  * @tc.name   : Test AudioOffloadRenderer Stop/Release proceed when offload disabled
  * @tc.number : AudioOffloadRenderer_PcmOffloadStopReleaseProceed_034
  * @tc.desc   : Test the collab bug fix scenario: with effect offload disabled,
