@@ -201,6 +201,7 @@ public:
     void SendRenderPeriodReachedEvent(int64_t rendererPeriodSize);
 
     void HandleRendererPositionChanges(size_t bytesWritten);
+    void Update3DAPositionAfterWrite(size_t pcmBytes);
     void HandleStateChangeEvent(int64_t data);
     void HandleRenderMarkReachedEvent(int64_t rendererMarkPosition);
     void HandleRenderPeriodReachedEvent(int64_t rendererPeriodNumber);

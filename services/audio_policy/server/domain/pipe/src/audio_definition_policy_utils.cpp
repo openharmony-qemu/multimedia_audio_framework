@@ -184,6 +184,7 @@ std::unordered_map<std::string, AudioFlag> AudioDefinitionPolicyUtils::flagStrTo
     {"AUDIO_INPUT_FLAG_CAMCORDER", AUDIO_INPUT_FLAG_CAMCORDER},
     {"AUDIO_INPUT_FLAG_VOICE_MESSAGE", AUDIO_INPUT_FLAG_VOICE_MESSAGE},
     {"AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT", AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT},
+    {"AUDIO_OUTPUT_FLAG_3DA_DIRECT", AUDIO_OUTPUT_FLAG_3DA_DIRECT},
 };
 
 std::unordered_map<std::string, AudioPreloadType> AudioDefinitionPolicyUtils::preloadStrToEnum = {
