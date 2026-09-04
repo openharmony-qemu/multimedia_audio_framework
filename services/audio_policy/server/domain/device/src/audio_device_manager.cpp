@@ -971,7 +971,7 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
         case MEDIA_OUTPUT_DEVICES:
             if ((static_cast<uint32_t>(dev->deviceRole_) & OUTPUT_DEVICE) &&
                 (static_cast<uint32_t>(deviceInfo.deviceUsage) & MEDIA) &&
-                (dev->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO || dev->deviceCategory_ == BT_WATCH)) {
+                (dev->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO)) {
                 audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
             }
             break;
