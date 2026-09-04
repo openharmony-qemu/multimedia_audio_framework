@@ -347,6 +347,7 @@ void AudioPipeManager::UpdateAudioPipeInfo(std::shared_ptr<AudioPipeInfo> newPip
 
 bool AudioPipeManager::IsSamePipe(std::shared_ptr<AudioPipeInfo> info, std::shared_ptr<AudioPipeInfo> cmpInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(info && cmpInfo, false, "info or cmpInfo is nullptr");
     if (info->name_ == cmpInfo->name_ || info->id_ == cmpInfo->id_) {
         return true;
     }
