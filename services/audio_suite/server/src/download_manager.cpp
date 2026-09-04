@@ -322,7 +322,9 @@ int32_t DownloadManager::SetUpdateEngineCallback(const sptr<IRemoteObject> objec
             AUDIO_INFO_LOG("SetUpdateEngineCallback AddDeathRecipient");
         }
     } else {
-        downloadCallback_->AsObject()->RemoveDeathRecipient(audioServerdeathRecipient_);
+        if (downloadCallback_) {
+            downloadCallback_->AsObject()->RemoveDeathRecipient(audioServerdeathRecipient_);
+        }
         audioServerdeathRecipient_ = nullptr;
     }
     callbackRegisteredCond_.notify_all();
