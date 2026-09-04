@@ -321,7 +321,7 @@ int32_t AudioSuiteSystemNode::DoProcess(AudioMetaFrame &metaFrame,
     CHECK_AND_RETURN_RET_LOG(!preNodes_.empty(), ERR_NOT_SUPPORTED, "current system node not connect pre node.");
     auto preNode = preNodes_[0].lock();
     CHECK_AND_RETURN_RET_LOG(preNode != nullptr, ERR_NOT_SUPPORTED, "current system node connect pre node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(metaFrame.audioData != nullptr && metaFrame.audioData != nullptr,
+    CHECK_AND_RETURN_RET_LOG(metaFrame.audioData != nullptr && metaFrame.metaData != nullptr,
         ERR_INVALID_PARAM, "invalid audio data");
 
     int32_t responseInAudioSize = 0;

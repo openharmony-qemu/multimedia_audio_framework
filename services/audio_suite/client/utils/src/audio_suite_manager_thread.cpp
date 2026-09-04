@@ -62,9 +62,9 @@ void AudioSuiteManagerThread::Run()
             Trace trace("AudioSuite runFunc:" + std::to_string(signal) +
                 " isPorcessing:" + std::to_string(isProcessing));
             condition_.wait(lock, [this] { return m_audioSuiteManager->IsMsgProcessing() || recvSignal_.load(); });
+            recvSignal_.store(false);
         }
         m_audioSuiteManager->HandleMsg();
-        recvSignal_.store(false);
         Stop();
     }
     UnscheduleThreadInServer(getpid(), gettid());

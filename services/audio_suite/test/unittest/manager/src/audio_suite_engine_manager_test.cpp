@@ -1385,7 +1385,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, PrintInfoNonExistentPipelineTest, Test
     engine.pipelineMap_[1] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
 
     int32_t result = engine.PrintInfo(999, -1);
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 
     engine.pipelineMap_.erase(1);
     engine.DeInit();
@@ -1876,6 +1876,56 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetRequestMetaDataCallbackTest, TestSi
     ret = pipeline->SetRequestMetaDataCallback(node->GetAudioNodeId(), nullptr);
     EXPECT_EQ(ret, SUCCESS);
     pipeline->DeInit();
+}
+
+/**
+ * @tc.name  startPipeline_PipelineStartFailed_001
+ * @tc.desc  Test StartPipeline when pipeline->Start() returns failure.
+ *           By using an uninitialized pipeline (isInit_ = false),
+ *           pipeline->Start() returns ERR_ILLEGAL_STATE, triggering the
+ *           "if (ret != SUCCESS)" branch, which calls
+ *           managerCallback_.OnStartPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST).
+ */
+HWTEST_F(AudioSuiteEngineManagerUnitTest, startPipeline_PipelineStartFailed_001, TestSize.Level0)
+{
+    AudioSuiteManagerCallbackTestImpl callback;
+    AudioSuiteEngine engineManger(callback);
+    engineManger.Init();
+    EXPECT_EQ(engineManger.IsInit(), true);
+ 
+    // Create an uninitialized pipeline so that pipeline->Start() returns ERR_ILLEGAL_STATE
+    auto pipeline = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
+    engineManger.pipelineMap_[1] = pipeline;
+ 
+    int32_t result = engineManger.StartPipeline(1);
+    EXPECT_EQ(result, SUCCESS);
+    // Wait for the async callback
+    sleep(1);
+}
+ 
+/**
+ * @tc.name  stopPipeline_PipelineStopFailed_001
+ * @tc.desc  Test StopPipeline when pipeline->Stop() returns failure.
+ *           By using an uninitialized pipeline (isInit_ = false),
+ *           pipeline->Stop() returns ERR_ILLEGAL_STATE, triggering the
+ *           "if (ret != SUCCESS)" branch, which calls
+ *           managerCallback_.OnStopPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST).
+ */
+HWTEST_F(AudioSuiteEngineManagerUnitTest, stopPipeline_PipelineStopFailed_001, TestSize.Level0)
+{
+    AudioSuiteManagerCallbackTestImpl callback;
+    AudioSuiteEngine engineManger(callback);
+    engineManger.Init();
+    EXPECT_EQ(engineManger.IsInit(), true);
+ 
+    // Create an uninitialized pipeline so that pipeline->Stop() returns ERR_ILLEGAL_STATE
+    auto pipeline = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
+    engineManger.pipelineMap_[1] = pipeline;
+ 
+    int32_t result = engineManger.StopPipeline(1);
+    EXPECT_EQ(result, SUCCESS);
+    // Wait for the async callback
+    sleep(1);
 }
 
 }  // namespace

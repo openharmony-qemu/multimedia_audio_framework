@@ -312,6 +312,13 @@ int32_t DownloadManager::UnregisterDownloadStatusCallback(int32_t callerPid)
 int32_t DownloadManager::SetUpdateEngineCallback(const sptr<IRemoteObject> object)
 {
     std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
+
+    // Remove old death recipient from old remote object before overwriting callback
+    if (audioServerdeathRecipient_ != nullptr && downloadCallback_ != nullptr) {
+        downloadCallback_->AsObject()->RemoveDeathRecipient(audioServerdeathRecipient_);
+    }
+    audioServerdeathRecipient_ = nullptr;
+
     downloadCallback_ = iface_cast<IAudioSuiteDownloadCallback>(object);
     isDownloadCallbackRegistered_ = downloadCallback_ != nullptr;
 
@@ -321,8 +328,6 @@ int32_t DownloadManager::SetUpdateEngineCallback(const sptr<IRemoteObject> objec
             audioServerdeathRecipient_ = audioServerdeathRecipient;
             AUDIO_INFO_LOG("SetUpdateEngineCallback AddDeathRecipient");
         }
-    } else {
-        audioServerdeathRecipient_ = nullptr;
     }
     callbackRegisteredCond_.notify_all();
     AUDIO_INFO_LOG("SetUpdateEngineCallback: %{public}s", downloadCallback_ != nullptr ? "set" : "cleared");

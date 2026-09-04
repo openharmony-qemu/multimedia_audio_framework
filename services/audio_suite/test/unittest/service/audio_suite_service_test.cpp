@@ -309,6 +309,55 @@ HWTEST_F(AudioSuiteServiceTest, GetDownloadStatus_NewVersionFail_001, TestSize.L
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
 
+/**
+ * @tc.name  SetUpdateEngineCallback_FirstCallNoRemove_001
+ * @tc.desc  Test SetUpdateEngineCallback when called for the first time,
+ *           audioServerdeathRecipient_ is nullptr so RemoveDeathRecipient branch is skipped,
+ *           should not crash and callback should be registered.
+ */
+HWTEST_F(AudioSuiteServiceTest, SetUpdateEngineCallback_FirstCallNoRemove_001, TestSize.Level0)
+{
+    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
+ 
+    auto mockStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
+    int32_t result = Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(mockStub);
+    EXPECT_EQ(result, SUCCESS);
+ 
+    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
+}
+ 
+/**
+ * @tc.name  SetUpdateEngineCallback_RemoveOldDeathRecipient_001
+ * @tc.desc  Test SetUpdateEngineCallback when called twice with different objects,
+ *           the second call enters the RemoveDeathRecipient branch
+ *           (audioServerdeathRecipient_ != nullptr && downloadCallback_ != nullptr).
+ */
+HWTEST_F(AudioSuiteServiceTest, SetUpdateEngineCallback_RemoveOldDeathRecipient_001, TestSize.Level0)
+{
+    auto mockStub1 = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
+    auto mockStub2 = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
+ 
+    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(mockStub1);
+    int32_t result = Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(mockStub2);
+    EXPECT_EQ(result, SUCCESS);
+ 
+    // Verify active callback is mockStub2
+    EXPECT_CALL(*mockStub2, GetFeatureStatus(_, _, _))
+        .WillOnce(Invoke([](const std::string& name, AudioSuiteDownloadStatusInfo& status, int32_t& funcResult) {
+            status.state = FEATURE_INSTALL_SUCCESS;
+            status.featureName = name;
+            status.errorCode = 0;
+            funcResult = SUCCESS;
+            return SUCCESS;
+        }));
+    EXPECT_CALL(*mockStub1, GetFeatureStatus(_, _, _)).Times(0);
+ 
+    AudioSuiteDownloadStatusInfo status;
+    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetDownloadStatus("feat1", status), SUCCESS);
+ 
+    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
+}
+
 } // namespace AudioSuite
 } // namespace AudioStandard
 } // namespace OHOS

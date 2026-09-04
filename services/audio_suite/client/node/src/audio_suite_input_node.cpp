@@ -240,6 +240,8 @@ void AudioInputNode::SetRequestMetaDataCallback(std::shared_ptr<InputNodeRequest
 int32_t AudioInputNode::DoProcess(AudioMetaFrame &metaFrame,
     int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag)
 {
+    CHECK_AND_RETURN_RET_LOG(responseAudioSize != nullptr && responseMetaSize != nullptr && finishedFlag != nullptr,
+        ERR_INVALID_PARAM, "DoProcess output param is nullptr");
     CHECK_AND_RETURN_RET_LOG(!GetAudioNodeDataFinishedFlag(), ERR_NOT_SUPPORTED,
         "meta data inputNode data finished, nodeType:%{public}d, nodeId:%{public}u", GetNodeType(), GetAudioNodeId());
     CHECK_AND_RETURN_RET_LOG(GetAudioNodeFormat().encodingType == ENCODING_METADATA, ERR_NOT_SUPPORTED,
