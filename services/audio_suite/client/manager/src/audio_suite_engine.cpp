@@ -245,7 +245,7 @@ int32_t AudioSuiteEngine::StartPipeline(uint32_t pipelineId)
             return;
         }
 
-        pipeline->Start(); 
+        pipeline->Start();
     };
 
     SendRequest(request, __func__);
@@ -1066,17 +1066,11 @@ int32_t AudioSuiteEngine::PrintInfo(uint32_t pipelineId, int32_t fd)
 
     std::shared_ptr<IAudioSuitePipeline> targetPipeline = nullptr;
     if (pipelineId != INVALID_PIPELINE_ID) {
-        std::shared_ptr<IAudioSuitePipeline> targetPipeline = nullptr;
         auto it = pipelineMap_.find(pipelineId);
-        if (pipelineId != INVALID_PIPELINE_ID) {
         CHECK_AND_RETURN_RET_LOG(it != pipelineMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
-            auto it = pipelineMap_.find(pipelineId);
             "PrintInfo pipeline not found, id = %{public}u",
-            if (it == pipelineMap_.end()) {
             pipelineId);
-                AUDIO_ERR_LOG("PrintInfo pipeline not found, id = %{public}u", pipelineId);
         targetPipeline = it->second;
-                managerCallback_.OnPrintInfo(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
     }
 
     auto request = [this, pipelineId, fd, targetPipeline]() {
