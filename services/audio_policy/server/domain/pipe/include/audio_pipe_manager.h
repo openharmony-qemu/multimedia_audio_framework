@@ -102,6 +102,9 @@ public:
     std::string GetModuleNameBySessionId(uint32_t sessionId);
     std::shared_ptr<AudioDeviceDescriptor> GetProcessDeviceInfoBySessionId(uint32_t sessionId,
         AudioStreamInfo &streamInfo);
+    // Bus address of the 3da direct bus port pipe (module name when busAddress is empty);
+    // empty when this device has no 3da pipe.
+    std::string Get3daDirectBusAddress();
 
     void StartClient(uint32_t sessionId);
     void PauseClient(uint32_t sessionId);
