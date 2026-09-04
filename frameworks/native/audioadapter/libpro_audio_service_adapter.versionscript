@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+1.0 {
+  global:
+    # ---- abstract factory + adapter interface (audio_service_adapter.h) ----
+    # CreateAudioAdapter() is the only symbol referenced BY NAME from other
+    # DSOs: audio_policy audio_adapter_manager.cpp:211, hpaeengine_fuzzer and
+    # pro_audio_service_adapter_unit_test. Every other method on the adapter
+    # is reached exclusively through virtual dispatch on
+    # shared_ptr<AudioServiceAdapter>, and destruction resolves inside this
+    # DSO via the make_shared control block -- no dynsym entries required.
+    #
+    # Anchored mangling patterns are used INSTEAD of the usual
+    # *AudioServiceAdapter* class wildcard: ProAudioServiceAdapterImpl /
+    # PulseAudioServiceAdapterImpl contain that substring, so the wildcard
+    # would drag ~100 internal implementation symbols back into the dynsym.
+    # The "19" length prefix pins the match to the base class exactly
+    # (impls mangle as 25Pro... / 27Pulse...).
+    #
+    # The prefix keeps the out-of-line destructor (D0/D1/D2, key function of
+    # the interface) exported; the three exact names keep vtable/typeinfo
+    # (RC02) available for any cross-DSO dynamic_cast/typeid under
+    # cfi_cross_dso. No virtual bases -> no thunks to cover.
+    _ZN4OHOS13AudioStandard19AudioServiceAdapter*;
+    _ZTVN4OHOS13AudioStandard19AudioServiceAdapterE;
+    _ZTIN4OHOS13AudioStandard19AudioServiceAdapterE;
+    _ZTSN4OHOS13AudioStandard19AudioServiceAdapterE;
+  local:
+    *;
+};
