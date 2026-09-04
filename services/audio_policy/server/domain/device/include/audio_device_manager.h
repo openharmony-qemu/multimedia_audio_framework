@@ -122,7 +122,7 @@ public:
     void UpdateDeviceVisibleMode(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
 
     bool HasSpecificDevicesConnected();
-    bool HasScoDevicesConnected();
+    bool HasScoDevicesRealConnected();
 
 private:
     AudioDeviceManager();
