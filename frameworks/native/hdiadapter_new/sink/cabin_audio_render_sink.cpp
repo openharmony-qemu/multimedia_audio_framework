@@ -371,8 +371,8 @@ int32_t CabinAudioRenderSink::CreateRender(void)
     struct AudioDeviceDescriptor deviceDesc;
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
-    // TODO(integration): InitAudioSampleAttr currently uses type=AUDIO_MULTI_CHANNEL and PCM format;
-    // encoding/streamId/channel layout must follow the HDI AudioVivid 3DA render requirements.
+    // type/format use generic multi-channel PCM values until the HDI AudioVivid render
+    // contract lands; streamId/channelLayout are already wired for 3DA direct.
 
     AUDIO_INFO_LOG("create render, rate: %{public}u, channel: %{public}u, format: %{public}u", param.sampleRate,
         param.channelCount, param.format);
