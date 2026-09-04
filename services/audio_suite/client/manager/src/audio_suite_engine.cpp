@@ -245,12 +245,7 @@ int32_t AudioSuiteEngine::StartPipeline(uint32_t pipelineId)
             return;
         }
 
-        int32_t ret = pipeline->Start();
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("engine start pipeline failed.");
-            managerCallback_.OnStartPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
-            return;
-        }
+        pipeline->Start(); 
     };
 
     SendRequest(request, __func__);
@@ -282,12 +277,7 @@ int32_t AudioSuiteEngine::StopPipeline(uint32_t pipelineId)
             return;
         }
 
-        int32_t ret = pipeline->Stop();
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("engine stop pipeline failed.");
-            managerCallback_.OnStopPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
-            return;
-        }
+        pipeline->Stop();
     };
 
     SendRequest(request, __func__);
@@ -1074,18 +1064,22 @@ int32_t AudioSuiteEngine::PrintInfo(uint32_t pipelineId, int32_t fd)
 {
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not print info.");
 
-    auto request = [this, pipelineId, fd]() {
+    std::shared_ptr<IAudioSuitePipeline> targetPipeline = nullptr;
+    if (pipelineId != INVALID_PIPELINE_ID) {
         std::shared_ptr<IAudioSuitePipeline> targetPipeline = nullptr;
+        auto it = pipelineMap_.find(pipelineId);
         if (pipelineId != INVALID_PIPELINE_ID) {
+        CHECK_AND_RETURN_RET_LOG(it != pipelineMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
             auto it = pipelineMap_.find(pipelineId);
+            "PrintInfo pipeline not found, id = %{public}u",
             if (it == pipelineMap_.end()) {
+            pipelineId);
                 AUDIO_ERR_LOG("PrintInfo pipeline not found, id = %{public}u", pipelineId);
+        targetPipeline = it->second;
                 managerCallback_.OnPrintInfo(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
-                return;
-            }
-            targetPipeline = it->second;
-        }
+    }
 
+    auto request = [this, pipelineId, fd, targetPipeline]() {
         AUDIO_DEBUG_LOG("PrintInfo enter");
         
         std::string content = GenerateTextSnapshot(pipelineId, targetPipeline);
