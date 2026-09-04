@@ -64,7 +64,7 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     deps = [
-      "${audio_framework_root}/frameworks/native/ohaudiosuite:ohaudiosuite",
+      "${audio_framework_root}/frameworks/native/ohaudiosuite:ohaudiosuite_src",
       "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
       "${audio_framework_root}/services/audio_suite:audio_suite",
       "${audio_framework_root}/services/audio_engine:audio_engine_plugins",

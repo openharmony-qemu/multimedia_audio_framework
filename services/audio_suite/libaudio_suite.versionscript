@@ -11,11 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-1.0 {
+{
   global:
-    *GetAudioSuiteManager*;
-    *Create*;
-    *AudioSuiteDownloadManager*;
+    extern "C++" {
+      OHOS::AudioStandard::AudioSuite::IAudioSuiteManager::*;
+      OHOS::AudioStandard::AudioSuite::AudioFormatConverter::*;
+      OHOS::AudioStandard::AudioSuite::MixerProcessorManager::*;
+      OHOS::AudioStandard::AudioSuite::AudioSuiteDownloadManager::*;
+    };
   local:
     *;
 };

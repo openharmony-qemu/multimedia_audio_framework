@@ -56,11 +56,17 @@ if (audio_framework_feature_audiosuite_support) {
       "-fomit-frame-pointer",
       "-fdata-sections",
       "-ffunction-sections",
+      "-fvisibility-inlines-hidden",
       "-fno-unroll-loops",
       "-fno-exceptions",
       "-fno-unwind-tables",
       "-fno-asynchronous-unwind-tables",
       "-Os",
+    ]
+
+    ldflags = [
+      "-Wl,-gc-sections",
+      "-Wl,--exclude-libs,ALL",
     ]
 
     include_dirs = [
@@ -97,6 +103,8 @@ if (audio_framework_feature_audiosuite_support) {
       cfi_cross_dso = true
       debug = false
     }
+
+    version_script = "libaudio_suite_client_idl.versionscript"
   }
 }
 
@@ -109,11 +117,17 @@ if (audio_framework_feature_audiosuite_support) {
       "-fomit-frame-pointer",
       "-fdata-sections",
       "-ffunction-sections",
+      "-fvisibility-inlines-hidden",
       "-fno-unroll-loops",
       "-fno-exceptions",
       "-fno-unwind-tables",
       "-fno-asynchronous-unwind-tables",
       "-Os",
+    ]
+
+    ldflags = [
+      "-Wl,-gc-sections",
+      "-Wl,--exclude-libs,ALL",
     ]
 
     include_dirs = [
@@ -150,6 +164,8 @@ if (audio_framework_feature_audiosuite_support) {
       cfi_cross_dso = true
       debug = false
     }
+
+    version_script = "libaudio_suite_server_idl.versionscript"
   }
 }
 
