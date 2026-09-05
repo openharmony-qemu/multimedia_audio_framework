@@ -1527,6 +1527,28 @@ bool AudioAdapterManager::IsDirectRoute(uint32_t routeFlag) const
     return (routeFlag & AUDIO_OUTPUT_FLAG_DIRECT);
 }
 
+// The 3da direct bus port is identified by the "3da" keyword in module name / bus
+// address so any bus number matches: boot opens the port with the xml module name
+// (bus10_3da_out), while play-time new pipes carry busAddress.
+bool AudioAdapterManager::Is3daDirectBusPort(const AudioModuleInfo &audioModuleInfo)
+{
+    return audioModuleInfo.name.find(HDI_BUS_KEYWORD_3DA) != std::string::npos ||
+        audioModuleInfo.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos;
+}
+
+// Converge the port onto the shared cabin sink: deviceClass takes the bus address
+// (module name fallback) and idInfo "3DA", so GetId(RENDER, AUDIO_VIVID_3DA_DIRECT,
+// "3DA") resolves every 3da bus variant to the same renderId/sink created at boot
+// (converge with CabinPlayBackEngine AV_SINK_NAME, share one renderId/sink).
+void AudioAdapterManager::ConvergeTo3daSink(const AudioModuleInfo &audioModuleInfo, std::string &deviceClass,
+    std::string &idInfo)
+{
+    deviceClass = audioModuleInfo.busAddress.empty() ? audioModuleInfo.name : audioModuleInfo.busAddress;
+    idInfo = HDI_ID_INFO_3DA;
+    AUDIO_INFO_LOG("3da bus -> 3da direct, deviceClass:%{public}s idInfo:%{public}s",
+        deviceClass.c_str(), idInfo.c_str());
+}
+
 int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeInfo, AudioIOHandle & ioHandle)
 {
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -1566,11 +1588,7 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
             // the play-time new pipe may not carry the 3DA route flag yet at port-open time.
             if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_3DA_DIRECT) ||
                 pipeInfo->moduleInfo_.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
-                deviceClass = pipeInfo->moduleInfo_.busAddress.empty() ? pipeInfo->moduleInfo_.name
-                    : pipeInfo->moduleInfo_.busAddress;
-                idInfo = HDI_ID_INFO_3DA;
-                AUDIO_INFO_LOG("3da bus -> 3da direct, deviceClass:%{public}s idInfo:%{public}s",
-                    deviceClass.c_str(), idInfo.c_str());
+                ConvergeTo3daSink(pipeInfo->moduleInfo_, deviceClass, idInfo);
             }
             result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, ioHandle);
         }
@@ -1860,16 +1878,8 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
         if (audioModuleInfo.role == HDI_AUDIO_PORT_SINK_ROLE) {
             std::string deviceClass = audioModuleInfo.className;
             std::string idInfo = GetHdiSinkIdInfo(audioModuleInfo);
-            // Boot opens the port with the xml module name (bus10_3da_out), while play-time
-            // new-pipe creation carries the xml pipe paProp moduleName (mixport_bus10_3da_out).
-            // Match the 3da keyword in name/busAddress so any bus number is covered.
-            if (audioModuleInfo.name.find(HDI_BUS_KEYWORD_3DA) != std::string::npos ||
-                audioModuleInfo.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
-                deviceClass = audioModuleInfo.busAddress.empty() ? audioModuleInfo.name
-                    : audioModuleInfo.busAddress;
-                idInfo = HDI_ID_INFO_3DA; // converge with CabinPlayBackEngine AV_SINK_NAME, share one renderId/sink
-                AUDIO_INFO_LOG("3da bus -> 3da direct, deviceClass:%{public}s idInfo:%{public}s",
-                    deviceClass.c_str(), idInfo.c_str());
+            if (Is3daDirectBusPort(audioModuleInfo)) {
+                ConvergeTo3daSink(audioModuleInfo, deviceClass, idInfo);
             }
             IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
             result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, ioHandle);
@@ -1886,8 +1896,7 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     // above (renderId == ioHandle). Skip the HPAE loadmodule, which would otherwise build a conflicting
     // primary sink chain that opens a second HDI render on the same bus port ("ports busy" -> open fail).
     // Register the port using the cabin renderId as paIndex so OpenPortAndInsertIOHandle succeeds.
-    if (audioModuleInfo.name.find(HDI_BUS_KEYWORD_3DA) != std::string::npos ||
-        audioModuleInfo.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
+    if (Is3daDirectBusPort(audioModuleInfo)) {
         paIndex = static_cast<uint32_t>(ioHandle);
         AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port (3da direct, skip hpae), paIndex: %{public}u end",
             ioHandle, paIndex);

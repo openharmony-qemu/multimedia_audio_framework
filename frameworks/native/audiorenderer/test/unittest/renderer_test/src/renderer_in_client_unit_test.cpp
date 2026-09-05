@@ -5192,5 +5192,120 @@ HWTEST(RendererInClientPublicNewUnitTest, SetupFastStreamThreadPriority_NormalSt
     EXPECT_FALSE(rendererInClientInner->IsUltraFastStream());
 }
 
+/**
+ * @tc.name  : Test 3DA direct layout adoption
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_097
+ * @tc.desc  : 3DA direct keeps a channelLayout already consistent with channels.
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_097, TestSize.Level1)
+{
+    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    renderer->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+    AudioStreamParams params = {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.encoding = ENCODING_AUDIOVIVID;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_10;
+    params.channelLayout = CH_LAYOUT_5POINT1POINT4; // positional 10ch, consistent
+    int32_t ret = renderer->SetAudioStreamInfo(params, nullptr, AudioPlaybackCaptureConfig());
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED); // layout branch passed; later IPC init may fail in UT
+    AudioStreamParams out = {};
+    EXPECT_EQ(renderer->GetAudioStreamInfo(out), SUCCESS);
+    EXPECT_EQ(out.channelLayout, CH_LAYOUT_5POINT1POINT4);
+}
+
+/**
+ * @tc.name  : Test 3DA direct layout adoption
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_098
+ * @tc.desc  : 3DA direct falls back to a consistent remoteChannelLayout.
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_098, TestSize.Level1)
+{
+    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    renderer->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+    AudioStreamParams params = {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.encoding = ENCODING_AUDIOVIVID;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_10;
+    params.channelLayout = CH_LAYOUT_5POINT1POINT2; // 8ch layout, inconsistent with 10ch
+    params.remoteChannelLayout = CH_LAYOUT_5POINT1POINT4;
+    int32_t ret = renderer->SetAudioStreamInfo(params, nullptr, AudioPlaybackCaptureConfig());
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+    AudioStreamParams out = {};
+    EXPECT_EQ(renderer->GetAudioStreamInfo(out), SUCCESS);
+    EXPECT_EQ(out.channelLayout, CH_LAYOUT_5POINT1POINT4);
+}
+
+/**
+ * @tc.name  : Test 3DA direct layout adoption
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_099
+ * @tc.desc  : 3DA direct defaults to the framework default-layout map (CHANNEL_10 -> 7.1.2).
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_099, TestSize.Level1)
+{
+    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    renderer->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+    AudioStreamParams params = {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.encoding = ENCODING_AUDIOVIVID;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_10;
+    params.channelLayout = CH_LAYOUT_UNKNOWN;
+    params.remoteChannelLayout = CH_LAYOUT_UNKNOWN;
+    int32_t ret = renderer->SetAudioStreamInfo(params, nullptr, AudioPlaybackCaptureConfig());
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+    AudioStreamParams out = {};
+    EXPECT_EQ(renderer->GetAudioStreamInfo(out), SUCCESS);
+    EXPECT_EQ(out.channelLayout, CH_LAYOUT_7POINT1POINT2);
+}
+
+/**
+ * @tc.name  : Test 3DA direct layout adoption
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_100
+ * @tc.desc  : 3DA direct keeps a consistent HOA layout ((order+1)^2 == channels).
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_100, TestSize.Level1)
+{
+    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    renderer->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+    AudioStreamParams params = {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.encoding = ENCODING_AUDIOVIVID;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_16;
+    params.channelLayout = CH_LAYOUT_HOA_ORDER3_ACN_N3D; // (3+1)^2 == 16
+    int32_t ret = renderer->SetAudioStreamInfo(params, nullptr, AudioPlaybackCaptureConfig());
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+    AudioStreamParams out = {};
+    EXPECT_EQ(renderer->GetAudioStreamInfo(out), SUCCESS);
+    EXPECT_EQ(out.channelLayout, CH_LAYOUT_HOA_ORDER3_ACN_N3D);
+}
+
+/**
+ * @tc.name  : Test 3DA direct layout adoption
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_101
+ * @tc.desc  : 3DA direct rejects when no layout matches (channels without default map entry).
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_101, TestSize.Level1)
+{
+    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    renderer->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+    AudioStreamParams params = {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.encoding = ENCODING_AUDIOVIVID;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_11; // no entry in the default layout map
+    params.channelLayout = CH_LAYOUT_UNKNOWN;
+    params.remoteChannelLayout = CH_LAYOUT_UNKNOWN;
+    int32_t ret = renderer->SetAudioStreamInfo(params, nullptr, AudioPlaybackCaptureConfig());
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

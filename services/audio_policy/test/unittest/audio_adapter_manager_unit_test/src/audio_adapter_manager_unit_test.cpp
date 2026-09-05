@@ -2001,6 +2001,86 @@ HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_012, TestSize
 }
 
 /**
+ * @tc.name: Is3daDirectBusPort_001
+ * @tc.desc: Test Is3daDirectBusPort matches the 3da keyword in the module name.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, Is3daDirectBusPort_001, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    info.name = "bus10_3da_out"; // boot xml module name
+    info.busAddress = "";
+    EXPECT_TRUE(AudioAdapterManager::Is3daDirectBusPort(info));
+
+    info.name = "mixport_bus11_3da_out"; // play-time new-pipe module name
+    EXPECT_TRUE(AudioAdapterManager::Is3daDirectBusPort(info));
+}
+
+/**
+ * @tc.name: Is3daDirectBusPort_002
+ * @tc.desc: Test Is3daDirectBusPort matches the 3da keyword in the bus address only.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, Is3daDirectBusPort_002, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    info.name = "primary";
+    info.busAddress = "bus10_3da_out";
+    EXPECT_TRUE(AudioAdapterManager::Is3daDirectBusPort(info));
+}
+
+/**
+ * @tc.name: Is3daDirectBusPort_003
+ * @tc.desc: Test Is3daDirectBusPort returns false for non-3da and empty fields.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, Is3daDirectBusPort_003, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    info.name = "speaker";
+    info.busAddress = "bus1_out";
+    EXPECT_FALSE(AudioAdapterManager::Is3daDirectBusPort(info));
+
+    info.name = "";
+    info.busAddress = "";
+    EXPECT_FALSE(AudioAdapterManager::Is3daDirectBusPort(info));
+}
+
+/**
+ * @tc.name: ConvergeTo3daSink_001
+ * @tc.desc: Test ConvergeTo3daSink takes the bus address as deviceClass with the fixed 3DA idInfo.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, ConvergeTo3daSink_001, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    info.name = "mixport_bus11_3da_out";
+    info.busAddress = "bus10_3da_out";
+    std::string deviceClass = "primary";
+    std::string idInfo = HDI_ID_INFO_DEFAULT;
+    AudioAdapterManager::ConvergeTo3daSink(info, deviceClass, idInfo);
+    EXPECT_EQ(deviceClass, "bus10_3da_out");
+    EXPECT_EQ(idInfo, HDI_ID_INFO_3DA);
+}
+
+/**
+ * @tc.name: ConvergeTo3daSink_002
+ * @tc.desc: Test ConvergeTo3daSink falls back to the module name when busAddress is empty.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, ConvergeTo3daSink_002, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    info.name = "bus10_3da_out";
+    info.busAddress = "";
+    std::string deviceClass = "";
+    std::string idInfo = "";
+    AudioAdapterManager::ConvergeTo3daSink(info, deviceClass, idInfo);
+    EXPECT_EQ(deviceClass, "bus10_3da_out");
+    EXPECT_EQ(idInfo, HDI_ID_INFO_3DA);
+}
+
+/**
  * @tc.name: SaveSystemVolumeForEffect_MultipleDevices_001
  * @tc.type: FUNC
  * @tc.desc: Test SaveSystemVolumeForEffect for multiple device types
