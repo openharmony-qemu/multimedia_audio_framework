@@ -296,7 +296,13 @@ private:
         auto future = promise->get_future();
 
         auto wrapper = [req = std::move(request), p = promise]() {
-            p->set_value(req());
+            try {
+                p->set_value(req());
+            } catch (...) {
+                // Store the exception instead of letting it propagate out of the
+                // worker thread (uncaught exception would terminate the process).
+                p->set_exception(std::current_exception());
+            }
         };
 
         SendRequest(std::move(wrapper), funcName);
@@ -307,7 +313,12 @@ private:
                 funcName.c_str(), timeoutMs);
             return defaultValue;
         }
-        return future.get();
+        try {
+            return future.get();
+        } catch (...) {
+            AUDIO_ERR_LOG("SendRequestSync %{public}s request exception", funcName.c_str());
+            return defaultValue;
+        }
     }
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
     int32_t OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);

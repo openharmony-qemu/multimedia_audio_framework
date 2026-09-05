@@ -79,6 +79,9 @@ int32_t OfflineAudioEffectChainImpl::SetParam(const std::vector<uint8_t> &param)
 
 int32_t OfflineAudioEffectChainImpl::GetParam(std::vector<uint8_t> &param)
 {
+    // Mirror SetParam: reject oversized param before the IPC round trip (the server
+    // side bound check would reject it anyway, but only after serializing the payload).
+    CHECK_AND_RETURN_RET_LOG(param.size() <= MAX_PARAM_SIZE, ERR_INVALID_PARAM, "param size overflow");
     std::lock_guard<std::mutex> lock(streamClientMutex_);
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
     return offlineStreamInClient_->GetParamOfflineEffectChain(param);

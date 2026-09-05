@@ -433,6 +433,11 @@ HpaeSourceBufferType HpaeSourceInputNode::GetOutputPortBufferType(HpaeNodeInfo &
 int32_t HpaeSourceInputNode::GetCapturerSourceAdapter(
     const std::string &deviceClass, const SourceType &sourceType, const std::string &info)
 {
+    // A repeated call without CapturerSourceDeInit would overwrite a valid captureId_
+    // and leak the HdiAdapterManager reference count; release the previous id first.
+    if (captureId_ != HDI_INVALID_ID) {
+        HdiAdapterManager::GetInstance().ReleaseId(captureId_);
+    }
     captureId_ = HDI_INVALID_ID;
     if (info.empty()) {
         captureId_ = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(
