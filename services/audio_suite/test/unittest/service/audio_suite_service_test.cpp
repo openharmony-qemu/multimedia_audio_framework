@@ -57,6 +57,16 @@ public:
     {
         return 0;
     }
+
+    bool AddDeathRecipient(const sptr<DeathRecipient>& recipient) override
+    {
+        return true;
+    }
+
+    bool RemoveDeathRecipient(const sptr<DeathRecipient>& recipient) override
+    {
+        return true;
+    }
 };
 
 class TestAudioSuiteService : public AudioSuiteService {
