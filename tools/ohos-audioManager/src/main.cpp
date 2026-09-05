@@ -524,9 +524,14 @@ int ValidateDeviceTypes(const std::vector<DeviceType>& deviceTypes,
     return 0;
 }
 
+struct DeviceSelectionContext {
+    DeviceFlag flag;
+    std::string flagName;
+    std::string deviceKind;
+};
+
 int ResolveDeviceDescriptors(AudioSystemManager* manager,
-    const std::vector<DeviceType>& deviceTypes, DeviceFlag flag,
-    const std::string& flagName, const std::string& deviceKind,
+    const std::vector<DeviceType>& deviceTypes, const DeviceSelectionContext& context,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& audioDeviceDescriptors)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> availableDevices;
@@ -539,7 +544,7 @@ int ResolveDeviceDescriptors(AudioSystemManager* manager,
             continue;
         }
         if (!devicesQueried) {
-            availableDevices = manager->GetDevices(flag);
+            availableDevices = manager->GetDevices(context.flag);
             devicesQueried = true;
         }
         std::shared_ptr<AudioDeviceDescriptor> targetDevice = nullptr;
@@ -551,7 +556,7 @@ int ResolveDeviceDescriptors(AudioSystemManager* manager,
         }
         if (targetDevice == nullptr) {
             return OutputError("ERR_DEVICE_UNAVAILABLE", "Specified device type is not available",
-                "Use 'get-devices --flag " + flagName + "' to check available " + deviceKind + " devices");
+                "Use 'get-devices --flag " + context.flagName + "' to check available " + context.deviceKind + " devices");
         }
         audioDeviceDescriptors.push_back(targetDevice);
     }
@@ -575,7 +580,9 @@ int CmdSelectOutputDevice(int argc, char** argv)
 {
     std::vector<DeviceType> deviceTypes = ParseDeviceTypes(argc, argv);
     int ret = ValidateDeviceTypes(deviceTypes, "select-output-device", "DEVICE_TYPE_SPEAKER");
-    if (ret != 0) return ret;
+    if (ret != 0) {
+        return ret;
+    }
 
     AudioSystemManager* manager = AudioSystemManager::GetInstance();
     if (manager == nullptr) {
@@ -583,10 +590,12 @@ int CmdSelectOutputDevice(int argc, char** argv)
             "Check if audio service is running");
     }
 
+    DeviceSelectionContext context{OUTPUT_DEVICES_FLAG, "OUTPUT_DEVICES_FLAG", "output"};
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptors;
-    ret = ResolveDeviceDescriptors(manager, deviceTypes, OUTPUT_DEVICES_FLAG,
-        "OUTPUT_DEVICES_FLAG", "output", descriptors);
-    if (ret != 0) return ret;
+    ret = ResolveDeviceDescriptors(manager, deviceTypes, context, descriptors);
+    if (ret != 0) {
+        return ret;
+    }
 
     int32_t result = manager->SelectOutputDevice(descriptors);
     if (result != SUCCESS) {
@@ -601,7 +610,9 @@ int CmdSelectInputDevice(int argc, char** argv)
 {
     std::vector<DeviceType> deviceTypes = ParseDeviceTypes(argc, argv);
     int ret = ValidateDeviceTypes(deviceTypes, "select-input-device", "DEVICE_TYPE_MIC");
-    if (ret != 0) return ret;
+    if (ret != 0) {
+        return ret;
+    }
 
     AudioSystemManager* manager = AudioSystemManager::GetInstance();
     if (manager == nullptr) {
@@ -609,10 +620,12 @@ int CmdSelectInputDevice(int argc, char** argv)
             "Check if audio service is running");
     }
 
+    DeviceSelectionContext context{INPUT_DEVICES_FLAG, "INPUT_DEVICES_FLAG", "input"};
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptors;
-    ret = ResolveDeviceDescriptors(manager, deviceTypes, INPUT_DEVICES_FLAG,
-        "INPUT_DEVICES_FLAG", "input", descriptors);
-    if (ret != 0) return ret;
+    ret = ResolveDeviceDescriptors(manager, deviceTypes, context, descriptors);
+    if (ret != 0) {
+        return ret;
+    }
 
     int32_t result = manager->SelectInputDevice(descriptors);
     if (result != SUCCESS) {
