@@ -43,7 +43,7 @@ HWTEST_F(LoopbackCallbackUnitTest, OnCommandResult_CallbackValid_001, TestSize.L
             successReceived = success;
             errorCodeReceived = errorCode;
         }
-        void OnStatusChange(int status, int reason) override {}
+        void OnStatusNotify(int status, int reason) override {}
     };
 
     auto cb = std::make_shared<TestILoopbackCB>();
@@ -61,7 +61,7 @@ HWTEST_F(LoopbackCallbackUnitTest, OnCommandResult_CallbackExpired_001, TestSize
     public:
         int callCount = 0;
         void OnCommandResult(int command, bool success, int errorCode) override { callCount++; }
-        void OnStatusChange(int status, int reason) override {}
+        void OnStatusNotify(int status, int reason) override {}
     };
 
     auto cb = std::make_shared<TestILoopbackCB>();
@@ -72,14 +72,14 @@ HWTEST_F(LoopbackCallbackUnitTest, OnCommandResult_CallbackExpired_001, TestSize
     EXPECT_EQ(result, SUCCESS);
 }
 
-HWTEST_F(LoopbackCallbackUnitTest, OnStatusChange_CallbackValid_001, TestSize.Level1)
+HWTEST_F(LoopbackCallbackUnitTest, OnStatusNotify_CallbackValid_001, TestSize.Level1)
 {
     class TestILoopbackCB : public ILoopbackCB {
     public:
         int statusReceived = 0;
         int reasonReceived = 0;
         void OnCommandResult(int command, bool success, int errorCode) override {}
-        void OnStatusChange(int status, int reason) override {
+        void OnStatusNotify(int status, int reason) override {
             statusReceived = status;
             reasonReceived = reason;
         }
@@ -88,25 +88,25 @@ HWTEST_F(LoopbackCallbackUnitTest, OnStatusChange_CallbackValid_001, TestSize.Le
     auto cb = std::make_shared<TestILoopbackCB>();
     auto callback = new LoopbackCallback(cb);
 
-    callback->OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
+    callback->OnStatusNotify(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
     EXPECT_EQ(cb->statusReceived, LOOPBACK_AVAILABLE_RUNNING);
     EXPECT_EQ(cb->reasonReceived, CMD_FROM_SYSTEM);
 }
 
-HWTEST_F(LoopbackCallbackUnitTest, OnStatusChange_CallbackExpired_001, TestSize.Level1)
+HWTEST_F(LoopbackCallbackUnitTest, OnStatusNotify_CallbackExpired_001, TestSize.Level1)
 {
     class TestILoopbackCB : public ILoopbackCB {
     public:
         int callCount = 0;
         void OnCommandResult(int command, bool success, int errorCode) override {}
-        void OnStatusChange(int status, int reason) override { callCount++; }
+        void OnStatusNotify(int status, int reason) override { callCount++; }
     };
 
     auto cb = std::make_shared<TestILoopbackCB>();
     auto callback = new LoopbackCallback(cb);
     cb = nullptr;
 
-    int32_t result = callback->OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
+    int32_t result = callback->OnStatusNotify(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -494,6 +494,99 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, RemoveAudioLoopbackCallback_NoPrivate_001
 
     int32_t result = wrapper->RemoveAudioLoopbackCallback();
     EXPECT_EQ(result, SUCCESS);
+}
+
+HWTEST_F(AudioLoopbackWrapperUnitTest, Init_Normal_Success_001, TestSize.Level1)
+{
+    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_NORMAL, appInfo_);
+
+    int32_t result = wrapper->Init();
+    EXPECT_EQ(result, SUCCESS);
+    sptr<ILoopback> proxy = wrapper->GetLoopbackProxy();
+    EXPECT_NE(proxy, nullptr);
+}
+
+HWTEST_F(AudioLoopbackWrapperUnitTest, Init_InvalidMode_IpcFailed_001, TestSize.Level1)
+{
+    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_NORMAL, appInfo_);
+    wrapper->mode_ = static_cast<AudioLoopbackMode>(100);
+
+    int32_t result = wrapper->Init();
+    EXPECT_NE(result, SUCCESS);
+    sptr<ILoopback> proxy = wrapper->GetLoopbackProxy();
+    EXPECT_EQ(proxy, nullptr);
+}
+
+HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Handler_Success_001, TestSize.Level1)
+{
+    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER,
+        appInfo_);
+    wrapper->SetLoopbackProxy(mockLoopback_);
+    wrapper->SetPrivate(mockPrivate_);
+
+    EXPECT_CALL(*mockLoopback_, Enable(true, _)).WillOnce(DoAll(SetArgReferee<1>(SUCCESS), Return(SUCCESS)));
+    EXPECT_CALL(*mockPrivate_, Enable(true)).WillOnce(Return(true));
+
+    bool result = wrapper->Enable(true);
+    EXPECT_TRUE(result);
+    wrapper->SetLoopbackProxy(nullptr);
+}
+
+HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Handler_IpcFailed_001, TestSize.Level1)
+{
+    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER,
+        appInfo_);
+    wrapper->SetLoopbackProxy(mockLoopback_);
+    wrapper->SetPrivate(mockPrivate_);
+
+    EXPECT_CALL(*mockLoopback_, Enable(true, _)).WillOnce(DoAll(SetArgReferee<1>(ERR_OPERATION_FAILED),
+        Return(SUCCESS)));
+    EXPECT_CALL(*mockPrivate_, Enable(true)).Times(AtMost(1)).WillOnce(Return(false));
+
+    bool result = wrapper->Enable(true);
+    EXPECT_FALSE(result);
+    wrapper->SetLoopbackProxy(nullptr);
+}
+
+HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Handler_PrivateFailed_001, TestSize.Level1)
+{
+    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER,
+        appInfo_);
+    wrapper->SetLoopbackProxy(mockLoopback_);
+    wrapper->SetPrivate(mockPrivate_);
+
+    EXPECT_CALL(*mockLoopback_, Enable(true, _)).WillOnce(DoAll(SetArgReferee<1>(SUCCESS), Return(SUCCESS)));
+    EXPECT_CALL(*mockPrivate_, Enable(true)).WillOnce(Return(false));
+
+    bool result = wrapper->Enable(true);
+    EXPECT_FALSE(result);
+    wrapper->SetLoopbackProxy(nullptr);
+}
+
+HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Handler_NoProxy_001, TestSize.Level1)
+{
+    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER,
+        appInfo_);
+    wrapper->SetPrivate(mockPrivate_);
+
+    EXPECT_CALL(*mockPrivate_, Enable(true)).Times(AtMost(1)).WillOnce(Return(false));
+
+    bool result = wrapper->Enable(true);
+    EXPECT_FALSE(result);
+}
+
+HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Handler_NoPrivate_001, TestSize.Level1)
+{
+    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER,
+        appInfo_);
+    wrapper->SetLoopbackProxy(mockLoopback_);
+    wrapper->SetPrivate(nullptr);
+
+    EXPECT_CALL(*mockLoopback_, Enable(true, _)).WillOnce(DoAll(SetArgReferee<1>(SUCCESS), Return(SUCCESS)));
+
+    bool result = wrapper->Enable(true);
+    EXPECT_TRUE(result);
+    wrapper->SetLoopbackProxy(nullptr);
 }
 }
 }

@@ -35,7 +35,7 @@
 namespace OHOS {
 namespace AudioStandard {
 static constexpr int32_t AUDIO_VIVID_3DA_STOP_TIMEOUT_IN_SEC = 8; // 8S
-static const std::string AV_SINK_NAME = "3DA";
+static const std::string AV_SINK_NAME = HDI_ID_INFO_3DA;
 static const char *PRIMARY_ADAPTER_TYPE = "primary";
 constexpr int32_t DELTA_TIME = 4000000; // 4ms
 constexpr int32_t PERIOD_NS_48K_1024 = 21333333; // 21.333ms
@@ -50,7 +50,7 @@ CabinPlayBackEngine::CabinPlayBackEngine()
       writeCount_(0),
       fwkSyncTime_(0),
       uChannel_(0),
-      uformat_(sizeof(int32_t)),
+      uformat_(INVALID_WIDTH),
       uSampleRate_(0),
       latency_(0),
       firstSetVolume_(true),
@@ -232,7 +232,7 @@ void CabinPlayBackEngine::AdjustVolume()
     uint32_t streamIndx = stream_->GetStreamIndex();
     AudioProcessConfig config = stream_->GetAudioProcessConfig();
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0u};
-    const std::string deviceClass = "audio_vivid_3da_direct";
+    const std::string deviceClass = HDI_BUS_KEYWORD_3DA;
     uint32_t renderId = IdHandler::GetInstance().GetRenderIdByDeviceClass(deviceClass, AV_SINK_NAME);
     float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, config.streamType, renderId, &volumes);
     float volumeBg = volumes.volumeHistory;
@@ -292,14 +292,7 @@ void CabinPlayBackEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> 
 
 int32_t CabinPlayBackEngine::GetFormatByteSize(AudioSampleFormat format)
 {
-    switch (format) {
-        case AudioSampleFormat::SAMPLE_S16LE:
-            return sizeof(int16_t);
-        case AudioSampleFormat::SAMPLE_S24LE:
-            return 3u;
-        default:
-            return sizeof(int32_t);
-    }
+    return AudioStandard::GetFormatByteSize(static_cast<int32_t>(format));
 }
 
 int32_t CabinPlayBackEngine::InitSink(const AudioStreamInfo &clientStreamInfo)
@@ -342,6 +335,7 @@ int32_t CabinPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat format
     attr.format = format;
     attr.channelLayout = layout;
     attr.deviceType = device_.deviceType_;
+    attr.address = device_.deviceName_; // routed bus port name, passed down to HDI port selection
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;
     attr.encodingType = ENCODING_AUDIOVIVID_3DA_DIRECT;
@@ -359,13 +353,21 @@ int32_t CabinPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat format
     ret = sink->SetVolume(volume, volume);
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;
-    uformat_ = GetFormatByteSize(attr.format);
+    uformat_ = attr.format;
 
     dumpFileName_ = "3da_playback_engine_.pcm";
     AUDIO_DEBUG_LOG("dump file name: %{public}s", dumpFileName_.c_str());
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dump3DA_);
 
     return ret;
+}
+
+// Without this override the base class always returns false, so TriggerStartIfNecessary
+// would call Start() on every client write: the pacing clock (fwkSyncTime_/writeCount_)
+// gets reset each time and an in-flight write could cancel a just-issued Pause.
+bool CabinPlayBackEngine::IsPlaybackEngineRunning() const noexcept
+{
+    return isStart_;
 }
 
 uint64_t CabinPlayBackEngine::GetLatency() noexcept

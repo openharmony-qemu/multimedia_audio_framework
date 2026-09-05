@@ -469,8 +469,8 @@ void AudioUsbManager::HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &&p)
     } else {
         CHECK_AND_RETURN_LOG(it != audioDevices_.end(), "Detached Device does not exist");
         NotifyDevice(*it, false);
-        audioDevices_.erase(it);
         pendingMap_.erase(it->usbAddr_);
+        audioDevices_.erase(it);
     }
 }
 

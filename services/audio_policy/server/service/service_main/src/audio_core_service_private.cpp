@@ -1317,6 +1317,11 @@ uint32_t AudioCoreService::QueryPipeIdBySessionId(uint32_t sessionId)
     return pipeManager_->QueryPipeIdBySessionId(sessionId);
 }
 
+std::string AudioCoreService::Get3daDirectBusAddress()
+{
+    return pipeManager_->Get3daDirectBusAddress();
+}
+
 int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
     AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool &isUltraFast)
 {

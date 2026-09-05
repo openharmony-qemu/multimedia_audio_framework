@@ -39,6 +39,7 @@ public:
     void RemoveRenderer(const std::shared_ptr<IRendererStream> &stream) override;
 
     uint64_t GetLatency() noexcept override;
+    bool IsPlaybackEngineRunning() const noexcept override;
 
 private:
     int32_t InitSink(const AudioStreamInfo &clientStreamInfo);
@@ -62,7 +63,7 @@ private:
     uint64_t writeCount_;
     uint64_t fwkSyncTime_;
     uint32_t uChannel_;
-    int32_t uformat_;
+    AudioSampleFormat uformat_; // cached sample-format enum (never store byte size)
     uint32_t uSampleRate_;
     uint64_t latency_;
     bool firstSetVolume_;

@@ -17,6 +17,7 @@ package OHOS.AudioStandard;
 
 interface ILoopback {
     [ipccode 0] void Enable([in] boolean enable, [out] int ret);
+    void NotifyStatus([in] int status, [out] int ret);
     void GetStatus([out] int status, [out] int ret);
     void GetVolume([out] float volume, [out] int ret);
 }

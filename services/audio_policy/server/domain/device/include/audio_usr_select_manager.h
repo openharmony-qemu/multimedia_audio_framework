@@ -56,9 +56,6 @@ public:
 
     // Set media render device selected by the user
     bool SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, int32_t uid);
-    std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDeviceByUid(int32_t uid);
-    BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
-    std::shared_ptr<AudioDeviceDescriptor> GetCapturerDevice(int32_t uid, SourceType sourceType);
     void UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info, bool mcFlag = false);
     void UpdateAppIsBackState(int32_t uid, AppIsBackState appState);
     void RestoreMediaControllerPreferredInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
@@ -67,9 +64,6 @@ private:
     AudioUsrSelectManager() {};
     ~AudioUsrSelectManager() {};
 
-    std::shared_ptr<AudioDeviceDescriptor> JudgeFinalSelectDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-        SourceType sourceType, BluetoothAndNearlinkPreferredRecordCategory category);
-    std::shared_ptr<AudioDeviceDescriptor> GetPreferDevice(int32_t index);
     int32_t GetIdFromRecordDeviceInfoList(int32_t uid);
     void UpdateRecordDeviceInfoForStartInner(int32_t index, RecordDeviceInfo info);
     void UpdateRecordDeviceInfoForSelectInner(int32_t index, RecordDeviceInfo info);

@@ -121,7 +121,11 @@ void HpaeVirtualProcessCluster::CreateGainNode(uint32_t sessionId, const HpaeNod
     } else {
         // Reuse existing node: clear stale fade state, mirroring HpaeProcessCluster::CreateGainNode.
         // (DisConnect erases the node, so reuse is unlikely, but reset for parity/defense.)
-        gainNode->ResetFadeState();
+        if (gainNode->HasPendingFade()) {
+            gainNode->ResetFadeState();
+        } else {
+            gainNode->ClearFadeState();
+        }
         AUDIO_INFO_LOG("sessionId %{public}d gainNode already exist, reset fade state", sessionId);
     }
 }

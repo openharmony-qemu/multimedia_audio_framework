@@ -84,6 +84,11 @@ constexpr int32_t MAX_RETRY_COUNT = 8;
 static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; // 1s
 static const int32_t VOIP_DIRECT_BUFFER_DURATION_IN_US = 120000;
 static const int64_t ONWRITEDATA_TIMEOUT_NS = 40000000;
+// 3DA HDI frame header: magic + size1 + size2 = 3 frames
+static constexpr int32_t THREE_DA_HDI_HEADER_FRAMES = 3;
+// Whole-frame contract fixed by the HDI format: metadata size and PCM frames per block
+static constexpr int32_t AVS3METADATA_SIZE = 19824;
+static constexpr int32_t AUDIO_VIVID_SAMPLES = 1024;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -528,13 +533,11 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
         std::to_string(bufferDesc.metaLength));
 
     CHECK_AND_RETURN_RET_LOG(bufferDesc.dataLength != 0 &&
-        bufferDesc.metaBuffer != nullptr, ERR_INVALID_PARAM,
+        bufferDesc.buffer != nullptr && bufferDesc.metaBuffer != nullptr, ERR_INVALID_PARAM,
         "3DA: Invalid buffer, dataLength=%{public}zu", bufferDesc.dataLength);
 
     CHECK_AND_RETURN_RET(CallStartWhenInStandby() == SUCCESS, ERR_OPERATION_FAILED);
     FirstFrameProcess();
-
-    uint64_t writePos = clientBuffer_->GetCurWriteFrame();
 
     if (gServerProxy_ == nullptr) {
         cbThreadReleased_ = true;
@@ -543,30 +546,106 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
         return ERR_WRITE_BUFFER;
     }
 
-    size_t blockSize = bufferDesc.bufLength + bufferDesc.metaLength;
-    uint8_t *dataBase = clientBuffer_->GetDataBase();
-    CHECK_AND_RETURN_RET_LOG(dataBase != nullptr, ERR_OPERATION_FAILED,
-        "3DA: GetDataBase returned NULL! writePos=%{public}" PRIu64, writePos);
+    // 3DA: assemble the whole frame magic|size1|metadata|align|size2|pcm into shared memory
+    const size_t frameSize = sizePerFrameInByte_;
+    CHECK_AND_RETURN_RET_LOG(frameSize >= sizeof(uint16_t), ERR_INVALID_PARAM,
+        "3DA: invalid frameSize=%{public}zu", frameSize);
+    const size_t pcmLen = bufferDesc.bufLength;
+    const size_t metaLen = bufferDesc.metaLength;
+    const size_t metaAligned = (metaLen + frameSize - 1) / frameSize * frameSize;
+    const size_t totalSize = static_cast<size_t>(THREE_DA_HDI_HEADER_FRAMES) * frameSize + metaAligned + pcmLen;
 
-    // Calculate offset in circular buffer
-    size_t pcmOffset = writePos % clientBuffer_->GetDataSize();
-    size_t metaOffset = pcmOffset + bufferDesc.bufLength;
-    CHECK_AND_RETURN_RET_LOG(pcmOffset + bufferDesc.bufLength <= clientBuffer_->GetDataSize(),
-        ERR_OPERATION_FAILED, "3DA: PCM out of bounds! offset=%{public}zu, size=%{public}zu, total=%{public}zu",
-        pcmOffset, bufferDesc.bufLength, clientBuffer_->GetDataSize());
+    // Whole-frame contract: the frame geometry is fixed (metadata size, PCM frames per block)
+    // on both client and server (spanSizeInFrame_). Any other length would desync blockFrames
+    // from the server span and poison the ring alignment, and would allow the uint16_t
+    // size1/size2 header fields to overflow.
+    CHECK_AND_RETURN_RET_LOG(metaLen == static_cast<size_t>(AVS3METADATA_SIZE), ERR_INVALID_PARAM,
+        "3DA: unexpected metaLength=%{public}zu, want %{public}d", metaLen, AVS3METADATA_SIZE);
+    CHECK_AND_RETURN_RET_LOG(pcmLen == static_cast<size_t>(AUDIO_VIVID_SAMPLES) * frameSize,
+        ERR_INVALID_PARAM, "3DA: bufLength=%{public}zu is not one PCM block of %{public}d frames",
+        pcmLen, AUDIO_VIVID_SAMPLES);
 
-    memcpy_s(dataBase + pcmOffset, bufferDesc.bufLength, bufferDesc.buffer, bufferDesc.bufLength);
+    uint64_t writePos = clientBuffer_->GetCurWriteFrame();
+    RingBufferWrapper ringBuffer;
+    int32_t ret = clientBuffer_->GetAllWritableBufferFromPosFrame(writePos, ringBuffer);
+    if (ret != SUCCESS || ringBuffer.basicBufferDescs[0].bufLength < totalSize) {
+        // A full ring is transient: the server frees a whole frame every period. Wait for
+        // free space like the normal write path instead of failing the app write.
+        FutexCode futexRes = clientBuffer_->WaitFor(
+            static_cast<int64_t>(GetBufferWaitTimeoutInMs()) * AUDIO_US_PER_SECOND,
+            [this, totalSize] () {
+                return state_ != RUNNING ||
+                    static_cast<size_t>(clientBuffer_->GetWritableDataFrames()) * sizePerFrameInByte_ >= totalSize;
+            });
+        CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
+            "3DA: state changed while waiting for space, state:%{public}d", state_.load());
+        CHECK_AND_RETURN_RET_LOG(futexRes == FUTEX_SUCCESS, ERROR,
+            "3DA: wait for writable space failed, ret:%{public}d", static_cast<int32_t>(futexRes));
+        writePos = clientBuffer_->GetCurWriteFrame();
+        ret = clientBuffer_->GetAllWritableBufferFromPosFrame(writePos, ringBuffer);
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.basicBufferDescs[0].bufLength >= totalSize,
+        ERR_OPERATION_FAILED, "3DA: GetAllWritableBuffer failed:%{public}d, writable=%{public}zu, need=%{public}zu",
+        ret, ringBuffer.basicBufferDescs[0].bufLength, totalSize);
+    // The free region may wrap at the ring tail and come back as two segments; that does
+    // not mean this frame crosses the tail. The frame always goes into the first segment,
+    // whose capacity is already checked above. With whole-frame stepping a real split can
+    // never occur: writePos advances by whole frames and the ring size is a whole-frame
+    // multiple, so seg0 either holds the full frame or is rejected by the check above.
+
+    uint8_t *dst = ringBuffer.basicBufferDescs[0].buffer;
+    const size_t cap = ringBuffer.basicBufferDescs[0].bufLength;
+    size_t offset = 0;
+    // magic: first 2 bytes 0x3d 0xaf, rest 0xff
+    if (memset_s(dst + offset, cap - offset, 0xff, frameSize) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    dst[offset] = static_cast<uint8_t>(0x3d);
+    dst[offset + 1] = static_cast<uint8_t>(0xaf);
+    offset += frameSize;
+    // size1: first 2 bytes (CPU order) = metadata+align size, rest 0xff
+    if (memset_s(dst + offset, cap - offset, 0xff, frameSize) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    uint16_t metaSize = static_cast<uint16_t>(metaAligned);
+    if (memcpy_s(dst + offset, cap - offset, &metaSize, sizeof(uint16_t)) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    offset += frameSize;
+    // metadata
+    if (memcpy_s(dst + offset, cap - offset, bufferDesc.metaBuffer, metaLen) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    offset += metaLen;
+    // align: 0xff padding up to a whole frame
+    const size_t alignSize = metaAligned - metaLen;
+    if (alignSize > 0 && memset_s(dst + offset, cap - offset, 0xff, alignSize) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    offset += alignSize;
+    // size2: first 2 bytes (CPU order) = PCM frame count, rest 0xff
+    if (memset_s(dst + offset, cap - offset, 0xff, frameSize) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    uint16_t pcmFrames = static_cast<uint16_t>(pcmLen / frameSize);
+    if (memcpy_s(dst + offset, cap - offset, &pcmFrames, sizeof(uint16_t)) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    offset += frameSize;
+    // pcm
+    if (memcpy_s(dst + offset, cap - offset, bufferDesc.buffer, pcmLen) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
 
-    CHECK_AND_RETURN_RET_LOG(metaOffset + bufferDesc.metaLength <= clientBuffer_->GetDataSize(),
-        ERR_OPERATION_FAILED, "3DA: Metadata out of bounds! metaOffset=%{public}zu,"
-        "size=%{public}zu, total=%{public}zu",
-        metaOffset, bufferDesc.metaLength, clientBuffer_->GetDataSize());
+    // advance in frames (whole-frame count = header + metadata-aligned + pcm)
+    uint64_t blockFrames = static_cast<uint64_t>(THREE_DA_HDI_HEADER_FRAMES) + metaAligned / frameSize
+        + pcmLen / frameSize;
+    clientBuffer_->SetCurWriteFrame(writePos + blockFrames, false);
 
-    memcpy_s(dataBase + metaOffset, bufferDesc.metaLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
-    uint64_t newWriteFrame = writePos + blockSize;
-    clientBuffer_->SetCurWriteFrame(newWriteFrame, false);
-
+    AUDIO_DEBUG_LOG("3DA: built HDI frame, total=%{public}zu, size1=%{public}zu, blockFrames=%{public}" PRIu64,
+        totalSize, metaAligned, blockFrames);
     return SUCCESS;
 }
 
@@ -581,6 +660,9 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
         (curStreamParams_.encoding == ENCODING_AUDIOVIVID)) {
         if (bufferDesc.dataLength != 0) {
             result = Write3DADirectBuffer(bufferDesc);
+            if (result == SUCCESS) {
+                Update3DAPositionAfterWrite(bufferDesc.bufLength);
+            }
         } else {
             AUDIO_WARNING_LOG("INVALID 3DA buffer");
             usleep(WAIT_FOR_NEXT_CB);
@@ -951,6 +1033,28 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
     HandleRendererPositionChanges(writtenSize);
 
     return bufferCached ? oriBufferSize : writtenSize;
+}
+
+// 3DA direct returns from ProcessWriteInner before WriteInner, so run the post-write
+// bookkeeping here for parity with other encodings: audioWriteState_ for
+// GetAudioTimestampInfo, position notify, and mark/period callbacks.
+// Count PCM frames only (bufLength); header/meta/align are not app audio.
+void RendererInClientInner::Update3DAPositionAfterWrite(size_t pcmBytes)
+{
+    if (sizePerFrameInByte_ == 0) {
+        AUDIO_ERR_LOG("Update3DAPositionAfterWrite: sizePerFrameInByte_ is 0");
+        return;
+    }
+    AudioWriteState currentState = audioWriteState_.load();
+    uint64_t frames = pcmBytes / sizePerFrameInByte_;
+    currentState.unprocessedFramesBytes_ += frames;
+    currentState.totalBytesWrittenAfterFlush_ += frames;
+    currentState.perPeriodFrame_ = 0;
+    audioWriteState_.store(currentState);
+    if (ipcStream_ != nullptr) {
+        ipcStream_->UpdatePosition();
+    }
+    HandleRendererPositionChanges(pcmBytes);
 }
 
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)

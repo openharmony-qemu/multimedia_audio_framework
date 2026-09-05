@@ -1,0 +1,54 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+1.0 {
+  global:
+    # ---- resampler C++ classes (resample/proresampler/audio_proresampler.cpp) ----
+    # ProResampler: constructed BY NAME across DSOs -- node library
+    # hpae_audio_format_converter_node.cpp:54 (make_unique<ProResampler>) and
+    # audio_service/common audio_resample.cpp:25 -- so ctor/dtor/move ops and
+    # the vtable/typeinfo (RC02) that virtual dispatch through the Resampler
+    # base pointer depends on must all stay exported.
+    # Resampler: abstract base, header-only, wildcarded for emitted thunks.
+    *ProResampler*;
+    *Resampler*;
+
+    # ---- resampler C engine (resample/proresampler/audio_proresampler_process.c) ----
+    # extern "C", no mangling -> bare names. Called by ProResampler members
+    # in this DSO, and the ctor/dtor are referenced cross-DSO by the class
+    # symbols above; kernels are file-static and stay local.
+    SingleStagePolyphaseResamplerInit;
+    SingleStagePolyphaseResamplerProcess;
+    SingleStagePolyphaseResamplerSetRate;
+    SingleStagePolyphaseResamplerSkipHalfTaps;
+    SingleStagePolyphaseResamplerResetMem;
+    SingleStagePolyphaseResamplerFree;
+
+    # ---- channel converter classes (channel_converter/) ----
+    # ChannelConverter used by audio_suite (3 headers) and node converter node;
+    # DownMixer is consumed via ChannelConverter but also linked directly by
+    # its own unit tests.
+    *ChannelConverter*;
+    *DownMixer*;
+
+    # ---- mixing-table free functions (channel_converter/src/mixer_utils.cpp) ----
+    # SetDefaultChannelLayout is called BY NAME from audio_service
+    # (hpae_renderer_stream_impl.cpp); the rest are shared helpers.
+    *SetUpGeneralMixingTable*;
+    *SetDefaultChannelLayout*;
+    *IsValidChLayout*;
+    *BitCounts*;
+    *CheckIsHOA*;
+  local:
+    *;
+};

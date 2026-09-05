@@ -22,6 +22,7 @@
 
 #include "audio_injector_policy.h"
 #include "audio_definition_adapter_info.h"
+#include "common/hdi_adapter_info.h"
 #include "audio_definition_policy_utils.h"
 #include "audio_policy_utils.h"
 #include "audio_utils.h"
@@ -534,7 +535,8 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_OUTPUT_FLAG_INTERPHONE) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT) ||
         (routeFlag & AUDIO_INPUT_FLAG_CAMCORDER) ||
-        (routeFlag & AUDIO_INPUT_FLAG_VOICE_MESSAGE)) {
+        (routeFlag & AUDIO_INPUT_FLAG_VOICE_MESSAGE) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_HD)) {
         AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
         return true;
     }
@@ -678,6 +680,20 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPipeManager::GetProcessDeviceInfoByS
     }
     AUDIO_ERR_LOG("Cannot find session: %{public}u", sessionId);
     return nullptr;
+}
+
+std::string AudioPipeManager::Get3daDirectBusAddress()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        const AudioModuleInfo &moduleInfo = pipeInfo->moduleInfo_;
+        if (moduleInfo.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos ||
+            moduleInfo.name.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
+            return moduleInfo.busAddress.empty() ? moduleInfo.name : moduleInfo.busAddress;
+        }
+    }
+    return "";
 }
 
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutputStreamDescs()

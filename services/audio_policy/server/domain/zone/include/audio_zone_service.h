@@ -65,7 +65,7 @@ public:
     int32_t EnableAudioZoneChangeReport(pid_t clientPid, int32_t zoneId, bool enable);
 
     int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid);
-    int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid);
+    int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid, bool isInternal = false);
     int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
     int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
     int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream);
@@ -164,7 +164,8 @@ private:
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);
     int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,
         uint32_t streamId, const StreamUsage &usage);
-    int32_t RemoveKeysFromAudioZone(int32_t zoneId, const std::vector<AudioZoneBindKey> &bindKeys);
+    int32_t RemoveKeysFromAudioZone(int32_t zoneId, const std::vector<AudioZoneBindKey> &bindKeys,
+        bool isInternal = false);
     int32_t FindAudioZoneByKey(int32_t uid, const std::string &deviceTag, uint32_t streamId,
         const StreamUsage &usage, DeviceRole deviceRole);
     bool CheckIsZoneValid(int32_t zoneId);

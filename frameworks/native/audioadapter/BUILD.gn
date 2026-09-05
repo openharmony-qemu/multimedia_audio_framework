@@ -82,5 +82,5 @@ ohos_shared_library("pro_audio_service_adapter") {
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
-  version_script = "libpulse_audio_service_adapter.versionscript"
+  version_script = "libpro_audio_service_adapter.versionscript"
 }

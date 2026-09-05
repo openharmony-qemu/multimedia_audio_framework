@@ -144,19 +144,16 @@ void HpaeGainNode::ResetVolume()
     AUDIO_INFO_LOG("curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
 }
 
-void HpaeGainNode::ResetFadeState()
+void HpaeGainNode::ClearFadeState()
 {
     // A reused/reconnected GainNode may carry stale fade state from its previous lifecycle
     // (e.g. DONE_FADEOUT left by a Pause). DONE_FADEOUT makes SignalProcess silence every frame,
     // so it must be cleared; otherwise the reused node stays muted permanently.
     fadeOutState_ = FadeOutState::NO_FADEOUT;
-    // fadeInState_=true but collFadeInState_=false is intentional:
-    //  - fadeOutState_==DONE_FADEOUT is a per-frame SilenceData gate in SignalProcess, so a
-    //    reused node was muted; fade-in avoids the silence->full-volume pop on reconnect.
-    //  - collFadeOutState_==DONE_FADEOUT is NOT a silence gate (DoCollFading only acts on
-    //    DO_FADEOUT), so clearing it needs no fade-in; coll fade-in is driven by collaboration
-    //    logic (SetCollFadeState), not by reconnect.
-    fadeInState_ = true; // fade-in on reconnect to avoid pop
+    // fadeInState_ is intentionally NOT armed here: a hot re-plumb of a cleanly playing session
+    // (scene refresh / effect-mode switch / move / manager reload) must keep gain continuity;
+    // re-arming the fade-in there is an audible 20 ms duck mid-speech. Arming is reserved for
+    // lifecycle transitions, see ResetFadeState().
     fadeProcessedBytes_ = 0;
     totalFadeBytes_ = 0;
     collFadeOutState_ = FadeOutState::NO_FADEOUT;
@@ -164,6 +161,25 @@ void HpaeGainNode::ResetFadeState()
     collFadeProcessedBytes_ = 0;
     collTotalFadeBytes_ = 0;
     operation_ = OPERATION_INVALID; // clear stale op; harmless (SetFadeState reassigns before use)
+    AUDIO_INFO_LOG("ClearFadeState, session:%{public}u, no fade armed", GetSessionId());
+}
+
+bool HpaeGainNode::HasPendingFade() const
+{
+    // True when the node is in an in-flight fade lifecycle: fade-in not finished, fade-out
+    // pending or terminal (DONE_FADEOUT is a per-frame SilenceData gate), or collab fade
+    // pending. Such a node needs the arm path on reconnect, otherwise resuming straight to
+    // full volume after a muted/partial state pops. collFadeOutState_==DONE_FADEOUT is NOT a
+    // silence gate (DoCollFading only acts on DO_FADEOUT), but it is included so a collab
+    // stream mid-fade keeps the compensated fade-in instead of an uncompensated step.
+    return fadeInState_ || fadeOutState_ != FadeOutState::NO_FADEOUT ||
+        collFadeInState_ || collFadeOutState_ != FadeOutState::NO_FADEOUT;
+}
+
+void HpaeGainNode::ResetFadeState()
+{
+    ClearFadeState();
+    fadeInState_ = true; // fade-in on reconnect to avoid pop
     AUDIO_INFO_LOG("ResetFadeState, session:%{public}u", GetSessionId());
 }
 

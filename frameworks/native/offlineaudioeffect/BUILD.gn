@@ -108,7 +108,7 @@ if (!audio_framework_feature_offline_effect) {
       "ipc:ipc_single",
     ]
 
-    version_script = "../../../audio_framework.versionscript"
+    version_script = "liboffline_audio_effect_service.versionscript"
     innerapi_tags = [ "platformsdk" ]
 
     part_name = "audio_framework"

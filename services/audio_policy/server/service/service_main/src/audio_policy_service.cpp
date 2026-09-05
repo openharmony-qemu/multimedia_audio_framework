@@ -581,6 +581,16 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
 
     deviceInfo.audioStreamInfo_ = {targetStreamInfo};
     deviceInfo.deviceName_ = "mmap_device";
+    if (config.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
+        // 3DA direct: the cabin sink passes attr.address to HDI CreateRender as the port
+        // descriptor, and the pin-based fallback would always land on Speaker. Use the
+        // 3da bus port address instead of the mmap placeholder; without a 3da pipe (e.g.
+        // phone UT environment) keep the placeholder so behavior stays unchanged.
+        std::string busAddress = coreService->Get3daDirectBusAddress();
+        if (!busAddress.empty()) {
+            deviceInfo.deviceName_ = busAddress;
+        }
+    }
     audioRouteMap_.GetNetworkIDInFastRouterMap(config.appInfo.appUid, deviceInfo.deviceRole_, deviceInfo.networkId_);
     deviceInfo.a2dpOffloadFlag_ = GetA2dpOffloadFlag();
     return SUCCESS;

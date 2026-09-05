@@ -5960,11 +5960,6 @@ void AudioPolicyServer::NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool 
     eventEntry_->TriggerVoipPriorityReload(streamId, lowered);
 }
 
-int32_t AudioPolicyServer::SetSourceOutputStreamMute(int32_t uid, bool mute)
-{
-    return audioPolicyService_.SetSourceOutputStreamMute(uid, mute);
-}
-
 int32_t AudioPolicyServer::IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret)
 {
     ret = AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(static_cast<SourceType>(sourceType));

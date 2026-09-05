@@ -92,7 +92,7 @@ ohos_shared_library("audio_loopback") {
 
   public_configs = [ ":audio_external_library_config" ]
 
-  version_script = "../../../audio_framework.versionscript"
+  version_script = "libaudio_loopback.versionscript"
   innerapi_tags = [ "platformsdk" ]
 
   part_name = "audio_framework"

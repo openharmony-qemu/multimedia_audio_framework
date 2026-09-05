@@ -746,7 +746,22 @@ int32_t AudioSelectInterfaceService::UnexcludeOutputDevices(AudioDeviceUsage aud
 int32_t AudioSelectInterfaceService::UnexcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
-    CHECK_AND_RETURN_RET_LOG(deviceDescs.size() > 0, ERR_INVALID_PARAM, "No device to exclude");
+    CHECK_AND_RETURN_RET_LOG(deviceDescs.size() > 0, ERR_INVALID_PARAM, "No device to unexclude");
+    const auto &front = deviceDescs.front();
+    if (Util::IsEnhancedRoutingSupported() &&
+        front != nullptr && !front->macAddress_.empty()) {
+        auto allDevices = AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> unexcludeDescs;
+        auto isSameMacOutput = [&front](const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc) {
+            return deviceDesc != nullptr &&
+                deviceDesc->macAddress_ == front->macAddress_ &&
+                deviceDesc->deviceRole_ == OUTPUT_DEVICE;
+        };
+        std::copy_if(allDevices.begin(), allDevices.end(),
+            std::back_inserter(unexcludeDescs), isSameMacOutput);
+        AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludeDescs, D_ALL_DEVICES);
+        return SUCCESS;
+    }
     AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(deviceDescs, audioDevUsage);
     return SUCCESS;
 }

@@ -683,6 +683,7 @@ enum LoopbackCommand {
     LOOPBACK_CMD_ENABLE = 1,
     /** Disable command.*/
     LOOPBACK_CMD_DISABLE = 2,
+    LOOPBACK_CMD_GETSTATUS = 3,
 };
 
 enum LoopBackError : int32_t {

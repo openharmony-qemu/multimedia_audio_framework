@@ -53,10 +53,6 @@ public:
     void RecoverExcludedOutputDevices();
     int32_t ConnectVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
 
-    void SelectOutputDeviceForRemote(std::shared_ptr<AudioDeviceDescriptor> desc);
-    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
-
 private:
     AudioRecoveryDevice() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
@@ -71,18 +67,6 @@ private:
         int32_t usageOrSourceType);
     int32_t HandleExcludedOutputDevicesRecovery(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>> &excludedDevices);
-
-    //selectoutputdevice
-    int32_t RefreshVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
-
-    // selectinputdevice
-    void SetCaptureDeviceForUsage(AudioScene scene, SourceType srcType, std::shared_ptr<AudioDeviceDescriptor> desc);
-    int32_t SelectFastInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
-        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
-    void WriteSelectInputSysEvents(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
-        SourceType srcType, AudioScene scene);
-
-    int32_t ClearActiveHfpDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 private:
     AudioStreamCollector& streamCollector_;
     AudioDeviceManager &audioDeviceManager_;

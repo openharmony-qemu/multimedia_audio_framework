@@ -1387,6 +1387,12 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     bool isNeedExclude = CheckNeedExclude(updatedDesc, isConnected);
     UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
 
+    if (isNeedExclude) {
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = {};
+        descs.push_back(std::make_shared<AudioDeviceDescriptor>(updatedDesc));
+        AudioCoreService::GetCoreService()->ExcludeOutputDevices(D_ALL_DEVICES, descs);
+    }
+
     TriggerDeviceChangedCallback(descForCb, isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
 
@@ -1545,9 +1551,6 @@ bool AudioDeviceStatus::CheckNeedExclude(AudioDeviceDescriptor &desc, bool isCon
     AUDIO_INFO_LOG("isConnected=%{public}d", isConnected);
     CHECK_AND_RETURN_RET(isConnected, false);
     desc.visibleMode_ = SYSTEM_SERVICE_VISIBLE;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = {};
-    descs.push_back(std::make_shared<AudioDeviceDescriptor>(desc));
-    AudioCoreService::GetCoreService()->ExcludeOutputDevices(D_ALL_DEVICES, descs);
     return true;
 #endif
     return false;
@@ -1634,8 +1637,10 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             if (desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
                 UpdateNearlinkDeviceVolume(desc);
             }
+#ifndef MULTI_USER_ZONE
             auto unexcludedDevice = audioDeviceManager_.GetAvailableBluetoothDevice(desc.deviceType_, desc.macAddress_);
             AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
+#endif
             ClearPreferredWhenCategoryUpdated(desc);
         }
     }
@@ -1724,6 +1729,7 @@ void AudioDeviceStatus::RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDe
 #ifdef MULTI_USER_ZONE
     TriggerDeviceChangedCallback(descForCb, true, zoneId);
     TriggerAvailableDeviceChangedCallback(descForCb, true, zoneId);
+    AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(descForCb, D_ALL_DEVICES);
 #endif
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
@@ -1735,6 +1741,11 @@ void AudioDeviceStatus::AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDes
     AUDIO_INFO_LOG("add device back to global list only");
     audioConnectedDevice_.AddConnectedDevice(desc);
     audioDeviceManager_.AddNewDevice(desc);
+#ifdef MULTI_USER_ZONE
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = {};
+    descs.push_back(desc);
+    AudioCoreService::GetCoreService()->ExcludeOutputDevices(D_ALL_DEVICES, descs);
+#endif
     CHECK_AND_RETURN(isNeedFetch);
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("AddDeviceBackToGlobalOnly");
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("AddDeviceBackToGlobalOnly");
