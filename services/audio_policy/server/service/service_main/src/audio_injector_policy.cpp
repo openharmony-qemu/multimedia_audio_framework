@@ -319,6 +319,7 @@ void AudioInjectorPolicy::RebuildCaptureInjector(uint32_t streamId)
         return;
     }
     capturePortIdx_ = paIndex;
+    CHECK_AND_RETURN(streamDesc != nullptr);
     if ((streamDesc->routeFlag_ & AUDIO_INPUT_FLAG_NORMAL) &&
             streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         voipType_ = NORMAL_VOIP;
