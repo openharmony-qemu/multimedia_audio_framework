@@ -977,10 +977,10 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_037, TestSize.Level1)
 /**
  * @tc.name  : Test AudioEffectChain API
  * @tc.type  : FUNC
- * @tc.number: AudioEffectChain_038
+ * @tc.number: AudioEffectChain_039
  * @tc.desc  : Test ApplyEffectChain passthrough when input has fewer channels than output
  */
-HWTEST(AudioEffectChainUnitTest, AudioEffectChain_038, TestSize.Level1)
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_039, TestSize.Level1)
 {
     std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
     std::string sceneType = "SCENE_MUSIC";
