@@ -34,8 +34,8 @@ std::string RemoteDeviceCapability::GetJsonString() const
     cJSON_AddNumberToObject(interface, "hd_play_mode", hdPlaybackMode_);
     cJSON_AddNumberToObject(interface, "tokenId", deviceTokenId_);
     char *pChar = cJSON_PrintUnformatted(interface);
-    CHECK_AND_RETURN_RET_LOG(pChar != nullptr, "", "pChar is null");
     cJSON_Delete(interface);
+    CHECK_AND_RETURN_RET_LOG(pChar != nullptr, "", "pChar is null");
     std::string str = pChar;
     cJSON_free(pChar);
     return str;
