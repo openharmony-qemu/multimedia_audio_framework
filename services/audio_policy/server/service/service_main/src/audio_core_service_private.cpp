@@ -1311,6 +1311,12 @@ std::string AudioCoreService::GetModuleNameBySessionId(uint32_t sessionId)
     return pipeManager_->GetModuleNameBySessionId(sessionId);
 }
 
+uint32_t AudioCoreService::QueryPipeIdBySessionId(uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
+    return pipeManager_->QueryPipeIdBySessionId(sessionId);
+}
+
 int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
     AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool &isUltraFast)
 {

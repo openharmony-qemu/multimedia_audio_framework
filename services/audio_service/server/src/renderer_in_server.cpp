@@ -39,7 +39,7 @@
 #include "audio_enhance_chain_manager.h"
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
-#include "audio_pipe_manager.h"
+#include "audio_pipe_info.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
 #include "audio_volume_c.h"
@@ -3272,7 +3272,7 @@ void RendererInServer::UpdateLatestForWorkgroup()
 bool RendererInServer::CollectInfosForWorkgroup()
 {
     bool running = (status_ == I_STATUS_STARTED) ? true : false;
-    uint32_t pipeId = AudioPipeManager::GetPipeManager()->QueryPipeIdBySessionId(streamIndex_);
+    uint32_t pipeId = CoreServiceHandler::GetInstance().QueryPipeIdBySessionId(streamIndex_);
     bool haveSound = false;
     if (pipeId != HDI_INVALID_ID) {
         struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0u};

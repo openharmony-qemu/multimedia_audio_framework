@@ -198,6 +198,12 @@ std::string AudioCoreService::EventEntry::GetModuleNameBySessionId(uint32_t sess
     return coreService_->GetModuleNameBySessionId(sessionId);
 }
 
+uint32_t AudioCoreService::EventEntry::QueryPipeIdBySessionId(uint32_t sessionId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->QueryPipeIdBySessionId(sessionId);
+}
+
 int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
     AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess)
 {
