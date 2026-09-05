@@ -106,7 +106,8 @@ public:
 
     int32_t SetSystemVolumeLevelLegacy(int32_t streamTypeIn, int32_t volumeLevel) override;
 
-    int32_t SetSystemVolumeLevel(int32_t volumeType, int32_t volumeLevel, int32_t volumeFlag, int32_t uid) override;
+    int32_t SetSystemVolumeLevel(int32_t volumeType, int32_t volumeLevel, int32_t volumeFlag,
+        int32_t uid, int32_t zoneId = INVALID_ZONEID) override;
 
     int32_t SetSystemVolumeLevelWithDevice(int32_t volumeType, int32_t volumeLevel, int32_t deviceType,
         int32_t volumeFlag = 0) override;
@@ -131,7 +132,8 @@ public:
 
     int32_t GetSystemActiveVolumeType(int32_t clientUid, int32_t &streamType) override;
 
-    int32_t GetSystemVolumeLevel(int32_t streamType, int32_t uid, int32_t &volumeLevel) override;
+    int32_t GetSystemVolumeLevel(int32_t streamType, int32_t uid, int32_t &volumeLevel,
+        int32_t zoneId = INVALID_ZONEID) override;
 
     int32_t GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage) override;
 
@@ -810,8 +812,10 @@ public:
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
     int32_t CallRingtoneLibrary();
     int32_t ReloadLoudVolumeMode(const int32_t streamInFocus, const int32_t setVolMode, bool &ret) override;
-    int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
-    int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
+    int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid,
+        int32_t zoneId = INVALID_ZONEID) override;
+    int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree,
+        int32_t zoneId = INVALID_ZONEID) override;
     int32_t GetSystemVolumeDegreeWithDevice(int32_t streamType, int32_t deviceType,
         const std::string &networkId, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;

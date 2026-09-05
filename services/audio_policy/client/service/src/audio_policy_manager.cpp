@@ -427,16 +427,19 @@ int32_t AudioPolicyManager::SetAdjustVolumeForZone(int32_t zoneId)
     return gsp->SetAdjustVolumeForZone(zoneId);
 }
 
-int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy,
-    int32_t volumeFlag, int32_t uid)
+int32_t AudioPolicyManager::SetSystemVolumeLevelLegacy(AudioVolumeType volumeType, int32_t volumeLevel)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, -1);
+    return gsp->SetSystemVolumeLevelLegacy(volumeType, volumeLevel);
+}
 
-    if (isLegacy) {
-        return gsp->SetSystemVolumeLevelLegacy(volumeType, volumeLevel);
-    }
-    return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag, uid);
+int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel,
+    int32_t volumeFlag, int32_t uid, int32_t zoneId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
+    return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag, uid, zoneId);
 }
 
 int32_t AudioPolicyManager::SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
@@ -579,13 +582,13 @@ int32_t AudioPolicyManager::GetSystemAppVolumePercentageForUid(int32_t appUid, i
     return gsp->GetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
-int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid)
+int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid, int32_t zoneId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, -1);
 
     int32_t volumeLevel = -1;
-    gsp->GetSystemVolumeLevel(volumeType, uid, volumeLevel);
+    gsp->GetSystemVolumeLevel(volumeType, uid, volumeLevel, zoneId);
     return volumeLevel;
 }
 
@@ -3889,20 +3892,20 @@ int32_t AudioPolicyManager::UnsetVolumeDegreeCallback(
 }
 
 int32_t AudioPolicyManager::SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
-    int32_t volumeFlag, int32_t uid)
+    int32_t volumeFlag, int32_t uid, int32_t zoneId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
-    return gsp->SetSystemVolumeDegree(volumeType, volumeDegree, volumeFlag, uid);
+    return gsp->SetSystemVolumeDegree(volumeType, volumeDegree, volumeFlag, uid, zoneId);
 }
 
-int32_t AudioPolicyManager::GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid)
+int32_t AudioPolicyManager::GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid, int32_t zoneId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
 
     int32_t volumeDegree = -1;
-    gsp->GetSystemVolumeDegree(volumeType, uid, volumeDegree);
+    gsp->GetSystemVolumeDegree(volumeType, uid, volumeDegree, zoneId);
     return volumeDegree;
 }
 
