@@ -555,8 +555,10 @@ int ResolveDeviceDescriptors(AudioSystemManager* manager,
             }
         }
         if (targetDevice == nullptr) {
+            std::string suggestion = "Use 'get-devices --flag " + context.flagName +
+                "' to check available " + context.deviceKind + " devices";
             return OutputError("ERR_DEVICE_UNAVAILABLE", "Specified device type is not available",
-                "Use 'get-devices --flag " + context.flagName + "' to check available " + context.deviceKind + " devices");
+                suggestion);
         }
         audioDeviceDescriptors.push_back(targetDevice);
     }
