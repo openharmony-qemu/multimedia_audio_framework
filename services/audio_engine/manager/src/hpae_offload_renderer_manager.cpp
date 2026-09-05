@@ -228,6 +228,10 @@ void HpaeOffloadRendererManager::DeleteInputSession(SessionEffectMoveMode moveMo
         curNode_->ClearSessionEffectAttachState();
     }
 
+    // Guard the direct dereferences below: curNode_ can be null here (previous session
+    // removed via RemoveNodeFromMap while another entry stays in the map, see :107).
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ not exist");
+
     if (curNode_->GetState() == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
         sinkOutputNode_->StopStream();
     }

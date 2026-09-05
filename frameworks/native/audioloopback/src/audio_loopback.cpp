@@ -589,13 +589,21 @@ AudioLoopbackErrorType AudioLoopbackPrivate::CheckDeviceSupport()
 bool AudioLoopbackPrivate::EnableLoopback()
 {
     Trace trace("AudioLoopbackPrivate::EnableLoopback");
-    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_ENABLE] = 1;
+    // karaokeParams_ is owned by loopbackMutex_ (Set*/GetDebugInfo/Destroy all hold it).
+    // This path runs on the service callback thread holding stateMutex_ only, so take a
+    // snapshot under loopbackMutex_ before iterating; IPC calls stay outside the lock.
+    std::map<KaraokeParamType, int32_t> paramsSnapshot;
+    {
+        std::lock_guard<std::mutex> lock(loopbackMutex_);
+        karaokeParams_[KaraokeParamType::KARAOKE_PARAM_ENABLE] = 1;
+        paramsSnapshot = karaokeParams_;
+    }
     // Restore legacy dispatch order: send ENABLE first so the nearlink karaoke
     // transition (gated on ENABLE downstream) starts before the other params, as it
     // did when karaokeParams_ was a map<string> iterated in lexicographic order.
     CHECK_AND_RETURN_RET_LOG(
         SetKaraokeParameters(KaraokeParamType::KARAOKE_PARAM_ENABLE, 1), false, "EnableLoopback failed");
-    for (auto &param : karaokeParams_) {
+    for (auto &param : paramsSnapshot) {
         CHECK_AND_CONTINUE(param.first != KaraokeParamType::KARAOKE_PARAM_ENABLE);
         auto ret = SetKaraokeParameters(param.first, param.second);
         CHECK_AND_RETURN_RET_LOG(ret, false, "EnableLoopback failed");
