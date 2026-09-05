@@ -13,12 +13,8 @@
 
 {
   global:
-    *AudioConverterCreate*;
-    *AudioConverterProcess*;
-    *AudioConverterDestroy*;
-    *AudioMixerCreate*;
-    *AudioMixerProcess*;
-    *AudioMixerDestroy*;
+    AudioConverter*;
+    AudioMixer*;
   local:
     *;
 };

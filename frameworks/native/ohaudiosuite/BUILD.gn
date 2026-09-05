@@ -51,8 +51,30 @@ ohos_shared_library("ohaudiosuite") {
   configs = [ ":audio_config" ]
 
   if (audio_framework_feature_audiosuite_support) {
+    sources = [
+      "./OHAudioSuiteEngine.cpp",
+      "./OHAudioSuiteNodeBuilder.cpp",
+      "./OHAudioSuiteFormatConverter.cpp",
+      "./OHAudioSuiteDownloadManager.cpp",
+    ]
+
     deps = [
-      ":ohaudiosuite_src",
+      "../../../services/audio_suite:audio_suite",
+      "../../../services/audio_engine:audio_engine_plugins",
+      "../../../services/audio_engine:audio_engine_utils",
+      "../../../services/audio_service:audio_common",
+      "../audioutils:audio_utils",
+    ]
+
+    cflags = [
+      "-Werror",
+      "-Os",
+      "-ffunction-sections",
+      "-fdata-sections",
+    ]
+
+    ldflags = [
+      "-Wl,-gc-sections",
     ]
 
     external_deps = [
@@ -60,11 +82,6 @@ ohos_shared_library("ohaudiosuite") {
       "c_utils:utils",
       "hilog:libhilog",
       "ipc:ipc_single",
-    ]
-
-    ldflags = [
-      "-Wl,-gc-sections",
-      "-Wl,--exclude-libs,ALL",
     ]
   }
 
@@ -76,55 +93,4 @@ ohos_shared_library("ohaudiosuite") {
   output_extension = "so"
   subsystem_name = "multimedia"
   part_name = "audio_framework"
-}
-
-ohos_source_set("ohaudiosuite_src") {
-  if (audio_framework_feature_audiosuite_support) {
-    sources = [
-      "./OHAudioSuiteEngine.cpp",
-      "./OHAudioSuiteNodeBuilder.cpp",
-      "./OHAudioSuiteFormatConverter.cpp",
-      "./OHAudioSuiteDownloadManager.cpp",
-    ]
-
-    include_dirs = [
-      "../../../interfaces/kits/c/",
-      "../../../interfaces/kits/c/common/",
-      "../../../interfaces/kits/c/audio_suite/",
-      "../../../services/audio_suite/client/stub/include",
-      "../../../services/audio_suite/idl",
-      "../../../services/audio_suite/client/utils/include",
-      "../../../services/audio_service/common/include/dfx",
-    ]
-
-    configs = [ ":audio_config" ]
-
-    deps = [
-      "../../../services/audio_suite:audio_suite",
-      "../../../services/audio_engine:audio_engine_plugins",
-      "../../../services/audio_engine:audio_engine_utils",
-      "../../../services/audio_service:audio_common",
-      "../audioutils:audio_utils",
-    ]
-
-    external_deps = [
-      "bounds_checking_function:libsec_shared",
-      "c_utils:utils",
-      "hilog:libhilog",
-      "ipc:ipc_single",
-      "bounds_checking_function:libsec_shared",
-    ]
-
-    cflags_cc = [
-      "-Werror",
-      "-Os",
-      "-ffunction-sections",
-      "-fdata-sections",
-      "-fvisibility-inlines-hidden",
-      "-fno-exceptions",
-    ]
-
-    subsystem_name = "multimedia"
-    part_name = "audio_framework"
-  }
 }
