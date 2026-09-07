@@ -13,9 +13,7 @@
 
 {
   global:
-    OH_AudioSuite*;
-    OH_AudioConverter_*;
-    OH_EQUALIZER_PARAM_*;
+    OH_*;
   local:
     *;
 };

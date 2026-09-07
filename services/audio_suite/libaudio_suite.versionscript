@@ -14,10 +14,10 @@
 {
   global:
     extern "C++" {
-      OHOS::AudioStandard::AudioSuite::IAudioSuiteManager::*;
-      OHOS::AudioStandard::AudioSuite::AudioFormatConverter::*;
-      OHOS::AudioStandard::AudioSuite::MixerProcessorManager::*;
-      OHOS::AudioStandard::AudioSuite::AudioSuiteDownloadManager::*;
+      OHOS::AudioStandard::AudioSuite::IAudioSuiteManager::GetAudioSuiteManager*;
+      OHOS::AudioStandard::AudioSuite::AudioFormatConverter::Create*;
+      OHOS::AudioStandard::AudioSuite::MixerProcessorManager::Create*;
+      OHOS::AudioStandard::AudioSuite::AudioSuiteDownloadManager::GetInstance*;
     };
   local:
     *;
