@@ -145,6 +145,7 @@ static const std::map<DeviceType, AudioAdapterType> DEVICE_HAL_MAP = {
     { DEVICE_TYPE_NEARLINK, AudioAdapterType::TYPE_PRIMARY },
     { DEVICE_TYPE_USB_ARM_HEADSET, AudioAdapterType::TYPE_USB },
     { DEVICE_TYPE_DP, AudioAdapterType::TYPE_DP },
+    { DEVICE_TYPE_HDMI, AudioAdapterType::TYPE_PRIMARY },
     { DEVICE_TYPE_ACCESSORY, AudioAdapterType::TYPE_ACCESSORY },
     { DEVICE_TYPE_LINE_DIGITAL, AudioAdapterType::TYPE_PRIMARY },
     { DEVICE_TYPE_WIRED_MICIN, AudioAdapterType::TYPE_PRIMARY },
