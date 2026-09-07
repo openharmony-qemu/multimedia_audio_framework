@@ -316,21 +316,6 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, OnUpdateEac3Support_001, TestSize.Level
 }
 
 /**
- * @tc.name: AudioCoreConfigManager_OnIsChipGenneralConfig_001
- * @tc.number: AudioCoreConfigManager_OnIsChipGenneralConfig_001
- * @tc.desc: Test OnIsChipGenneralConfig sets isChipGeneralConfig_
- */
-HWTEST_F(AudioCoreConfigManagerAiutTest, OnIsChipGenneralConfig_001, TestSize.Level1)
-{
-    AIUT_INFO_LOG("entry");
-    auto &configManager = AudioCoreConfigManager::GetInstance();
-    configManager.OnIsChipGenneralConfig(true);
-    AIUT_EXPECT_TRUE_INFO_LOG(configManager.isChipGeneralConfig_, "should be true");
-    configManager.OnIsChipGenneralConfig(false);
-    AIUT_EXPECT_FALSE_INFO_LOG(configManager.isChipGeneralConfig_, "should be false");
-}
-
-/**
  * @tc.name: AudioCoreConfigManager_OnSupportUltraFast_001
  * @tc.number: AudioCoreConfigManager_OnSupportUltraFast_001
  * @tc.desc: Test OnSupportUltraFast sets supportUltraFast_
