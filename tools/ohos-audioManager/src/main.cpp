@@ -306,7 +306,7 @@ int CmdSetVolume(int argc, char** argv)
             "Check if the process has system permission or volume value is valid");
     }
 
-    json resultJson;
+    json resultJson = json::object();
     resultJson["volumeType"] = VolumeTypeToString(volumeType);
     resultJson["volume"] = volume;
     return OutputSuccess(resultJson);
@@ -447,7 +447,7 @@ int CmdSetMute(int argc, char** argv)
             "require ACCESS_NOTIFICATION_POLICY_PERMISSION");
     }
 
-    json resultJson;
+    json resultJson = json::object();
     resultJson["volumeType"] = VolumeTypeToString(volumeType);
     resultJson["mute"] = mute;
     return OutputSuccess(resultJson);
@@ -488,7 +488,7 @@ int CmdGetDevices(int argc, char** argv)
     result["devices"] = json::array();
 
     for (const auto& device : devices) {
-        json deviceJson;
+        json deviceJson = json::object();
         deviceJson["deviceType"] = static_cast<int>(device->deviceType_);
         deviceJson["deviceId"] = static_cast<int>(device->deviceId_);
         result["devices"].push_back(deviceJson);
@@ -567,10 +567,10 @@ int ResolveDeviceDescriptors(AudioSystemManager* manager,
 
 json BuildDeviceResultJson(const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descriptors)
 {
-    json resultJson;
+    json resultJson = json::object();
     resultJson["devices"] = json::array();
     for (const auto& device : descriptors) {
-        json deviceJson;
+        json deviceJson = json::object();
         deviceJson["deviceType"] = static_cast<int>(device->deviceType_);
         deviceJson["deviceId"] = static_cast<int>(device->deviceId_);
         resultJson["devices"].push_back(deviceJson);
