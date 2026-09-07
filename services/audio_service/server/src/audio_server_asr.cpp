@@ -242,6 +242,7 @@ int32_t AudioServer::GetAsrAecMode(int32_t &asrAecMode)
         // if asr_aec_mode null and ASR_AEC null, return err.
         std::string keyAec = "ASR_AEC";
         auto itAec = AudioServer::audioParameters.find(keyAec);
+        CHECK_AND_RETURN_RET_LOG(itAec != AudioServer::audioParameters.end(), ERR_INVALID_PARAM, "get value failed.");
         std::string asrAecSink = itAec->second;
         if (asrAecSink == "ASR_AEC=ON") {
             asrAecMode = static_cast<int>(AsrAecMode::STANDARD);

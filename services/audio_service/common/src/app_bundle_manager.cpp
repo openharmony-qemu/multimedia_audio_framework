@@ -65,6 +65,7 @@ std::string AppBundleManager::GetSelfBundleName(int32_t uid)
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetSelfBundleName");
     sptr<ISystemAbilityManager> systemAbilityManager =
         SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(systemAbilityManager, bundleName, "systemAbilityManager is null");
     guard.CheckCurrTimeout();
     sptr<OHOS::IRemoteObject> remoteObject =
         systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
