@@ -99,6 +99,7 @@ public:
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
     int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) override;
     void SetSpeed(uint32_t sessionId, float speed) override;
+    bool IsSessionHdiSpeedSupported(uint32_t sessionId) override;
 
     // interfaces for render effect
     void InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,

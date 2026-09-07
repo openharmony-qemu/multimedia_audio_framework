@@ -622,6 +622,14 @@ int32_t HpaeRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
 int32_t HpaeRendererStreamImpl::SetSpeed(float speed)
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
+    // Only the offload engine chain implements HDI-side speed. Reject other engine paths
+    // (e.g. MCH on the normal renderer manager) so the client falls back to local sonic
+    // speed instead of storing the value and failing silently.
+    if (!IHpaeManager::GetHpaeManager().IsSessionHdiSpeedSupported(processConfig_.originalSessionId)) {
+        AUDIO_INFO_LOG("[%{public}u] sink chain has no HDI speed capability, keep client-side speed",
+            streamIndex_);
+        return ERR_NOT_SUPPORTED;
+    }
     IHpaeManager::GetHpaeManager().SetSpeed(processConfig_.originalSessionId, speed);
     speed_ = speed;
     return SUCCESS;

@@ -105,6 +105,7 @@ public:
     virtual int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) = 0;
     virtual int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) = 0;
     virtual void SetSpeed(uint32_t sessionId, float speed) = 0;
+    virtual bool IsSessionHdiSpeedSupported(uint32_t sessionId) = 0;
 
     // interfaces for render effect
     virtual void InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,

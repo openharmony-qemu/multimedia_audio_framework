@@ -368,6 +368,22 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetSpeed on a session outside the offload engine chain.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_SetSpeed_NoHdiCapability_001
+ * @tc.desc  : Sessions without offload-engine HDI speed capability must be rejected so the
+ *             client falls back to local sonic speed (e.g. HiCar MCH speed silent-drop fix).
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_SetSpeed_NoHdiCapability_001, TestSize.Level1)
+{
+    auto rendererStreamImpl = CreateHpaeRendererStreamImpl();
+    ASSERT_NE(rendererStreamImpl, nullptr);
+    // The session is not registered in HpaeManager, so the capability query returns false
+    // and SetSpeed must reject instead of storing the value silently.
+    EXPECT_EQ(rendererStreamImpl->SetSpeed(2.0f), ERR_NOT_SUPPORTED);
+}
+
+/**
  * @tc.name  : Test GetLatencyWithFlag with no hardware/engine flag.
  * @tc.type  : FUNC
  * @tc.number: HpaeRenderer_GetLatencyWithFlag_001
