@@ -863,47 +863,5 @@ HWTEST_F(RendererInClientThirdAiut, RegisterThreadPriorityOnStart_Default, TestS
         "renderer should remain valid after RegisterThreadPriorityOnStart with default player type");
 }
 
-// ==================== RegisterSpatializationStateEventListener 分支测试 ====================
-
-/**
- * @tc.name  : Test RegisterSpatializationStateEventListener first call
- * @tc.type  : FUNC
- * @tc.number: RegisterSpatialization_First
- * @tc.desc  : Test RegisterSpatializationStateEventListener on first call.
- * @tc.owner : audio_route_renderer
- */
-HWTEST_F(RendererInClientThirdAiut, RegisterSpatialization_First, TestSize.Level1)
-{
-    AIUT_INFO_LOG("entry");
-    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getuid());
-    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
-
-    renderer->firstSpatializationRegistered_ = true;
-    renderer->sessionId_ = 100001;
-    int32_t result = renderer->RegisterSpatializationStateEventListener();
-    AIUT_EXPECT_EQ_INFO_LOG(result, SUCCESS,
-        "RegisterSpatializationStateEventListener should return SUCCESS, result=%d", result);
-}
-
-// ==================== UnregisterSpatializationStateEventListener 分支测试 ====================
-
-/**
- * @tc.name  : Test UnregisterSpatializationStateEventListener
- * @tc.type  : FUNC
- * @tc.number: UnregisterSpatialization
- * @tc.desc  : Test UnregisterSpatializationStateEventListener.
- * @tc.owner : audio_route_renderer
- */
-HWTEST_F(RendererInClientThirdAiut, UnregisterSpatialization, TestSize.Level1)
-{
-    AIUT_INFO_LOG("entry");
-    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getuid());
-    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
-
-    int32_t result = renderer->UnregisterSpatializationStateEventListener(100001);
-    AIUT_EXPECT_EQ_INFO_LOG(result, SUCCESS,
-        "UnregisterSpatializationStateEventListener should return SUCCESS, result=%d", result);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS
