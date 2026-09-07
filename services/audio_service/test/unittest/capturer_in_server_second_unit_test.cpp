@@ -1269,7 +1269,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, SetInMainThreadState_001, TestSize.Leve
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    auto result = capturerInServer_->SetInMainThreadState(false);
+    capturerInServer_->SetInMainThreadState(false);
     EXPECT_EQ(capturerInServer_->isInMainThread_, false);
 }
 
