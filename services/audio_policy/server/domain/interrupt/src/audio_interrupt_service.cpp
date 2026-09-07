@@ -1408,6 +1408,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         " zoneId: %{public}d usage: %{public}d source: %{public}d isCheckMuteStream: %{public}d deviceTag: %{public}s",
         incomingStreamId, currAudioInterrupt.pid, streamType, zoneId, currAudioInterrupt.streamUsage,
         incomingSourceType, currAudioInterrupt.isCheckMuteStream, incommingDeviceTag.c_str());
+    UpdateAudioFocusCheckMuteFlag(zoneId, currAudioInterrupt);
 
     if (AudioInterruptIsStandbyInFocusList(zoneId, incomingStreamId, incommingDeviceTag) ||
         (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId, incommingDeviceTag) && !isUpdatedAudioStrategy)) {

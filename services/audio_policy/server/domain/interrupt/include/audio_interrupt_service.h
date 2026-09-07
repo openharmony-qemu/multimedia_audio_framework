@@ -41,6 +41,9 @@
 #include "audio_interrupt_dfx.h"
 #include "audio_interrupt_strategy.h"
 #include "audio_debug_info.h"
+#ifdef HAS_WINDOW_MANAGER
+#include "window_utils.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -465,10 +468,10 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
     void UpdateIsCheckMuteStreamByPid(int32_t callerPid);
-    bool ProcessSilentChangeInterrupt(const MuteFocusInfo &audioFocusInfo);
     void RemoveStreamBySessionId(const uint32_t streamId);
     void RemoveStreamByPid(const int32_t callerPid);
     void AddStreamByPid(const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession);
+    void UpdateAudioFocusCheckMuteFlag(const int32_t zoneId, AudioInterrupt &audioInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
