@@ -2,7 +2,7 @@
 
 ## 概述
 
-ohos-audioManager 是一个用于管理音频设备和音量的命令行工具。它提供了获取和设置音量、查询静音状态、获取设备列表以及切换输出设备等功能。
+ohos-audioManager 是一个用于管理音频设备和音量的命令行工具。它提供了获取和设置音量、查询静音状态、获取设备列表以及切换输入输出设备等功能。
 
 ## 功能列表
 
@@ -13,13 +13,14 @@ ohos-audioManager 是一个用于管理音频设备和音量的命令行工具�
 - 设置指定音量类型的静音状态
 - 获取音频设备列表
 - 切换音频输出设备
+- 切换音频输入设备
 
 ## 依赖
 
 - 系统能力：AudioSystemManager (audio_client)
 - 权限：
   - ACCESS_NOTIFICATION_POLICY_PERMISSION（设置 STREAM_RING 或 STREAM_VOICE_RING 类型的静音状态需要此权限）
-  - 系统权限（GetDevices 部分设备标志和 SelectOutputDevice 需要）
+  - 系统权限（GetDevices 部分设备标志和 SelectOutputDevice/SelectInputDevice 需要）
 
 ## 基本用法
 
@@ -37,7 +38,8 @@ ohos-audioManager <command> [options]
 | is-mute | 获取静音状态 | --type | 无 | 无 |
 | set-mute | 设置静音 | --mute, --type | ACCESS_NOTIFICATION_POLICY_PERMISSION（STREAM_RING 或 STREAM_VOICE_RING 类型） | 无 |
 | get-devices | 获取设备列表 | --flag | 系统权限（部分 flag） | 无 |
-| select-output-device | 切换出声设备 | --type | 系统权限 | 无 |
+| select-output-device | 切换输出设备 | --type | 系统权限 | 无 |
+| select-input-device | 切换输入设备 | --type | 系统权限 | 无 |
 
 **前置依赖说明**：
 - **无**：该命令可直接执行，无需前置条件
@@ -81,6 +83,11 @@ ohos-audioManager get-devices --flag INPUT_DEVICES_FLAG
 ohos-audioManager select-output-device --type DEVICE_TYPE_SPEAKER
 ohos-audioManager select-output-device --type DEVICE_TYPE_BLUETOOTH_A2DP
 ohos-audioManager select-output-device --type DEFAULT
+
+# 切换输入设备（无前置依赖）
+ohos-audioManager select-input-device --type DEVICE_TYPE_MIC
+ohos-audioManager select-input-device --type DEVICE_TYPE_USB_HEADSET
+ohos-audioManager select-input-device --type DEVICE_TYPE_BLUETOOTH_SCO
 ```
 
 ## 参数说明
