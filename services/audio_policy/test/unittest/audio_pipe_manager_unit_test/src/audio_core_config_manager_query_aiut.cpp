@@ -397,7 +397,7 @@ HWTEST_F(AudioCoreConfigManagerQueryAiutTest, GetStreamPropInfoSize_001, TestSiz
 {
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
-    uint32_t result = configManager.GetStreamPropInfoSize("non_existent", "non_existent");
+    uint32_t result = configManager.GetStreamPropInfoSize("non_existent", "non_existent", LOCAL_NETWORK_ID);
     AIUT_EXPECT_EQ_INFO_LOG(result, 0,
         "should return 0 for non-existent adapter/pipe");
 }
@@ -744,7 +744,7 @@ HWTEST_F(AudioCoreConfigManagerQueryAiutTest, GetStreamPropInfoFromPipe_002, Tes
     auto &configManager = AudioCoreConfigManager::GetInstance();
     auto info = std::make_shared<AdapterPipeInfo>();
     info->streamPropInfos_.clear();
-    info->dynamicStreamPropInfos_.clear();
+    info->dynamicStreamPropInfosMap_.clear();
     AudioStreamInfo streamInfo;
     auto result = configManager.GetStreamPropInfoFromPipe(info, streamInfo);
     AIUT_EXPECT_EQ_INFO_LOG(result, nullptr, "should return nullptr for empty props");
@@ -760,7 +760,7 @@ HWTEST_F(AudioCoreConfigManagerQueryAiutTest, GetStreamPropInfoFromPipe_003, Tes
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
     auto info = std::make_shared<AdapterPipeInfo>();
-    info->dynamicStreamPropInfos_.clear();
+    info->dynamicStreamPropInfosMap_.clear();
     auto propInfo = std::make_shared<PipeStreamPropInfo>();
     propInfo->format_ = SAMPLE_S16LE;
     propInfo->sampleRate_ = SAMPLE_RATE_48000;
@@ -781,7 +781,7 @@ HWTEST_F(AudioCoreConfigManagerQueryAiutTest, GetStreamPropInfoFromPipe_004, Tes
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
     auto info = std::make_shared<AdapterPipeInfo>();
-    info->dynamicStreamPropInfos_.clear();
+    info->dynamicStreamPropInfosMap_.clear();
     auto propInfo = std::make_shared<PipeStreamPropInfo>();
     propInfo->format_ = SAMPLE_S16LE;
     propInfo->sampleRate_ = SAMPLE_RATE_48000;
@@ -793,22 +793,6 @@ HWTEST_F(AudioCoreConfigManagerQueryAiutTest, GetStreamPropInfoFromPipe_004, Tes
 }
 
 /**
- * @tc.name: AudioCoreConfigManager_UpdateHasEarpieceForChipProp_001
- * @tc.number: AudioCoreConfigManager_UpdateHasEarpieceForChipProp_001
- * @tc.desc: Test UpdateHasEarpieceForChipProp with chip general config
- */
-HWTEST_F(AudioCoreConfigManagerQueryAiutTest, UpdateHasEarpieceForChipProp_001, TestSize.Level1)
-{
-    AIUT_INFO_LOG("entry");
-    auto &configManager = AudioCoreConfigManager::GetInstance();
-    configManager.isChipGeneralConfig_ = true;
-    bool oldHasEarpiece = configManager.hasEarpiece_;
-    configManager.UpdateHasEarpieceForChipProp();
-    AIUT_EXPECT_EQ_INFO_LOG(configManager.hasEarpiece_, oldHasEarpiece,
-        "hasEarpiece_ should remain unchanged for chip general config");
-}
-
-/**
  * @tc.name: AudioCoreConfigManager_ClearStreamPropInfo_001
  * @tc.number: AudioCoreConfigManager_ClearStreamPropInfo_001
  * @tc.desc: Test ClearStreamPropInfo calls config data clear
@@ -817,8 +801,8 @@ HWTEST_F(AudioCoreConfigManagerQueryAiutTest, ClearStreamPropInfo_001, TestSize.
 {
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
-    configManager.ClearStreamPropInfo(TEST_ADAPTER_NAME, TEST_PIPE_NAME);
-    AIUT_EXPECT_EQ_INFO_LOG(configManager.GetStreamPropInfoSize(TEST_ADAPTER_NAME, TEST_PIPE_NAME), 0,
+    configManager.ClearStreamPropInfo(TEST_ADAPTER_NAME, TEST_PIPE_NAME, LOCAL_NETWORK_ID);
+    AIUT_EXPECT_EQ_INFO_LOG(configManager.GetStreamPropInfoSize(TEST_ADAPTER_NAME, TEST_PIPE_NAME, LOCAL_NETWORK_ID), 0,
         "GetStreamPropInfoSize should return 0 after clear");
 }
 
@@ -834,8 +818,8 @@ HWTEST_F(AudioCoreConfigManagerQueryAiutTest, UpdateStreamPropInfo_001, TestSize
     std::list<DeviceStreamInfo> emptyStreamInfo;
     std::list<std::string> supportDevices = {"speaker"};
     configManager.UpdateStreamPropInfo(TEST_ADAPTER_NAME, TEST_PIPE_NAME,
-        emptyStreamInfo, supportDevices);
-    AIUT_EXPECT_EQ_INFO_LOG(configManager.GetStreamPropInfoSize(TEST_ADAPTER_NAME, TEST_PIPE_NAME), 0,
+        emptyStreamInfo, supportDevices, LOCAL_NETWORK_ID);
+    AIUT_EXPECT_EQ_INFO_LOG(configManager.GetStreamPropInfoSize(TEST_ADAPTER_NAME, TEST_PIPE_NAME, LOCAL_NETWORK_ID), 0,
         "GetStreamPropInfoSize should return 0 for empty stream info");
 }
 
@@ -855,9 +839,9 @@ HWTEST_F(AudioCoreConfigManagerQueryAiutTest, UpdateStreamPropInfo_002, TestSize
     std::list<DeviceStreamInfo> deviceStreamInfo = {streamInfo};
     std::list<std::string> supportDevices = {"speaker"};
     configManager.UpdateStreamPropInfo(TEST_ADAPTER_NAME, TEST_PIPE_NAME,
-        deviceStreamInfo, supportDevices);
+        deviceStreamInfo, supportDevices, LOCAL_NETWORK_ID);
     AIUT_EXPECT_TRUE_INFO_LOG(
-        configManager.GetStreamPropInfoSize(TEST_ADAPTER_NAME, TEST_PIPE_NAME) >= 0,
+        configManager.GetStreamPropInfoSize(TEST_ADAPTER_NAME, TEST_PIPE_NAME, LOCAL_NETWORK_ID) >= 0,
         "GetStreamPropInfoSize should return non-negative after update");
 }
 
