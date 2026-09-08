@@ -274,6 +274,9 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && !selectedDesc.empty() && selectedDesc[0] != nullptr,
         ERROR, "ptr exception");
     SelectOutputDeviceLog(audioRendererFilter, selectedDesc, audioDeviceSelectMode);
+    if (audioRendererFilter->blockFirstOverride) {
+        SetBlockFirstOverride();
+    }
     CHECK_AND_RETURN_RET_LOG(selectedDesc.size() == 1 && selectedDesc[0] &&
         selectedDesc[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE, ERR_INVALID_OPERATION, "DeviceCheck no success");
 
@@ -315,6 +318,16 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     coreService->OnPreferredOutputDeviceUpdated(AudioRouterSelectStrategy::GetInstance()
         .Get1stCurrentOutputDevice(audioRendererFilter->uid), AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
+}
+
+void AudioSelectInterfaceService::SetBlockFirstOverride()
+{
+    blockFirstOverridePending_.store(true);
+}
+
+bool AudioSelectInterfaceService::ClearBlockFirstOverride()
+{
+    return blockFirstOverridePending_.exchange(false);
 }
 
 int32_t AudioSelectInterfaceService::SelectOutputDevicePrepare(
@@ -785,7 +798,7 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
             desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
             desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
             desc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
-            CHECK_AND_CONTINUE(!skipForce);
+            CHECK_AND_CONTINUE(!skipForce && !ClearBlockFirstOverride());
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
                 std::make_shared<AudioDeviceDescriptor>(), desc->GetRealUid(), "SetDefaultOutputDevice");
             forceFetch = true;
