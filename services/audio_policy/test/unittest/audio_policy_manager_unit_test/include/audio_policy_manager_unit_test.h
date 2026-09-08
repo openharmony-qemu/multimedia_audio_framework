@@ -106,18 +106,6 @@ public:
     void OnRecordControllerEnabledChange(const SystemRecordControllerChangeInfo &changeInfo) override {}
 };
 
-class ConcreteAudioSeparationEffectEnabledChangeCallback : public AudioSeparationEffectEnabledChangeCallback {
-public:
-    void OnAudioSeparationEffectEnabledChange(bool enabled) override
-    {
-        enabled_ = enabled;
-        callCount_++;
-    }
-
-    bool enabled_ = true;
-    uint32_t callCount_ = 0;
-};
-
 class AudioPolicyManagerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
