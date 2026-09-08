@@ -236,15 +236,16 @@ HWTEST_F(RendererInServerFifthUnitTest, GetActualStreamManagerType_001, TestSize
  * @tc.name  : Test SetSpeed with valid speed
  * @tc.type  : FUNC
  * @tc.number: SetSpeed_Valid_001
- * @tc.desc  : Test SetSpeed with valid speed value.
+ * @tc.desc  : Test SetSpeed returns ERR_NOT_SUPPORTED when the engine chain has no HDI speed capability.
  */
 HWTEST_F(RendererInServerFifthUnitTest, SetSpeed_Valid_001, TestSize.Level1)
 {
     ASSERT_NE(nullptr, rendererInServer);
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
+    // Normal manager chain has no HDI-side speed: the capability gate rejects with ERR_NOT_SUPPORTED.
     int32_t setRet = rendererInServer->SetSpeed(1.0f);
-    EXPECT_EQ(SUCCESS, setRet);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, setRet);
 }
 
 /**
