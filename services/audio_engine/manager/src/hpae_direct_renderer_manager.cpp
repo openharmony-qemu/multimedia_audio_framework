@@ -284,6 +284,9 @@ int32_t HpaeDirectRendererManager::DestroyStream(uint32_t sessionId)
 
 int32_t HpaeDirectRendererManager::RecreateSinkOutputNodeIfNeeded()
 {
+    // A failed reload/init leaves sinkOutputNode_ null while curNode_ stays
+    // alive; dereferencing it here would crash the worker thread.
+    CHECK_AND_RETURN_RET_LOG(sinkOutputNode_ != nullptr, ERROR, "sinkOutputNode_ is null, sink init/reload failed");
     bool isVoip = (sinkInfo_.deviceClass == VOIP_DIRECT_DEVICE_CLASS);
     AudioSamplingRate newSampleRate = GetDirectSampleRate(curNode_->GetSampleRate(), isVoip);
     AudioSampleFormat newFormat = GetDirectFormat(curNode_->GetBitWidth(), isVoip);
@@ -785,7 +788,10 @@ int32_t HpaeDirectRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkI
         }
         StopOuputNode();
         sinkInfo_ = sinkInfo;
-        InitSinkInner(isReload);
+        int32_t ret = InitSinkInner(isReload);
+        // InitSinkInner leaves sinkOutputNode_ null when CheckFramelen rejects the
+        // new sink geometry; continuing here would crash in CreateDirectNodes.
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "InitSinkInner failed %{public}d, skip node rebuild", ret);
 
         CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is null");
         if (curNode_->GetState() == HPAE_SESSION_RUNNING) {

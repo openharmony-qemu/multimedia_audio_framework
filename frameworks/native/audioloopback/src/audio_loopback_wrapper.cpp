@@ -92,7 +92,10 @@ bool AudioLoopbackWrapper::Enable(bool enable)
 int32_t AudioLoopbackWrapper::EnableNormal(bool enable)
 {
     if (loopbackProxy_ != nullptr) {
-        int result = SUCCESS;
+        // Start from a non-SUCCESS sentinel: on SendRequest failure the [out]
+        // result is left untouched by the proxy, so a SUCCESS default would
+        // mask the IPC failure as success.
+        int result = ERR_OPERATION_FAILED;
         loopbackProxy_->Enable(enable, result);
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("ILoopback.Enable failed %{public}d", result);
@@ -122,7 +125,7 @@ int32_t AudioLoopbackWrapper::EnableControl(bool enable)
         return ERROR_LOOPBACK_HANDLER_NOT_EXIST;
     }
 
-    int result = SUCCESS;
+    int result = ERR_OPERATION_FAILED;
     loopbackProxy_->Enable(enable, result);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "failed with %{public}d", result);
 
@@ -144,7 +147,7 @@ AudioLoopbackStatus AudioLoopbackWrapper::GetStatus()
             return LOOPBACK_UNAVAILABLE_SCENE;
         }
         int status = 0;
-        int result = SUCCESS;
+        int result = ERR_OPERATION_FAILED;
         loopbackProxy_->GetStatus(status, result);
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("ILoopback.GetStatus failed %{public}d", result);
@@ -185,7 +188,7 @@ float AudioLoopbackWrapper::GetVolume()
             return 0.0f;
         }
         float volume = 0.0f;
-        int result = SUCCESS;
+        int result = ERR_OPERATION_FAILED;
         loopbackProxy_->GetVolume(volume, result);
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("ILoopback.GetVolume failed %{public}d", result);
