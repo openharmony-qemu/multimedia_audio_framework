@@ -208,7 +208,16 @@ audio_ohos_library("audio_suite") {
 
 audio_ohos_library("audio_pcm_process") {
   branch_protector_ret = "pac_ret"
-  cflags = [ "-Os" ]
+  cflags = [
+    "-Os",
+    "-ffunction-sections",
+    "-fdata-sections",
+    "-fvisibility-inlines-hidden",
+  ]
+
+  ldflags = [
+    "-Wl,-gc-sections",
+  ]
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -251,6 +260,8 @@ audio_ohos_library("audio_pcm_process") {
   }
 
   # innerapi_tags = [ "chipsetsdk" ]
+
+  version_script = "libaudio_pcm_process.versionscript"
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
