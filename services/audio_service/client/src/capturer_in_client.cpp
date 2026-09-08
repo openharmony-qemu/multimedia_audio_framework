@@ -2564,7 +2564,7 @@ void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrIn
         capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
         NotifyFastStatusChange(FASTSTATUS_FAST);
     }
-    InitCacheBuffer(attr.engineSize);
+    InitCacheBuffer(clientSpanSizeInByte_);
     uint64_t bufferDurationInUs = spanSizeInFrame_ * AUDIO_US_PER_S / streamParams_.samplingRate;
     InitCallbackBuffer(bufferDurationInUs);
     clientBuffer_->UpdateSpanBasicInfo(spanSizeInFrame_, cacheSizeInByte_, sizePerFrameInByte_);
