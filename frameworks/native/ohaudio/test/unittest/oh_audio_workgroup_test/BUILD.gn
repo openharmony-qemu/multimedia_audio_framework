@@ -14,7 +14,7 @@
 import("//build/test.gni")
 import("../../../../../../config.gni")
 
-module_output_path = "audio_framework/audio_framework_route/audio_ndk"
+module_output_path = "audio_framework/audio_framework_common/oh_audio_workgroup"
 
 config("audio_workgroup_config") {
   include_dirs = [
@@ -63,4 +63,38 @@ ohos_unittest("audio_oh_audio_workgroup_unit_test") {
     "samgr:samgr_proxy",
     "c_utils:utils",
   ]
+}
+
+ohos_unittest("oh_audio_workgroup_aiut") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "../../../../../../test/unittest/audio_test_utils/include",
+  ]
+
+  configs = [
+    ":audio_ohaudio_config",
+  ]
+
+  sources = [ "src/oh_audio_workgroup_aiut.cpp" ]
+
+  deps = [
+    "../../../../ohaudio:ohaudio",
+    "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
+  ]
+
+  external_deps = [
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+  ]
+}
+
+group("oh_audio_workgroup_aiut_group") {
+  testonly = true
+  deps = [ ":oh_audio_workgroup_aiut" ]
 }
