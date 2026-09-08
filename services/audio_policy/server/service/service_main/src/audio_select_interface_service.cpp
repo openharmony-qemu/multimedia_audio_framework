@@ -59,16 +59,10 @@ int32_t AudioSelectInterfaceService::SetDeviceActive(DeviceType deviceType, bool
     int32_t ownerUid = AudioSceneManager::GetInstance().GetAudioSceneOwnerUid();
     int32_t callerUid = GetPreferredUid(uid);
     if (!active) {
-        auto currentDevices = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(callerUid);
-        bool isCurrentDevice = false;
-        for (const auto &desc : currentDevices) {
-            if (desc != nullptr && desc->deviceType_ == deviceType) {
-                isCurrentDevice = true;
-                break;
-            }
-        }
-        if (!isCurrentDevice) {
-            AUDIO_INFO_LOG("current routed device differs from %{public}d, skip deactivate", deviceType);
+        std::shared_ptr<AudioDeviceDescriptor> preferredDesc =
+            AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(callerUid, INVALID_STREAM_ID);
+        if (preferredDesc->deviceType_ != deviceType) {
+            AUDIO_INFO_LOG("no need update preferredDesc->deviceType_:%{public}d",preferredDesc->deviceType_);
             return SUCCESS;
         }
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
