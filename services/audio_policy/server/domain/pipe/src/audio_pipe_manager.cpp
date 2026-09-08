@@ -1490,6 +1490,14 @@ void AudioPipeManager::UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamD
     streamDesc->UpdateNewDevice(newDeviceDesc);
 }
 
+void AudioPipeManager::UpdateOldDeviceDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDesc)
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    streamDesc->UpdateOldDevice(oldDeviceDesc);
+}
+
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByStreamUsage(StreamUsage streamUsage)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> result;

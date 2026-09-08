@@ -822,7 +822,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
 
     SetPreferredInputDeviceIfValid(streamDesc);
-    streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+    pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
     std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc = GetCaptureClientDevice(streamDesc, sessionId);
     CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
     pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
@@ -2914,7 +2914,7 @@ void AudioCoreService::PrepareInputFetchInfos(
     for (const auto &streamDesc : inputStreamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
 
-        streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+        pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
 
         FetchDeviceInfo info;
         info.sourceType = streamDesc->capturerInfo_.sourceType;

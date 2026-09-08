@@ -3509,7 +3509,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     const AudioRouterCenter::OutputDeviceMap &outResult)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
-    streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
+    pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_.load()) {
@@ -3546,7 +3546,7 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", streamDesc->GetSessionId());
-    streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
+    pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
 
     FetchDeviceInfo info = { streamDesc->GetRenderUsage(), GetRealUid(streamDesc),
         streamDesc->GetRenderPrivacyType(), caller, streamDesc->bundleName_ };
