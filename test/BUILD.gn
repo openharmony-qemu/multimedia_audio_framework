@@ -48,6 +48,7 @@ group("audio_unit_test") {
     "../frameworks/native/audiorenderer/test/unittest/renderer_test:renderer_capture_interrupt_unit_test",
     "../frameworks/native/audiorenderer/test/unittest/renderer_test:renderer_in_client_unit_test",
     "../frameworks/native/audiorenderer/test/unittest/renderer_test:renderer_in_client_second_unit_test",
+    "../frameworks/native/audiorenderer/test/unittest/renderer_test:renderer_in_client_third_aiut",
     "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_renderer_extra_unit_test",
     "../frameworks/native/audioschedule:audioschedule_unit_test",
     "../frameworks/native/audiodefinitions:audio_definitions_unit_test",

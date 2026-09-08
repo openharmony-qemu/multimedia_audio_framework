@@ -382,6 +382,60 @@ ohos_unittest("renderer_in_client_second_unit_test") {
       "../../../../../../test/resource/audio_renderer/ohos_test.xml"
 }
 
+ohos_unittest("renderer_in_client_third_aiut") {
+  testonly = true
+  module_out_path = "audio_framework/audio_framework_route/renderer_in_client"
+  include_dirs = [
+    "./include",
+    "../../../../audiorenderer/include",
+    "../../../../audiostream/include",
+    "../../../../common/include",
+    "../../../../../../frameworks/native/audioutils/include/",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audio_debug_manager/include",
+    "../../../../../../services/audio_policy/client/include",
+    "../../../../../../services/audio_service/common/include/",
+    "../../../../../audio_utils/include",
+    "../../../../../../test/unittest/audio_test_utils/include",
+  ]
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  sources = [ "src/renderer_in_client_third_aiut.cpp" ]
+
+  deps = [
+    "../../../../../../services/audio_policy:audio_policy_client",
+    "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
+    "../../../../../../services/audio_service:audio_common",
+    "../../../../audiorenderer:audio_renderer",
+    "../../../../audioutils:audio_utils",
+    "../../../../audio_debug_manager:audio_debug_manager",
+    "../../../../audiodefinitions:audio_definitions",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "media_foundation:media_foundation",
+    "samgr:samgr_proxy",
+    "init:libbegetutil",
+  ]
+
+  resource_config_file =
+      "../../../../../../test/resource/audio_renderer/ohos_test.xml"
+}
+
 ohos_unittest("audio_renderer_firstFrame_mock_test") {
   testonly = true
   module_out_path = renderer_module_output_path
