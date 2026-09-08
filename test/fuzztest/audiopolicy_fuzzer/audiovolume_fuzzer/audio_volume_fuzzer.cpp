@@ -341,11 +341,6 @@ void GetStopFadeoutStateFuzzTest(FuzzedDataProvider& fdp)
     audioVolume->GetStopFadeoutState(streamIndex);
 }
 
-void GetCurrentActiveDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioVolume::GetInstance()->GetCurrentActiveDevice();
-}
-
 void RemoveStopFadeoutStateFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t streamIndex = GetData<uint32_t>();
@@ -472,7 +467,6 @@ void Test(FuzzedDataProvider& fdp)
     SetStopFadeoutStateFuzzTest,
     GetStopFadeoutStateFuzzTest,
     RemoveStopFadeoutStateFuzzTest,
-    GetCurrentActiveDeviceFuzzTest,
     SetOffloadEnableFuzzTest,
     GetOffloadEnableFuzzTest,
     SetOffloadTypeFuzzTest,
