@@ -1396,6 +1396,7 @@ napi_status NapiParamUtils::GetAudioRendererFilter(const napi_env &env, sptr<Aud
 {
     napi_value tempValue = nullptr;
     int32_t intValue = {0};
+    bool boolValue = false;
     argTransFlag = true;
     audioRendererFilter = new(std::nothrow) AudioRendererFilter();
 
@@ -1414,12 +1415,9 @@ napi_status NapiParamUtils::GetAudioRendererFilter(const napi_env &env, sptr<Aud
         audioRendererFilter->streamId = intValue;
     }
 
-    napi_value blockValue = nullptr;
-    if (napi_get_named_property(env, in, "blockFirstOverride", &blockValue) == napi_ok) {
-        bool boolValue = false;
-        if (napi_get_value_bool(env, blockValue, &boolValue) == napi_ok) {
-            audioRendererFilter->blockFirstOverride = boolValue;
-        }
+    status = GetValueBoolean(env, "blockFirstOverride", boolValue, in);
+    if (status == napi_ok) {
+        audioRendererFilter->blockFirstOverride = boolValue;
     }
 
     return napi_ok;

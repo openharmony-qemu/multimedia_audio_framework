@@ -59,6 +59,18 @@ int32_t AudioSelectInterfaceService::SetDeviceActive(DeviceType deviceType, bool
     int32_t ownerUid = AudioSceneManager::GetInstance().GetAudioSceneOwnerUid();
     int32_t callerUid = GetPreferredUid(uid);
     if (!active) {
+        auto currentDevices = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(callerUid);
+        bool isCurrentDevice = false;
+        for (const auto &desc : currentDevices) {
+            if (desc != nullptr && desc->deviceType_ == deviceType) {
+                isCurrentDevice = true;
+                break;
+            }
+        }
+        if (!isCurrentDevice) {
+            AUDIO_INFO_LOG("current routed device differs from %{public}d, skip deactivate", deviceType);
+            return SUCCESS;
+        }
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), uid, "SetDeviceActive");
 #ifdef BLUETOOTH_ENABLE
