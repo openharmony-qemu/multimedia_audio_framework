@@ -153,7 +153,7 @@ int32_t OffloadAudioRenderSink::Stop(void)
     return PostCtrlCmd(CtrlCmd::CMD_STOP, 0, CTRL_WAIT_MS);
 }
 
-int32_t OffloadAudioRenderSink::ExecStop()
+int32_t OffloadAudioRenderSink::ExecStop(bool flushFirst)
 {
     AUDIO_WARNING_LOG("in");
     Trace trace("OffloadAudioRenderSink::Stop");
@@ -162,7 +162,11 @@ int32_t OffloadAudioRenderSink::ExecStop()
         ctrlState_.store(CtrlState::CTRL_IDLE);
         return SUCCESS;
     }
-    ExecFlush(false); // legacy stop flushes first; on the ctrl thread this is ordered, race free
+    if (flushFirst) {
+        // legacy stop flushes first; keep the gate closed through the whole stop:
+        // ExecFlush publishes no state here, ExecStop owns the terminal transition
+        ExecFlush(false, false);
+    }
     AudioXCollie audioXCollie("OffloadAudioRenderSink::Stop", TIMEOUT_SECONDS_10,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::lock_guard<std::mutex> lock(sinkMutex_);
@@ -232,6 +236,11 @@ int32_t OffloadAudioRenderSink::PostCtrlCmd(CtrlCmd cmd, int32_t arg, int32_t wa
 
 void OffloadAudioRenderSink::StartCtrlThread()
 {
+    if (ctrlThread_.joinable()) {
+        // double Init without DeInit: never move-assign over a joinable thread (terminate)
+        AUDIO_WARNING_LOG("ctrl thread already running, skip restart");
+        return;
+    }
     ctrlRunning_.store(true);
     auto self = shared_from_this();
     ctrlThread_ = std::thread([self] { self->CtrlThreadMain(); });
@@ -265,7 +274,8 @@ int32_t OffloadAudioRenderSink::HandleCtrlCmd(CtrlCmd cmd, int32_t arg)
     switch (cmd) {
         case CtrlCmd::CMD_START: {
             if (ctrlState_.load() == CtrlState::CTRL_FLUSHING) {
-                // accepted now, executes when the in-flight flush completes (last writer wins)
+                // gate closed = a flush is executing or queued as the carrier: run this
+                // start when that flush resolves (last writer wins)
                 pendingAfterFlush_ = PendingAfterFlush::PENDING_START;
                 return SUCCESS;
             }
@@ -280,30 +290,23 @@ int32_t OffloadAudioRenderSink::HandleCtrlCmd(CtrlCmd cmd, int32_t arg)
             }
             return ExecStop();
         case CtrlCmd::CMD_FLUSH: {
-            CtrlState state = ctrlState_.load();
-            if (state == CtrlState::CTRL_IDLE) {
+            if (ctrlState_.load() == CtrlState::CTRL_IDLE) {
                 AUDIO_ERR_LOG("not start, invalid state");
                 return ERR_OPERATION_FAILED;
             }
-            if (state == CtrlState::CTRL_FLUSHING) {
-                // coalesce: the in-flight flush already covers this round, no data can
-                // slip in because RenderFrame is rejected while FLUSHING
-                return SUCCESS;
-            }
+            // FLUSHING here means the caller pre-closed the gate and this command is the
+            // flush carrier itself, so always execute; a repeat flush is idempotent at HDI
             ExecFlush(false);
             return SUCCESS;
         }
         case CtrlCmd::CMD_RESET: {
-            CtrlState state = ctrlState_.load();
-            if (state == CtrlState::CTRL_IDLE) {
+            if (ctrlState_.load() == CtrlState::CTRL_IDLE) {
                 AUDIO_ERR_LOG("not start, invalid state");
                 return ERR_OPERATION_FAILED;
             }
-            if (state == CtrlState::CTRL_FLUSHING) {
-                pendingAfterFlush_ = PendingAfterFlush::PENDING_START;
-                return SUCCESS;
-            }
-            ExecFlush(true); // reset = flush then restart
+            // reset = flush then restart; never absorb into pending: this command is its
+            // own flush carrier, and any earlier FLUSH in the queue has already completed
+            ExecFlush(true);
             return SUCCESS;
         }
         case CtrlCmd::CMD_DRAIN:
@@ -313,7 +316,7 @@ int32_t OffloadAudioRenderSink::HandleCtrlCmd(CtrlCmd cmd, int32_t arg)
     }
 }
 
-void OffloadAudioRenderSink::ExecFlush(bool restartAfter)
+void OffloadAudioRenderSink::ExecFlush(bool restartAfter, bool publishStarted)
 {
     Trace trace("OffloadAudioRenderSink::FlushInner");
     // publish FLUSHING before the HDI call so the lock-free RenderFrame gate closes first
@@ -331,10 +334,10 @@ void OffloadAudioRenderSink::ExecFlush(bool restartAfter)
         AUDIO_ERR_LOG("flush fail, ret: %{public}d", ret);
     }
     renderPos_ = 0;
-    ResolvePendingAfterFlush(restartAfter);
+    ResolvePendingAfterFlush(restartAfter, publishStarted);
 }
 
-void OffloadAudioRenderSink::ResolvePendingAfterFlush(bool restartAfter)
+void OffloadAudioRenderSink::ResolvePendingAfterFlush(bool restartAfter, bool publishStarted)
 {
     PendingAfterFlush pending = pendingAfterFlush_;
     pendingAfterFlush_ = PendingAfterFlush::PENDING_NONE;
@@ -351,14 +354,17 @@ void OffloadAudioRenderSink::ResolvePendingAfterFlush(bool restartAfter)
             break;
         }
         case PendingAfterFlush::PENDING_STOP: {
-            int32_t ret = ExecStop();
+            int32_t ret = ExecStop(false); // the flush above already ran, no second flush
             if (ret != SUCCESS) {
                 AUDIO_ERR_LOG("deferred stop fail, ret: %{public}d", ret);
             }
             break;
         }
         default:
-            ctrlState_.store(CtrlState::CTRL_STARTED); // flush done, sink is still started
+            if (publishStarted) {
+                ctrlState_.store(CtrlState::CTRL_STARTED); // flush done, sink is still started
+            }
+            // else: ExecStop context keeps FLUSHING until it publishes its terminal state
             break;
     }
 }
@@ -366,7 +372,8 @@ void OffloadAudioRenderSink::ResolvePendingAfterFlush(bool restartAfter)
 int32_t OffloadAudioRenderSink::ExecDrain(int32_t drainType)
 {
     Trace trace("OffloadAudioRenderSink::Drain");
-    std::lock_guard<std::mutex> lock(sinkMutex_);
+    // no sinkMutex_ here (legacy contract): DrainBuffer can block for seconds and must
+    // not stall DeInit teardown; ctrl-queue serialization against flush/stop still holds
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->DrainBuffer(audioRender_, (AudioDrainNotifyType *)&drainType);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "drain fail");
@@ -375,11 +382,20 @@ int32_t OffloadAudioRenderSink::ExecDrain(int32_t drainType)
 
 int32_t OffloadAudioRenderSink::Flush(void)
 {
+    // close the write gate before returning (legacy isFlushing_ contract): upstream
+    // StopStream computes rewindTime from the HDI cache right after Flush() returns
+    if (ctrlState_.load() == CtrlState::CTRL_STARTED) {
+        ctrlState_.store(CtrlState::CTRL_FLUSHING);
+    }
     return PostCtrlCmd(CtrlCmd::CMD_FLUSH, 0, 0);
 }
 
 int32_t OffloadAudioRenderSink::Reset(void)
 {
+    // same synchronous gate closure as Flush(): legacy Reset set isFlushing_ inline
+    if (ctrlState_.load() == CtrlState::CTRL_STARTED) {
+        ctrlState_.store(CtrlState::CTRL_FLUSHING);
+    }
     return PostCtrlCmd(CtrlCmd::CMD_RESET, 0, CTRL_WAIT_MS);
 }
 

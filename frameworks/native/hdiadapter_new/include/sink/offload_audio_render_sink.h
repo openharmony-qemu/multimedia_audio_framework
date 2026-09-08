@@ -113,14 +113,16 @@ private:
     };
 
     int32_t PostCtrlCmd(CtrlCmd cmd, int32_t arg, int32_t waitMs);
-    void StartCtrlThread();
+    void StartCtrlThread(); // requires a shared_ptr-owned instance (uses shared_from_this)
     void CtrlThreadMain();
     int32_t HandleCtrlCmd(CtrlCmd cmd, int32_t arg);
     int32_t ExecStart();
-    int32_t ExecStop();
-    void ExecFlush(bool restartAfter);
+    int32_t ExecStop(bool flushFirst = true); // false = flush already done (pending-stop path)
+    // publishStarted=false: the caller owns the terminal state, ExecStop keeps the
+    // write gate closed until it publishes IDLE (or STARTED on legacy failure)
+    void ExecFlush(bool restartAfter, bool publishStarted = true);
     int32_t ExecDrain(int32_t drainType);
-    void ResolvePendingAfterFlush(bool restartAfter);
+    void ResolvePendingAfterFlush(bool restartAfter, bool publishStarted = true);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
