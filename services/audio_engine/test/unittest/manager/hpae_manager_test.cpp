@@ -2374,6 +2374,30 @@ HWTEST_F(HpaeManagerUnitTest, StreamSpanRouteAndInnerReadCallbackBranches001, Te
     WaitForMsgProcessing(hpaeManager_);
 }
 
+/**
+ * @tc.name  : Test IsSessionHdiSpeedSupported query branches
+ * @tc.type  : FUNC
+ * @tc.number: IsSessionHdiSpeedSupported_001
+ * @tc.desc  : Per-session HDI speed capability: unknown session, normal chain and missing sink.
+ */
+HWTEST_F(HpaeManagerUnitTest, IsSessionHdiSpeedSupported_001, TestSize.Level1)
+{
+    PrepareCoverageManager(hpaeManager_);
+
+    const uint32_t playSessionId = TEST_STREAM_SESSION_ID + 123;
+    const std::string sinkName = "Speaker_File";
+    AddCoverageRouteManagers(hpaeManager_, sinkName, "mic", "inner_capture");
+    AddCoveragePlaySession(hpaeManager_, playSessionId, sinkName);
+
+    // Unknown session and normal-manager chain both report no HDI speed capability.
+    EXPECT_FALSE(hpaeManager_->IsSessionHdiSpeedSupported(TEST_STREAM_SESSION_ID + 999));
+    EXPECT_FALSE(hpaeManager_->IsSessionHdiSpeedSupported(playSessionId));
+
+    // Sink manager missing from the map keeps the conservative false answer.
+    hpaeManager_->rendererManagerMap_.erase(sinkName);
+    EXPECT_FALSE(hpaeManager_->IsSessionHdiSpeedSupported(playSessionId));
+}
+
 HWTEST_F(HpaeManagerUnitTest, StopAudioPort001, TestSize.Level4)
 {
     EXPECT_NE(hpaeManager_, nullptr);

@@ -53,6 +53,7 @@ public:
     int32_t calculateCacheCountRet = SUCCESS;
     uint32_t calculatedCacheCount = 0;
     bool calculateCacheCountCalled = false;
+    int32_t setSpeedRet = SUCCESS;
 
     virtual int32_t RegisterStreamListener(const sptr<IRemoteObject> &object) override { return 0; }
 
@@ -161,7 +162,7 @@ public:
 
     virtual int32_t SetSourceDuration(int64_t duration) override { return 0; }
 
-    virtual int32_t SetSpeed(float speed) override { return 0; }
+    virtual int32_t SetSpeed(float speed) override { return setSpeedRet; }
 
     virtual int32_t SetOffloadDataCallbackState(int32_t state) override { return 0; }
 
@@ -4460,9 +4461,62 @@ HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_NormalStream_001, TestSize.Le
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
     rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     rendererInClientInner->ipcStream_ = new IpcStreamMock();
-    
+
     int32_t ret = rendererInClientInner->SetSpeed(2.0f);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSpeed falls back to client-side speed on HDI rejection
+ * @tc.type  : FUNC
+ * @tc.number: SetSpeed_HdiRejectedFallback_001
+ * @tc.desc  : Server SetSpeed rejection must apply local sonic speed instead of failing.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_HdiRejectedFallback_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    auto ipcStream = new IpcStreamTest();
+    // Simulate the server capability gate rejecting a non-offload engine chain.
+    ipcStream->setSpeedRet = ERR_NOT_SUPPORTED;
+    rendererInClientInner->ipcStream_ = ipcStream;
+    rendererInClientInner->isHdiSpeed_ = true;
+
+    int32_t ret = rendererInClientInner->SetSpeed(2.0f);
+    EXPECT_EQ(ret, SUCCESS);
+    // App intent is preserved and local sonic speed actually takes over.
+    EXPECT_EQ(rendererInClientInner->GetSpeed(), 2.0f);
+    EXPECT_EQ(rendererInClientInner->speed_, 2.0f);
+    EXPECT_TRUE(rendererInClientInner->speedEnable_);
+    // The HDI side never accepted the speed.
+    EXPECT_EQ(rendererInClientInner->hdiSpeed_, 1.0f);
+}
+
+/**
+ * @tc.name  : Test NotifyRouteUpdate keeps client speed on HDI rejection
+ * @tc.type  : FUNC
+ * @tc.number: NotifyRouteUpdate_HdiRejectedKeepSpeed_001
+ * @tc.desc  : Arming HDI speed mode with a rejected speed must not neutralize sonic speed.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_HdiRejectedKeepSpeed_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    auto ipcStream = new IpcStreamTest();
+    ipcStream->setSpeedRet = ERR_NOT_SUPPORTED;
+    rendererInClientInner->ipcStream_ = ipcStream;
+
+    // Client-side speed is active before the route flips to HDI speed mode.
+    EXPECT_EQ(rendererInClientInner->SetSpeed(2.0f), SUCCESS);
+    EXPECT_EQ(rendererInClientInner->speed_, 2.0f);
+
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    rendererInClientInner->NotifyRouteUpdate(flagInfo, "remoteNetworkId");
+
+    EXPECT_TRUE(rendererInClientInner->isHdiSpeed_.load());
+    // Sonic speed stays at the client value: rejection keeps it untouched.
+    EXPECT_EQ(rendererInClientInner->speed_, 2.0f);
+    EXPECT_TRUE(rendererInClientInner->speedEnable_);
+    EXPECT_EQ(rendererInClientInner->hdiSpeed_, 1.0f);
 }
 
 /**
