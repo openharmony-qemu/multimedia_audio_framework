@@ -30,7 +30,6 @@ config("module_private_config") {
     "../../server/include",
     "../../../../frameworks/native/audioschedule/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
-    "../../../../test/unittest/common/include",
     "../../../../../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
   ]
 }
@@ -288,6 +287,7 @@ ohos_unittest("audio_ring_cache_unit_test") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/server/include",
+    "../../../../test/unittest/common/include",
   ]
 
   cflags = [
@@ -295,7 +295,10 @@ ohos_unittest("audio_ring_cache_unit_test") {
     "-fno-access-control",
   ]
 
-  sources = [ "audio_ring_cache_unit_test.cpp" ]
+  sources = [
+    "audio_ring_cache_unit_test.cpp",
+    "./common/audio_ring_cache_aiut.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
 
@@ -1321,9 +1324,7 @@ ohos_unittest("resource_manager_adapter_unit_test") {
   module_out_path = module_output_path
   include_dirs = [ "../../server/include" ]
 
-  sources = [
-    "resource_manager_adapter_unit_test.cpp",
-  ]
+  sources = [ "resource_manager_adapter_unit_test.cpp" ]
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -2983,179 +2984,42 @@ ohos_unittest("renderer_in_server_fifth_unit_test") {
 
 
 
-ohos_unittest("audio_service_core_aiut") {
+ohos_unittest("linear_pos_time_model_aiut") {
   testonly = true
-  module_out_path = "audio_framework/audio_framework_route/audio_service_core"
+  module_out_path = "audio_framework/audio_framework_route/linear_pos_time_model"
 
   include_dirs = [
-    "../../server/include",
-    "../../../audio_service/common/include",
-    "../../../audio_service/common/include/dfx",
-    "../../../../frameworks/native/audiocapturer/include",
-    "../../../../services/audio_service/server/include",
-    "../../../../services/audio_service/client/include",
-    "../../../../services/audio_service/client/src",
-    "../../../../services/audio_service/server/include",
-    "../../../../frameworks/native/audiostream/include",
-    "../../../../frameworks/native/hdiadapter_new/include",
-    "../../../../frameworks/native/playbackcapturer/include",
-    "../../../../frameworks/native/audiodefinitions/include",
-    "../../../../interfaces/inner_api/native/audiomanager/include",
-    "../../../../frameworks/native/audiopolicy/include",
-    "../../../../frameworks/native/audioinnercall/include",
-    "../../../../services/audio_engine/plugin/channel_converter/include",
-    "../../../../services/audio_service/client/include",
+    "../../../../frameworks/native/audioutils/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include",
-    "../../../../services/audio_service/common/include/dfx",
-    "../../../../services/audio_policy/client/include",
-    "../../../../test/unittest/audio_test_utils/include",
+    "../../../../services/audio_service/server/include",
+    "../../../../test/unittest/common/include",
   ]
 
-  sources = [
-    "../../../../services/audio_service/server/src/audio_engine_manager.cpp",
-    "../../../../services/audio_service/server/src/audio_playback_engine.cpp",
-    "../../../../services/audio_service/server/src/audio_service.cpp",
-    "../../../../services/audio_service/server/src/capturer_in_server.cpp",
-    "../../../../services/audio_service/server/src/core_service_handler.cpp",
-    "../../../../services/audio_service/server/src/direct_playback_engine.cpp",
-    "../../../../services/audio_service/server/src/hpae_adapter_manager.cpp",
-    "../../../../services/audio_service/server/src/hpae_capturer_stream_impl.cpp",
-    "../../../../services/audio_service/server/src/hpae_renderer_stream_impl.cpp",
-    "../../../../services/audio_service/server/src/hw_decoding_adapter_manager.cpp",
-    "../../../../services/audio_service/server/src/hw_decoding_renderer_impl.cpp",
-    "../../../../services/audio_service/server/src/i_stream_manager.cpp",
-    "../../../../services/audio_service/server/src/ipc_stream_in_server.cpp",
-    "../../../../services/audio_service/server/src/none_mix_engine.cpp",
-    "../../../../services/audio_service/server/src/cabin_playback_engine.cpp",
-    "../../../../services/audio_service/server/src/offline_stream_in_server.cpp",
-    "../../../../services/audio_service/server/src/policy_handler.cpp",
-    "../../../../services/audio_service/server/src/audio_privacy_manager_in_server.cpp",
-    "../../../../services/audio_service/server/src/pro_audio_stream_manager.cpp",
-    "../../../../services/audio_service/server/src/pro_renderer_stream_impl.cpp",
-    "../../../../services/audio_service/server/src/record_privacy_manager.cpp",
-    "../../../../services/audio_service/server/src/renderer_in_server.cpp",
-    "../../../../services/audio_service/server/src/audio_workgroup_callback.cpp",
-    "../../../../services/audio_service/server/src/audio_workgroup.cpp",
-    "../../../../services/audio_service/server/src/audio_resource_service.cpp",
-    "../../../../services/audio_service/server/src/audio_injector_service.cpp",
-    "../../../../services/audio_service/server/src/audio_system_load_listener.cpp",
-    "./server/src/service/audio_service_core_aiut.cpp",
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
   ]
 
-  configs = [
-    ":module_private_config",
-    "../../../../services/audio_service:audio_service_config",
-  ]
-  cflags = [ "-fno-access-control" ]
+  sources = [ "./common/linear_pos_time_model_aiut.cpp" ]
+
+  configs = [ ":module_private_config" ]
 
   deps = [
-    "../../../../services/audio_service/idl:audio_framework_interface",
-    "../../../../frameworks/native/audiocapturer:audio_capturer",
-    "../../../../frameworks/native/audioclock:audio_clock",
-    "../../../../frameworks/native/audioeffect:audio_effect",
-    "../../../../frameworks/native/audiodefinitions:audio_definitions",
-    "../../../../frameworks/native/audioqosmanager:audio_qosmanager",
-    "../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../frameworks/native/audioutils:audio_utils",
-    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../../services/audio_engine:hpae_engine_manager",
-    "../../../../services/audio_engine:audio_engine_plugins",
-    "../../../../services/audio_engine:audio_engine_utils",
-    "../../../../services/audio_policy:audio_policy_client",
-    "../../../../services/audio_policy:audio_policy_service",
     "../../../../services/audio_service:audio_client",
-    "../../../../services/audio_policy:audio_manager_client",
     "../../../../services/audio_service:audio_engine_manager",
     "../../../../services/audio_service:audio_policy_manager",
     "../../../../services/audio_service:audio_stream_client",
     "../../../../services/audio_service:audio_common",
-    "../../../../services/audio_service:audio_process_service",
-    "../../../../services/audio_service:audio_service",
-    "../../../audio_policy:audio_foundation",
   ]
-
-  if (audio_framework_feature_offline_effect) {
-    deps += [
-      "../../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
-    ]
-  }
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
-    "ability_runtime:app_manager",
-    "ability_runtime:ability_connect_callback_stub",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken_shared",
-    "access_token:libprivacy_sdk",
     "c_utils:utils",
-    "drivers_interface_audio:libeffect_proxy_1.0",
-    "eventhandler:libeventhandler",
-    "googletest:gtest",
-    "hdf_core:libhdf_utils",
-    "hicollie:libhicollie",
     "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "media_foundation:media_monitor_client",
-    "media_foundation:media_monitor_common",
-    "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "frame_aware_sched:rtg_interface",
-    "qos_manager:concurrent_task_client",
-    "power_manager:power_setting",
-    "power_manager:powermgr_client",
-    "ability_runtime:extension_manager",
-    "init:libbegetutil",
-    "cJSON:cjson",
   ]
-
-  defines = []
-  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
-    defines += [
-      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
-    ]
-  } else {
-    defines += [
-      "SOURCE_PERIOD_SIZE=1",
-    ]
-  }
-
-  if (!audio_framework_feature_new_engine_flag) {
-    sources += [
-      "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",
-      "../../../../services/audio_service/server/src/pa_capturer_stream_impl.cpp",
-      "../../../../services/audio_service/server/src/pa_renderer_stream_impl.cpp",
-    ]
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-    defines += [ "SUPPORT_OLD_ENGINE" ]
-  }
-
-  if (audio_framework_feature_call_manager_enable) {
-    external_deps += [
-      "call_manager:tel_call_manager_api",
-      "ability_base:want",
-    ]
-    defines += [ "FEATURE_CALL_MANAGER" ]
-  }
-
-  if (ressche_enable == true) {
-    external_deps += [ "resource_schedule_service:ressched_client" ]
-    defines += [ "RESSCHE_ENABLE" ]
-  }
-
-  if (audio_framework_feature_inner_capturer) {
-    deps +=
-        [ "../../../../frameworks/native/playbackcapturer:playback_capturer" ]
-    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
-  }
-  if (audio_framework_feature_offline_effect) {
-    defines += [ "FEATURE_OFFLINE_EFFECT" ]
-  }
-  if (audio_framework_feature_multi_alarm_level) {
-    defines += [ "MULTI_ALARM_LEVEL" ]
-  }
 }
 
 group("audio_service_unittest") {
@@ -3179,7 +3043,7 @@ group("audio_service_unittest") {
     ":audio_manager_stub_unit_test",
     ":renderer_in_server_fourth_unit_test",
     ":renderer_in_server_fifth_unit_test",
-    ":audio_service_core_aiut",
+    ":linear_pos_time_model_aiut",
     "renderer_in_server_unit_test:renderer_in_server_unit_test",
     "renderer_in_server_unit_test:renderer_in_server_second_unit_test",
     "renderer_in_server_unit_test:renderer_in_server_third_unit_test",
