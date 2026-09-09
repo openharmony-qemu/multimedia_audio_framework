@@ -461,6 +461,8 @@ audio_ohos_library("audio_policy_service") {
     "ffrt:libffrt",
   ]
 
+  public_external_deps = [ "ffrt:libffrt" ]
+
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
     external_deps += [

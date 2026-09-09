@@ -57,7 +57,6 @@ group("audio_policy_unittest_packages") {
     ":audio_pipe_manager_unit_test",
     ":audio_pipe_selector_route_selector_unit_test",
     ":audio_pipe_selector_unit_test",
-    ":audio_pipe_selector_aiut",
     ":audio_pnp_server_unit_test",
     ":audio_policy_client_stub_impl_test",
     ":audio_policy_manager_unit_test",
@@ -98,9 +97,7 @@ group("audio_policy_unittest_packages") {
     ":dfx_msg_manager_unit_test",
     ":power_state_listener_unit_test",
     ":privacy_priority_router_unit_test",
-    ":negative_priority_router_unit_test",
     ":stream_filter_router_unit_test",
-    ":sco_audio_scene_manager_unit_test",
     ":sle_audio_device_manager_unit_test",
     ":va_device_manager_test",
     ":volume_data_maintainer_unit_test",
@@ -650,7 +647,6 @@ ohos_unittest("standalone_mode_manager_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -1984,7 +1980,6 @@ ohos_unittest("audio_effect_config_parser_test") {
     "hilog:libhilog",
     "init:libbegetutil",
     "libxml2:libxml2",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_effect_config_parser_test/src/audio_effect_config_parser_test.cpp" ]
@@ -2047,7 +2042,6 @@ ohos_unittest("audio_pnp_server_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -2123,7 +2117,6 @@ ohos_unittest("audio_socket_thread_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   if (audio_framework_feature_wired_audio) {
@@ -2194,7 +2187,6 @@ ohos_unittest("audio_policy_server_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -2363,7 +2355,6 @@ ohos_unittest("audio_spatialization_service_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_spatialization_service_unit_test/src/audio_spatialization_service_unit_test.cpp" ]
@@ -2421,7 +2412,6 @@ ohos_unittest("audio_collaborative_service_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "media_foundation:media_monitor_common",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_spatialization_service_unit_test/src/audio_collaborative_service_unit_test.cpp" ]
@@ -2482,7 +2472,6 @@ ohos_unittest("stream_filter_router_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/stream_filter_router_unit_test/src/stream_filter_router_unit_test.cpp" ]
@@ -2544,69 +2533,6 @@ ohos_unittest("stream_filter_router_unit_test") {
   }
 }
 
-ohos_unittest("sco_audio_scene_manager_unit_test") {
-  module_out_path = module_output_path
-  include_dirs = [
-    "./unittest/sco_audio_scene_manager_unit_test/include",
-    "../server/domain/device/src/sco",
-  ]
-
-  use_exceptions = true
-
-  cflags = [
-    "-Wall",
-    "-Wno-macro-redefined",
-  ]
-
-  cflags_cc = cflags
-  cflags_cc += [ "-fno-access-control" ]
-
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    boundary_sanitize = true
-    debug = false
-    integer_overflow = true
-    ubsan = true
-  }
-
-  external_deps = [
-    "ability_base:want",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libprivacy_sdk",
-    "access_token:libtokenid_sdk",
-    "access_token:libtokensetproc_shared",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "hdf_core:libhdf_ipc_adapter",
-    "hdf_core:libhdi",
-    "hdf_core:libpub_utils",
-    "hilog:libhilog",
-    "ipc:ipc_single",
-    "kv_store:distributeddata_inner",
-    "os_account:os_account_innerkits",
-    "power_manager:powermgr_client",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
-
-  sources = [ "./unittest/sco_audio_scene_manager_unit_test/src/sco_audio_scene_manager_unit_test.cpp" ]
-
-  deps = [
-    "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
-    "../../audio_policy:audio_policy_client",
-    "../../audio_policy:audio_policy_service_static",
-    "../../audio_service:audio_client",
-    "../../audio_service:audio_engine_manager",
-    "../../audio_service:audio_policy_manager",
-    "../../audio_service:audio_stream_client",
-    "../../audio_service:audio_common",
-  ]
-}
-
 ohos_unittest("sle_audio_device_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
@@ -2655,7 +2581,6 @@ ohos_unittest("sle_audio_device_manager_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/sle_audio_device_manager_unit_test/src/sle_audio_device_manager_unit_test.cpp" ]
@@ -2728,7 +2653,6 @@ ohos_unittest("audio_device_manager_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_device_manager_unit_test/src/audio_device_manager_unit_test.cpp" ]
@@ -2811,7 +2735,6 @@ ohos_unittest("audio_router_center_unit_test") {
     "samgr:samgr_proxy",
     "googletest:gmock",
     "googletest:gtest",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -2914,106 +2837,9 @@ ohos_unittest("privacy_priority_router_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/privacy_priority_router_unit_test/src/privacy_priority_router_unit_test.cpp" ]
-
-  deps = [
-    "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
-    "../../audio_policy:audio_policy_client",
-    "../../audio_policy:audio_policy_service_static",
-    "../../audio_service:audio_client",
-    "../../audio_service:audio_engine_manager",
-    "../../audio_service:audio_policy_manager",
-    "../../audio_service:audio_stream_client",
-    "../../audio_service:audio_common",
-  ]
-
-  if (accessibility_enable == true) {
-    external_deps += [
-      "accessibility:accessibility_common",
-      "accessibility:accessibilityconfig",
-    ]
-  }
-
-  defines = []
-  if (audio_framework_feature_dtmf_tone) {
-    defines += [ "FEATURE_DTMF_TONE" ]
-  }
-
-  if (audio_framework_feature_support_os_account) {
-    defines += [ "SUPPORT_USER_ACCOUNT" ]
-  }
-
-  if (build_variant == "user") {
-    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
-  } else if (build_variant == "root") {
-    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
-  }
-
-  if (appgallery_part_enable == true) {
-    defines += [ "FEATURE_APPGALLERY" ]
-  }
-
-  if (bluetooth_part_enable == true) {
-    external_deps += [ "bluetooth:btframework" ]
-  }
-
-  if (audio_framework_feature_input) {
-    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
-    external_deps += [ "input:libmmi-client" ]
-  }
-
-  if (audio_framework_feature_device_manager) {
-    defines += [ "FEATURE_DEVICE_MANAGER" ]
-    external_deps += [ "device_manager:devicemanagersdk" ]
-  }
-}
-
-ohos_unittest("negative_priority_router_unit_test") {
-  module_out_path = module_output_path
-  include_dirs = [
-    "./unittest/negative_priority_router_unit_test/include",
-    "../../audio_policy/server/domain/router",
-  ]
-
-  use_exceptions = true
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-Wno-macro-redefined",
-  ]
-
-  cflags_cc = cflags
-  cflags_cc += [ "-fno-access-control" ]
-
-  external_deps = [
-    "ability_base:want",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libprivacy_sdk",
-    "access_token:libtokenid_sdk",
-    "access_token:libtokensetproc_shared",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "hdf_core:libhdf_ipc_adapter",
-    "hdf_core:libhdi",
-    "hdf_core:libpub_utils",
-    "hilog:libhilog",
-    "ipc:ipc_single",
-    "kv_store:distributeddata_inner",
-    "os_account:os_account_innerkits",
-    "power_manager:powermgr_client",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-    "ffrt:libffrt",
-  ]
-
-  sources = [ "./unittest/negative_priority_router_unit_test/src/negative_priority_router_unit_test.cpp" ]
 
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
@@ -3120,7 +2946,6 @@ ohos_unittest("audio_global_config_manager_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_global_config_manager_test/src/audio_global_config_manager_test.cpp" ]
@@ -3153,7 +2978,6 @@ ohos_unittest("audio_session_state_monitor_test") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "eventhandler:libeventhandler",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_session_state_monitor_test/audio_session_state_monitor_test.cpp" ]
@@ -3188,7 +3012,6 @@ ohos_unittest("audio_policy_state_monitor_test") {
     "data_share:datashare_consumer",
     "hilog:libhilog",
     "ipc:ipc_single",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_policy_state_monitor_test/audio_policy_state_monitor_test.cpp" ]
@@ -3263,7 +3086,6 @@ ohos_unittest("audio_stream_collector_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_stream_collector_unit_test/src/audio_stream_collector_unit_test.cpp" ]
@@ -3362,7 +3184,6 @@ ohos_unittest("audio_stream_collector_pro_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_stream_collector_unit_test/src/audio_stream_collector_pro_unit_test.cpp" ]
@@ -3447,7 +3268,6 @@ ohos_unittest("audio_effect_service_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -3509,7 +3329,6 @@ ohos_unittest("audio_policy_server_handler_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_policy_server_handler_unit_test/src/audio_policy_server_handler_unit_test.cpp" ]
@@ -3752,7 +3571,6 @@ ohos_unittest("volume_data_maintainer_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/volume_data_maintainer_unit_test/src/volume_data_maintainer_unit_test.cpp" ]
@@ -3861,7 +3679,6 @@ ohos_unittest("audio_device_common_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -3934,7 +3751,6 @@ ohos_unittest("audio_effect_config_parser_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_effect_config_parser_unit_test/src/audio_effect_config_parser_unit_test.cpp" ]
@@ -4002,7 +3818,6 @@ ohos_unittest("device_status_listener_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/device_status_listener_unit_test/src/device_status_listener_unit_test.cpp" ]
@@ -4114,7 +3929,6 @@ ohos_unittest("audio_active_device_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_active_device_unit_test/src/audio_active_device_unit_test.cpp" ]
@@ -4180,7 +3994,6 @@ ohos_unittest("audio_arm_device_behavior_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_arm_device_behavior_unit_test/src/audio_arm_device_behavior_unit_test.cpp" ]
@@ -4246,7 +4059,6 @@ ohos_unittest("audio_a2dp_device_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_a2dp_device_unit_test/src/audio_a2dp_device_unit_test.cpp" ]
@@ -4313,7 +4125,6 @@ ohos_unittest("audio_connected_device_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_connected_device_unit_test/src/audio_connected_device_unit_test.cpp" ]
@@ -4358,7 +4169,6 @@ ohos_unittest("audio_volume_manager_unit_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -4410,7 +4220,6 @@ ohos_unittest("audio_loud_volume_manager_unit_test") {
     "input:libmmi-client",
     "ipc:ipc_single",
     "os_account:os_account_innerkits",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -4457,7 +4266,6 @@ ohos_unittest("audio_volume_manager_ext_unit_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -4557,7 +4365,6 @@ ohos_unittest("audio_adapter_manager_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 }
 
@@ -4645,7 +4452,6 @@ ohos_unittest("audio_volume_utils_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 }
 
@@ -4737,7 +4543,6 @@ ohos_unittest("audio_adapter_manager_ext_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   defines = []
@@ -4831,96 +4636,6 @@ ohos_unittest("audio_pipe_selector_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
-  ]
-}
-
-ohos_unittest("audio_pipe_selector_aiut") {
-  module_out_path = "audio_framework/audio_framework_route/audio_pipe_manager"
-  include_dirs = [
-    "../client/service/include",
-    "../server/include",
-    "./unittest/audio_pipe_selector_unit_test/include",
-    "../../../services/audio_policy/services/pipe/include",
-    "../../../frameworks/native/audiodefinitions/include",
-    "../../../test/unittest/common/include",
-  ]
-
-  use_exceptions = true
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-Wno-macro-redefined",
-    "-fno-access-control",
-  ]
-
-  sources = [
-    "./unittest/audio_pipe_selector_unit_test/src/audio_pipe_selector_aiut.cpp",
-  ]
-
-  deps = [
-    "../../../frameworks/native/audiodefinitions:audio_definitions",
-    "../../../frameworks/native/audioeffect:audio_effect",
-    "../../../frameworks/native/audioschedule:audio_schedule",
-    "../../../frameworks/native/audioutils:audio_utils",
-    "../../../services/audio_policy:audio_policy_client",
-    "../../../services/audio_policy:audio_policy_service_static",
-    "../../../services/audio_service:audio_client",
-    "../../../services/audio_service:audio_engine_manager",
-    "../../../services/audio_service:audio_policy_manager",
-    "../../../services/audio_service:audio_stream_client",
-    "../../../services/audio_service:audio_common",
-    "../../../services/audio_service:audio_process_service",
-    "../../../services/audio_service:audio_service",
-  ]
-
-  if (audio_framework_feature_offline_effect) {
-    deps += [
-      "../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
-    ]
-  }
-
-  external_deps = [
-    "ability_base:session_info",
-    "ability_base:want",
-    "ability_base:zuri",
-    "ability_runtime:ability_connect_callback_stub",
-    "ability_runtime:ability_context_native",
-    "ability_runtime:app_context",
-    "ability_runtime:dataobs_manager",
-    "ability_runtime:extension_manager",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libprivacy_sdk",
-    "access_token:libtokenid_sdk",
-    "access_token:libtokensetproc_shared",
-    "bluetooth:btframework",
-    "bounds_checking_function:libsec_shared",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_6.1",
-    "eventhandler:libeventhandler",
-    "googletest:gmock",
-    "hdf_core:libhdf_host",
-    "hdf_core:libhdf_ipc_adapter",
-    "hdf_core:libhdf_utils",
-    "hdf_core:libhdi",
-    "hdf_core:libpub_utils",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "init:libbegetutil",
-    "ipc:ipc_single",
-    "media_foundation:media_monitor_client",
-    "media_foundation:media_monitor_common",
-    "os_account:os_account_innerkits",
-    "power_manager:power_setting",
-    "power_manager:powermgr_client",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 }
 
@@ -5008,7 +4723,6 @@ ohos_unittest("audio_pipe_selector_route_selector_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 }
 
@@ -5046,7 +4760,6 @@ ohos_unittest("audio_recovery_device_unit_test") {
     "power_manager:powermgr_client",
     "samgr:samgr_proxy",
     "eventhandler:libeventhandler",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_recovery_device_unit_test/src/audio_recovery_device_unit_test.cpp" ]
@@ -5091,7 +4804,6 @@ ohos_unittest("audio_input_thread_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_input_thread_unit_test/src/audio_input_thread_unit_test.cpp" ]
@@ -5155,7 +4867,6 @@ ohos_unittest("audio_concurrency_manager_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_concurrency_manager_unit_test/src/audio_concurrency_manager_unit_test.cpp" ]
@@ -5207,7 +4918,6 @@ ohos_unittest("audio_device_status_unit_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_device_status_unit_test/src/audio_device_status_unit_test.cpp" ]
@@ -5262,7 +4972,6 @@ ohos_unittest("audio_state_manager_unit_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_state_manager_unit_test/src/audio_state_manager_unit_test.cpp" ]
@@ -5327,7 +5036,6 @@ ohos_unittest("audio_device_lock_unit_test") {
     "power_manager:powermgr_client",
     "samgr:samgr_proxy",
     "eventhandler:libeventhandler",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_device_lock_unit_test/src/audio_device_lock_unit_test.cpp" ]
@@ -5399,7 +5107,6 @@ ohos_unittest("power_state_listener_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/power_state_listener_unit_test/src/power_state_listener_unit_test.cpp" ]
@@ -5451,7 +5158,6 @@ ohos_unittest("audio_usb_manager_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_usb_manager_unit_test/src/audio_usb_manager_unit_test.cpp" ]
@@ -5492,7 +5198,6 @@ ohos_unittest("audio_usr_select_manager_unit_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_usr_select_manager_unit_test/src/audio_usr_select_manager_unit_test.cpp" ]
@@ -5556,7 +5261,6 @@ ohos_unittest("audio_session_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
-    "ffrt:libffrt",
   ]
 
   sources =
@@ -5604,7 +5308,6 @@ ohos_unittest("audio_session_service_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_session_service_unit_test/src/audio_session_service_unit_test.cpp" ]
@@ -5655,7 +5358,6 @@ ohos_unittest("audio_policy_utils_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_policy_utils_unit_test/src/audio_policy_utils_unit_test.cpp" ]
@@ -5800,7 +5502,6 @@ ohos_unittest("audio_setting_provider_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_setting_provider_unit_test/src/audio_setting_provider_unit_test.cpp" ]
@@ -5860,7 +5561,6 @@ ohos_unittest("audio_strategy_router_parser_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_strategy_router_parser_unit_test/src/audio_strategy_router_parser_unit_test.cpp" ]
@@ -5904,7 +5604,6 @@ ohos_unittest("audio_tone_parser_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_tone_parser_unit_test/src/audio_tone_parser_unit_test.cpp" ]
@@ -5938,8 +5637,7 @@ ohos_unittest("audio_server_definitions_unit_test") {
     "c_utils:utils",
     "ipc:ipc_single",
     "hilog:libhilog",
-    "bounds_checking_function:libsec_static",
-    "ffrt:libffrt",
+    "bounds_checking_function:libsec_static"
   ]
 
   sources = [ "./unittest/audio_definition_adapter_info_unit_test/src/audio_definition_adapter_info_unit_test.cpp" ]
@@ -5986,7 +5684,6 @@ ohos_unittest("audio_client_tracker_callback_listener_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -6065,7 +5762,6 @@ ohos_unittest("audio_client_tracker_callback_service_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -6124,7 +5820,6 @@ ohos_unittest("audio_core_service_entry_unit_test") {
     "power_manager:powermgr_client",
     "samgr:samgr_proxy",
     "eventhandler:libeventhandler",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_core_service_entry_unit_test/src/audio_core_service_entry_unit_test.cpp" ]
@@ -6185,7 +5880,6 @@ ohos_unittest("audio_core_service_private_unit_test") {
     "power_manager:powermgr_client",
     "samgr:samgr_proxy",
     "eventhandler:libeventhandler",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -6250,7 +5944,6 @@ ohos_unittest("audio_core_service_private_route_selector_unit_test") {
     "power_manager:powermgr_client",
     "samgr:samgr_proxy",
     "eventhandler:libeventhandler",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -6644,7 +6337,7 @@ ohos_unittest("audio_pipe_manager_unit_test") {
     "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_unit_test.cpp",
     "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_extended_test.cpp",
     "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_required_pipe_test.cpp",
-    "./unittest/audio_pipe_manager_unit_test/src/audio_core_config_manager_query_aiut.cpp",
+    "./unittest/audio_pipe_manager_unit_test/src/audio_core_config_manager_aiut.cpp",
   ]
 
   deps = [
@@ -6708,7 +6401,6 @@ ohos_unittest("audio_pipe_manager_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 }
 
@@ -6770,7 +6462,6 @@ ohos_unittest("audio_interrupt_dfx_collector_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_interrupt_service_test/src/audio_interrupt_dfx_collector_unit_test.cpp" ]
@@ -6846,7 +6537,6 @@ ohos_unittest("audio_tone_manager_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   if (audio_framework_feature_wired_audio) {
@@ -6918,7 +6608,6 @@ ohos_unittest("dfx_msg_manager_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [
@@ -7034,7 +6723,6 @@ ohos_unittest("user_select_router_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/user_select_router_unit_test/src/user_select_router_unit_test.cpp" ]
@@ -7140,7 +6828,6 @@ ohos_unittest("user_select_router_ext_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/user_select_router_unit_test/src/user_select_router_ext_unit_test.cpp" ]
@@ -7230,7 +6917,6 @@ ohos_unittest("audio_injector_policy_unit_test") {
     "ipc:ipc_single",
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_injector_policy_unit_test/src/audio_injector_policy_unit_test.cpp" ]
@@ -7309,7 +6995,6 @@ ohos_unittest("va_device_manager_test") {
     "window_manager:session_manager_lite",
     "window_manager:libwm_lite",
     "init:libbeget_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/va_device_manager_test/src/va_device_manager_test.cpp" ]
@@ -7407,7 +7092,6 @@ ohos_unittest("audio_interphone_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
 
   if (bluetooth_part_enable == true) {
@@ -7487,7 +7171,6 @@ ohos_unittest("audio_record_controller_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "init:libbeget_proxy",
-    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_record_controller_unit_test/src/audio_record_controller_unit_test.cpp" ]
