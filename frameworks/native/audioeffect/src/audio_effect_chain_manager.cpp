@@ -127,10 +127,6 @@ AudioEffectChainManager *AudioEffectChainManager::GetInstance()
 int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::string &sinkName)
 {
     Trace trace("AudioEffectChainManager::UpdateDeviceInfo");
-    if (Util::IsEnhancedRoutingSupported()) {
-        AUDIO_INFO_LOG("Enhanced routing is supported, no need update device info");
-        return SUCCESS;
-    }
     if (!isInitialized_) {
         deviceType_ = (DeviceType)device;
         deviceSink_ = sinkName;
@@ -193,6 +189,11 @@ void AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::str
     Trace trace("AudioEffectChainManager::SetOutputDeviceSink device: " + std::to_string(device) +
         " sinkName: " + sinkName);
     std::lock_guard<std::mutex> lock(dynamicMutex_);
+    if (Util::IsEnhancedRoutingSupported()) {
+        AUDIO_INFO_LOG("Enhanced routing is supported, no need update device info");
+        return;
+    }
+
     if (UpdateDeviceInfo(device, sinkName) != SUCCESS) {
         return;
     }
@@ -1461,7 +1462,13 @@ bool AudioEffectChainManager::HasRunningSessionForEffectChain(std::shared_ptr<Au
     for (const auto& [sessionId, effectInfo] : sessionIDToEffectInfoMap_) {
         CHECK_AND_CONTINUE(effectInfo.sceneMode != "EFFECT_NONE");
         std::string sceneTypeTemp = effectInfo.sceneType;
-        std::string sceneTypeAndDeviceKeyTemp = sceneTypeTemp + "_&_" + GetDeviceTypeName();
+        std::string sceneTypeAndDeviceKeyTemp = "";
+        if (Util::IsEnhancedRoutingSupported()) {
+            sceneTypeAndDeviceKeyTemp = GetDeviceTypeName(effectInfo.deviceType) + "_&_" +
+                sceneTypeTemp + "_&_" + std::to_string(effectInfo.renderId);
+        } else {
+            sceneTypeAndDeviceKeyTemp = sceneTypeTemp + "_&_" + GetDeviceTypeName();
+        }
         CHECK_AND_CONTINUE_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKeyTemp) > 0 &&
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp] != nullptr, "null audioEffectChain");
         auto audioEffectChainTemp = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp];
@@ -1482,10 +1489,10 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
             continue;
         }
         if (HasRunningSessionForEffectChain(audioEffectChain)) {
-            AUDIO_INFO_LOG("HasRunningSessionForEffectChain enabled %{public}d", enabled);
+            AUDIO_INFO_LOG("key: %{public}s, HasRunningSession enabled %{public}d", key.c_str(), enabled);
             audioEffectChain->SetSpatializationEnabledForFading(enabled);
         } else {
-            AUDIO_INFO_LOG("chains enabled %{public}d", enabled);
+            AUDIO_INFO_LOG("key: %{public}s, chains enabled %{public}d", key.c_str(), enabled);
             audioEffectChain->SetSpatializationEnabled(enabled);
         }
     }
