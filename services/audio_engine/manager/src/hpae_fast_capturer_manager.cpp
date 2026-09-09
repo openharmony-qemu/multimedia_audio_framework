@@ -424,13 +424,6 @@ int32_t HpaeFastCapturerManager::MoveStream(uint32_t sessionId, const std::strin
             TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId, MOVE_SINGLE, sourceName);
             return;
         }
-        // The two maps are maintained in pairs; guard against desync anyway, because
-        // operator[] would silently insert a default session info (mirror the normal
-        // capturer manager's MoveStream which checks before access).
-        if (sessionNodeMap_.find(sessionId) == sessionNodeMap_.end()) {
-            TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId, MOVE_SINGLE, sourceName);
-            return;
-        }
         CHECK_AND_RETURN_LOG(!sourceName.empty(), "sourceName is empty");
         HpaeCaptureMoveInfo moveInfo;
         moveInfo.sessionId = sessionId;
@@ -451,11 +444,6 @@ void HpaeFastCapturerManager::MoveAllStreamToNewSource(const std::string &source
     std::vector<HpaeCaptureMoveInfo> moveInfos;
     for (const auto &[sessionId, node] : sourceOutputNodeMap_) {
         if (moveType == MOVE_ALL || std::find(moveIds.begin(), moveIds.end(), sessionId) != moveIds.end()) {
-            // Skip sessions missing from sessionNodeMap_ instead of letting operator[]
-            // insert a default entry (pair-maintenance guard, mirrors MoveStream above).
-            if (sessionNodeMap_.find(sessionId) == sessionNodeMap_.end()) {
-                continue;
-            }
             HpaeCaptureMoveInfo moveInfo;
             moveInfo.sessionId = sessionId;
             moveInfo.sourceOutputNode = node;
