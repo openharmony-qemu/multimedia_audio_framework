@@ -95,6 +95,7 @@ uint32_t GetSampleSizeFromBitDepth(AudioBitDepth bitDepth)
 
 PcmBufferFormat ConvertToPcmBufferFormat(const AudioFormatConfig* cfg)
 {
+    CHECK_AND_RETURN_RET_LOG(cfg != nullptr, "invalid params cfg is nullptr");
     AudioSamplingRate rate;
     ValidateSampleRate(cfg->sampleRate, rate);
 
@@ -107,6 +108,7 @@ PcmBufferFormat ConvertToPcmBufferFormat(const AudioFormatConfig* cfg)
 
 AudioFormat ConvertToAudioFormat(const AudioFormatConfig* cfg)
 {
+    CHECK_AND_RETURN_RET_LOG(cfg != nullptr, "invalid params cfg is nullptr");
     AudioFormat format;
     AudioSamplingRate rate = SAMPLE_RATE_48000;
     ValidateSampleRate(cfg->sampleRate, rate);

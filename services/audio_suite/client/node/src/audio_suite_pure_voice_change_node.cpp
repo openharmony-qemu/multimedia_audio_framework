@@ -55,6 +55,8 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_PURE_VOICE_CHANGE, nodeParameter_);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create nr algoInterface");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "algoInterface_ Init failed");
     nodeParameter_.inChannels = STEREO;
@@ -65,8 +67,6 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
         {VMPH_ALGO_CHANNEL_LAYOUT, nodeParameter_.outChannels},
         static_cast<AudioSampleFormat>(nodeParameter_.outFormat),
         static_cast<AudioSamplingRate>(nodeParameter_.outSampleRate)});
-
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
 
     nodeNeedDataDuration_ =
         static_cast<uint64_t>(nodeParameter_.frameLen) * MILLISECONDS_TO_MICROSECONDS / nodeParameter_.inSampleRate;

@@ -89,7 +89,8 @@ int32_t AudioInputNode::InitCacheBuffer(uint32_t needDataLength)
     if (outPcmData_.GetDataSize() > singleRequestSize_) {
         singleRequestSize_ = outPcmData_.GetDataSize();
     }
-    cachedBuffer_.ResizeBuffer(singleRequestSize_);
+    ret = cachedBuffer_.ResizeBuffer(singleRequestSize_);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ERROR, "cachedBuffer ResizeBuffer failed");
 
     uint32_t inDuration = needDataLength >= inPcmData_.GetDataDuration() ?
         needDataLength : inPcmData_.GetDataDuration();

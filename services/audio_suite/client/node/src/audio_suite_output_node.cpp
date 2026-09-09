@@ -293,7 +293,14 @@ uint8_t *AudioOutputNode::GetCacheBufferData(size_t idx)
         return nullptr;
     }
 
-    return outputs_[idx]->GetPcmData() + bufferUsedOffset_;
+    uint8_t *pcmData = outputs_[idx]->GetPcmData();
+    CHECK_AND_RETURN_RET_LOG(pcmData != nullptr, nullptr, "pcmData is nullptr, idx=%{public}zu", idx);
+ 
+    CHECK_AND_RETURN_RET_LOG(bufferUsedOffset_ < outputs_[idx]->GetDataSize(), nullptr,
+        "bufferUsedOffset_=%{public}zu >= dataSize=%{public}u, idx=%{public}zu",
+        bufferUsedOffset_, outputs_[idx]->GetDataSize(), idx);
+ 
+    return pcmData + bufferUsedOffset_;
 }
 
 }  // namespace AudioSuite

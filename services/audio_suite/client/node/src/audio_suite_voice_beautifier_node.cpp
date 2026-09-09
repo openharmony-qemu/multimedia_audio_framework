@@ -47,6 +47,8 @@ int32_t AudioSuiteVoiceBeautifierNode::Init()
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER, nodeParameter_);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create voice beautifier algoInterface");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
 
     int32_t ret = algoInterface_->Init();
     if (ret != SUCCESS) {
@@ -61,7 +63,6 @@ int32_t AudioSuiteVoiceBeautifierNode::Init()
         static_cast<AudioSampleFormat>(nodeParameter_.outFormat),
         static_cast<AudioSamplingRate>(nodeParameter_.outSampleRate)});
 
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     nodeNeedDataDuration_ =
         static_cast<uint64_t>(nodeParameter_.frameLen) * MILLISECONDS_TO_MICROSECONDS / nodeParameter_.inSampleRate;
     AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode Init end");
