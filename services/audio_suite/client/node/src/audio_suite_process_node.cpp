@@ -134,7 +134,7 @@ int32_t AudioSuiteProcessNode::ObtainProcessedData()
 
         Trace trace("AudioSuiteProcessNode::SignalProcess Start");
         algoProcessedResult_ = SignalProcess(preOutputs);
-        CHECK_AND_RETURN_RET_LOG(!algoProcessedResult_.empty() || algoProcessedResult_[0] != nullptr, ERROR,
+        CHECK_AND_RETURN_RET_LOG(!algoProcessedResult_.empty() && algoProcessedResult_[0] != nullptr, ERROR,
             "node %{public}d SignalProcess returned error result", GetNodeType());
         trace.End();
 
