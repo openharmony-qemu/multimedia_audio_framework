@@ -788,10 +788,7 @@ int32_t HpaeDirectRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkI
         }
         StopOuputNode();
         sinkInfo_ = sinkInfo;
-        int32_t ret = InitSinkInner(isReload);
-        // InitSinkInner leaves sinkOutputNode_ null when CheckFramelen rejects the
-        // new sink geometry; continuing here would crash in CreateDirectNodes.
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "InitSinkInner failed %{public}d, skip node rebuild", ret);
+        InitSinkInner(isReload);
 
         CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is null");
         if (curNode_->GetState() == HPAE_SESSION_RUNNING) {
