@@ -24,8 +24,6 @@ ohos_shared_library("audio_engine_utils") {
     debug = false
   }
   install_enable = true
-  # hpae_no_lock_queue.cpp uses try-catch as a last-resort guard.
-  use_exceptions = true
 
   sources = [
     "buffer/hpae_pcm_buffer.cpp",
@@ -272,8 +270,6 @@ audio_ohos_library("hpae_engine_manager") {
     debug = false
   }
   install_enable = true
-  # hpae_manager.h SendRequestSync template uses try-catch.
-  use_exceptions = true
 
   configs = [ ":audio_engine_node_config" ]
 

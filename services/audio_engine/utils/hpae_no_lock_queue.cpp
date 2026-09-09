@@ -249,18 +249,8 @@ void HpaeNoLockQueue::ProcessRequests(uint64_t requestHeadIndex, bool isProcess)
         for (std::vector<Request>::reverse_iterator requestIter = tempRequestQueue_.rbegin();
              requestIter != tempRequestQueue_.rend();
              ++requestIter) {
-            if (*requestIter == nullptr) {
-                continue;
-            }
-            // Last-resort guard: an exception escaping a request would propagate to the
-            // worker thread entry (std::terminate) or to a DeInit caller; log and drop it
-            // so one bad request cannot take the whole queue down.
-            try {
+            if (*requestIter != nullptr) {
                 (*requestIter)();
-            } catch (const std::exception &e) {
-                AUDIO_ERR_LOG("request exception: %{public}s", e.what());
-            } catch (...) {
-                AUDIO_ERR_LOG("request unknown exception");
             }
         }
     }

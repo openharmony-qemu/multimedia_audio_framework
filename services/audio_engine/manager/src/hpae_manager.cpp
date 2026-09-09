@@ -1539,41 +1539,6 @@ void HpaeManager::SendRequest(Request &&request, std::string funcName)
     hpaeManagerThread_->Notify();
 }
 
-// Defined out-of-line instead of in hpae_manager.h: the try-catch body requires
-// -fexceptions (this TU builds with use_exceptions), while translation units
-// including the header may be built with -fno-exceptions.
-int32_t HpaeManager::SendRequestSync(std::function<int32_t()> request, const std::string &funcName,
-    int32_t defaultValue, uint32_t timeoutMs)
-{
-    auto promise = std::make_shared<std::promise<int32_t>>();
-    auto future = promise->get_future();
-
-    auto wrapper = [req = std::move(request), p = promise]() {
-        try {
-            p->set_value(req());
-        } catch (...) {
-            // Store the exception instead of letting it propagate out of the
-            // worker thread (uncaught exception would terminate the process).
-            p->set_exception(std::current_exception());
-        }
-    };
-
-    SendRequest(std::move(wrapper), funcName);
-
-    auto status = future.wait_for(std::chrono::milliseconds(timeoutMs));
-    if (status != std::future_status::ready) {
-        AUDIO_ERR_LOG("SendRequestSync %{public}s timed out after %{public}u ms",
-            funcName.c_str(), timeoutMs);
-        return defaultValue;
-    }
-    try {
-        return future.get();
-    } catch (...) {
-        AUDIO_ERR_LOG("SendRequestSync %{public}s request exception", funcName.c_str());
-        return defaultValue;
-    }
-}
-
 uint64_t HpaeManager::ProcessPendingTransitionsAndGetNextDelay()
 {
     constexpr auto timeout = std::chrono::milliseconds(DEFAULT_PAUSE_STREAM_TIME_IN_MS);
@@ -3623,7 +3588,7 @@ int32_t HpaeManager::SetAissEnabledSync(uint32_t sessionId, bool enabled)
         ClearAissSession(sessionId, true);
         return SUCCESS;
     };
-    return SendRequestSync(std::move(request), __func__, ERR_OPERATION_FAILED);
+    return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
 }
 
 int32_t HpaeManager::SetAissEnabledByUidSync(int32_t uid, bool enabled)
@@ -3634,7 +3599,7 @@ int32_t HpaeManager::SetAissEnabledByUidSync(int32_t uid, bool enabled)
     auto request = [this, uid, enabled]() -> int32_t {
         return enabled ? EnableAissByUid(uid) : DisableAissByUid(uid);
     };
-    return SendRequestSync(std::move(request), __func__, ERR_OPERATION_FAILED);
+    return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
 }
 
 int32_t HpaeManager::DisableAissByUidWhenStreamInactiveSync(int32_t uid)
@@ -3643,7 +3608,7 @@ int32_t HpaeManager::DisableAissByUidWhenStreamInactiveSync(int32_t uid)
         "DisableAissByUidWhenStreamInactiveSync: sessionEffectManager_ is null");
 
     auto request = [this, uid]() -> int32_t { return DisableAissByUidWhenStreamInactive(uid); };
-    return SendRequestSync(std::move(request), __func__, ERR_OPERATION_FAILED);
+    return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
 }
 
 int32_t HpaeManager::DisableAissByUidWhenStreamInactive(int32_t uid)
@@ -3793,7 +3758,7 @@ int32_t HpaeManager::SetVocalRatioSync(float ratio)
         return sessionEffectManager_->SetEffectParameter(AUDIO_AISS_ENHANCE_EFFECT_NAME,
             static_cast<int32_t>(EffectParameterType::VOCAL_RATIO), ratio);
     };
-    return SendRequestSync(std::move(request), __func__, ERR_OPERATION_FAILED);
+    return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
 }
 
 uint64_t HpaeManager::PostDelayedTask(uint64_t delayMs, std::function<void()> task)

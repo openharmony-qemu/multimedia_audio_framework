@@ -2506,7 +2506,7 @@ HWTEST_F(HpaeManagerUnitTest, sendRequestSyncReturnsActualResult, TestSize.Level
     sleep(1);
     EXPECT_EQ(hpaeManager_->IsRunning(), true);
 
-    auto result = hpaeManager_->SendRequestSync(
+    auto result = hpaeManager_->SendRequestSync<int32_t>(
         []() -> int32_t { return 42; },
         "TestReturn42",
         -1);
@@ -2524,7 +2524,7 @@ HWTEST_F(HpaeManagerUnitTest, sendRequestSyncReturnsErrorFromLambda, TestSize.Le
     sleep(1);
     EXPECT_EQ(hpaeManager_->IsRunning(), true);
 
-    auto result = hpaeManager_->SendRequestSync(
+    auto result = hpaeManager_->SendRequestSync<int32_t>(
         []() -> int32_t { return TEST_SYNC_ERROR; },
         "TestReturnError",
         SUCCESS);
@@ -2541,7 +2541,7 @@ HWTEST_F(HpaeManagerUnitTest, sendRequestSyncReturnsDefaultOnTimeout, TestSize.L
     // Don't Init - no HpaeManagerThread running, so the request won't be processed
     EXPECT_EQ(hpaeManager_->IsRunning(), false);
 
-    auto result = hpaeManager_->SendRequestSync(
+    auto result = hpaeManager_->SendRequestSync<int32_t>(
         []() -> int32_t { return 42; },
         "TestTimeout",
         -1,
@@ -2562,7 +2562,7 @@ HWTEST_F(HpaeManagerUnitTest, sendRequestSyncSequentialCalls, TestSize.Level0)
     int32_t counter = 0;
     for (int i = 0; i < 5; i++) {
         std::string funcName = "TestSequential_" + std::to_string(i);
-        auto result = hpaeManager_->SendRequestSync(
+        auto result = hpaeManager_->SendRequestSync<int32_t>(
             [&counter]() -> int32_t { return ++counter; },
             funcName,
             -1);
