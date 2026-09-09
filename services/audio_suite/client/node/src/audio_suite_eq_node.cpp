@@ -54,7 +54,7 @@ int32_t AudioSuiteEqNode::Init()
     }
     algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_EQUALIZER, nodeParameter_);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create equalizer algoInterface");
- 
+
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to Init eq Change Algo");
     SetAudioNodeFormat(AudioFormat{{EQ_ALGO_CHANNEL_LAYOUT, nodeParameter_.inChannels},
