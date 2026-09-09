@@ -197,6 +197,8 @@ ohos_unittest("hpae_manager_test") {
   ]
 
   configs = [ ":audio_engine_private_config" ]
+  # hpae_manager_test.cpp instantiates SendRequestSync (try-catch in template).
+  configs += [ "//build/config/compiler:exceptions" ]
 
   deps = [
     "../../:hpae_engine_manager_static",
