@@ -867,6 +867,7 @@ private:
     int32_t RemoveAllSystemVolumeChangeCallbackInfo();
     int32_t CheckAudioPolicyClientRegisted();
     void RecoverSystemVolumeChangeByFilterCallback(const sptr<IAudioPolicy> &gsp);
+    void NotifyAudioSeparationEffectDisabledForServerDied();
 
     std::mutex listenerStubMutex_;
     std::mutex registerCallbackMutex_;
