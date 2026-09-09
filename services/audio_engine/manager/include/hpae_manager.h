@@ -288,38 +288,11 @@ private:
 
     void SendRequest(Request &&request, std::string funcName);
 
-    template<typename Ret>
-    Ret SendRequestSync(std::function<Ret()> request, const std::string &funcName,
-                        Ret defaultValue, uint32_t timeoutMs = 2000)
-    {
-        auto promise = std::make_shared<std::promise<Ret>>();
-        auto future = promise->get_future();
-
-        auto wrapper = [req = std::move(request), p = promise]() {
-            try {
-                p->set_value(req());
-            } catch (...) {
-                // Store the exception instead of letting it propagate out of the
-                // worker thread (uncaught exception would terminate the process).
-                p->set_exception(std::current_exception());
-            }
-        };
-
-        SendRequest(std::move(wrapper), funcName);
-
-        auto status = future.wait_for(std::chrono::milliseconds(timeoutMs));
-        if (status != std::future_status::ready) {
-            AUDIO_ERR_LOG("SendRequestSync %{public}s timed out after %{public}u ms",
-                funcName.c_str(), timeoutMs);
-            return defaultValue;
-        }
-        try {
-            return future.get();
-        } catch (...) {
-            AUDIO_ERR_LOG("SendRequestSync %{public}s request exception", funcName.c_str());
-            return defaultValue;
-        }
-    }
+    // Defined in hpae_manager.cpp: the body uses try-catch, which requires
+    // -fexceptions; keeping it out of this header lets -fno-exceptions
+    // translation units include the header.
+    int32_t SendRequestSync(std::function<int32_t()> request, const std::string &funcName,
+                            int32_t defaultValue, uint32_t timeoutMs = 2000);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
     int32_t OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
     int32_t OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
