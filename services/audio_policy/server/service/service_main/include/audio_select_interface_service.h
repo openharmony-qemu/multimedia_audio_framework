@@ -22,6 +22,7 @@
 #include "audio_stream_types.h"
 #include "istandard_audio_policy_manager_listener.h"
 #include "audio_router_select_strategy.h"
+#include <atomic>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -117,9 +118,12 @@ private:
     void HandleActiveBtOriginalLogic(DeviceType deviceType, const std::string &macAddress);
     int32_t SelectOutputDevicePrepare(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
         StreamUsage strUsage);
+    void SetBlockFirstOverride();
+    bool ClearBlockFirstOverride();
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;
+    std::atomic<bool> blockFirstOverridePending_ {false};
 };
 } // namespace AudioStandard
 } // namespace OHOS
