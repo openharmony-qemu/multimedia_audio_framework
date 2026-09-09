@@ -48,7 +48,6 @@ int32_t AudioSuiteAissNode::Init()
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
         isOutputStreamInit_ = true;
     }
-
     if (!algoInterface_) {
         algoInterface_ =
             AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION, nodeParameter_);
