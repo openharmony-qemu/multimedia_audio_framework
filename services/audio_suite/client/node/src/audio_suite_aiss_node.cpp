@@ -38,6 +38,8 @@ AudioSuiteAissNode::~AudioSuiteAissNode()
 
 int32_t AudioSuiteAissNode::Init()
 {
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
     if (isInit_ == true) {
         AUDIO_DEBUG_LOG("AudioSuiteAissNode has inited");
         return SUCCESS;
@@ -46,13 +48,12 @@ int32_t AudioSuiteAissNode::Init()
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
         isOutputStreamInit_ = true;
     }
+
     if (!algoInterface_) {
         algoInterface_ =
             AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION, nodeParameter_);
     }
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create Aiss algoInterface");
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
 
     if (algoInterface_->Init() != SUCCESS) {
         AUDIO_ERR_LOG("InitAlgorithm failed");

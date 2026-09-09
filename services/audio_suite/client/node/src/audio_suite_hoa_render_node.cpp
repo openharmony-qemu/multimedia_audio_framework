@@ -45,6 +45,8 @@ AudioSuiteHoaRenderNode::~AudioSuiteHoaRenderNode()
 
 int32_t AudioSuiteHoaRenderNode::Init()
 {
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
     if (isInit_) {
         AUDIO_ERR_LOG("AudioSuiteHoaRenderNode::Init failed, already inited");
         return ERROR;
@@ -58,8 +60,6 @@ int32_t AudioSuiteHoaRenderNode::Init()
     algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_HOA_RENDER,
         nodeParameter_);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algoInterface_ CreateAlgoInterface failed");
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
 
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "algoInterface_ Init failed");

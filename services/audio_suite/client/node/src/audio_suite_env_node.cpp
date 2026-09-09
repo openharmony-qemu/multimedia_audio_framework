@@ -41,6 +41,8 @@ AudioSuiteEnvNode::~AudioSuiteEnvNode()
 
 int32_t AudioSuiteEnvNode::Init()
 {
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
     if (isInit_) {
         AUDIO_ERR_LOG("AudioSuiteEnvNode::Init failed, already inited");
         return ERROR;
@@ -53,8 +55,6 @@ int32_t AudioSuiteEnvNode::Init()
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_ENVIRONMENT_EFFECT, nodeParameter_);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create environment algoInterface");
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "envAlgoInterfaceImpl Init failed");
     SetAudioNodeFormat(AudioFormat{{ENV_ALGO_CHANNEL_LAYOUT, nodeParameter_.inChannels},
