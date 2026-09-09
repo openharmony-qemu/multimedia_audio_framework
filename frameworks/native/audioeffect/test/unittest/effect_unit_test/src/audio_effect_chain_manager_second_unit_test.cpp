@@ -161,7 +161,8 @@ HWTEST(AudioEffectChainManagerSecondUnitTest, SetSpatializationEnabledToChains_0
         SECOND_DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, SECOND_DEFAULT_EFFECT_LIBRARY_LIST);
     std::string routeKey = "DEVICE_TYPE_SPEAKER_&_SCENE_MOVIE_&_7";
     auto headTracker = std::make_shared<HeadTracker>();
-    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>("SCENE_MOVIE", headTracker);
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        std::make_shared<AudioEffectChain>("SCENE_MOVIE", headTracker);
 
     SessionEffectInfo info = SECOND_DEFAULT_INFO;
     info.deviceType = DEVICE_TYPE_SPEAKER;
@@ -201,7 +202,8 @@ HWTEST(AudioEffectChainManagerSecondUnitTest, SetSpatializationEnabledToChains_0
         SECOND_DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, SECOND_DEFAULT_EFFECT_LIBRARY_LIST);
     std::string sceneTypeAndDeviceKey = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
     auto headTracker = std::make_shared<HeadTracker>();
-    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>("SCENE_MOVIE", headTracker);
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        std::make_shared<AudioEffectChain>("SCENE_MOVIE", headTracker);
 
     AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
     AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["111"] = SECOND_DEFAULT_INFO;
