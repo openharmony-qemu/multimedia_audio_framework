@@ -593,7 +593,9 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
         }
     }
     for (auto node: sinkInputs) {
-        if (node->GetSessionId() == curNode_->GetSessionId()) {
+        // curNode_ can be null: DeleteInputSession nulls it via RemoveNodeFromMap
+        // after the first match, and move-in paths can arrive at an empty manager.
+        if (curNode_ && node->GetSessionId() == curNode_->GetSessionId()) {
             DeleteInputSession(SessionEffectMoveMode::KEEP_ATTACH_STATE_FOR_MOVE);
         } else {
             // Attach state follows the stream to the new sink — do NOT clear it or emit DISABLED.
@@ -742,7 +744,10 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
         }
         StopOuputNode();
         sinkInfo_ = sinkInfo;
-        InitSinkInner(isReload);
+        int32_t ret = InitSinkInner(isReload);
+        // InitSinkInner leaves sinkOutputNode_ null when CheckFramelen rejects the
+        // new sink geometry; continuing here would crash in CreateOffloadNodes.
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "InitSinkInner failed %{public}d, skip node rebuild", ret);
 
         CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is null");
         if (curNode_->GetState() == HPAE_SESSION_RUNNING) {

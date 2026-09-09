@@ -377,7 +377,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
     bool exists = std::find(AUDIO_PERSISTENCE_SCENE.begin(), AUDIO_PERSISTENCE_SCENE.end(), sceneType) !=
         AUDIO_PERSISTENCE_SCENE.end();
     if (exists && !hasLoadedEffectProperties_) {
-        LoadEffectProperties();
+        LoadEffectPropertiesLocked();
     }
     std::string tSceneType = (sceneType == DEFAULT_SCENE_TYPE ? DEFAULT_PRESET_SCENE : sceneType);
     for (std::string effect: effectChainToEffectsMap_[effectChain]) {
@@ -426,7 +426,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
     bool exists = std::find(AUDIO_PERSISTENCE_SCENE.begin(), AUDIO_PERSISTENCE_SCENE.end(), sceneType) !=
         AUDIO_PERSISTENCE_SCENE.end();
     if (exists && !hasLoadedEffectProperties_) {
-        LoadEffectProperties();
+        LoadEffectPropertiesLocked();
     }
     std::string tSceneType = (sceneType == DEFAULT_SCENE_TYPE ? DEFAULT_PRESET_SCENE : sceneType);
     for (std::string effect: effectChainToEffectsMap_[effectChain]) {
@@ -2027,6 +2027,17 @@ int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropert
 // LCOV_EXCL_START
 void AudioEffectChainManager::LoadEffectProperties()
 {
+    // External entries (hpae_manager / audio_server_effect) reach here without
+    // dynamicMutex_ while readers of effectPropertyMap_ hold it; take the lock here.
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    LoadEffectPropertiesLocked();
+}
+
+// Caller must hold dynamicMutex_: the internal reentry points (tails of the two
+// SetAudioEffectChainDynamic overloads) already run under it via the locked
+// CreateAudioEffectChainDynamic entries, so locking again here would deadlock.
+void AudioEffectChainManager::LoadEffectPropertiesLocked()
+{
     hasLoadedEffectProperties_ = false;
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     CHECK_AND_RETURN_LOG(settingProvider.CheckOsAccountReady(), "os account not ready");
@@ -3016,8 +3027,11 @@ bool AudioEffectChainManager::IsChannelLayoutSupportedForDspEffect(AudioChannelL
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     effectHdiInput_[0] = HDI_QUERY_CHANNELLAYOUT;
-    uint64_t* tempChannelLayout = reinterpret_cast<uint64_t *>(effectHdiInput_ + 1);
-    *tempChannelLayout = channelLayout;
+    // effectHdiInput_ + 1 is not 8-byte aligned: reinterpret_cast + dereference is
+    // UB (alignment + strict aliasing). memcpy matches the HDI_VOLUME pattern above.
+    int32_t ret = memcpy_s(effectHdiInput_ + 1, SEND_HDI_COMMAND_LEN - sizeof(int8_t),
+        &channelLayout, sizeof(channelLayout));
+    CHECK_AND_RETURN_RET_LOG(ret == 0, false, "memcpy channelLayout failed");
     CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, false, "audioEffectHdiParam_ is nullptr");
     DeviceType deviceTypeTemp = deviceType_ == DEVICE_TYPE_NEARLINK ? DEVICE_TYPE_BLUETOOTH_A2DP : deviceType_;
     CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, deviceTypeTemp) == SUCCESS, false,
