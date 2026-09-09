@@ -941,10 +941,7 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         // in the connect-to-arm window.
         SetSessionFade(sessionId, OPERATION_STARTED);
         HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
-        // Guard like OnFadeDone/SetSessionFade: HasSessionEffect re-derives the scene
-        // type internally and the two results may differ, so bare operator[] here
-        // could insert a null entry and crash.
-        if (HasSessionEffect(sessionId) && SafeGetMap(sceneClusterMap_, sceneType)) {
+        if (HasSessionEffect(sessionId)) {
             sceneClusterMap_[sceneType]->SessionEffectStart(sessionId);
         }
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
@@ -970,10 +967,7 @@ int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
         // Arm fade-in right after connect, before SessionEffectStart (see Start for rationale).
         SetSessionFade(sessionId, OPERATION_STARTED);
         HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
-        // Guard like OnFadeDone/SetSessionFade: HasSessionEffect re-derives the scene
-        // type internally and the two results may differ, so bare operator[] here
-        // could insert a null entry and crash.
-        if (HasSessionEffect(sessionId) && SafeGetMap(sceneClusterMap_, sceneType)) {
+        if (HasSessionEffect(sessionId)) {
             sceneClusterMap_[sceneType]->SessionEffectStart(sessionId);
         }
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
