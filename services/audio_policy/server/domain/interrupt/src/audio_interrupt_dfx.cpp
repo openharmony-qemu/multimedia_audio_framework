@@ -158,6 +158,20 @@ void AudioInterruptDfx::RecordSilentWithPauseStrategyEvent(const AudioInterrupt 
     WriteAudioInterruptErrorEvent(interruptError);
 }
 
+void AudioInterruptDfx::RecordNavWithPauseStrategyEvent(const AudioInterrupt &incomingInterrupt)
+{
+    AudioFocusErrorEvent interruptError;
+    interruptError.appName = AudioInterruptUtils::GetAudioInterruptBundleName(incomingInterrupt);
+    interruptError.rendererInfo += "streamType: " + std::to_string(incomingInterrupt.audioFocusType.streamType) +
+        " sourceType: " + std::to_string(incomingInterrupt.audioFocusType.sourceType) + ";";
+    interruptError.errorInfo = "NavigationWithPauseStrategy";
+    interruptError.audiosessionInfo = "sessionConcurrencyMode:" +
+        std::to_string(static_cast<int32_t>(sessionService_.GetSessionStrategy(incomingInterrupt.pid))) +
+        " independentConcurrencyMode:" +
+        std::to_string(static_cast<int32_t>(incomingInterrupt.independentStrategy.concurrencyMode));
+    WriteAudioInterruptErrorEvent(interruptError);
+}
+
 std::string AudioInterruptDfx::GetInterruptRendererInfo(const AudioInterrupt &audioInterrupt)
 {
     std::string rendererInfoStr = "";
