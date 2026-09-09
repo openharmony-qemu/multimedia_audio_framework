@@ -839,7 +839,8 @@ void AudioAdapterManager::SaveSpecifiedDeviceVolumeInner(AudioStreamType streamT
         AUDIO_INFO_LOG("SaveSpecifiedDeviceVolumeInner: streamType: %{public}d, volumeLevel: %{public}d, "
             "deviceType: %{public}d", streamType, volumeLevel, deviceType);
         auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
-        volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volumeLevel);
+        VolumeScale volume = {volumeLevel, -1, GetMaxVolumeLevel(streamType, deviceType)};
+        volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volume);
         auto descs = audioConnectedDevice_.GetCopy();
         for (auto &temp : descs) {
             CHECK_AND_CONTINUE(temp != nullptr);
