@@ -218,9 +218,6 @@ int32_t CapturerInServer::InitBufferStatus()
         spanInfo->readStartTime = 0;
         spanInfo->readDoneTime = 0;
 
-        spanInfo->writeStartTime = 0;
-        spanInfo->writeDoneTime = 0;
-
         spanInfo->volumeStart = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
         spanInfo->volumeEnd = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
         spanInfo->isMute = false;
