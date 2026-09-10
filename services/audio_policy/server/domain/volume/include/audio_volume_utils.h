@@ -123,7 +123,8 @@ public:
     int32_t GetMaxVolumeLevel(DeviceType deviceType, AudioStreamType streamType, int32_t zoneId = 0);
     void GetMaxVolumeLevelFromConfig(DeviceType deviceType, AudioStreamType streamType,
         int32_t &volumeLevel, int32_t zoneId = 0);
-
+    void GetMaxVolumeLevelFromConfigByProxy(DeviceType deviceType, AudioStreamType streamType,
+        int32_t &volumeLevel, int32_t zoneId = 0);
     int32_t GetMinVolumeLevel(DeviceType deviceType, AudioStreamType streamType,
         int32_t zoneId = 0);
     void GetMinVolumeLevelFromConfig(DeviceType deviceType, AudioStreamType streamType,
