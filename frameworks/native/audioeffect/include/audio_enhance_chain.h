@@ -59,7 +59,7 @@ struct AlgoCache {
 
 struct AudioEnhanceParamAdapter {
     uint32_t muteInfo { 0 };
-    uint32_t volumeInfo { 100 };
+    uint32_t volumeInfo { 100 }; // 100 for default volume
     uint32_t foldState { FOLD_STATE_MIDDLE };
     uint32_t powerState { 0 };
     uint32_t appsMuteState { 0 };
