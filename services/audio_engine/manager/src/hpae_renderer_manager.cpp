@@ -171,10 +171,6 @@ void HpaeRendererManager::CreateProcessClusterAndConnect(HpaeNodeInfo &nodeInfo,
 void HpaeRendererManager::CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo)
 {
     HILOG_COMM_INFO("[CreateDefaultProcessCluster]use default processCluster");
-    // The DEFAULT cluster count tracks only sessions of NON-default scene types that
-    // borrow the default cluster; a session whose sceneType is already DEFAULT is
-    // counted by the generic sceneType increment, so skip the extra DEFAULT increment.
-    const bool isDefaultScene = nodeInfo.sceneType == HPAE_SCENE_DEFAULT;
     if (!SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT)) {
         AUDIO_INFO_LOG("default processCluster is null, create default processCluster");
         HpaeNodeInfo temp = nodeInfo;
@@ -184,14 +180,10 @@ void HpaeRendererManager::CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo)
         auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(temp, sinkInfo_);
         sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
         sceneClusterMap_[nodeInfo.sceneType] = hpaeProcessCluster;
-        if (!isDefaultScene) {
-            sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
-        }
+        sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
     } else {
         sceneClusterMap_[nodeInfo.sceneType] = sceneClusterMap_[HPAE_SCENE_DEFAULT];
-        if (!isDefaultScene) {
-            sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
-        }
+        sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
     }
     return;
 }
@@ -223,12 +215,7 @@ void HpaeRendererManager::CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int3
             } else {
                 sceneClusterMap_[nodeInfo.sceneType] = sceneClusterMap_[HPAE_SCENE_DEFAULT];
             }
-            // DEFAULT count only tracks non-default scenes borrowing the default cluster;
-            // a DEFAULT-scene session is counted by the generic increment (see
-            // CreateProcessCluster tail). Keeps create/disconnect counts symmetric.
-            if (nodeInfo.sceneType != HPAE_SCENE_DEFAULT) {
-                sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
-            }
+            sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
             break;
         case USE_DEFAULT_PROCESSCLUSTER:
             CreateDefaultProcessCluster(nodeInfo);
@@ -405,11 +392,7 @@ void HpaeRendererManager::DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo)
         AUDIO_WARNING_LOG("sceneType %{public}d count not found in map, skip decrement", nodeInfo.sceneType);
     }
     auto defaultProcessCluster = SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT);
-    // Mirror the create-side guard: only non-default scenes that borrowed the default
-    // cluster decrement the DEFAULT count here. For a DEFAULT-scene session the
-    // decrement above already covers it; a second one would underflow the count.
-    if (defaultProcessCluster && processCluster == defaultProcessCluster &&
-        nodeInfo.sceneType != HPAE_SCENE_DEFAULT) {
+    if (defaultProcessCluster && processCluster == defaultProcessCluster) {
         sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]--;
         AUDIO_INFO_LOG("sceneType default count is %{public}d",
             sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
