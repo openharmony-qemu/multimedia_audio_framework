@@ -340,6 +340,22 @@ void AudioInterruptService::RecordSilentWithPauseStrategyEvent(const AudioInterr
         }
 }
 
+void AudioInterruptService::RecordNavWithPauseStrategyEvent(const AudioInterrupt &audioInterrupt)
+{
+    if (audioInterrupt.audioFocusType.streamType != STREAM_NAVIGATION || interruptDfx_ == nullptr) {
+        return;
+    }
+    AudioConcurrencyMode mode = audioInterrupt.sessionStrategy.concurrencyMode;
+    if (IsIndependentStrategyValid(audioInterrupt)) {
+        mode = audioInterrupt.independentStrategy.concurrencyMode;
+    } else if (sessionService_.IsAudioSessionActivated(audioInterrupt.pid)) {
+        mode = sessionService_.GetSessionStrategy(audioInterrupt.pid);
+    }
+    if (mode == AudioConcurrencyMode::PAUSE_OTHERS) {
+        interruptDfx_->RecordNavWithPauseStrategyEvent(audioInterrupt);
+    }
+}
+
 void AudioInterruptService::AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
 {
     bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
@@ -1416,6 +1432,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
             " active audio interrupt.");
         return SUCCESS;
     }
+    RecordNavWithPauseStrategyEvent(currAudioInterrupt);
     GameRecogSetParam(GetClientTypeByStreamId(incomingStreamId), incomingSourceType, true);
     ResetNonInterruptControl(currAudioInterrupt);
     bool shouldReturnSuccess = false;
