@@ -366,28 +366,6 @@ int32_t AudioServer::SetRotationToEffect(const uint32_t rotate)
 }
 // LCOV_EXCL_STOP
 
-int32_t AudioServer::SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType)
-{
-    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-    Volume vol = {false, 0.0f, 0};
-    PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
-    float systemVol = vol.isMute ? 0.0f : vol.volumeFloat;
-    if (PolicyHandler::GetInstance().IsAbsVolumeSupported() &&
-        PolicyHandler::GetInstance().GetActiveOutPutDevice() == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        systemVol = 1.0f; // 1.0f for a2dp abs volume
-    }
-
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
-        return HPAE::IHpaeManager::GetHpaeManager().SetVolumeInfo(volumeType, systemVol);
-    } else {
-        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-        CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
-        return audioEnhanceChainManager->SetVolumeInfo(volumeType, systemVol);
-    }
-}
-
 int32_t AudioServer::SetMicrophoneMuteForEnhanceChain(const bool &isMute)
 {
     int32_t engineFlag = GetEngineFlag();
