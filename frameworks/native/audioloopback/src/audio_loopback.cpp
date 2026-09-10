@@ -495,24 +495,41 @@ void AudioLoopbackPrivate::DisableLoopback()
     ReportUsingDuration(duration);
 }
 
+// Stop/Release must run OUTSIDE loopbackMutex_: the read/write data callbacks
+// (OnReadData/OnWriteData) take the same mutex, and Stop/Release wait for an
+// in-flight data callback to return — holding the mutex across the teardown
+// deadlocks the stop and orphans the mutex for every later API call.
+static void StopAndReleaseStreams(const std::shared_ptr<AudioCapturer> &capturer,
+    const std::shared_ptr<AudioRenderer> &renderer)
+{
+    if (capturer != nullptr) {
+        capturer->Stop();
+        capturer->Release();
+    } else {
+        AUDIO_WARNING_LOG("audioCapturer is nullptr");
+    }
+    if (renderer != nullptr) {
+        renderer->Stop();
+        renderer->Release();
+    } else {
+        AUDIO_WARNING_LOG("audioRenderer is nullptr");
+    }
+}
+
 void AudioLoopbackPrivate::DestroyAudioLoopbackInner()
 {
     Trace trace("AudioLoopbackPrivate::DestroyAudioLoopbackInner");
     DisableLoopback();
-    if (audioCapturer_) {
-        audioCapturer_->Stop();
-        audioCapturer_->Release();
-        audioCapturer_ = nullptr;
-    } else {
-        AUDIO_WARNING_LOG("audioCapturer is nullptr");
+    std::shared_ptr<AudioCapturer> capturer;
+    std::shared_ptr<AudioRenderer> renderer;
+    {
+        // Only move the streams out under the lock; the teardown itself runs
+        // outside it so the data callbacks can always take the mutex.
+        std::lock_guard<std::mutex> lock(loopbackMutex_);
+        capturer = std::move(audioCapturer_);
+        renderer = std::move(audioRenderer_);
     }
-    if (audioRenderer_) {
-        audioRenderer_->Stop();
-        audioRenderer_->Release();
-        audioRenderer_ = nullptr;
-    } else {
-        AUDIO_WARNING_LOG("audioRenderer is nullptr");
-    }
+    StopAndReleaseStreams(capturer, renderer);
 }
 
 void AudioLoopbackPrivate::DestroyAudioLoopback()
@@ -523,15 +540,26 @@ void AudioLoopbackPrivate::DestroyAudioLoopback()
 void AudioLoopbackPrivate::DestroyAudioLoopback(uint32_t generation)
 {
     Trace trace("AudioLoopbackPrivate::DestroyAudioLoopback");
-    std::lock_guard<std::mutex> lock(loopbackMutex_);
-    // Skip when the session was re-enabled after this destroy was scheduled:
-    // Enable(true) bumped the generation and owns the streams now.
-    if (destroyGeneration_.load(std::memory_order_relaxed) != generation) {
-        AUDIO_INFO_LOG("Skip stale destroy: session re-enabled, generation %{public}u, current %{public}u",
-            generation, destroyGeneration_.load(std::memory_order_relaxed));
-        return;
+    std::shared_ptr<AudioCapturer> capturer;
+    std::shared_ptr<AudioRenderer> renderer;
+    {
+        std::lock_guard<std::mutex> lock(loopbackMutex_);
+        // Skip when the session was re-enabled after this destroy was scheduled:
+        // Enable(true) bumped the generation and owns the streams now. The gate
+        // shares the critical section with the move-out so a stale destroy can
+        // never grab streams rebuilt by a later Enable(true).
+        if (destroyGeneration_.load(std::memory_order_relaxed) != generation) {
+            AUDIO_INFO_LOG("Skip stale destroy: session re-enabled, generation %{public}u, current %{public}u",
+                generation, destroyGeneration_.load(std::memory_order_relaxed));
+            return;
+        }
+        capturer = std::move(audioCapturer_);
+        renderer = std::move(audioRenderer_);
     }
-    DestroyAudioLoopbackInner();
+    // After the stale gate: disabling here must never touch a re-enabled
+    // session's karaoke state, and the IPC stays lock-free.
+    DisableLoopback();
+    StopAndReleaseStreams(capturer, renderer);
 }
 
 void AudioLoopbackPrivate::SetKaraokeParam(KaraokeParamType paramType, int32_t value)
