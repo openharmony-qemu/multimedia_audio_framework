@@ -490,7 +490,6 @@ int CmdGetDevices(int argc, char** argv)
     for (const auto& device : devices) {
         json deviceJson = json::object();
         deviceJson["deviceType"] = static_cast<int>(device->deviceType_);
-        deviceJson["deviceId"] = static_cast<int>(device->deviceId_);
         result["devices"].push_back(deviceJson);
     }
 
