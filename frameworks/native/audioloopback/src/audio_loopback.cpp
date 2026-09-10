@@ -192,14 +192,6 @@ bool AudioLoopbackPrivate::Enable(bool enable)
     AUDIO_INFO_LOG("Enable %{public}d, currentState_ %{public}d", enable, currentState_);
     if (enable) {
         CHECK_AND_RETURN_RET_LOG(GetCurrentState() != LOOPBACK_STATE_RUNNING, true, "AudioLoopback already running");
-        // Invalidate destroys scheduled for the previous session and clean up
-        // its leftover streams here: a detached destroy that lost the race must
-        // never tear down the streams rebuilt below.
-        destroyGeneration_.fetch_add(1, std::memory_order_relaxed);
-        if (audioRenderer_ != nullptr || audioCapturer_ != nullptr) {
-            AUDIO_INFO_LOG("Destroy leftover streams before re-enable");
-            DestroyAudioLoopbackInner();
-        }
         InitStatus();
         auto ret = CheckDeviceSupport();
         if (ret != DEFAULT_OK) {
@@ -274,7 +266,7 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
     }
     std::lock_guard<std::mutex> lock(loopbackMutex_);
     int32_t volInt = static_cast<int32_t>(volume * VALUE_HUNDRED);
-    SetKaraokeParam(KaraokeParamType::KARAOKE_PARAM_VOLUME, volInt);
+    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_VOLUME] = volInt;
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
         CHECK_AND_RETURN_RET_LOG(
             SetKaraokeParameters(KaraokeParamType::KARAOKE_PARAM_VOLUME, volInt), ERROR, "SetVolume failed");
@@ -299,7 +291,7 @@ bool AudioLoopbackPrivate::SetReverbPreset(AudioLoopbackReverbPreset preset)
             ord == REVERB_PRESET_THEATER || ord == REVERB_PRESET_CONCERT,
         false, "preset invalid");
     currentReverbPreset_ = preset;
-    SetKaraokeParam(KaraokeParamType::KARAOKE_PARAM_REVERB_MODE, ord);
+    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_REVERB_MODE] = ord;
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
         CHECK_AND_RETURN_RET_LOG(
             SetKaraokeParameters(KaraokeParamType::KARAOKE_PARAM_REVERB_MODE, ord), false, "SetReverbPreset failed");
@@ -322,7 +314,7 @@ bool AudioLoopbackPrivate::SetEqualizerPreset(AudioLoopbackEqualizerPreset prese
         ord == EQUALIZER_PRESET_FLAT || ord == EQUALIZER_PRESET_FULL || ord == EQUALIZER_PRESET_BRIGHT,
         false, "preset invalid");
     currentEqualizerPreset_ = preset;
-    SetKaraokeParam(KaraokeParamType::KARAOKE_PARAM_EQ_MODE, ord);
+    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_EQ_MODE] = ord;
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
         CHECK_AND_RETURN_RET_LOG(
             SetKaraokeParameters(KaraokeParamType::KARAOKE_PARAM_EQ_MODE, ord), false, "SetEqualizerPreset failed");
@@ -371,7 +363,13 @@ int32_t AudioLoopbackPrivate::GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debug
     debugInfo.equalizerPreset = currentEqualizerPreset_;
 
     // Volume from karaokeParams_
-    debugInfo.volume = GetKaraokeParam(KaraokeParamType::KARAOKE_PARAM_VOLUME);
+    {
+        std::lock_guard<std::mutex> lock(loopbackMutex_);
+        auto it = karaokeParams_.find(KaraokeParamType::KARAOKE_PARAM_VOLUME);
+        if (it != karaokeParams_.end()) {
+            debugInfo.volume = it->second;
+        }
+    }
 
     // Stream states
     debugInfo.uplinkStreamState = capturerState_.load();
@@ -480,8 +478,8 @@ void AudioLoopbackPrivate::ReportUsingDuration(uint64_t usingDuration)
 
 void AudioLoopbackPrivate::DisableLoopback()
 {
-    if (GetKaraokeParam(KaraokeParamType::KARAOKE_PARAM_ENABLE) == 1) {
-        SetKaraokeParam(KaraokeParamType::KARAOKE_PARAM_ENABLE, 0);
+    if (karaokeParams_[KaraokeParamType::KARAOKE_PARAM_ENABLE] == 1) {
+        karaokeParams_[KaraokeParamType::KARAOKE_PARAM_ENABLE] = 0;
         CHECK_AND_RETURN_LOG(
             SetKaraokeParameters(KaraokeParamType::KARAOKE_PARAM_ENABLE, 0), "DisableLoopback failed");
     }
@@ -495,84 +493,31 @@ void AudioLoopbackPrivate::DisableLoopback()
     ReportUsingDuration(duration);
 }
 
-// Stop/Release must run OUTSIDE loopbackMutex_: the read/write data callbacks
-// (OnReadData/OnWriteData) take the same mutex, and Stop/Release wait for an
-// in-flight data callback to return — holding the mutex across the teardown
-// deadlocks the stop and orphans the mutex for every later API call.
-static void StopAndReleaseStreams(const std::shared_ptr<AudioCapturer> &capturer,
-    const std::shared_ptr<AudioRenderer> &renderer)
+void AudioLoopbackPrivate::DestroyAudioLoopbackInner()
 {
-    if (capturer != nullptr) {
-        capturer->Stop();
-        capturer->Release();
+    Trace trace("AudioLoopbackPrivate::DestroyAudioLoopbackInner");
+    DisableLoopback();
+    if (audioCapturer_) {
+        audioCapturer_->Stop();
+        audioCapturer_->Release();
+        audioCapturer_ = nullptr;
     } else {
         AUDIO_WARNING_LOG("audioCapturer is nullptr");
     }
-    if (renderer != nullptr) {
-        renderer->Stop();
-        renderer->Release();
+    if (audioRenderer_) {
+        audioRenderer_->Stop();
+        audioRenderer_->Release();
+        audioRenderer_ = nullptr;
     } else {
         AUDIO_WARNING_LOG("audioRenderer is nullptr");
     }
 }
 
-void AudioLoopbackPrivate::DestroyAudioLoopbackInner()
-{
-    Trace trace("AudioLoopbackPrivate::DestroyAudioLoopbackInner");
-    DisableLoopback();
-    std::shared_ptr<AudioCapturer> capturer;
-    std::shared_ptr<AudioRenderer> renderer;
-    {
-        // Only move the streams out under the lock; the teardown itself runs
-        // outside it so the data callbacks can always take the mutex.
-        std::lock_guard<std::mutex> lock(loopbackMutex_);
-        capturer = std::move(audioCapturer_);
-        renderer = std::move(audioRenderer_);
-    }
-    StopAndReleaseStreams(capturer, renderer);
-}
-
 void AudioLoopbackPrivate::DestroyAudioLoopback()
 {
-    DestroyAudioLoopback(destroyGeneration_.load(std::memory_order_relaxed));
-}
-
-void AudioLoopbackPrivate::DestroyAudioLoopback(uint32_t generation)
-{
     Trace trace("AudioLoopbackPrivate::DestroyAudioLoopback");
-    std::shared_ptr<AudioCapturer> capturer;
-    std::shared_ptr<AudioRenderer> renderer;
-    {
-        std::lock_guard<std::mutex> lock(loopbackMutex_);
-        // Skip when the session was re-enabled after this destroy was scheduled:
-        // Enable(true) bumped the generation and owns the streams now. The gate
-        // shares the critical section with the move-out so a stale destroy can
-        // never grab streams rebuilt by a later Enable(true).
-        if (destroyGeneration_.load(std::memory_order_relaxed) != generation) {
-            AUDIO_INFO_LOG("Skip stale destroy: session re-enabled, generation %{public}u, current %{public}u",
-                generation, destroyGeneration_.load(std::memory_order_relaxed));
-            return;
-        }
-        capturer = std::move(audioCapturer_);
-        renderer = std::move(audioRenderer_);
-    }
-    // After the stale gate: disabling here must never touch a re-enabled
-    // session's karaoke state, and the IPC stays lock-free.
-    DisableLoopback();
-    StopAndReleaseStreams(capturer, renderer);
-}
-
-void AudioLoopbackPrivate::SetKaraokeParam(KaraokeParamType paramType, int32_t value)
-{
-    std::lock_guard<std::mutex> lock(karaokeParamsMutex_);
-    karaokeParams_[paramType] = value;
-}
-
-int32_t AudioLoopbackPrivate::GetKaraokeParam(KaraokeParamType paramType) const
-{
-    std::lock_guard<std::mutex> lock(karaokeParamsMutex_);
-    auto it = karaokeParams_.find(paramType);
-    return it != karaokeParams_.end() ? it->second : 0;
+    std::lock_guard<std::mutex> lock(loopbackMutex_);
+    DestroyAudioLoopbackInner();
 }
 
 AudioRendererOptions AudioLoopbackPrivate::GenerateRendererConfig()
@@ -644,22 +589,13 @@ AudioLoopbackErrorType AudioLoopbackPrivate::CheckDeviceSupport()
 bool AudioLoopbackPrivate::EnableLoopback()
 {
     Trace trace("AudioLoopbackPrivate::EnableLoopback");
-    // karaokeParams_ is guarded by karaokeParamsMutex_ (leaf lock): this path runs
-    // under stateMutex_ (service callback thread) or inside loopbackMutex_
-    // (Enable(true) -> UpdateStatus), so locking either outer lock here would
-    // self-deadlock or invert the lock order. IPC calls stay outside the lock.
-    std::map<KaraokeParamType, int32_t> paramsSnapshot;
-    {
-        std::lock_guard<std::mutex> lock(karaokeParamsMutex_);
-        karaokeParams_[KaraokeParamType::KARAOKE_PARAM_ENABLE] = 1;
-        paramsSnapshot = karaokeParams_;
-    }
+    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_ENABLE] = 1;
     // Restore legacy dispatch order: send ENABLE first so the nearlink karaoke
     // transition (gated on ENABLE downstream) starts before the other params, as it
     // did when karaokeParams_ was a map<string> iterated in lexicographic order.
     CHECK_AND_RETURN_RET_LOG(
         SetKaraokeParameters(KaraokeParamType::KARAOKE_PARAM_ENABLE, 1), false, "EnableLoopback failed");
-    for (auto &param : paramsSnapshot) {
+    for (auto &param : karaokeParams_) {
         CHECK_AND_CONTINUE(param.first != KaraokeParamType::KARAOKE_PARAM_ENABLE);
         auto ret = SetKaraokeParameters(param.first, param.second);
         CHECK_AND_RETURN_RET_LOG(ret, false, "EnableLoopback failed");
@@ -673,33 +609,20 @@ bool AudioLoopbackPrivate::EnableLoopback()
 
 void AudioLoopbackPrivate::OnReadData(size_t length)
 {
-    // Copy the shared_ptr under the lock: a concurrent destroy nulls the member
-    // and stops/releases the capturer, so use a local copy to stay safe.
-    std::shared_ptr<AudioCapturer> capturer;
-    {
-        std::lock_guard<std::mutex> lock(loopbackMutex_);
-        capturer = audioCapturer_;
-    }
-    CHECK_AND_RETURN_LOG(capturer != nullptr, "audioCapturer is nullptr");
+    CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "audioCapturer is nullptr");
     BufferDesc bufDesc;
-    int32_t ret = capturer->GetBufferDesc(bufDesc);
+    int32_t ret = audioCapturer_->GetBufferDesc(bufDesc);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "get bufDesc failed, bufLength=%{public}zu, dataLength=%{public}zu",
         bufDesc.bufLength, bufDesc.dataLength);
 }
 
 void AudioLoopbackPrivate::OnWriteData(size_t length)
 {
-    // Same as OnReadData: keep a local shared_ptr copy against concurrent destroy.
-    std::shared_ptr<AudioRenderer> renderer;
-    {
-        std::lock_guard<std::mutex> lock(loopbackMutex_);
-        renderer = audioRenderer_;
-    }
-    CHECK_AND_RETURN_LOG(renderer != nullptr, "audioRenderer is nullptr");
+    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "audioRenderer is nullptr");
     BufferDesc bufDesc;
-    renderer->GetBufferDesc(bufDesc);
+    audioRenderer_->GetBufferDesc(bufDesc);
     memset_s((void*)bufDesc.buffer, bufDesc.bufLength, 0, bufDesc.bufLength);
-    renderer->Enqueue(bufDesc);
+    audioRenderer_->Enqueue(bufDesc);
 }
 
 AudioLoopbackPrivate::RendererCallbackImpl::RendererCallbackImpl(AudioLoopbackPrivate &parent)
@@ -802,13 +725,9 @@ void AudioLoopbackPrivate::UpdateStatus()
         if (newState == LOOPBACK_STATE_DESTROYED) {
             currentState_ = LOOPBACK_STATE_DESTROYING;
             auto self = shared_from_this();
-            // Carry the session generation: if the app re-enables before this
-            // detached destroy runs, Enable(true) bumps the generation and this
-            // destroy skips itself instead of killing the new streams.
-            uint32_t generation = destroyGeneration_.load(std::memory_order_relaxed);
-            std::thread([self, generation] {
+            std::thread([self] {
                 CHECK_AND_RETURN(self != nullptr);
-                self->DestroyAudioLoopback(generation);
+                self->DestroyAudioLoopback();
             }).detach();
         }
         currentState_ = newState;

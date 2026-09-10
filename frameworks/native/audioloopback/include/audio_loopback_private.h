@@ -118,14 +118,7 @@ private:
 
     void CreateAudioLoopback();
     void DestroyAudioLoopback();
-    // Skip the destroy when the session was re-enabled after this destroy was
-    // scheduled (generation mismatch), so a stale destroy cannot tear down the
-    // streams rebuilt by a later Enable(true).
-    void DestroyAudioLoopback(uint32_t generation);
     void DestroyAudioLoopbackInner();
-    // Single-field helpers guarded by karaokeParamsMutex_ (leaf lock).
-    void SetKaraokeParam(KaraokeParamType paramType, int32_t value);
-    int32_t GetKaraokeParam(KaraokeParamType paramType) const;
     bool IsAudioLoopbackSupported();
     AudioLoopbackErrorType CheckDeviceSupport();
     bool EnableLoopback();
@@ -143,18 +136,10 @@ private:
     AudioCapturerOptions capturerOptions_;
     AppInfo appInfo_ = {};
     std::map<KaraokeParamType, int32_t> karaokeParams_ = {};
-    // Sole guard of karaokeParams_. Must stay a LEAF lock: EnableLoopback runs
-    // under stateMutex_ (service callback thread) and inside loopbackMutex_
-    // (Enable(true) -> UpdateStatus -> EnableLoopback), so holding either outer
-    // lock here, or taking an outer lock while holding this one, deadlocks.
-    mutable std::mutex karaokeParamsMutex_;
     std::shared_ptr<AudioRenderer> audioRenderer_;
     std::shared_ptr<AudioCapturer> audioCapturer_;
     mutable std::mutex loopbackMutex_;
     mutable std::mutex stateMutex_;
-    // Bumped by every Enable(true) rebuild; detached destroys carry the
-    // generation they were scheduled for and skip themselves when it changed.
-    std::atomic<uint32_t> destroyGeneration_ = 0;
     std::shared_ptr<AudioLoopbackCallback> statusCallback_;
     AudioLoopbackState currentState_ = LOOPBACK_STATE_IDLE;
     AudioLoopbackMode mode_ = LOOPBACK_HARDWARE;
