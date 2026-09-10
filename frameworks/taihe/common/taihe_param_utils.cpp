@@ -169,7 +169,7 @@ static int32_t GetCapturerStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audio
     AudioStreamInfo const &streamInfo)
 {
     int32_t intValue = TaiheParamUtils::GetIntValueFromSamplingRateUnion(streamInfo.samplingRate);
-    if (!IsValidAudioSamplingRate(intValue)) {
+    if (!TaiheParamUtils::IsValidAudioSamplingRate(intValue)) {
         AUDIO_ERR_LOG("invaild samplingRate");
         return AUDIO_ERR;
     }
