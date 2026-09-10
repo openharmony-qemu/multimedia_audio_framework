@@ -84,7 +84,7 @@ void HpaeSignalProcessThread::Run()
 {
     if (isFastThread_) {
         BindCore();
-        bool setPriorityResult = SetEndpointThreadPriority();
+        bool setPriorityResult = SetHpaeDataThreadPriority();
         if (!setPriorityResult) {
             SetThreadQosLevel();
         }

@@ -205,7 +205,7 @@ void AuthQosForAudio()
     g_audioServerAuthQosFinish.store(true);
 }
 
-bool SetEndpointThreadPriority()
+bool SetHpaeDataThreadPriority()
 {
     Trace trace("SetEndpointThreadPriority");
     AuthQosForAudio();
@@ -218,7 +218,7 @@ bool SetEndpointThreadPriority()
     return res;
 }
 
-bool ResetEndpointThreadPriority()
+bool ResetHpaeDataThreadPriority()
 {
     struct sched_param param = {0};
     param.sched_priority = 0;
@@ -240,8 +240,8 @@ void ResetProcessDataThreadPriority(void) {};
 void UnscheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
 void ScheduleReportProcessQosLevel(pid_t /* pid */, uid_t /* uid */, const char* /* bundleName */) {};
 void UnscheduleReportProcessQosLevel(pid_t /* pid */, uid_t /* uid */, const char* /* bundleName */) {};
-bool SetEndpointThreadPriority() { return false; };
-bool ResetEndpointThreadPriority() { return false; };
+bool SetHpaeDataThreadPriority() { return false; };
+bool ResetHpaeDataThreadPriority() { return false; };
 void AuthQosForAudio() {}
 #endif
 
