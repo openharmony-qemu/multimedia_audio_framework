@@ -162,7 +162,7 @@ public:
 
     virtual int32_t SetSourceDuration(int64_t duration) override { return 0; }
 
-    virtual int32_t SetSpeed(float speed) override { return setSpeedRet; }
+    int32_t SetSpeed(float speed) override { return setSpeedRet; }
 
     virtual int32_t SetOffloadDataCallbackState(int32_t state) override { return 0; }
 
@@ -4476,18 +4476,15 @@ HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_HdiRejectedFallback_001, Test
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
     auto ipcStream = new IpcStreamTest();
-    // Simulate the server capability gate rejecting a non-offload engine chain.
     ipcStream->setSpeedRet = ERR_NOT_SUPPORTED;
     rendererInClientInner->ipcStream_ = ipcStream;
     rendererInClientInner->isHdiSpeed_ = true;
 
     int32_t ret = rendererInClientInner->SetSpeed(2.0f);
     EXPECT_EQ(ret, SUCCESS);
-    // App intent is preserved and local sonic speed actually takes over.
     EXPECT_EQ(rendererInClientInner->GetSpeed(), 2.0f);
     EXPECT_EQ(rendererInClientInner->speed_, 2.0f);
     EXPECT_TRUE(rendererInClientInner->speedEnable_);
-    // The HDI side never accepted the speed.
     EXPECT_EQ(rendererInClientInner->hdiSpeed_, 1.0f);
 }
 
@@ -4495,7 +4492,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_HdiRejectedFallback_001, Test
  * @tc.name  : Test NotifyRouteUpdate keeps client speed on HDI rejection
  * @tc.type  : FUNC
  * @tc.number: NotifyRouteUpdate_HdiRejectedKeepSpeed_001
- * @tc.desc  : Arming HDI speed mode with a rejected speed must not neutralize sonic speed.
+ * @tc.desc  : Switching to HDI speed mode with a rejected speed keeps the client-side speed.
  */
 HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_HdiRejectedKeepSpeed_001, TestSize.Level1)
 {
@@ -4504,7 +4501,6 @@ HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_HdiRejectedKeepSpeed
     ipcStream->setSpeedRet = ERR_NOT_SUPPORTED;
     rendererInClientInner->ipcStream_ = ipcStream;
 
-    // Client-side speed is active before the route flips to HDI speed mode.
     EXPECT_EQ(rendererInClientInner->SetSpeed(2.0f), SUCCESS);
     EXPECT_EQ(rendererInClientInner->speed_, 2.0f);
 
@@ -4513,7 +4509,6 @@ HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_HdiRejectedKeepSpeed
     rendererInClientInner->NotifyRouteUpdate(flagInfo, "remoteNetworkId");
 
     EXPECT_TRUE(rendererInClientInner->isHdiSpeed_.load());
-    // Sonic speed stays at the client value: rejection keeps it untouched.
     EXPECT_EQ(rendererInClientInner->speed_, 2.0f);
     EXPECT_TRUE(rendererInClientInner->speedEnable_);
     EXPECT_EQ(rendererInClientInner->hdiSpeed_, 1.0f);
