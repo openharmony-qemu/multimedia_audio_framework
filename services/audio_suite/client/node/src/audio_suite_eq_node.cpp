@@ -41,6 +41,8 @@ AudioSuiteEqNode::~AudioSuiteEqNode()
 
 int32_t AudioSuiteEqNode::Init()
 {
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
     if (isEqNodeInit_) {
         AUDIO_ERR_LOG("AudioSuiteEqNode::Init failed, already inited");
         return ERROR;
@@ -52,14 +54,15 @@ int32_t AudioSuiteEqNode::Init()
     }
     algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_EQUALIZER, nodeParameter_);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create equalizer algoInterface");
-    algoInterface_->Init();
+
+    int32_t ret = algoInterface_->Init();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to Init eq Change Algo");
     SetAudioNodeFormat(AudioFormat{{EQ_ALGO_CHANNEL_LAYOUT, nodeParameter_.inChannels},
         static_cast<AudioSampleFormat>(nodeParameter_.inFormat),
         static_cast<AudioSamplingRate>(nodeParameter_.inSampleRate),
         {EQ_ALGO_CHANNEL_LAYOUT, nodeParameter_.outChannels},
         static_cast<AudioSampleFormat>(nodeParameter_.outFormat),
         static_cast<AudioSamplingRate>(nodeParameter_.outSampleRate)});
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     nodeNeedDataDuration_ =
         static_cast<uint64_t>(nodeParameter_.frameLen) * MILLISECONDS_TO_MICROSECONDS / nodeParameter_.inSampleRate;
 

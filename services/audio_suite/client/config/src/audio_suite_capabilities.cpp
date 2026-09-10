@@ -207,6 +207,8 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeParameter &np)
     CHECK_AND_RETURN_RET_LOG(audioEffectLibHandle != nullptr,
         ERROR, "dlsym algo: %{private}s so fail, function name: %{public}s",
         algoSoPath.c_str(), AISS_LIBRARY_INFO_SYM_AS_STR.c_str());
+    CHECK_AND_RETURN_RET_LOG(audioEffectLibHandle->supportEffect != nullptr, ERROR,
+        "supportEffect function pointer is null in library: %{private}s", algoSoPath.c_str());
     struct AlgoSupportConfig supportConfig = {};
     audioEffectLibHandle->supportEffect(&supportConfig);
     CHECK_AND_RETURN_RET_LOG(SetAudioParameters(np, supportConfig) == SUCCESS, ERROR, "SetAudioParameters failed.");

@@ -316,6 +316,8 @@ std::vector<AudioSuitePcmBuffer*> AudioSuiteSystemNode::SignalProcess(
 int32_t AudioSuiteSystemNode::DoProcess(AudioMetaFrame &metaFrame,
     int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag)
 {
+    CHECK_AND_RETURN_RET_LOG(responseAudioSize != nullptr && responseMetaSize != nullptr && finishedFlag != nullptr,
+        ERR_INVALID_PARAM, "invalid DoProcess param.");
     CHECK_AND_RETURN_RET_LOG(!GetAudioNodeDataFinishedFlag(), ERR_NOT_SUPPORTED, "meta data output completed.");
     CHECK_AND_RETURN_RET_LOG(effectChain_ != nullptr, ERR_NOT_SUPPORTED, "effectChain_ is nullptr.");
     CHECK_AND_RETURN_RET_LOG(!preNodes_.empty(), ERR_NOT_SUPPORTED, "current system node not connect pre node.");
