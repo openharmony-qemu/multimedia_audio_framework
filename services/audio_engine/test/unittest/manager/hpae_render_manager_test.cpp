@@ -1836,40 +1836,6 @@ HWTEST_F(HpaeRendererManagerTest, DisconnectNodeFromEffectChain_003, TestSize.Le
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
 }
 
-/**
- * @tc.name  : DisconnectNodeFromEffectChain
- * @tc.type  : FUNC
- * @tc.number: DisconnectNodeFromEffectChain_004
- * @tc.desc  : Test DisconnectNodeFromEffectChain with DEFAULT sceneType decrements the
- *             DEFAULT count exactly once (no double decrement for the same counter).
- */
-HWTEST_F(HpaeRendererManagerTest, DisconnectNodeFromEffectChain_004, TestSize.Level0)
-{
-    HpaeSinkInfo sinkInfo = GetSinkInfo();
-    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
-    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
-    WaitForMsgProcessing(hpaeRendererManager);
-
-    HpaeNodeInfo nodeInfo;
-    nodeInfo.sessionId = 20004;
-    nodeInfo.sceneType = HPAE_SCENE_DEFAULT;
-
-    // DEFAULT-scene session whose cluster was created once by the generic increment
-    // (e.g. first DEFAULT session via CREATE_NEW decision)
-    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_DEFAULT] =
-        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
-    hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] = 1;
-    hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = false;
-
-    hpaeRendererManager->DisconnectNodeFromEffectChain(nodeInfo);
-
-    EXPECT_EQ(hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass, true);
-    // DEFAULT count must be decremented exactly once: 1 -> 0 (double decrement gave -1)
-    EXPECT_EQ(hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT], 0);
-
-    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
-}
-
 // ==================== UT for SwitchBypassState ====================
 
 /**

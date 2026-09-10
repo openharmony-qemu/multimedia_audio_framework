@@ -2871,6 +2871,20 @@ HWTEST_F(HpaeDirectRendererManagerTest, recreateSinkOutputNodeIfNeeded_002, Test
 }
 
 /**
+ * @tc.name  : recreateSinkOutputNodeIfNeeded_003
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_159
+ * @tc.desc  : Test RecreateSinkOutputNodeIfNeeded returns ERROR when sinkOutputNode_ is null
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, recreateSinkOutputNodeIfNeeded_003, TestSize.Level0)
+{
+    // Before Init (or after a failed reload) sinkOutputNode_ is null; the entry guard
+    // must return ERROR instead of dereferencing it.
+    EXPECT_EQ(directManager_->sinkOutputNode_, nullptr);
+    EXPECT_EQ(directManager_->RecreateSinkOutputNodeIfNeeded(), ERROR);
+}
+
+/**
  * @tc.name  : process_001
  * @tc.type  : FUNC
  * @tc.number: HpaeDirectRendererManagerTest_129
