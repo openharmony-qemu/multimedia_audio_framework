@@ -103,17 +103,6 @@ HWTEST_F(LoopbackInServerUnitTest, Enable_ManagerNull_001, TestSize.Level1)
     EXPECT_EQ(ret, ERR_NULL_POINTER);
 }
 
-HWTEST_F(LoopbackInServerUnitTest, Enable_ManagerExpired_001, TestSize.Level1)
-{
-    std::weak_ptr<AudioLoopbackManager> weakManager = manager_;
-    manager_ = nullptr;
-    loopbackInServer_ = new LoopbackInServer(LOOPBACK_HARDWARE, LOOPBACK_TYPE_NORMAL, 1000, weakManager.lock());
-    int32_t ret = SUCCESS;
-    int32_t result = loopbackInServer_->Enable(true, ret);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(ret, ERR_NULL_POINTER);
-}
-
 HWTEST_F(LoopbackInServerUnitTest, GetStatus_ManagerValid_001, TestSize.Level1)
 {
     loopbackInServer_ = new LoopbackInServer(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, 1002, manager_);
