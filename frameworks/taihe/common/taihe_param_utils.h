@@ -42,6 +42,8 @@ public:
     static int32_t GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
         AudioCapturerOptions const &options);
     static int32_t GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
+        AudioCapturerMicInOptions const &options);
+    static int32_t GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
         AudioRendererOptions const &options);
     static int32_t GetMicInStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
         AudioStreamInfo const &in);
@@ -51,10 +53,12 @@ public:
         AudioCapturerInfo const &in);
     static int32_t GetPreferredInputDevice(OHOS::AudioStandard::AudioCapturerOptions *opts,
         AudioCapturerOptions const &options);
+    static int32_t GetPreferredInputDevice(OHOS::AudioStandard::AudioCapturerOptions *opts,
+        AudioCapturerMicInOptions const &options);
     static int32_t GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOptions *opts,
         AudioCapturerOptions const &options);
     static int32_t GetCapturerMicInConfig(OHOS::AudioStandard::AudioCapturerOptions *opts,
-        AudioCapturerOptions const &options);
+        AudioCapturerMicInOptions const &options);
     static int32_t GetRendererOptions(OHOS::AudioStandard::AudioRendererOptions *opts,
         AudioRendererOptions const &options);
     static int32_t GetAppInfo(OHOS::AudioStandard::AppInfo &appInfo, AppIdInfo const &options);
