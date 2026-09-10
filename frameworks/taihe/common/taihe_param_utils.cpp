@@ -165,11 +165,9 @@ int32_t TaiheParamUtils::GetRendererInfo(OHOS::AudioStandard::AudioRendererInfo 
     return AUDIO_OK;
 }
 
-int32_t TaiheParamUtils::GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
-    AudioCapturerOptions const &options)
+static int32_t GetCapturerStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
+    AudioStreamInfo const &streamInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(options.streamInfo.has_value(), AUDIO_ERR, "streamInfo is empty");
-    const AudioStreamInfo &streamInfo = options.streamInfo.value();
     int32_t intValue = GetIntValueFromSamplingRateUnion(streamInfo.samplingRate);
     if (!IsValidAudioSamplingRate(intValue)) {
         AUDIO_ERR_LOG("invaild samplingRate");
@@ -187,6 +185,19 @@ int32_t TaiheParamUtils::GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &aud
             static_cast<OHOS::AudioStandard::AudioChannelLayout>(streamInfo.channelLayout.value().get_value());
     }
     return AUDIO_OK;
+}
+
+int32_t TaiheParamUtils::GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
+    AudioCapturerOptions const &options)
+{
+    return GetCapturerStreamInfo(audioStreamInfo, options.streamInfo);
+}
+
+int32_t TaiheParamUtils::GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
+    AudioCapturerMicInOptions const &options)
+{
+    CHECK_AND_RETURN_RET_LOG(options.streamInfo.has_value(), AUDIO_ERR, "streamInfo is empty");
+    return GetCapturerStreamInfo(audioStreamInfo, options.streamInfo.value());
 }
 
 int32_t TaiheParamUtils::GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
@@ -256,9 +267,11 @@ int32_t TaiheParamUtils::GetCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo 
     return AUDIO_OK;
 }
 
-int32_t TaiheParamUtils::GetPreferredInputDevice(OHOS::AudioStandard::AudioCapturerOptions *opts,
-    AudioCapturerOptions const &options)
+template<typename CapturerOptions>
+static int32_t GetPreferredInputDeviceImpl(OHOS::AudioStandard::AudioCapturerOptions *opts,
+    CapturerOptions const &options)
 {
+    CHECK_AND_RETURN_RET_LOG(opts != nullptr, AUDIO_ERR, "opts is nullptr");
     CHECK_AND_RETURN_RET(options.preferredInputDevice.has_value(), AUDIO_OK);
     auto device = std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>();
     CHECK_AND_RETURN_RET_LOG(device != nullptr, AUDIO_ERR, "No memory");
@@ -270,6 +283,18 @@ int32_t TaiheParamUtils::GetPreferredInputDevice(OHOS::AudioStandard::AudioCaptu
 
     opts->preferredInputDevice = *device;
     return AUDIO_OK;
+}
+
+int32_t TaiheParamUtils::GetPreferredInputDevice(OHOS::AudioStandard::AudioCapturerOptions *opts,
+    AudioCapturerOptions const &options)
+{
+    return GetPreferredInputDeviceImpl(opts, options);
+}
+
+int32_t TaiheParamUtils::GetPreferredInputDevice(OHOS::AudioStandard::AudioCapturerOptions *opts,
+    AudioCapturerMicInOptions const &options)
+{
+    return GetPreferredInputDeviceImpl(opts, options);
 }
 
 static int32_t GetPlaybackCaptureMode(OHOS::AudioStandard::AudioCapturerOptions *opts,
@@ -290,8 +315,9 @@ static int32_t GetPlaybackCaptureMode(OHOS::AudioStandard::AudioCapturerOptions 
     return AUDIO_OK;
 }
 
+template<typename CapturerOptions>
 static int32_t GetCapturerSubStreamOptions(OHOS::AudioStandard::AudioCapturerOptions *opts,
-    AudioCapturerOptions const &options)
+    CapturerOptions const &options)
 {
     CHECK_AND_RETURN_RET_LOG(opts != nullptr, AUDIO_ERR, "opts is nullptr");
     int32_t status = AUDIO_OK;
@@ -343,7 +369,7 @@ int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOp
 }
 
 int32_t TaiheParamUtils::GetCapturerMicInConfig(OHOS::AudioStandard::AudioCapturerOptions *opts,
-    AudioCapturerOptions const &options)
+    AudioCapturerMicInOptions const &options)
 {
     CHECK_AND_RETURN_RET_LOG(opts != nullptr, AUDIO_ERR, "opts is nullptr");
     int32_t status = AUDIO_OK;

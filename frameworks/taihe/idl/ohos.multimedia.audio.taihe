@@ -1037,7 +1037,7 @@ enum AudioPlaybackCaptureMode: i32 {
 }
 
 struct AudioCapturerOptions {
-  @optional streamInfo: Optional<AudioStreamInfo>;
+  streamInfo: AudioStreamInfo;
   capturerInfo: AudioCapturerInfo;
   preferredInputDevice: Optional<AudioDeviceDescriptor>;
   @optional processedStreamInfo: Optional<AudioStreamInfo>;
@@ -1045,6 +1045,15 @@ struct AudioCapturerOptions {
   @optional ecStreamInfo: Optional<AudioStreamInfo>;
   @optional playbackCaptureMode: Optional<AudioPlaybackCaptureMode>;
   @optional playbackCaptureUid: Optional<i32>;
+}
+
+struct AudioCapturerMicInOptions {
+  @optional streamInfo: Optional<AudioStreamInfo>;
+  capturerInfo: AudioCapturerInfo;
+  preferredInputDevice: Optional<AudioDeviceDescriptor>;
+  @optional processedStreamInfo: Optional<AudioStreamInfo>;
+  @optional micInStreamInfo: Optional<AudioStreamInfo>;
+  @optional ecStreamInfo: Optional<AudioStreamInfo>;
 }
 
 enum PlaybackCaptureStartState: i32 {
@@ -1425,7 +1434,7 @@ function CreateAudioCapturerSync(options: AudioCapturerOptions): AudioCapturerOr
 
 @gen_async("createMicInAudioCapturer")
 @gen_promise("createMicInAudioCapturer")
-function CreateMicInAudioCapturerSync(options: AudioCapturerOptions): AudioCapturerOrNull;
+function CreateMicInAudioCapturerSync(options: AudioCapturerMicInOptions): AudioCapturerOrNull;
 
 union AudioRendererOrNull {
   type_audioRenderer: AudioRenderer;

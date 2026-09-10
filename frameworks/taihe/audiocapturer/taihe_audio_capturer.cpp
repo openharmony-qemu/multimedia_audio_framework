@@ -1131,12 +1131,12 @@ AudioCapturerOrNull CreateAudioCapturerSync(AudioCapturerOptions const &options)
     return AudioCapturerImpl::CreateAudioCapturerWrapper(capturerOptions);
 }
 
-AudioCapturerOrNull CreateMicInAudioCapturerSync(AudioCapturerOptions const &options)
+AudioCapturerOrNull CreateMicInAudioCapturerSync(AudioCapturerMicInOptions const &options)
 {
     OHOS::AudioStandard::AudioCapturerOptions capturerOptions;
     if (TaiheParamUtils::GetCapturerMicInConfig(&capturerOptions, options) != AUDIO_OK) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INPUT_INVALID,
-            "parameter verification failed: The param of options must be interface AudioCapturerOptions");
+            "parameter verification failed: The param of options must be interface AudioCapturerMicInOptions");
         AUDIO_ERR_LOG("get captureOptions failed");
         return AudioCapturerOrNull::make_type_null();
     }
