@@ -277,7 +277,8 @@ static int32_t GetPreferredInputDeviceImpl(OHOS::AudioStandard::AudioCapturerOpt
     CHECK_AND_RETURN_RET_LOG(device != nullptr, AUDIO_ERR, "No memory");
 
     bool argTransFlag = false;
-    int32_t status = TaiheParamUtils::GetAudioDeviceDescriptor(device, argTransFlag, options.preferredInputDevice.value());
+    int32_t status = TaiheParamUtils::GetAudioDeviceDescriptor(
+        device, argTransFlag, options.preferredInputDevice.value());
     CHECK_AND_RETURN_RET(status == AUDIO_OK, status);
     CHECK_AND_RETURN_RET_LOG(argTransFlag, AUDIO_INVALID_PARAM, "PreferInputDevice argTransFlag is false");
 
