@@ -451,6 +451,10 @@ int32_t AudioServer::SetKaraokeParameters(int32_t deviceType, int32_t paramType,
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "SetKaraokeParameters refused for %{public}d", callingUid);
+    if (static_cast<KaraokeParamType>(paramType) == KARAOKE_PARAM_EQ_MODE) {
+        DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+        value = deviceType == DEVICE_TYPE_NEARLINK ? EQUALIZER_PRESET_FULL : value;
+    }
     bool valid = false;
     std::string parameters = BuildKaraokeParamString(paramType, value, valid);
     CHECK_AND_RETURN_RET_LOG(valid, ERROR,

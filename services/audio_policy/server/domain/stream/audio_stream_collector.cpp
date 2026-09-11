@@ -1954,6 +1954,7 @@ std::vector<std::pair<int32_t, AudioStreamType>> AudioStreamCollector::GetActive
     std::vector<std::pair<int32_t, AudioStreamType>> result;
     for (auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING && !changeInfo->backMute) {
+            CHECK_AND_CONTINUE(!changeInfo->rendererInfo.isLoopback); // discard loopback
             int32_t uid = changeInfo->clientUID;
             AudioStreamType streamType = GetStreamType(
                 changeInfo->rendererInfo.contentType, changeInfo->rendererInfo.streamUsage);
