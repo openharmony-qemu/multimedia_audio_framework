@@ -84,6 +84,7 @@ int32_t AudioSuiteRawFormatConversion::Init(
 
 void AudioSuiteRawFormatConversion::Reset()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (proResampler_ != nullptr) {
         proResampler_->Reset();
     }
