@@ -457,6 +457,12 @@ int32_t HpaeManagerImpl::GetStreamRouteFlag(HpaeStreamClassType streamClassType,
     return manager_->GetStreamRouteFlag(streamClassType, sessionId, routeFlag);
 }
 
+bool HpaeManagerImpl::IsSessionHdiSpeedSupported(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
+    return manager_->IsSessionHdiSpeedSupported(sessionId);
+}
+
 // record stream interface
 int32_t HpaeManagerImpl::RegisterReadCallback(uint32_t sessionId,
     const std::weak_ptr<ICapturerStreamCallback> &callback)

@@ -832,7 +832,10 @@ bool RendererInClientInner::DoHdiSetSpeed(float speed, bool force)
     AUDIO_INFO_LOG("set speed to hdi, sessionId: %{public}d, speed: %{public}f", sessionId_, speed);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, true, "ipcStream is not inited!");
     CHECK_AND_RETURN_RET_LOG(force || !isEqual(speed, hdiSpeed_), true, "forbid duplicate set speed");
-    ipcStream_->SetSpeed(speed);
+    int32_t ret = ipcStream_->SetSpeed(speed);
+    // False makes the caller fall back to local sonic speed: the server rejects SetSpeed
+    // when the engine chain (e.g. MCH on the normal renderer manager) has no HDI speed.
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "hdi set speed fail: %{public}d", ret);
     hdiSpeed_ = speed;
     return true;
 }
@@ -861,7 +864,8 @@ void RendererInClientInner::NotifyRouteUpdate(const StreamFlagInfo &flagInfo, co
     isHdiSpeed_.store(curIsHdiSpeed);
     if (curIsHdiSpeed) {
         if (realSpeed_.has_value()) {
-            DoHdiSetSpeed(realSpeed_.value(), true);
+            // On HDI rejection keep the already-active client-side speed untouched.
+            CHECK_AND_RETURN_LOG(DoHdiSetSpeed(realSpeed_.value(), true), "keep client-side speed");
             SetSpeedInner(1.0);
         }
     } else {
@@ -886,8 +890,13 @@ int32_t RendererInClientInner::SetSpeed(float speed)
     std::lock_guard lock(speedMutex_);
     realSpeed_ = speed;
     if (isHdiSpeed_.load()) {
-        DoHdiSetSpeed(speed, false);
-        SetSpeedInner(1.0);
+        if (!DoHdiSetSpeed(speed, false)) {
+            AUDIO_INFO_LOG("hdi speed unsupported, sessionId: %{public}d, fallback to client-side speed",
+                sessionId_);
+            SetSpeedInner(speed);
+        } else {
+            SetSpeedInner(1.0);
+        }
     } else {
         SetSpeedInner(speed);
     }
