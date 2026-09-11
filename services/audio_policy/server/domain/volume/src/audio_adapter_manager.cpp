@@ -404,8 +404,12 @@ void AudioAdapterManager::SaveBootAnimationVolumeToLocal(std::shared_ptr<AudioDe
     volumeTarget = STREAM_MUSIC;
     forceSpeaker = true;
 #endif
-    if (volumeType != volumeTarget) return;
-    if (forceSpeaker && device->deviceType_ != DEVICE_TYPE_SPEAKER) return;
+    if (volumeType != volumeTarget) {
+        return;
+    }
+    if (forceSpeaker && device->deviceType_ != DEVICE_TYPE_SPEAKER) {
+        return;
+    }
     int32_t volumeLevel =
         GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
     // To keep the startup volume consistent between the new and old versions, still use "ringtonevolume".
