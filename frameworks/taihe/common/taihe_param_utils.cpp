@@ -492,8 +492,8 @@ int32_t TaiheParamUtils::GetAudioRendererFilter(
         audioRendererFilter->streamId = in.rendererId.value();
     }
 
-    if (in.blockFirstOverride.has_value()) {
-        audioRendererFilter->blockFirstOverride = in.blockFirstOverride.value();
+    if (in.blockFirstOverrode.has_value()) {
+        audioRendererFilter->blockFirstOverrode = in.blockFirstOverrode.value();
     }
     return AUDIO_OK;
 }
