@@ -38,9 +38,20 @@ inline bool IsBtDevice(DeviceType deviceType)
         || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN;
 }
 
+inline bool IsBtInputDevice(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN
+        || deviceType == DEVICE_TYPE_BT_SPP;
+}
+
 inline bool IsNearlinkDevice(DeviceType deviceType)
 {
     return deviceType == DEVICE_TYPE_NEARLINK || deviceType == DEVICE_TYPE_NEARLINK_IN;
+}
+
+inline bool IsNearlinkInputDevice(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_NEARLINK_IN || deviceType == DEVICE_TYPE_NEARLINK_PORT;
 }
 
 class AudioDeviceDescriptor;
