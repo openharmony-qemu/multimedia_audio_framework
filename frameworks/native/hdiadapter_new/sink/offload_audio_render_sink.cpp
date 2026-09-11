@@ -83,7 +83,9 @@ void OffloadAudioRenderSink::DeInit(void)
         if (ctrlThread_.joinable()) {
             ctrlThread_.detach();
         }
-        // zombie executor may still be inside an HDI call: skip teardown to avoid UAF
+        // zombie executor may still be inside an HDI call (including a blocking DrainBuffer,
+        // which is deliberately not joined -- see the constraint note in ExecDrain): skip
+        // teardown to avoid UAF
         AUDIO_ERR_LOG("ctrl thread shutdown timeout, abandon teardown");
         return;
     }
@@ -250,7 +252,8 @@ void OffloadAudioRenderSink::StartCtrlThread()
 void OffloadAudioRenderSink::CtrlThreadMain()
 {
     std::unique_lock<std::mutex> lock(ctrlQueueMutex_);
-    while (true) {
+    bool shutdown = false;
+    while (!shutdown) {
         ctrlQueueCv_.wait(lock, [this] { return !ctrlQueue_.empty(); });
         CtrlRequest request = std::move(ctrlQueue_.front());
         ctrlQueue_.pop();
@@ -263,9 +266,12 @@ void OffloadAudioRenderSink::CtrlThreadMain()
             request.done->set_value(ret);
         }
         if (request.cmd == CtrlCmd::CMD_SHUTDOWN) {
-            return;
+            // exit via the loop condition with the lock already dropped (unique_lock
+            // dtor is a no-op on the unlocked state), same path the nested return took
+            shutdown = true;
+        } else {
+            lock.lock();
         }
-        lock.lock();
     }
 }
 
@@ -373,7 +379,10 @@ int32_t OffloadAudioRenderSink::ExecDrain(int32_t drainType)
 {
     Trace trace("OffloadAudioRenderSink::Drain");
     // no sinkMutex_ here (legacy contract): DrainBuffer can block for seconds and must
-    // not stall DeInit teardown; ctrl-queue serialization against flush/stop still holds
+    // not stall DeInit teardown; ctrl-queue serialization against flush/stop still holds.
+    // constraint: if DeInit abandons the ctrl thread (shutdown timeout), a drain in flight
+    // is never joined -- the zombie finishes on its own against the shared_ptr self-ref;
+    // teardown paths must never add a join/wait for it (see the abandon branch in DeInit)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->DrainBuffer(audioRender_, (AudioDrainNotifyType *)&drainType);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "drain fail");
