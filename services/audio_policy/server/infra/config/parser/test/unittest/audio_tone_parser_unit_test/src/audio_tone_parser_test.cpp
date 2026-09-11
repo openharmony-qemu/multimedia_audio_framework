@@ -177,7 +177,7 @@ HWTEST_F(AudioToneParserSecondUnitTest, AudioToneParserSecondUnitTest_005, TestS
 /**
  * @tc.name  : Test ParseCustom.
  * @tc.number: AudioToneParserSecondUnitTest_006
- * @tc.desc  : Test ParseCustom interface. curNode->CompareName("CountryInfo") is false
+ * @tc.desc  : Test ParseCustom interface. curNode->CompareName("CountryOrRegionInfo") is false
  */
 HWTEST_F(AudioToneParserSecondUnitTest, AudioToneParserSecondUnitTest_006, TestSize.Level4)
 {

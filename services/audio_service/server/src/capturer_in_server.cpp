@@ -62,6 +62,7 @@ namespace {
     static const size_t CAPTURER_BUFFER_WAKE_UP_NUM = 100;
     static const uint32_t OVERFLOW_LOG_LOOP_COUNT = 100;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
+    constexpr int32_t TOTAL_SIZE_5MS_TO_20MS = 4;
     static const uint32_t OVERFLOW_REPORT_INTERVAL_MS = 60000;
 #ifdef FEATURE_CALL_MANAGER
 static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
@@ -91,6 +92,21 @@ bool IsCapturerConfigValid(const AudioProcessConfig &config)
         return false;
     }
     return true;
+}
+
+void ReportServerWakeupEvent(const AudioProcessConfig &config, AudioWakeupStageCode stage,
+    AudioWakeupErrorCode errorCode)
+{
+    SourceType sourceType = config.capturerInfo.sourceType;
+    if (sourceType != SOURCE_TYPE_WAKEUP && sourceType != SOURCE_TYPE_VOICE_RECOGNITION &&
+        sourceType != SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+        return;
+    }
+    AudioWakeupTrackInfo info {};
+    info.stage = stage;
+    info.result = WAKEUP_RESULT_FAIL;
+    info.errCode = errorCode;
+    (void)AudioService::GetInstance()->ReportWakeupEvent(info);
 }
 }
 
@@ -140,10 +156,12 @@ int32_t CapturerInServer::ConfigServerBuffer()
     const size_t bufferNum = ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP)
         ? CAPTURER_BUFFER_WAKE_UP_NUM : CAPTURER_BUFFER_DEFAULT_NUM);
     totalSizeInFrame_ = spanSizeInFrame_ * bufferNum;
+    size_t totalSizeInFrameToCreate = processConfig_.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP ?
+        totalSizeInFrame_ * TOTAL_SIZE_5MS_TO_20MS : totalSizeInFrame_;
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     spanSizeInBytes_ = byteSizePerFrame_ * spanSizeInFrame_;
     AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}zu, spanSizeInFrame_: %{public}zu,"
-        "byteSizePerFrame_: %{public}zu, spanSizeInBytes_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_,
+        "byteSizePerFrame_: %{public}zu, spanSizeInBytes_ %{public}zu", totalSizeInFrameToCreate, spanSizeInFrame_,
         byteSizePerFrame_, spanSizeInBytes_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -159,7 +177,7 @@ int32_t CapturerInServer::ConfigServerBuffer()
         "InitCacheBuffer failed %{public}d", ret);
 
     // create OHAudioBuffer in server
-    audioServerBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
+    audioServerBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInFrameToCreate, spanSizeInFrame_, byteSizePerFrame_);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CREATE_MEMORY_ALLOC_FAILED, "Create oh audio buffer failed", false),
@@ -213,18 +231,24 @@ int32_t CapturerInServer::InitBufferStatus()
 int32_t CapturerInServer::Init()
 {
     int32_t ret = IStreamManager::GetRecorderManager().CreateCapturer(processConfig_, stream_);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
+    if (ret != SUCCESS || stream_ == nullptr) {
+        ReportServerWakeupEvent(processConfig_, STAGE_SERVER_CREATE_EXIT,
+            WAKEUP_TRACK_SERVER_CREATE_STREAM_ERROR);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CREATE_OPERATION_FAILED, "Construct CapturerInServer failed", false),
-        "Construct CapturerInServer failed: %{public}d", ret);
+            RECORD_CREATE_OPERATION_FAILED, "Construct CapturerInServer failed", false);
+        return ERR_OPERATION_FAILED;
+    }
     streamIndex_ = stream_->GetStreamIndex();
     capturerClock_ = CapturerClockManager::GetInstance().CreateCapturerClock(
         streamIndex_, processConfig_.streamInfo.samplingRate);
     ret = ConfigServerBuffer();
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+    if (ret != SUCCESS) {
+        ReportServerWakeupEvent(processConfig_, STAGE_SERVER_CREATE_EXIT,
+            WAKEUP_TRACK_SERVER_BUFFER_ERROR);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CREATE_OPERATION_FAILED, "ConfigServerBuffer failed", false),
-        "ConfigServerBuffer failed: %{public}d", ret);
+            RECORD_CREATE_OPERATION_FAILED, "ConfigServerBuffer failed", false);
+        return ERR_OPERATION_FAILED;
+    }
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterReadCallback(shared_from_this());
 
@@ -932,11 +956,18 @@ int32_t CapturerInServer::StartInner(bool hasNoCallback)
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         PlaybackCapturerManager::GetInstance()->InitAllDupBuffer(innerCapId_);
     }
+    return StartStream();
+}
+
+int32_t CapturerInServer::StartStream()
+{
     int32_t ret = stream_->Start();
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+    if (ret != SUCCESS) {
+        ReportServerWakeupEvent(processConfig_, STAGE_SERVER_START_EXIT, WAKEUP_TRACK_SERVER_START_ERROR);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_START_OPERATION_FAILED, "Start stream failed", false),
-        "Start stream failed, reason: %{public}d", ret);
+            RECORD_START_OPERATION_FAILED, "Start stream failed", false);
+        return ret;
+    }
     resetTime_ = true;
     RebuildCaptureInjector();
 
@@ -1090,10 +1121,12 @@ int32_t CapturerInServer::Stop()
     }
     TurnOffRemoteMicIndicator();
     int ret = stream_->Stop();
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+    if (ret != SUCCESS) {
+        ReportServerWakeupEvent(processConfig_, STAGE_SERVER_STOP_EXIT, WAKEUP_TRACK_SERVER_STOP_ERROR);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_STOP_OPERATION_FAILED, "Stop stream failed", false),
-        "Stop stream failed, reason: %{public}d", ret);
+            RECORD_STOP_OPERATION_FAILED, "Stop stream failed", false);
+        return ret;
+    }
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     CaptureConcurrentCheck(streamIndex_);

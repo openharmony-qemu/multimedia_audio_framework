@@ -1106,19 +1106,12 @@ bool HpaeCapturerManager::IsRunning(void)
 
 void HpaeCapturerManager::SendRequest(Request &&request, const std::string &funcName, bool isInit)
 {
-    if (!isInit && !IsInit()) {
-        AUDIO_INFO_LOG("not init, %{public}s excute failed", funcName.c_str());
-        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_CAPTURE_MANAGER_TYPE, funcName,
-            "HpaeCapturerManager not init");
-        return;
-    }
-    hpaeNoLockQueue_.PushRequest(std::move(request));
-    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ capturer is nullptr");
     if (hpaeSignalProcessThread_ == nullptr) {
         AUDIO_INFO_LOG("hpaeSignalProcessThread_ capturer is nullptr, %{public}s excute failed", funcName.c_str());
         HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_CAPTURE_MANAGER_TYPE, funcName, "thread is nullptr");
         return;
     }
+    hpaeNoLockQueue_.PushRequest(std::move(request));
     hpaeSignalProcessThread_->Notify();
 }
 

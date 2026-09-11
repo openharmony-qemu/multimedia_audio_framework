@@ -137,6 +137,10 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolumeEnhanced(int32_t appUid = INVALID_UID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetUidVolumeDevicesForEnhancedRouting(int32_t uid);
+    void UpdateSystemPreferredVolumeDevice(
+        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    void UpdateAppPreferredVolumeDevice(
+        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 
 private:
     int32_t volumeAdjustZoneId_ = 0;

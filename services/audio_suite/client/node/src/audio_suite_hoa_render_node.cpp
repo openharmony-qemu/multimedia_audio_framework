@@ -45,6 +45,8 @@ AudioSuiteHoaRenderNode::~AudioSuiteHoaRenderNode()
 
 int32_t AudioSuiteHoaRenderNode::Init()
 {
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
     if (isInit_) {
         AUDIO_ERR_LOG("AudioSuiteHoaRenderNode::Init failed, already inited");
         return ERROR;
@@ -69,8 +71,6 @@ int32_t AudioSuiteHoaRenderNode::Init()
         static_cast<AudioSampleFormat>(nodeParameter_.outFormat),
         static_cast<AudioSamplingRate>(nodeParameter_.outSampleRate)});
 
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-
     nodeNeedDataDuration_ =
         static_cast<uint64_t>(nodeParameter_.frameLen) * MILLISECONDS_TO_MICROSECONDS / nodeParameter_.inSampleRate;
     isInit_ = true;
@@ -82,7 +82,8 @@ int32_t AudioSuiteHoaRenderNode::Init()
 int32_t AudioSuiteHoaRenderNode::DeInit()
 {
     if (algoInterface_ != nullptr) {
-        algoInterface_->Deinit();
+        int32_t ret = algoInterface_->Deinit();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Deinit failed: %{public}d", ret);
         algoInterface_ = nullptr;
     }
 

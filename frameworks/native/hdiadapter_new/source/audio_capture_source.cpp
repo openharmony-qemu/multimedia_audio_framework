@@ -107,6 +107,7 @@ const std::unordered_map<uint32_t, AudioInputType> INDEPENDENT_PIPE_AUDIO_FLAG_T
     {AUDIO_INPUT_FLAG_VOICE_RECOGNITION, AUDIO_INPUT_VOICE_RECOGNITION_TYPE},
     {AUDIO_INPUT_FLAG_RAW_AI, AUDIO_INPUT_RAW_AI_TYPE},
     {AUDIO_INPUT_FLAG_CAMCORDER, AUDIO_INPUT_CAMCORDER_TYPE},
+    {AUDIO_INPUT_FLAG_INTERPHONE, AUDIO_INPUT_INTERPHONE_TYPE},
     {AUDIO_INPUT_FLAG_VOICE_MESSAGE, hdiAudioVoiceMessageInputType},
 };
 
@@ -606,7 +607,11 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
     }
 
     AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
-    struct AudioFrameLen frameLen = { fdesc->frameLen, fdescEc->frameLen };
+    uint64_t micDataLen = fdesc->frameLen;
+    if (attr_.sourceType == SOURCE_TYPE_EC && attr_.adapterName == "dp") {
+        micDataLen = fdescEc->frameLen;
+    }
+    struct AudioFrameLen frameLen = { micDataLen, fdescEc->frameLen };
     struct AudioCaptureFrameInfo frameInfo = {};
     ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
     if (ret < 0) {
@@ -906,6 +911,7 @@ const std::unordered_map<std::string, AudioInputType> AudioCaptureSource::audioI
     {"AUDIO_INPUT_ULTRASONIC_TYPE", AUDIO_INPUT_ULTRASONIC_TYPE},
     {"AUDIO_INPUT_RAW_AI_TYPE", AUDIO_INPUT_RAW_AI_TYPE},
     {"AUDIO_INPUT_CAMCORDER_TYPE", AUDIO_INPUT_CAMCORDER_TYPE},
+    {"AUDIO_INPUT_INTERPHONE_TYPE", AUDIO_INPUT_INTERPHONE_TYPE},
     {"AUDIO_INPUT_VOICE_MESSAGE_TYPE", hdiAudioVoiceMessageInputType}
 };
 
@@ -977,6 +983,9 @@ enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourc
             break;
         case SOURCE_TYPE_VOICE_MESSAGE:
             hdiAudioInputType = hdiAudioVoiceMessageInputType;
+            break;
+        case SOURCE_TYPE_INTERPHONE:
+            hdiAudioInputType = AUDIO_INPUT_INTERPHONE_TYPE;
             break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
@@ -1122,6 +1131,8 @@ uint32_t AudioCaptureSource::GenerateUniqueIDByHdiSource(AudioInputType hdiSourc
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT);
         case AUDIO_INPUT_CAMCORDER_TYPE:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_CAMCORDER);
+        case AUDIO_INPUT_INTERPHONE_TYPE:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_INTERPHONE);
         default:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
     }
@@ -1210,6 +1221,9 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.interleaved = true;
     param.streamId = static_cast<int32_t>(GetMultiDeviceUniqueId());
     param.type = AUDIO_IN_MEDIA;
+    if (attr_.routeFlag == AUDIO_INPUT_FLAG_INTERPHONE) {
+        param.type = AUDIO_D2D;
+    }
     param.period = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.isBigEndian = false;

@@ -92,6 +92,7 @@ public:
 
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
     void OnFadeDone(uint32_t sessionId) override;
+    void OnCloseCrossfadeDone(uint32_t sessionId) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
     void OnRewindBuffer(uint32_t sessionId, uint64_t rewindTimeUs) override;
     void OnNotifyQueue() override;
@@ -163,6 +164,11 @@ private:
     std::shared_ptr<HpaeSessionEffectNode> sessionEffectNode_ = nullptr;
     uint32_t sessionEffectSessionId_ = 0;
 
+    // Pending close-crossfade finalize waiting on OnCloseCrossfadeDone: identity token of the
+    // closing node (guards late callbacks against finalizing a newer node after rescue+recreate).
+    std::weak_ptr<HpaeSessionEffectNode> pendingCloseNode_;
+    uint32_t pendingCloseSessionId_ = 0;
+
     // Pending SessionEffect create deferred behind a STOPPING node (rapid recreate).
     uint32_t pendingSeCreateSessionId_ = 0;
     uint64_t pendingSeCreateGeneration_ = 0;
@@ -173,9 +179,16 @@ private:
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
         bool aissSwitchEnabled = false);
     int32_t RemoveSessionEffectNode(bool finalizeNow = false);
-    // BeginClose: rewind + enter STOPPING; Finalize queued for next batch, or direct when finalizeNow
+    // BeginClose: rewind + enter STOPPING; Finalize direct when finalizeNow or no crossfade
+    // pending, else deferred to the OnCloseCrossfadeDone callback
     void FinalizeSessionEffectClose(uint32_t sessionId,
         const std::weak_ptr<HpaeSessionEffectNode> &closingNode);
+    // Erase the pending-close token (single slot — at most one materialized SE node / one SE
+    // close at a time).
+    void ClearPendingSessionEffectClose();
+    // Rescue/delivery: finalize the tokened closing node if it is still the current node.
+    // Returns true when this call finalized the close.
+    bool FinalizePendingSessionEffectClose(uint32_t sessionId);
     uint64_t SetPendingSessionEffectCreate(uint32_t sessionId,
         const std::shared_ptr<IEffectInstance> &instance);
     bool IsPendingSessionEffectCreate(uint32_t sessionId, uint64_t generation,

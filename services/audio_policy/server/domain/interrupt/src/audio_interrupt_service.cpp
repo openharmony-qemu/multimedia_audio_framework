@@ -51,6 +51,7 @@ const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
 constexpr int32_t RETRY_TIME_S = 5;
 constexpr int64_t SLEEP_TIME_S = 1;
 constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
+constexpr uint32_t MAX_STREAMS_IN_DEACTIVATE_SESSION = 128;
 
 static const map<InterruptHint, AudioFocuState> HINT_STATE_MAP = {
     {INTERRUPT_HINT_PAUSE, PAUSE},
@@ -303,12 +304,29 @@ void AudioInterruptService::ActivateAudioSessionErrorEvent(const int32_t zoneId,
     }
 }
 
-void AudioInterruptService::DeactivateAudioSessionErrorEvent(
-    const std::vector<AudioInterrupt> &streamsInSession, const int32_t callerPid)
+void AudioInterruptService::AddStreamByPid(const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession)
+{
+    auto streamSize = streamsInDeactivateAudioSession_.size() + streamsInSession.size();
+    CHECK_AND_RETURN_LOG(streamSize < MAX_STREAMS_IN_DEACTIVATE_SESSION, "streamSize too big");
+
+    std::copy_if(streamsInSession.begin(), streamsInSession.end(), std::back_inserter(streamsInDeactivateAudioSession_),
+        [callerPid](const AudioInterrupt &item) { return item.pid == callerPid; });
+}
+ 
+void AudioInterruptService::RemoveStreamByPid(const int32_t callerPid)
+{
+    streamsInDeactivateAudioSession_.erase(std::remove_if(streamsInDeactivateAudioSession_.begin(),
+        streamsInDeactivateAudioSession_.end(), [callerPid](const AudioInterrupt &item) {
+            return item.pid == callerPid;
+        }), streamsInDeactivateAudioSession_.end());
+}
+
+void AudioInterruptService::DeactivateAudioSessionErrorEvent(const int32_t callerPid)
 {
     if (interruptDfx_ != nullptr) {
-        interruptDfx_->DeactivateAudioSessionErrorEvent(streamsInSession, callerPid);
+        interruptDfx_->DeactivateAudioSessionErrorEvent(streamsInDeactivateAudioSession_, callerPid);
     }
+    RemoveStreamByPid(callerPid);
 }
 
 void AudioInterruptService::RecordSilentWithPauseStrategyEvent(const AudioInterrupt &incomingInterrupt,
@@ -320,6 +338,22 @@ void AudioInterruptService::RecordSilentWithPauseStrategyEvent(const AudioInterr
         interruptDfx_ != nullptr)  {
             interruptDfx_->RecordSilentWithPauseStrategyEvent(incomingInterrupt, activeInterrupt, focusEntry);
         }
+}
+
+void AudioInterruptService::RecordNavWithPauseStrategyEvent(const AudioInterrupt &audioInterrupt)
+{
+    if (audioInterrupt.audioFocusType.streamType != STREAM_NAVIGATION || interruptDfx_ == nullptr) {
+        return;
+    }
+    AudioConcurrencyMode mode = audioInterrupt.sessionStrategy.concurrencyMode;
+    if (IsIndependentStrategyValid(audioInterrupt)) {
+        mode = audioInterrupt.independentStrategy.concurrencyMode;
+    } else if (sessionService_.IsAudioSessionActivated(audioInterrupt.pid)) {
+        mode = sessionService_.GetSessionStrategy(audioInterrupt.pid);
+    }
+    if (mode == AudioConcurrencyMode::PAUSE_OTHERS) {
+        interruptDfx_->RecordNavWithPauseStrategyEvent(audioInterrupt);
+    }
 }
 
 void AudioInterruptService::AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
@@ -468,7 +502,6 @@ int32_t AudioInterruptService::DeactivateAudioSession(const int32_t zoneId, cons
         }
         if (streamsInSession.size() > 0) {
             // Wait for the streams managed by session to stop
-            DeactivateAudioSessionErrorEvent(streamsInSession, callerPid);
             DelayToDeactivateStreamsInAudioSession(zoneId, callerPid, streamsInSession, onFakeInterruptDeactivate);
         } else {
             // If there is a fake interrupt, it needs to be deactivated.
@@ -526,6 +559,7 @@ void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
     const int32_t zoneId, const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession,
     std::function<void()> onFakeInterruptDeactivate)
 {
+    AddStreamByPid(callerPid, streamsInSession);
     auto audioInterruptService = shared_from_this();
     auto deactivateTask = [audioInterruptService, zoneId, callerPid, streamsInSession, onFakeInterruptDeactivate] {
         if (audioInterruptService == nullptr) {
@@ -566,9 +600,11 @@ int32_t AudioInterruptService::DeactivateStreamsInAudioSession(
             "interrupt, pid %{public}d", callerPid);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             SESSION_STOP_ILLEGAL_STATE, "Session is reactivated, no need to deactivate interrupt", false);
+        RemoveStreamByPid(callerPid);
         return ERROR;
     }
 
+    DeactivateAudioSessionErrorEvent(callerPid);
     // If the application deactivates a session, the streams managed by session needs to be stoped.
     // and be unmuted if the session is muted.
     if (handler_ != nullptr) {
@@ -1388,6 +1424,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         " zoneId: %{public}d usage: %{public}d source: %{public}d isCheckMuteStream: %{public}d deviceTag: %{public}s",
         incomingStreamId, currAudioInterrupt.pid, streamType, zoneId, currAudioInterrupt.streamUsage,
         incomingSourceType, currAudioInterrupt.isCheckMuteStream, incommingDeviceTag.c_str());
+    UpdateAudioFocusCheckMuteFlag(zoneId, currAudioInterrupt);
 
     if (AudioInterruptIsStandbyInFocusList(zoneId, incomingStreamId, incommingDeviceTag) ||
         (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId, incommingDeviceTag) && !isUpdatedAudioStrategy)) {
@@ -1395,6 +1432,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
             " active audio interrupt.");
         return SUCCESS;
     }
+    RecordNavWithPauseStrategyEvent(currAudioInterrupt);
     GameRecogSetParam(GetClientTypeByStreamId(incomingStreamId), incomingSourceType, true);
     ResetNonInterruptControl(currAudioInterrupt);
     bool shouldReturnSuccess = false;
@@ -1495,6 +1533,14 @@ void AudioInterruptService::ResetNonInterruptControl(AudioInterrupt audioInterru
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+void AudioInterruptService::RemoveStreamBySessionId(const uint32_t streamId)
+{
+    streamsInDeactivateAudioSession_.erase(std::remove_if(streamsInDeactivateAudioSession_.begin(),
+        streamsInDeactivateAudioSession_.end(), [streamId](const AudioInterrupt &item) {
+            return item.streamId == streamId;
+        }), streamsInDeactivateAudioSession_.end());
+}
+
 AudioInterruptResult AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId,
     const AudioInterrupt &audioInterrupt, bool isRemoveFocusHis)
 {
@@ -1512,6 +1558,7 @@ AudioInterruptResult AudioInterruptService::DeactivateAudioInterrupt(const int32
         "usage: %{public}d source: %{public}d",
         incomingStreamId, currAudioInterrupt.pid, (currAudioInterrupt.audioFocusType).streamType,
         currAudioInterrupt.streamUsage, incomingSourceType);
+    RemoveStreamBySessionId(audioInterrupt.streamId);
 
     if (interruptDfx_ != nullptr) {
         interruptDfx_->CheckInterruptEvent(currAudioInterrupt.streamId);
@@ -1677,7 +1724,7 @@ void AudioInterruptService::UpdateContextForAudioZone(const int32_t zoneId,
     zoneManager_.UpdateContextForAudioZone(zoneId, context);
 }
 
-int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
+int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal)
 {
     std::unique_lock<std::mutex> lock(mutex_);
     int32_t ret = zoneManager_.MigrateAudioInterruptZone(zoneId, func);
@@ -1686,7 +1733,7 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, ZONEID_DEFAULT, true, isInternal);
     return SUCCESS;
 }
 

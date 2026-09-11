@@ -301,7 +301,6 @@ ohos_shared_library("audio_stream_client") {
   ]
 
   external_deps = [
-    "bounds_checking_function:libsec_shared",
     "ability_base:want",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
@@ -318,11 +317,6 @@ ohos_shared_library("audio_stream_client") {
     "samgr:samgr_proxy",
     "c_utils:utils",
   ]
-
-  defines = []
-  if (audio_framework_feature_multi_zone_volume) {
-    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
-  }
 
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
@@ -381,7 +375,6 @@ ohos_shared_library("audio_policy_manager") {
   ]
 
   external_deps = [
-    "bounds_checking_function:libsec_shared",
     "ability_base:want",
     "eventhandler:libeventhandler",
     "frame_aware_sched:rtg_interface",
@@ -512,7 +505,6 @@ ohos_shared_library("audio_client") {
   ]
 
   external_deps = [
-    "bounds_checking_function:libsec_shared",
     "ability_base:want",
     "eventhandler:libeventhandler",
     "frame_aware_sched:rtg_interface",
@@ -525,12 +517,7 @@ ohos_shared_library("audio_client") {
     "c_utils:utils",
   ]
 
-  public_external_deps = [ "c_utils:utils" ]
-
-  defines = []
-  if (audio_framework_feature_multi_zone_volume) {
-    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
-  }
+  public_external_deps = [ "c_utils:utils", ]
 
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
@@ -561,6 +548,7 @@ config("audio_service_config") {
     "../../services/audio_service/test/unittest:audio_server_extra_unit_test",
     "../../services/audio_service/test/unittest:audio_service_second_unit_test",
     "../../services/audio_service/test/unittest:audio_manager_stub_unit_test",
+    "../../services/audio_service/test/unittest:audio_service_core_aiut",
   ]
 
   include_dirs = [
@@ -769,10 +757,6 @@ audio_ohos_library("audio_process_service") {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
-  if (audio_framework_feature_multi_zone_volume) {
-    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
-  }
-
   if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
     defines += [
       "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
@@ -860,9 +844,9 @@ audio_ohos_library("audio_service") {
     "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "qos_manager:concurrent_task_client",
   ]
   defines = []
   if (!audio_framework_feature_new_engine_flag) {
@@ -924,10 +908,6 @@ audio_ohos_library("audio_service") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 
-  if (audio_framework_feature_multi_zone_volume) {
-    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
-  }
-
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
@@ -968,7 +948,6 @@ ohos_shared_library("audio_sasdk") {
   ]
 
   external_deps = [
-    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",

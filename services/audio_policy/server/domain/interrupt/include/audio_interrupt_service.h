@@ -41,6 +41,9 @@
 #include "audio_interrupt_dfx.h"
 #include "audio_interrupt_strategy.h"
 #include "audio_debug_info.h"
+#ifdef HAS_WINDOW_MANAGER
+#include "window_utils.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -127,7 +130,7 @@ public:
     int32_t FindZoneByPid(int32_t pid);
     int32_t CreateAudioInterruptZone(const int32_t zoneId, const AudioZoneContext &context);
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal = false);
-    int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
+    int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal = false);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts,
         const std::vector<uint32_t> &bypassSessionIds = {});
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const std::string &deviceTag,
@@ -315,6 +318,7 @@ private:
     void SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,
         const uint32_t &streamId, const AudioInterrupt &audioInterrupt);
     void CollectInterruptDfx(const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt);
+    void RecordNavWithPauseStrategyEvent(const AudioInterrupt &audioInterrupt);
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activeInterrupt);
     bool UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType,
         int32_t zoneId = ZONEID_DEFAULT, bool notFromInterrupt = true, bool isInternal = false);
@@ -333,8 +337,7 @@ private:
     // systemapp debug interfaces
     void WriteCallSessionEvent(int32_t strategyValue);
     void ActivateAudioSessionErrorEvent(const int32_t zoneId, const int32_t callerPid, bool isActivated);
-    void DeactivateAudioSessionErrorEvent(const std::vector<AudioInterrupt> &streamsInSession,
-        const int32_t callerPid);
+    void DeactivateAudioSessionErrorEvent(const int32_t callerPid);
     void RecordSilentWithPauseStrategyEvent(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry);
     void AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
@@ -469,7 +472,10 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
     void UpdateIsCheckMuteStreamByPid(int32_t callerPid);
-    bool ProcessSilentChangeInterrupt(const MuteFocusInfo &audioFocusInfo);
+    void RemoveStreamBySessionId(const uint32_t streamId);
+    void RemoveStreamByPid(const int32_t callerPid);
+    void AddStreamByPid(const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession);
+    void UpdateAudioFocusCheckMuteFlag(const int32_t zoneId, AudioInterrupt &audioInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -490,6 +496,8 @@ private:
 
     std::map<uint32_t, std::list<MuteFocusInfo>> muteAudioFocus_;
     std::set<uint32_t> deferredResumeStreamIds_;
+
+    std::vector<AudioInterrupt> streamsInDeactivateAudioSession_;
 
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;

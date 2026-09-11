@@ -246,8 +246,6 @@ public:
 
     void NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool lowered);
 
-    int32_t SetSourceOutputStreamMute(int32_t uid, bool mute);
-
 #ifdef FEATURE_DTMF_TONE
     int32_t GetSupportedTones(const std::string &countryCode, std::vector<int32_t> &throw_with_nested) override;
 
@@ -597,6 +595,10 @@ public:
     int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
     int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
+
+    int32_t ExcludeUidForExtZone(int32_t uid) override;
+
+    int32_t UnexcludeUidForExtZone(int32_t uid) override;
 
     int32_t SetZoneDeviceVisible(bool visible) override;
 

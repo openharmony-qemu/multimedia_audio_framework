@@ -33,6 +33,7 @@ public:
     ~LoopbackInServer();
 
     int32_t Enable(bool enable, int32_t &ret) override;
+    int32_t NotifyStatus(int32_t status, int32_t &ret) override;
     int32_t GetStatus(int32_t &status, int32_t &ret) override;
     int32_t GetVolume(float &volume, int32_t &ret) override;
 

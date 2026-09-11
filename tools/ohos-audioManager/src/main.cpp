@@ -114,6 +114,7 @@ static const std::unordered_map<std::string, DeviceType> gDeviceTypeMap = {
     {"DEVICE_TYPE_NEARLINK", DeviceType::DEVICE_TYPE_NEARLINK},
     {"DEVICE_TYPE_SYSTEM_PRIVATE", DeviceType::DEVICE_TYPE_SYSTEM_PRIVATE},
     {"DEVICE_TYPE_DEFAULT", DeviceType::DEVICE_TYPE_DEFAULT},
+    {"DEFAULT", DeviceType::DEVICE_TYPE_DEFAULT},
     {"DEVICE_TYPE_NONE", DeviceType::DEVICE_TYPE_NONE}
 };
 
@@ -305,7 +306,7 @@ int CmdSetVolume(int argc, char** argv)
             "Check if the process has system permission or volume value is valid");
     }
 
-    json resultJson;
+    json resultJson = json::object();
     resultJson["volumeType"] = VolumeTypeToString(volumeType);
     resultJson["volume"] = volume;
     return OutputSuccess(resultJson);
@@ -446,7 +447,7 @@ int CmdSetMute(int argc, char** argv)
             "require ACCESS_NOTIFICATION_POLICY_PERMISSION");
     }
 
-    json resultJson;
+    json resultJson = json::object();
     resultJson["volumeType"] = VolumeTypeToString(volumeType);
     resultJson["mute"] = mute;
     return OutputSuccess(resultJson);
@@ -487,7 +488,7 @@ int CmdGetDevices(int argc, char** argv)
     result["devices"] = json::array();
 
     for (const auto& device : devices) {
-        json deviceJson;
+        json deviceJson = json::object();
         deviceJson["deviceType"] = static_cast<int>(device->deviceType_);
         result["devices"].push_back(deviceJson);
     }
@@ -495,22 +496,93 @@ int CmdGetDevices(int argc, char** argv)
     return OutputSuccess(result);
 }
 
-int CmdSelectOutputDevice(int argc, char** argv)
+std::vector<DeviceType> ParseDeviceTypes(int argc, char** argv)
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-
+    std::vector<DeviceType> deviceTypes;
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "--type") == 0 && i + 1 < argc) {
-            DeviceType deviceType = ParseDeviceType(argv[i + 1]);
-            auto descriptor = std::make_shared<AudioDeviceDescriptor>();
-            descriptor->deviceType_ = deviceType;
-            audioDeviceDescriptors.push_back(descriptor);
+            deviceTypes.push_back(ParseDeviceType(argv[i + 1]));
         }
     }
+    return deviceTypes;
+}
 
-    if (audioDeviceDescriptors.empty()) {
+int ValidateDeviceTypes(const std::vector<DeviceType>& deviceTypes,
+    const std::string& commandName, const std::string& exampleType)
+{
+    if (deviceTypes.empty()) {
         return OutputError("ERR_ARG_MISSING", "Missing required parameter: --type",
-            "Please provide at least one device type. Example: --type DEVICE_TYPE_SPEAKER");
+            "Please provide at least one device type. Example: --type " + exampleType);
+    }
+    for (const auto& type : deviceTypes) {
+        if (type == DEVICE_TYPE_NONE) {
+            return OutputError("ERR_INVALID_PARAM", "Invalid device type",
+                "Check the device type spelling. Use 'help " + commandName + "' for valid values");
+        }
+    }
+    return 0;
+}
+
+struct DeviceSelectionContext {
+    DeviceFlag flag;
+    std::string flagName;
+    std::string deviceKind;
+};
+
+int ResolveDeviceDescriptors(AudioSystemManager* manager,
+    const std::vector<DeviceType>& deviceTypes, const DeviceSelectionContext& context,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>>& audioDeviceDescriptors)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> availableDevices;
+    bool devicesQueried = false;
+    for (const auto& type : deviceTypes) {
+        if (type == DEVICE_TYPE_DEFAULT) {
+            auto descriptor = std::make_shared<AudioDeviceDescriptor>();
+            descriptor->deviceType_ = type;
+            audioDeviceDescriptors.push_back(descriptor);
+            continue;
+        }
+        if (!devicesQueried) {
+            availableDevices = manager->GetDevices(context.flag);
+            devicesQueried = true;
+        }
+        std::shared_ptr<AudioDeviceDescriptor> targetDevice = nullptr;
+        for (const auto& device : availableDevices) {
+            if (device->deviceType_ == type) {
+                targetDevice = device;
+                break;
+            }
+        }
+        if (targetDevice == nullptr) {
+            std::string suggestion = "Use 'get-devices --flag " + context.flagName +
+                "' to check available " + context.deviceKind + " devices";
+            return OutputError("ERR_DEVICE_UNAVAILABLE", "Specified device type is not available",
+                suggestion);
+        }
+        audioDeviceDescriptors.push_back(targetDevice);
+    }
+    return 0;
+}
+
+json BuildDeviceResultJson(const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descriptors)
+{
+    json resultJson = json::object();
+    resultJson["devices"] = json::array();
+    for (const auto& device : descriptors) {
+        json deviceJson = json::object();
+        deviceJson["deviceType"] = static_cast<int>(device->deviceType_);
+        deviceJson["deviceId"] = static_cast<int>(device->deviceId_);
+        resultJson["devices"].push_back(deviceJson);
+    }
+    return resultJson;
+}
+
+int CmdSelectOutputDevice(int argc, char** argv)
+{
+    std::vector<DeviceType> deviceTypes = ParseDeviceTypes(argc, argv);
+    int ret = ValidateDeviceTypes(deviceTypes, "select-output-device", "DEVICE_TYPE_SPEAKER");
+    if (ret != 0) {
+        return ret;
     }
 
     AudioSystemManager* manager = AudioSystemManager::GetInstance();
@@ -519,19 +591,50 @@ int CmdSelectOutputDevice(int argc, char** argv)
             "Check if audio service is running");
     }
 
-    int32_t result = manager->SelectOutputDevice(audioDeviceDescriptors);
-    if (result != SUCCESS) {
-        return OutputError("ERR_PERMISSION_DENIED", "Failed to select output device. "
-            "System permission is required",
-            "Check if the process has system permission and device type is valid");
+    DeviceSelectionContext context{OUTPUT_DEVICES_FLAG, "OUTPUT_DEVICES_FLAG", "output"};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptors;
+    ret = ResolveDeviceDescriptors(manager, deviceTypes, context, descriptors);
+    if (ret != 0) {
+        return ret;
     }
 
-    json resultJson;
-    resultJson["devices"] = json::array();
-    for (const auto& device : audioDeviceDescriptors) {
-        resultJson["devices"].push_back(static_cast<int>(device->deviceType_));
+    int32_t result = manager->SelectOutputDevice(descriptors);
+    if (result != SUCCESS) {
+        return OutputError("ERR_OPERATION_FAILED", "Failed to select output device",
+            "Check system permission, device validity, and audio service availability");
     }
-    return OutputSuccess(resultJson);
+
+    return OutputSuccess(BuildDeviceResultJson(descriptors));
+}
+
+int CmdSelectInputDevice(int argc, char** argv)
+{
+    std::vector<DeviceType> deviceTypes = ParseDeviceTypes(argc, argv);
+    int ret = ValidateDeviceTypes(deviceTypes, "select-input-device", "DEVICE_TYPE_MIC");
+    if (ret != 0) {
+        return ret;
+    }
+
+    AudioSystemManager* manager = AudioSystemManager::GetInstance();
+    if (manager == nullptr) {
+        return OutputError("ERR_INTERNAL_ERROR", "Failed to get AudioSystemManager instance",
+            "Check if audio service is running");
+    }
+
+    DeviceSelectionContext context{INPUT_DEVICES_FLAG, "INPUT_DEVICES_FLAG", "input"};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptors;
+    ret = ResolveDeviceDescriptors(manager, deviceTypes, context, descriptors);
+    if (ret != 0) {
+        return ret;
+    }
+
+    int32_t result = manager->SelectInputDevice(descriptors);
+    if (result != SUCCESS) {
+        return OutputError("ERR_OPERATION_FAILED", "Failed to select input device",
+            "Check system permission, device validity, and audio service availability");
+    }
+
+    return OutputSuccess(BuildDeviceResultJson(descriptors));
 }
 
 void ShowGeneralHelp()
@@ -735,7 +838,7 @@ void RegisterSelectOutputDeviceCommand()
         "    --type <deviceType>    Required. Device type. Values: [DEVICE_TYPE_INVALID, "
         "DEVICE_TYPE_EARPIECE, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_WIRED_HEADSET, "
         "DEVICE_TYPE_WIRED_HEADPHONES, DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_A2DP, "
-        "DEVICE_TYPE_MIC, DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_DP, DEVICE_TYPE_REMOTE_CAST, "
+        "DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_DP, DEVICE_TYPE_REMOTE_CAST, "
         "DEVICE_TYPE_USB_DEVICE, DEVICE_TYPE_HDMI, DEVICE_TYPE_LINE_DIGITAL, "
         "DEVICE_TYPE_REMOTE_DAUDIO, DEVICE_TYPE_HEARING_AID, DEVICE_TYPE_NEARLINK, "
         "DEVICE_TYPE_SYSTEM_PRIVATE, DEFAULT]. Can be specified multiple times",
@@ -744,6 +847,21 @@ void RegisterSelectOutputDeviceCommand()
         "    ohos-audioManager select-output-device --type DEFAULT"
     };
     RegisterCommand("select-output-device", details, CmdSelectOutputDevice);
+}
+
+void RegisterSelectInputDeviceCommand()
+{
+    CommandDetails details = {
+        "Select the input audio device",
+        "ohos-audioManager select-input-device --type <deviceType>",
+        "    --type <deviceType>    Required. Device type. Values: [DEVICE_TYPE_MIC, "
+        "DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_USB_HEADSET, "
+        "DEFAULT]. Can be specified multiple times",
+        "    ohos-audioManager select-input-device --type DEVICE_TYPE_MIC\n"
+        "    ohos-audioManager select-input-device --type DEVICE_TYPE_USB_HEADSET\n"
+        "    ohos-audioManager select-input-device --type DEVICE_TYPE_BLUETOOTH_SCO"
+    };
+    RegisterCommand("select-input-device", details, CmdSelectInputDevice);
 }
 
 void InitCommands()
@@ -756,6 +874,7 @@ void InitCommands()
     RegisterSetMuteCommand();
     RegisterGetDevicesCommand();
     RegisterSelectOutputDeviceCommand();
+    RegisterSelectInputDeviceCommand();
     g_hasSubCommand = (gCommands.size() > INT_NUM1);
 }
 

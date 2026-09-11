@@ -61,6 +61,9 @@ static const std::string DEFAULT_SPEAKER_SINK_NAME = "Speaker";
 static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
 static const std::string MCH_SINK_NAME = "MCH_Speaker";
 static const std::string NEARLINK_SINK_NAME = "Wireless_Speaker";
+// Max delay before a deferred AISS-disable request is force-closed, even if the bound stream never
+// reaches a terminal state (see DisableAissByUidWhenStreamInactiveSync).
+static constexpr uint32_t AISS_DISABLE_BACKSTOP_TIMEOUT_MS = 1000;
 
 HpaeManagerThread::~HpaeManagerThread()
 {
@@ -3280,7 +3283,6 @@ std::shared_ptr<IHpaeRendererManager> HpaeManager::GetAuxiliaryRendererManager()
 
 int32_t HpaeManager::SetAuxiliarySinkEnable(bool isEnabled)
 {
-    AUDIO_INFO_LOG("set to isEnabled:[%{public}s]", isEnabled ? "true" : "false");
     auxSinkEnable_ = isEnabled;
     
     auto request = [this, isEnabled]() {
@@ -3407,9 +3409,21 @@ bool HpaeManager::IsPendingAissDisableFor(uint32_t sessionId) const
 // PostDestroy becomes a no-op and UnbindSessionEffect is idempotent - which is exactly the mid-move
 // situation where the physical effect node was already destroyed at move-out. The pending request
 // is cleared and the control epoch bumped so any in-flight stale event is invalidated.
+// Central invalidation: cancel the 1s backstop task, drop the request and bump the control epoch
+// so any in-flight stale event is invalidated. Every path that clears a pending deferred
+// AISS-disable request must go through here, otherwise the backstop task outlives the request.
+void HpaeManager::InvalidatePendingAissDisable()
+{
+    if (pendingAissDisable_.has_value()) {
+        delayedTaskQueue_.CancelTask(pendingAissDisable_->taskId);
+        pendingAissDisable_.reset();
+    }
+    ++aissControlGeneration_;
+}
+
 void HpaeManager::FinishPendingAissDisable()
 {
-    pendingAissDisable_.reset();
+    InvalidatePendingAissDisable();
     if (boundSessionId_ != UNBOUND_SESSION_ID) {
         ClearAissSession(boundSessionId_, true); // clears boundSessionId_ + boundUid_ when matched
         // Destroy-timeout: ClearAissSession aborts before unbinding (keep-binding contract for
@@ -3422,7 +3436,6 @@ void HpaeManager::FinishPendingAissDisable()
     } else if (boundUid_ != -1) {
         boundUid_ = -1; // armed -> off, no physical binding to tear down
     }
-    ++aissControlGeneration_;
     AUDIO_INFO_LOG("FinishPendingAissDisable: AISS closed, generation %{public}" PRIu64, aissControlGeneration_);
 }
 
@@ -3453,8 +3466,7 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
         // Same uid already active. An explicit re-enable cancels any pending deferred disable and
         // reuses the current AISS instance (no destroy/recreate).
         if (pendingAissDisable_.has_value()) {
-            pendingAissDisable_.reset();
-            ++aissControlGeneration_;
+            InvalidatePendingAissDisable();
             AUDIO_INFO_LOG("EnableAissByUid: cancelled pending disable for uid %{public}d", uid);
         }
         return SUCCESS;
@@ -3467,8 +3479,7 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
     }
 
     // Claiming (or re-claiming while armed) the uid invalidates any prior deferred-disable request.
-    pendingAissDisable_.reset();
-    ++aissControlGeneration_;
+    InvalidatePendingAissDisable();
     boundUid_ = uid;
     boundSessionId_ = UNBOUND_SESSION_ID;
 
@@ -3529,8 +3540,7 @@ int32_t HpaeManager::DisableAissByUid(int32_t uid)
         "DisableAissByUid: uid %{public}d not bound (current: %{public}d)", uid, boundUid_);
 
     // Immediate disable outranks any deferred-disable request: invalidate it before closing.
-    pendingAissDisable_.reset();
-    ++aissControlGeneration_;
+    InvalidatePendingAissDisable();
     ClearAissSession(boundSessionId_, true);
     boundUid_ = -1;
     boundSessionId_ = UNBOUND_SESSION_ID;
@@ -3545,8 +3555,7 @@ int32_t HpaeManager::SetAissEnabledSync(uint32_t sessionId, bool enabled)
     auto request = [this, sessionId, enabled]() -> int32_t {
         // Session-level AISS control invalidates any uid-level deferred-disable request so the old
         // uid's terminal events cannot affect the new session binding.
-        pendingAissDisable_.reset();
-        ++aissControlGeneration_;
+        InvalidatePendingAissDisable();
         auto rendererManager = GetRendererManagerById(sessionId);
         CHECK_AND_RETURN_RET_LOG(rendererManager != nullptr,
             static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND),
@@ -3598,51 +3607,73 @@ int32_t HpaeManager::DisableAissByUidWhenStreamInactiveSync(int32_t uid)
     CHECK_AND_RETURN_RET_LOG(sessionEffectManager_ != nullptr, ERR_OPERATION_FAILED,
         "DisableAissByUidWhenStreamInactiveSync: sessionEffectManager_ is null");
 
-    auto request = [this, uid]() -> int32_t {
-        // uid mismatch: refuse without touching the existing binding.
-        if (boundUid_ != uid) {
-            AUDIO_WARNING_LOG("DisableAissByUidWhenStreamInactiveSync: uid %{public}d not bound (current: %{public}d)",
-                uid, boundUid_);
-            return ERR_OPERATION_FAILED;
-        }
-        // same {uid, sessionId} already pending: idempotent.
-        if (IsPendingAissDisableFor(boundSessionId_)) {
-            return SUCCESS;
-        }
-        // bound uid but no physical binding (UID_ARMED): cancel the armed state and go OFF.
-        if (boundSessionId_ == UNBOUND_SESSION_ID) {
-            boundUid_ = -1;
-            pendingAissDisable_.reset();
-            ++aissControlGeneration_;
-            AUDIO_INFO_LOG("DisableAissByUidWhenStreamInactiveSync: armed uid %{public}d cancelled", uid);
-            return SUCCESS;
-        }
-        // a physical binding exists: decide by its current state.
-        auto it = rendererIdStreamInfoMap_.find(boundSessionId_);
-        if (it == rendererIdStreamInfoMap_.end() ||
-            it->second.state == HPAE_SESSION_PAUSED || it->second.state == HPAE_SESSION_STOPPED ||
-            it->second.state == HPAE_SESSION_RELEASED) {
-            // stream record gone or already terminal: close now.
-            FinishPendingAissDisable();
-            return SUCCESS;
-        }
-        HpaeSessionState state = it->second.state;
-        if (state == HPAE_SESSION_RUNNING || state == HPAE_SESSION_PAUSING ||
-            state == HPAE_SESSION_STOPPING) {
-            // still active or transitioning: register the deferred request at the current epoch.
-            pendingAissDisable_ = PendingAissDisable{ uid, boundSessionId_, aissControlGeneration_ };
-            AUDIO_INFO_LOG("DisableAissByUidWhenStreamInactiveSync: registered pending disable uid %{public}d "
-                "session %{public}u state %{public}d generation %{public}" PRIu64,
-                uid, boundSessionId_, state, aissControlGeneration_);
-            return SUCCESS;
-        }
-        // NEW/PREPARED/INVALID with an existing physical binding: inconsistent, refuse and do not
-        // wait or close other bindings.
-        AUDIO_ERR_LOG("DisableAissByUidWhenStreamInactiveSync: bound session %{public}u in inconsistent state "
-            "%{public}d", boundSessionId_, state);
-        return ERR_OPERATION_FAILED;
-    };
+    auto request = [this, uid]() -> int32_t { return DisableAissByUidWhenStreamInactive(uid); };
     return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
+}
+
+int32_t HpaeManager::DisableAissByUidWhenStreamInactive(int32_t uid)
+{
+    // uid mismatch: refuse without touching the existing binding.
+    if (boundUid_ != uid) {
+        AUDIO_WARNING_LOG("DisableAissByUidWhenStreamInactiveSync: uid %{public}d not bound (current: %{public}d)",
+            uid, boundUid_);
+        return ERR_OPERATION_FAILED;
+    }
+    // same {uid, sessionId} already pending: idempotent.
+    if (IsPendingAissDisableFor(boundSessionId_)) {
+        return SUCCESS;
+    }
+    // bound uid but no physical binding (UID_ARMED): cancel the armed state and go OFF.
+    if (boundSessionId_ == UNBOUND_SESSION_ID) {
+        boundUid_ = -1;
+        InvalidatePendingAissDisable();
+        AUDIO_INFO_LOG("DisableAissByUidWhenStreamInactiveSync: armed uid %{public}d cancelled", uid);
+        return SUCCESS;
+    }
+    // a physical binding exists: decide by its current state.
+    auto it = rendererIdStreamInfoMap_.find(boundSessionId_);
+    if (it == rendererIdStreamInfoMap_.end() ||
+        it->second.state == HPAE_SESSION_PAUSED || it->second.state == HPAE_SESSION_STOPPED ||
+        it->second.state == HPAE_SESSION_RELEASED) {
+        // stream record gone or already terminal: close now.
+        FinishPendingAissDisable();
+        return SUCCESS;
+    }
+    HpaeSessionState state = it->second.state;
+    if (state == HPAE_SESSION_RUNNING || state == HPAE_SESSION_PAUSING ||
+        state == HPAE_SESSION_STOPPING) {
+        // Still active or transitioning: defer until the stream reaches a terminal state.
+        return RegisterPendingAissDisable(uid, boundSessionId_, state);
+    }
+    // NEW/PREPARED/INVALID with an existing physical binding: inconsistent, refuse and do not
+    // wait or close other bindings.
+    AUDIO_ERR_LOG("DisableAissByUidWhenStreamInactiveSync: bound session %{public}u in inconsistent state "
+        "%{public}d", boundSessionId_, state);
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t HpaeManager::RegisterPendingAissDisable(int32_t uid, uint32_t sessionId, HpaeSessionState state)
+{
+    // Register the request at the current epoch and arm a 1s backstop so AISS is closed even if no
+    // terminal event ever arrives.
+    uint64_t generation = aissControlGeneration_;
+    uint64_t taskId = delayedTaskQueue_.PostDelayedTask(AISS_DISABLE_BACKSTOP_TIMEOUT_MS,
+        [this, sessionId, generation]() { RunAissDisableBackstop(sessionId, generation); });
+    pendingAissDisable_ = PendingAissDisable{ uid, sessionId, generation, taskId };
+    AUDIO_INFO_LOG("DisableAissByUidWhenStreamInactiveSync: registered pending disable uid %{public}d "
+        "session %{public}u state %{public}d generation %{public}" PRIu64 " task %{public}" PRIu64,
+        uid, sessionId, state, generation, taskId);
+    return SUCCESS;
+}
+
+void HpaeManager::RunAissDisableBackstop(uint32_t sessionId, uint64_t generation)
+{
+    // Captured generation is the second line of defence against a missed cancel: a stale task must
+    // not close a request registered in a later epoch.
+    if (pendingAissDisable_.has_value() && pendingAissDisable_->generation == generation &&
+        IsPendingAissDisableFor(sessionId)) {
+        FinishPendingAissDisable();
+    }
 }
 
 void HpaeManager::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId)

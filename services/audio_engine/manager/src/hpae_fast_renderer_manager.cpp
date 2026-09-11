@@ -1073,19 +1073,13 @@ void HpaeFastRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
 
 void HpaeFastRendererManager::SendRequest(Request &&request, const std::string &funcName, bool isInit)
 {
-    if (!isInit && !IsInit()) {
-        AUDIO_ERR_LOG("HpaeFastRendererManager not init, %{public}s excute failed", funcName.c_str());
-        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_RENDERER_MANAGER_TYPE, funcName,
-            "HpaeFastRendererManager not init");
-        return;
-    }
-    hpaeNoLockQueue_.PushRequest(std::move(request));
     if (hpaeSignalProcessThread_ == nullptr) {
         AUDIO_ERR_LOG("hpaeSignalProcessThread_ is nullptr, %{public}s excute failed", funcName.c_str());
         HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_RENDERER_MANAGER_TYPE, funcName,
             "thread is nullptr");
         return;
     }
+    hpaeNoLockQueue_.PushRequest(std::move(request));
     hpaeSignalProcessThread_->Notify();
 }
 

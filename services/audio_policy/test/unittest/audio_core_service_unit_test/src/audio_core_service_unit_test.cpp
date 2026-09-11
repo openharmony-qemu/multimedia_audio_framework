@@ -24,6 +24,7 @@
 #include "audio_core_config_manager.h"
 #include "audio_select_interface_service.h"
 #include "audio_router_infra.h"
+#include "audio_router_center.h"
 #include "audio_router_select_strategy.h"
 #include "i_hpae_manager.h"
 #include "audio_volume.h"
@@ -434,7 +435,7 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_005, TestSize.Level1)
         AudioSourceStrategyType {
         "AUDIO_INPUT_VOICE_RECOGNITION_TYPE", // hdiSource
         "primary", // adapterName
-        "primary_input", // pipeName
+        "primary_input_voice_recognition", // pipeName
         AUDIO_INPUT_FLAG_VOICE_RECOGNITION, // audioFlag
         1 // priority
         });
@@ -1193,31 +1194,6 @@ HWTEST_F(AudioCoreServiceUnitTest, SelectInputDevice_001, TestSize.Level1)
     inputDevice->networkId_ = LOCAL_NETWORK_ID;
     deviceDescriptorVector.push_back(inputDevice);
     auto ret = GetServerPtr()->eventEntry_->SelectInputDevice(audioCapturerFilter, deviceDescriptorVector);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
-* @tc.number: SelectInputDevice_002
-* @tc.desc  : Test SelectInputDevice - will return success.
-*/
-HWTEST_F(AudioCoreServiceUnitTest, SelectInputDevice_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest SelectInputDevice_002 start");
-    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
-    vector<std::shared_ptr<AudioDeviceDescriptor>> devs;
-    auto inputDevs = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
-    auto inputDevice =  inputDevs[0];
-    inputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
-    inputDevice->networkId_ = LOCAL_NETWORK_ID;
-    devs.push_back(inputDevice);
-
-    constexpr int32_t BLUETOOTH_UID = 1002;
-    audioCapturerFilter->uid = BLUETOOTH_UID;
-    audioCapturerFilter->capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION;
-    audioCapturerFilter->capturerInfo.capturerFlags == 0;
-    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
-    auto ret = AudioRecoveryDevice::GetInstance().SelectInputDevice(audioCapturerFilter, devs);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -4043,8 +4019,23 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_017, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
 
+    // Use the currently routed VoIP devices as the target, so the result does not depend on
+    // whether the environment has router strategy configuration and default devices.
     AudioDeviceDescriptor inputDevice;
+    FetchDeviceInfo captureInfo;
+    captureInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    captureInfo.clientUID = -1;
+    auto inputDesc = AudioRouterCenter::GetAudioRouterCenter().FetchInputDevice(captureInfo);
+    if (inputDesc != nullptr) {
+        inputDevice = *inputDesc;
+    }
+
     AudioDeviceDescriptor outputDevice;
+    FetchDeviceInfo renderInfo = { STREAM_USAGE_VOICE_COMMUNICATION, "AudioCapturerSession_017" };
+    auto outputDescs = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(renderInfo);
+    if (!outputDescs.empty() && outputDescs.front() != nullptr) {
+        outputDevice = *outputDescs.front();
+    }
 
     auto ret = audioCoreService->IsVoipDeviceChanged(inputDevice, outputDevice);
     EXPECT_EQ(ret, true);

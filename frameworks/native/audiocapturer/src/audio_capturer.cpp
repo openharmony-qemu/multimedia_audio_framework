@@ -1797,7 +1797,12 @@ int32_t AudioCapturerPrivate::StopImpl() const
             KaraokeParamType::KARAOKE_PARAM_CAPTURE_REVERB, 0);
     }
 
-    return audioStream_->StopAudioStream() ? SUCCESS : ERROR;
+    bool result = audioStream_->StopAudioStream();
+    if (!result) {
+        ReportWakeupEvent(capturerInfo_.sourceType, STAGE_FWK_STOP_EXIT,
+            WAKEUP_RESULT_FAIL, WAKEUP_TRACK_FWK_STOP_ERROR);
+    }
+    return result ? SUCCESS : ERROR;
 }
 
 bool AudioCapturerPrivate::Flush() const

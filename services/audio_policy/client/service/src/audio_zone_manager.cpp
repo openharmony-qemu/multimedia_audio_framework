@@ -83,6 +83,10 @@ public:
 
     int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
+    int32_t ExcludeUidForExtZone(int32_t uid) override;
+
+    int32_t UnexcludeUidForExtZone(int32_t uid) override;
+
     void SetZoneDeviceVisible(bool visible) override;
 
     int32_t RegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType,
@@ -146,8 +150,24 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneClient()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "register audio zone client failed.");
     client_ = temp;
     AudioPolicyManager::RegisterServerDiedCallBack([this]() {
-        CHECK_AND_RETURN_LOG(this->client_ != nullptr, "client_ is nullptr!");
-        this->client_->Restore();
+        sptr<AudioZoneClient> client;
+        sptr<IRemoteObject> object;
+        {
+            std::lock_guard<std::mutex> lock(clientMutex_);
+            CHECK_AND_RETURN_LOG(this->client_ != nullptr, "client_ is nullptr");
+            client = this->client_;
+            object = client->AsObject();
+        }
+        CHECK_AND_RETURN_LOG(object != nullptr, "client asobject is nullptr!");
+        int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioZoneClient(object);
+        AUDIO_INFO_LOG("Re-register audio zone client after server died, result: %{public}d", ret);
+        if (ret != SUCCESS) {
+            std::lock_guard<std::mutex> lock(clientMutex_);
+            client_ = nullptr;
+            AUDIO_WARNING_LOG("Re-register failed, clear client_ for next full registration");
+            return;
+        }
+        client->Restore();
     });
     return SUCCESS;
 }
@@ -395,6 +415,24 @@ int32_t AudioZoneManagerInner::ResumeAudioFocusForExtAudioZone(const std::vector
     int32_t result = AudioPolicyManager::GetInstance().ResumeAudioFocusForExtAudioZone(zoneIds);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
         "ResumeAudioFocusForExtAudioZone result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::ExcludeUidForExtZone(int32_t uid)
+{
+    AUDIO_INFO_LOG("in");
+    int32_t result = AudioPolicyManager::GetInstance().ExcludeUidForExtZone(uid);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "ExcludeUidForExtZone result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::UnexcludeUidForExtZone(int32_t uid)
+{
+    AUDIO_INFO_LOG("in");
+    int32_t result = AudioPolicyManager::GetInstance().UnexcludeUidForExtZone(uid);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "UnexcludeUidForExtZone result:%{public}d", result);
     return result;
 }
 

@@ -380,6 +380,7 @@ public:
     // ICoreServiceProvider from EventEntry
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     std::string GetModuleNameBySessionId(uint32_t sessionId);
+    std::string Get3daDirectBusAddress();
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
         AudioStreamInfo &streamInfo, bool &isUltraFast);
     int32_t GetAudioDebugInfoBySessionId(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
@@ -798,6 +799,7 @@ private:
     void HandleA2dpSuspend();
     bool UpdateActiveDeviceAndVolumeBeforeMoveSession(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
+    void SyncVolWhenCurrentOutputDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &desc);
     void CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId);
     void CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid);
     void ClearRingMuteWhenCallStart(bool pre, bool after, std::shared_ptr<AudioStreamDescriptor> streamDesc);

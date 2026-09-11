@@ -284,6 +284,17 @@ void AudioPolicyManager::RecoverSystemVolumeChangeByFilterCallback(const sptr<IA
     }
 }
 
+void AudioPolicyManager::NotifyAudioSeparationEffectDisabledForServerDied()
+{
+    sptr<AudioPolicyClientStubImpl> clientStub;
+    {
+        std::lock_guard<std::mutex> lock(registerCallbackMutex_);
+        clientStub = audioPolicyClientStubCB_;
+    }
+    CHECK_AND_RETURN(clientStub != nullptr);
+    clientStub->OnAudioSeparationEffectEnabledChange(false);
+}
+
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
 {
     GetInstance().ResetClientTrackerStubMap();
@@ -311,6 +322,7 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
             }
         }
     }
+    GetInstance().NotifyAudioSeparationEffectDisabledForServerDied();
     GetInstance().RecoverAudioPolicyCallbackClient();
 
     {

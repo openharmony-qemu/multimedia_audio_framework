@@ -57,6 +57,16 @@ public:
     {
         return 0;
     }
+
+    bool AddDeathRecipient(const sptr<DeathRecipient>& recipient) override
+    {
+        return true;
+    }
+
+    bool RemoveDeathRecipient(const sptr<DeathRecipient>& recipient) override
+    {
+        return true;
+    }
 };
 
 class TestAudioSuiteService : public AudioSuiteService {
@@ -307,6 +317,41 @@ HWTEST_F(AudioSuiteServiceTest, GetDownloadStatus_NewVersionFail_001, TestSize.L
     EXPECT_EQ(status.size, 0);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
+}
+
+/**
+ * @tc.name  SetUpdateEngineCallback_ReplaceCallback_001
+ * @tc.desc  Test SetUpdateEngineCallback when replacing an existing callback,
+ *           the old death recipient should be removed from the old remote object.
+ */
+HWTEST_F(AudioSuiteServiceTest, SetUpdateEngineCallback_ReplaceCallback_001, TestSize.Level0)
+{
+    auto& dm = Singleton<DownloadManager>::GetInstance();
+
+    // Step 1: First call to SetUpdateEngineCallback, sets up old callback
+    auto oldStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
+    dm.SetUpdateEngineCallback(oldStub);
+
+    // Step 2: Call SetUpdateEngineCallback again with a new callback
+    //  This triggers the new branch: remove old death recipient before overwriting
+    auto newStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
+    dm.SetUpdateEngineCallback(newStub);
+
+    // Verify: the new callback is active (basic sanity check)
+    EXPECT_CALL(*newStub, GetFeatureStatus(_, _, _))
+        .WillOnce(Invoke([](const std::string& name, AudioSuiteDownloadStatusInfo& status, int32_t& funcResult) {
+            status.state = 0;
+            status.featureName = name;
+            status.errorCode = 0;
+            funcResult = SUCCESS;
+            return SUCCESS;
+        }));
+
+    AudioSuiteDownloadStatusInfo status;
+    EXPECT_EQ(dm.GetDownloadStatus("feat1", status), SUCCESS);
+
+    // Cleanup
+    dm.SetUpdateEngineCallback(nullptr);
 }
 
 } // namespace AudioSuite

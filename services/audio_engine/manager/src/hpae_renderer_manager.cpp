@@ -521,6 +521,7 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId,
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::DeleteInputSession");
     // Invalidate any deferred Create so a stale retry cannot (re)materialize a node after teardown.
     CancelPendingSessionEffectCreate(sessionId);
+    pendingSeFinalizeMap_.erase(sessionId);
     auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
     CHECK_AND_RETURN_RET(sinkInputNode != nullptr, SUCCESS);
     auto sessionIt = sessionNodeMap_.find(sessionId);
@@ -764,7 +765,13 @@ void HpaeRendererManager::ConnectInputCluster(uint32_t sessionId, HpaeProcessorT
     std::shared_ptr<HpaeGainNode> sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
     if (sessionGainNode != nullptr) {
         sessionGainNode->ResetVolume();
-        sessionGainNode->ResetFadeState(); // clear stale fade (e.g. DONE_FADEOUT) on reconnect
+        // Arm fade-in only when the node resumes from a fade lifecycle (Pause->Start, stale
+        // DONE_FADEOUT); a hot re-plumb of a cleanly playing session keeps gain continuity.
+        if (sessionGainNode->HasPendingFade()) {
+            sessionGainNode->ResetFadeState();
+        } else {
+            sessionGainNode->ClearFadeState();
+        }
     }
     // Materialize physical SE node from attach-state (survives reload/disconnect).
     // CreateSessionEffectNode has a duplicate-guard, so calling it when the node already exists is safe.
@@ -912,12 +919,15 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
+        // Arm fade-in right after connect: SessionEffectStart below can take milliseconds and
+        // a client that pre-buffered data before Start would otherwise leak full-gain frames
+        // in the connect-to-arm window.
+        SetSessionFade(sessionId, OPERATION_STARTED);
         HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (HasSessionEffect(sessionId)) {
             sceneClusterMap_[sceneType]->SessionEffectStart(sessionId);
         }
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
-        SetSessionFade(sessionId, OPERATION_STARTED);
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = true;
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_RUNNING);
@@ -937,12 +947,13 @@ int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
+        // Arm fade-in right after connect, before SessionEffectStart (see Start for rationale).
+        SetSessionFade(sessionId, OPERATION_STARTED);
         HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (HasSessionEffect(sessionId)) {
             sceneClusterMap_[sceneType]->SessionEffectStart(sessionId);
         }
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
-        SetSessionFade(sessionId, OPERATION_STARTED);
         UpdateClusterStreamInfo(sceneType);
         if (syncId >= 0) {
             HandleSyncId(sessionId, syncId);
@@ -1094,6 +1105,9 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId, bool isStandby)
             sessionId, GetEncryptStr(sinkInfo_.deviceName).c_str(), isStandby);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
+        // SE close-crossfade waiting on its callback: finalize now, the chain is about to stop
+        // being pulled (fade/teardown); the close cannot be guaranteed to complete before then.
+        FinalizePendingSessionEffectClose(sessionId);
         HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_PAUSED, isStandby)) {
             if (HasSessionEffect(sessionId)) {
@@ -1181,6 +1195,9 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
             sessionId, GetEncryptStr(sinkInfo_.deviceName).c_str());
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Stop not find sessionId %{public}u", sessionId);
+        // SE close-crossfade waiting on its callback: finalize now, the chain is about to stop
+        // being pulled (fade/teardown); the close cannot be guaranteed to complete before then.
+        FinalizePendingSessionEffectClose(sessionId);
         HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
             if (HasSessionEffect(sessionId)) {
@@ -1722,6 +1739,9 @@ void HpaeRendererManager::OnFadeDone(uint32_t sessionId)
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "not find sessionId %{public}u", sessionId);
         CHECK_AND_RETURN_LOG(sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_RUNNING,
             "no need disconnect renderer input session, %{public}u is running", sessionId);
+        // Fade completed while an SE close was still waiting on its crossfade callback: finalize
+        // before SessionEffectPause stops the node (SignalProcess would never run again).
+        FinalizePendingSessionEffectClose(sessionId);
         AUDIO_INFO_LOG("Fade done, call back at RendererManager");
         IOperation operation = sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPING ?
             OPERATION_STOPPED : OPERATION_PAUSED;

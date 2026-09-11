@@ -280,6 +280,31 @@ bool AudioRouterCenter::IsAlarmFollowRingStrategy(AudioScene audioScene, StreamU
     return isRingScene && isAlarmUsage;
 }
 
+shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaOrToneRenderDevice(
+    FetchDeviceInfo &bak, int32_t clientUID, RouterType &routerType, const uint32_t streamId)
+{
+    bool hasSystemPermission = (clientUID == BOOT_ANIMATION_UID || PermissionUtil::VerifySystemPermission());
+    AudioPolicyDump::GetInstance().RecordBootStateTime(BootAnimationState::VERIFY_PERMISSION_IN_START, clientUID,
+        ClockTime::GetCurMilli());
+    AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
+    shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
+    if (IsMediaFollowCallStrategy(audioScene)) {
+        bak.streamUsage = AudioPipeManager::GetPipeManager()->GetLastestRunningCallStreamUsage();
+        bak.streamUsage = (bak.streamUsage == STREAM_USAGE_UNKNOWN) ? STREAM_USAGE_VOICE_COMMUNICATION :
+            bak.streamUsage;
+        AUDIO_INFO_LOG("replace usage %{public}d to %{public}d", bak.preStreamUsage, bak.streamUsage);
+        desc = FetchCallRenderDevice(bak.streamUsage, clientUID, routerType, bak.bypassType,
+            GetBypassWithSco(audioScene));
+    } else if (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) {
+        StreamUsage ringStreamUsage = (audioScene == AUDIO_SCENE_RINGING) ?
+            STREAM_USAGE_RINGTONE : STREAM_USAGE_VOICE_RINGTONE;
+        desc = MediaFollowRingStrategy(bak, ringStreamUsage, routerType, bak.bypassType, streamId);
+    } else {
+        desc = FetchMediaRenderDevice(bak, routerType, bak.bypassType, streamId);
+    }
+    return desc;
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesInner(FetchDeviceInfo &info)
 {
     auto earlyResult = PreFetchOutputDevices(info);
@@ -294,26 +319,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     bak.audioPipeType = PIPE_TYPE_OUT_NORMAL;
 
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS || renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
-        bool hasSystemPermission = (clientUID == BOOT_ANIMATION_UID || PermissionUtil::VerifySystemPermission());
-        AudioPolicyDump::GetInstance().RecordBootStateTime(BootAnimationState::VERIFY_PERMISSION_IN_START, clientUID,
-            ClockTime::GetCurMilli());
-        AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
-        shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
-        if (IsMediaFollowCallStrategy(audioScene)) {
-            bak.streamUsage = AudioPipeManager::GetPipeManager()->GetLastestRunningCallStreamUsage();
-            bak.streamUsage = (bak.streamUsage == STREAM_USAGE_UNKNOWN) ? STREAM_USAGE_VOICE_COMMUNICATION :
-                bak.streamUsage;
-            AUDIO_INFO_LOG("replace usage %{public}d to %{public}d", streamUsage, bak.streamUsage);
-            desc = FetchCallRenderDevice(bak.streamUsage, clientUID, routerType, bak.bypassType,
-                GetBypassWithSco(audioScene));
-        } else if (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) {
-            StreamUsage ringStreamUsage = (audioScene == AUDIO_SCENE_RINGING) ?
-                STREAM_USAGE_RINGTONE : STREAM_USAGE_VOICE_RINGTONE;
-            desc = MediaFollowRingStrategy(bak, ringStreamUsage, routerType, bak.bypassType, info.streamId);
-        } else {
-            desc = FetchMediaRenderDevice(bak, routerType, bak.bypassType, info.streamId);
-        }
-        descs.push_back(move(desc));
+        descs.push_back(FetchMediaOrToneRenderDevice(bak, clientUID, routerType, info.streamId));
     } else if (renderConfigMap_[streamUsage] == RING_RENDER_ROUTERS) {
         DealRingRenderRouters(descs, bak, routerType);
     } else if (renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS) {
@@ -322,6 +328,14 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         AUDIO_INFO_LOG("streamUsage %{public}d didn't config router strategy, skipped", streamUsage);
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
+    }
+    if (!descs.empty() && descs.front() != nullptr && IsBlockedDeviceForTransferCall(descs.front()) &&
+        AudioPipeManager::GetPipeManager()->HasTransferCallOrRingtoneStream() &&
+        streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        AUDIO_INFO_LOG("Render blocked by transfer call/ring, device %{public}d, fallback to default",
+            descs.front()->deviceType_);
+        descs.clear();
+        descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
     }
     if (audioDeviceRefinerCb_ != nullptr && !NeedSkipSelectAudioOutputDeviceRefined(bak.streamUsage, descs)) {
         bak.routerType = routerType;
@@ -332,6 +346,13 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     AudioPolicyDump::GetInstance().RecordBootStateTime(BootAnimationState::FETCH_OUTPUT_DEVICES, clientUID,
         ClockTime::GetCurMilli());
     return descs;
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesNoArbiter(
+    FetchDeviceInfo &info)
+{
+    std::lock_guard<std::mutex> lock(routerMutex_);
+    return FetchOutputDevicesInner(info);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevices(FetchDeviceInfo &info)

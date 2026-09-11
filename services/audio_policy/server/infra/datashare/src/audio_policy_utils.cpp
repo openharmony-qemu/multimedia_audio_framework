@@ -1039,6 +1039,19 @@ bool AudioPolicyUtils::CheckInterphone(StreamUsage usage, const shared_ptr<Audio
     return true;
 }
 
+bool AudioPolicyUtils::IsCallOrRingStreamUsage(StreamUsage streamUsage)
+{
+    return streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
+           streamUsage == STREAM_USAGE_INTERPHONE ||
+           streamUsage == STREAM_USAGE_RINGTONE ||
+           streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+           streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
+}
+
 int32_t AudioPolicyUtils::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);

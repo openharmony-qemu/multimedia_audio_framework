@@ -55,6 +55,8 @@ public:
 
     int32_t Enable(LoopbackType type, bool enable, int32_t pid);
 
+    int32_t NotifyStatus(LoopbackType type, int32_t status, int32_t pid);
+
     int32_t GetStatus(LoopbackType type, int &status, int32_t pid);
 
     int32_t GetVolume(LoopbackType type, float &volume, int32_t pid);
@@ -70,7 +72,7 @@ private:
 
     sptr<ILoopbackCallback> globalHandlerCallback_;
     int32_t handlerPid_ = -1;
-    AudioLoopbackStatus globalHandlerState_ = LOOPBACK_AVAILABLE_IDLE;
+    AudioLoopbackStatus globalHandlerState_ = LOOPBACK_UNAVAILABLE_SCENE;
 
     std::map<int32_t, sptr<LoopbackInServer>> globalControls_;
     std::map<int32_t, sptr<ILoopbackCallback>> globalControlCallbacks_;

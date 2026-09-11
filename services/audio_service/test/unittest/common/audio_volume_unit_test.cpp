@@ -1716,7 +1716,6 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_001, TestSize.Level1)
     uint32_t sessionId = 123;
     struct VolumeValues volumes = {0.0f, 1.0f, 0.0f, 0.0f, 0.0f};
     VolumeUtils::enforcedToneVolume_ = -1.0f;
-    AudioVolume::GetInstance()->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_SCO;
     float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_COMMUNICATION, TEST_PIPE_ID, &volumes);
     EXPECT_NE(volume, -1.0f);
 }
@@ -1732,7 +1731,6 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_002, TestSize.Level1)
     uint32_t sessionId = 123;
     struct VolumeValues volumes = {0.0f, 1.0f, 0.0f, 0.0f, 0.0f};
     VolumeUtils::enforcedToneVolume_ = -1.0f;
-    AudioVolume::GetInstance()->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_SCO;
     float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_COMMUNICATION, TEST_PIPE_ID, &volumes);
     EXPECT_NE(volume, -1.0f);
 }
@@ -1748,7 +1746,6 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_003, TestSize.Level1)
     uint32_t sessionId = 123;
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     VolumeUtils::enforcedToneVolume_ = -1.0f;
-    AudioVolume::GetInstance()->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_COMMUNICATION, TEST_PIPE_ID, &volumes);
     EXPECT_NE(volume, -1.0f);
 }
@@ -1764,7 +1761,6 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_004, TestSize.Level1)
     uint32_t sessionId = 123;
     struct VolumeValues volumes = {0.0f, 1.0f, 0.0f, 0.0f, 0.0f};
     VolumeUtils::enforcedToneVolume_ = -1.0f;
-    AudioVolume::GetInstance()->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_SCO;
     float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_RING, TEST_PIPE_ID, &volumes);
     EXPECT_NE(volume, -1.0f);
 }
@@ -1966,20 +1962,6 @@ HWTEST_F(AudioVolumeUnitTest, SetOffloadEnable_002, TestSize.Level1)
     AudioVolume::GetInstance()->offloadEnable_.clear();
     uint32_t ret = AudioVolume::GetInstance()->GetOffloadEnable(streamIndex);
     EXPECT_EQ(ret, 0);
-}
-
-/**
- * @tc.name  : Test AudioVolume API
- * @tc.type  : FUNC
- * @tc.number: GetCurrentActiveDevice_001
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, GetCurrentActiveDevice_001, TestSize.Level1)
-{
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    AudioVolume::GetInstance()->currentActiveDevice_ = deviceType;
-    DeviceType ret = AudioVolume::GetInstance()->GetCurrentActiveDevice();
-    EXPECT_EQ(ret, deviceType);
 }
 
 /**

@@ -565,18 +565,47 @@ void AudioActiveDevice::UpdateUidVolumeDeviceMapForEnhancedRouting()
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
     uidVolumeDeviceMap_.clear();
 
-    // update system prefer volume device
-    FetchDeviceInfo systemDeviceInfo = {STREAM_USAGE_MUSIC, SYSTEM_UID, "UpdateUidVolumeDeviceMap"};
-    auto devices = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(systemDeviceInfo);
-    if (!devices.empty()) {
-        uidVolumeDeviceMap_[SYSTEM_UID] = devices;
-    }
-
     // update app prefer volume device
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs =
         AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
     streamDescs.push_back(AudioPipeManager::GetPipeManager()->GetModemCommunicationStreamDescCopy());
 
+    UpdateSystemPreferredVolumeDevice(streamDescs);
+    UpdateAppPreferredVolumeDevice(streamDescs);
+}
+
+// Note: Only called by UpdateUidVolumeDeviceMapForEnhancedRouting
+void AudioActiveDevice::UpdateSystemPreferredVolumeDevice(
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+{
+    FetchDeviceInfo musicDeviceInfo = {STREAM_USAGE_MUSIC, SYSTEM_UID, "UpdateUidVolumeDeviceMap"};
+    auto devices = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(musicDeviceInfo);
+    if (!devices.empty()) {
+        uidVolumeDeviceMap_[SYSTEM_UID] = devices;
+    }
+
+    AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(true);
+    if (audioScene != AUDIO_SCENE_DEFAULT) {
+        FetchDeviceInfo voiceDeviceInfo = {STREAM_USAGE_VOICE_COMMUNICATION, SYSTEM_UID, "UpdateUidVolumeDeviceMap"};
+        auto devices = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevicesNoArbiter(voiceDeviceInfo);
+        CHECK_AND_RETURN_LOG(!devices.empty() && devices.front() != nullptr, "device is null");
+        for (auto &streamDesc : streamDescs) {
+            CHECK_AND_CONTINUE(streamDesc != nullptr);
+            CHECK_AND_CONTINUE(streamDesc->streamStatus_ == STREAM_STATUS_STARTED);
+            CHECK_AND_CONTINUE(AudioPolicyUtils::IsCallOrRingStreamUsage(streamDesc->rendererInfo_.streamUsage));
+            CHECK_AND_CONTINUE(!streamDesc->newDeviceDescs_.empty() && streamDesc->newDeviceDescs_.front() != nullptr);
+            if (streamDesc->newDeviceDescs_.front()->IsSameDeviceDesc(devices.front())) {
+                uidVolumeDeviceMap_[SYSTEM_UID] = devices;
+                break;
+            }
+        }
+    }
+}
+
+// Note: Only called by UpdateUidVolumeDeviceMapForEnhancedRouting
+void AudioActiveDevice::UpdateAppPreferredVolumeDevice(
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+{
     set<int32_t> uidSet = {};
     for (auto &streamDesc : streamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
@@ -819,8 +848,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolumeEnha
     }
 
     auto devices = GetUidVolumeDevicesForEnhancedRouting(appUid);
-    CHECK_AND_RETURN_RET_LOG(!devices.empty(), GetDeviceForVolumeEnhanced(SYSTEM_UID),
-        "no uid %{public}d in active", appUid);
+    CHECK_AND_RETURN_RET(!devices.empty(), GetDeviceForVolumeEnhanced(SYSTEM_UID));
     return devices.front();
 }
 

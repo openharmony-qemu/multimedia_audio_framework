@@ -290,6 +290,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchDupDevices_002, TestSize.Level1)
 HWTEST(AudioRouterCenterUnitTest, FetchRingRenderDevices_001, TestSize.Level1)
 {
     AudioRouterCenter audioRouterCenter;
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPublicDevices_.clear();
     StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
     int32_t clientUID = 1000;
     RouterType routerType;
@@ -1847,5 +1848,240 @@ HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_014, TestSize.Level1)
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_MIC);
 }
+/**
+ * @tc.name  : Test FetchMediaOrToneRenderDevice.
+ * @tc.number: FetchMediaOrToneRenderDevice_001
+ * @tc.desc  : Test FetchMediaOrToneRenderDevice falls to FetchMediaRenderDevice under default scene.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchMediaOrToneRenderDevice_001, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.mediaRenderRouters_.clear();
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    validDesc->deviceId_ = 100;
+    audioRouterCenter.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, validDesc));
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    auto result = audioRouterCenter.FetchOutputDevicesInner(info);
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name  : Test FetchMediaOrToneRenderDevice.
+ * @tc.number: FetchMediaOrToneRenderDevice_002
+ * @tc.desc  : Test FetchMediaOrToneRenderDevice follows ring strategy under RINGING scene.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchMediaOrToneRenderDevice_002, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.ringRenderRouters_.clear();
+
+    std::shared_ptr<AudioDeviceDescriptor> speakerDevice = std::make_shared<AudioDeviceDescriptor>();
+    speakerDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
+    speakerDevice->deviceId_ = 101;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringDevices;
+    ringDevices.push_back(speakerDevice);
+
+    audioRouterCenter.ringRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, nullptr, ringDevices));
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_RINGING;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+    info.privacyType = PRIVACY_TYPE_PUBLIC;
+
+    auto result = audioRouterCenter.FetchOutputDevicesInner(info);
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(result[0]->deviceId_, 101);
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+}
+
+/**
+ * @tc.name  : Test FetchOutputDevicesInner blocked device fallback.
+ * @tc.number: FetchOutputDevicesInner_BlockedDeviceFallback_001
+ * @tc.desc  : When blocked device is returned and transfer stream exists, fallback to default device.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchOutputDevicesInner_BlockedDeviceFallback_001, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.mediaRenderRouters_.clear();
+    auto blockedDesc = std::make_shared<AudioDeviceDescriptor>();
+    blockedDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    blockedDesc->deviceId_ = 50;
+    blockedDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioRouterCenter.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, blockedDesc));
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(1);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION;
+    audioPipeManager->modemCommunicationIdMap_[100001] = streamDesc;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    auto result = audioRouterCenter.FetchOutputDevicesInner(info);
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+}
+
+/**
+ * @tc.name  : Test FetchOutputDevicesInner blocked device no fallback.
+ * @tc.number: FetchOutputDevicesInner_BlockedDeviceFallback_002
+ * @tc.desc  : When blocked device is returned but no transfer stream exists, keep the blocked device.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchOutputDevicesInner_BlockedDeviceFallback_002, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.mediaRenderRouters_.clear();
+    auto blockedDesc = std::make_shared<AudioDeviceDescriptor>();
+    blockedDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    blockedDesc->deviceId_ = 50;
+    blockedDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioRouterCenter.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, blockedDesc));
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    auto result = audioRouterCenter.FetchOutputDevicesInner(info);
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+}
+
+/**
+ * @tc.name  : Test FetchOutputDevicesInner non-blocked device keeps it.
+ * @tc.number: FetchOutputDevicesInner_BlockedDeviceFallback_003
+ * @tc.desc  : When non-blocked device is returned, keep it even if transfer stream exists.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchOutputDevicesInner_BlockedDeviceFallback_003, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.mediaRenderRouters_.clear();
+    auto speakerDesc = std::make_shared<AudioDeviceDescriptor>();
+    speakerDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    speakerDesc->deviceId_ = 60;
+    speakerDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioRouterCenter.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, speakerDesc));
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(1);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION;
+    audioPipeManager->modemCommunicationIdMap_[100001] = streamDesc;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    auto result = audioRouterCenter.FetchOutputDevicesInner(info);
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+}
+
+/**
+ * @tc.name  : Test FetchOutputDevicesInner empty descs no fallback.
+ * @tc.number: FetchOutputDevicesInner_BlockedDeviceFallback_004
+ * @tc.desc  : When descs is empty, blocked device check is skipped.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchOutputDevicesInner_BlockedDeviceFallback_004, TestSize.Level1)
+{
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.mediaRenderRouters_.clear();
+    audioRouterCenter.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr));
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_NONE;
+    info.bypassType = ROUTER_TYPE_NONE;
+    info.caller = "test_caller";
+
+    auto result = audioRouterCenter.FetchOutputDevicesInner(info);
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_NONE);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

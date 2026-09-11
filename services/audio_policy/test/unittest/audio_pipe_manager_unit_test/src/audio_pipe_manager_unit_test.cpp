@@ -3154,5 +3154,409 @@ HWTEST_F(AudioPipeManagerUnitTest, GetPipeinfoById_002, TestSize.Level1)
     auto result = audioPipeManager->GetPipeinfoById(targetPipeId);
     EXPECT_NE(result, nullptr);
 }
+
+/**
+ * @tc.name: HasTransferCallOrRingtoneStream_001
+ * @tc.desc: Test HasTransferCallOrRingtoneStream when count <= 0, fast path returns false.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasTransferCallOrRingtoneStream_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+
+    EXPECT_FALSE(audioPipeManager->HasTransferCallOrRingtoneStream());
+}
+
+/**
+ * @tc.name: HasTransferCallOrRingtoneStream_002
+ * @tc.desc: Test HasTransferCallOrRingtoneStream when transfer communication stream exists in modem map.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasTransferCallOrRingtoneStream_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(1);
+
+    auto streamDesc = MakeCallStreamDesc(STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION, STREAM_STATUS_STOPPED);
+    audioPipeManager->modemCommunicationIdMap_[100001] = streamDesc;
+
+    EXPECT_TRUE(audioPipeManager->HasTransferCallOrRingtoneStream());
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+}
+
+/**
+ * @tc.name: HasTransferCallOrRingtoneStream_003
+ * @tc.desc: Test HasTransferCallOrRingtoneStream when transfer ringtone stream exists in pipe list.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasTransferCallOrRingtoneStream_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(1);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    EXPECT_TRUE(audioPipeManager->HasTransferCallOrRingtoneStream());
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+}
+
+/**
+ * @tc.name: HasTransferCallOrRingtoneStream_004
+ * @tc.desc: Test HasTransferCallOrRingtoneStream when count > 0 but no actual transfer streams exist, counter resets.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasTransferCallOrRingtoneStream_004, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(5);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    audioPipeManager->modemCommunicationIdMap_[100001] = streamDesc;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto otherDesc = std::make_shared<AudioStreamDescriptor>();
+    otherDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    pipeInfo->streamDescriptors_.push_back(otherDesc);
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    EXPECT_FALSE(audioPipeManager->HasTransferCallOrRingtoneStream());
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 0);
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name: HasTransferCallOrRingtoneStream_005
+ * @tc.desc: Test HasTransferCallOrRingtoneStream skips null streamDesc in modem map.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasTransferCallOrRingtoneStream_005, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(1);
+
+    audioPipeManager->modemCommunicationIdMap_[100001] = nullptr;
+
+    EXPECT_FALSE(audioPipeManager->HasTransferCallOrRingtoneStream());
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 0);
+    audioPipeManager->modemCommunicationIdMap_.clear();
+}
+
+/**
+ * @tc.name: HasTransferCallOrRingtoneStream_006
+ * @tc.desc: Test HasTransferCallOrRingtoneStream skips null pipeInfo in pipe list.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasTransferCallOrRingtoneStream_006, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(1);
+
+    audioPipeManager->curPipeList_.push_back(nullptr);
+
+    EXPECT_FALSE(audioPipeManager->HasTransferCallOrRingtoneStream());
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 0);
+    audioPipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name: AddStreamToPipe_TransferRingtone_IncrementCount
+ * @tc.desc: Test AddStreamToPipe increments transferCallOrRingtoneCount_ for TRANSFER_RINGTONE.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AddStreamToPipe_TransferRingtone_IncrementCount, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->id_ = 9001;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 100001;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
+
+    audioPipeManager->AddStreamToPipe(pipeInfo, streamDesc, PIPE_ACTION_NEW);
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 1);
+
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+}
+
+/**
+ * @tc.name: AddStreamToPipe_NonTransferRingtone_NoCountChange
+ * @tc.desc: Test AddStreamToPipe does not increment counter for non-TRANSFER_RINGTONE usage.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AddStreamToPipe_NonTransferRingtone_NoCountChange, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->id_ = 9002;
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 100002;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+
+    audioPipeManager->AddStreamToPipe(pipeInfo, streamDesc, PIPE_ACTION_NEW);
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 0);
+
+    audioPipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name: RemoveClient_TransferRingtone_DecrementCount
+ * @tc.desc: Test RemoveClient decrements transferCallOrRingtoneCount_ for TRANSFER_RINGTONE stream.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, RemoveClient_TransferRingtone_DecrementCount, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(1);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 100003;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    audioPipeManager->RemoveClient(100003);
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 0);
+
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+}
+
+/**
+ * @tc.name: RemoveClient_NonTransferRingtone_NoCountChange
+ * @tc.desc: Test RemoveClient does not decrement counter for non-TRANSFER_RINGTONE stream.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, RemoveClient_NonTransferRingtone_NoCountChange, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 100004;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    audioPipeManager->RemoveClient(100004);
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 0);
+
+    audioPipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name: RemoveClient_TransferRingtone_CountNotBelowZero
+ * @tc.desc: Test RemoveClient does not decrement counter below 0.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, RemoveClient_TransferRingtone_CountNotBelowZero, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 100005;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    audioPipeManager->curPipeList_.push_back(pipeInfo);
+
+    audioPipeManager->RemoveClient(100005);
+    EXPECT_GE(audioPipeManager->transferCallOrRingtoneCount_.load(), 0);
+
+    audioPipeManager->curPipeList_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+}
+
+/**
+ * @tc.name: AddModemCommunicationId_TransferCommunication_IncrementCount
+ * @tc.desc: Test AddModemCommunicationId increments counter for TRANSFER_COMMUNICATION.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AddModemCommunicationId_TransferCommunication_IncrementCount, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+
+    uint32_t sessionId = 100001;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION;
+    audioPipeManager->AddModemCommunicationId(sessionId, streamDesc);
+
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 1);
+
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+}
+
+/**
+ * @tc.name: AddModemCommunicationId_NullStream_NoCountChange
+ * @tc.desc: Test AddModemCommunicationId does not increment counter when streamDesc is nullptr.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AddModemCommunicationId_NullStream_NoCountChange, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+
+    uint32_t sessionId = 100001;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
+    audioPipeManager->AddModemCommunicationId(sessionId, streamDesc);
+
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 0);
+
+    audioPipeManager->modemCommunicationIdMap_.clear();
+}
+
+/**
+ * @tc.name: AddModemCommunicationId_NonTransferCommunication_NoCountChange
+ * @tc.desc: Test AddModemCommunicationId does not increment counter for non-TRANSFER_COMMUNICATION usage.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AddModemCommunicationId_NonTransferCommunication_NoCountChange, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+
+    uint32_t sessionId = 100001;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    audioPipeManager->AddModemCommunicationId(sessionId, streamDesc);
+
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 0);
+
+    audioPipeManager->modemCommunicationIdMap_.clear();
+}
+
+/**
+ * @tc.name: RemoveModemCommunicationId_TransferCommunication_DecrementCount
+ * @tc.desc: Test RemoveModemCommunicationId decrements counter for TRANSFER_COMMUNICATION.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, RemoveModemCommunicationId_TransferCommunication_DecrementCount, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(1);
+
+    uint32_t sessionId = 100001;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION;
+    audioPipeManager->modemCommunicationIdMap_[sessionId] = streamDesc;
+
+    audioPipeManager->RemoveModemCommunicationId(sessionId);
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 0);
+    EXPECT_EQ(audioPipeManager->modemCommunicationIdMap_.find(sessionId),
+        audioPipeManager->modemCommunicationIdMap_.end());
+
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+}
+
+/**
+ * @tc.name: RemoveModemCommunicationId_NullStream_NoCountChange
+ * @tc.desc: Test RemoveModemCommunicationId does not decrement counter when streamDesc is nullptr.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, RemoveModemCommunicationId_NullStream_NoCountChange, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(1);
+
+    uint32_t sessionId = 100001;
+    audioPipeManager->modemCommunicationIdMap_[sessionId] = nullptr;
+
+    audioPipeManager->RemoveModemCommunicationId(sessionId);
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 1);
+
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+}
+
+/**
+ * @tc.name: RemoveModemCommunicationId_NonTransferCommunication_NoCountChange
+ * @tc.desc: Test RemoveModemCommunicationId does not decrement counter for non-TRANSFER_COMMUNICATION usage.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, RemoveModemCommunicationId_NonTransferCommunication_NoCountChange, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(1);
+
+    uint32_t sessionId = 100001;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    audioPipeManager->modemCommunicationIdMap_[sessionId] = streamDesc;
+
+    audioPipeManager->RemoveModemCommunicationId(sessionId);
+    EXPECT_EQ(audioPipeManager->transferCallOrRingtoneCount_.load(), 1);
+
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+}
+
+/**
+ * @tc.name: RemoveModemCommunicationId_CountNotBelowZero
+ * @tc.desc: Test RemoveModemCommunicationId does not decrement counter below 0.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, RemoveModemCommunicationId_CountNotBelowZero, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+
+    uint32_t sessionId = 100001;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION;
+    audioPipeManager->modemCommunicationIdMap_[sessionId] = streamDesc;
+
+    audioPipeManager->RemoveModemCommunicationId(sessionId);
+    EXPECT_GE(audioPipeManager->transferCallOrRingtoneCount_.load(), 0);
+
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->transferCallOrRingtoneCount_.store(0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2514,6 +2514,60 @@ HWTEST_F(SessionEffectNodeThreadTest, flushDuringActive_restartsPreheatThread_jo
     }
 }
 
+// SE-CF-CB1: pending close crossfade consumed -> OnCloseCrossfadeDone fired exactly once
+// (mix skipped: ReadOutput returns 0, callback still fires — completion is unconditional)
+HWTEST_F(SessionEffectNodeStateTest, closeCrossfade_done_firesCallbackOnce, TestSize.Level0)
+{
+    EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
+    ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
+    size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
+    // Shadow the saturated EnterState expectation: the close drain yields no wet block,
+    // so the mix is skipped and the dry block passes through.
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::_))
+        .WillOnce(testing::Return(0));
+    EXPECT_CALL(*mockCallback_, OnCloseCrossfadeDone(TEST_SESSION_ID)).Times(1);
+    node_->StartCloseCrossfade();
+    ASSERT_TRUE(node_->IsCloseCrossfadePending());
+    node_->DoProcess();  // upstream pull -> SignalProcess -> ProcessCloseCrossfade
+    EXPECT_FALSE(node_->IsCloseCrossfadePending());
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+}
+
+// SE-CF-CB2: mix path — ReadOutput returns a full block -> still exactly one callback
+HWTEST_F(SessionEffectNodeStateTest, closeCrossfade_mixPath_firesCallbackOnce, TestSize.Level0)
+{
+    EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
+    size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
+    // ProcessCloseCrossfade drains without a skip pointer (skipCount = nullptr)
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::_))
+        .WillOnce(testing::Return(byteLen));
+    EXPECT_CALL(*mockCallback_, OnCloseCrossfadeDone(TEST_SESSION_ID)).Times(1);
+    node_->StartCloseCrossfade();
+    node_->DoProcess();
+    EXPECT_FALSE(node_->IsCloseCrossfadePending());
+}
+
+// SE-CF-CB3: CHECK early-exit path (config channel mismatch) -> callback still fires once
+HWTEST_F(SessionEffectNodeStateTest, closeCrossfade_earlyExit_firesCallbackOnce, TestSize.Level0)
+{
+    EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
+    node_->audioConfig_.inputCfg.channels = 4;  // inputCfg 4ch vs outputCfg 2ch -> config-mismatch early exit
+    EXPECT_CALL(*mockCallback_, OnCloseCrossfadeDone(TEST_SESSION_ID)).Times(1);
+    node_->StartCloseCrossfade();
+    node_->DoProcess();
+    EXPECT_FALSE(node_->IsCloseCrossfadePending());
+}
+
+// SE-CF-CB4: no pending (WARMING_UP node) -> no callback ever
+HWTEST_F(SessionEffectNodeStateTest, closeCrossfade_notPending_noCallback, TestSize.Level0)
+{
+    EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
+    EXPECT_CALL(*mockCallback_, OnCloseCrossfadeDone(TEST_SESSION_ID)).Times(0);
+    node_->StartCloseCrossfade();
+    ASSERT_FALSE(node_->IsCloseCrossfadePending());
+    node_->DoProcess();
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

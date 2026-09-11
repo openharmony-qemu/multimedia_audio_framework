@@ -20,6 +20,7 @@
 #include "va_device_broker_wrapper_impl.h"
 #include "va_device_controller_stub_impl.h"
 #include "iv_a_device_broker.h"
+#include "iservice_registry.h"
 
 #include "audio_errors.h"
 #include "audio_policy_log.h"

@@ -610,14 +610,236 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetVolumeReductionRatio_001, TestSize.Leve
     info->duckedDb = testDb;
 
     audioAdapterManager->lowerVolumeInfos_[STREAM_ALARM] = nullptr;
-    EXPECT_EQ(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 0);
+    EXPECT_EQ(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 1);
 
     audioAdapterManager->lowerVolumeInfos_[STREAM_ALARM] = info;
-    EXPECT_EQ(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 0);
+    EXPECT_EQ(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 1);
 
     info->duckedDb = testDb2;
     audioAdapterManager->lowerVolumeInfos_[STREAM_ALARM] = info;
     EXPECT_NE(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 0);
+}
+
+/**
+ * @tc.name: Test DepressMediaVolumeForHeadSet
+ * @tc.number: DepressMediaVolumeForHeadSet_001
+ * @tc.type: FUNC
+ * @tc.desc: media volume exceeds the product of limit and reduction, returns reduction
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressMediaVolumeForHeadSet_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    float result = audioAdapterManager->DepressMediaVolumeForHeadSet(0.6f, 0.5f, 1.0f);
+    EXPECT_FLOAT_EQ(result, 0.5f);
+}
+
+/**
+ * @tc.name: Test DepressMediaVolumeForHeadSet
+ * @tc.number: DepressMediaVolumeForHeadSet_002
+ * @tc.type: FUNC
+ * @tc.desc: zero volume limit returns reduction to avoid invalid division
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressMediaVolumeForHeadSet_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    float result = audioAdapterManager->DepressMediaVolumeForHeadSet(0.0f, 0.5f, 0.0f);
+    EXPECT_FLOAT_EQ(result, 0.5f);
+}
+
+/**
+ * @tc.name: Test DepressMediaVolumeForHeadSet
+ * @tc.number: DepressMediaVolumeForHeadSet_003
+ * @tc.type: FUNC
+ * @tc.desc: volume limit smaller than media volume with reduction larger than one, returns reduction
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressMediaVolumeForHeadSet_003, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    float result = audioAdapterManager->DepressMediaVolumeForHeadSet(0.5f, 1.5f, 0.4f);
+    EXPECT_FLOAT_EQ(result, 1.5f);
+}
+
+/**
+ * @tc.name: Test DepressMediaVolumeForHeadSet
+ * @tc.number: DepressMediaVolumeForHeadSet_004
+ * @tc.type: FUNC
+ * @tc.desc: normal path returns the ratio of media volume to volume limit
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressMediaVolumeForHeadSet_004, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    float result = audioAdapterManager->DepressMediaVolumeForHeadSet(0.4f, 0.8f, 1.0f);
+    EXPECT_FLOAT_EQ(result, 0.4f);
+}
+
+/**
+ * @tc.name: Test DepressMediaVolumeForHeadSet
+ * @tc.number: DepressMediaVolumeForHeadSet_005
+ * @tc.type: FUNC
+ * @tc.desc: ratio equals reduction at the boundary
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressMediaVolumeForHeadSet_005, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    float result = audioAdapterManager->DepressMediaVolumeForHeadSet(0.5f, 0.5f, 1.0f);
+    EXPECT_FLOAT_EQ(result, 0.5f);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: DepressVolume_NullDevice_001
+ * @tc.type: FUNC
+ * @tc.desc: null device descriptor leaves volume unchanged
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressVolume_NullDevice_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    float volume = 0.5f;
+    std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_MUSIC, desc);
+    EXPECT_FLOAT_EQ(volume, 0.5f);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: DepressVolume_SpecialStream_001
+ * @tc.type: FUNC
+ * @tc.desc: voice call assistant and ultrasonic streams are skipped before depressing
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressVolume_SpecialStream_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+    ASSERT_NE(desc, nullptr);
+    float volume = 0.5f;
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_VOICE_CALL_ASSISTANT, desc);
+    EXPECT_FLOAT_EQ(volume, 0.5f);
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_ULTRASONIC, desc);
+    EXPECT_FLOAT_EQ(volume, 0.5f);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: DepressVolume_DefaultScene_001
+ * @tc.type: FUNC
+ * @tc.desc: out of call resets limit to max and clamps volume to the limit
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressVolume_DefaultScene_001, TestSize.Level1)
+{
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+    ASSERT_NE(desc, nullptr);
+    float volume = 1.5f;
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_MUSIC, desc);
+    EXPECT_FLOAT_EQ(volume, AudioAdapterManager::MAX_STREAM_VOLUME);
+
+    float lowVolume = 0.5f;
+    audioAdapterManager->DepressVolume(lowVolume, TEST_VOLUME_LEVEL, STREAM_MUSIC, desc);
+    EXPECT_FLOAT_EQ(lowVolume, 0.5f);
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: DepressVolume_ReductionNonHeadset_001
+ * @tc.type: FUNC
+ * @tc.desc: in call non-headset device depresses volume by limit times reduction ratio
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressVolume_ReductionNonHeadset_001, TestSize.Level1)
+{
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+    ASSERT_NE(desc, nullptr);
+    audioAdapterManager->volumeLimit_ = 0.5f;
+
+    auto info = std::make_shared<LowerVolumeInfo>();
+    ASSERT_NE(info, nullptr);
+    info->streamType = STREAM_RING;
+    info->duckedDb = -6;
+    audioAdapterManager->lowerVolumeInfos_[info->streamType] = info;
+
+    float volume = 0.6f;
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_RING, desc);
+    float reduction = audioAdapterManager->GetVolumeReductionRatio(STREAM_RING);
+    EXPECT_FLOAT_EQ(volume, 0.5f * reduction);
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: DepressVolume_ScoHeadset_001
+ * @tc.type: FUNC
+ * @tc.desc: in call bluetooth sco headset depresses media volume through headset path
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressVolume_ScoHeadset_001, TestSize.Level1)
+{
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+    ASSERT_NE(desc, nullptr);
+    DeviceType oldType = desc->deviceType_;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioAdapterManager->isVgsVolumeSupported_ = true;
+    audioAdapterManager->volumeLimit_ = 0.5f;
+
+    auto info = std::make_shared<LowerVolumeInfo>();
+    ASSERT_NE(info, nullptr);
+    info->streamType = STREAM_MUSIC;
+    info->duckedDb = -6;
+    audioAdapterManager->lowerVolumeInfos_[info->streamType] = info;
+
+    float volume = 0.6f;
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_MUSIC, desc);
+    EXPECT_FLOAT_EQ(volume, audioAdapterManager->GetVolumeReductionRatio(STREAM_MUSIC));
+
+    desc->deviceType_ = oldType;
+    audioAdapterManager->isVgsVolumeSupported_ = false;
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: DepressVolume_NearlinkHeadset_001
+ * @tc.type: FUNC
+ * @tc.desc: in call nearlink headset depresses media volume through headset path
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, DepressVolume_NearlinkHeadset_001, TestSize.Level1)
+{
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+    ASSERT_NE(desc, nullptr);
+    DeviceType oldType = desc->deviceType_;
+    desc->deviceType_ = DEVICE_TYPE_NEARLINK;
+    audioAdapterManager->isSleVoiceStatus_ = true;
+    audioAdapterManager->volumeLimit_ = 0.5f;
+
+    auto info = std::make_shared<LowerVolumeInfo>();
+    ASSERT_NE(info, nullptr);
+    info->streamType = STREAM_MUSIC;
+    info->duckedDb = -6;
+    audioAdapterManager->lowerVolumeInfos_[info->streamType] = info;
+
+    float volume = 0.6f;
+    audioAdapterManager->DepressVolume(volume, TEST_VOLUME_LEVEL, STREAM_MUSIC, desc);
+    EXPECT_FLOAT_EQ(volume, audioAdapterManager->GetVolumeReductionRatio(STREAM_MUSIC));
+
+    desc->deviceType_ = oldType;
+    audioAdapterManager->isSleVoiceStatus_ = false;
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
 }
 
 /**
@@ -1776,6 +1998,86 @@ HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_012, TestSize
     EXPECT_EQ(volumeDb, MAX_VOLUME_DB_VALUE);
     audioAdapterManager->audioActiveDevice_.activeOutputDevices_.clear();
     audioAdapterManager->isVgsVolumeSupported_ = false;
+}
+
+/**
+ * @tc.name: Is3daDirectBusPort_001
+ * @tc.desc: Test Is3daDirectBusPort matches the 3da keyword in the module name.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, Is3daDirectBusPort_001, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    info.name = "bus10_3da_out"; // boot xml module name
+    info.busAddress = "";
+    EXPECT_TRUE(AudioAdapterManager::Is3daDirectBusPort(info));
+
+    info.name = "mixport_bus11_3da_out"; // play-time new-pipe module name
+    EXPECT_TRUE(AudioAdapterManager::Is3daDirectBusPort(info));
+}
+
+/**
+ * @tc.name: Is3daDirectBusPort_002
+ * @tc.desc: Test Is3daDirectBusPort matches the 3da keyword in the bus address only.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, Is3daDirectBusPort_002, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    info.name = "primary";
+    info.busAddress = "bus10_3da_out";
+    EXPECT_TRUE(AudioAdapterManager::Is3daDirectBusPort(info));
+}
+
+/**
+ * @tc.name: Is3daDirectBusPort_003
+ * @tc.desc: Test Is3daDirectBusPort returns false for non-3da and empty fields.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, Is3daDirectBusPort_003, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    info.name = "speaker";
+    info.busAddress = "bus1_out";
+    EXPECT_FALSE(AudioAdapterManager::Is3daDirectBusPort(info));
+
+    info.name = "";
+    info.busAddress = "";
+    EXPECT_FALSE(AudioAdapterManager::Is3daDirectBusPort(info));
+}
+
+/**
+ * @tc.name: ConvergeTo3daSink_001
+ * @tc.desc: Test ConvergeTo3daSink takes the bus address as deviceClass with the fixed 3DA idInfo.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, ConvergeTo3daSink_001, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    info.name = "mixport_bus11_3da_out";
+    info.busAddress = "bus10_3da_out";
+    std::string deviceClass = "primary";
+    std::string idInfo = HDI_ID_INFO_DEFAULT;
+    AudioAdapterManager::ConvergeTo3daSink(info, deviceClass, idInfo);
+    EXPECT_EQ(deviceClass, "bus10_3da_out");
+    EXPECT_EQ(idInfo, HDI_ID_INFO_3DA);
+}
+
+/**
+ * @tc.name: ConvergeTo3daSink_002
+ * @tc.desc: Test ConvergeTo3daSink falls back to the module name when busAddress is empty.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, ConvergeTo3daSink_002, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    info.name = "bus10_3da_out";
+    info.busAddress = "";
+    std::string deviceClass = "";
+    std::string idInfo = "";
+    AudioAdapterManager::ConvergeTo3daSink(info, deviceClass, idInfo);
+    EXPECT_EQ(deviceClass, "bus10_3da_out");
+    EXPECT_EQ(idInfo, HDI_ID_INFO_3DA);
 }
 
 /**

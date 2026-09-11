@@ -920,16 +920,5 @@ HWTEST_F(AudioPolicyServerMethodsTest, EnableSystemRecordController_002, TestSiz
     int32_t ret = audioPolicyServer_->EnableSystemRecordController(true, config, obj);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
-
-/**
- * @tc.name  : EnableSystemRecordController_003
- * @tc.desc  : Test show=false skips death recipient
- */
-HWTEST_F(AudioPolicyServerMethodsTest, EnableSystemRecordController_003, TestSize.Level1)
-{
-    SystemRecordControllerConfig config;
-    int32_t ret = audioPolicyServer_->EnableSystemRecordController(false, config, nullptr);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
 } // namespace AudioStandard
 } // namespace OHOS

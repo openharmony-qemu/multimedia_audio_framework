@@ -30,6 +30,8 @@ AudioSettingProvider* AudioSettingProvider::instance_;
 std::mutex AudioSettingProvider::mutex_;
 std::atomic<bool> AudioSettingProvider::isDataShareReady_ = false;
 sptr<IRemoteObject> AudioSettingProvider::remoteObj_;
+std::map<std::string, sptr<AudioSettingObserver>> AudioSettingProvider::registeredObservers_;
+std::mutex AudioSettingProvider::observerMutex_;
 
 const std::string SETTING_COLUMN_KEYWORD = "KEYWORD";
 const std::string SETTING_COLUMN_VALUE = "VALUE";
@@ -280,6 +282,17 @@ ErrCode AudioSettingProvider::RegisterObserver(const sptr<AudioSettingObserver> 
     std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
     CHECK_AND_RETURN_RET_LOG(observer != nullptr, ERR_NO_INIT, "observer is nullptr");
     auto uri = AssembleUri(observer->GetKey(), tableType);
+    std::string uriStr = uri.ToString();
+    // Check if already registered ,Not to repeated registration
+    {
+        std::lock_guard<std::mutex> lock(observerMutex_);
+        auto it = registeredObservers_.find(uriStr);
+        if (it != registeredObservers_.end()) {
+            AUDIO_INFO_LOG("Observer for %{public}s already registered, skip", uriStr.c_str());
+            IPCSkeleton::SetCallingIdentity(callingIdentity);
+            return ERR_OK;
+        }
+    }
     if (!isDataShareReady_) {
         AUDIO_WARNING_LOG("DataShareHelper is not ready");
         IPCSkeleton::SetCallingIdentity(callingIdentity);
@@ -296,6 +309,11 @@ ErrCode AudioSettingProvider::RegisterObserver(const sptr<AudioSettingObserver> 
     std::thread execCb(execFirCb);
     execCb.detach();
     ReleaseDataShareHelper(helper);
+    // Add to registered observers map after successful registration
+    {
+        std::lock_guard<std::mutex> lock(observerMutex_);
+        registeredObservers_[uriStr] = observer;
+    }
     IPCSkeleton::SetCallingIdentity(callingIdentity);
     AUDIO_DEBUG_LOG("succeed to register observer of uri=%{public}s", uri.ToString().c_str());
     return ERR_OK;
@@ -306,6 +324,12 @@ ErrCode AudioSettingProvider::UnregisterObserver(const sptr<AudioSettingObserver
     std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
     auto uri = AssembleUri(observer->GetKey(), tableType);
     auto helper = CreateDataShareHelper(tableType);
+    std::string uriStr = uri.ToString();
+    // Remove from registered observers map
+    {
+        std::lock_guard<std::mutex> lock(observerMutex_);
+        registeredObservers_.erase(uriStr);
+    }
     if (helper == nullptr) {
         IPCSkeleton::SetCallingIdentity(callingIdentity);
         return ERR_NO_INIT;

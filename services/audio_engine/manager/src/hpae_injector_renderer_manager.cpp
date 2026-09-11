@@ -560,10 +560,7 @@ int32_t HpaeInjectorRendererManager::SetLoudnessGain(uint32_t sessionId, float l
 
 void HpaeInjectorRendererManager::SendRequest(Request &&request, const std::string &funcName, bool isInit)
 {
-    if (!isInit && !IsInit()) {
-        AUDIO_ERR_LOG("HpaeInjectorRendererManager not init, %{public}s excute failed", funcName.c_str());
-        return;
-    }
+    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ Injector is nullptr");
     hpaeNoLockQueue_.PushRequest(std::move(request));
     hpaeSignalProcessThread_->Notify();
 }

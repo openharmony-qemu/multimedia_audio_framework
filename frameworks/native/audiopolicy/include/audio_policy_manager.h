@@ -632,6 +632,10 @@ public:
 
     int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
 
+    int32_t ExcludeUidForExtZone(int32_t uid);
+
+    int32_t UnexcludeUidForExtZone(int32_t uid);
+
     void SetZoneDeviceVisible(bool visible);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
@@ -865,6 +869,7 @@ private:
     int32_t RemoveAllSystemVolumeChangeCallbackInfo();
     int32_t CheckAudioPolicyClientRegisted();
     void RecoverSystemVolumeChangeByFilterCallback(const sptr<IAudioPolicy> &gsp);
+    void NotifyAudioSeparationEffectDisabledForServerDied();
 
     std::mutex listenerStubMutex_;
     std::mutex registerCallbackMutex_;

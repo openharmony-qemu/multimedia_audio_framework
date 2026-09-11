@@ -246,6 +246,47 @@ void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInf
     return;
 }
 
+// Layout-channel consistency check for 3DA direct (no AudioVivid exemption):
+// popcount for positional layouts, (order + 1) * (order + 1) for HOA layouts.
+static bool Is3DAChannelLayoutMatched(uint8_t channels, uint64_t channelLayout)
+{
+    CHECK_AND_RETURN_RET(channelLayout != CH_LAYOUT_UNKNOWN, false);
+    if (((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) == 0) {
+        return __builtin_popcountll(channelLayout) == static_cast<int32_t>(channels);
+    }
+    uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
+    return ((order + 1) * (order + 1)) == static_cast<uint64_t>(channels);
+}
+
+// 3DA direct bypasses MCR conversion, so layout must match stream geometry: adopt the
+// first layout consistent with channels (channelLayout, then remoteChannelLayout), else
+// the default layout map; reject when none matches. Writes the adopted layout back to
+// both param copies so GetAudioStreamInfo readback stays consistent.
+static int32_t Adopt3DAChannelLayout(AudioStreamParams &curStreamParams,
+    AudioStreamParams &streamParams, const AudioStreamParams &info)
+{
+    uint8_t channels3DA = curStreamParams.channels;
+    uint64_t layout3DA = curStreamParams.channelLayout;
+    const char *layoutSource = "adopted";
+    if (!Is3DAChannelLayoutMatched(channels3DA, layout3DA)) {
+        layout3DA = info.remoteChannelLayout;
+        layoutSource = "remote";
+    }
+    if (!Is3DAChannelLayoutMatched(channels3DA, layout3DA)) {
+        layout3DA = IAudioStream::ConvertChannelsToDefaultChannelLayout(
+            static_cast<AudioChannel>(channels3DA), CH_LAYOUT_UNKNOWN);
+        layoutSource = "defaulted";
+    }
+    CHECK_AND_RETURN_RET_LOG(Is3DAChannelLayoutMatched(channels3DA, layout3DA),
+        ERR_NOT_SUPPORTED, "3DA direct layout mismatch, channels:%{public}u layout:%{public}" PRIx64,
+        channels3DA, layout3DA);
+    curStreamParams.channelLayout = layout3DA;
+    streamParams.channelLayout = layout3DA;
+    AUDIO_INFO_LOG("3DA direct layout %{public}s, channels:%{public}u layout:%{public}" PRIx64,
+        layoutSource, channels3DA, layout3DA);
+    return SUCCESS;
+}
+
 int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj,
     const AudioPlaybackCaptureConfig &config)
@@ -278,9 +319,8 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 
         AUDIO_INFO_LOG("rendererInfo rendererFlags: %{public}u", rendererInfo_.rendererFlags);
         if (rendererInfo_.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
-            curStreamParams_.channelLayout = (std::find(cfg.supportOutChannelLayout.begin(),
-            cfg.supportOutChannelLayout.end(), cfg.outChannelLayout) != cfg.supportOutChannelLayout.end()) ?\
-            cfg.outChannelLayout : CH_LAYOUT_5POINT1POINT2;
+            CHECK_AND_RETURN_RET(Adopt3DAChannelLayout(curStreamParams_, streamParams_, info)
+                == SUCCESS, ERR_NOT_SUPPORTED);
         } else {
             converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
         }

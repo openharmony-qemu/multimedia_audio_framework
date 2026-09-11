@@ -204,6 +204,7 @@ void HpaeOffloadRendererManager::DeleteInputSession(SessionEffectMoveMode moveMo
 {
     // Invalidate any deferred Create so a stale retry cannot (re)materialize a node after teardown.
     CancelPendingSessionEffectCreate(sessionEffectSessionId_);
+    ClearPendingSessionEffectClose();
     if (sessionEffectNode_ != nullptr) {
         sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
     }
@@ -455,6 +456,9 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId, bool isStandby)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Pause not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Pause sessionId %{public}u", sessionId);
+        // SE close-crossfade waiting on its callback: finalize now — TearDownCurrentNodePipeline
+        // stops pulling the chain; the close cannot be guaranteed to complete before then.
+        FinalizePendingSessionEffectClose(sessionId);
         auto state = curNode_->GetState();
         bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         node->SetState(HPAE_SESSION_PAUSED);
@@ -550,6 +554,9 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Stop not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Stop sessionId %{public}u", sessionId);
+        // SE close-crossfade waiting on its callback: finalize now — TearDownCurrentNodePipeline
+        // stops pulling the chain; the close cannot be guaranteed to complete before then.
+        FinalizePendingSessionEffectClose(sessionId);
         auto state = curNode_->GetState();
         bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         node->SetState(HPAE_SESSION_STOPPED);
@@ -1288,34 +1295,37 @@ int32_t HpaeOffloadRendererManager::RemoveSessionEffectNode(bool finalizeNow)
         curNode_->RewindHistoryBuffer(latency);
     }
 
-    // Enter STOPPING: the next Process() (between this and the next HandleMsg) gets one
-    // aligned wet->dry crossfade opportunity if the chain is pulled. FinalizeClose, queued
-    // for the next HandleMsg batch (or directly below when finalizeNow), owns the actual node
-    // deletion (never inside DoProcess).
+    // Enter STOPPING: the next Process() (between this and the next HandleMsg) gets one aligned
+    // wet->dry crossfade opportunity if the chain is pulled. FinalizeClose — direct when
+    // finalizeNow or no crossfade pending, else deferred to the OnCloseCrossfadeDone callback —
+    // owns the actual node deletion (never inside DoProcess).
     closingNode->StartCloseCrossfade();
     std::weak_ptr<HpaeSessionEffectNode> weakClosingNode = closingNode;
-    if (finalizeNow) {
-        // Switch path ("open new"): finalize inside this same request (BeginClose above) so a
-        // Create queued right behind us sees no leftover node. Skips the crossfade-drain batch.
+    bool crossfadePending = closingNode->IsCloseCrossfadePending();
+    if (finalizeNow || !crossfadePending) {
+        // Switch path ("open new"), or a non-ACTIVE node with no crossfade armed: finalize
+        // inside this same request so a Create queued right behind us sees no leftover node.
         FinalizeSessionEffectClose(sessionId, weakClosingNode);
     } else {
-        Request finalize = [this, sessionId, weakClosingNode]() {
-            FinalizeSessionEffectClose(sessionId, weakClosingNode);
-        };
-        hpaeNoLockQueue_.PushRequest(std::move(finalize));
-        if (hpaeSignalProcessThread_ != nullptr) {
-            hpaeSignalProcessThread_->Notify();
-        }
+        // Smooth close: ProcessCloseCrossfade completes on the next pull and calls back
+        // OnCloseCrossfadeDone, which finalizes on the HandleMsg thread. Record the identity
+        // token so a late callback cannot finalize a different (newer) node.
+        pendingCloseNode_ = weakClosingNode;
+        pendingCloseSessionId_ = sessionId;
     }
-    AUDIO_INFO_LOG("RemoveSessionEffectNode: session %{public}u BeginClose (finalizeNow=%{public}d), "
-        "latency=%" PRIu64,
-        sessionId, static_cast<int32_t>(finalizeNow), latency);
+    AUDIO_INFO_LOG("RemoveSessionEffectNode: session %{public}u BeginClose (finalizeNow=%{public}d, "
+        "crossfadePending=%{public}d), latency=%" PRIu64,
+        sessionId, static_cast<int32_t>(finalizeNow), static_cast<int32_t>(crossfadePending), latency);
     return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
 }
 
 void HpaeOffloadRendererManager::FinalizeSessionEffectClose(uint32_t sessionId,
     const std::weak_ptr<HpaeSessionEffectNode> &closingNode)
 {
+    // Any finalize attempt ends the pending-close window for this session.
+    if (pendingCloseSessionId_ == sessionId) {
+        ClearPendingSessionEffectClose();
+    }
     auto node = closingNode.lock();
     // Identity check: no-op if the closing node was already replaced/destroyed
     // (DestroyStream, DeleteInputSession, Reload, or a replayed/recreated node).
@@ -1365,6 +1375,35 @@ void HpaeOffloadRendererManager::FinalizeSessionEffectClose(uint32_t sessionId,
         sessionId, static_cast<int32_t>(sameInstanceReuse));
 }
 
+void HpaeOffloadRendererManager::ClearPendingSessionEffectClose()
+{
+    pendingCloseNode_.reset();
+    pendingCloseSessionId_ = 0;
+}
+
+bool HpaeOffloadRendererManager::FinalizePendingSessionEffectClose(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET(pendingCloseSessionId_ == sessionId && !pendingCloseNode_.expired(), false);
+    auto closingNode = pendingCloseNode_.lock();
+    ClearPendingSessionEffectClose();
+    if (closingNode == nullptr || sessionEffectNode_ != closingNode) {
+        AUDIO_WARNING_LOG("PendingClose identity mismatch: session %{public}u", sessionId);
+        return false;
+    }
+    FinalizeSessionEffectClose(sessionId, closingNode);
+    return true;
+}
+
+void HpaeOffloadRendererManager::OnCloseCrossfadeDone(uint32_t sessionId)
+{
+    auto request = [this, sessionId]() {
+        bool finalized = FinalizePendingSessionEffectClose(sessionId);
+        AUDIO_INFO_LOG("CloseCrossfadeDone: session %{public}u finalized=%{public}d",
+            sessionId, static_cast<int32_t>(finalized));
+    };
+    SendRequest(request, __func__);
+}
+
 uint64_t HpaeOffloadRendererManager::SetPendingSessionEffectCreate(uint32_t sessionId,
     const std::shared_ptr<IEffectInstance> &instance)
 {
@@ -1404,6 +1443,7 @@ void HpaeOffloadRendererManager::DetachSessionEffectNodeForReload()
     // Do NOT clear attach state — it must survive reload so ConnectInputSession can re-materialize.
     // Only reset the physical cache (node + sessionId).
     CancelPendingSessionEffectCreate(sessionEffectSessionId_);
+    ClearPendingSessionEffectClose();
     if (sessionEffectNode_ != nullptr) {
         // Reload runs on SignalProcessThread after DisConnectInputSession has removed this node
         // from the processing chain, so CloseSessionEffectCore only resets local runtime state.
@@ -1525,12 +1565,13 @@ int32_t HpaeOffloadRendererManager::DestroySessionEffect(uint32_t sessionId, boo
     // Remove active physical SE node if materialized for this session
     if (sessionEffectSessionId_ == sessionId && sessionEffectNode_ != nullptr) {
         if (sessionEffectNode_->GetStatus() == HpaeSessionEffectNode::STATUS::STOPPING) {
-            // Close already begun (BeginClose already queued FinalizeClose). Re-BeginClose would
-            // double-rewind and queue a duplicate Finalize; just cancel any deferred recreate.
+            // Close already begun (BeginClose is waiting on the crossfade callback). Re-BeginClose
+            // would double-rewind and duplicate the Finalize; just cancel any deferred recreate.
             CancelPendingSessionEffectCreate(sessionId);
             if (finalizeNow) {
-                // Earlier BeginClose queued a Finalize; run it now so the teardown completes
-                // before the new session's Create (queued copy no-ops on the identity check).
+                // Earlier BeginClose is waiting on its callback; run the Finalize now so the
+                // teardown completes before the new session's Create (the late callback no-ops
+                // on the cleared token).
                 FinalizeSessionEffectClose(sessionId, sessionEffectNode_);
             }
             AUDIO_INFO_LOG("DestroySessionEffect: session %{public}u already STOPPING, skip re-Begin",

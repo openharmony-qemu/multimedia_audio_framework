@@ -72,6 +72,7 @@ ohos_shared_library("audio_engine_utils") {
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+  version_script = "libaudio_engine_utils.versionscript"
 }
 
 config("audio_engine_plugins_config") {
@@ -131,6 +132,7 @@ ohos_shared_library("audio_engine_plugins") {
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+  version_script = "libaudio_engine_plugins.versionscript"
 }
 
 config("audio_engine_node_config") {
@@ -256,6 +258,7 @@ ohos_shared_library("audio_engine_node") {
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+  version_script = "libaudio_engine_node.versionscript"
 }
 
 audio_ohos_library("hpae_engine_manager") {
@@ -333,6 +336,7 @@ audio_ohos_library("hpae_engine_manager") {
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+  version_script = "libhpae_engine_manager.versionscript"
 }
 
 ohos_shared_library("audio_engine_monitor") {
@@ -360,4 +364,5 @@ ohos_shared_library("audio_engine_monitor") {
   ]
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+  version_script = "libaudio_engine_monitor.versionscript"
 }

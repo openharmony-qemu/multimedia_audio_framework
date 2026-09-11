@@ -282,17 +282,17 @@ int32_t HpaeRenderEffectNode::AudioRendererRelease(HpaeNodeInfo &nodeInfo)
 
 int32_t HpaeRenderEffectNode::AudioOffloadRendererCreate(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(OffloadRendererCheckNotifyEffect(sinkInfo) == true,
+    CHECK_AND_RETURN_RET_LOG(OffloadRendererCheckNotifyEffect(sinkInfo, true) == true,
         ERR_INVALID_HANDLE, "no need to create");
 
-    int32_t ret = CreateAudioEffectChain(nodeInfo);
+    int32_t ret = CreateAudioEffectChain(nodeInfo, true);
     AUDIO_WARNING_LOG("out, ret: %{public}d", ret);
     return SUCCESS;
 }
 
 int32_t HpaeRenderEffectNode::AudioOffloadRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(OffloadRendererCheckNotifyEffect(sinkInfo) == true,
+    CHECK_AND_RETURN_RET_LOG(OffloadRendererCheckNotifyEffect(sinkInfo, true) == true,
         ERR_INVALID_HANDLE, "no need to start");
 
     ModifyAudioEffectChainInfo(nodeInfo, ADD_AUDIO_EFFECT_CHAIN_INFO);
@@ -301,7 +301,7 @@ int32_t HpaeRenderEffectNode::AudioOffloadRendererStart(HpaeNodeInfo &nodeInfo, 
 
 int32_t HpaeRenderEffectNode::AudioOffloadRendererStop(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(OffloadRendererCheckNotifyEffect(sinkInfo) == true,
+    CHECK_AND_RETURN_RET_LOG(OffloadRendererCheckNotifyEffect(sinkInfo, false) == true,
         ERR_INVALID_HANDLE, "no need to stop");
 
     ModifyAudioEffectChainInfo(nodeInfo, REMOVE_AUDIO_EFFECT_CHAIN_INFO);
@@ -310,27 +310,30 @@ int32_t HpaeRenderEffectNode::AudioOffloadRendererStop(HpaeNodeInfo &nodeInfo, c
 
 int32_t HpaeRenderEffectNode::AudioOffloadRendererRelease(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(OffloadRendererCheckNotifyEffect(sinkInfo) == true,
+    CHECK_AND_RETURN_RET_LOG(OffloadRendererCheckNotifyEffect(sinkInfo, false) == true,
         ERR_INVALID_HANDLE, "no need to release");
 
-    int32_t ret = ReleaseAudioEffectChain(nodeInfo);
+    int32_t ret = ReleaseAudioEffectChain(nodeInfo, true);
     AUDIO_WARNING_LOG("out, ret: %{public}d", ret);
     ModifyAudioEffectChainInfo(nodeInfo, REMOVE_AUDIO_EFFECT_CHAIN_INFO);
     return SUCCESS;
 }
 
-bool HpaeRenderEffectNode::OffloadRendererCheckNotifyEffect(const HpaeSinkInfo &sinkInfo)
+bool HpaeRenderEffectNode::OffloadRendererCheckNotifyEffect(const HpaeSinkInfo &sinkInfo,
+    bool isPcmOffload)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager->GetOffloadEnabled() == true, false,
-        "no effect offload scene");
+    if (isPcmOffload == true) {
+        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager->GetOffloadEnabled() == true, false,
+            "no effect offload scene");
+    }
     CHECK_AND_RETURN_RET_LOG(sinkInfo.deviceClass != "remote_offload", false, "no need notify effectChainManager");
 
     return true;
 }
 
-int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
+int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo, bool isPcmOffload)
 {
     AUDIO_INFO_LOG("sessionID is %{public}u, sceneType is %{public}d",
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
@@ -352,7 +355,9 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
         return SUCCESS;
     }
     audioEffectChainManager->UpdateSceneTypeList(sceneType, ADD_SCENE_TYPE);
-    if (audioEffectChainManager->GetOffloadEnabled()) {
+    if (audioEffectChainManager->GetOffloadEnabled() || isPcmOffload == true) {
+        AUDIO_INFO_LOG("no need continue, offloadEnable: %{public}d, isPcmOffload: %{public}d",
+            audioEffectChainManager->GetOffloadEnabled(), isPcmOffload);
         return SUCCESS;
     }
     int32_t ret;
@@ -372,7 +377,7 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
     return SUCCESS;
 }
 
-int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo)
+int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo, bool isPcmOffload)
 {
     AUDIO_INFO_LOG("sessionID is %{public}u, sceneType is %{public}d",
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
@@ -394,7 +399,9 @@ int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo)
         return SUCCESS;
     }
     audioEffectChainManager->UpdateSceneTypeList(sceneType, REMOVE_SCENE_TYPE);
-    if (audioEffectChainManager->GetOffloadEnabled()) {
+    if (audioEffectChainManager->GetOffloadEnabled() || isPcmOffload == true) {
+        AUDIO_INFO_LOG("no need continue, offloadEnable: %{public}d, isPcmOffload: %{public}d",
+            audioEffectChainManager->GetOffloadEnabled(), isPcmOffload);
         return SUCCESS;
     }
     int32_t ret;

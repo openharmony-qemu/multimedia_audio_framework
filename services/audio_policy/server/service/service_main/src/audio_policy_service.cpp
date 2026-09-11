@@ -98,12 +98,6 @@ bool AudioPolicyService::Init(void)
     audioGlobalConfigManager_.ParseGlobalConfigXml();
     RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_POLICY_GLOBAL_CONFIG, ClockTime::GetCurMilli());
 
-#ifdef FEATURE_DTMF_TONE
-    bool ret = audioToneManager_.LoadToneDtmfConfig();
-    RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_TONE_DTMF_CONFIG, ClockTime::GetCurMilli());
-    CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Tone Load Configuration failed");
-#endif
-
     CreateRecoveryThread();
     std::string versionType = OHOS::system::GetParameter("const.logsystem.versiontype", "commercial");
     AudioDump::GetInstance().SetVersionType(versionType);
@@ -587,6 +581,16 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
 
     deviceInfo.audioStreamInfo_ = {targetStreamInfo};
     deviceInfo.deviceName_ = "mmap_device";
+    if (config.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
+        // 3DA direct: the cabin sink passes attr.address to HDI CreateRender as the port
+        // descriptor, and the pin-based fallback would always land on Speaker. Use the
+        // 3da bus port address instead of the mmap placeholder; without a 3da pipe (e.g.
+        // phone UT environment) keep the placeholder so behavior stays unchanged.
+        std::string busAddress = coreService->Get3daDirectBusAddress();
+        if (!busAddress.empty()) {
+            deviceInfo.deviceName_ = busAddress;
+        }
+    }
     audioRouteMap_.GetNetworkIDInFastRouterMap(config.appInfo.appUid, deviceInfo.deviceRole_, deviceInfo.networkId_);
     deviceInfo.a2dpOffloadFlag_ = GetA2dpOffloadFlag();
     return SUCCESS;

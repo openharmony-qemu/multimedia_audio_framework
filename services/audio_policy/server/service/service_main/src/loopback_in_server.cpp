@@ -49,6 +49,16 @@ int32_t LoopbackInServer::Enable(bool enable, int32_t &ret)
     return SUCCESS;
 }
 
+int32_t LoopbackInServer::NotifyStatus(int32_t status, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(type_ == LOOPBACK_TYPE_GLOBAL_HANDLER, ERR_INVALID_HANDLE, "not handler");
+    auto manager = manager_.lock();
+    CHECK_AND_RETURN_RET_LOG(manager != nullptr, ERR_OPERATION_FAILED, "manager_ is nullptr");
+
+    ret = manager->NotifyStatus(type_, status, pid_);
+    return SUCCESS;
+}
+
 int32_t LoopbackInServer::GetStatus(int32_t &status, int32_t &ret)
 {
     AUDIO_DEBUG_LOG("LoopbackInServer::GetStatus, type %{public}d", static_cast<int32_t>(type_));

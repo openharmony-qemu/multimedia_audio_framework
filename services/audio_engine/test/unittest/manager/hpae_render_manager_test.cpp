@@ -2502,6 +2502,54 @@ HWTEST_F(HpaeRendererManagerTest, ConnectInputCluster_001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: Test ConnectInputCluster conditional fade arming
+ * @tc.type: FUNC
+ * @tc.number: ConnectInputCluster_002
+ * @tc.desc: A cleanly playing session keeps gain continuity on reconnect (fade-in NOT armed);
+ *           a node resuming from a fade lifecycle (stale DONE_FADEOUT) keeps the arm path.
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectInputCluster_002, TestSize.Level0)
+{
+    uint32_t sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+    auto gainNode = hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->GetGainNodeById(sessionId);
+    ASSERT_NE(gainNode, nullptr);
+
+    // Cleanly playing session: hot re-plumb (scene refresh / effect-mode switch / reload)
+    // keeps gain continuity, fade-in must NOT be armed.
+    gainNode->fadeInState_ = false;
+    gainNode->fadeOutState_ = FadeOutState::NO_FADEOUT;
+    hpaeRendererManager->ConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
+    EXPECT_EQ(gainNode->fadeInState_, false);
+
+    // Session resuming from a fade lifecycle (stale DONE_FADEOUT left by a Pause):
+    // reconnect keeps the legacy behavior (clear + arm fade-in).
+    gainNode->fadeOutState_ = FadeOutState::DONE_FADEOUT;
+    hpaeRendererManager->ConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
+    EXPECT_EQ(gainNode->fadeInState_, true);
+
+    EXPECT_EQ(hpaeRendererManager->DeleteProcessCluster(sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
  * @tc.name: DisConnectInputCluster
  * @tc.type: FUNC
  * @tc.number: DisConnectInputCluster_001
@@ -4620,14 +4668,15 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectStatusCallback, TestSize.Level0)
 
     EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    // DISABLED is emitted by the deferred FinalizeClose; drain the queue before asserting.
+    // IDLE node has no crossfade pending: FinalizeClose runs inside the destroy request itself;
+    // the drain below only covers any leftover bookkeeping requests.
     WaitForMsgProcessing(hpaeRendererManager_);
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
     EXPECT_EQ(hpaeRendererManager_->DeInit(), SUCCESS);
 }
 
 // Rapid recreate: Create arriving while the old node is STOPPING is not rejected as duplicate;
-// it requeues and materializes after FinalizeClose.
+// it requeues and materializes after the close finalizes (now driven by OnCloseCrossfadeDone).
 HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyThenCreateRequeues, TestSize.Level0)
 {
     constexpr uint32_t sessionId = 7901;
@@ -4649,8 +4698,21 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyThenCreateRequeues, TestSi
     ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "old", oldInst, config),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
-    // Destroy (BeginClose) then immediately Create the same session: requeues behind the STOPPING
-    // node instead of returning ALREADY_BOUND.
+    // Arm the smooth close: an ACTIVE node arms the close crossfade, so the destroy below waits
+    // for OnCloseCrossfadeDone instead of finalizing inline.
+    auto cluster = hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE];
+    ASSERT_NE(cluster, nullptr);
+    auto node = cluster->GetSessionEffectNode(sessionId);
+    ASSERT_NE(node, nullptr);
+    node->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+
+    // Freeze the queue (thread gone): sync calls still run inline, pushed requests wait for a
+    // manual drain; interphone route makes OnCloseCrossfadeDone's SendRequest drain inline.
+    EXPECT_TRUE(hpaeRendererManager_->DeactivateThread());
+    hpaeRendererManager_->sinkInfo_.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+
+    // Destroy (BeginClose, crossfade pending -> wait) then immediately Create the same session:
+    // requeues behind the STOPPING node instead of returning ALREADY_BOUND.
     EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     auto newInst = std::make_shared<NiceMock<MockEffectInstance>>();
@@ -4658,8 +4720,10 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyThenCreateRequeues, TestSi
     EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "new", newInst, config),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
-    // After drain: old finalized (DISABLED), new materialized (still present).
-    WaitForMsgProcessing(hpaeRendererManager_);
+    // Crossfade done: the inline drain runs the requeued retry first (node still STOPPING, so it
+    // re-defers), then the callback's Finalize — old finalized (DISABLED), new still deferred.
+    hpaeRendererManager_->OnCloseCrossfadeDone(sessionId);
+    hpaeRendererManager_->HandleMsg();  // retry materializes the new node
     EXPECT_TRUE(hpaeRendererManager_->HasSessionEffect(sessionId));
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
     EXPECT_GE(callback->Count(sessionId, OPERATION_SESSION_EFFECT_ENABLED), 2u);
@@ -5855,9 +5919,9 @@ HWTEST_F(HpaeRendererManagerTest, N_Fin_PendingAbsent, TestSize.Level1)
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 
-// N_Fin_DeferredViaHandleMsg: PostDestroySessionEffect queues Destroy; HandleMsg batch N runs
-// BeginClose + queues Finalize; batch N+1 runs FinalizeSessionEffectClose emitting a single DISABLED.
-HWTEST_F(HpaeRendererManagerTest, N_Fin_DeferredViaHandleMsg, TestSize.Level1)
+// N_Fin_DirectWhenNoPending: IDLE node has no crossfade pending -> destroy finalizes inside
+// the same (synchronous) request, DISABLED exactly once.
+HWTEST_F(HpaeRendererManagerTest, N_Fin_DirectWhenNoPending, TestSize.Level1)
 {
     constexpr uint32_t sessionId = 90017;
     constexpr uint32_t nodeId = 307;
@@ -5876,17 +5940,136 @@ HWTEST_F(HpaeRendererManagerTest, N_Fin_DeferredViaHandleMsg, TestSize.Level1)
     ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
-    hpaeRendererManager_->isInit_.store(true);  // SendRequest queues instead of running inline
-    hpaeRendererManager_->PostDestroySessionEffect(sessionId);
+    // Synchronous destroy on the test thread: IDLE node, no crossfade pending -> direct Finalize.
+    hpaeRendererManager_->DestroySessionEffect(sessionId);
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    hpaeRendererManager_->HandleMsg();  // nothing queued -> no duplicate
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 
-    hpaeRendererManager_->HandleMsg();  // batch N: Destroy -> BeginClose + push Finalize
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+// N_Fin_DeferredUntilCrossfadeDone: ACTIVE node -> destroy only Begins (STOPPING, no DISABLED);
+// Finalize runs when OnCloseCrossfadeDone arrives (queued via SendRequest).
+HWTEST_F(HpaeRendererManagerTest, N_Fin_DeferredUntilCrossfadeDone, TestSize.Level1)
+{
+    constexpr uint32_t sessionId = 90019;
+    constexpr uint32_t nodeId = 309;
+    AddSessionEffectTestSessionWithScene(hpaeRendererManager_, sessionId, nodeId, HPAE_SCENE_SPLIT_MEDIA);
+    std::string scene = TransProcessorTypeToSceneType(HPAE_SCENE_SPLIT_MEDIA);
+    InjectOverrideChain(scene);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    // Force the smooth-close precondition: an ACTIVE node arms the close crossfade.
+    auto cluster = hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_SPLIT_MEDIA];
+    ASSERT_NE(cluster, nullptr);
+    auto node = cluster->GetSessionEffectNode(sessionId);
+    ASSERT_NE(node, nullptr);
+    node->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+
+    // Synchronous destroy on the test thread: BeginClose, crossfade pending -> wait for callback.
+    hpaeRendererManager_->DestroySessionEffect(sessionId);
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    EXPECT_TRUE(cluster->IsSessionEffectNodeStopping(sessionId));
+    EXPECT_EQ(hpaeRendererManager_->pendingSeFinalizeMap_.count(sessionId), 1u);
+
+    hpaeRendererManager_->OnCloseCrossfadeDone(sessionId);  // SendRequest -> queued
+    hpaeRendererManager_->HandleMsg();
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_FALSE(cluster->HasSessionEffectNode(sessionId));
+    EXPECT_EQ(hpaeRendererManager_->pendingSeFinalizeMap_.count(sessionId), 0u);
+
+    hpaeRendererManager_->OnCloseCrossfadeDone(sessionId);  // stale callback -> no-op
+    hpaeRendererManager_->HandleMsg();
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+// N_Fin_PauseRescue: Pause arriving while the close waits on the callback finalizes directly;
+// the late callback no-ops (token cleared) — no duplicate DISABLED.
+HWTEST_F(HpaeRendererManagerTest, N_Fin_PauseRescue, TestSize.Level1)
+{
+    constexpr uint32_t sessionId = 90020;
+    constexpr uint32_t nodeId = 310;
+    AddSessionEffectTestSessionWithScene(hpaeRendererManager_, sessionId, nodeId, HPAE_SCENE_SPLIT_MEDIA);
+    std::string scene = TransProcessorTypeToSceneType(HPAE_SCENE_SPLIT_MEDIA);
+    InjectOverrideChain(scene);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    auto cluster = hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_SPLIT_MEDIA];
+    ASSERT_NE(cluster, nullptr);
+    cluster->GetSessionEffectNode(sessionId)->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+
+    // Synchronous destroy on the test thread: BeginClose, waiting on callback.
+    hpaeRendererManager_->DestroySessionEffect(sessionId);
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 0u);
 
-    hpaeRendererManager_->HandleMsg();  // batch N+1: FinalizeSessionEffectClose -> DISABLED
+    hpaeRendererManager_->Pause(sessionId);  // entry rescue finalizes instead of waiting
+    hpaeRendererManager_->HandleMsg();
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_FALSE(cluster->HasSessionEffectNode(sessionId));
+    EXPECT_EQ(hpaeRendererManager_->pendingSeFinalizeMap_.count(sessionId), 0u);
+
+    hpaeRendererManager_->OnCloseCrossfadeDone(sessionId);  // late callback: token gone
+    hpaeRendererManager_->HandleMsg();
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 
-    hpaeRendererManager_->HandleMsg();  // no duplicate
-    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+// N_Fin_OnFadeDoneRescue: fade completion while the close still waits -> finalize before
+// SessionEffectPause/DisConnectInputSession (the chain stops being pulled afterwards).
+HWTEST_F(HpaeRendererManagerTest, N_Fin_OnFadeDoneRescue, TestSize.Level1)
+{
+    constexpr uint32_t sessionId = 90021;
+    constexpr uint32_t nodeId = 311;
+    AddSessionEffectTestSessionWithScene(hpaeRendererManager_, sessionId, nodeId, HPAE_SCENE_SPLIT_MEDIA);
+    std::string scene = TransProcessorTypeToSceneType(HPAE_SCENE_SPLIT_MEDIA);
+    InjectOverrideChain(scene);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    auto cluster = hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_SPLIT_MEDIA];
+    ASSERT_NE(cluster, nullptr);
+    cluster->GetSessionEffectNode(sessionId)->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+
+    // Synchronous destroy on the test thread: BeginClose, waiting on callback.
+    hpaeRendererManager_->DestroySessionEffect(sessionId);
+
+    // Fade done fires with the session pausing (state != RUNNING).
+    hpaeRendererManager_->sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_PAUSING);
+    hpaeRendererManager_->OnFadeDone(sessionId);
+    hpaeRendererManager_->HandleMsg();
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);  // rescue
+    EXPECT_FALSE(cluster->HasSessionEffectNode(sessionId));
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -6224,8 +6407,8 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyFinalizeNowThenCreateSucce
     EXPECT_EQ(hpaeRendererManager_->DeInit(), SUCCESS);
 }
 
-// finalizeNow on an already-STOPPING node: direct finalize in the STOPPING branch; the
-// earlier-queued FinalizeClose later no-ops on the cluster identity check (exactly one DISABLED).
+// finalizeNow on an already-STOPPING node: direct finalize in the STOPPING branch; a late
+// OnCloseCrossfadeDone afterwards no-ops on the cleared pending-close token (exactly one DISABLED).
 HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyFinalizeNowOnStoppingNodeFinalizesDirectly,
     TestSize.Level0)
 {
@@ -6249,11 +6432,15 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyFinalizeNowOnStoppingNodeF
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_TRUE(hpaeRendererManager_->HasSessionEffect(sessionId));
 
-    // Freeze the queue: process thread gone, sync calls still run inline, pushed lambdas stay
-    // undrained until an explicit drain.
-    EXPECT_TRUE(hpaeRendererManager_->DeactivateThread());
+    // Arm the smooth close: an ACTIVE node arms the close crossfade, so the plain destroy below
+    // waits for OnCloseCrossfadeDone (nothing queued) instead of finalizing inline.
+    auto cluster = hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE];
+    ASSERT_NE(cluster, nullptr);
+    auto node = cluster->GetSessionEffectNode(sessionId);
+    ASSERT_NE(node, nullptr);
+    node->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
 
-    // Plain destroy: node enters STOPPING, FinalizeClose stays queued (no drain here).
+    // Plain destroy: node enters STOPPING and waits on the crossfade callback.
     EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     EXPECT_TRUE(hpaeRendererManager_->HasSessionEffect(sessionId)); // STOPPING residue
@@ -6264,9 +6451,12 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyFinalizeNowOnStoppingNodeF
     EXPECT_FALSE(hpaeRendererManager_->HasSessionEffect(sessionId));
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 
-    // DeInit drains the stale queued FinalizeClose; the identity check must keep it a no-op.
-    EXPECT_EQ(hpaeRendererManager_->DeInit(), SUCCESS);
+    // The crossfade callback arrives late: the token was cleared by the finalize above, so the
+    // marshalled request must be a no-op (no duplicate DISABLED).
+    hpaeRendererManager_->OnCloseCrossfadeDone(sessionId);
+    WaitForMsgProcessing(hpaeRendererManager_);
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_EQ(hpaeRendererManager_->DeInit(), SUCCESS);
 }
 
 }  // namespace

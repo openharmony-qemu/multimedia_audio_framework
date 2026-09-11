@@ -106,6 +106,7 @@ public:
 
     bool IsWirelessDevice(DeviceType deviceType);
     static bool CheckInterphone(StreamUsage usage, const shared_ptr<AudioDeviceDescriptor> &desc);
+    static bool IsCallOrRingStreamUsage(StreamUsage streamUsage);
 
     bool UpdateDevicesListInfo(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
         const std::shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceInfoUpdateCommand updateCommand,

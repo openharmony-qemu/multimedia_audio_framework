@@ -7790,7 +7790,6 @@ HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffectWith
     bool ret5 = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
         CH_LAYOUT_7POINT1, deviceType);
 
-    // All should return false without proper HDI initialization
     EXPECT_EQ(ret1, false);
     EXPECT_EQ(ret2, true);
     EXPECT_EQ(ret3, false);

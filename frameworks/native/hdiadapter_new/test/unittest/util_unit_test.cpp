@@ -26,7 +26,7 @@
 #include "util/callback_wrapper.h"
 #include "util/kv_pair.h"
 #include "util/audio_hdi_version_manager.h"
-#include "audio_stream_num.h"
+#include "audio_stream_enum.h"
 
 using namespace testing::ext;
 
@@ -430,6 +430,31 @@ HWTEST_F(UtilUnitTest, KvPairUnitTest_001, TestSize.Level1)
     kv.Erase("test");
     ret = kv.Get<uint32_t>("test_1", value);
     EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_016
+ * @tc.desc   : Test IdHandler GetRenderIdByDeviceClass with 3da bus keyword (3DA direct)
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_016, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t id = idHandler.GetRenderIdByDeviceClass("bus10_3da_out", HDI_ID_INFO_3DA);
+    EXPECT_NE(id, HDI_INVALID_ID);
+
+    uint32_t base = idHandler.ParseBase(id);
+    EXPECT_EQ(base, HDI_ID_BASE_RENDER);
+
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT);
+
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, HDI_ID_INFO_3DA);
+
+    // keyword match: any bus number / mixport_ prefix converges to the same 3DA direct id
+    uint32_t futureBusId = idHandler.GetRenderIdByDeviceClass("mixport_bus11_3da_out", HDI_ID_INFO_3DA);
+    EXPECT_EQ(futureBusId, id);
 }
 
 /**

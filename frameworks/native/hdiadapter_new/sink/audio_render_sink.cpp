@@ -193,7 +193,7 @@ int32_t AudioRenderSink::Start(void)
 
 void AudioRenderSink::CheckActiveDeviceValidForStart()
 {
-    if (currentActiveDevice_ != DEVICE_TYPE_NONE) {
+    if (Util::IsEnhancedRoutingSupported() && currentActiveDevice_ != DEVICE_TYPE_NONE) {
         forceSetRouteFlag_ = true;
         std::vector<DeviceType> devices = { currentActiveDevice_ };
         if (currentDevicesSize_ > 1 && currentSecondaryActiveDevice_ != DEVICE_TYPE_NONE) {
@@ -974,6 +974,9 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     param.interleaved = true;
     param.streamId = static_cast<int32_t>(GetUniqueId());
     param.type = AUDIO_IN_MEDIA;
+    if (attr_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
+        param.type = AUDIO_D2D;
+    }
     param.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     param.isBigEndian = false;
     param.isSignedData = true;
@@ -1131,6 +1134,8 @@ int32_t AudioRenderSink::InitRender(void)
             AUDIO_INFO_LOG("voip hal do not need to SetOutputRoute when create render");
         } else if (halName_ == HDI_ID_INFO_VOICE_CALL_ASSISTANT) {
             AUDIO_INFO_LOG("voice call assistant hal do not need to SetOutputRoute when create render");
+        } else if (halName_ == HDI_ID_INFO_DIRECT && !Util::IsEnhancedRoutingSupported()) {
+            AUDIO_INFO_LOG("direct do not need to SetOutputRoute when create render");
         } else {
             DeviceType type = static_cast<DeviceType>(attr_.deviceType);
             if (type == DEVICE_TYPE_INVALID) {

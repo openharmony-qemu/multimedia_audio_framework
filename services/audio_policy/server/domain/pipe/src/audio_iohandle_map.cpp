@@ -23,6 +23,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_pipe_manager.h"
+#include "common/hdi_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -217,7 +218,15 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
 
     if (moduleInfo.role == "sink") {
         pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
-        pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        // A 3DA bus port may be opened at boot (xml module name) or at play-time new-pipe
+        // creation (paProp moduleName with mixport_ prefix). Match the 3da keyword in
+        // name/busAddress so any bus number (bus10/bus11/...) is covered.
+        if (moduleInfo.name.find(HDI_BUS_KEYWORD_3DA) != std::string::npos ||
+            moduleInfo.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
+            pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_3DA_DIRECT;
+        } else {
+            pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        }
     } else {
         pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
         pipeInfo->routeFlag_ = moduleInfo.sourceType == std::to_string(SourceType::SOURCE_TYPE_WAKEUP) ?

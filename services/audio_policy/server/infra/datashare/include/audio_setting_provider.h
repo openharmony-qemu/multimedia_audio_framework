@@ -135,6 +135,8 @@ private:
     static std::mutex mutex_;
     static sptr<IRemoteObject> remoteObj_;
     static std::string SettingSystemUrlProxy_;
+    static std::map<std::string, sptr<AudioSettingObserver>> registeredObservers_;
+    static std::mutex observerMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

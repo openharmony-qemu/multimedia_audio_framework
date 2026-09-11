@@ -46,6 +46,7 @@ public:
         return audioRouterCenter;
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo &info);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesNoArbiter(FetchDeviceInfo &info);
     OutputDeviceMap FetchOutputDevicesForAllOutputStreams(std::vector<FetchDeviceInfo> &infos);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(FetchDeviceInfo &info);
@@ -66,6 +67,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchMediaOutputDevices(FetchDeviceInfo &info);
 
     bool IsMediaFollowCallStrategy(AudioScene audioScene);
+
 private:
     AudioRouterCenter()
     {
@@ -132,6 +134,8 @@ private:
     shared_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
         std::vector<std::unique_ptr<RouterBase>> &routers, const RouterType routerType,
         const uint32_t streamId = INVALID_STREAM_ID);
+    shared_ptr<AudioDeviceDescriptor> FetchMediaOrToneRenderDevice(FetchDeviceInfo &bak, int32_t clientUID,
+        RouterType &routerType, const uint32_t streamId = INVALID_STREAM_ID);
     shared_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
         RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE,
         const RouterType &bypassWithSco = RouterType::ROUTER_TYPE_NONE);

@@ -61,7 +61,8 @@
 #include "audio_record_controller.h"
 #include "ipc_skeleton.h"
 #include "securec.h"
-
+#include "audio_schedule.h"
+#include "parameter.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -146,6 +147,9 @@ const std::string NEARLINK_LIST = "audio_nearlink_list";
 constexpr const char* SCENE_BOARD_PACKAGE_NAME = "com.ohos.sceneboard";
 constexpr int32_t MIN_VOLUME_PERCENTAGE = 0;
 constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
+const char RINGTONE_PARAMETER_SCANNER_FIRST_KEY[] = "ringtone.scanner.first";
+const char RINGTONE_PARAMETER_SCANNER_FIRST_TRUE[] = "true";
+const int32_t RINGTONEPARA_SIZE = 64;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -3457,6 +3461,7 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChan
 int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChangeInfo &streamChangeInfoIn)
 {
     Trace trace("AudioPolicyServer::UpdateTracker");
+    ScheduleReportData(getpid(), gettid(), "audio_server");
     AudioMode mode = static_cast<AudioMode>(modeIn);
     AudioStreamChangeInfo streamChangeInfo = streamChangeInfoIn;
 
@@ -3498,6 +3503,7 @@ int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChange
         // ReEvaluate bypass whenever capturer state changes, including non-running -> running transition.
         coreService_->ReEvaluateVoipBypassByAppMuteHint();
     }
+    UnscheduleReportData(getpid(), gettid(), "audio_server");
     return ret;
 }
 
@@ -4993,6 +4999,20 @@ int32_t AudioPolicyServer::ResumeAudioFocusForExtAudioZone(const std::vector<int
     return AudioZoneService::GetInstance().ResumeAudioFocusForExtAudioZone(zoneIds);
 }
 
+int32_t AudioPolicyServer::ExcludeUidForExtZone(int32_t uid)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    return AudioZoneService::GetInstance().ExcludeUidForExtZone(uid);
+}
+
+int32_t AudioPolicyServer::UnexcludeUidForExtZone(int32_t uid)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    return AudioZoneService::GetInstance().UnexcludeUidForExtZone(uid);
+}
+
 int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
@@ -5964,11 +5984,6 @@ void AudioPolicyServer::NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool 
     eventEntry_->TriggerVoipPriorityReload(streamId, lowered);
 }
 
-int32_t AudioPolicyServer::SetSourceOutputStreamMute(int32_t uid, bool mute)
-{
-    return audioPolicyService_.SetSourceOutputStreamMute(uid, mute);
-}
-
 int32_t AudioPolicyServer::IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret)
 {
     ret = AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(static_cast<SourceType>(sourceType));
@@ -6195,8 +6210,9 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
 {
     Trace trace("AudioPolicyServer::CallRingtoneLibrary");
     AUDIO_INFO_LOG("Enter CallRingtoneLibrary");
+    int32_t ret = ERROR;
     auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(saManager != nullptr, ERROR, "Get system ability manager failed.");
+    CHECK_AND_RETURN_RET_LOG(saManager != nullptr, ret, "Get system ability manager failed.");
 
     AudioXCollie audioXCollie("CallRingtoneLibrary::start", DATASHARE_SERVICE_TIMEOUT_SECONDS,
         [](void *) {
@@ -6204,13 +6220,19 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     auto remoteObj = saManager->GetSystemAbility(STORAGE_MANAGER_MANAGER_ID);
-    CHECK_AND_RETURN_RET_LOG(remoteObj != nullptr, ERROR, "Get system ability failed.");
+    CHECK_AND_RETURN_RET_LOG(remoteObj != nullptr, ret, "Get system ability failed.");
 
     auto dataShareHelper = DataShare::DataShareHelper::Creator(remoteObj, "datashare:///ringtone", "",
         DATASHARE_SERVICE_TIMEOUT_SECONDS);
-    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
+    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ret, "Create dataShare failed, datashare or library error.");
     dataShareHelper->Release();
-    return SUCCESS;
+    char paramValue[RINGTONEPARA_SIZE] = {0};
+    GetParameter(RINGTONE_PARAMETER_SCANNER_FIRST_KEY, "", paramValue, RINGTONEPARA_SIZE);
+    if (strcmp(paramValue, RINGTONE_PARAMETER_SCANNER_FIRST_TRUE) == 0) {
+        ret = SUCCESS;
+    }
+    AUDIO_WARNING_LOG("Exit CallRingtoneLibrary, ret:%{public}d", ret);
+    return ret;
 }
 
 int32_t AudioPolicyServer::GetVADeviceBroker(sptr<IRemoteObject> &client)

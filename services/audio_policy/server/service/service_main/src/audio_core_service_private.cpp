@@ -287,6 +287,15 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     return isUpdateActiveDevice;
 }
 
+void AudioCoreService::SyncVolWhenCurrentOutputDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    CHECK_AND_RETURN(desc != nullptr && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP);
+
+#ifdef BLUETOOTH_ENABLE
+    Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(desc->macAddress_);
+#endif
+}
+
 void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
     CHECK_AND_RETURN(pipeInfo && pipeInfo->streamDescriptors_.size() > 0);
@@ -694,8 +703,7 @@ void AudioCoreService::CheckAndCreateCallTransferForTransferCall(
 uint32_t AudioCoreService::GetVoiceCallMuteDuration(AudioDeviceDescriptor &curDesc, AudioDeviceDescriptor &newDesc)
 {
     uint32_t muteDuration = 0;
-    if (!curDesc.IsSameDeviceDesc(newDesc) &&
-        !(curDesc.IsSpeakerOrEarpiece() && newDesc.IsSpeakerOrEarpiece())) {
+    if (!curDesc.IsSameDeviceDesc(newDesc)) {
         muteDuration = VOICE_CALL_DEVICE_SWITCH_MUTE_US;
     }
     return muteDuration;
@@ -1301,6 +1309,11 @@ std::string AudioCoreService::GetModuleNameBySessionId(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
     return pipeManager_->GetModuleNameBySessionId(sessionId);
+}
+
+std::string AudioCoreService::Get3daDirectBusAddress()
+{
+    return pipeManager_->Get3daDirectBusAddress();
 }
 
 int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
@@ -2686,6 +2699,7 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
     streamDesc->newDeviceDescs_ = descs;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
     ActivateOutputDevice(streamDesc, reason);
+    SyncVolWhenCurrentOutputDeviceChanged(descs.front());
 
     if (audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_DEFAULT) {
         audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
@@ -2734,6 +2748,7 @@ bool AudioCoreService::UpdateOutputDevice(std::shared_ptr<AudioDeviceDescriptor>
         WriteOutputRouteChangeEvent(desc, reason);
         audioRouterSelectStrategy_.UpdateCurrentOutputDevice(uid, {desc});
         AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
+        SyncVolWhenCurrentOutputDeviceChanged(desc);
         return true;
     }
     return false;
@@ -3509,7 +3524,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     const AudioRouterCenter::OutputDeviceMap &outResult)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
-    streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
+    pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_.load()) {
@@ -3546,7 +3561,7 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", streamDesc->GetSessionId());
-    streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
+    pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
 
     FetchDeviceInfo info = { streamDesc->GetRenderUsage(), GetRealUid(streamDesc),
         streamDesc->GetRenderPrivacyType(), caller, streamDesc->bundleName_ };

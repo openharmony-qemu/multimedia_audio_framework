@@ -90,6 +90,7 @@
     *RequestUserPrivacyAuthority*;
     *ReportPlaybackCaptureUserChoice*;
     *ReportWakeupEvent*;
+    *RegisterWakeupEventCallback*;
     *SetAncoRecordingConfigChanged*;
     *OnMetaData*;
     *IsValidNetworkIdForSendEffectParam*;

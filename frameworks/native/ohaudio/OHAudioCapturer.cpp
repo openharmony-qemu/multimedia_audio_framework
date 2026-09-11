@@ -403,6 +403,7 @@ OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer,
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "convert capturer failed", true),
         "convert capturer failed");
+    CHECK_AND_RETURN_RET_LOG(frames != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "frames is nullptr");
 
     *frames = audioCapturer->GetFramesRead();
     return AUDIOSTREAM_SUCCESS;
@@ -458,6 +459,7 @@ OH_AudioStream_Result OH_AudioCapturer_GetOverflowCount(OH_AudioCapturer* captur
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "convert capturer failed", true),
         "convert capturer failed");
+    CHECK_AND_RETURN_RET_LOG(count != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "count is nullptr");
 
     *count = audioCapturer->GetOverflowCount();
     return AUDIOSTREAM_SUCCESS;

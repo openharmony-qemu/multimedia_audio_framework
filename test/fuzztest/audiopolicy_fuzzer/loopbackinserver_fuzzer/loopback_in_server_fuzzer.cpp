@@ -57,16 +57,11 @@ public:
         return SUCCESS;
     }
 
-    int32_t OnStatusChange(int32_t status, int32_t reason) override
+    int32_t OnStatusNotify(int32_t status, int32_t reason) override
     {
         lastStatus_ = status;
         lastReason_ = reason;
         return SUCCESS;
-    }
-
-    ErrCode OnStatusNotify(int32_t status, int32_t reason)
-    {
-        return 0;
     }
 
 private:

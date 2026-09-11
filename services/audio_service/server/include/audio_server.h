@@ -485,7 +485,6 @@ private:
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
     bool IsFastBlocked(int32_t uid, PlayerType playerType);
-    int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
     void InitMaxRendererStreamCntPerUid();
     bool IsSatellite(const AudioProcessConfig &config, int32_t callingUid);

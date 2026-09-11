@@ -20,6 +20,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <chrono>
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
@@ -49,8 +50,12 @@ public:
 private:
     AudioToneManager() {}
     ~AudioToneManager() {}
+    bool EnsureToneDtmfConfigLoaded();
 private:
 #ifdef FEATURE_DTMF_TONE
+    std::mutex toneDtmfMutex_;
+    bool isToneDtmfConfigLoaded_ = false;
+    std::chrono::steady_clock::time_point lastLoadFailTime_;
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap_;
     std::unordered_map<std::string, std::unordered_map<int32_t, std::shared_ptr<ToneInfo>>> customToneDescriptorMap_;
 #endif

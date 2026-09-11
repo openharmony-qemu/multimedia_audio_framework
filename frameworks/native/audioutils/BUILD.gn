@@ -117,10 +117,6 @@ ohos_shared_library("audio_utils") {
     defines += [ "MULTI_BUS_ENABLE" ]
   }
 
-  if (audio_framework_feature_multi_user_zone) {
-    defines += [ "MULTI_USER_ZONE" ]
-  }
-
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"

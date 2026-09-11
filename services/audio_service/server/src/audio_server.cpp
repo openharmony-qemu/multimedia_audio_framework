@@ -237,14 +237,10 @@ const std::set<std::string> ASR_FORBIDDEN_KEYS = {
     "TTS_2_MODEM",
     "MIC_2_MODEM",
     "MODEM_2_DEVICE",
-    "audio2voicetx",
-    "audiomix2voicetx",
-    "audio2voicetxex",
-    "audiomix2voicetxex",
-    "output_mute=true",
-    "output_mute=false",
-    "input_mute=true",
-    "input_mute=false",
+    "asraudio2voicetx",
+    "asraudiomix2voicetx",
+    "asraudio2voicetxex",
+    "asraudiomix2voicetxex",
     "mute_tts=true",
     "mute_tts=false",
     "mute_call=true",
@@ -968,6 +964,8 @@ void AudioServer::OnStart()
     }
     InitMaxRendererStreamCntPerUid();
     AudioInnerCall::GetInstance()->RegisterAudioServer(this);
+    AudioService::GetInstance()->RegisterWakeupEventCallback(
+        [this](const AudioWakeupTrackInfo &info) { return ReportWakeupEvent(info); });
     asyncHandler_ = std::make_shared<AsyncActionHandler>("OS_ASAsyncHandler");
 
     // After publish, other process can call audioserver functions through ipc
@@ -3174,10 +3172,6 @@ int32_t AudioServer::NotifyStreamVolumeChanged(int32_t streamType, float volume)
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("NotifyStreamVolumeChanged failed");
     }
-    ret = SetVolumeInfoForEnhanceChain(streamTypeTmp);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("SetVolumeInfoForEnhanceChain failed");
-    }
     return SUCCESS;
 }
 
@@ -4020,8 +4014,10 @@ bool AudioServer::AudioParameterValueCheck(const std::string &key, const std::st
 
 int32_t AudioServer::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice)
 {
-    bool ret = VerifyClientPermission(MANAGE_AUDIO_CONFIG_PERMISSION);
-    CHECK_AND_RETURN_RET_LOG(ret, false, "ReportPlaybackCaptureUserChoice failed: no permission.");
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    bool ret = VerifyClientPermission(CAPTURE_PLAYBACK_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No permission.");
     CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
     return AudioService::GetInstance()->ReportPlaybackCaptureUserChoice(sessionId, choice);
 }

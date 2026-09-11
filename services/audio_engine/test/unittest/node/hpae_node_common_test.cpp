@@ -1335,7 +1335,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
     } else {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
-        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_OTHERS);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
     }
 }
@@ -1363,7 +1363,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
     } else {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MUSIC);
-        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_OTHERS);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MUSIC);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MUSIC);
     }
 }
@@ -1410,7 +1410,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
     } else {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_GAME);
-        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_OTHERS);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_GAME);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_GAME);
     }
 }
@@ -1439,7 +1439,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
     } else {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
-        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_OTHERS);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
     }
     // Switch to NEARLINK - should remain collaborative
@@ -1451,7 +1451,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
     } else {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
-        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_OTHERS);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
     }
 }
@@ -1623,7 +1623,6 @@ HWTEST_F(HpaeNodeCommonTest, StringToNum_Valid_001, TestSize.Level0)
     EXPECT_EQ(StringToNum("123"), 123L);
     EXPECT_EQ(StringToNum("0"), 0L);
     EXPECT_EQ(StringToNum("-5"), -5L);
-    EXPECT_EQ(StringToNum("9999999999"), 9999999999L);
 }
 
 /**

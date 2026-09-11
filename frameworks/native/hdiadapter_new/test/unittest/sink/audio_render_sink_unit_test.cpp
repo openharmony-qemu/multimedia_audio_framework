@@ -22,6 +22,7 @@
 #include "audio_stream_enum.h"
 #include "util/id_handler.h"
 #include "audio_info.h"
+#include "sink/audio_render_sink.h"
 
 using namespace testing::ext;
 
@@ -1007,6 +1008,26 @@ HWTEST_F(AudioRenderSinkUnitTest, InterphoneSinkUnitTest_006, TestSize.Level1)
     
     attr.channel = 2;
     EXPECT_EQ(attr.channel, 2);
+}
+
+/**
+ * @tc.name   : Test InitAudioSampleAttr for interphone routeFlag
+ * @tc.number : InitAudioSampleAttr_Interphone_001
+ * @tc.desc   : Test InitAudioSampleAttr sets param.type by interphone routeFlag
+ */
+HWTEST_F(AudioRenderSinkUnitTest, InitAudioSampleAttr_Interphone_001, TestSize.Level1)
+{
+    auto sink = std::make_shared<AudioRenderSink>(TEST_RENDER_ID, "primary");
+    ASSERT_NE(sink, nullptr);
+    struct AudioSampleAttributes param;
+    // true branch: routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE -> AUDIO_D2D
+    sink->attr_.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+    sink->InitAudioSampleAttr(param);
+    EXPECT_EQ(param.type, AUDIO_D2D);
+    // false branch: routeFlag != AUDIO_OUTPUT_FLAG_INTERPHONE -> AUDIO_IN_MEDIA
+    sink->attr_.routeFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+    sink->InitAudioSampleAttr(param);
+    EXPECT_EQ(param.type, AUDIO_IN_MEDIA);
 }
 
 /**

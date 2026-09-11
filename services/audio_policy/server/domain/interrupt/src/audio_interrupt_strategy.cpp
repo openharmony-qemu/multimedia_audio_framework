@@ -206,7 +206,8 @@ void AudioInterruptStrategy::UpdatePauseAudioFocusStrategy(const AudioInterrupt 
         return;
     }
 
-    if (focusEntry.hintType == INTERRUPT_HINT_STOP) {
+    if (focusEntry.hintType == INTERRUPT_HINT_STOP &&
+        incomingInterrupt.audioFocusType.streamType != STREAM_INTERNAL_FORCE_STOP) {
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
         AUDIO_INFO_LOG("Change STOP to PAUSE for streamId:%{public}u with PAUSE_WHEN_INTERRUPTED flag",
             currentInterrupt.streamId);
@@ -321,7 +322,8 @@ bool AudioInterruptStrategy::IsCanMixwithMedia(const AudioInterrupt &currentInte
     SourceType incomingSourceType = currentInterrupt.audioFocusType.sourceType;
     bool isMixStream = (incomingStreamType == STREAM_ALARM);
     bool isMixSource = (incomingSourceType == SOURCE_TYPE_MIC || incomingSourceType == SOURCE_TYPE_CAMCORDER ||
-        incomingSourceType == SOURCE_TYPE_VOICE_MESSAGE || incomingSourceType == SOURCE_TYPE_LIVE);
+        incomingSourceType == SOURCE_TYPE_VOICE_MESSAGE || incomingSourceType == SOURCE_TYPE_LIVE ||
+        incomingSourceType == SOURCE_TYPE_UNPROCESSED);
     return (isMixStream || isMixSource);
 }
 

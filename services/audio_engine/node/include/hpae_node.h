@@ -134,6 +134,11 @@ public:
         return nodeInfo_.deviceClass;
     }
 
+    virtual bool GetWaitValidInput() const
+    {
+        return nodeInfo_.waitValidInput;
+    }
+
     virtual std::string GetDeviceNetId() const
     {
         return nodeInfo_.deviceNetId;
