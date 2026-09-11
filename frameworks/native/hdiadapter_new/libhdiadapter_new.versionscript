@@ -79,6 +79,10 @@
     # audio_framework_feature_power_manager is on; entry is a no-op below).
     *RingBufferHandler*;
     *AudioRunningLock*;
+    # AudioPlayingAppManager: constructed and its public methods called by
+    # name from the hdiadapter unit test
+    # (audio_playing_app_manager_unit_test.cpp) and audio_playing_app util.
+    *AudioPlayingAppManager*;
     # AudioHdiVersionManager::GetInstance static call in audio_service.
     *AudioHdiVersionManager*;
   local:
@@ -90,7 +94,7 @@
 #       HDI callback helpers declared in public headers, zero external
 #       by-name references),
 #   WakeupBuffer (internal buffer of wakeup_audio_capture_source),
-#   AudioPlayingAppManager / HdiDfxUtils (internal utils, no external refs),
+#   HdiDfxUtils (internal util, no external refs),
 #   KvPair<> (header-only template), POD attrs/enums in common/ headers
 #       (IAudioSinkAttr/IAudioSourceAttr -- Marshalling/Unmarshalling inline),
 #   anonymous-namespace and file-static helpers.
