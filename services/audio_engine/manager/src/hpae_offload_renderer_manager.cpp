@@ -931,7 +931,7 @@ void HpaeOffloadRendererManager::NotifyStreamChangeToSink(
     CHECK_AND_RETURN(sinkOutputNode_ != nullptr);
     StreamUsage usage = STREAM_USAGE_UNKNOWN;
     if (sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end()) {
-        usage = AudioTypeUtils::GetStreamUsageByStreamType(sinkInputNodeMap_[sessionId]->GetStreamType());
+        usage = sinkInputNodeMap_[sessionId]->GetEffectStreamUsage();
     }
     sinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
 }
