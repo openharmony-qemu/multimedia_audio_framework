@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Copyright (c) 2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,9 +11,89 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Strict whitelist for libhdiadapter_new.z.so (target "hdiadapter_new").
+# Replaces the former umbrella script (global: *;  == no governance at all).
+# Every entry below is verified by-name referenced across DSO boundaries by
+# production consumers (audio_engine / audio_policy / audio_service), by the
+# hdiadapter AIUT+unittest suites (which construct sinks/sources/managers via
+# make_shared), or by cross-DSO derivation in audio_service.
+
 1.0 {
   global:
-    *;
+    # ---- sink plane (include/sink/) ----
+    # "AudioRenderSink" as a substring covers EXACTLY the public sink set:
+    # IAudioRenderSink (interface, out-of-line self-implemented virtuals in
+    # i_audio_render_sink.cpp -> vtable/typeinfo live here), AudioRenderSink
+    # (common base) and all concrete sinks (Bluetooth/Cabin/Direct/Fast/File/
+    # Multichannel/Offload/Remote/RemoteFast/RemoteMultichannel/
+    # RemoteOffload). Each of them is make_shared-constructed by name from
+    # the AIUT sink suite. No TU-local class contains this substring.
+    *AudioRenderSink*;
+    # AuxiliarySink: constructed by name in the AIUT sink suite (46 uses).
+    *AuxiliarySink*;
+    # Sink callback interface: AudioServer (audio_service) derives from it.
+    # All members are inline in the header, so today this matches zero
+    # symbols in this DSO; the entry is kept so any future out-of-line
+    # addition cannot silently break cross-DSO derivation.
+    *IAudioSinkCallback*;
+
+    # ---- source plane (include/source/) ----
+    # Same rationale as the sink plane: interface (i_audio_capture_source.cpp
+    # holds out-of-line virtuals), common base and every concrete source
+    # (Bluetooth/Fast/File/Remote/RemoteFast/Wakeup) are AIUT-constructed.
+    *AudioCaptureSource*;
+    # VACaptureSource does not contain "AudioCaptureSource" as a substring.
+    *VACaptureSource*;
+    # Source callback interface: AudioServer/CapturerStateOb/
+    # CamcorderMetadataOb (audio_service) derive from it. See the
+    # IAudioSinkCallback note above.
+    *IAudioSourceCallback*;
+
+    # ---- adapter plane (include/adapter/, include/manager/) ----
+    # Substring covers IDeviceManager, Local/Bluetooth/RemoteDeviceManager
+    # (all make_shared-constructed by the AIUT adapter suites) and
+    # IDeviceManagerCallback (AudioServer derives from it).
+    *DeviceManager*;
+    # HdiAdapterFactory: GetInstance/Create* called by name from the AIUT
+    # adapter_manager suite.
+    *HdiAdapterFactory*;
+    # HdiAdapterManager: concrete singleton, 273 GetInstance call sites plus
+    # non-virtual instance-method calls across audio_engine/audio_policy/
+    # audio_service -- every public member resolves by name at link time.
+    # Also covers private-member access from -fno-access-control tests
+    # (renderSinks_/captureSources_).
+    *HdiAdapterManager*;
+    # HdiMonitor::ReportHdiException static call from audio_service.
+    *HdiMonitor*;
+
+    # ---- util (include/util/) ----
+    # Header-public with out-of-line definitions in callback_wrapper.cpp;
+    # constructed by name in hdiadapter util_unit_test.
+    *SinkCallbackWrapper*;
+    *SourceCallbackWrapper*;
+    # IdHandler: GetInstance/CheckId/GetRenderIdByDeviceClass statics called
+    # by name across audio_engine/audio_policy/audio_service + engine tests.
+    *IdHandler*;
+    # RingBufferHandler / AudioRunningLock: constructed by name in AIUT and
+    # hdiadapter util_unit_test (AudioRunningLock only when
+    # audio_framework_feature_power_manager is on; entry is a no-op below).
+    *RingBufferHandler*;
+    *AudioRunningLock*;
+    # AudioHdiVersionManager::GetInstance static call in audio_service.
+    *AudioHdiVersionManager*;
   local:
     *;
 };
+
+# Deliberately NOT exported (kept local by the fallback above):
+#   RemoteAdapterHdiCallback / RemoteOffloadHdiCallbackImpl (internal "final"
+#       HDI callback helpers declared in public headers, zero external
+#       by-name references),
+#   WakeupBuffer (internal buffer of wakeup_audio_capture_source),
+#   AudioPlayingAppManager / HdiDfxUtils (internal utils, no external refs),
+#   KvPair<> (header-only template), POD attrs/enums in common/ headers
+#       (IAudioSinkAttr/IAudioSourceAttr -- Marshalling/Unmarshalling inline),
+#   anonymous-namespace and file-static helpers.
+# RC01-RC05 (compiler/runtime, C++ ABI, unwind, sanitizer, toolchain) symbols:
+# zero entries here -- covered implicitly by the class wildcards where the
+# ABI requires them (vtable/typeinfo/thunks), never hidden selectively.

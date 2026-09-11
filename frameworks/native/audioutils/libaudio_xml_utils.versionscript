@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Strict whitelist for libaudio_xml_utils.z.so (target "audio_xml_utils",
+# single TU: src/audio_xml_parser.cpp).
+
+1.0 {
+  global:
+    # ---- AudioXmlNode abstract XML interface (include/audio_xml_parser.h) ----
+    # AudioXmlNode::Create() is referenced by name from audioeffect
+    # (audio_collaboration_manager.cpp:117), audio_policy (12 XML config
+    # parsers + service tests), audio_service (audio_param_parser.cpp:60),
+    # audio_suite (audio_suite_capabilities_parser.cpp:54) and
+    # audioxmlparser_fuzzer. Everything else on the returned node is vptr
+    # dispatch, and destruction goes through the make_shared control block
+    # inside this DSO.
+    #
+    # Anchored mangling INSTEAD of the usual *AudioXmlNode* wildcard: the
+    # TU-local implementation class AudioXmlNodeInner (audio_xml_parser.cpp,
+    # in no header) contains that substring and would leak ~15 internal
+    # symbols. The "12" length prefix pins the match to the interface
+    # (Inner mangles as ...18AudioXmlNodeInner...).
+    #
+    # vtable/typeinfo exact names keep RC02 available for any cross-DSO
+    # typeid/dynamic_cast under cfi_cross_dso; no virtual bases -> no thunks.
+    _ZN4OHOS13AudioStandard12AudioXmlNode*;
+    _ZTVN4OHOS13AudioStandard12AudioXmlNodeE;
+    _ZTIN4OHOS13AudioStandard12AudioXmlNodeE;
+    _ZTSN4OHOS13AudioStandard12AudioXmlNodeE;
+
+    # ---- DlopenUtils libxml2 dlopen lifecycle (same header) ----
+    # Init/DeInit are called by name from audio_policy_server.cpp:336/360
+    # and audio_server.cpp:959/995. No other symbol defined in this DSO
+    # contains "DlopenUtils", so the plain wildcard is exact.
+    *DlopenUtils*;
+  local:
+    *;
+};
+
+# Deliberately NOT exported (kept local by the fallback above):
+#   AudioXmlNodeInner (TU-local implementation class, the wildcard trap this
+#       script anchors around), XmlFuncHandle members (file-scope function
+#       pointer table).
+# RC01-RC05: zero entries -- compiler/runtime and C++ ABI internals are never
+# selectively hidden here.
