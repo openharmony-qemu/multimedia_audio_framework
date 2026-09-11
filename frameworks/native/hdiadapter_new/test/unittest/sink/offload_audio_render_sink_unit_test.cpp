@@ -304,7 +304,7 @@ static int32_t FakeDrainBuffer(struct IAudioRender *self, AudioDrainNotifyType *
     RecordHdiCall("Drain");
     g_drainEntered.store(true);
     while (g_drainShouldBlock.load() && !g_drainRelease.load()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(CTRL_POLL_STEP_MS / 2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(CTRL_POLL_STEP_MS));
     }
     g_drainExited.store(true);
     return g_hdiDrainRet.load();
