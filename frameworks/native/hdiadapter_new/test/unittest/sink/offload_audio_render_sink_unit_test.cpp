@@ -16,6 +16,7 @@
 #include <atomic>
 #include <chrono>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -255,8 +256,6 @@ static constexpr int32_t CTRL_TEST_REPLY_SHORT_MS = 100;
 static constexpr int32_t CTRL_TEST_REPLY_MS = 1000;
 static constexpr uint32_t FAKE_FRAME_BYTES = 4;
 static constexpr uint32_t FAKE_BUFFER_SIZE_MS = 100;
-// heuristic wind-down budget: drain stub has exited, thread teardown itself is unobservable
-static constexpr int32_t CTRL_TEST_ZOMBIE_WIND_DOWN_MS = 100;
 
 static std::mutex g_hdiCallMtx;
 static std::vector<std::string> g_hdiCalls;
@@ -388,6 +387,18 @@ static bool WaitForCtrlState(const std::shared_ptr<OffloadAudioRenderSink> &sink
         std::this_thread::sleep_for(std::chrono::milliseconds(CTRL_POLL_STEP_MS));
     }
     return sink->ctrlState_.load() == state;
+}
+
+static bool WaitForWeakPtrExpired(const std::weak_ptr<OffloadAudioRenderSink> &weakSink,
+    int32_t timeoutMs)
+{
+    for (int32_t waitedMs = 0; waitedMs < timeoutMs; waitedMs += CTRL_POLL_STEP_MS) {
+        if (weakSink.expired()) {
+            return true;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(CTRL_POLL_STEP_MS));
+    }
+    return weakSink.expired();
 }
 
 /**
@@ -929,10 +940,14 @@ HWTEST_F(OffloadAudioRenderSinkUnitTest, OffloadSinkUnitTest_035, TestSize.Level
     // the abandoned plane rejects every later command
     EXPECT_EQ(sink->PostCtrlCmd(OffloadCtrlCmd::CMD_STOP, 0, CTRL_TEST_REPLY_MS), ERR_ILLEGAL_STATE);
 
-    // let the detached thread leave the stub and wind down before dropping the sink
+    // release the stub: the zombie then consumes the CMD_SHUTDOWN DeInit queued before
+    // the abandon, exits CtrlThreadMain and drops its self-ref; the expired weak_ptr
+    // proves the exit deterministically (no heuristic wind-down sleep needed)
     g_drainRelease.store(true);
     EXPECT_TRUE(WaitForFlag(g_drainExited, CTRL_TEST_WAIT_MS));
-    std::this_thread::sleep_for(std::chrono::milliseconds(CTRL_TEST_ZOMBIE_WIND_DOWN_MS));
+    std::weak_ptr<OffloadAudioRenderSink> weakSink = sink;
+    sink = nullptr;
+    EXPECT_TRUE(WaitForWeakPtrExpired(weakSink, CTRL_TEST_WAIT_MS));
     g_drainShouldBlock.store(false);
 }
 

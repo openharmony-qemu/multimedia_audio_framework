@@ -37,6 +37,12 @@ struct OffloadHdiCallback {
     void *sink_;
 };
 
+// Control-plane actor: one resident ctrl thread serializes all HDI control calls and
+// owns the flush state machine. Ownership constraint: instances MUST be shared_ptr-owned
+// (the ctrl thread holds a self-ref for its whole lifetime). Abandon constraint: if
+// DeInit times out on shutdown it detaches the ctrl thread and skips teardown on
+// purpose (UAF over leak); a drain in flight at that moment is never joined afterwards
+// (see the constraint note on ExecDrain).
 class OffloadAudioRenderSink : public IAudioRenderSink,
     public std::enable_shared_from_this<OffloadAudioRenderSink> {
 public:
