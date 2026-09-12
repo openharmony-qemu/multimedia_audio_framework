@@ -1707,6 +1707,11 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
 {
     AUDIO_INFO_LOG("SetStreamMuteInternal streamType: %{public}d, mute: %{public}d, updateUi: %{public}d",
         streamType, mute, isUpdateUi);
+    if (VolumeUtils::IsNotificationFollowRingtone() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_NOTIFICATION) {
+        AUDIO_INFO_LOG("notificationFollowRingtone_ is true. Use ringtone instead of notification");
+        streamType = STREAM_RING;
+    }
 
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_NOTIFICATION &&
         audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL && !mute) {
@@ -1723,6 +1728,16 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
             }
         }
         return SUCCESS;
+    }
+
+    if (VolumeUtils::IsNotificationFollowRingtone() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
+        // The notificationFollowRingtone is true. Keep the mute of notification and ringtone the same.
+        int32_t setResult1 = SetSingleStreamMute(STREAM_RING, mute, isUpdateUi, deviceType, zoneId);
+        int32_t setResult2 = SetSingleStreamMute(STREAM_NOTIFICATION, mute, isUpdateUi, deviceType, zoneId);
+        AUDIO_INFO_LOG("SetStreamMute: mute=%{public}d, ringtoneResult=%{public}d, notificationResult=%{public}d",
+            mute, setResult1, setResult2);
+        return setResult1;
     }
 
     return SetSingleStreamMute(streamType, mute, isUpdateUi, deviceType, zoneId);

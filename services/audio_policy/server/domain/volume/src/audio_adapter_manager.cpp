@@ -141,6 +141,11 @@ bool AudioAdapterManager::Init()
     isVolumeUnadjustable_ = system::GetBoolParameter("const.multimedia.audio.fixedvolume", false);
     AUDIO_INFO_LOG("Get fixdvolume parameter success %{public}d", isVolumeUnadjustable_);
 
+    bool notificationFollowRingtone =
+        system::GetBoolParameter("const.multimedia.audio.notification_follow_ringtone", false);
+    AUDIO_INFO_LOG("Get notification_follow_ringtone parameter success %{public}d", notificationFollowRingtone);
+    VolumeUtils::SetNotificationFollowRingtone(notificationFollowRingtone);
+
     char mdmMuteStatus[6] = {0};
     ret = GetParameter("persist.edm.unmute_device_disallowed", "false", mdmMuteStatus, sizeof(mdmMuteStatus));
     if (ret > 0) {
