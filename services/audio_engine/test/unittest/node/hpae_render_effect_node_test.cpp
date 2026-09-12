@@ -2699,8 +2699,16 @@ HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_PcmOffloadStopReleasePro
 
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceClass = "speaker";
-    EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), SUCCESS);
-    EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), SUCCESS);
+    // Enhanced-routing platforms force-disable effect offload regardless of spkOffloadEnabled_;
+    // with the flag set, a closed gate means the platform knob closed it. Create/Start are
+    // blocked there, while Stop/Release proceed (isPcmOffload=false skips the gate).
+    if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
+        EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), SUCCESS);
+        EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), SUCCESS);
+    } else {
+        EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+        EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    }
     EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), SUCCESS);
     EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), SUCCESS);
 
