@@ -180,7 +180,7 @@ HWTEST_F(HpaeFastCapturerManagerTest, ConstructAndSimpleApis, TestSize.Level0)
  * @tc.name  : SendRequestAndThreadBranches
  * @tc.type  : FUNC
  * @tc.number: HpaeFastCapturerManagerTest_012
- * @tc.desc  : Test SendRequest init guard and signal-thread null/non-null branches.
+ * @tc.desc  : Test SendRequest thread-null drop (isInit does not bypass) and thread-present branches.
  */
 HWTEST_F(HpaeFastCapturerManagerTest, SendRequestAndThreadBranches, TestSize.Level1)
 {
@@ -191,9 +191,10 @@ HWTEST_F(HpaeFastCapturerManagerTest, SendRequestAndThreadBranches, TestSize.Lev
     manager->HandleMsg();
     EXPECT_EQ(requestHandled, false);
 
+    // isInit no longer bypasses the thread-null check: request is dropped, not queued.
     manager->SendRequest([&requestHandled] { requestHandled = true; }, "test", true);
     manager->HandleMsg();
-    EXPECT_EQ(requestHandled, true);
+    EXPECT_EQ(requestHandled, false);
 
     requestHandled = false;
     manager->isInit_.store(true);
