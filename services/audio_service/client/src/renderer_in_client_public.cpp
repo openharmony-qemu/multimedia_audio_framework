@@ -74,12 +74,18 @@ const std::vector<int32_t> STOP_FLUSH_UIDS = {1013}; // MEDIA_SERVICE_UID
 static const int64_t DUCK_UNDUCK_DURATION_MS = 500; // 500ms
 static const int64_t MIN_INTERVAL_IN_NS = 150000000;
 
-// HOA layouts encode the ambisonic order in the layout bitfield:
-// channel count = (order + 1) * (order + 1)
+// The channel layout bitfield carries a mode tag in bits 44-47 and has two shapes:
+// mode 0 (plain bitmask): every low bit flags one channel, channels = popcount;
+// mode 1 (ambisonic/HOA): the low bits are HOA parameters (order / component
+// ordering / normalization) and the channel count = (order + 1) * (order + 1).
+static uint64_t GetLayoutMode(uint64_t channelLayout)
+{
+    return (channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET;
+}
+
 static bool IsHoaChannelLayout(uint64_t channelLayout)
 {
-    return ((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) ==
-        static_cast<uint64_t>(CHANNEL_MDOE_AMBISONIC);
+    return GetLayoutMode(channelLayout) == static_cast<uint64_t>(CHANNEL_MDOE_AMBISONIC);
 }
 
 static bool IsHoaChannelCountMatched(uint64_t channelLayout, uint8_t channels)
