@@ -974,6 +974,7 @@ ohos_unittest("renderer_in_client_hoa_unit_test") {
     "hdf_core:libpub_utils",
     "hicollie:libhicollie",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
