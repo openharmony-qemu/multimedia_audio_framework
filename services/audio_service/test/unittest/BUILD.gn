@@ -924,6 +924,7 @@ ohos_unittest("capturer_in_client_unit_test") {
 ohos_unittest("renderer_in_client_hoa_unit_test") {
   testonly = true
   module_out_path = module_output_path
+  use_exceptions = true # GTEST_SKIP needs exceptions; without it the skip only logs
 
   configs = [ ":module_private_config" ]
 

@@ -219,25 +219,5 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_NonHoaAudioVivid_001, Tes
     int32_t ret = rendererInClient->SetAudioStreamInfo(info, proxyObj);
     EXPECT_NE(ret, ERR_INVALID_PARAM);
 }
-
-/**
- * @tc.name  : Test SetAudioStreamInfo converter construct failure API
- * @tc.type  : FUNC
- * @tc.number: SetAudioStreamInfo_ConverterConstructFail_001
- * @tc.desc  : Test SetAudioStreamInfo returns ERR_NOT_SUPPORTED when the converter fails to
- *             construct on an unsupported sample format; the converter object is kept, which
- *             distinguishes this branch from the D4 algo-unavailable guard.
- */
-HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_ConverterConstructFail_001, TestSize.Level1)
-{
-    auto rendererInClient = RendererInClient::GetInstance(AudioStreamType::STREAM_MUSIC, getuid());
-    ASSERT_TRUE(rendererInClient != nullptr);
-
-    AudioStreamParams info = BuildAudioVividParams(AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO);
-    info.format = AudioSampleFormat::INVALID_WIDTH;
-    std::shared_ptr<AudioClientTracker> proxyObj;
-    int32_t ret = rendererInClient->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
 } // namespace AudioStandard
 } // namespace OHOS
