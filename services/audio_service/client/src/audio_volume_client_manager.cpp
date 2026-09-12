@@ -44,7 +44,8 @@ AudioVolumeClientManager::~AudioVolumeClientManager()
     }
 }
 
-int32_t AudioVolumeClientManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid)
+int32_t AudioVolumeClientManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid,
+    int32_t zoneId)
 {
     HILOG_COMM_INFO("[SetVolume]SetSystemVolume: volumeType[%{public}d], volumeLevel[%{public}d]",
         volumeType, volumeLevel);
@@ -88,7 +89,8 @@ int32_t AudioVolumeClientManager::SetVolume(AudioVolumeType volumeType, int32_t 
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    int32_t ret = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, uid == 0, 0, uid);
+    int32_t ret = uid == 0 ? AudioPolicyManager::GetInstance().SetSystemVolumeLevelLegacy(volumeType, volumeLevel) :
+        AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, 0, uid, zoneId);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             ERR_SET_VOLUME_FAILED, "SetVolume failed", true));
@@ -138,7 +140,7 @@ int32_t AudioVolumeClientManager::SetVolumeWithDevice(AudioVolumeType volumeType
     return AudioPolicyManager::GetInstance().SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType);
 }
 
-int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t uid) const
+int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t uid, int32_t zoneId) const
 {
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -176,7 +178,7 @@ int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t 
             return ERR_NOT_SUPPORTED;
     }
 
-    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType, uid);
+    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType, uid, zoneId);
 }
 
 int32_t AudioVolumeClientManager::SetLowPowerVolume(int32_t streamId, float volume) const
@@ -528,7 +530,8 @@ int32_t AudioVolumeClientManager::UnregisterSystemVolumeChangeByFilterCallback(c
     return ret;
 }
 
-int32_t AudioVolumeClientManager::SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid)
+int32_t AudioVolumeClientManager::SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid,
+    int32_t zoneId)
 {
     AUDIO_INFO_LOG("volumeType[%{public}d], volumeDegree[%{public}d]", volumeType, degree);
 
@@ -563,10 +566,10 @@ int32_t AudioVolumeClientManager::SetVolumeDegree(AudioVolumeType volumeType, in
             return ERR_NOT_SUPPORTED;
     }
 
-    return AudioPolicyManager::GetInstance().SetSystemVolumeDegree(volumeType, degree, 0, uid);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeDegree(volumeType, degree, 0, uid, zoneId);
 }
 
-int32_t AudioVolumeClientManager::GetVolumeDegree(AudioVolumeType volumeType, int32_t uid)
+int32_t AudioVolumeClientManager::GetVolumeDegree(AudioVolumeType volumeType, int32_t uid, int32_t zoneId)
 {
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -599,7 +602,7 @@ int32_t AudioVolumeClientManager::GetVolumeDegree(AudioVolumeType volumeType, in
             return ERR_NOT_SUPPORTED;
     }
 
-    return AudioPolicyManager::GetInstance().GetSystemVolumeDegree(volumeType, uid);
+    return AudioPolicyManager::GetInstance().GetSystemVolumeDegree(volumeType, uid, zoneId);
 }
 
 int32_t AudioVolumeClientManager::GetMinVolumeDegree(AudioVolumeType volumeType)

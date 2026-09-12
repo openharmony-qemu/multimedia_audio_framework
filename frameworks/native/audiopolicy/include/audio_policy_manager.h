@@ -60,8 +60,10 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
-        int32_t volumeFlag = 0, int32_t uid = 0);
+    int32_t SetSystemVolumeLevelLegacy(AudioVolumeType volumeType, int32_t volumeLevel);
+
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel,
+        int32_t volumeFlag = 0, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID);
 
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
         int32_t volumeFlag = 0);
@@ -87,7 +89,7 @@ public:
 
     bool ReloadLoudVolumeMode(AudioStreamType streamType, SetLoudVolMode setVolMode);
 
-    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
+    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID);
 
     int32_t GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage);
 
@@ -824,8 +826,8 @@ public:
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
     int32_t UnsetVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
     int32_t SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
-        int32_t volumeFlag, int32_t uid);
-    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
+        int32_t volumeFlag, int32_t uid, int32_t zoneId = INVALID_ZONEID);
+    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid, int32_t zoneId = INVALID_ZONEID);
     int32_t GetSystemVolumeDegreeWithDevice(AudioVolumeType volumeType, DeviceType deviceType,
         std::string networkId = LOCAL_NETWORK_ID);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);

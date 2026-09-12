@@ -920,5 +920,69 @@ HWTEST_F(AudioPolicyServerMethodsTest, EnableSystemRecordController_002, TestSiz
     int32_t ret = audioPolicyServer_->EnableSystemRecordController(true, config, obj);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
+
+/**
+ * @tc.name  : GetSystemVolumeLevel_001
+ * @tc.desc  : zoneId valid, skip FindAudioZoneByUid.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, GetSystemVolumeLevel_001, TestSize.Level1)
+{
+    int32_t level = -1;
+    audioPolicyServer_->GetSystemVolumeLevel(STREAM_MUSIC, 0, level, 0);
+    EXPECT_GE(level, 0);
+}
+
+/**
+ * @tc.name  : GetSystemVolumeLevel_002
+ * @tc.desc  : zoneId invalid, uid!=0, go uid reverse lookup.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, GetSystemVolumeLevel_002, TestSize.Level1)
+{
+    int32_t level = -1;
+    audioPolicyServer_->GetSystemVolumeLevel(STREAM_MUSIC, 1000, level, INVALID_ZONEID);
+    EXPECT_GE(level, 0);
+}
+
+/**
+ * @tc.name  : SetSystemVolumeDegree_001
+ * @tc.desc  : zoneId valid, skip FindAudioZoneByUid.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, SetSystemVolumeDegree_001, TestSize.Level1)
+{
+    int32_t ret = audioPolicyServer_->SetSystemVolumeDegree(STREAM_MUSIC, 30, 0, 0, 0);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : SetSystemVolumeDegree_002
+ * @tc.desc  : zoneId invalid, uid!=0, go uid reverse lookup.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, SetSystemVolumeDegree_002, TestSize.Level1)
+{
+    int32_t ret = audioPolicyServer_->SetSystemVolumeDegree(STREAM_MUSIC, 30, 0, 1000, INVALID_ZONEID);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : GetSystemVolumeDegree_001
+ * @tc.desc  : zoneId valid, skip FindAudioZoneByUid.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, GetSystemVolumeDegree_001, TestSize.Level1)
+{
+    int32_t degree = -1;
+    audioPolicyServer_->GetSystemVolumeDegree(STREAM_MUSIC, 0, degree, 0);
+    EXPECT_GE(degree, 0);
+}
+
+/**
+ * @tc.name  : GetSystemVolumeDegree_002
+ * @tc.desc  : zoneId invalid, uid!=0, go uid reverse lookup.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, GetSystemVolumeDegree_002, TestSize.Level1)
+{
+    int32_t degree = -1;
+    audioPolicyServer_->GetSystemVolumeDegree(STREAM_MUSIC, 1000, degree, INVALID_ZONEID);
+    EXPECT_GE(degree, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
