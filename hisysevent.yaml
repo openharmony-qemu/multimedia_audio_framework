@@ -22,6 +22,7 @@ DEVICE_CHANGE:
   NETWORKID: {type: STRING, desc: network id}
   ADDRESS: {type: STRING, desc: device address}
   DEVICE_DETAILED_CATEGORY: {type: STRING, desc: device detailed category}
+  ZONE_INFO: {type: STRING, desc: zone details}
 
 VOLUME_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: audio input device}
@@ -46,6 +47,7 @@ STREAM_CHANGE:
   STATE: {type: INT32, desc: audio state}
   DEVICETYPE: {type: INT32, desc: device type}
   NETWORKID: {type: STRING, desc: network id}
+  ZONE_INFO: {type: STRING, desc: zone details}
 
 STREAM_STANDBY:
   __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: render stream standby state change}
