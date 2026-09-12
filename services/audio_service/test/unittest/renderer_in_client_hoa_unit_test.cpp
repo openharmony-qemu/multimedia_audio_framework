@@ -19,8 +19,12 @@
  *   - D1: HOA layout whose order does not match the channel count is rejected with
  *     ERR_INVALID_PARAM before any converter config IPC.
  *   - D4: HOA stream whose MCR converter failed to load the algo library is rejected
- *     with ERR_NOT_SUPPORTED and converter_ is reset to nullptr; non-HOA streams only
- *     log a warning and keep the passthrough converter.
+ *     with ERR_NOT_SUPPORTED; non-HOA streams only log a warning and keep the
+ *     passthrough converter.
+ *
+ * The cases go through the RendererInClient factory and pin return codes only.
+ * They deliberately do not include renderer_in_client_private.h: its header chain
+ * is internal and differs across code lines, which dragged in transitive deps.
  *
  * Environment notes:
  *   - D4 cases rely on the UT environment having no MCR algo library deployed under
@@ -43,7 +47,7 @@
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_spatial_channel_converter.h"
-#include "renderer_in_client_private.h"
+#include "renderer_in_client.h"
 
 using namespace testing::ext;
 
@@ -118,7 +122,7 @@ static void SkipIfMcrAlgoLoaded()
  */
 HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD1Reject_001, TestSize.Level1)
 {
-    auto rendererInClient = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getuid());
+    auto rendererInClient = RendererInClient::GetInstance(AudioStreamType::STREAM_MUSIC, getuid());
     ASSERT_TRUE(rendererInClient != nullptr);
 
     AudioStreamParams info = BuildAudioVividParams(AudioChannelLayout::CH_LAYOUT_HOA_ORDER2_ACN_N3D,
@@ -126,7 +130,6 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD1Reject_001, TestSize
     std::shared_ptr<AudioClientTracker> proxyObj;
     int32_t ret = rendererInClient->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
-    EXPECT_EQ(rendererInClient->converter_, nullptr);
 }
 
 /**
@@ -138,7 +141,7 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD1Reject_001, TestSize
  */
 HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD1Reject_002, TestSize.Level1)
 {
-    auto rendererInClient = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getuid());
+    auto rendererInClient = RendererInClient::GetInstance(AudioStreamType::STREAM_MUSIC, getuid());
     ASSERT_TRUE(rendererInClient != nullptr);
 
     std::shared_ptr<AudioClientTracker> proxyObj;
@@ -151,7 +154,6 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD1Reject_002, TestSize
         AudioChannel::CHANNEL_9);
     ret = rendererInClient->SetAudioStreamInfo(firstOrderInfo, proxyObj);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
-    EXPECT_EQ(rendererInClient->converter_, nullptr);
 }
 
 /**
@@ -164,7 +166,7 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD1Reject_002, TestSize
 HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD4HardFail_001, TestSize.Level1)
 {
     SkipIfMcrAlgoLoaded();
-    auto rendererInClient = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getuid());
+    auto rendererInClient = RendererInClient::GetInstance(AudioStreamType::STREAM_MUSIC, getuid());
     ASSERT_TRUE(rendererInClient != nullptr);
 
     AudioStreamParams info = BuildAudioVividParams(AudioChannelLayout::CH_LAYOUT_HOA_ORDER2_ACN_N3D,
@@ -172,7 +174,6 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD4HardFail_001, TestSi
     std::shared_ptr<AudioClientTracker> proxyObj;
     int32_t ret = rendererInClient->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-    EXPECT_EQ(rendererInClient->converter_, nullptr);
 }
 
 /**
@@ -185,7 +186,7 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD4HardFail_001, TestSi
 HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD4HardFail_002, TestSize.Level1)
 {
     SkipIfMcrAlgoLoaded();
-    auto rendererInClient = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getuid());
+    auto rendererInClient = RendererInClient::GetInstance(AudioStreamType::STREAM_MUSIC, getuid());
     ASSERT_TRUE(rendererInClient != nullptr);
 
     std::shared_ptr<AudioClientTracker> proxyObj;
@@ -193,13 +194,11 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD4HardFail_002, TestSi
         AudioChannel::CHANNEL_4);
     int32_t ret = rendererInClient->SetAudioStreamInfo(firstOrderInfo, proxyObj);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-    EXPECT_EQ(rendererInClient->converter_, nullptr);
 
     AudioStreamParams thirdOrderInfo = BuildAudioVividParams(AudioChannelLayout::CH_LAYOUT_HOA_ORDER3_ACN_N3D,
         AudioChannel::CHANNEL_16);
     ret = rendererInClient->SetAudioStreamInfo(thirdOrderInfo, proxyObj);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-    EXPECT_EQ(rendererInClient->converter_, nullptr);
 }
 
 /**
@@ -212,14 +211,13 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD4HardFail_002, TestSi
  */
 HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_NonHoaAudioVivid_001, TestSize.Level1)
 {
-    auto rendererInClient = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getuid());
+    auto rendererInClient = RendererInClient::GetInstance(AudioStreamType::STREAM_MUSIC, getuid());
     ASSERT_TRUE(rendererInClient != nullptr);
 
     AudioStreamParams info = BuildAudioVividParams(AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO);
     std::shared_ptr<AudioClientTracker> proxyObj;
     int32_t ret = rendererInClient->SetAudioStreamInfo(info, proxyObj);
     EXPECT_NE(ret, ERR_INVALID_PARAM);
-    EXPECT_NE(rendererInClient->converter_, nullptr);
 }
 
 /**
@@ -232,7 +230,7 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_NonHoaAudioVivid_001, Tes
  */
 HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_ConverterConstructFail_001, TestSize.Level1)
 {
-    auto rendererInClient = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getuid());
+    auto rendererInClient = RendererInClient::GetInstance(AudioStreamType::STREAM_MUSIC, getuid());
     ASSERT_TRUE(rendererInClient != nullptr);
 
     AudioStreamParams info = BuildAudioVividParams(AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO);
@@ -240,7 +238,6 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_ConverterConstructFail_00
     std::shared_ptr<AudioClientTracker> proxyObj;
     int32_t ret = rendererInClient->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-    EXPECT_NE(rendererInClient->converter_, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
