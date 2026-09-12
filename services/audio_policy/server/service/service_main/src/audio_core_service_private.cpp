@@ -3870,8 +3870,7 @@ bool AudioCoreService::HasRunningScoNormalCapturerStream(
     for (const auto &desc : inputStreamDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
         if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
-            (desc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_RECOGNITION &&
-            desc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
+            !Util::IsScoSupportSource(desc->capturerInfo_.sourceType) &&
             (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
             desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
             AUDIO_INFO_LOG("Running Normal Capturer stream : %{public}d", desc->sessionId_);
@@ -3887,8 +3886,7 @@ bool AudioCoreService::HasRunningScoRecognitionCapturerStream(
     for (const auto &desc : inputStreamDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
         if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
-            (desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
-            desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
+            Util::IsScoSupportSource(desc->capturerInfo_.sourceType) &&
             (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
             desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
             desc->newDeviceDescs_[0]->isVrSupported_)) {
