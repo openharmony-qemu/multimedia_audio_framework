@@ -326,6 +326,8 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     shlib_type = "sa"
+
+    version_script = "libaudio_suite_service.versionscript"
  
     deps = [
       ":audio_suite",
