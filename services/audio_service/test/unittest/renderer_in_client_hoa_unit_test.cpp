@@ -27,9 +27,10 @@
  *     /system/lib64(32), so AudioSpatialChannelConverter::Init() ends with
  *     loadSuccess_ == false, and on AudioPolicyManager::GetConverterConfig() degrading
  *     to an empty config when the audio policy service is absent.
- *   - The D4 cases are only valid on standard UT images without the MCR algo library
- *     deployed (e.g. rk CI images); on product images shipping the algo the load result
- *     flips and those cases would fail.
+ *   - The D4 cases probe the image with the same load chain as production
+ *     (GetConverterConfig -> converter Init -> IsAlgoLoaded) and skip via GTEST_SKIP
+ *     on images where the MCR algo is actually loaded, so product images shipping the
+ *     algo do not turn these negative cases red.
  *   - The non-HOA case only asserts that the D1/D4 guards do not misfire: the code
  *     after the guards reaches InitIpcStream() whose result depends on whether the
  *     audio service is available in the test environment, so no exact value is pinned.
@@ -40,6 +41,8 @@
 
 #include <gtest/gtest.h>
 #include "audio_errors.h"
+#include "audio_policy_manager.h"
+#include "audio_spatial_channel_converter.h"
 #include "renderer_in_client_private.h"
 
 using namespace testing::ext;
@@ -84,6 +87,26 @@ static AudioStreamParams BuildAudioVividParams(AudioChannelLayout channelLayout,
     info.channels = channels;
     info.channelLayout = channelLayout;
     return info;
+}
+
+// Probe whether this image actually loads the MCR algo library, using the same chain
+// as the production D4 decision (GetConverterConfig -> converter Init -> IsAlgoLoaded).
+static bool IsMcrAlgoLoadedOnThisImage()
+{
+    ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
+    AudioSpatialChannelConverter probe;
+    if (!probe.Init(BuildAudioVividParams(AudioChannelLayout::CH_LAYOUT_HOA_ORDER2_ACN_N3D,
+        AudioChannel::CHANNEL_9), cfg)) {
+        return false;
+    }
+    return probe.IsAlgoLoaded();
+}
+
+static void SkipIfMcrAlgoLoaded()
+{
+    if (IsMcrAlgoLoadedOnThisImage()) {
+        GTEST_SKIP() << "MCR algo deployed on this image; D4 hard-fail case not valid here";
+    }
 }
 
 /**
@@ -140,6 +163,7 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD1Reject_002, TestSize
  */
 HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD4HardFail_001, TestSize.Level1)
 {
+    SkipIfMcrAlgoLoaded();
     auto rendererInClient = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getuid());
     ASSERT_TRUE(rendererInClient != nullptr);
 
@@ -160,6 +184,7 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD4HardFail_001, TestSi
  */
 HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD4HardFail_002, TestSize.Level1)
 {
+    SkipIfMcrAlgoLoaded();
     auto rendererInClient = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getuid());
     ASSERT_TRUE(rendererInClient != nullptr);
 

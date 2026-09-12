@@ -28,6 +28,7 @@
 #include "hisysevent.h"
 
 #include "audio_errors.h"
+#include "audio_device_utils.h"
 #include "audio_policy_manager.h"
 #include "audio_renderer_log.h"
 #include "audio_ring_cache.h"
@@ -73,7 +74,8 @@ const std::vector<int32_t> STOP_FLUSH_UIDS = {1013}; // MEDIA_SERVICE_UID
 static const int64_t DUCK_UNDUCK_DURATION_MS = 500; // 500ms
 static const int64_t MIN_INTERVAL_IN_NS = 150000000;
 
-// HOA layouts encode the ambisonic order in the layout bitfield: channel count = (order + 1) ^ 2
+// HOA layouts encode the ambisonic order in the layout bitfield:
+// channel count = (order + 1) * (order + 1)
 static bool IsHoaChannelLayout(uint64_t channelLayout)
 {
     return ((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) ==
@@ -82,9 +84,9 @@ static bool IsHoaChannelLayout(uint64_t channelLayout)
 
 static bool IsHoaChannelCountMatched(uint64_t channelLayout, uint8_t channels)
 {
-    uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
-    uint64_t expectedChannels = (order + 1) * (order + 1);
-    return expectedChannels == static_cast<uint64_t>(channels);
+    return IsHoaChannelLayout(channelLayout) &&
+        (ConvertLayoutToAudioChannel(static_cast<AudioChannelLayout>(channelLayout)) ==
+        static_cast<AudioChannel>(channels));
 }
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
