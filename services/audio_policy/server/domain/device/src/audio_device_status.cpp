@@ -55,6 +55,11 @@ const std::string DEFAULT_BUFFER_SIZE_8000 = "320";
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const int32_t DEFAULT_UID = -1;
 
+const std::unordered_map<AudioFlag, std::string> SUPPORT_FLAG_DYNAMIC_PIPE_MAP = {
+    {AudioFlag::AUDIO_OUTPUT_FLAG_LOWPOWER, "offload_distributed_output"},
+    {AudioFlag::AUDIO_OUTPUT_FLAG_MULTICHANNEL, "multichannel_distributed_output"},
+};
+
 static std::string GetEncryptAddr(const std::string &addr)
 {
     const int32_t START_POS = 6;
@@ -1860,10 +1865,11 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         device.audioStreamInfo_ = capability.streamInfoList_;
         std::list<std::string> supportDevices = { "Distributed_Output" };
         device.SetDeviceCapability(capability.streamInfoList_, 0);
-        AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "offload_distributed_output",
-            capability.streamInfoList_, supportDevices, device.networkId_);
-        AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "multichannel_distributed_output",
-            capability.streamInfoList_, supportDevices, device.networkId_);
+        for (const auto &[flag, propInfo] : SUPPORT_FLAG_DYNAMIC_PIPE_MAP) {
+            CHECK_AND_CONTINUE(capability.IsSupportDynamicPipe(flag));
+            AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", propInfo,
+                capability.streamInfoList_, supportDevices, device.networkId_);
+        }
         device.BuildCapabilitiesFromDeviceStreamInfo();
         AUDIO_INFO_LOG("Update audioStreamInfo success");
     }
@@ -1886,7 +1892,7 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         device.model_ = "hiplay";
         device.isSupportRemoteMultichannel_ = false;
     } else if (capability.protocol_ == 1) {
-        device.isSupportRemoteMultichannel_ = false;
+        device.isSupportRemoteMultichannel_ = true;
     }
 
     device.hdPlaybackMode_ = static_cast<HdPlaybackMode>(capability.hdPlaybackMode_);
