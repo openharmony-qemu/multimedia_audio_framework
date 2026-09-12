@@ -106,12 +106,16 @@ static bool IsMcrAlgoLoadedOnThisImage()
     return probe.IsAlgoLoaded();
 }
 
-static void SkipIfMcrAlgoLoaded()
-{
-    if (IsMcrAlgoLoadedOnThisImage()) {
-        GTEST_SKIP() << "MCR algo deployed on this image; D4 hard-fail case not valid here";
-    }
-}
+// GTEST_SKIP must be followed by a plain return in the test body: with exceptions
+// disabled it only records the skip and does not unwind out of the test, and calling
+// it from a helper would merely return from the helper.
+#define SKIP_IF_MCR_ALGO_LOADED() \
+    do { \
+        if (IsMcrAlgoLoadedOnThisImage()) { \
+            GTEST_SKIP() << "MCR algo deployed on this image; D4 hard-fail case not valid here"; \
+            return; \
+        } \
+    } while (0)
 
 /**
  * @tc.name  : Test SetAudioStreamInfo HOA D1 guard API
@@ -165,7 +169,7 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD1Reject_002, TestSize
  */
 HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD4HardFail_001, TestSize.Level1)
 {
-    SkipIfMcrAlgoLoaded();
+    SKIP_IF_MCR_ALGO_LOADED();
     auto rendererInClient = RendererInClient::GetInstance(AudioStreamType::STREAM_MUSIC, getuid());
     ASSERT_TRUE(rendererInClient != nullptr);
 
@@ -185,7 +189,7 @@ HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD4HardFail_001, TestSi
  */
 HWTEST(RendererInClientHoaUnitTest, SetAudioStreamInfo_HoaD4HardFail_002, TestSize.Level1)
 {
-    SkipIfMcrAlgoLoaded();
+    SKIP_IF_MCR_ALGO_LOADED();
     auto rendererInClient = RendererInClient::GetInstance(AudioStreamType::STREAM_MUSIC, getuid());
     ASSERT_TRUE(rendererInClient != nullptr);
 
