@@ -76,7 +76,7 @@ ohos_unittest("hpae_render_manager_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
@@ -1390,7 +1390,7 @@ ohos_unittest("hpae_direct_renderer_manager_session_effect_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
