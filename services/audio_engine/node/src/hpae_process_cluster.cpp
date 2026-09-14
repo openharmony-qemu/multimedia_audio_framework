@@ -721,6 +721,11 @@ std::shared_ptr<HpaeLoudnessGainNode> HpaeProcessCluster::GetLoudnessGainNode(ui
     return SafeGetMap(idLoudnessGainNodeMap_, sessionId);
 }
 
+std::shared_ptr<HpaeLoudnessGainNode> HpaeProcessCluster::GetRenderEffectNode() const
+{
+    return renderEffectNode_;
+}
+
 void HpaeProcessCluster::SetCollaborationStateToMixNode(CollaborationState isCollaborationEnabled)
 {
     if (mixerNode_ != nullptr) {

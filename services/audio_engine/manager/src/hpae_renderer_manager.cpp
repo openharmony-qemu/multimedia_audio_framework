@@ -982,7 +982,9 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
     auto request = [this, sceneType]() {
         AUDIO_INFO_LOG("mixerNode trigger callback, sceneType %{public}d", sceneType);
         if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
-            AudioEffectChainManager::GetInstance()->SetInitEffectBufferFlag(false);
+            if (sceneClusterMap_[sceneType]->GetRenderEffectNode != nullptr) {
+                AudioEffectChainManager::GetInstance()->SetInitEffectBufferFlag(false);
+            }
             DisConnectOutputCluster(sceneType);
             // for collaboration
             DisConnectCoBufferFromOnDisConnectProcessCluster(sceneType);

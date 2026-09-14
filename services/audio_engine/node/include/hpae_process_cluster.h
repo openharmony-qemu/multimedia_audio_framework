@@ -96,6 +96,7 @@ public:
     int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value);
     std::shared_ptr<HpaeSessionEffectNode> GetSessionEffectNode(uint32_t sessionId) const;
     std::shared_ptr<HpaeLoudnessGainNode> GetLoudnessGainNode(uint32_t sessionId) const;
+    std::shared_ptr<HpaeLoudnessGainNode> GetRenderEffectNode() const;
     void SetCollaborationStateToMixNode(CollaborationState isCollaborationEnabled);
     void SetDelayCountToEffectNode(int32_t delayCount);
     void SetCollabDoFade(bool fadeOutState);
