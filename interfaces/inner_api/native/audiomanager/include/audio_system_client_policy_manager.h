@@ -186,15 +186,6 @@ public:
     int32_t ActivatePreemptMode() const;
 
     /**
-     * @brief Set duck passthrough mode
-     *
-     * @param enable True to enable duck passthrough mode, false to disable.
-     * @return Returns {@link SUCCESS} if successful; returns an error code otherwise.
-     * @since 26.0.0
-     */
-    int32_t SetDuckPassthroughMode(bool enable) const;
-
-    /**
      * @brief Update stream state
      *
      * @param clientUid client Uid
