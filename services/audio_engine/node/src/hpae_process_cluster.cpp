@@ -721,7 +721,7 @@ std::shared_ptr<HpaeLoudnessGainNode> HpaeProcessCluster::GetLoudnessGainNode(ui
     return SafeGetMap(idLoudnessGainNodeMap_, sessionId);
 }
 
-std::shared_ptr<HpaeLoudnessGainNode> HpaeProcessCluster::GetRenderEffectNode() const
+std::shared_ptr<HpaeRenderEffectNode> HpaeProcessCluster::GetRenderEffectNode() const
 {
     return renderEffectNode_;
 }
