@@ -22,3 +22,4 @@ persist.multimedia.audio.anco_capture_focus_control = 1
 persist.multimedia.audio.enable_new_route = 0
 persist.multimedia.audio.anco_focus_hint_control = 1
 const.multimedia.audio.support_params_utils = 0
+const.multimedia.audio.notification_follow_ringtone = false
