@@ -658,7 +658,7 @@ int32_t AudioSystemManager::ActivatePreemptMode() const
 
 int32_t AudioSystemManager::SetDuckPassthroughMode(bool enable) const
 {
-    return AudioSystemClientPolicyManager::GetInstance().SetDuckPassthroughMode(enable);
+    return AudioInterruptClientManager::GetInstance().SetDuckPassthroughMode(enable);
 }
 
 int32_t AudioSystemManager::SetForegroundList(const std::vector<std::string> &list)
