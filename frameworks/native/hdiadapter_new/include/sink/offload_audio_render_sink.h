@@ -19,6 +19,11 @@
 #include "sink/i_audio_render_sink.h"
 #include <iostream>
 #include <cstring>
+#include <atomic>
+#include <condition_variable>
+#include <future>
+#include <queue>
+#include <thread>
 #include "v6_1/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
@@ -32,7 +37,14 @@ struct OffloadHdiCallback {
     void *sink_;
 };
 
-class OffloadAudioRenderSink : public IAudioRenderSink {
+// Control-plane actor: one resident ctrl thread serializes all HDI control calls and
+// owns the flush state machine. Ownership constraint: instances MUST be shared_ptr-owned
+// (the ctrl thread holds a self-ref for its whole lifetime). Abandon constraint: if
+// DeInit times out on shutdown it detaches the ctrl thread and skips teardown on
+// purpose (UAF over leak); a drain in flight at that moment is never joined afterwards
+// (see the constraint note on ExecDrain).
+class OffloadAudioRenderSink : public IAudioRenderSink,
+    public std::enable_shared_from_this<OffloadAudioRenderSink> {
 public:
     OffloadAudioRenderSink() = default;
     ~OffloadAudioRenderSink();
@@ -93,8 +105,30 @@ private:
     int32_t SetVolumeInner(float left, float right, uint32_t durationMs = 0);
     bool NeedToSetOffloadVolume(const float newVolume);
     void UpdateSinkState(bool started);
-    int32_t FlushInner(void);
-    void CheckFlushThread();
+    // ---- control-plane actor: one resident thread owns all HDI control calls and the
+    // flush state machine, replacing the old spawn-per-flush threads and the
+    // isFlushing_/isNeedRestart_ cross-thread flags (see control-plane refactor design)
+    enum class CtrlState : uint8_t { CTRL_IDLE, CTRL_STARTED, CTRL_FLUSHING };
+    enum class CtrlCmd : uint8_t { CMD_START, CMD_STOP, CMD_FLUSH, CMD_RESET, CMD_DRAIN, CMD_SHUTDOWN };
+    enum class PendingAfterFlush : uint8_t { PENDING_NONE, PENDING_START, PENDING_STOP };
+
+    struct CtrlRequest {
+        CtrlCmd cmd;
+        int32_t arg = 0; // AudioDrainType for CMD_DRAIN
+        std::shared_ptr<std::promise<int32_t>> done; // null = fire and forget
+    };
+
+    int32_t PostCtrlCmd(CtrlCmd cmd, int32_t arg, int32_t waitMs);
+    void StartCtrlThread(); // requires a shared_ptr-owned instance (uses shared_from_this)
+    void CtrlThreadMain();
+    int32_t HandleCtrlCmd(CtrlCmd cmd, int32_t arg);
+    int32_t ExecStart();
+    int32_t ExecStop(bool flushFirst = true); // false = flush already done (pending-stop path)
+    // publishStarted=false: the caller owns the terminal state, ExecStop keeps the
+    // write gate closed until it publishes IDLE (or STARTED on legacy failure)
+    void ExecFlush(bool restartAfter, bool publishStarted = true);
+    int32_t ExecDrain(int32_t drainType);
+    void ResolvePendingAfterFlush(bool restartAfter, bool publishStarted = true);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -110,13 +144,15 @@ private:
     static constexpr int32_t RUNNING_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
     static constexpr uint32_t AUDIO_SPEED_BASE = 1000;
+    // caller wait budget for control replies; must stay well below the media side 8s write
+    // timeout, otherwise a stuck reply makes media rebuild the stream on top of it
+    static constexpr int32_t CTRL_WAIT_MS = 3000;
+    static constexpr int32_t CTRL_SHUTDOWN_JOIN_MS = 2000;
 
     IAudioSinkAttr attr_ = {};
     struct OffloadHdiCallback hdiCallback_ = {};
     bool sinkInited_ = false;
-    bool started_ = false;
-    bool isFlushing_ = false;
-    bool isNeedRestart_ = false;
+    std::atomic<bool> started_ = false;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     float offloadVolume_ = 0.0f;
@@ -155,7 +191,14 @@ private:
 
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     bool forceSetRouteFlag_ = false;
-    std::shared_ptr<std::thread> flushThread_;
+    std::thread ctrlThread_;
+    std::mutex ctrlQueueMutex_; // leaf lock: guards the queue only, never across sinkMutex_
+    std::condition_variable ctrlQueueCv_;
+    std::queue<CtrlRequest> ctrlQueue_;
+    std::atomic<CtrlState> ctrlState_ = CtrlState::CTRL_IDLE; // lock-free readers: RenderFrame etc.
+    std::atomic<bool> ctrlRunning_ = false;
+    std::atomic<bool> ctrlAbandoned_ = false;
+    PendingAfterFlush pendingAfterFlush_ = PendingAfterFlush::PENDING_NONE; // ctrl thread only
 };
 
 } // namespace AudioStandard
