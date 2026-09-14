@@ -289,12 +289,6 @@ int32_t AudioSystemClientPolicyManager::ActivatePreemptMode() const
     return AudioPolicyManager::GetInstance().ActivatePreemptMode();
 }
 
-int32_t AudioSystemClientPolicyManager::SetDuckPassthroughMode(bool enable) const
-{
-    AUDIO_DEBUG_LOG("SetDuckPassthroughMode: %{public}d", enable);
-    return AudioPolicyManager::GetInstance().SetDuckPassthroughMode(enable);
-}
-
 int32_t AudioSystemClientPolicyManager::UpdateStreamState(int32_t clientUid,
     StreamSetState streamSetState, StreamUsage streamUsage)
 {
