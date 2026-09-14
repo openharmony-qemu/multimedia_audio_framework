@@ -222,7 +222,7 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_012, TestSize.Level4)
     std::string macAddress = "00:11:22:33:44:55";
     std::string deviceName = "testDevice";
     AudioStreamInfo streamInfo = AudioStreamInfo();
-    audioDeviceStatus_->audioActiveDevice_.activeBTDevice_ = macAddress;
+    audioDeviceStatus_->audioActiveDevice_.AddActiveBtDevice(macAddress);
     audioDeviceStatus_->audioA2dpOffloadManager_ = nullptr;
     audioDeviceStatus_->OnDeviceConfigurationChanged(deviceType, macAddress, deviceName, streamInfo);
     EXPECT_EQ(audioDeviceStatus_->audioA2dpDevice_.connectedA2dpDeviceMap_.size(), 0);
@@ -240,13 +240,13 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_013, TestSize.Level4)
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = AudioSampleFormat::SAMPLE_U8;
     streamInfo.channels = AudioChannel::CHANNEL_16;
-    audioDeviceStatus_->audioActiveDevice_.activeBTDevice_ = "testBTDevice";
+    audioDeviceStatus_->audioActiveDevice_.AddActiveBtDevice("testBTDevice");
     A2dpDeviceConfigInfo config;
     config.streamInfo.samplingRate.insert(AudioSamplingRate::SAMPLE_RATE_44100);
     config.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     config.streamInfo.channelLayout.insert(AudioChannelLayout::CH_LAYOUT_MONO);
     audioDeviceStatus_->audioActiveDevice_.audioA2dpDevice_.connectedA2dpDeviceMap_["testBTDevice"] = config;
-    EXPECT_TRUE(audioDeviceStatus_->IsConfigurationUpdated(deviceType, streamInfo));
+    EXPECT_TRUE(audioDeviceStatus_->IsConfigurationUpdated(deviceType, "testBTDevice", streamInfo));
 }
 
 /**

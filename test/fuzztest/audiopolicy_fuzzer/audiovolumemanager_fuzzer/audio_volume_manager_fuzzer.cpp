@@ -288,7 +288,7 @@ void AudioVolumeManagerSetAbsVolumeSceneAsyncFuzzTest(FuzzedDataProvider& fdp)
     bool support = fdp.ConsumeBool();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
-    audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
+    audioVolumeManager.audioActiveDevice_.AddActiveBtDevice(macAddress);
     audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support, 0);
 }
 
@@ -314,7 +314,7 @@ void AudioVolumeManagerSetDeviceAbsVolumeSupportedFuzzTest(FuzzedDataProvider& f
     bool support = fdp.ConsumeBool();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
-    audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
+    audioVolumeManager.audioActiveDevice_.AddActiveBtDevice(macAddress);
     audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
 }
 
@@ -326,7 +326,7 @@ void AudioVolumeManagerSetStreamMuteFuzzTest(FuzzedDataProvider& fdp)
     StreamUsage streamUsage = PickValue(fdp, g_testStreamUsages);
     DeviceType deviceType = PickValue(fdp, g_testDeviceTypes);
     std::string macAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
-    audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
+    audioVolumeManager.audioActiveDevice_.AddActiveBtDevice(macAddress);
     A2dpDeviceConfigInfo a2dpDeviceConfigInfo;
     a2dpDeviceConfigInfo.absVolumeSupport = fdp.ConsumeBool();
     audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_.insert({macAddress, a2dpDeviceConfigInfo});
@@ -583,7 +583,8 @@ void AudioVolumeManagerHandleA2dpAbsVolumeFuzzTest(FuzzedDataProvider& fdp)
     int32_t volumeDegree = fdp.ConsumeIntegral<int32_t>();
     VolumeScale volume = {volumeLevel, volumeDegree};
     DeviceType curOutputDeviceType = PickValue(fdp, g_testDeviceTypes);
-    audioVolumeManager.HandleA2dpAbsVolume(streamType, volume, curOutputDeviceType);
+    std::string macAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    audioVolumeManager.HandleA2dpAbsVolume(streamType, volume, curOutputDeviceType, macAddress);
 }
 
 void AudioVolumeManagerCheckNearlinkActiveMusicTimeFuzzTest(FuzzedDataProvider& fdp)

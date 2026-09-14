@@ -860,8 +860,6 @@ void FuzzMiscServerFunctions()
     server->GetSessionDebugInfo(sessionDebugInfo);
     server->SetDeviceAbsVolumeSupported(GetData<std::string>(),
         GetData<int32_t>() % MAXVALUE == 1, GetData<int32_t>());
-    bool absVolumeScene = false;
-    server->IsAbsVolumeScene(absVolumeScene);
     server->SetSleVoiceStatusFlag(GetData<int32_t>() % MAXVALUE == 1);
     std::shared_ptr<AudioDeviceDescriptor> selectedDevice;
     server->GetSelectedInputDevice(selectedDevice);

@@ -48,8 +48,7 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, GetActiveA2dpDeviceStreamInfo_001, TestSi
     info.mute = false;
     a2dpDevice.connectedA2dpInDeviceMap_["AA:BB:CC:DD:EE:FF"] = info;
     AudioStreamInfo streamInfo;
-    bool result = audioActiveDevice->GetActiveA2dpDeviceStreamInfo(
-        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN, streamInfo);
+    bool result = audioActiveDevice->GetActiveA2dpInDeviceStreamInfo(streamInfo);
 
     EXPECT_EQ(result, true);
 }

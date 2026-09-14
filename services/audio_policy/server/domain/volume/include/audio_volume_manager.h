@@ -265,17 +265,20 @@ private:
     bool CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType);
     void ProcUpdateRingerMode();
     int32_t HandleA2dpAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
-        DeviceType curDeviceType);
+        DeviceType curDeviceType, const std::string &macAddress);
     int32_t HandleNearlinkDeviceAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
         DeviceType curDeviceType);
     void CancelSafeVolumeNotificationWhenSwitchDevice();
     void CheckReduceOtherActiveVolume(AudioStreamType streamType, int32_t volumeLevel);
     void HandleLegacyHighVolumeEvent();
-    int32_t SetSystemVolumeExternal(AudioStreamType streamType, const VolumeScale &volume, DeviceType deviceType);
+    int32_t SetSystemVolumeExternal(AudioStreamType streamType, const VolumeScale &volume, DeviceType deviceType,
+        const std::string &macAddress);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, const VolumeScale &volume,
         std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0);
     int32_t HandleStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
         DeviceType deviceType, int32_t zoneId);
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolumeWithZone(int32_t &zoneId, AudioVolumeType volumeType,
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, DeviceType fallbackDeviceType = DEVICE_TYPE_NONE) const;
     int32_t GetCurrentNearlinkAbsVolume();
     int32_t GetNearlinkKaraokeVolume();
     NearlinkKaraokeVolumeMode GetNearlinkKaraokeMode();

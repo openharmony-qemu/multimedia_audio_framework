@@ -576,7 +576,8 @@ void AudioPolicyServer::ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFo
         return;
     }
     auto currentDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    if (currentDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP && audioPolicyManager_.IsAbsVolumeScene()) {
+    if (currentDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
+        audioPolicyManager_.IsAbsVolumeScene(audioActiveDevice_.GetCurrentOutputDeviceMacAddr())) {
         streamInFocus = AudioStreamType::STREAM_MUSIC;
         return;
     }
@@ -4095,12 +4096,6 @@ int32_t AudioPolicyServer::SetDeviceAbsVolumeSupported(const std::string &macAdd
         return ERROR;
     }
     return audioVolumeManager_.SetDeviceAbsVolumeSupported(macAddress, support, volume);
-}
-
-int32_t AudioPolicyServer::IsAbsVolumeScene(bool &ret)
-{
-    ret = audioPolicyManager_.IsAbsVolumeScene();
-    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, int32_t volume,

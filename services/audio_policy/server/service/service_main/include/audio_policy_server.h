@@ -468,8 +468,6 @@ public:
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support,
         const int32_t volume = 0) override;
 
-    int32_t IsAbsVolumeScene(bool &ret) override;
-
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, int32_t volume, bool updateUi) override;
 
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, int32_t volumeType,

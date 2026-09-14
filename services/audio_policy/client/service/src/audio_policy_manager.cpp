@@ -1981,15 +1981,6 @@ int32_t AudioPolicyManager::SetDeviceAbsVolumeSupported(const std::string &macAd
     return gsp->SetDeviceAbsVolumeSupported(macAddress, support, volume);
 }
 
-bool AudioPolicyManager::IsAbsVolumeScene()
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
-    bool ret = true;
-    gsp->IsAbsVolumeScene(ret);
-    return ret;
-}
-
 int32_t AudioPolicyManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
     const bool updateUi)
 {

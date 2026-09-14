@@ -776,18 +776,6 @@ HWTEST(AudioPolicyExtUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level
 }
 
 /**
- * @tc.name  : Test IsAbsVolumeScene
- * @tc.number: IsAbsVolumeScene_001
- * @tc.desc  : Test IsAbsVolumeScene interface.
- * @tc.type  : FUNC
- */
-HWTEST(AudioPolicyExtUnitTest, IsAbsVolumeScene_001, TestSize.Level1)
-{
-    bool ret = AudioPolicyManager::GetInstance().IsAbsVolumeScene();
-    EXPECT_EQ(false, ret);
-}
-
-/**
  * @tc.name  : Test IsSpatializationSupported
  * @tc.number: IsSpatializationSupported_001
  * @tc.desc  : Test IsSpatializationSupported interface.

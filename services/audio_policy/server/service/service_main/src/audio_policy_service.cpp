@@ -211,7 +211,9 @@ int32_t AudioPolicyService::NotifyWakeUpCapturerRemoved()
 
 bool AudioPolicyService::IsAbsVolumeSupported()
 {
-    return audioPolicyManager_.IsAbsVolumeScene();
+    // Query against the currently routed output device so dual bluetooth devices are evaluated
+    // per device instead of a single shared active mac.
+    return audioPolicyManager_.IsAbsVolumeScene(audioActiveDevice_.GetCurrentOutputDeviceMacAddr());
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)

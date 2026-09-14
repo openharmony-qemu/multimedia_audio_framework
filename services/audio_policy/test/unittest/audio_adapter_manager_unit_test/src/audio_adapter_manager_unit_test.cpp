@@ -1573,18 +1573,20 @@ HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_002, TestSize
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     auto device = std::make_shared<AudioDeviceDescriptor>();
     device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    const std::string macAddress = "11:22:33:44:55:66";
+    device->macAddress_ = macAddress;
     bool isMuted = false;
     int32_t volumeLevel = TEST_VOLUME_LEVEL;
     float volumeDb = TEST_VOLUME_DB;
-    audioAdapterManager->isAbsVolumeScene_ = false;
+    // Abs volume scene is keyed by the device mac address.
+    audioAdapterManager->SetAbsVolumeScene(macAddress, false, 0);
     audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_RING, isMuted, volumeLevel, volumeDb);
     EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
 
-    audioAdapterManager->isAbsVolumeScene_ = true;
+    audioAdapterManager->SetAbsVolumeScene(macAddress, true, 0);
     audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_RING, isMuted, volumeLevel, volumeDb);
     EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
 
-    audioAdapterManager->isAbsVolumeScene_ = true;
     audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_MUSIC, isMuted, volumeLevel, volumeDb);
     EXPECT_EQ(volumeDb, ABS_VOLUME_DB_VALUE);
 }

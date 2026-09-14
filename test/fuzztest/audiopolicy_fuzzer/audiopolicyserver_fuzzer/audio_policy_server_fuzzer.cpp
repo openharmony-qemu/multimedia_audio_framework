@@ -858,15 +858,6 @@ void AudioPolicyServerSetDeviceAbsVolumeSupportedFuzzTest()
     audioPolicyServer->SetDeviceAbsVolumeSupported(macAddress, support, 0);
 }
 
-void AudioPolicyServerIsAbsVolumeSceneFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-
-    bool ret = GetData<bool>();
-    audioPolicyServer->IsAbsVolumeScene(ret);
-}
-
 void AudioPolicyServerSetA2dpDeviceVolumeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
@@ -2074,7 +2065,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerGetAudioCapturerMicrophoneDescriptorsFuzzTest,
     AudioPolicyServerGetAvailableMicrophonesFuzzTest,
     AudioPolicyServerSetDeviceAbsVolumeSupportedFuzzTest,
-    AudioPolicyServerIsAbsVolumeSceneFuzzTest,
     AudioPolicyServerSetA2dpDeviceVolumeFuzzTest,
     AudioPolicyServerSetNearlinkDeviceVolumeFuzzTest,
     AudioPolicyServerGetAvailableDevicesFuzzTest,

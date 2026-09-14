@@ -466,8 +466,6 @@ public:
 
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, const int32_t volume);
 
-    bool IsAbsVolumeScene();
-
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
 
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,

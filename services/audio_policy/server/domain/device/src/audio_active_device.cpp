@@ -49,36 +49,55 @@ constexpr uint32_t DEFAULT_PIPE_ID = 0;
 
 static const int32_t MEDIA_SERVICE_UID = 1013;
 
-bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo)
+bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(const std::string &macAddress, AudioStreamInfo &streamInfo)
 {
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        A2dpDeviceConfigInfo info;
-        if (audioA2dpDevice_.GetA2dpDeviceInfo(activeBTDevice_, info)) {
-            streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
-            streamInfo.format = info.streamInfo.format;
-            streamInfo.channels = *info.streamInfo.GetChannels().rbegin();
-            return true;
-        }
-    } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-        A2dpDeviceConfigInfo info;
-        if (audioA2dpDevice_.GetA2dpInDeviceInfo(activeBTInDevice_, info)) {
-            streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
-            streamInfo.format = info.streamInfo.format;
-            streamInfo.channels = *info.streamInfo.GetChannels().rbegin();
-            return true;
-        }
+    if (macAddress.empty()) {
+        return false;
+    }
+    A2dpDeviceConfigInfo info;
+    if (audioA2dpDevice_.GetA2dpDeviceInfo(macAddress, info)) {
+        streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
+        streamInfo.format = info.streamInfo.format;
+        streamInfo.channels = *info.streamInfo.GetChannels().rbegin();
+        return true;
     }
     return false;
 }
 
-std::string AudioActiveDevice::GetActiveBtDeviceMac()
+bool AudioActiveDevice::GetActiveA2dpInDeviceStreamInfo(AudioStreamInfo &streamInfo)
 {
-    return activeBTDevice_;
+    A2dpDeviceConfigInfo info;
+    if (audioA2dpDevice_.GetA2dpInDeviceInfo(activeBTInDevice_, info)) {
+        streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
+        streamInfo.format = info.streamInfo.format;
+        streamInfo.channels = *info.streamInfo.GetChannels().rbegin();
+        return true;
+    }
+    return false;
 }
 
-void AudioActiveDevice::SetActiveBtDeviceMac(const std::string macAddress)
+std::set<std::string> AudioActiveDevice::GetActiveBtDeviceMac() const
 {
-    activeBTDevice_ = macAddress;
+    std::lock_guard<std::mutex> lock(activeBtDevicesMutex_);
+    return activeBTDevices_;
+}
+
+void AudioActiveDevice::AddActiveBtDevice(const std::string &macAddress)
+{
+    std::lock_guard<std::mutex> lock(activeBtDevicesMutex_);
+    activeBTDevices_.insert(macAddress);
+}
+
+void AudioActiveDevice::RemoveActiveBtDevice(const std::string &macAddress)
+{
+    std::lock_guard<std::mutex> lock(activeBtDevicesMutex_);
+    activeBTDevices_.erase(macAddress);
+}
+
+bool AudioActiveDevice::IsActiveBtDevice(const std::string &macAddress) const
+{
+    std::lock_guard<std::mutex> lock(activeBtDevicesMutex_);
+    return activeBTDevices_.find(macAddress) != activeBTDevices_.end();
 }
 
 void AudioActiveDevice::SetActiveBtInDeviceMac(const std::string macAddress)

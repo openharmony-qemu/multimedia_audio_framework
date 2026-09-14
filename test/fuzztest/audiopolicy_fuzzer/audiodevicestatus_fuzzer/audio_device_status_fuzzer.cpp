@@ -496,8 +496,9 @@ void IsConfigurationUpdatedFuzzTest(FuzzedDataProvider& fdp)
 {
     DeviceType deviceType = PickValue(fdp, DeviceTypeVec);
     AudioStreamInfo streamInfo = ConsumeAudioStreamInfo(fdp);
+    std::string macAddress = ConsumeAddress(fdp);
     AudioDeviceStatus audioDeviceStatus;
-    audioDeviceStatus.IsConfigurationUpdated(deviceType, streamInfo);
+    audioDeviceStatus.IsConfigurationUpdated(deviceType, macAddress, streamInfo);
     OnStop();
 }
 
@@ -564,7 +565,7 @@ void AudioDeviceStatusOnDeviceConfigurationChangedFuzzTest(FuzzedDataProvider& f
     std::string macAddress = ConsumeAddress(fdp);
     std::string deviceName = ConsumeString(fdp);
     AudioStreamInfo streamInfo = ConsumeAudioStreamInfo(fdp);
-    audioDeviceStatus.audioActiveDevice_.SetActiveBtDeviceMac(ConsumeAddress(fdp));
+    audioDeviceStatus.audioActiveDevice_.AddActiveBtDevice(ConsumeAddress(fdp));
     audioDeviceStatus.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
 
     audioDeviceStatus.OnDeviceConfigurationChanged(deviceType, macAddress, deviceName, streamInfo);

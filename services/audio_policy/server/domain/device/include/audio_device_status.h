@@ -154,7 +154,8 @@ private:
     void ClearPreferredDevices(AudioDeviceDescriptor &desc);
     void ClearPreferredDeviceByType(const std::vector<PreferredType> &types,
         AudioDeviceDescriptor &desc, DeviceRole role);
-    bool IsConfigurationUpdated(DeviceType deviceType, const AudioStreamInfo &streamInfo);
+    bool IsConfigurationUpdated(DeviceType deviceType, const std::string &macAddress,
+        const AudioStreamInfo &streamInfo);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectDeviceMapInit();
     void ClearActiveHfpDevice(AudioDeviceDescriptor &desc,
         const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
