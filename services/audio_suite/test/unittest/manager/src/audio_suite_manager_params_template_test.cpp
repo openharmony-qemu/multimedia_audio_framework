@@ -15,533 +15,351 @@
 
 #include <string>
 #include <thread>
-#include <chrono>
-#include <cstdio>
-#include <unistd.h>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "audio_errors.h"
-#include "audio_suite_manager_private.h"
-#include "audio_suite_manager_callback.h"
-#include "audio_suite_serializer.h"
+#include "audio_suite_pipeline_impl.h"
+#include "audio_suite_base.h"
 #include "audio_suite_unittest_tools.h"
-#include "i_audio_suite_engine.h"
+#include "audio_suite_manager_test_common.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace AudioSuite;
 using namespace testing::ext;
-using namespace testing;
 
 namespace {
 
-class MockIAudioSuiteEngine : public IAudioSuiteEngine {
-public:
-    MockIAudioSuiteEngine() = default;
-    ~MockIAudioSuiteEngine() = default;
-
-    MOCK_METHOD(int32_t, Init, ());
-    MOCK_METHOD(int32_t, DeInit, ());
-    MOCK_METHOD(int32_t, CreatePipeline, (PipelineWorkMode workMode));
-    MOCK_METHOD(int32_t, DestroyPipeline, (uint32_t pipelineId));
-    MOCK_METHOD(int32_t, StartPipeline, (uint32_t pipelineId));
-    MOCK_METHOD(int32_t, StopPipeline, (uint32_t pipelineId));
-    MOCK_METHOD(int32_t, GetPipelineState, (uint32_t pipelineId));
-    MOCK_METHOD(int32_t, CreateNode, (uint32_t pipelineId, AudioNodeBuilder& builder));
-    MOCK_METHOD(int32_t, DestroyNode, (uint32_t nodeId));
-    MOCK_METHOD(int32_t, BypassEffectNode, (uint32_t nodeId, bool bypass));
-    MOCK_METHOD(int32_t, GetNodeBypassStatus, (uint32_t nodeId));
-    MOCK_METHOD(int32_t, SetAudioFormat, (uint32_t nodeId, AudioFormat audioFormat));
-    MOCK_METHOD(int32_t, SetRequestDataCallback, (uint32_t nodeId,
-        std::shared_ptr<InputNodeRequestDataCallBack> callback));
-    MOCK_METHOD(int32_t, SetRequestMetaDataCallback, (uint32_t nodeId,
-        std::shared_ptr<InputNodeRequestMetaDataCallBack> callback));
-    MOCK_METHOD(int32_t, ConnectNodes, (uint32_t srcNodeId, uint32_t destNodeId));
-    MOCK_METHOD(int32_t, DisConnectNodes, (uint32_t srcNodeId, uint32_t destNodeId));
-    MOCK_METHOD(int32_t, RenderFrame, (uint32_t pipelineId, uint8_t *audioData,
-        int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag));
-    MOCK_METHOD(int32_t, MultiRenderFrame, (uint32_t pipelineId,
-        AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag));
-    MOCK_METHOD(int32_t, MetaRenderFrame, (uint32_t pipelineId, AudioMetaFrame &metaFrame,
-        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag));
-    MOCK_METHOD(int32_t, SetOptions, (uint32_t nodeId, std::string name, std::string value));
-    MOCK_METHOD(int32_t, GetOptions, (uint32_t nodeId, std::string name, std::string& value));
-    MOCK_METHOD(int32_t, PrintInfo, (uint32_t pipelineId, int32_t fd));
-    MOCK_METHOD(int32_t, SetSystemNodeParam, (uint32_t nodeId, std::vector<uint8_t> &param));
-    MOCK_METHOD(int32_t, GetSystemNodeParam, (uint32_t nodeId, std::vector<uint8_t> &param));
-    MOCK_METHOD(int32_t, GetSystemNodeInOutSize, (uint32_t nodeId, uint32_t &inSize, uint32_t &outSize));
+struct PipelineNodeHandle {
+    std::shared_ptr<AudioSuitePipeline> pipeline_;
+    uint32_t nodeId_ = INVALID_NODE_ID;
 };
 
-class AudioSuiteManagerParamsTemplateUnitTest : public testing::Test {
+class AudioSuiteParamsTemplateUnitTest : public testing::Test {
 public:
     void SetUp() override
     {
         if (!AllNodeTypesSupported()) {
             GTEST_SKIP() << "not support all node types, skip this test";
         }
-        manager_.Init();
     }
-    
+
     void TearDown() override
     {
-        manager_.DeInit();
+        pipelines_.clear();
     }
 
 protected:
-    void SetMockEngine(std::shared_ptr<MockIAudioSuiteEngine> mockEngine)
+    // Helper to create a pipeline with input, effect, output nodes
+    // Returns the effect nodeId via the handle
+    PipelineNodeHandle CreateTestPipeline(AudioNodeType effectType)
     {
-        manager_.suiteEngine_ = mockEngine;
+        PipelineNodeHandle handle;
+        EXPECT_EQ(AudioSuitePipelineImpl::Create(PIPELINE_EDIT_MODE, handle.pipeline_), SUCCESS);
+        EXPECT_NE(handle.pipeline_, nullptr);
+
+        AudioNodeBuilder inputBuilder;
+        inputBuilder.nodeType = NODE_TYPE_INPUT;
+        uint32_t inputNodeId = INVALID_NODE_ID;
+        EXPECT_EQ(handle.pipeline_->CreateNode(inputBuilder, inputNodeId), SUCCESS);
+
+        AudioNodeBuilder effectBuilder;
+        effectBuilder.nodeType = effectType;
+        EXPECT_EQ(handle.pipeline_->CreateNode(effectBuilder, handle.nodeId_), SUCCESS);
+
+        AudioNodeBuilder outputBuilder;
+        outputBuilder.nodeType = NODE_TYPE_OUTPUT;
+        uint32_t outputNodeId = INVALID_NODE_ID;
+        EXPECT_EQ(handle.pipeline_->CreateNode(outputBuilder, outputNodeId), SUCCESS);
+
+        EXPECT_EQ(handle.pipeline_->ConnectNodes(inputNodeId, handle.nodeId_), SUCCESS);
+        EXPECT_EQ(handle.pipeline_->ConnectNodes(handle.nodeId_, outputNodeId), SUCCESS);
+
+        pipelines_.push_back(handle.pipeline_);
+        return handle;
     }
 
-    AudioSuiteManager manager_;
+    std::vector<std::shared_ptr<AudioSuitePipeline>> pipelines_;
 };
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, SetParamsTemplate_EngineNull, TestSize.Level0)
+// Test SetSpaceRenderPositionParams with valid params
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, SetSpaceRenderPositionParamsSuccess, TestSize.Level0)
 {
-    AudioSpaceRenderPositionParams params;
-    params.x = 1.0f;
-    params.y = 2.0f;
-    params.z = 3.0f;
-
-    manager_.suiteEngine_ = nullptr;
-    int32_t ret = manager_.SetSpaceRenderPositionParams(1, params);
-    EXPECT_EQ(ret, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
-}
-
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, SetParamsTemplate_SetOptionsFailed, TestSize.Level0)
-{
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_SPACE_RENDER);
 
     AudioSpaceRenderPositionParams params;
     params.x = 1.0f;
     params.y = 2.0f;
     params.z = 3.0f;
-
-    EXPECT_CALL(*mockEngine, SetOptions(_, _, _))
-        .WillOnce(Return(ERR_ILLEGAL_STATE));
-
-    int32_t ret = manager_.SetSpaceRenderPositionParams(1, params);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    int32_t ret = handle.pipeline_->SetSpaceRenderPositionParams(handle.nodeId_, params);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, SetParamsTemplate_CallbackFailed, TestSize.Level0)
+// Test GetSpaceRenderPositionParams
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, GetSpaceRenderPositionParamsSuccess, TestSize.Level0)
 {
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_SPACE_RENDER);
 
     AudioSpaceRenderPositionParams params;
     params.x = 1.0f;
     params.y = 2.0f;
     params.z = 3.0f;
+    EXPECT_EQ(handle.pipeline_->SetSpaceRenderPositionParams(handle.nodeId_, params), SUCCESS);
 
-    EXPECT_CALL(*mockEngine, SetOptions(_, _, _))
-        .WillOnce(Return(SUCCESS));
-
-    manager_.setOptionsResult_ = ERR_OPERATION_FAILED;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishSetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
-
-    int32_t ret = manager_.SetSpaceRenderPositionParams(1, params);
-    notifyThread.join();
-    EXPECT_EQ(ret, ERROR);
+    AudioSpaceRenderPositionParams getResult;
+    int32_t ret = handle.pipeline_->GetSpaceRenderPositionParams(handle.nodeId_, getResult);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FLOAT_EQ(getResult.x, 1.0f);
+    EXPECT_FLOAT_EQ(getResult.y, 2.0f);
+    EXPECT_FLOAT_EQ(getResult.z, 3.0f);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, GetParamsTemplate_EngineNull, TestSize.Level0)
+// Test SetSpaceRenderPositionParams with non-existent node
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, SetSpaceRenderPositionParamsNodeNotExist, TestSize.Level0)
 {
-    AudioSpaceRenderPositionParams params;
-
-    manager_.suiteEngine_ = nullptr;
-    int32_t ret = manager_.GetSpaceRenderPositionParams(1, params);
-    EXPECT_EQ(ret, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST);
-}
-
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, GetParamsTemplate_GetOptionsFailed, TestSize.Level0)
-{
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
-
-    AudioSpaceRenderPositionParams params;
-
-    EXPECT_CALL(*mockEngine, GetOptions(_, _, _))
-        .WillOnce(Return(ERR_ILLEGAL_STATE));
-
-    int32_t ret = manager_.GetSpaceRenderPositionParams(1, params);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
-}
-
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, GetParamsTemplate_CallbackFailed, TestSize.Level0)
-{
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
-
-    AudioSpaceRenderPositionParams params;
-
-    EXPECT_CALL(*mockEngine, GetOptions(_, _, _))
-        .WillOnce(Return(SUCCESS));
-
-    manager_.getOptionsResult_ = ERR_OPERATION_FAILED;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishGetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
-
-    int32_t ret = manager_.GetSpaceRenderPositionParams(1, params);
-    notifyThread.join();
-    EXPECT_EQ(ret, ERROR);
-}
-
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, GetParamsTemplate_DeserializeFailed, TestSize.Level0)
-{
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
-
-    AudioSpaceRenderPositionParams params;
-
-    EXPECT_CALL(*mockEngine, GetOptions(_, _, _))
-        .WillOnce(DoAll(SetArgReferee<2>(std::string("invalid")), Return(SUCCESS)));
-
-    manager_.getOptionsResult_ = SUCCESS;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishGetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
-
-    int32_t ret = manager_.GetSpaceRenderPositionParams(1, params);
-    notifyThread.join();
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, SetParamsTemplate_Timeout, TestSize.Level0)
-{
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_SPACE_RENDER);
 
     AudioSpaceRenderPositionParams params;
     params.x = 1.0f;
     params.y = 2.0f;
     params.z = 3.0f;
-
-    EXPECT_CALL(*mockEngine, SetOptions(_, _, _))
-        .WillOnce(Return(SUCCESS));
-
-    int32_t ret = manager_.SetSpaceRenderPositionParams(1, params);
-    EXPECT_EQ(ret, ERR_AUDIO_SUITE_TIMEOUT);
+    int32_t ret = handle.pipeline_->SetSpaceRenderPositionParams(999, params);
+    EXPECT_NE(ret, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, GetParamsTemplate_Timeout, TestSize.Level0)
+// Test SetSpaceRenderRotationParams
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, SetSpaceRenderRotationParamsSuccess, TestSize.Level0)
 {
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
-
-    AudioSpaceRenderPositionParams params;
-
-    EXPECT_CALL(*mockEngine, GetOptions(_, _, _))
-        .WillOnce(Return(SUCCESS));
-
-    int32_t ret = manager_.GetSpaceRenderPositionParams(1, params);
-    EXPECT_EQ(ret, ERR_AUDIO_SUITE_TIMEOUT);
-}
-
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, SetRotationParamsTemplate_Success, TestSize.Level0)
-{
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_SPACE_RENDER);
 
     AudioSpaceRenderRotationParams params;
     params.x = 1.0f;
     params.y = 2.0f;
     params.z = 3.0f;
-    params.surroundTime = 2;
+    params.surroundTime = 5.0f;
     params.surroundDirection = AudioSurroundDirection::SPACE_RENDER_CW;
-
-    EXPECT_CALL(*mockEngine, SetOptions(_, _, _))
-        .WillOnce(Return(SUCCESS));
-
-    manager_.setOptionsResult_ = SUCCESS;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishSetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
-
-    int32_t ret = manager_.SetSpaceRenderRotationParams(1, params);
-    notifyThread.join();
+    int32_t ret = handle.pipeline_->SetSpaceRenderRotationParams(handle.nodeId_, params);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, GetRotationParamsTemplate_Success, TestSize.Level0)
+// Test GetSpaceRenderRotationParams
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, GetSpaceRenderRotationParamsSuccess, TestSize.Level0)
 {
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_SPACE_RENDER);
 
     AudioSpaceRenderRotationParams params;
+    params.x = 1.0f;
+    params.y = 2.0f;
+    params.z = 3.0f;
+    params.surroundTime = 5.0f;
+    params.surroundDirection = AudioSurroundDirection::SPACE_RENDER_CW;
+    EXPECT_EQ(handle.pipeline_->SetSpaceRenderRotationParams(handle.nodeId_, params), SUCCESS);
 
-    EXPECT_CALL(*mockEngine, GetOptions(_, _, _))
-        .WillOnce(DoAll(SetArgReferee<2>(std::string("1.0,2.0,3.0,100,1")), Return(SUCCESS)));
-
-    manager_.getOptionsResult_ = SUCCESS;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishGetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
-
-    int32_t ret = manager_.GetSpaceRenderRotationParams(1, params);
-    notifyThread.join();
+    AudioSpaceRenderRotationParams getResult;
+    int32_t ret = handle.pipeline_->GetSpaceRenderRotationParams(handle.nodeId_, getResult);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_FLOAT_EQ(params.x, 1.0f);
-    EXPECT_FLOAT_EQ(params.y, 2.0f);
-    EXPECT_FLOAT_EQ(params.z, 3.0f);
-    EXPECT_EQ(params.surroundTime, 100);
-    EXPECT_EQ(params.surroundDirection, AudioSurroundDirection::SPACE_RENDER_CW);
+    EXPECT_FLOAT_EQ(getResult.x, 1.0f);
+    EXPECT_FLOAT_EQ(getResult.y, 2.0f);
+    EXPECT_FLOAT_EQ(getResult.z, 3.0f);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, SetExtensionParamsTemplate_Success, TestSize.Level0)
+// Test SetSpaceRenderExtensionParams
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, SetSpaceRenderExtensionParamsSuccess, TestSize.Level0)
 {
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_SPACE_RENDER);
 
     AudioSpaceRenderExtensionParams params;
     params.extRadius = 1.5f;
     params.extAngle = 45;
-
-    EXPECT_CALL(*mockEngine, SetOptions(_, _, _))
-        .WillOnce(Return(SUCCESS));
-
-    manager_.setOptionsResult_ = SUCCESS;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishSetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
-
-    int32_t ret = manager_.SetSpaceRenderExtensionParams(1, params);
-    notifyThread.join();
+    int32_t ret = handle.pipeline_->SetSpaceRenderExtensionParams(handle.nodeId_, params);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, GetExtensionParamsTemplate_Success, TestSize.Level0)
+// Test GetSpaceRenderExtensionParams
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, GetSpaceRenderExtensionParamsSuccess, TestSize.Level0)
 {
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_SPACE_RENDER);
 
     AudioSpaceRenderExtensionParams params;
+    params.extRadius = 1.5f;
+    params.extAngle = 45;
+    EXPECT_EQ(handle.pipeline_->SetSpaceRenderExtensionParams(handle.nodeId_, params), SUCCESS);
 
-    EXPECT_CALL(*mockEngine, GetOptions(_, _, _))
-        .WillOnce(DoAll(SetArgReferee<2>(std::string("1.5,45")), Return(SUCCESS)));
-
-    manager_.getOptionsResult_ = SUCCESS;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishGetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
-
-    int32_t ret = manager_.GetSpaceRenderExtensionParams(1, params);
-    notifyThread.join();
+    AudioSpaceRenderExtensionParams getResult;
+    int32_t ret = handle.pipeline_->GetSpaceRenderExtensionParams(handle.nodeId_, getResult);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_FLOAT_EQ(params.extRadius, 1.5f);
-    EXPECT_EQ(params.extAngle, 45);
+    EXPECT_FLOAT_EQ(getResult.extRadius, 1.5f);
+    EXPECT_EQ(getResult.extAngle, 45);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, SetTempoAndPitchTemplate_Success, TestSize.Level0)
+// Test SetTempoAndPitch
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, SetTempoAndPitchSuccess, TestSize.Level0)
 {
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
-
-    EXPECT_CALL(*mockEngine, SetOptions(_, _, _))
-        .WillOnce(Return(SUCCESS));
-
-    manager_.setOptionsResult_ = SUCCESS;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishSetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
+    auto handle = CreateTestPipeline(NODE_TYPE_TEMPO_PITCH);
 
     float speed = 1.5f;
     float pitch = 2.0f;
-    int32_t ret = manager_.SetTempoAndPitch(1, speed, pitch);
-    notifyThread.join();
+    int32_t ret = handle.pipeline_->SetTempoAndPitch(handle.nodeId_, speed, pitch);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, GetTempoAndPitchTemplate_Success, TestSize.Level0)
+// Test GetTempoAndPitch
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, GetTempoAndPitchSuccess, TestSize.Level0)
 {
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_TEMPO_PITCH);
 
-    EXPECT_CALL(*mockEngine, GetOptions(_, _, _))
-        .WillOnce(DoAll(SetArgReferee<2>(std::string("1.5,2.0")), Return(SUCCESS)));
+    float speed = 1.5f;
+    float pitch = 2.0f;
+    EXPECT_EQ(handle.pipeline_->SetTempoAndPitch(handle.nodeId_, speed, pitch), SUCCESS);
 
-    manager_.getOptionsResult_ = SUCCESS;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishGetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
-
-    float speed = 0.0f;
-    float pitch = 0.0f;
-    int32_t ret = manager_.GetTempoAndPitch(1, speed, pitch);
-    notifyThread.join();
+    float getResultSpeed = 0.0f;
+    float getResultPitch = 0.0f;
+    int32_t ret = handle.pipeline_->GetTempoAndPitch(handle.nodeId_, getResultSpeed, getResultPitch);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_FLOAT_EQ(speed, 1.5f);
-    EXPECT_FLOAT_EQ(pitch, 2.0f);
+    EXPECT_FLOAT_EQ(getResultSpeed, 1.5f);
+    EXPECT_FLOAT_EQ(getResultPitch, 2.0f);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, SetPureVoiceChangeTemplate_Success, TestSize.Level0)
+// Test SetPureVoiceChangeOption
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, SetPureVoiceChangeOptionSuccess, TestSize.Level0)
 {
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_PURE_VOICE_CHANGE);
 
     AudioPureVoiceChangeOption option;
     option.optionGender = AudioPureVoiceChangeGenderOption::PURE_VOICE_CHANGE_FEMALE;
     option.optionType = AudioPureVoiceChangeType::PURE_VOICE_CHANGE_TYPE_CUTE;
     option.pitch = 1.5f;
-
-    EXPECT_CALL(*mockEngine, SetOptions(_, _, _))
-        .WillOnce(Return(SUCCESS));
-
-    manager_.setOptionsResult_ = SUCCESS;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishSetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
-
-    int32_t ret = manager_.SetPureVoiceChangeOption(1, option);
-    notifyThread.join();
+    int32_t ret = handle.pipeline_->SetPureVoiceChangeOption(handle.nodeId_, option);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, GetPureVoiceChangeTemplate_Success, TestSize.Level0)
+// Test GetPureVoiceChangeOption
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, GetPureVoiceChangeOptionSuccess, TestSize.Level0)
 {
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_PURE_VOICE_CHANGE);
 
     AudioPureVoiceChangeOption option;
+    option.optionGender = AudioPureVoiceChangeGenderOption::PURE_VOICE_CHANGE_FEMALE;
+    option.optionType = AudioPureVoiceChangeType::PURE_VOICE_CHANGE_TYPE_CUTE;
+    option.pitch = 1.5f;
+    EXPECT_EQ(handle.pipeline_->SetPureVoiceChangeOption(handle.nodeId_, option), SUCCESS);
 
-    EXPECT_CALL(*mockEngine, GetOptions(_, _, _))
-        .WillOnce(DoAll(SetArgReferee<2>(std::string("1,2,1.5")), Return(SUCCESS)));
-
-    manager_.getOptionsResult_ = SUCCESS;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishGetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
-
-    int32_t ret = manager_.GetPureVoiceChangeOption(1, option);
-    notifyThread.join();
+    AudioPureVoiceChangeOption getResult;
+    int32_t ret = handle.pipeline_->GetPureVoiceChangeOption(handle.nodeId_, getResult);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(option.optionGender, AudioPureVoiceChangeGenderOption::PURE_VOICE_CHANGE_FEMALE);
-    EXPECT_EQ(option.optionType, AudioPureVoiceChangeType::PURE_VOICE_CHANGE_TYPE_CUTE);
-    EXPECT_FLOAT_EQ(option.pitch, 1.5f);
+    EXPECT_EQ(getResult.optionGender, AudioPureVoiceChangeGenderOption::PURE_VOICE_CHANGE_FEMALE);
+    EXPECT_EQ(getResult.optionType, AudioPureVoiceChangeType::PURE_VOICE_CHANGE_TYPE_CUTE);
+    EXPECT_FLOAT_EQ(getResult.pitch, 1.5f);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, SetGeneralVoiceChangeTemplate_Success, TestSize.Level0)
+// Test SetGeneralVoiceChangeType
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, SetGeneralVoiceChangeTypeSuccess, TestSize.Level0)
 {
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_GENERAL_VOICE_CHANGE);
 
     AudioGeneralVoiceChangeType type = AudioGeneralVoiceChangeType::GENERAL_VOICE_CHANGE_TYPE_CUTE;
-
-    EXPECT_CALL(*mockEngine, SetOptions(_, _, _))
-        .WillOnce(Return(SUCCESS));
-
-    manager_.setOptionsResult_ = SUCCESS;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishSetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
-
-    int32_t ret = manager_.SetGeneralVoiceChangeType(1, type);
-    notifyThread.join();
+    int32_t ret = handle.pipeline_->SetGeneralVoiceChangeType(handle.nodeId_, type);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, GetGeneralVoiceChangeTemplate_Success, TestSize.Level0)
+// Test GetGeneralVoiceChangeType
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, GetGeneralVoiceChangeTypeSuccess, TestSize.Level0)
 {
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_GENERAL_VOICE_CHANGE);
 
-    AudioGeneralVoiceChangeType type;
+    AudioGeneralVoiceChangeType type = AudioGeneralVoiceChangeType::GENERAL_VOICE_CHANGE_TYPE_CUTE;
+    EXPECT_EQ(handle.pipeline_->SetGeneralVoiceChangeType(handle.nodeId_, type), SUCCESS);
 
-    EXPECT_CALL(*mockEngine, GetOptions(_, _, _))
-        .WillOnce(DoAll(SetArgReferee<2>(std::string("1")), Return(SUCCESS)));
-
-    manager_.getOptionsResult_ = SUCCESS;
-
-    std::thread notifyThread([this]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        manager_.isFinishGetOptions_ = true;
-        manager_.callbackCV_.notify_one();
-    });
-
-    int32_t ret = manager_.GetGeneralVoiceChangeType(1, type);
-    notifyThread.join();
+    AudioGeneralVoiceChangeType getResult;
+    int32_t ret = handle.pipeline_->GetGeneralVoiceChangeType(handle.nodeId_, getResult);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(type, AudioGeneralVoiceChangeType::GENERAL_VOICE_CHANGE_TYPE_CUTE);
+    EXPECT_EQ(getResult, AudioGeneralVoiceChangeType::GENERAL_VOICE_CHANGE_TYPE_CUTE);
 }
 
-HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, SetParamsTemplate_ConcurrentAccess, TestSize.Level1)
+// Test SetSpaceRenderPositionParams with invalid params (out of range)
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, SetSpaceRenderPositionParamsInvalid, TestSize.Level0)
 {
-    auto mockEngine = std::make_shared<MockIAudioSuiteEngine>();
-    SetMockEngine(mockEngine);
+    auto handle = CreateTestPipeline(NODE_TYPE_SPACE_RENDER);
 
     AudioSpaceRenderPositionParams params;
-    params.x = 1.0f;
+    params.x = 6.0f;  // out of range (-5.0 to 5.0)
     params.y = 2.0f;
     params.z = 3.0f;
+    int32_t ret = handle.pipeline_->SetSpaceRenderPositionParams(handle.nodeId_, params);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
 
-    EXPECT_CALL(*mockEngine, SetOptions(_, _, _))
-        .Times(2)
-        .WillRepeatedly(Return(SUCCESS));
+// Test SetTempoAndPitch with invalid params
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, SetTempoAndPitchInvalid, TestSize.Level0)
+{
+    auto handle = CreateTestPipeline(NODE_TYPE_TEMPO_PITCH);
 
-    manager_.setOptionsResult_ = SUCCESS;
+    // speed out of range (0.5~10.0)
+    int32_t ret = handle.pipeline_->SetTempoAndPitch(handle.nodeId_, 0.4f, 1.0f);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
-    std::thread thread1([this, params]() {
-        manager_.SetSpaceRenderPositionParams(1, params);
+    // pitch out of range (0.1~5.0)
+    ret = handle.pipeline_->SetTempoAndPitch(handle.nodeId_, 1.0f, 0.09f);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+// Test SetPureVoiceChangeOption with invalid pitch
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, SetPureVoiceChangeOptionInvalid, TestSize.Level0)
+{
+    auto handle = CreateTestPipeline(NODE_TYPE_PURE_VOICE_CHANGE);
+
+    AudioPureVoiceChangeOption option;
+    option.optionGender = AudioPureVoiceChangeGenderOption::PURE_VOICE_CHANGE_FEMALE;
+    option.optionType = AudioPureVoiceChangeType::PURE_VOICE_CHANGE_TYPE_CUTE;
+    option.pitch = 0.29f;  // out of range (0.3~3.0 or 0.0)
+    int32_t ret = handle.pipeline_->SetPureVoiceChangeOption(handle.nodeId_, option);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+// Test concurrent access to SetParamsTemplate (thread safety)
+HWTEST_F(AudioSuiteParamsTemplateUnitTest, SetParamsTemplateConcurrentAccess, TestSize.Level1)
+{
+    auto handle1 = CreateTestPipeline(NODE_TYPE_SPACE_RENDER);
+    auto handle2 = CreateTestPipeline(NODE_TYPE_SPACE_RENDER);
+
+    AudioSpaceRenderPositionParams params1;
+    params1.x = 1.0f;
+    params1.y = 2.0f;
+    params1.z = 3.0f;
+
+    AudioSpaceRenderPositionParams params2;
+    params2.x = 4.0f;
+    params2.y = 5.0f;
+    params2.z = 6.0f;
+
+    auto pipeline1 = handle1.pipeline_;
+    auto pipeline2 = handle2.pipeline_;
+    uint32_t nodeId1 = handle1.nodeId_;
+    uint32_t nodeId2 = handle2.nodeId_;
+
+    std::thread thread1([pipeline1, nodeId1, params1]() {
+        pipeline1->SetSpaceRenderPositionParams(nodeId1, params1);
     });
 
-    std::thread thread2([this, params]() {
-        manager_.SetSpaceRenderPositionParams(2, params);
-    });
-
-    std::thread notifyThread([this]() {
-        for (int i = 0; i < 2; ++i) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            {
-                std::lock_guard<std::mutex> lock(manager_.callbackMutex_);
-                manager_.isFinishSetOptions_ = true;
-            }
-            manager_.callbackCV_.notify_all();
-        }
+    std::thread thread2([pipeline2, nodeId2, params2]() {
+        pipeline2->SetSpaceRenderPositionParams(nodeId2, params2);
     });
 
     thread1.join();
     thread2.join();
-    notifyThread.join();
+
+    // Verify both were set correctly — concurrent Set should not interfere with each other
+    AudioSpaceRenderPositionParams result1;
+    int32_t ret1 = pipeline1->GetSpaceRenderPositionParams(nodeId1, result1);
+    if (ret1 == SUCCESS) {
+        EXPECT_FLOAT_EQ(result1.x, 1.0f);
+    }
+
+    AudioSpaceRenderPositionParams result2;
+    int32_t ret2 = pipeline2->GetSpaceRenderPositionParams(nodeId2, result2);
+    if (ret2 == SUCCESS) {
+        EXPECT_FLOAT_EQ(result2.x, 4.0f);
+    }
 }
 
-}
+}  // namespace

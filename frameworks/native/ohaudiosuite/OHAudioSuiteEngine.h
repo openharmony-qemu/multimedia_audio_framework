@@ -18,10 +18,11 @@
 
 #include <mutex>
 #include <cstdint>
+#include <vector>
 #include <unordered_map>
 #include <unordered_set>
 #include "native_audio_suite_engine.h"
-#include "audio_suite_manager.h"
+#include "audio_suite_pipeline.h"
 #include "OHAudioSuiteNodeBuilder.h"
 
 namespace OHOS {
@@ -60,39 +61,35 @@ private:
 
 class OHAudioNode {
 public:
-    explicit OHAudioNode(uint32_t id, AudioSuite::AudioNodeType type) : nodeId_(id), type_(type) {};
+    explicit OHAudioNode(uint32_t id, AudioSuite::AudioNodeType type,
+                         std::shared_ptr<AudioSuite::AudioSuitePipeline> pipeline)
+        : nodeId_(id), type_(type), pipeline_(std::move(pipeline)) {};
     ~OHAudioNode() = default;
 
-    uint32_t GetNodeId() const
-    {
-        return nodeId_;
-    }
-
-    AudioSuite::AudioNodeType GetNodeType() const
-    {
-        return type_;
-    }
+    uint32_t GetNodeId() const;
+    AudioSuite::AudioNodeType GetNodeType() const;
+    std::shared_ptr<AudioSuite::AudioSuitePipeline> GetPipeline() const;
 
 private:
     uint32_t nodeId_ = AudioSuite::INVALID_NODE_ID;
-    AudioSuite::AudioNodeType type_;
+    AudioSuite::AudioNodeType type_ = AudioSuite::NODE_TYPE_EMPTY;
+    std::shared_ptr<AudioSuite::AudioSuitePipeline> pipeline_;
 };
 
 class OHAudioSuitePipeline {
 public:
-    explicit OHAudioSuitePipeline(uint32_t id) : pipelineId_(id) {};
-    ~OHAudioSuitePipeline();
+    explicit OHAudioSuitePipeline(std::shared_ptr<AudioSuite::AudioSuitePipeline> pipeline)
+        : pipeline_(std::move(pipeline)) {};
+    ~OHAudioSuitePipeline() = default;
 
-    uint32_t GetPipelineId() const
-    {
-        return pipelineId_;
-    }
+    std::shared_ptr<AudioSuite::AudioSuitePipeline> GetPipeline() const;
     void AddNode(OHAudioNode *node);
-    bool IsNodeExists(OHAudioNode *node);
     void RemoveNode(OHAudioNode *node);
+    bool IsNodeExists(OHAudioNode *node);
+    void GetAllNodes(std::vector<OHAudioNode*> &nodes);
 
 private:
-    uint32_t pipelineId_ = AudioSuite::INVALID_PIPELINE_ID;
+    std::shared_ptr<AudioSuite::AudioSuitePipeline> pipeline_;
     std::unordered_set<OHAudioNode*> nodes_;
     std::mutex mutex_;
 };
@@ -101,17 +98,17 @@ class OHAudioSuiteEngine {
 public:
     ~OHAudioSuiteEngine();
 
-    static OHAudioSuiteEngine *GetInstance();
+    static OHAudioSuiteEngine &GetInstance();
 
     // engine
-    int32_t CreateEngine() const;
-    int32_t DestroyEngine() const;
+    int32_t CreateEngine();
+    int32_t DestroyEngine();
 
     // pipeline
     int32_t CreatePipeline(OH_AudioSuitePipeline **audioSuitePipeline, OH_AudioSuite_PipelineWorkMode ohWorkMode);
     int32_t DestroyPipeline(OHAudioSuitePipeline *audioPipeline);
-    int32_t StartPipeline(OHAudioSuitePipeline *audioPipeline) const;
-    int32_t StopPipeline(OHAudioSuitePipeline *audioPipeline) const;
+    int32_t StartPipeline(OHAudioSuitePipeline *audioPipeline);
+    int32_t StopPipeline(OHAudioSuitePipeline *audioPipeline);
     int32_t GetPipelineState(OHAudioSuitePipeline *audioPipeline, OH_AudioSuite_PipelineState *state);
     int32_t RenderFrame(OHAudioSuitePipeline *audioPipeline,
         uint8_t *audioData, int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag);
@@ -130,7 +127,7 @@ public:
     int32_t SetAudioFormat(OHAudioNode *node, OH_AudioFormat *audioFormat);
     int32_t SetAudioFormat(OHAudioNode *node, OH_AudioSuite_SystemNodeFormat *audioFormat);
     int32_t ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
-    int32_t DisConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
+    int32_t DisconnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
     int32_t SetEqualizerFrequencyBandGains(
         OHAudioNode *node, OH_EqualizerFrequencyBandGains frequencyBandGains);
     int32_t SetSoundFieldType(OHAudioNode *node, OH_SoundFieldType soundFieldType);
@@ -160,26 +157,38 @@ public:
     int32_t SetSystemNodeParam(OHAudioNode* node, std::vector<uint8_t> &param);
     int32_t GetSystemNodeParam(OHAudioNode* node, std::vector<uint8_t> &param);
     int32_t GetSystemNodeInOutSize(OHAudioNode* node, uint32_t &inSize, uint32_t &outSize);
-    template <typename T>
-    int32_t SetAudioNodeProperty(OHAudioNode* node, T value, AudioNodeType nodeType,
-                                std::function<int32_t(uint32_t, T)> setter, const char* funcName);
-    template <typename T>
-    int32_t GetAudioNodeProperty(OHAudioNode* node, T* outValue, AudioNodeType nodeType,
-                                std::function<int32_t(uint32_t, T&)> getter, const char* funcName);
 
 private:
     explicit OHAudioSuiteEngine() {};
     OHAudioSuiteEngine(const OHAudioSuiteEngine&) = delete;
     OHAudioSuiteEngine& operator=(const OHAudioSuiteEngine&) = delete;
-    int32_t InitInputCallback(OHAudioSuiteNodeBuilder *builder, uint32_t nodeId, OH_AudioNode **audioNode);
-    std::unordered_set<OHAudioSuitePipeline*> pipelines_;
-    std::recursive_mutex mutex_;
+
+    void CleanupAll();
+    int32_t InitInputCallback(std::shared_ptr<AudioSuite::AudioSuitePipeline> pipeline,
+        OHAudioSuiteNodeBuilder *builder, uint32_t nodeId, OH_AudioNode *audioNode);
+    std::shared_ptr<AudioSuite::AudioSuitePipeline> GetAudioSuitePipeline(OHAudioSuitePipeline *pipeline);
+    int32_t GetAudioSuitePipelineAndNodeId(OHAudioNode* node, AudioNodeType expectedType,
+        std::shared_ptr<AudioSuite::AudioSuitePipeline>& pipeline, uint32_t& nodeId);
+    int32_t GetAudioSuitePipelineAndNodeId(OHAudioNode* node,
+        std::shared_ptr<AudioSuite::AudioSuitePipeline>& pipeline, uint32_t& nodeId, AudioNodeType& nodeType);
+    int32_t LookupPipelineAndNodeId(OHAudioNode* node,
+        std::shared_ptr<AudioSuite::AudioSuitePipeline>& pipeline, uint32_t& nodeId, AudioNodeType& nodeType);
+
     void AddPipeline(OHAudioSuitePipeline *pipeline);
     void RemovePipeline(OHAudioSuitePipeline *pipeline);
+
+    void AddNode(OHAudioNode *node);
     void RemoveNode(OHAudioNode *node);
-    bool IsPipelineExists(OHAudioSuitePipeline *pipeline);
-    bool IsNodeExists(OHAudioNode *node);
-    int32_t ValidateNode(OHAudioNode* node, AudioNodeType expectedType, const char* funcName);
+    void RemoveNodes(std::vector<OHAudioNode*> &nodes);
+
+    std::mutex pipelinesMutex_;
+    std::unordered_set<OHAudioSuitePipeline*> pipelines_;
+
+    std::mutex nodesMutex_;
+    std::unordered_set<OHAudioNode*> nodes_;
+
+    std::mutex engineMutex_;
+    bool isInitialized_ = false;
 };
 
 } // namespace AudioStandard
