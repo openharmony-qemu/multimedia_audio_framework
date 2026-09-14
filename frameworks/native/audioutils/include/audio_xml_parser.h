@@ -56,7 +56,7 @@ public:
     virtual bool IsElementNode() = 0;
 
     virtual void FreeDoc() = 0;
-    virtual void FreeProp(char *propName) = 0;
+    virtual void FreeXmlString(char *str) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

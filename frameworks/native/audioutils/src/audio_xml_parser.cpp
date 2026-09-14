@@ -74,7 +74,7 @@ public:
     std::string GetName() override;
 
     void FreeDoc() override;
-    void FreeProp(char *propName) override;
+    void FreeXmlString(char *str) override;
 
 private:
     int32_t StrcmpXml(const xmlChar *propName1, const xmlChar *propName2);
@@ -102,7 +102,7 @@ bool DlopenUtils::Init()
         xmlFuncHandle_->xmlFreeDoc =
             reinterpret_cast<decltype(xmlFuncHandle_->xmlFreeDoc)>(dlsym(libHandle, "xmlFreeDoc"));
         xmlFuncHandle_->xmlFree =
-            reinterpret_cast<decltype(xmlFuncHandle_->xmlFree)>(dlsym(libHandle, "xmlFree"));
+            *(reinterpret_cast<decltype(xmlFuncHandle_->xmlFree) *>(dlsym(libHandle, "xmlFree")));
         xmlFuncHandle_->xmlCleanupParser =
             reinterpret_cast<decltype(xmlFuncHandle_->xmlCleanupParser)>(dlsym(libHandle, "xmlCleanupParser"));
         xmlFuncHandle_->xmlStrcmp =
@@ -235,6 +235,7 @@ int32_t AudioXmlNodeInner::GetProp(const char *propName, std::string &result)
     xmlChar *tempValue = xmlFunc(curNode_, reinterpret_cast<const xmlChar*>(propName));
     CHECK_AND_RETURN_RET_LOG(tempValue != nullptr, ERROR, "GetProp Fail! curNode has no prop: %{public}s", propName);
     result = reinterpret_cast<char*>(tempValue);
+    FreeXmlString(reinterpret_cast<char*>(tempValue));
     return SUCCESS;
 }
 
@@ -262,10 +263,10 @@ void AudioXmlNodeInner::FreeDoc()
     }
 }
 
-void AudioXmlNodeInner::FreeProp(char *propName)
+void AudioXmlNodeInner::FreeXmlString(char *str)
 {
     CHECK_AND_RETURN_LOG(xmlFuncHandle_ != nullptr, "xmlFuncHandle is nullptr!");
-    xmlFuncHandle_->xmlFree(reinterpret_cast<xmlChar*>(propName));
+    xmlFuncHandle_->xmlFree(reinterpret_cast<xmlChar*>(str));
 }
 
 int32_t AudioXmlNodeInner::StrcmpXml(const xmlChar *propName1, const xmlChar *propName2)

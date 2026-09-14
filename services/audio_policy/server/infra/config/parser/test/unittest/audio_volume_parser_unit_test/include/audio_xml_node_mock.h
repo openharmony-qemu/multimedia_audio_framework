@@ -39,7 +39,7 @@ public:
     MOCK_METHOD(bool, CompareName, (const char *propName), ());
     MOCK_METHOD(bool, IsElementNode, (), ());
     MOCK_METHOD(void, FreeDoc, (), ());
-    MOCK_METHOD(void, FreeProp, (char *propName), ());
+    MOCK_METHOD(void, FreeXmlString, (char *str), ());
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
