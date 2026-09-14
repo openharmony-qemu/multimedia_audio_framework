@@ -339,6 +339,7 @@ void HpaeDirectRendererManager::CreateProcessNodes(uint32_t sessionId)
     }
     converterForGain_ = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, nodeInfo);
     converterForGain_->SetDownmixNormalization(false);
+    CHECK_AND_RETURN(sinkInfo_.deviceClass != VOIP_DIRECT_DEVICE_CLASS);
     converterForGain_->RegisterCallback(this);
 }
 
