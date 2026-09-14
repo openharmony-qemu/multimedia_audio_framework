@@ -22,7 +22,8 @@
 #include <set>
 #include <sstream>
 #include "audio_errors.h"
-#include "audio_suite_manager.h"
+#include "audio_suite_base.h"
+#include "audio_suite_pipeline.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_format_conversion.h"
 

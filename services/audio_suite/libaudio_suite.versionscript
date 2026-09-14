@@ -14,7 +14,8 @@
 {
   global:
     extern "C++" {
-      OHOS::AudioStandard::AudioSuite::IAudioSuiteManager::GetAudioSuiteManager*;
+      OHOS::AudioStandard::AudioSuite::AudioSuitePipeline::Create*;
+      OHOS::AudioStandard::AudioSuite::AudioSuitePipeline::IsNodeTypeSupported*;
       OHOS::AudioStandard::AudioSuite::AudioFormatConverter::Create*;
       OHOS::AudioStandard::AudioSuite::MixerProcessorManager::Create*;
       OHOS::AudioStandard::AudioSuite::AudioSuiteDownloadManager::GetInstance*;

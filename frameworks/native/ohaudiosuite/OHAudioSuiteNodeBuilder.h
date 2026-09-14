@@ -20,7 +20,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include "native_audio_suite_engine.h"
-#include "audio_suite_manager.h"
+#include "audio_suite_base.h"
 
 namespace OHOS {
 namespace AudioStandard {
