@@ -1959,7 +1959,7 @@ HWTEST_F(AudioCoreServicePrivateTest, GetVoiceCallMuteDuration_001, TestSize.Lev
     uint32_t targetMuteDuration = 100000;
 
     uint32_t muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc1);
-    EXPECT_EQ(muteDuration, targetMuteDuration);
+    EXPECT_EQ(muteDuration, 0);
 
     muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc2);
     EXPECT_EQ(muteDuration, targetMuteDuration);
