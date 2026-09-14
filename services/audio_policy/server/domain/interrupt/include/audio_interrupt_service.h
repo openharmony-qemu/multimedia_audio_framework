@@ -125,6 +125,7 @@ public:
 
     // preempt audio focus interfaces
     int32_t ActivatePreemptMode();
+    int32_t SetDuckPassthroughMode(bool enable);
     // zone debug interfaces
     int32_t FindZoneByPid(int32_t pid);
     int32_t CreateAudioInterruptZone(const int32_t zoneId, const AudioZoneContext &context);
@@ -355,6 +356,8 @@ private:
     bool IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry);
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
+    void UpdateHintTypeByConcurrencyMode(AudioConcurrencyMode concurrencyMode, AudioFocusEntry &focusEntry);
+    void ApplyDuckPassthroughMode(AudioFocusEntry &focusEntry);
     void HandleSessionTimeOutEvent(const int32_t pid);
     int32_t GetAudioSessionZoneidByPid(const int32_t pid);
     bool HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
@@ -504,6 +507,7 @@ private:
     mutable std::atomic<int32_t> formerUid_ = -1;
     mutable int32_t ownerPid_ = 0;
     mutable int32_t ownerUid_ = 0;
+    std::atomic<bool> duckPassthroughMode_{false};
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
     AudioStreamType activeStreamType_ = STREAM_MUSIC;
 

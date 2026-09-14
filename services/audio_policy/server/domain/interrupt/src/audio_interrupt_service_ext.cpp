@@ -718,6 +718,14 @@ void AudioInterruptService::CheckInterruptResponseAfterDelay(const int32_t zoneI
     interruptDfx_->CheckInterruptResponse(info, currentFocusList);
 }
 
+int32_t AudioInterruptService::SetDuckPassthroughMode(bool enable)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    duckPassthroughMode_.store(enable);
+    AUDIO_INFO_LOG("SetDuckPassthroughMode: %{public}d", enable);
+    return SUCCESS;
+}
+
 void AudioInterruptService::UpdateAudioFocusCheckMuteFlag(const int32_t zoneId, AudioInterrupt &audioInterrupt)
 {
     CHECK_AND_RETURN(AudioInterruptUtils::IsMediaStream(audioInterrupt.audioFocusType.streamType));

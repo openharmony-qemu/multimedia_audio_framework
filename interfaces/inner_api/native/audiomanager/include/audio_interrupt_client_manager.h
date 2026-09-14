@@ -89,6 +89,15 @@ public:
     int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode);
 
     /**
+     * @brief Set duck passthrough mode
+     *
+     * @param enable True to enable duck passthrough mode, false to disable.
+     * @return Returns {@link SUCCESS} if successful; returns an error code otherwise.
+     * @since 26.0.0
+     */
+    int32_t SetDuckPassthroughMode(bool enable);
+
+    /**
      * @brief Deactivactivate audio Interrupt
      *
      * @param audioInterrupt audioInterrupt

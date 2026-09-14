@@ -1377,6 +1377,13 @@ int32_t AudioPolicyManager::ActivatePreemptMode()
     return gsp->ActivatePreemptMode();
 }
 
+int32_t AudioPolicyManager::SetDuckPassthroughMode(bool enable)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
+    return gsp->SetDuckPassthroughMode(enable);
+}
+
 int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clientId,
     const std::shared_ptr<AudioInterruptCallback> &callback)
 {

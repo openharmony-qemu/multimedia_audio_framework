@@ -2160,11 +2160,18 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
                 AUDIO_INFO_LOG("Update hint type for system app anyway, pid: %{public}d, strategy: %{public}d",
                     incomingInterrupt.pid, static_cast<int32_t>(concurrencyMode));
                 focusEntry.hintType = modeToHint->second;
+                ApplyDuckPassthroughMode(focusEntry);
                 return;
             }
         }
     }
+    UpdateHintTypeByConcurrencyMode(concurrencyMode, focusEntry);
+    ApplyDuckPassthroughMode(focusEntry);
+}
 
+void AudioInterruptService::UpdateHintTypeByConcurrencyMode(AudioConcurrencyMode concurrencyMode,
+    AudioFocusEntry &focusEntry)
+{
     switch (concurrencyMode) {
         case AudioConcurrencyMode::DUCK_OTHERS:
             if (focusEntry.hintType == INTERRUPT_HINT_DUCK ||
@@ -2185,6 +2192,15 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
             AUDIO_INFO_LOG("The concurrency mode is %{public}d. No need to update hint type",
                 static_cast<int32_t>(concurrencyMode));
             break;
+    }
+}
+
+void AudioInterruptService::ApplyDuckPassthroughMode(AudioFocusEntry &focusEntry)
+{
+    if (duckPassthroughMode_ && focusEntry.hintType == INTERRUPT_HINT_DUCK) {
+        AUDIO_INFO_LOG("change duck to mix for enable duckPassthroughMode");
+        focusEntry.hintType = INTERRUPT_HINT_NONE;
+        focusEntry.actionOn = INCOMING;
     }
 }
 
@@ -2643,6 +2659,7 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     if (interruptCustom_ != nullptr) {
         interruptCustom_->UpdateCustomFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     }
+    ApplyDuckPassthroughMode(focusEntry);
 }
 
 bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
