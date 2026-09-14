@@ -58,7 +58,7 @@ public:
  {
      SetProcessDataThreadPriority(-1);
      GetIntParameter("const.multimedia.audio_setPriority", HIGH_LEVEL_THREAD_PRIORITY);
-     EXPECT_TRUE(SetEndpointThreadPriority());
+     EXPECT_TRUE(SetHpaeDataThreadPriority());
  }
 
 /**
@@ -70,17 +70,17 @@ HWTEST_F(AudioScheduleUnitTest, ResetProcessDataThreadPriorityTest_001, TestSize
 {
     ResetProcessDataThreadPriority();
     GetIntParameter("const.multimedia.audio_setPriority", HIGH_LEVEL_THREAD_PRIORITY);
-    EXPECT_TRUE(SetEndpointThreadPriority());
+    EXPECT_TRUE(SetHpaeDataThreadPriority());
 }
 
 /**
- * @tc.name   : Test ResetEndpointThreadPriority
- * @tc.number : ResetEndpointThreadPriorityTest_002
- * @tc.desc   : Test ResetEndpointThreadPriority
+ * @tc.name   : Test ResetHpaeDataThreadPriority
+ * @tc.number : ResetHpaeDataThreadPriorityTest_002
+ * @tc.desc   : Test ResetHpaeDataThreadPriority
  */
-HWTEST_F(AudioScheduleUnitTest, ResetEndpointThreadPriorityTest_002, TestSize.Level1)
+HWTEST_F(AudioScheduleUnitTest, ResetHpaeDataThreadPriorityTest_002, TestSize.Level1)
 {
-    EXPECT_TRUE(ResetEndpointThreadPriority());
+    EXPECT_TRUE(ResetHpaeDataThreadPriority());
 }
 } // namespace AudioStandard
 } // namespace OHOS
