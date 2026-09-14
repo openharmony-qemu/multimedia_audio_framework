@@ -17,12 +17,12 @@ package OHOS.AudioStandard.AudioSuite;
 import AudioSuiteTypes;
 
 interface IAudioSuiteDownloadCallback {
-    [ipccode 1] int GetFeatureNewVersion([in] String featureName, [out] AudioSuiteCloudRomVersionInfo newVersion);
-    int GetFeatureStatus([in] String featureName, [out] AudioSuiteDownloadStatusInfo statusInfos);
-    int DownloadAndInstall([in] boolean downloadCondition, [in] String featureName);
-    int PauseCloudRom([in] String featureName);
-    int CancelCloudRom([in] String featureName);
-    int UninstallCloudRom([in] String featureName);
+    [ipccode 1] int GetFeatureNewVersion([in] String[] featureNames, [out] AudioSuiteCloudRomVersionInfo[] newVersion);
+    int GetFeatureStatus([in] String[] featureNames, [out] AudioSuiteDownloadStatusInfo[] statusInfos);
+    int DownloadAndInstall([in] boolean allowedCellularNet, [in] String[] featureNames);
+    int PauseCloudRom([in] String[] featureNames);
+    int CancelCloudRom([in] String[] featureNames);
+    int UninstallCloudRom([in] String[] featureNames);
 
     int RegisterDownloadStatusCallback();
     int UnregisterDownloadStatusCallback();

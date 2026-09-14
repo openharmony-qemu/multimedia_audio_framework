@@ -56,13 +56,20 @@ public:
 
     ErrCode RegisterDownloadStatusCallback(const sptr<IRemoteObject> &object, ErrCode &result) override;
     ErrCode UnregisterDownloadStatusCallback(ErrCode& result) override;
-    ErrCode StartDownload(const std::string &version, bool allowedCellularNet, ErrCode &result) override;
-    ErrCode PauseDownload(const std::string& featureName, ErrCode& result) override;
-    ErrCode CancelDownload(const std::string &version, ErrCode &result) override;
-    ErrCode StartBackgroundDownload(const std::string &version, ErrCode &result) override;
+    ErrCode GetInstallStatus(
+        const std::vector<std::string> &featureNames, std::vector<bool> &installStatus, ErrCode &result) override;
+    ErrCode StartDownload(
+        const std::vector<std::string> &featureNames, bool allowedCellularNet, ErrCode &result) override;
+    ErrCode PauseDownload(const std::vector<std::string>& featureNames, ErrCode& result) override;
+    ErrCode CancelDownload(const std::vector<std::string> &featureNames, ErrCode &result) override;
+    ErrCode StartBackgroundDownload(const std::vector<std::string> &featureNames, ErrCode &result) override;
     ErrCode GetDownloadStatus(
-        const std::string& version, AudioSuiteDownloadStatusInfo &status, ErrCode &result) override;
-    ErrCode UninstallCloudRom(const std::string &version, ErrCode &result) override;
+        const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo> &status,
+        ErrCode &result) override;
+    ErrCode GetFeatureNewVersion(
+        const std::vector<std::string>& featureNames, std::vector<AudioSuiteCloudRomVersionInfo> &newVersion,
+        ErrCode &result) override;
+    ErrCode UninstallCloudRom(const std::vector<std::string> &featureNames, ErrCode &result) override;
 
     ErrCode RegisterDownloadInterfaceCallback(const sptr<IRemoteObject> &object, ErrCode &result) override;
     ErrCode UnregisterDownloadInterfaceCallback(ErrCode& result) override;

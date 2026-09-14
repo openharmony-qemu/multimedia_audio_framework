@@ -22,12 +22,14 @@ sequenceable OHOS.IRemoteObject;
 interface IAudioSuiteService {
     [ipccode 1] int RegisterDownloadStatusCallback([in] IRemoteObject object);
     int UnregisterDownloadStatusCallback();
-    int StartDownload([in] String version, [in] boolean allowedCellularNet);
-    int PauseDownload([in] String version);
-    int CancelDownload([in] String version);
-    int StartBackgroundDownload([in] String version);
-    int GetDownloadStatus([in] String version, [out] AudioSuiteDownloadStatusInfo status);
-    int UninstallCloudRom([in] String version);
+    int GetInstallStatus([in] String[] featureNames, [out] boolean[] installStatus);
+    int StartDownload([in] String[] featureNames, [in] boolean allowedCellularNet);
+    int PauseDownload([in] String[] featureNames);
+    int CancelDownload([in] String[] featureNames);
+    int StartBackgroundDownload([in] String[] featureNames);
+    int GetDownloadStatus([in] String[] featureNames, [out] AudioSuiteDownloadStatusInfo[] status);
+    int GetFeatureNewVersion([in] String[] featureNames, [out] AudioSuiteCloudRomVersionInfo[] newVersion);
+    int UninstallCloudRom([in] String[] featureNames);
 
     int RegisterDownloadInterfaceCallback([in] IRemoteObject object);
     int UnregisterDownloadInterfaceCallback();

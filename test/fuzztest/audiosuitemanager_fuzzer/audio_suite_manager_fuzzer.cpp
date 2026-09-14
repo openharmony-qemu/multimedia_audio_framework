@@ -412,7 +412,7 @@ void AudioSuiteManagerStartDownloadFuzzTest()
     } else {
         featureName[nameLen] = '\0';
     }
-    g_downloadManager->StartDownload(std::string(featureName));
+    g_downloadManager->StartDownload(std::vector<std::string>{std::string(featureName)}, true);
 }
 
 void AudioSuiteManagerCancelDownloadFuzzTest()
@@ -435,7 +435,7 @@ void AudioSuiteManagerCancelDownloadFuzzTest()
     } else {
         featureName[nameLen] = '\0';
     }
-    g_downloadManager->CancelDownload(std::string(featureName));
+    g_downloadManager->CancelDownload(std::vector<std::string>{std::string(featureName)});
 }
 
 void AudioSuiteManagerStartBackgroundDownloadFuzzTest()
@@ -458,7 +458,7 @@ void AudioSuiteManagerStartBackgroundDownloadFuzzTest()
     } else {
         featureName[nameLen] = '\0';
     }
-    g_downloadManager->StartBackgroundDownload(std::string(featureName));
+    g_downloadManager->StartBackgroundDownload(std::vector<std::string>{std::string(featureName)});
 }
 
 void AudioSuiteManagerGetDownloadStatusFuzzTest()
@@ -481,8 +481,32 @@ void AudioSuiteManagerGetDownloadStatusFuzzTest()
     } else {
         featureName[nameLen] = '\0';
     }
-    AudioSuite::AudioSuiteDownloadStatusInfo status;
-    g_downloadManager->GetDownloadStatus(std::string(featureName), status);
+    std::vector<AudioSuite::AudioSuiteDownloadStatusInfo> status;
+    g_downloadManager->GetDownloadStatus(std::vector<std::string>{std::string(featureName)}, status);
+}
+
+void AudioSuiteManagerGetFeatureNewVersionFuzzTest()
+{
+    if (!g_downloadManagerInited) {
+        g_downloadManager = &AudioSuite::AudioSuiteDownloadManager::GetInstance();
+        g_downloadManagerInited = true;
+    }
+    if (g_downloadManager == nullptr) {
+        return;
+    }
+    char featureName[MAX_FEATURE_NAME_SIZE] = {0};
+    uint32_t nameLen = GetData<uint32_t>() % MAX_FEATURE_NAME_SIZE;
+    for (uint32_t i = 0; i < nameLen; i++) {
+        featureName[i] = GetData<uint8_t>();
+    }
+    if (nameLen == 0) {
+        featureName[0] = 'v';
+        featureName[1] = '\0';
+    } else {
+        featureName[nameLen] = '\0';
+    }
+    std::vector<AudioSuite::AudioSuiteCloudRomVersionInfo> versionInfos;
+    g_downloadManager->GetFeatureNewVersion(std::vector<std::string>{std::string(featureName)}, versionInfos);
 }
 
 void AudioSuiteManagerUninstallCloudRomFuzzTest()
@@ -505,7 +529,7 @@ void AudioSuiteManagerUninstallCloudRomFuzzTest()
     } else {
         featureName[nameLen] = '\0';
     }
-    g_downloadManager->UninstallCloudRom(std::string(featureName));
+    g_downloadManager->UninstallCloudRom(std::vector<std::string>{std::string(featureName)});
 }
 
 void AudioSuiteManagerUnregisterDownloadCallbackFuzzTest()
@@ -563,6 +587,7 @@ vector g_testFuncs = {
     AudioSuiteManagerCancelDownloadFuzzTest,
     AudioSuiteManagerStartBackgroundDownloadFuzzTest,
     AudioSuiteManagerGetDownloadStatusFuzzTest,
+    AudioSuiteManagerGetFeatureNewVersionFuzzTest,
     AudioSuiteManagerUninstallCloudRomFuzzTest,
     AudioSuiteManagerUnregisterDownloadCallbackFuzzTest,
 };

@@ -212,7 +212,7 @@ napi_value NapiAudioSuiteDownloadManager::StartDownload(napi_env env, napi_callb
             return;
         }
         int32_t ret = napi->audioSuiteDownloadMgr_->StartDownloadDirect(
-            context->featureName,
+            std::vector<std::string>{context->featureName},
             context->networkType == NETWORK_TYPE_CELLULAR ||
             context->networkType == NETWORK_TYPE_CELLULAR_AND_WIFI);
         if (ret != SUCCESS) {
@@ -258,7 +258,8 @@ napi_value NapiAudioSuiteDownloadManager::PauseDownload(napi_env env, napi_callb
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->PauseDownloadDirect(context->featureName);
+        int32_t ret = napi->audioSuiteDownloadMgr_->PauseDownloadDirect(
+            std::vector<std::string>{context->featureName});
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "PauseDownload failed");
@@ -302,7 +303,8 @@ napi_value NapiAudioSuiteDownloadManager::CancelDownload(napi_env env, napi_call
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->CancelDownloadDirect(context->featureName);
+        int32_t ret = napi->audioSuiteDownloadMgr_->CancelDownloadDirect(
+            std::vector<std::string>{context->featureName});
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "CancelDownload failed");
@@ -346,7 +348,8 @@ napi_value NapiAudioSuiteDownloadManager::StartBackgroundDownload(napi_env env, 
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->StartBackgroundDownloadDirect(context->featureName);
+        int32_t ret = napi->audioSuiteDownloadMgr_->StartBackgroundDownloadDirect(
+            std::vector<std::string>{context->featureName});
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "StartBackgroundDownload failed");
@@ -391,7 +394,10 @@ napi_value NapiAudioSuiteDownloadManager::GetDownloadStatus(napi_env env, napi_c
             return;
         }
         int32_t ret = napi->audioSuiteDownloadMgr_->GetDownloadStatusDirect(
-            context->featureName, context->statusInfo);
+            std::vector<std::string>{context->featureName}, context->statusInfos);
+        if (ret == SUCCESS && !context->statusInfos.empty()) {
+            context->statusInfo = context->statusInfos[0];
+        }
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "GetDownloadStatus failed");
@@ -400,8 +406,7 @@ napi_value NapiAudioSuiteDownloadManager::GetDownloadStatus(napi_env env, napi_c
 
     auto complete = [env, context](napi_value &output) {
         napi_value statusObj = nullptr;
-        napi_status nstatus = NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(
-            env, context->statusInfo, statusObj);
+        napi_status nstatus = NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(env, context->statusInfo, statusObj);
         if (nstatus != napi_ok || statusObj == nullptr) {
             AUDIO_ERR_LOG("GetDownloadStatus: SetValueAudioSuiteDownloadStatusInfo failed");
             napi_get_undefined(env, &output);
@@ -444,7 +449,8 @@ napi_value NapiAudioSuiteDownloadManager::UninstallCloudRom(napi_env env, napi_c
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->UninstallCloudRomDirect(context->featureName);
+        int32_t ret = napi->audioSuiteDownloadMgr_->UninstallCloudRomDirect(
+            std::vector<std::string>{context->featureName});
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "UninstallCloudRom failed");
