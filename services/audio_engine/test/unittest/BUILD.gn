@@ -1590,7 +1590,7 @@ ohos_unittest("hpae_offload_se_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:hpae_engine_manager",
+    "../../:hpae_engine_manager_static",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
