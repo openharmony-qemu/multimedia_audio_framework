@@ -34,7 +34,6 @@ namespace HPAE {
 static constexpr uint32_t FIRST_SESSIONID = 90000;
 static constexpr uint32_t MAX_VALID_SESSIONID = 99999;
 static constexpr uint32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
-static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t DEFAULT_RING_BUFFER_NUM = 4;
 static constexpr int32_t MAX_OVERFLOW_UNDERRUN_COUNT = 50; // 1s
 uint32_t HpaeSoftLink::g_sessionId = FIRST_SESSIONID; // begin at 90000
