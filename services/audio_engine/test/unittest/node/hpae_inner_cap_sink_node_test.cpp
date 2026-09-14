@@ -76,6 +76,50 @@ HWTEST_F(HpaeInnerCapSinkNodeTest, Construct_001, TestSize.Level0)
 }
 
 /**
+ * @tc.name  : TickDuration_001
+ * @tc.type  : FUNC
+ * @tc.number: TickDuration_001
+ * @tc.desc  : Tick derives from geometry: 960 frames at 48000 -> 20ms real-time tick.
+ */
+HWTEST_F(HpaeInnerCapSinkNodeTest, TickDuration_001, TestSize.Level0)
+{
+    EXPECT_EQ(node_->tickDuration_.count(), static_cast<int64_t>(20000000));
+}
+
+/**
+ * @tc.name  : TickDuration_002
+ * @tc.type  : FUNC
+ * @tc.number: TickDuration_002
+ * @tc.desc  : Tick follows a 100ms sink frame length: 4800 frames at 48000 -> 100ms tick.
+ */
+HWTEST_F(HpaeInnerCapSinkNodeTest, TickDuration_002, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.frameLen = 4800; // 100ms @ 48000, SOURCE_PERIOD_SIZE scaled sink
+    auto node = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+    EXPECT_EQ(node->tickDuration_.count(), static_cast<int64_t>(100000000));
+}
+
+/**
+ * @tc.name  : TickDuration_003
+ * @tc.type  : FUNC
+ * @tc.number: TickDuration_003
+ * @tc.desc  : Invalid geometry falls back to the default 20ms tick.
+ */
+HWTEST_F(HpaeInnerCapSinkNodeTest, TickDuration_003, TestSize.Level0)
+{
+    HpaeNodeInfo zeroFrameLen = GetTestNodeInfo();
+    zeroFrameLen.frameLen = 0;
+    auto frameNode = std::make_shared<HpaeInnerCapSinkNode>(zeroFrameLen);
+    EXPECT_EQ(frameNode->tickDuration_.count(), static_cast<int64_t>(20000000));
+
+    HpaeNodeInfo zeroRate = GetTestNodeInfo();
+    zeroRate.samplingRate = static_cast<AudioSamplingRate>(0);
+    auto rateNode = std::make_shared<HpaeInnerCapSinkNode>(zeroRate);
+    EXPECT_EQ(rateNode->tickDuration_.count(), static_cast<int64_t>(20000000));
+}
+
+/**
  * @tc.name  : InnerCapturerSinkInit_001
  * @tc.type  : FUNC
  * @tc.number: InnerCapturerSinkInit_001
