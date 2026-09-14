@@ -2711,11 +2711,107 @@ HWTEST_F(AudioPipeSelectorUnitTest, DISABLED_ProcessNewPipeList_RemoteCast_001, 
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
     
     audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescToOldPipeInfo, streamDescs);
-    
+
     EXPECT_EQ(newPipeInfoList.size(), 2);
     EXPECT_EQ(newPipeInfoList[0]->streamDescriptors_.size(), 1);
     EXPECT_EQ(newPipeInfoList[0]->adapterName_, REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
     EXPECT_EQ(newPipeInfoList[0]->streamDescMap_.count(100001), 1);
+}
+
+/**
+ * @tc.name  : ConvertStreamDescToPipeInfo_ChannelLayout_001
+ * @tc.desc  : Test ConvertStreamDescToPipeInfo fills moduleInfo_.channelLayout from the stream
+ *             layout instead of leaving it empty; the 64-bit HOA bitfield (mode bit 44) must
+ *             survive the decimal serialization.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_ChannelLayout_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = 1;
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 48000;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_HOA_ORDER3_ACN_N3D;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_FALSE(info.moduleInfo_.channelLayout.empty());
+    EXPECT_EQ(info.moduleInfo_.channelLayout,
+        std::to_string(static_cast<uint64_t>(AudioChannelLayout::CH_LAYOUT_HOA_ORDER3_ACN_N3D)));
+}
+
+/**
+ * @tc.name  : IsPipeFormatMatch_ChannelLayout_001
+ * @tc.desc  : Test IsPipeFormatMatch against a pipe built by ConvertStreamDescToPipeInfo: the
+ *             same layout matches (pipe reuse instead of special-remote reload), a different
+ *             layout does not match, and a pipe with an empty layout string keeps the old
+ *             never-match behaviour so real mismatches still reload.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, IsPipeFormatMatch_ChannelLayout_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = 1;
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 48000;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, *pipeInfo);
+
+    // same format and layout: the pipe is reused, no special-remote reload needed
+    EXPECT_TRUE(audioPipeSelector->IsPipeFormatMatch(streamPropInfo, pipeInfo));
+
+    // same format but different layout: must not match, so the reload path stays reachable
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_5POINT1;
+    EXPECT_FALSE(audioPipeSelector->IsPipeFormatMatch(streamPropInfo, pipeInfo));
+
+    // pipe with an empty layout string (predates the fill) never matches on this field
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    std::string savedLayout = pipeInfo->moduleInfo_.channelLayout;
+    pipeInfo->moduleInfo_.channelLayout = "";
+    EXPECT_FALSE(audioPipeSelector->IsPipeFormatMatch(streamPropInfo, pipeInfo));
+    pipeInfo->moduleInfo_.channelLayout = savedLayout;
 }
 } // namespace AudioStandard
 } // namespace OHOS

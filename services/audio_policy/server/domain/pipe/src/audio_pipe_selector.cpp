@@ -1767,6 +1767,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
     info.moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
     info.moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(streamPropInfo->channelLayout_));
+    info.moduleInfo_.channelLayout = std::to_string(streamPropInfo->channelLayout_);
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
 
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
