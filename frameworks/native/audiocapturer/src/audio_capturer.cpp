@@ -1215,6 +1215,7 @@ void AudioCapturerPrivate::CheckSignalData(uint8_t *buffer, size_t bufferSize) c
     if (!latencyMeasEnabled_) {
         return;
     }
+    CHECK_AND_RETURN_LOG(buffer != nullptr, "buffer is nullptr");
     CHECK_AND_CALL_FUNC_RETURN_LOG(signalDetectAgent_ != nullptr,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CREATE_NULL_POINTER, "LatencyMeas signalDetectAgent_ is nullptr", true),
@@ -1948,6 +1949,7 @@ void AudioCapturerInterruptCallbackImpl::FinishSwitch()
 
 bool AudioCapturerInterruptCallbackImpl::NoNeedNotifyEvent(const InterruptEvent &interruptEvent)
 {
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audioStream_ is nullptr");
     StreamFocusState currentFocusState = audioStream_->GetFocusState();
     bool noNeedSendNotify = (currentFocusState == FOCUS_STARTING || currentFocusState == FOCUS_RUNNING
         || currentFocusState == FOCUS_STOPPED || currentFocusState == FOCUS_APP_STOPPING);
