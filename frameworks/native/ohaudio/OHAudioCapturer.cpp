@@ -318,7 +318,6 @@ OH_AudioStream_Result OH_AudioCapturer_GetSamplingRate(OH_AudioCapturer* capture
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "rate is nullptr", true),
         "rate is nullptr");
-
     *rate = audioCapturer->GetSamplingRate();
     return AUDIOSTREAM_SUCCESS;
 }
