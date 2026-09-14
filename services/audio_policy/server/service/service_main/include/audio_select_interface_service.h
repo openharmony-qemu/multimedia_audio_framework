@@ -118,12 +118,12 @@ private:
     void HandleActiveBtOriginalLogic(DeviceType deviceType, const std::string &macAddress);
     int32_t SelectOutputDevicePrepare(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
         StreamUsage strUsage);
-    void SetBlockFirstOverride();
-    bool ClearBlockFirstOverride();
+    void SetBlockFirstOverrode();
+    bool ClearBlockFirstOverrode();
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;
-    std::atomic<bool> blockFirstOverridePending_ {false};
+    std::atomic<bool> blockFirstOverrodePending_ {false};
 };
 } // namespace AudioStandard
 } // namespace OHOS

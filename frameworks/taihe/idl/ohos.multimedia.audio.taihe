@@ -251,7 +251,7 @@ struct AudioRendererFilter {
   uid: Optional<i32>;
   rendererInfo: Optional<AudioRendererInfo>;
   rendererId: Optional<i32>;
-  blockFirstOverride: Optional<bool>;
+  blockFirstOverrode: Optional<bool>;
 }
 
 struct AudioCapturerFilter {

@@ -34,7 +34,7 @@ public:
     AudioRendererInfo rendererInfo = {};
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     int32_t streamId = -1;
-    bool blockFirstOverride = false;
+    bool blockFirstOverrode = false;
 
     bool Marshalling(Parcel &parcel) const override;
     static AudioRendererFilter* Unmarshalling(Parcel &parcel);
