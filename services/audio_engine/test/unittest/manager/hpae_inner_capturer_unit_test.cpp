@@ -307,6 +307,28 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseFlushChange_001, Test
 }
 
 /**
+ * @tc.name  : Test CreateCapturerSpanAlign_001
+ * @tc.type  : FUNC
+ * @tc.number: CreateCapturerSpanAlign_001
+ * @tc.desc  : Capturer-side node cadence is re-aligned to the sink tick when the negotiated
+ *             span disagrees (SOURCE_PERIOD_SIZE scaled span vs a 20ms chain).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, CreateCapturerSpanAlign_001, TestSize.Level1)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
+    recordStreamInfo.samplingRate = SAMPLE_RATE_48000;
+    recordStreamInfo.frameLen = 4800; // scaled span, disagrees with the 960 sink tick
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(recordStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    auto converter = hpaeInnerCapturerManager_->capturerAudioFormatConverterNodeMap_[recordStreamInfo.sessionId];
+    ASSERT_NE(converter, nullptr);
+    EXPECT_EQ(static_cast<uint32_t>(converter->GetNodeInfo().frameLen),
+        SAMPLE_RATE_48000 * FRAME_LENGTH_IN_SECOND); // re-aligned to the 960 sink cadence
+}
+
+/**
  * @tc.name  : Test StreamStartStopDrainChange_001
  * @tc.type  : FUNC
  * @tc.number: StreamStartStopDrainChange_001
