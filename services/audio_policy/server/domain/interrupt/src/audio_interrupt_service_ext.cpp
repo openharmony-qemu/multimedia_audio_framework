@@ -743,6 +743,6 @@ void AudioInterruptService::UpdateAudioFocusCheckMuteFlag(const int32_t zoneId, 
         AUDIO_INFO_LOG("Same app has same-type stream, update isCheckMuteStream flag");
         audioInterrupt.isCheckMuteStream = false;
     }
-}
+} 
 }
 } // namespace OHOS
