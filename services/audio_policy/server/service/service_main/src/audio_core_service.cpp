@@ -56,7 +56,7 @@ namespace {
 const size_t SELECT_DEVICE_HISTORY_LIMIT = 10;
 const uint32_t FIRST_SESSIONID = 100000;
 static const char *CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
-const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
+const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02 * SOURCE_PERIOD_SIZE;
 const uint32_t PC_MIC_CHANNEL_NUM = 4;
 const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 
