@@ -179,12 +179,15 @@ int32_t AudioVolumeUtils::GetMaxVolumeLevel(DeviceType deviceType, AudioStreamTy
 {
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t maxVolumeLevel = MAX_VOLUME_LEVEL;
-    GetMaxVolumeLevelFromConfig(deviceType, volumeType, maxVolumeLevel, zoneId);
+    if (zoneVolumeConfigMap_.contains(std::string(PRIMARY_ZONE_NAME))) {
+        GetMaxVolumeLevelFromConfigByProxy(deviceType, volumeType, maxVolumeLevel, zoneId);
+    } else {
+        GetMaxVolumeLevelFromConfig(deviceType, volumeType, maxVolumeLevel, zoneId);
+    }
     return maxVolumeLevel;
 }
 
-#ifdef FEATURE_AUDIO_ZONE_VOLUME
-void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(DeviceType deviceType,
+void AudioVolumeUtils::GetMaxVolumeLevelFromConfigByProxy(DeviceType deviceType,
     AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(zoneVolumeConfigMapMutex_);
@@ -196,7 +199,6 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(DeviceType deviceType,
     CHECK_AND_RETURN_LOG(zoneConfigIt.contains(internalVolumeType), "streamType in zone not config");
     volumeLevel = zoneConfigIt[internalVolumeType].maxVolume;
 }
-#else
 void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(DeviceType deviceType,
     AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
 {
@@ -216,7 +218,6 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(DeviceType deviceType,
         volumeLevel = streamVolumeInfos_[internalVolumeType]->maxLevel;
         return;
     }
-
     CHECK_AND_RETURN_LOG(streamVolumeInfos_.contains(internalVolumeType) &&
         streamVolumeInfos_[internalVolumeType] != nullptr, "streamVolumeInfos_ not contain volume type");
     
@@ -232,7 +233,6 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(DeviceType deviceType,
     CHECK_AND_RETURN_LOG(deviceVolumeInfoIt->maxLevel != -1, "maxLevel is -1, not use");
     volumeLevel = deviceVolumeInfoIt->maxLevel;
 }
-#endif
 
 int32_t AudioVolumeUtils::GetMinVolumeLevel(DeviceType deviceType, AudioStreamType streamType, int32_t zoneId)
 {

@@ -165,6 +165,9 @@ void AudioAdapterManager::InitBootAnimationVolume()
 {
     char currentVolumeValue[3] = {0};
     AudioVolumeType typeForBootAnimation = VolumeUtils::IsPCVolumeEnable() ? STREAM_SYSTEM : STREAM_NOTIFICATION;
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+    typeForBootAnimation = STREAM_MUSIC;
+#endif
     auto desc = audioActiveDevice_.GetDeviceForVolume(typeForBootAnimation);
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
     int32_t bootAnimationVolume = GetStreamVolumeInternal(desc, typeForBootAnimation);
@@ -317,7 +320,11 @@ void AudioAdapterManager::LoadVolumeValueMapFromDb()
 #endif
     }
     auto desc = audioConnectedDevice_.GetOutputDeviceByDeviceType(DEVICE_TYPE_SPEAKER);
-    SaveNotificationVolumeToLocal(desc, STREAM_NOTIFICATION);
+    AudioVolumeType bootAnimationVolumeType = STREAM_NOTIFICATION;
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+    bootAnimationVolumeType = STREAM_MUSIC;
+#endif
+    SaveBootAnimationVolumeToLocal(desc, bootAnimationVolumeType);
 }
 
 int32_t AudioAdapterManager::ReInitKVStore()
@@ -390,25 +397,38 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType, Devic
     return AudioVolumeUtils::GetInstance().GetMinVolumeLevel(deviceType, volumeType, zoneId);
 }
 
-void AudioAdapterManager::SaveNotificationVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
+void AudioAdapterManager::SaveBootAnimationVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
     AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     AudioVolumeType audioVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
     // Only use the volume of speaker as the Boot Animation Volume.
     // use STREAM_NOTIFICATION on phone and use STREAM_SYSTEM on PC.
-    bool isRightVolumeType = VolumeUtils::IsPCVolumeEnable() ?
-        (audioVolumeMap == STREAM_SYSTEM) : (audioVolumeMap == STREAM_NOTIFICATION);
-    if (isRightVolumeType && (!VolumeUtils::IsPCVolumeEnable() || device->deviceType_ == DEVICE_TYPE_SPEAKER)) {
-        int32_t volumeLevel =
-            GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
-        // To keep the startup volume consistent between the new and old versions, still use "ringtonevolume".
-        int32_t ret = SetParameter("persist.multimedia.audio.ringtonevolume", std::to_string(volumeLevel).c_str());
-        if (ret == 0) {
-            AUDIO_INFO_LOG("Save notification volume for boot success %{public}d", volumeLevel);
-        } else {
-            AUDIO_ERR_LOG("Save notification volume for boot failed, result %{public}d", ret);
-        }
+    // use STREAM_MUSIC on HiCar
+    AudioVolumeType volumeTarget = STREAM_NOTIFICATION;
+    bool forceSpeaker = false;
+    if (VolumeUtils::IsPCVolumeEnable()) {
+        volumeTarget = STREAM_SYSTEM;
+        forceSpeaker = true;
+    }
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+    volumeTarget = STREAM_MUSIC;
+    forceSpeaker = true;
+#endif
+    if (volumeType != volumeTarget) {
+        return;
+    }
+    if (forceSpeaker && device->deviceType_ != DEVICE_TYPE_SPEAKER) {
+        return;
+    }
+    int32_t volumeLevel =
+        GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
+    // To keep the startup volume consistent between the new and old versions, still use "ringtonevolume".
+    int32_t ret = SetParameter("persist.multimedia.audio.ringtonevolume", std::to_string(volumeLevel).c_str());
+    if (ret == 0) {
+        AUDIO_INFO_LOG("Save notification volume for boot success %{public}d", volumeLevel);
+    } else {
+        AUDIO_ERR_LOG("Save notification volume for boot failed, result %{public}d", ret);
     }
 }
 
@@ -817,6 +837,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, co
     if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(zoneId, desc->deviceType_)) {
         AUDIO_INFO_LOG("Set system volume for proxy device, zoneId: %{public}d, device: %{public}s",
             zoneId, desc->GetName().c_str());
+        SaveBootAnimationVolumeToLocal(desc, streamType);
         AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId, desc->deviceType_, streamType, buffedVolume);
         return SUCCESS;
     }
@@ -1192,6 +1213,7 @@ int32_t AudioAdapterManager::SetStreamMute(std::shared_ptr<AudioDeviceDescriptor
             GetSystemVolumeDegree(device, streamType, zoneId));
         AUDIO_INFO_LOG("Set system volume for proxy device, zoneId: %{public}d, device: %{public}s",
             zoneId, device->GetName().c_str());
+        SaveBootAnimationVolumeToLocal(device, streamType);
         AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId, device->deviceType_, streamType,
             volume);
         return SUCCESS;
@@ -2745,7 +2767,7 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
     ringerMode_.store(ringerMode);
     auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_NOTIFICATION);
     // Save volume in local prop for bootanimation
-    SaveNotificationVolumeToLocal(desc, STREAM_NOTIFICATION);
+    SaveBootAnimationVolumeToLocal(desc, STREAM_NOTIFICATION);
 }
 
 void AudioAdapterManager::CloneVolumeMap(void)
@@ -4481,7 +4503,7 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERROR, "desc is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    SaveNotificationVolumeToLocal(desc, volumeType);
+    SaveBootAnimationVolumeToLocal(desc, volumeType);
     if (desc->deviceType_ == DEVICE_TYPE_HEARING_AID) {
         AudioIOHandle ioHandle;
         std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_HEARING_AID);
