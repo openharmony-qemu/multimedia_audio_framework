@@ -496,6 +496,7 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
     CheckNeedPreRemoveUnusedPipe(pipeInfos);
     uint32_t audioFlag;
+    RemoveAndCloseUnusedCapturerPipe(pipeInfos);
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         HILOG_COMM_INFO("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
@@ -1122,6 +1123,7 @@ int32_t AudioCoreService::FetchCapturerPipeAndExecute(std::shared_ptr<AudioStrea
 
     CheckNeedPreRemoveUnusedPipe(pipeInfos);
 
+    RemoveAndCloseUnusedCapturerPipe(pipeInfos);
     for (auto &pipeInfo : pipeInfos) {
         HILOG_COMM_INFO("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
@@ -1232,9 +1234,9 @@ void AudioCoreService::ProcessInputPipeReload(std::shared_ptr<AudioPipeInfo> pip
     ProcessInputPipeUpdate(pipeInfo, flag);
 }
 
-void AudioCoreService::RemoveUnusedPipe(const AudioStreamDeviceChangeReasonExt reason)
+void AudioCoreService::RemoveAndCloseUnusedPipeInternal(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos,
+    const AudioStreamDeviceChangeReasonExt &reason)
 {
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedPipe();
     bool isOldDeviceUnavailable = reason.IsOldDeviceUnavaliable() || reason.IsOldDeviceUnavaliableExt();
     for (auto pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
@@ -1280,6 +1282,20 @@ void AudioCoreService::RemoveUnusedPipe(const AudioStreamDeviceChangeReasonExt r
         audioPolicyManager_.RemoveAudioPipeVolume(pipeInfo->id_);
     }
     StopNoRunningPipe();
+}
+
+void AudioCoreService::RemoveUnusedPipe(const AudioStreamDeviceChangeReasonExt reason)
+{
+    RemoveAndCloseUnusedPipeInternal(pipeManager_->GetUnusedPipe(), reason);
+}
+
+void AudioCoreService::RemoveAndCloseUnusedCapturerPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos,
+    const AudioStreamDeviceChangeReasonExt reason)
+{
+    // Keep enhanced-routing capability gating in one place for all capturer fetch paths.
+    CHECK_AND_RETURN_LOG(Util::IsEnhancedRoutingSupported(), "enhanced routing is not supported");
+    auto unusedPipes = pipeManager_->GetUnusedPipeForCapturer(pipeInfos);
+    RemoveAndCloseUnusedPipeInternal(unusedPipes, reason);
 }
 
 void AudioCoreService::RemoveUnusedRecordPipe()
@@ -1828,8 +1844,7 @@ void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> s
 }
 
 void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-    const std::vector<SourceOutput>& sourceOutputs,
-    std::shared_ptr<AudioPipeInfo> pipeInfo)
+    const std::vector<SourceOutput>& sourceOutputs, std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
     Trace trace("AudioCoreService::MoveToNewInputDevice");
     std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_, sourceOutputs);

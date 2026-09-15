@@ -491,8 +491,21 @@ const std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetPipeList(
 std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe()
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    return GetUnusedPipeInternal(curPipeList_);
+}
+
+std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipeForCapturer(
+    const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    return GetUnusedPipeInternal(pipeInfos);
+}
+
+std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipeInternal(
+    const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
+{
     std::vector<std::shared_ptr<AudioPipeInfo>> newList;
-    for (auto pipe : curPipeList_) {
+    for (auto pipe : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
         if (pipe->streamDescriptors_.empty() && (IsSpecialPipe(pipe->routeFlag_) ||
             (pipe->adapterName_ == ADAPTER_TYPE_VA &&

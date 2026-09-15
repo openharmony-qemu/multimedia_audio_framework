@@ -37,6 +37,7 @@ static const char* ADAPTER_FILE_TYPE = "file";
 static const char* ADAPTER_USB_TYPE = "usb";
 static const char* ADAPTER_DP_TYPE = "dp";
 static const char* ADAPTER_ACCESSORY_TYPE = "accessory";
+static const char* ADAPTER_VA_TYPE = "va";
 
 static const char* ADAPTER_DEVICE_PRIMARY_SPEAKER = "Speaker";
 static const char* ADAPTER_DEVICE_PRIMARY_EARPIECE = "Earpicece";
