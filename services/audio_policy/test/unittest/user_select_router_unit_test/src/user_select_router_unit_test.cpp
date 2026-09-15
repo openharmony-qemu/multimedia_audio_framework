@@ -236,8 +236,6 @@ HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_003, TestSize.Level3)
     SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
     int32_t clientUID = 1;
     uint32_t sessionID = 678;
-    auto desc = make_shared<AudioDeviceDescriptor>();
-    AudioStateManager::GetAudioStateManager().SetPreferredRecognitionCaptureDevice(desc);
     auto result = userSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
 }

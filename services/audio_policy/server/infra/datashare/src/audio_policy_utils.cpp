@@ -215,7 +215,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             ret = ERR_INVALID_PARAM;
             break;
         case AUDIO_RECOGNITION_CAPTURE:
-            audioStateManager_.SetPreferredRecognitionCaptureDevice(desc);
+            strategy.SetRecognitionInputDevice(desc);
             break;
         default:
             ret = ERR_INVALID_PARAM;

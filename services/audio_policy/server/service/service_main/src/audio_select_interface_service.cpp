@@ -523,6 +523,8 @@ int32_t AudioSelectInterfaceService::SelectInputDeviceInner(sptr<AudioCapturerFi
     if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
         srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         AudioRouterSelectStrategy::GetInstance().SetCallInputDevice(selectUid, selectStreamId, selectedDesc);
+    } else if (audioCapturerFilter->uid == UID_BLUETOOTH_SA && srcType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        AudioRouterSelectStrategy::GetInstance().SetRecognitionInputDevice(selectedDesc);
     } else {
         AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(selectUid, selectStreamId, selectedDesc);
     }

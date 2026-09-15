@@ -76,6 +76,7 @@ constexpr float MAX_STREAM_PITCH_LEVEL = 4.0f;
 constexpr float PITCH_DEFAULT = 1.0f;
 constexpr int32_t EMPTY_UID = 0;
 constexpr int32_t UID_COCKPIT_SA = 8850;
+constexpr int32_t UID_BLUETOOTH_SA = 1002;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 constexpr int32_t DEFAULT_ZONEID = 0;
