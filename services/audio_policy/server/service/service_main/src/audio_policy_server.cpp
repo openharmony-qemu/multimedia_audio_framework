@@ -1730,10 +1730,10 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
         VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
         // The notificationFollowRingtone is true. Keep the mute of notification and ringtone the same.
         int32_t setResult1 = SetSingleStreamMute(STREAM_RING, mute, isUpdateUi, deviceType, zoneId);
+        CHECK_AND_RETURN_RET_LOG(setResult1 == SUCCESS, setResult1, "Failed for ringtone: %{public}d", setResult1);
         int32_t setResult2 = SetSingleStreamMute(STREAM_NOTIFICATION, mute, isUpdateUi, deviceType, zoneId);
-        AUDIO_INFO_LOG("SetStreamMute: mute=%{public}d, ringtoneResult=%{public}d, notificationResult=%{public}d",
-            mute, setResult1, setResult2);
-        return setResult1;
+        AUDIO_INFO_LOG("SetStreamMute: mute=%{public}d, notification result =%{public}d", mute, setResult2);
+        return SUCCESS;
     }
 
     return SetSingleStreamMute(streamType, mute, isUpdateUi, deviceType, zoneId);

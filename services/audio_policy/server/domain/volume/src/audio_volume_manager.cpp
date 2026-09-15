@@ -2404,10 +2404,10 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelWithOption(AudioStreamType strea
         VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
         // The notificationFollowRingtone is true. Keep the volume of notification and ringtone the same.
         int32_t setResult1 = SetSingleStreamVolume(STREAM_RING, volumeLevel, option);
+        CHECK_AND_RETURN_RET_LOG(setResult1 == SUCCESS, setResult1, "Failed for ringtone: %{public}d", setResult1);
         int32_t setResult2 = SetSingleStreamVolume(STREAM_NOTIFICATION, volumeLevel, option);
-        AUDIO_INFO_LOG("SetSystemVolume: level=%{public}d, degree=%{public}d, result1=%{public}d, result2=%{public}d",
-            volumeLevel, option.volumeDegree, setResult1, setResult2);
-        return setResult1;
+        AUDIO_INFO_LOG("degree=%{public}d, notification result=%{public}d", option.volumeDegree, setResult2);
+        return SUCCESS;
     }
     return SetSingleStreamVolume(streamType, volumeLevel, option);
 }
@@ -2485,6 +2485,7 @@ int32_t AudioVolumeManager::SetSingleStreamVolumeWithDevice(AudioStreamType stre
         ret = SetSingleStreamVolume(streamType, volumeLevel, option);
     }
 
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to set volume: %{public}d", ret);
     if (VolumeUtils::IsNotificationFollowRingtone() &&
         VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
         int32_t resultOfNotification = SUCCESS;
