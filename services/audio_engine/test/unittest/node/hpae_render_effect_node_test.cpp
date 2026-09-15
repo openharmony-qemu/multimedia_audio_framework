@@ -747,12 +747,13 @@ HWTEST_F(HpaeRenderEffectNodeTest, testGetExpectedInputChannelInfoWithRenderId_0
     AudioBasicFormat basicFormat;
     basicFormat.rate = SAMPLE_RATE_48000;
     basicFormat.audioChannelInfo.numChannels = STEREO;
+    // Empty the manager so the query deterministically exercises its failure path.
+    // Under the unified singleton (shared audio_effect, c41f01401a) the chain
+    // created above is visible to node-side queries; ResetInfo restores the
+    // same empty state the node used to see under the dual-singleton link.
+    AudioEffectChainManager::GetInstance()->ResetInfo();
     int32_t ret = hpaeRenderEffectNode->GetExpectedInputChannelInfo(basicFormat);
-    // Unified singleton (shared audio_effect): the chain created above is visible
-    // to node-side queries, so the query succeeds. The old error expectation only
-    // held under the dual-singleton link (audio_effect_static) where the node read
-    // an empty manager copy.
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -2372,12 +2373,13 @@ HWTEST_F(HpaeRenderEffectNodeTest, GetExpectedInputChannelInfo_Error_011, TestSi
     basicFormat.audioChannelInfo.numChannels = STEREO;
 
     // Should return error when no effect chain exists
+    // Empty the manager so the query deterministically exercises its failure path.
+    // Under the unified singleton (shared audio_effect, c41f01401a) the default
+    // chains from init are visible to node-side queries; ResetInfo restores the
+    // same empty state the node used to see under the dual-singleton link.
+    AudioEffectChainManager::GetInstance()->ResetInfo();
     int32_t ret = node->GetExpectedInputChannelInfo(basicFormat);
-    // Unified singleton (shared audio_effect): default chains from init are visible
-    // to node-side queries, so the query succeeds. The old error expectation only
-    // held under the dual-singleton link (audio_effect_static) where the node read
-    // an empty manager copy.
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
