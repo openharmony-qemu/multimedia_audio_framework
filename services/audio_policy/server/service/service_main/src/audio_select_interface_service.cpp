@@ -536,9 +536,12 @@ int32_t AudioSelectInterfaceService::SelectInputDeviceInner(sptr<AudioCapturerFi
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret, StreamDfxManager::GetInstance().SendAudioErrorEvent(
         IPCSkeleton::GetCallingUid(), ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED, "RefreshVirtualDevice failed", false));
 
+    int32_t bluetoothUid = 1002;
     if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
         srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         AudioRouterSelectStrategy::GetInstance().SetCallInputDevice(selectUid, selectStreamId, selectedDesc);
+    } else if (audioCapturerFilter->uid == bluetoothUid && srcType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        AudioRouterSelectStrategy::GetInstance().SetRecognitionInputDevice(selectedDesc);
     } else {
         AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(selectUid, selectStreamId, selectedDesc);
     }

@@ -1315,7 +1315,7 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
         auto sourceType = streamDesc->capturerInfo_.sourceType;
         auto sessionId = streamDesc->sessionId_;
         if (Util::IsScoSupportSource(sourceType)) {
-            audioStateManager_.SetPreferredRecognitionCaptureDevice(make_shared<AudioDeviceDescriptor>());
+            audioRouterSelectStrategy_.SetRecognitionInputDevice(make_shared<AudioDeviceDescriptor>());
         }
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionId);
     }

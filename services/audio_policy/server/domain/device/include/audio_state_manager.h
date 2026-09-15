@@ -46,9 +46,6 @@ public:
     // Get tone render device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredToneRenderDevice();
 
-    void SetPreferredRecognitionCaptureDevice(const shared_ptr<AudioDeviceDescriptor> &desc);
-    shared_ptr<AudioDeviceDescriptor> GetPreferredRecognitionCaptureDevice();
-
     int32_t SetAudioVKBInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
     int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);
 
@@ -57,7 +54,6 @@ private:
     ~AudioStateManager() {};
     std::shared_ptr<AudioDeviceDescriptor> preferredRingRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> preferredRecognitionCaptureDevice_{make_shared<AudioDeviceDescriptor>()};
 
     std::mutex mutex_;
     sptr<IStandardAudioPolicyManagerListener> audioVKBInfoMgrCallback_;
