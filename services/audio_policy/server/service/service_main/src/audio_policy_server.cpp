@@ -150,6 +150,7 @@ constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
 const char RINGTONE_PARAMETER_SCANNER_FIRST_KEY[] = "ringtone.scanner.first";
 const char RINGTONE_PARAMETER_SCANNER_FIRST_TRUE[] = "true";
 const int32_t RINGTONEPARA_SIZE = 64;
+static const int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024; // 10MB
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -4675,6 +4676,8 @@ int32_t AudioPolicyServer::DownloadPersonalizedHRTF(int32_t fd, int64_t length)
     if (!hasSystemPermission) {
         return ERR_PERMISSION_DENIED;
     }
+    CHECK_AND_RETURN_RET_LOG(fd >= 0, ERR_INVALID_PARAM, "invalid fd");
+    CHECK_AND_RETURN_RET_LOG(length > 0 && length <= MAX_HRTF_LENGTH, ERR_INVALID_PARAM, "invalid length");
     return audioSpatializationService_.DownloadPersonalizedHRTF(fd, length);
 }
 
