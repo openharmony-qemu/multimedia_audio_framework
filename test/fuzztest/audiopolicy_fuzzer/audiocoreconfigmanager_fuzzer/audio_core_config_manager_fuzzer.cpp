@@ -356,6 +356,7 @@ void GetStreamPropInfoForMultiChannelFuzzTest(FuzzedDataProvider& fdp)
     if (fdp.ConsumeBool()) {
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
         streamPropInfo->channelLayout_ = ConsumeEnum<AudioChannelLayout>(fdp);
+        streamPropInfo->channels_ = STEREO;
         info->streamPropInfos_.push_back(streamPropInfo);
     }
     AudioChannelLayout channelLayout = ConsumeEnum<AudioChannelLayout>(fdp);
