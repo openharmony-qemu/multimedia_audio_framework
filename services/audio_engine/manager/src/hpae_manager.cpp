@@ -3731,6 +3731,22 @@ void HpaeManager::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint
     SendRequest(request, __func__);
 }
 
+void HpaeManager::SetStreamSilentMode(HpaeStreamClassType streamClassType, uint32_t sessionId, bool silentMode)
+{
+    auto request = [this, streamClassType, sessionId, silentMode]() {
+        AUDIO_INFO_LOG("SetStreamSilentMode streamClassType %{public}d sessionId %{public}u silentMode %{public}d",
+            streamClassType, sessionId, silentMode);
+        CHECK_AND_RETURN(streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY);
+        auto it = rendererIdSinkNameMap_.find(sessionId);
+        CHECK_AND_RETURN_LOG(it != rendererIdSinkNameMap_.end(),
+            "cannot find sessionId %{public}u streamClassType %{public}d", sessionId, streamClassType);
+        auto rendererManager = SafeGetMap(rendererManagerMap_, it->second);
+        CHECK_AND_RETURN_LOG(rendererManager != nullptr, "cannot find device:%{public}s", it->second.c_str());
+        rendererManager->SetStreamSilentMode(sessionId, silentMode);
+    };
+    SendRequest(request, __func__);
+}
+
 float HpaeManager::GetMaxAmplitude()
 {
     float maxAmplitude = 0.0f;

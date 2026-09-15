@@ -381,6 +381,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
  * @tc.number: HpaeRenderer_SetSpeed_NoHdiCapability_001
  * @tc.desc  : Sessions without offload-engine HDI speed capability must be rejected so the
  *             client falls back to local sonic speed (e.g. HiCar MCH speed silent-drop fix).
+ * @tc.owner : audio_route_renderer
  */
 HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_SetSpeed_NoHdiCapability_001, TestSize.Level1)
 {

@@ -34,9 +34,9 @@ void IAudioRenderSink::RegistCallback(uint32_t type, std::shared_ptr<IAudioSinkC
 }
 
 void IAudioRenderSink::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid)
+    uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid, bool silentMode)
 {
-    ChangePipeStream(change, streamId, usage, state, appUid);
+    ChangePipeStream(change, streamId, usage, state, appUid, silentMode);
 }
 
 std::shared_ptr<AudioOutputPipeInfo> IAudioRenderSink::GetOutputPipeInfo()
@@ -80,7 +80,7 @@ void IAudioRenderSink::ChangePipeDevice(const std::vector<DeviceType> &devices)
 }
 
 void IAudioRenderSink::ChangePipeStream(StreamChangeType change,
-    uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid)
+    uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid, bool silentMode)
 {
     std::lock_guard<std::mutex> lock(pipeLock_);
     CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
@@ -89,7 +89,7 @@ void IAudioRenderSink::ChangePipeStream(StreamChangeType change,
     switch (change) {
         case STREAM_CHANGE_TYPE_ADD:
             bundleName = AudioBundleManager::GetBundleNameFromUid(appUid);
-            pipeInfo_->AddStream(streamId, usage, state, bundleName);
+            pipeInfo_->AddStream(streamId, usage, state, bundleName, silentMode);
             break;
         case STREAM_CHANGE_TYPE_REMOVE:
             pipeInfo_->RemoveStream(streamId);
@@ -98,7 +98,7 @@ void IAudioRenderSink::ChangePipeStream(StreamChangeType change,
             pipeInfo_->RemoveAllStreams();
             break;
         case STREAM_CHANGE_TYPE_STATE_CHANGE:
-            pipeInfo_->UpdateStream(streamId, state);
+            pipeInfo_->UpdateStream(streamId, state, silentMode);
             break;
         default:
             return;

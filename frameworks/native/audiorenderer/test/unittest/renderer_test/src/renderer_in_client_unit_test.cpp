@@ -4471,6 +4471,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_NormalStream_001, TestSize.Le
  * @tc.type  : FUNC
  * @tc.number: SetSpeed_HdiRejectedFallback_001
  * @tc.desc  : Server SetSpeed rejection must apply local sonic speed instead of failing.
+ * @tc.owner : audio_route_renderer
  */
 HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_HdiRejectedFallback_001, TestSize.Level1)
 {
@@ -4493,6 +4494,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_HdiRejectedFallback_001, Test
  * @tc.type  : FUNC
  * @tc.number: NotifyRouteUpdate_HdiRejectedKeepSpeed_001
  * @tc.desc  : Switching to HDI speed mode with a rejected speed keeps the client-side speed.
+ * @tc.owner : audio_route_renderer
  */
 HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_HdiRejectedKeepSpeed_001, TestSize.Level1)
 {

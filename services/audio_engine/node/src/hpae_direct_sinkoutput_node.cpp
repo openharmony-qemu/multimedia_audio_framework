@@ -369,11 +369,11 @@ void HpaeDirectSinkOutputNode::UpdateBusStatus(bool isActive)
 }
 
 void HpaeDirectSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
+    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid, bool silentMode)
 {
     CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_LOG(audioRendererSink_->IsInited(), "audioRendererSink_ not init");
-    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
+    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid, silentMode);
 }
 
 bool HpaeDirectSinkOutputNode::IsRenderInit() const

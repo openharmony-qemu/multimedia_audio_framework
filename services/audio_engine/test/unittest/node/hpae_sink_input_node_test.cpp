@@ -1145,6 +1145,22 @@ HWTEST_F(HpaeSinkInputNodeTest, session_effect_attach_state_overwrite_001, TestS
     EXPECT_EQ(locked.get(), mockEffectB.get());
 }
 
+/**
+ * @tc.name  : SetStreamSilentMode_001
+ * @tc.type  : FUNC
+ * @tc.number: SetStreamSilentMode_001
+ * @tc.desc  : Test SetStreamSilentMode/GetStreamSilentMode default false and set true.
+ * @tc.owner : audio_route_renderer
+ */
+HWTEST_F(HpaeSinkInputNodeTest, SetStreamSilentMode_001, TestSize.Level0)
+{
+    EXPECT_FALSE(node_->GetStreamSilentMode());
+    node_->SetStreamSilentMode(true);
+    EXPECT_TRUE(node_->GetStreamSilentMode());
+    node_->SetStreamSilentMode(false);
+    EXPECT_FALSE(node_->GetStreamSilentMode());
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

@@ -51,6 +51,7 @@ struct HpaeRenderSessionInfo {
     HpaeSessionState state = HPAE_SESSION_NEW;
     bool isMoveAble = true;
     bool bypass = false;
+    bool silentMode = false;
 };
 
 struct HpaeSinkInputInfo {

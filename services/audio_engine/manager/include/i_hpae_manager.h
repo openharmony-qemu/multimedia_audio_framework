@@ -177,6 +177,8 @@ public:
     virtual void LoadCollaborationConfig() = 0;
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) { return 0; };
     virtual void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
+    virtual void SetStreamSilentMode(HpaeStreamClassType streamClassType, uint32_t sessionId,
+        bool silentMode) = 0;
     virtual float GetMaxAmplitude() { return 0.0f; }
     virtual void SetSinkMuteForSwitchDevice(const std::string &deviceClass, bool mute) = 0;
 

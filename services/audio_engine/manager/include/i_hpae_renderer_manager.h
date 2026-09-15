@@ -133,6 +133,7 @@ public:
     virtual void SetMuteForSwitchDevice(bool mute) {};
     virtual int32_t SetSinkVirtualOutputNode(const std::shared_ptr<HpaeSinkVirtualOutputNode> &sinkVirtualOutputNode);
     virtual void TriggerAppsUidUpdate(uint32_t sessionId) { return; }
+    virtual void SetStreamSilentMode(uint32_t sessionId, bool silentMode) {}
     virtual float GetMaxAmplitude() { return 0.0f; }
 
     // Session Effect (async — dispatches to SignalProcessThread, safe to call from any thread)

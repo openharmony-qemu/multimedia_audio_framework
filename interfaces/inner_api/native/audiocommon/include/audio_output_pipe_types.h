@@ -96,13 +96,15 @@ public:
         devices_ = devices;
     }
 
-    void AddStream(uint32_t streamId, StreamUsage usage, RendererState state, std::string bundleName = "")
+    void AddStream(uint32_t streamId, StreamUsage usage, RendererState state, std::string bundleName = "",
+        bool silentMode = false)
     {
         RendererStreamInfo info;
         info.streamId_ = streamId;
         info.usage_ = usage;
         info.state_ = state;
         info.bundleName_ = bundleName;
+        info.silentMode_ = silentMode;
         streams_[streamId] = info;
     }
 
@@ -116,10 +118,11 @@ public:
         streams_.clear();
     }
 
-    void UpdateStream(uint32_t streamId, RendererState state)
+    void UpdateStream(uint32_t streamId, RendererState state, bool silentMode)
     {
         if (streams_.find(streamId) != streams_.end()) {
             streams_[streamId].state_ = state;
+            streams_[streamId].silentMode_ = silentMode;
         }
     }
 
@@ -173,7 +176,8 @@ private:
             ret = parcel.WriteUint32(stream.second.streamId_) &&
                 parcel.WriteInt32(stream.second.state_) &&
                 parcel.WriteInt32(stream.second.usage_) &&
-                parcel.WriteString(stream.second.bundleName_);
+                parcel.WriteString(stream.second.bundleName_) &&
+                parcel.WriteBool(stream.second.silentMode_);
             AUDIO_CHECK_AND_RETURN_RET(ret, false);
         }
         return true;
@@ -199,6 +203,7 @@ private:
             stream.state_ = static_cast<RendererState>(parcel.ReadInt32());
             stream.usage_ = static_cast<StreamUsage>(parcel.ReadInt32());
             stream.bundleName_ = parcel.ReadString();
+            stream.silentMode_ = parcel.ReadBool();
             streams_[stream.streamId_] = stream;
         }
     }

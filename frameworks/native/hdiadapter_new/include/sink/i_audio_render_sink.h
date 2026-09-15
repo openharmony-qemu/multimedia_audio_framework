@@ -155,7 +155,8 @@ public:
 
     virtual std::shared_ptr<AudioOutputPipeInfo> GetOutputPipeInfo();
     virtual void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
+        uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID,
+        bool silentMode = false);
     // Implement by self (end)
 
 protected:
@@ -167,7 +168,8 @@ protected:
     virtual void ChangePipeStatus(AudioPipeStatus state);
     virtual void ChangePipeDevice(const std::vector<DeviceType> &devices);
     virtual void ChangePipeStream(StreamChangeType change,
-        uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
+        uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID,
+        bool silentMode = false);
     virtual void DeinitPipeInfo();
 
     // Common variables

@@ -180,6 +180,7 @@ public:
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
 
     void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
+    void SetStreamSilentMode(HpaeStreamClassType streamClassType, uint32_t sessionId, bool silentMode) override;
     float GetMaxAmplitude() override;
     void SetSinkMuteForSwitchDevice(const std::string &deviceClass, bool mute) override;
 

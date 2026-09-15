@@ -143,6 +143,7 @@ private:
     IAudioSinkAttr CreateSinkAttr();
     void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state,
         uint32_t appUid = INVALID_UID);
+    void SetStreamSilentMode(uint32_t sessionId, bool silentMode) override;
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &inputNode);
     bool IsVoipFastSink() const;
 
