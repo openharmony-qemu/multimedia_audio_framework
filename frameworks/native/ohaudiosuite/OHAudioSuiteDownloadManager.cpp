@@ -19,6 +19,7 @@
 
 #include <cinttypes>
 #include <string>
+#include <vector>
 #include <thread>
 #include "audio_utils.h"
 #include "audio_errors.h"
@@ -31,7 +32,7 @@
 using OHOS::AudioStandard::OHAudioSuiteDownloadManager;
 
 namespace {
-static constexpr size_t DOWNLOAD_FEATURE_NAME_MAX_LEN = 1024;
+static constexpr size_t DOWNLOAD_FEATURE_NAME_MAX_LEN = 256;
 static constexpr size_t DOWNLOAD_SYSTEM_PERMISSION_DENIED = 202;
 }
 
@@ -319,36 +320,43 @@ int32_t OHAudioSuiteDownloadManager::UnregisterDownloadStatusCallback(const OH_A
 
 int32_t OHAudioSuiteDownloadManager::StartDownload(const char *featureName)
 {
-    return AudioSuite::AudioSuiteDownloadManager::GetInstance().StartDownload(std::string(featureName));
+    std::vector<std::string> featureNames = {std::string(featureName)};
+    return AudioSuite::AudioSuiteDownloadManager::GetInstance().StartDownload(featureNames, true);
 }
 
 int32_t OHAudioSuiteDownloadManager::PauseDownload(const char *featureName)
 {
-    return AudioSuite::AudioSuiteDownloadManager::GetInstance().PauseDownload(std::string(featureName));
+    std::vector<std::string> featureNames = {std::string(featureName)};
+    return AudioSuite::AudioSuiteDownloadManager::GetInstance().PauseDownload(featureNames);
 }
 
 int32_t OHAudioSuiteDownloadManager::CancelDownload(const char *featureName)
 {
-    return AudioSuite::AudioSuiteDownloadManager::GetInstance().CancelDownload(std::string(featureName));
+    std::vector<std::string> featureNames = {std::string(featureName)};
+    return AudioSuite::AudioSuiteDownloadManager::GetInstance().CancelDownload(featureNames);
 }
 
 int32_t OHAudioSuiteDownloadManager::StartBackgroundDownload(const char *featureName)
 {
-    return AudioSuite::AudioSuiteDownloadManager::GetInstance().StartBackgroundDownload(std::string(featureName));
+    std::vector<std::string> featureNames = {std::string(featureName)};
+    return AudioSuite::AudioSuiteDownloadManager::GetInstance().StartBackgroundDownload(featureNames);
 }
 
 int32_t OHAudioSuiteDownloadManager::UninstallCloudRom(const char *featureName)
 {
-    return AudioSuite::AudioSuiteDownloadManager::GetInstance().UninstallCloudRom(std::string(featureName));
+    std::vector<std::string> featureNames = {std::string(featureName)};
+    return AudioSuite::AudioSuiteDownloadManager::GetInstance().UninstallCloudRom(featureNames);
 }
 
 int32_t OHAudioSuiteDownloadManager::GetDownloadStatus(const char *featureName,
                                                        OH_AudioSuite_DownloadStatusInfo *status)
 {
-    AudioSuite::AudioSuiteDownloadStatusInfo audioSuiteStatus;
-    int32_t ret = AudioSuite::AudioSuiteDownloadManager::GetInstance().GetDownloadStatus(std::string(featureName),
-                                                                                         audioSuiteStatus);
+    std::vector<std::string> featureNames = {std::string(featureName)};
+    std::vector<AudioSuite::AudioSuiteDownloadStatusInfo> statusInfos;
+    int32_t ret = AudioSuite::AudioSuiteDownloadManager::GetInstance().GetDownloadStatus(featureNames, statusInfos);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetDownloadStatus failed, ret = %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(!statusInfos.empty(), ERROR, "GetDownloadStatus returned empty status");
+    const auto& audioSuiteStatus = statusInfos[0];
 
     auto res = strncpy_s(status->featureName,
                          sizeof(status->featureName),

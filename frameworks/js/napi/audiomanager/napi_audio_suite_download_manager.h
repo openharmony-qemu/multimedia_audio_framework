@@ -42,6 +42,7 @@ private:
         int32_t networkType = 0;
         std::string featureName;
         AudioSuite::AudioSuiteDownloadStatusInfo statusInfo;
+        std::vector<AudioSuite::AudioSuiteDownloadStatusInfo> statusInfos;
     };
 
     static napi_value Construct(napi_env env, napi_callback_info info);
