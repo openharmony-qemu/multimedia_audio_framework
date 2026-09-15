@@ -747,6 +747,11 @@ HWTEST_F(HpaeRenderEffectNodeTest, testGetExpectedInputChannelInfoWithRenderId_0
     AudioBasicFormat basicFormat;
     basicFormat.rate = SAMPLE_RATE_48000;
     basicFormat.audioChannelInfo.numChannels = STEREO;
+    // Empty the manager so the query deterministically exercises its failure path.
+    // Under the unified singleton (shared audio_effect, c41f01401a) the chain
+    // created above is visible to node-side queries; ResetInfo restores the
+    // same empty state the node used to see under the dual-singleton link.
+    AudioEffectChainManager::GetInstance()->ResetInfo();
     int32_t ret = hpaeRenderEffectNode->GetExpectedInputChannelInfo(basicFormat);
     EXPECT_NE(ret, SUCCESS);
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -2368,6 +2373,11 @@ HWTEST_F(HpaeRenderEffectNodeTest, GetExpectedInputChannelInfo_Error_011, TestSi
     basicFormat.audioChannelInfo.numChannels = STEREO;
 
     // Should return error when no effect chain exists
+    // Empty the manager so the query deterministically exercises its failure path.
+    // Under the unified singleton (shared audio_effect, c41f01401a) the default
+    // chains from init are visible to node-side queries; ResetInfo restores the
+    // same empty state the node used to see under the dual-singleton link.
+    AudioEffectChainManager::GetInstance()->ResetInfo();
     int32_t ret = node->GetExpectedInputChannelInfo(basicFormat);
     EXPECT_NE(ret, SUCCESS);
 
@@ -2699,8 +2709,16 @@ HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_PcmOffloadStopReleasePro
 
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceClass = "speaker";
-    EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), SUCCESS);
-    EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), SUCCESS);
+    // Enhanced-routing platforms force-disable effect offload regardless of spkOffloadEnabled_;
+    // with the flag set, a closed gate means the platform knob closed it. Create/Start are
+    // blocked there, while Stop/Release proceed (isPcmOffload=false skips the gate).
+    if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
+        EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), SUCCESS);
+        EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), SUCCESS);
+    } else {
+        EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+        EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    }
     EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), SUCCESS);
     EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), SUCCESS);
 

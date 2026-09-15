@@ -3440,7 +3440,7 @@ void HpaeManager::FinishPendingAissDisable()
 {
     InvalidatePendingAissDisable();
     if (boundSessionId_ != UNBOUND_SESSION_ID) {
-        ClearAissSession(boundSessionId_, true); // clears boundSessionId_ + boundUid_ when matched
+        ClearAissSession(boundSessionId_, true, true); // clears boundSessionId_ + boundUid_ when matched
         // Destroy-timeout: ClearAissSession aborts before unbinding (keep-binding contract for
         // switch retries). A deferred-disable terminal has no retry event (the stream stops here),
         // so unlike the switch paths the logical state is dropped unconditionally - mirroring

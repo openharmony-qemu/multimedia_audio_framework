@@ -2742,17 +2742,18 @@ HWTEST_F(HpaeDirectRendererManagerTest, sendRequest_001, TestSize.Level0)
  * @tc.name  : sendRequest_002
  * @tc.type  : FUNC
  * @tc.number: HpaeDirectRendererManagerTest_123
- * @tc.desc  : Test SendRequest with isInit=true pushes request even when not initialized
+ * @tc.desc  : Test SendRequest drops request when signal thread is null even if isInit is true
  */
 HWTEST_F(HpaeDirectRendererManagerTest, sendRequest_002, TestSize.Level0)
 {
     EXPECT_EQ(directManager_->IsInit(), false);
     bool executed = false;
     auto request = [&executed]() { executed = true; };
+    // isInit no longer bypasses the thread-null check: request is dropped, not queued.
     directManager_->SendRequest(std::move(request), "test_func", true);
     EXPECT_EQ(executed, false);
     directManager_->HandleMsg();
-    EXPECT_EQ(executed, true);
+    EXPECT_EQ(executed, false);
 }
 
 /**
