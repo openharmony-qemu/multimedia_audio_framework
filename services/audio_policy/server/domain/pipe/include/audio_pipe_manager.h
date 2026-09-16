@@ -175,6 +175,7 @@ public:
     std::shared_ptr<AudioPipeInfo> FindPipeBySessionId(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId);
     bool IsStreamUsageActive(const StreamUsage &usage);
+    bool HasRingerOrAlarmStreamRunning();
     bool IsInterphoneStreamActive();
     bool IsInterphoneCapturerActive();
     bool IsVoipOrCellularStreamActive();

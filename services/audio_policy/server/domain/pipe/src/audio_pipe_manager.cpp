@@ -1347,6 +1347,23 @@ bool AudioPipeManager::IsStreamUsageActive(const StreamUsage &usage)
     return false;
 }
 
+bool AudioPipeManager::HasRingerOrAlarmStreamRunning()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        CHECK_AND_CONTINUE(pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT);
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (Util::IsRingerOrAlarmerStreamUsage(desc->rendererInfo_.streamUsage) &&
+                desc->streamStatus_ == STREAM_STATUS_STARTED) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 int32_t AudioPipeManager::IsCaptureVoipCall()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);

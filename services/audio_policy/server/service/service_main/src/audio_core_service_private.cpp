@@ -1472,6 +1472,24 @@ void AudioCoreService::UnmuteDualStreamAfterAlarm(const std::shared_ptr<AudioStr
     streamsWhenRingDualOnPrimarySpeaker_.clear();
 }
 
+void AudioCoreService::ClearRingerFlags(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
+    CHECK_AND_RETURN(Util::IsRingerOrAlarmerStreamUsage(streamUsage));
+
+    CHECK_AND_RETURN_LOG(!pipeManager_->HasRingerOrAlarmStreamRunning(),
+        "other ringer or alarm stream still running, no need to clear flags");
+
+    if (!audioVolumeManager_.IsRingerModeMute()) {
+        AUDIO_INFO_LOG("reset ringer mode mute, stream usage:%{public}d", streamUsage);
+        audioVolumeManager_.ResetRingerModeMute();
+    }
+
+    AUDIO_INFO_LOG("disable primary speaker dual tone flag, no other ringer or alarm stream running");
+    isRingDualToneOnPrimarySpeaker_ = false;
+}
+
 bool AudioCoreService::IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(sessionIdMutex_);
