@@ -1118,7 +1118,9 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId, bool isStandby)
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = false;
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
-        
+#ifdef MULTI_BUS_ENABLE
+        UpdateBusStatusIfNoRunningStream(sessionId);
+#endif
         StopInterphoneSinkIfNeeded();
     };
     SendRequest(request, __func__);
@@ -1134,6 +1136,22 @@ void HpaeRendererManager::StopInterphoneSinkIfNeeded()
         }
     }
 }
+
+#ifdef MULTI_BUS_ENABLE
+void HpaeRendererManager::UpdateBusStatusIfNoRunningStream(uint32_t sessionId)
+{
+    bool otherRunning = false;
+    for (const auto &it : sessionNodeMap_) {
+        if (it.first != sessionId && it.second.state == HPAE_SESSION_RUNNING) {
+            otherRunning = true;
+            break;
+        }
+    }
+    if (!otherRunning && outputCluster_ != nullptr) {
+        outputCluster_->UpdateBusStatus(false);
+    }
+}
+#endif
 
 int32_t HpaeRendererManager::Flush(uint32_t sessionId)
 {
@@ -1398,6 +1416,7 @@ int32_t HpaeRendererManager::InitOutputCluster()
     IAudioSinkAttr attr;
     attr.adapterName = sinkInfo_.adapterName.c_str();
     attr.sinkName = sinkInfo_.deviceClass.c_str();
+    attr.busName = sinkInfo_.deviceName;
     attr.sampleRate = sinkInfo_.samplingRate;
     attr.channel = sinkInfo_.channels;
     attr.format = sinkInfo_.format;

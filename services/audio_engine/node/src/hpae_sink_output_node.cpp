@@ -514,6 +514,12 @@ int32_t HpaeSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
     return audioRendererSink_->UpdateAppsUid(appsUid);
 }
 
+void HpaeSinkOutputNode::UpdateBusStatus(bool isActive)
+{
+    CHECK_AND_RETURN(audioRendererSink_ != nullptr);
+    audioRendererSink_->UpdateBusStatus(isActive);
+}
+
 void HpaeSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
     uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
 {

@@ -202,6 +202,9 @@ private:
     void ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo, bool isReload, bool isNeedCallBack);
     void InitDefaultNodeInfoFromInitManager(bool isReload);
     void StopInterphoneSinkIfNeeded();
+#ifdef MULTI_BUS_ENABLE
+    void UpdateBusStatusIfNoRunningStream(uint32_t sessionId);
+#endif
     void DetachSessionEffectNodeForRefresh(uint32_t sessionId, HpaeProcessorType oldSceneType);
     void MaterializeSessionEffectFromAttachState(uint32_t sessionId, HpaeProcessorType sceneType);
     void HandleSessionEffectMaterializeFailure(uint32_t sessionId, int32_t ret,

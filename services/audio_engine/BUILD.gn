@@ -334,6 +334,12 @@ audio_ohos_library("hpae_engine_manager") {
 
   static_defines = [ "HPAE_UT_SKIP_RSS_REPORT" ]
 
+  defines = []
+
+  if (audio_framework_feature_multi_bus) {
+    defines += [ "MULTI_BUS_ENABLE" ]
+  }
+
   subsystem_name = "multimedia"
   part_name = "audio_framework"
   version_script = "libhpae_engine_manager.versionscript"

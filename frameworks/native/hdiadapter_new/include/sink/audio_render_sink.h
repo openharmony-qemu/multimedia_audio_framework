@@ -81,6 +81,8 @@ public:
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
+    void UpdateBusStatus(bool isActive) override;
+
     void DumpInfo(std::string &dumpString) override;
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
@@ -201,6 +203,7 @@ private:
     bool deviceConnectedFlag_ = false;
 #ifdef MULTI_BUS_ENABLE
     AudioPlayingAppManager playingAppManager_;
+    bool busIsActive_ = false;
 #endif
 
     std::function<void(bool)> deviceCallback_ = nullptr;
