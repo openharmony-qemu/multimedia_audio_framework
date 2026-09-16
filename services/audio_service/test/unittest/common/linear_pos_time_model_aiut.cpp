@@ -188,7 +188,7 @@ HWTEST_F(LinearPosTimeModelAiut, LinearPosTimeModel_SetSpanCount, TestSize.Level
     model.SetSpanCount(TEST_SPAN_COUNT);
     int64_t time = model.GetTimeOfPos(TEST_FRAME_44100);
     AIUT_EXPECT_EQ_INFO_LOG(time, TEST_NANO_TIME_1S,
-        "GetTimeOfPos should work after SetSpanCount, time=%lld", time);
+        "GetTimeOfPos should work after SetSpanCount, time=%ld", time);
 }
 
 // ==================== GetTimeOfPos Tests ====================
@@ -222,7 +222,7 @@ HWTEST_F(LinearPosTimeModelAiut, LinearPosTimeModel_GetTimeOfPos_Forward, TestSi
     model.ResetFrameStamp(TEST_FRAME_0, TEST_NANO_TIME_0);
     int64_t time = model.GetTimeOfPos(TEST_FRAME_44100);
     AIUT_EXPECT_EQ_INFO_LOG(time, TEST_NANO_TIME_1S,
-        "GetTimeOfPos(44100) should return 1s, got time=%lld", time);
+        "GetTimeOfPos(44100) should return 1s, got time=%ld", time);
 }
 
 /**
@@ -239,7 +239,7 @@ HWTEST_F(LinearPosTimeModelAiut, LinearPosTimeModel_GetTimeOfPos_Backward, TestS
     model.ResetFrameStamp(TEST_FRAME_44100, TEST_NANO_TIME_1S);
     int64_t time = model.GetTimeOfPos(TEST_FRAME_0);
     AIUT_EXPECT_EQ_INFO_LOG(time, TEST_NANO_TIME_0,
-        "GetTimeOfPos(0) should return 0, got time=%lld", time);
+        "GetTimeOfPos(0) should return 0, got time=%ld", time);
 }
 
 /**
