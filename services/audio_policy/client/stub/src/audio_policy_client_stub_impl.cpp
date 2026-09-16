@@ -1843,12 +1843,18 @@ int32_t AudioPolicyClientStubImpl::RemoveStreamVolumeChangeCallback(
 
 int32_t AudioPolicyClientStubImpl::OnStreamVolumeChange(const StreamVolumeEvent &streamVolumeEvent)
 {
-    std::lock_guard<std::mutex> lockCbMap(streamVolumeChangeMutex_);
-    for (auto &[streamUsages, cb] : streamVolumeChangeCallbackList_) {
-        std::shared_ptr<StreamVolumeChangeCallback> streamVolumeChangeCallback = cb.lock();
-        if (streamVolumeChangeCallback != nullptr && streamUsages.count(streamVolumeEvent.streamUsage)) {
-            streamVolumeChangeCallback->OnStreamVolumeChange(streamVolumeEvent);
+    std::vector<std::shared_ptr<StreamVolumeChangeCallback>> callbacks;
+    {
+        std::lock_guard<std::mutex> lockCbMap(streamVolumeChangeMutex_);
+        for (auto &[streamUsages, cb] : streamVolumeChangeCallbackList_) {
+            std::shared_ptr<StreamVolumeChangeCallback> streamVolumeChangeCallback = cb.lock();
+            if (streamVolumeChangeCallback != nullptr && streamUsages.count(streamVolumeEvent.streamUsage)) {
+                callbacks.push_back(streamVolumeChangeCallback);
+            }
         }
+    }
+    for (const auto &callback : callbacks) {
+        callback->OnStreamVolumeChange(streamVolumeEvent);
     }
     return SUCCESS;
 }
