@@ -356,7 +356,8 @@ void GetStreamPropInfoForMultiChannelFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(info != nullptr);
     if (fdp.ConsumeBool()) {
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-        streamPropInfo->channelLayout_ = ConsumeEnum<AudioChannelLayout>(fdp) + 1;
+        AudioChannelLayout channelLayoutTemp = ConsumeEnum<AudioChannelLayout>(fdp);
+        streamPropInfo->channelLayout_ = (channelLayoutTemp == CH_LAYOUT_UNKNOWN ? CH_LAYOUT_MONO : channelLayoutTemp);
         streamPropInfo->channels_ = ConvertLayoutToAudioChannel(streamPropInfo->channelLayout_);
         info->streamPropInfos_.push_back(streamPropInfo);
     }
