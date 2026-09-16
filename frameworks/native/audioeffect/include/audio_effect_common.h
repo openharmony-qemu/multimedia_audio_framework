@@ -35,9 +35,9 @@ struct AudioEnhanceDeviceAttr {
 };
 
 struct EnhanceTransBuffer {
-    void *ecData { nullptr };
-    void *micData { nullptr };
-    void *micRefData { nullptr };
+    const void *ecData { nullptr };
+    const void *micData { nullptr };
+    const void *micRefData { nullptr };
     size_t ecDataLen { 0 };
     size_t micDataLen { 0 };
     size_t micRefDataLen { 0 };
