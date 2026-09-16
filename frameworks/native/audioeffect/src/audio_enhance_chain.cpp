@@ -33,7 +33,7 @@ const uint32_t BITLENGTH = 8;
 const uint32_t MILLISECOND = 1000;
 const uint32_t DEFAULT_FRAMELENGTH = 20;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
-const uint32_t DEFAULT_FORMAT = 2;
+const uint32_t DEFAULT_FORMAT = 4;
 const uint32_t DEFAULT_MICNUM = 2;
 const uint32_t DEFAULT_ECOFF_CH = 0;
 const uint32_t DEFAULT_MICREFOFF_CH = 0;
@@ -527,7 +527,7 @@ int32_t AudioEnhanceChain::GetOutputDataFromChain(void *buf, size_t bufSize)
     return SUCCESS;
 }
 
-int32_t AudioEnhanceChain::WriteChainOutputData(void *buf, size_t bufSize)
+int32_t AudioEnhanceChain::WriteChainOutputData(const void *buf, size_t bufSize)
 {
     CHECK_AND_RETURN_RET_LOG(buf != nullptr, ERROR, "buf is null");
     CHECK_AND_RETURN_RET_LOG(bufSize != 0, ERROR, "bufSize is 0");

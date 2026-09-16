@@ -109,7 +109,7 @@ private:
     int32_t ProcessApplyEnhanceChain(void);
     int32_t ProcessReleaseAllEnhanceModule(void);
     int32_t ProcessSetAppsMuteState(uint32_t appsMuteState);
-    int32_t WriteChainOutputData(void *buf, size_t bufSize);
+    int32_t WriteChainOutputData(const void *buf, size_t bufSize);
     int32_t CacheChainInputData(const EnhanceTransBuffer &transBuf);
     int32_t InitSingleEnhanceModule(AudioEffectHandle enhanceHandle, const std::string &enhanceProp);
     void ScheduleAudioTask(const ThreadHandler::Task &task);
