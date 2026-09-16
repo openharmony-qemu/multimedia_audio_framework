@@ -719,14 +719,22 @@ HWTEST(AudioPolicyManagerDevice, ZmAddUid_InvalidZone, TestSize.Level1)
 {
     auto *zm = AudioZoneManager::GetInstance();
     int32_t ret = zm->AddUidToAudioZone(0, 1000);
+#ifdef MULTI_USER_ZONE
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+#else
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
+#endif
 }
 
 HWTEST(AudioPolicyManagerDevice, ZmRemoveUid_InvalidZone, TestSize.Level1)
 {
     auto *zm = AudioZoneManager::GetInstance();
     int32_t ret = zm->RemoveUidFromAudioZone(0, 1000);
+#ifdef MULTI_USER_ZONE
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+#else
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
+#endif
 }
 
 HWTEST(AudioPolicyManagerDevice, ZmAddUidUsages_InvalidZone, TestSize.Level1)

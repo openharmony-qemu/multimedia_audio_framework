@@ -222,20 +222,6 @@ int32_t AudioPolicyManager::ResumeAudioFocusForExtAudioZone(const std::vector<in
     return gsp->ResumeAudioFocusForExtAudioZone(zoneIds);
 }
 
-int32_t AudioPolicyManager::ExcludeUidForExtZone(int32_t uid)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
-    return gsp->ExcludeUidForExtZone(uid);
-}
-
-int32_t AudioPolicyManager::UnexcludeUidForExtZone(int32_t uid)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
-    return gsp->UnexcludeUidForExtZone(uid);
-}
-
 void AudioPolicyManager::SetZoneDeviceVisible(bool visible)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
