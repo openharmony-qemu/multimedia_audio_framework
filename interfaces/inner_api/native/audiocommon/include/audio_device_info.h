@@ -25,10 +25,8 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t INVALID_GROUP_ID = -1;
-namespace {
-const char* LOCAL_NETWORK_ID = "LocalDevice";
-const char* REMOTE_NETWORK_ID = "RemoteDevice";
-}
+constexpr const char* LOCAL_NETWORK_ID = "LocalDevice";
+constexpr const char* REMOTE_NETWORK_ID = "RemoteDevice";
 
 enum API_VERSION {
     API_7 = 7,

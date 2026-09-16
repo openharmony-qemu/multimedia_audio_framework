@@ -23,6 +23,7 @@
 #include "ipc_skeleton.h"
 #include "media_monitor_manager.h"
 #include "audio_active_device.h"
+#include "audio_router_center.h"
 #include <chrono>
 #include <algorithm>
 
@@ -33,6 +34,86 @@ namespace {
 constexpr uid_t AUDIO_UID = 1041;
 constexpr uid_t FUSION_CONNECTIVITY_UID = 7035;
 const std::vector<uid_t> SKIP_DEVICE_TYPES_UID_VEC{AUDIO_UID, FUSION_CONNECTIVITY_UID};
+}
+
+static bool IsValidDevice(const shared_ptr<AudioDeviceSimpleDescriptor> &device)
+{
+    return device && device->deviceId_ > 0 && device->deviceType_ > DEVICE_TYPE_INVALID;
+}
+
+static vector<Selection> ParseSelection(const AudioAppSelectDevice &selectDevice,
+    int32_t uid, const set<SelectDeviceType> &types, uint32_t streamId = INVALID_STREAM_ID)
+{
+    vector<Selection> result;
+    for (auto type : types) {
+        switch (type) {
+            case SelectDeviceType::CALL_INPUT:
+                if (IsValidDevice(selectDevice.callInput_.device_)) {
+                    result.push_back({uid, SelectDeviceType::CALL_INPUT,
+                        selectDevice.callInput_.device_->deviceId_, streamId});
+                }
+                break;
+            case SelectDeviceType::CALL_OUTPUT:
+                if (IsValidDevice(selectDevice.callOutput_.device_)) {
+                    result.push_back({uid, SelectDeviceType::CALL_OUTPUT,
+                        selectDevice.callOutput_.device_->deviceId_, streamId});
+                }
+                break;
+            case SelectDeviceType::MEDIA_INPUT:
+                if (IsValidDevice(selectDevice.mediaInput_.device_)) {
+                    result.push_back({uid, SelectDeviceType::MEDIA_INPUT,
+                        selectDevice.mediaInput_.device_->deviceId_, streamId});
+                }
+                break;
+            case SelectDeviceType::MEDIA_OUTPUT:
+                if (IsValidDevice(selectDevice.mediaOutput_.device_)) {
+                    result.push_back({uid, SelectDeviceType::MEDIA_OUTPUT,
+                        selectDevice.mediaOutput_.device_->deviceId_, streamId});
+                }
+                break;
+            default:
+                AUDIO_ERR_LOG("Invalid select device type: %{public}d", type);
+        }
+    }
+    return result;
+}
+
+static SelectDeviceType ParseSelectType(SourceType sourceType)
+{
+    return AudioRouterCenter::GetAudioRouterCenter().IsCallCaptureRouter(sourceType) ?
+        SelectDeviceType::CALL_INPUT : SelectDeviceType::MEDIA_INPUT;
+}
+
+static SelectDeviceType ParseSelectType(StreamUsage streamUsage)
+{
+    return AudioRouterCenter::GetAudioRouterCenter().IsCallRenderRouter(streamUsage) ?
+        SelectDeviceType::CALL_OUTPUT : SelectDeviceType::MEDIA_OUTPUT;
+}
+
+static std::vector<Selection> GetStreamSelections(int32_t uid,
+    const AudioAppRouterContext &context, const std::set<SelectDeviceType> &types)
+{
+    std::map<uint32_t, SelectDeviceType> selectTypeMap;
+    for (auto &inputStream: context.inputStreams_) {
+        auto it = types.find(ParseSelectType(inputStream.second));
+        if (it != types.end()) {
+            selectTypeMap[inputStream.first] = *it;
+        }
+    }
+    for (auto &outputStream: context.outputStreams_) {
+        auto it = types.find(ParseSelectType(outputStream.second));
+        if (it != types.end()) {
+            selectTypeMap[outputStream.first] = *it;
+        }
+    }
+    vector<Selection> result;
+    for (auto &p : selectTypeMap) {
+        auto it = context.streamSelectDevices_.find(p.first);
+        if (it != context.streamSelectDevices_.end() && IsValidDevice(it->second)) {
+            result.push_back({uid, p.second, it->second->deviceId_, p.first});
+        }
+    }
+    return result;
 }
 
 void AudioRouterInfra::RefreshSelectDevice(SelectDeviceType type, int32_t uid,
@@ -578,6 +659,22 @@ std::vector<SourceType> AudioRouterInfra::GetAppRunningSourceTypesNoLock(int32_t
     return sourceTypes;
 }
 
+std::vector<Selection> AudioRouterInfra::GetSelections(const std::set<SelectDeviceType> &types)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    auto selections = ParseSelection(systemSelectDevice_, SYSTEM_UID, types);
+    for (auto &entry : appContexts_) {
+        auto uid = entry.first;
+        CHECK_AND_CONTINUE(entry.second);
+        auto &context = *entry.second;
+        auto temp = ParseSelection(context.appSelectDevice_, uid, types);
+        std::move(temp.begin(), temp.end(), std::back_inserter(selections));
+        temp = GetStreamSelections(uid, context, types);
+        std::move(temp.begin(), temp.end(), std::back_inserter(selections));
+    };
+    return selections;
+}
+
 std::vector<StreamUsage> AudioRouterInfra::GetAppRunningStreamUsages(int32_t uid)
 {
     if (uid == INVALID_UID) {
@@ -722,7 +819,6 @@ bool AudioRouterInfra::HasRunningOutputStream(int32_t uid)
 
 bool AudioRouterInfra::HasValidSelectDevice(AudioSelectDeviceInfo selectInfo)
 {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
     return selectInfo.device_ != nullptr && selectInfo.device_->deviceType_ != DEVICE_TYPE_NONE;
 }
 

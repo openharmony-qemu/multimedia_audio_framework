@@ -35,6 +35,7 @@
 #include "audio_select_interface_service.h"
 #include "audio_server_proxy.h"
 #include "audio_device_status.h"
+#include "audio_rollback_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -185,17 +186,18 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "desc is null");
     int32_t ret = SUCCESS;
     bool mediaControllerFlag = IsSelectedByMediaController();
+    auto &rollback = AudioRollbackManager::GetInstance();
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
     switch (preferredType) {
         case AUDIO_MEDIA_RENDER:
-            strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
+            rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
             break;
         case AUDIO_CALL_RENDER:
-            strategy.SetCallOutputDevice(AudioSelectInterfaceService::GetInstance().GetPreferredUid(uid),
+            rollback.SetCallOutputDevice(AudioSelectInterfaceService::GetInstance().GetPreferredUid(uid),
                 INVALID_STREAM_ID, desc, caller);
             break;
         case AUDIO_CALL_CAPTURE:
-            strategy.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
+            rollback.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
             break;
         case AUDIO_RECORD_CAPTURE:
 #ifdef INPUT_FEATURE_INDEPENDENT_MODE
@@ -207,7 +209,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
                     UpdateType::SYSTEM_SELECT, info, mediaControllerFlag);
             }
             CHECK_AND_BREAK_LOG(!mediaControllerFlag, "selected by media controller");
-            strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
+            rollback.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
 #endif
             break;
         case AUDIO_RING_RENDER:
@@ -248,7 +250,7 @@ bool AudioPolicyUtils::ShouldUseSystemPreferredDeviceForVolume(const std::string
     if (it != shouldUseSystemPreferredDeviceCache_.end()) {
         return it->second;
     }
-    
+
     CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback_ != nullptr, false, "callback is nullptr");
     bool ret = false;
     audioClientInfoMgrCallback_->OnQueryUseSystemPreferredDeviceForVolume(bundleName, ret);
@@ -282,8 +284,8 @@ void AudioPolicyUtils::SetPreferredRecordCaptureDeviceInCar(
             AudioUsrSelectManager::GetAudioUsrSelectManager().UpdateRecordDeviceInfo(
                 UpdateType::SYSTEM_SELECT, info);
         }
-        auto &strategy = AudioRouterSelectStrategy::GetInstance();
-        strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
+        auto &rollback = AudioRollbackManager::GetInstance();
+        rollback.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
     }
 }
 #endif

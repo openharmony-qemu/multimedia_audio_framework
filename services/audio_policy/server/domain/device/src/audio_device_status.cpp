@@ -38,6 +38,7 @@
 #include "audio_collaborative_service.h"
 #include "audio_router_select_strategy.h"
 #include "audio_pipe_manager.h"
+#include "audio_rollback_manager.h"
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
 
@@ -1520,11 +1521,11 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
             (command == USAGE_UPDATE && (desc.deviceUsage_ & DeviceUsage::MEDIA)))) {
         audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
     }
-
 #ifdef BLUETOOTH_ENABLE
     ClearActiveHfpDevice(desc, command, reason);
 #endif
     UpdateChangeReasonForCollaboration(desc, command, reason);
+    AudioRollbackManager::GetInstance().OnConnectStateUpdate(desc, command);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnDeviceInfoUpdated", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceInfoUpdated", reason);
     if (portNeedClose != "" && oldPaIndex == GetPaIndexByPortName(portNeedClose)) {
