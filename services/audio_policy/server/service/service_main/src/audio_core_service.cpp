@@ -2088,6 +2088,7 @@ int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid,
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     bool forceFetch = false;
+    int32_t clientUid = INVALID_UID;
     for (auto &changeInfo : audioRendererChangeInfos) {
         bool currentSessionID = false;
         uint32_t sessionIDListSize = sessionIDList.size();
@@ -2103,12 +2104,16 @@ int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid,
                 changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
                 changeInfo->rendererInfo.streamUsage == STREAM_USAGE_INTERPHONE)) {
             CHECK_AND_CONTINUE(!skipForce);
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
+            clientUid = changeInfo->clientUID;
             forceFetch = true;
         }
     }
-    return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType, forceFetch, callerUid);
+    int32_t ret = audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType, forceFetch, callerUid);
+    if (ret == NEED_TO_FETCH && clientUid != INVALID_UID) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            std::make_shared<AudioDeviceDescriptor>(), clientUid, "SetDefaultOutputDevice");
+    }
+    return ret;
 }
 
 bool AudioCoreService::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos)

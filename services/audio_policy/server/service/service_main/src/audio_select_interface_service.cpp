@@ -786,8 +786,6 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
             desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
             desc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
             CHECK_AND_CONTINUE(!skipForce);
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), desc->GetRealUid(), "SetDefaultOutputDevice");
             forceFetch = true;
         }
     }
@@ -799,6 +797,8 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
     ret = AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(deviceType, clientUid,
         sessionID, streamUsage);
     if ((isRunning && ret == NEED_TO_FETCH) || forceFetch) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            std::make_shared<AudioDeviceDescriptor>(), clientUid, "SetDefaultOutputDevice");
         AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
         return SUCCESS;

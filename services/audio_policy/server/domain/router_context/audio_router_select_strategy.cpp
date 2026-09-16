@@ -232,9 +232,11 @@ int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceTy
 
     if (streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
         auto before = GetMediaDefaultOutputDevice(uid, streamId);
+        auto current = std::make_shared<AudioDeviceDescriptor>(Get1stCurrentInputDevice(uid));
         UpdateMediaDefaultOutputDevice(uid, streamId, setDev);
         auto after = GetMediaDefaultOutputDevice(uid, streamId);
-        if (!IsSameDeviceDeviceDescriptor(before, after)) {
+        if (!IsSameDeviceDeviceDescriptor(before, after) ||
+            !IsSameDeviceDeviceDescriptor(current, after)) {
             AUDIO_WARNING_LOG("media default output device change");
             return NEED_TO_FETCH;
         }
@@ -244,9 +246,11 @@ int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceTy
         streamUsage == STREAM_USAGE_INTERPHONE ||
         streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) {
         auto before = GetCallDefaultOutputDevice(uid, streamId);
+        auto current = std::make_shared<AudioDeviceDescriptor>(Get1stCurrentInputDevice(uid));
         UpdateCallDefaultOutputDevice(uid, streamId, setDev);
         auto after = GetCallDefaultOutputDevice(uid, streamId);
-        if (!IsSameDeviceDeviceDescriptor(before, after)) {
+        if (!IsSameDeviceDeviceDescriptor(before, after) ||
+            !IsSameDeviceDeviceDescriptor(current, after)) {
             AUDIO_WARNING_LOG("call default output device change");
             return NEED_TO_FETCH;
         }
