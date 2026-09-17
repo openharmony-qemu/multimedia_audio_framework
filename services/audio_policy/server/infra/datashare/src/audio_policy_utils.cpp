@@ -1110,7 +1110,7 @@ bool AudioPolicyUtils::UpdateDevicesListInfo(std::vector<std::shared_ptr<AudioDe
                 AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             break;
         case CONNECTSTATE_UPDATE:
-            ret = UpdateConnectState(devices, devDesc);
+            ret = UpdateConnectState(devices, devDesc, reason);
             break;
         case ENABLE_UPDATE:
             ret = UpdateEnableState(devices, devDesc);
@@ -1158,10 +1158,11 @@ bool AudioPolicyUtils::UpdateDeviceCategory(std::vector<std::shared_ptr<AudioDev
 }
 
 bool AudioPolicyUtils::UpdateConnectState(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
-    const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
+    const std::shared_ptr<AudioDeviceDescriptor> &devDesc, AudioStreamDeviceChangeReasonExt &reason)
 {
     bool updateFlag = false;
     bool isScoDevice = devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
+    bool isScoSuspend = false;
 
     for (const auto &desc : devices) {
         CHECK_AND_CONTINUE(desc != nullptr);
@@ -1170,6 +1171,7 @@ bool AudioPolicyUtils::UpdateConnectState(std::vector<std::shared_ptr<AudioDevic
             continue;
         }
         if (desc->deviceType_ == devDesc->deviceType_) {
+            isScoSuspend |= desc->connectState_ == CONNECTED && devDesc->connectState_ == SUSPEND_CONNECTED;
             desc->connectState_ = devDesc->connectState_;
             updateFlag = true;
             continue;
@@ -1190,6 +1192,8 @@ bool AudioPolicyUtils::UpdateConnectState(std::vector<std::shared_ptr<AudioDevic
             }
         }
     }
+    reason = isScoDevice && isScoSuspend ? AudioStreamDeviceChangeReasonExt::ExtEnum::DEVICE_RESELECT : reason;
+
     return updateFlag;
 }
 
