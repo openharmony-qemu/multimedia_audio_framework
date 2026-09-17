@@ -262,6 +262,15 @@ int32_t CabinPlayBackEngine::AddRenderer(const std::shared_ptr<IRendererStream> 
 {
     AUDIO_INFO_LOG("Enter add 3da direct");
     CHECK_AND_RETURN_RET_LOG(stream != nullptr, ERR_INVALID_PARAM, "stream is null");
+    if (stream_ && stream->GetStreamIndex() != stream_->GetStreamIndex()) {
+        // Single-slot engine: the new stream takes over the slot when the previous stream
+        // has not been released yet (e.g. cross-process switch ordering), instead of
+        // rejecting it with ERROR_UNSUPPORTED and blocking all later 3DA streams.
+        AUDIO_INFO_LOG("slot taken over, old stream:%{public}u new stream:%{public}u",
+            stream_->GetStreamIndex(), stream->GetStreamIndex());
+        Stop();
+        stream_ = nullptr;
+    }
     if (!stream_) {
         AudioProcessConfig config = stream->GetAudioProcessConfig();
         int32_t result = InitSink(config.streamInfo);
