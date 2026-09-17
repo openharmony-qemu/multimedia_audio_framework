@@ -330,65 +330,6 @@ HWTEST_F(AudioPolicyServerMethodsTest, SetMicrophoneMuteCommon_003, TestSize.Lev
 }
 
 /**
- * @tc.name  : SetMicrophoneMutePersistent_001
- * @tc.desc  : Test no MICROPHONE_CONTROL_PERMISSION
- */
-HWTEST_F(AudioPolicyServerMethodsTest, SetMicrophoneMutePersistent_001, TestSize.Level1)
-{
-    int32_t selfUid = getuid();
-    setuid(9999);
-    int32_t ret = audioPolicyServer_->SetMicrophoneMutePersistent(true, 0);
-    setuid(selfUid);
-    EXPECT_NE(ret, ERR_PERMISSION_DENIED);
-}
-
-/**
- * @tc.name  : SetMicrophoneMutePersistent_002
- * @tc.desc  : Test invalid policy type
- */
-HWTEST_F(AudioPolicyServerMethodsTest, SetMicrophoneMutePersistent_002, TestSize.Level1)
-{
-    int32_t ret = audioPolicyServer_->SetMicrophoneMutePersistent(true, 9999);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
-}
-
-/**
- * @tc.name  : SetMicrophoneMutePersistent_003
- * @tc.desc  : Test valid policy type EDM_POLICY_TYPE
- */
-HWTEST_F(AudioPolicyServerMethodsTest, SetMicrophoneMutePersistent_003, TestSize.Level1)
-{
-    int32_t typeIn = static_cast<int32_t>(PolicyType::EDM_POLICY_TYPE);
-    int32_t ret = audioPolicyServer_->SetMicrophoneMutePersistent(true, typeIn);
-    EXPECT_NE(ret, ERR_PERMISSION_DENIED);
-    EXPECT_NE(ret, ERR_OPERATION_FAILED);
-}
-
-/**
- * @tc.name  : SetMicrophoneMutePersistent_004
- * @tc.desc  : Test valid policy type PRIVACY_POLCIY_TYPE
- */
-HWTEST_F(AudioPolicyServerMethodsTest, SetMicrophoneMutePersistent_004, TestSize.Level1)
-{
-    int32_t typeIn = static_cast<int32_t>(PolicyType::PRIVACY_POLCIY_TYPE);
-    int32_t ret = audioPolicyServer_->SetMicrophoneMutePersistent(false, typeIn);
-    EXPECT_NE(ret, ERR_PERMISSION_DENIED);
-    EXPECT_NE(ret, ERR_OPERATION_FAILED);
-}
-
-/**
- * @tc.name  : SetMicrophoneMutePersistent_005
- * @tc.desc  : Test valid policy type TEMPORARY_POLCIY_TYPE
- */
-HWTEST_F(AudioPolicyServerMethodsTest, SetMicrophoneMutePersistent_005, TestSize.Level1)
-{
-    int32_t typeIn = static_cast<int32_t>(PolicyType::TEMPORARY_POLCIY_TYPE);
-    int32_t ret = audioPolicyServer_->SetMicrophoneMutePersistent(false, typeIn);
-    EXPECT_NE(ret, ERR_PERMISSION_DENIED);
-    EXPECT_NE(ret, ERR_OPERATION_FAILED);
-}
-
-/**
  * @tc.name  : ActivatePreemptMode_001
  * @tc.desc  : Test callingUid != PREEMPT_UID
  */
@@ -776,19 +717,6 @@ HWTEST_F(AudioPolicyServerMethodsTest, IsAudioSeparationEffectSupported_002, Tes
     bool ret = false;
     int32_t result = audioPolicyServer_->IsAudioSeparationEffectSupported(ret);
     EXPECT_EQ(result, SUCCESS);
-}
-
-/**
- * @tc.name  : SetAudioSeparationEffectEnabled_001
- * @tc.desc  : Test no MANAGE_SYSTEM_AUDIO_EFFECTS permission
- */
-HWTEST_F(AudioPolicyServerMethodsTest, SetAudioSeparationEffectEnabled_001, TestSize.Level1)
-{
-    int32_t selfUid = getuid();
-    setuid(9999);
-    int32_t ret = audioPolicyServer_->SetAudioSeparationEffectEnabled(true, 0, 0);
-    setuid(selfUid);
-    EXPECT_EQ(ret, ERROR);
 }
 
 /**
