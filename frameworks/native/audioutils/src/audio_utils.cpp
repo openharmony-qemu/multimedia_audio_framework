@@ -1169,11 +1169,10 @@ float CalculateMaxAmplitudeForPCM24Bit(char *frame, uint64_t nSamples)
 {
     int curMaxAmplitude = 0;
     for (uint32_t i = 0; i < nSamples; ++i) {
-        char *curPos = frame + (i * 3); // 3 bytes
-        int curValue = 0;
-        for (int j = 0; j < 3; ++j) { // 3 bytes
-            curValue += (*(curPos + j) << (BIT_8 * j));
-        }
+        const uint8_t *p = reinterpret_cast<const uint8_t *>(frame) + i * 3; // 3 bytes
+        uint32_t u = static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << BIT_8) |
+            (static_cast<uint32_t>(p[2]) << BIT_16);
+        int32_t curValue = static_cast<int32_t>(u << BIT_8) >> BIT_8;
         if (curValue < 0) {
             curValue = -curValue;
         }
