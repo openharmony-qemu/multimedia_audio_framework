@@ -1860,6 +1860,7 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
     if (sceneTypeToSpecialEffectSet_.erase(sceneType) > 0) {
         if (isNeedInitEffectBuffer_) {
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->InitEffectChain();
+            AUDIO_INFO_LOG("init effect buffer");
         }
         isNeedInitEffectBuffer_ = true;
     }
@@ -1876,6 +1877,7 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
             HILOG_COMM_INFO("[CheckAndReleaseCommonEffectChain]default effect chain will be released");
             if (isNeedInitEffectBuffer_) {
                 sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]->InitEffectChain();
+                AUDIO_INFO_LOG("init effect buffer");
             }
             isNeedInitEffectBuffer_ = true;
             return SUCCESS;
