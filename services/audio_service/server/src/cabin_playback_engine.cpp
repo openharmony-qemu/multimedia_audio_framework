@@ -369,7 +369,7 @@ int32_t CabinPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat format
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;
     uformat_ = attr.format;
-    uLayout_ = attr.channelLayout;
+    uLayout_ = static_cast<AudioChannelLayout>(attr.channelLayout);
 
     dumpFileName_ = "3da_playback_engine_.pcm";
     AUDIO_DEBUG_LOG("dump file name: %{public}s", dumpFileName_.c_str());
