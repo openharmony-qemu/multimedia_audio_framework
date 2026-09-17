@@ -42,7 +42,7 @@ namespace {
     std::shared_ptr<PowerMgr::ThermalMgrListener> thermalListener_ = nullptr;
     std::shared_ptr<AudioThermalLevelListener> thermalLevelListener_ = nullptr;
     std::shared_ptr<AudioThermalLevelListenerHandler> ListenerHandler_ =
-        std::make_shared<AudioThermalLevelListenerHandler>;
+        std::make_shared<AudioThermalLevelListenerHandler>();
 }
 
 AudioThermalLevelListenerHandler::AudioThermalLevelListenerHandler()
