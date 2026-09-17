@@ -548,25 +548,102 @@ HWTEST(PrivacyPriorityRouterUnitTest, RemoveArmUsb_001, TestSize.Level4)
 }
 
 /**
- * @tc.name  : Test IsA2dpDisable.
- * @tc.number: IsA2dpDisable_001
- * @tc.desc  : Test RemoveArmUsb interface.
+ * @tc.name  : Test IsMediaOutputDisable.
+ * @tc.number: IsMediaOutputDisable_001
+ * @tc.desc  : Test IsMediaOutputDisable with bt input and a2dp media output disabled.
  */
-HWTEST(PrivacyPriorityRouterUnitTest, IsA2dpDisable_001, TestSize.Level4)
+HWTEST(PrivacyPriorityRouterUnitTest, IsMediaOutputDisable_001, TestSize.Level4)
 {
-    PrivacyPriorityRouter router;
     auto &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
     audioDeviceManager.connectedDevices_.clear();
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    desc->deviceRole_ = OUTPUT_DEVICE;
-    desc->networkId_ = "";
-    desc->macAddress_ = "00:11:22:33:44:55";
-    desc->connectState_ = CONNECTED;
-    desc->isEnable_ = false;
-    audioDeviceManager.connectedDevices_.push_back(desc);
-    bool isA2dpDisable = router.IsA2dpDisable(desc);
-    EXPECT_EQ(isA2dpDisable, true);
+
+    auto a2dpDesc = std::make_shared<AudioDeviceDescriptor>();
+    a2dpDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    a2dpDesc->deviceRole_ = OUTPUT_DEVICE;
+    a2dpDesc->networkId_ = "";
+    a2dpDesc->macAddress_ = "00:11:22:33:44:55";
+    a2dpDesc->connectState_ = CONNECTED;
+    a2dpDesc->isEnable_ = false;
+    audioDeviceManager.connectedDevices_.push_back(a2dpDesc);
+
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.deviceRole_ = INPUT_DEVICE;
+    desc.networkId_ = "";
+    desc.macAddress_ = "00:11:22:33:44:55";
+    desc.connectState_ = CONNECTED;
+
+    PrivacyPriorityRouter router;
+    EXPECT_TRUE(router.IsMediaOutputDisable(desc));
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    EXPECT_TRUE(router.IsMediaOutputDisable(desc));
+    desc.deviceType_ = DEVICE_TYPE_BT_SPP;
+    EXPECT_TRUE(router.IsMediaOutputDisable(desc));
+
+    a2dpDesc->isEnable_ = true;
+    EXPECT_FALSE(router.IsMediaOutputDisable(desc));
+}
+
+/**
+ * @tc.name  : Test IsMediaOutputDisable.
+ * @tc.number: IsMediaOutputDisable_002
+ * @tc.desc  : Test IsMediaOutputDisable with nearlink input and nearlink media output disabled.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, IsMediaOutputDisable_002, TestSize.Level4)
+{
+    auto &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    audioDeviceManager.connectedDevices_.clear();
+
+    auto nearlinkDesc = std::make_shared<AudioDeviceDescriptor>();
+    nearlinkDesc->deviceType_ = DEVICE_TYPE_NEARLINK;
+    nearlinkDesc->deviceRole_ = OUTPUT_DEVICE;
+    nearlinkDesc->networkId_ = "";
+    nearlinkDesc->macAddress_ = "00:11:22:33:44:55";
+    nearlinkDesc->connectState_ = CONNECTED;
+    nearlinkDesc->deviceUsage_ = static_cast<DeviceUsage>(DeviceUsage::VOICE | DeviceUsage::RECOGNITION);
+    audioDeviceManager.connectedDevices_.push_back(nearlinkDesc);
+
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
+    desc.deviceRole_ = INPUT_DEVICE;
+    desc.networkId_ = "";
+    desc.macAddress_ = "00:11:22:33:44:55";
+    desc.connectState_ = CONNECTED;
+
+    PrivacyPriorityRouter router;
+    EXPECT_TRUE(router.IsMediaOutputDisable(desc));
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK_PORT;
+    EXPECT_TRUE(router.IsMediaOutputDisable(desc));
+
+    nearlinkDesc->deviceUsage_ = DeviceUsage::ALL_USAGE;
+    EXPECT_FALSE(router.IsMediaOutputDisable(desc));
+}
+
+/**
+ * @tc.name  : Test IsMediaOutputDisable.
+ * @tc.number: IsMediaOutputDisable_003
+ * @tc.desc  : Test IsMediaOutputDisable with other input and media output disabled.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, IsMediaOutputDisable_003, TestSize.Level4)
+{
+    auto &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    audioDeviceManager.connectedDevices_.clear();
+
+    auto nearlinkDesc = std::make_shared<AudioDeviceDescriptor>();
+    nearlinkDesc->deviceType_ = DEVICE_TYPE_NEARLINK;
+    nearlinkDesc->deviceRole_ = OUTPUT_DEVICE;
+    nearlinkDesc->networkId_ = "";
+    nearlinkDesc->macAddress_ = "00:11:22:33:44:55";
+    nearlinkDesc->connectState_ = CONNECTED;
+    nearlinkDesc->deviceUsage_ = static_cast<DeviceUsage>(DeviceUsage::VOICE | DeviceUsage::RECOGNITION);
+    audioDeviceManager.connectedDevices_.push_back(nearlinkDesc);
+
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_MIC;
+    desc.deviceRole_ = INPUT_DEVICE;
+
+    PrivacyPriorityRouter router;
+    EXPECT_FALSE(router.IsMediaOutputDisable(desc));
 }
 
 /**
