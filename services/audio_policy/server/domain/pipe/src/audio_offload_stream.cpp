@@ -83,6 +83,7 @@ void AudioOffloadStream::HandlePowerStateChanged(PowerMgr::PowerState state)
     }
     currentPowerState_ = state;
 
+    AudioServerProxy::GetInstance().SetPowerStateNotifyProxy(static_cast<int32_t>(currentPowerState_));
     std::lock_guard<std::mutex> lock(offloadMutex_);
     for (auto &iter : offloadSessionIdMap_) {
         if (iter.second != NO_OFFLOAD_STREAM_SESSIONID) {

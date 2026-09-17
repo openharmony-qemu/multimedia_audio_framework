@@ -78,6 +78,7 @@
 #include "audio_injector_service.h"
 #include "audio_sink_latency_fetcher.h"
 #include "audio_system_load_listener.h"
+#include "audio_thermal_listener.h"
 #include "cJSON.h"
 #include "concurrent_task_client.h"
 #ifdef FEATURE_CALL_MANAGER
@@ -990,6 +991,7 @@ void AudioServer::OnStart()
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
     AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
     AddSystemAbilityListener(CONCURRENT_TASK_SERVICE_ID);
+    AddSystemAbilityListener(POWER_MANAGER_THERMAL_SERVICE_ID);
     InitAudioEngine();
     OnStartExpansion();
     DlopenUtils::DeInit();
@@ -1065,6 +1067,10 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
             AuthQosForAudio();
             break;
         }
+        case POWER_MANAGER_THERMAL_SERVICE_ID:
+            AUDIO_INFO_LOG("power manager thermal service start");
+            RegisterAudioThermalLevelListener();
+            break;
         default:
             AUDIO_ERR_LOG("unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
@@ -3404,6 +3410,14 @@ int32_t AudioServer::UnsetOffloadMode(uint32_t sessionId)
     return AudioService::GetInstance()->UnsetOffloadMode(sessionId);
 }
 // LCOV_EXCL_STOP
+
+int32_t AudioServer::SetPowerStateNotify(int32_t state)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
+        callingUid);
+    return SetPowerState(state);
+}
 
 void AudioServer::OnRenderSinkStateChange(uint32_t sinkId, bool started)
 {

@@ -130,6 +130,12 @@ void AudioEffectChain::SetLidState(const std::string &lidState)
         "convert invalid lidState: %{public}s", lidState.c_str());
 }
 
+void AudioEffectChain::SetLowPowerParam(const std::string &lowPowerParam)
+{
+    CHECK_AND_RETURN_LOG(StringConverter(lowPowerParam, lowPowerParam_),
+        "convert invalid lowPowerParam: %{public}s", lowPowerParam.c_str());
+}
+
 void AudioEffectChain::SetStereoEnhancementMode(const std::string &stereoEnhancementMode)
 {
     AUDIO_INFO_LOG("stereoEnhancementMode: %{public}s", stereoEnhancementMode.c_str());
@@ -211,12 +217,13 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, spatializationSceneType: "
         "%{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d, absVolumeState: %{public}d, "
         "earphoneProduct: %{public}d, outdoorMode: %{public}d, superLoudnessMode: %{public}d, "
-        "systemLoadState: %{public}d, frontendAppType: %{public}d, personalizedSpatitalizationEnabled: %{public}d ",
+        "systemLoadState: %{public}d, frontendAppType: %{public}d, personalizedSpatitalizationEnabled: %{public}d, "
+        "lowPowerParam: %{public}d",
         data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
         data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
         data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE], data[EARPHONE_PRODUCT],
         data[OUTDOOR_MODE], data[SUPER_LOUDNESS_MODE], data[SYSTEMLOAD_STATE_INDEX], data[FRONTEND_APP_TYPE],
-        data[PERSONALIZED_SPATIALIZATION_ENABLED]);
+        data[PERSONALIZED_SPATIALIZATION_ENABLED], data[LOW_POWER_INDEX]);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     replyData = replyDatas[0];
@@ -268,6 +275,7 @@ void AudioEffectChain::BuildEffectParamData(int32_t *data)
     data[FRONTEND_APP_TYPE] = static_cast<int32_t>(frontendAppType_);
     data[STEREO_ENHANCEMENT_INDEX] = static_cast<int32_t>(stereoEnhancementMode_);
     data[PERSONALIZED_SPATIALIZATION_ENABLED] = static_cast<int32_t>(personalizedSpatializationEnabled_);
+    data[LOW_POWER_INDEX] = static_cast<int32_t>(lowPowerParam_);
 }
 
 int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std::string &property)

@@ -252,6 +252,8 @@ public:
 
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
 
+    int32_t SetPowerStateNotify(int32_t state) override;
+
     int32_t CheckHibernateState(bool hibernate) override;
 
     int32_t CreateIpcOfflineStream(int32_t &errorCode, sptr<IRemoteObject>& client) override;
@@ -414,6 +416,7 @@ private:
 
 private:
     void InitHdiEventCallback();
+    void SetPowerState(int32_t state);
 #ifdef HAS_FEATURE_INNERCAPTURER
     bool HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
         const AudioPlaybackCaptureConfig &filterConfig);
@@ -557,6 +560,7 @@ private:
     std::string playTaskId_ = "0"; // only use by homemusic
 
     bool isEarpiece_ = false;
+    bool isScreenOn_ = true;
     float audioBalanceValue_ = 0.0f;
 
     float audioD2DValue_ = 0.0f;

@@ -802,6 +802,7 @@ audio_ohos_library("audio_service") {
     "server/src/audio_system_load_listener.cpp",
     "server/src/config/audio_param_parser.cpp",
     "server/src/audio_injector_service.cpp",
+    "server/src/audio_thermal_listener.cpp",
   ]
 
   configs = [ ":audio_service_config" ]
@@ -847,8 +848,15 @@ audio_ohos_library("audio_service") {
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "thermal_manager:thermalmgr_listener",
+    "thermal_manager:thermalsrv_client",
   ]
   defines = []
+  if (audio_framework_feature_power_manager) {
+    external_deps += [ "power_manager:powermgr_client" ]
+    defines += [ "FEATURE_POWER_MANAGER" ]
+  }
+
   if (!audio_framework_feature_new_engine_flag) {
     sources += [ "server/src/audio_server_dump.cpp" ]
     external_deps += [

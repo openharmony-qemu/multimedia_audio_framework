@@ -106,6 +106,7 @@
             "safwk",
             "samgr",
             "sensor",
+            "thermal_manager",
             "bounds_checking_function",
             "sonic",
             "screenlock_mgr",
