@@ -33,6 +33,7 @@
 #include "audio_recovery_device.h"
 #include "audio_bundle_manager.h"
 #include "audio_volume.h"
+#include "audio_rollback_manager.h"
 #include "audio_router_select_strategy.h"
 #include "audio_zone_service.h"
 
@@ -383,9 +384,8 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
 
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     UpdateDeviceAfterConnectAndAddtoList(audioDescriptor);
-    if (!NeedUpdatePreferredDevice(updatedDesc)) {
-        return;
-    }
+    CHECK_AND_RETURN(NeedUpdatePreferredDevice(updatedDesc));
+    AudioRollbackManager::GetInstance().SetNewConnectRollback(audioDescriptor);
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
     DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
     FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "updateConnectedDescWhenCon_1", ROUTER_TYPE_USER_SELECT };
