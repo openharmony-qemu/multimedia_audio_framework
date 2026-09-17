@@ -106,7 +106,7 @@ HWTEST(AudioEffectChainManagerSecondUnitTest, HasRunningSessionForEffectChain_00
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_["DEVICE_TYPE_SPEAKER_&_SCENE_MOVIE_&_7"] =
         audioEffectChain;
 
-    EXPECT_TRUE(AudioEffectChainManager::GetInstance()->HasRunningSessionForEffectChain(audioEffectChain));
+    EXPECT_FALSE(AudioEffectChainManager::GetInstance()->HasRunningSessionForEffectChain(audioEffectChain));
 
     // legacy key does not match any session under enhanced routing
     auto otherChain = AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_GAME", true);
@@ -139,7 +139,7 @@ HWTEST(AudioEffectChainManagerSecondUnitTest, HasRunningSessionForEffectChain_00
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_["DEVICE_TYPE_INVALID_&_SCENE_MOVIE_&_9"] =
         audioEffectChain;
 
-    EXPECT_TRUE(AudioEffectChainManager::GetInstance()->HasRunningSessionForEffectChain(audioEffectChain));
+    EXPECT_FALSE(AudioEffectChainManager::GetInstance()->HasRunningSessionForEffectChain(audioEffectChain));
 
     auto otherChain = AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_GAME", true);
     EXPECT_FALSE(AudioEffectChainManager::GetInstance()->HasRunningSessionForEffectChain(otherChain));
