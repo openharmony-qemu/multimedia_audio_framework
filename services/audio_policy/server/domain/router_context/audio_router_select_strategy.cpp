@@ -238,6 +238,8 @@ int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceTy
         if (!IsSameDeviceDeviceDescriptor(before, after) ||
             !IsSameDeviceDeviceDescriptor(current, after)) {
             AUDIO_WARNING_LOG("media default output device change");
+            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+                std::make_shared<AudioDeviceDescriptor>(), uid, "SetDefaultOutputDevice");
             return NEED_TO_FETCH;
         }
     } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
@@ -252,6 +254,8 @@ int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceTy
         if (!IsSameDeviceDeviceDescriptor(before, after) ||
             !IsSameDeviceDeviceDescriptor(current, after)) {
             AUDIO_WARNING_LOG("call default output device change");
+            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+                std::make_shared<AudioDeviceDescriptor>(), uid, "SetDefaultOutputDevice");
             return NEED_TO_FETCH;
         }
     } else {
