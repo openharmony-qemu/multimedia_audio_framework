@@ -78,7 +78,9 @@
 #include "audio_injector_service.h"
 #include "audio_sink_latency_fetcher.h"
 #include "audio_system_load_listener.h"
+#ifdef FEATURE_THERMAL_MANAGER
 #include "audio_thermal_listener.h"
+#endif
 #include "cJSON.h"
 #include "concurrent_task_client.h"
 #ifdef FEATURE_CALL_MANAGER
@@ -1068,8 +1070,10 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
             break;
         }
         case POWER_MANAGER_THERMAL_SERVICE_ID:
+#ifdef FEATURE_THERMAL_MANAGER
             AUDIO_INFO_LOG("power manager thermal service start");
             RegisterAudioThermalLevelListener();
+#endif
             break;
         default:
             AUDIO_ERR_LOG("unhandled sysabilityId:%{public}d", systemAbilityId);

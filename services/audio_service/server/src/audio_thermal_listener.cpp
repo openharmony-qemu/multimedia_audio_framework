@@ -77,7 +77,7 @@ void AudioThermalLevelListener::UnregisterThermalLevelListener()
 
 void AudioThermalLevelListener::OnThermalLevelResult(const PowerMgr::ThermalLevel &level)
 {
-    if(IsValidThermalLevel(level)) {
+    if (IsValidThermalLevel(level)) {
         PostThermalLevelTask(level);
     }
 }
@@ -87,7 +87,7 @@ void AudioThermalLevelListener::PostThermalLevelTask(const PowerMgr::ThermalLeve
     CHECK_AND_RETURN_LOG(ListenerHandler_ != nullptr, "ListenerHandler_ is nullptr");
     auto task = [thermalLevel]() {
         AudioEffectChainManager::GetInstance()->UpdateParamExtra("audio_effect", THERMAL_LEVEL_SUBKEY,
-         std::to_string(static_cast<int32_t>(thermalLevel)));
+            std::to_string(static_cast<int32_t>(thermalLevel)));
     };
     ListenerHandler_->PostTask(task, THERMAL_LEVEL_TASK, POST_THERMAL_LEVEL_TASK_DELAY_MS);
 }
@@ -97,7 +97,7 @@ void RegisterAudioThermalLevelListener()
     auto thermalLevel = PowerMgr::ThermalMgrClient::GetInstance().GetThermalLevel();
     if (IsValidThermalLevel(thermalLevel)) {
         AudioEffectChainManager::GetInstance()->UpdateParamExtra("audio_effect", THERMAL_LEVEL_SUBKEY,
-         std::to_string(static_cast<int32_t>(thermalLevel)));
+            std::to_string(static_cast<int32_t>(thermalLevel)));
     }
 
     if (thermalListener_ == nullptr) {

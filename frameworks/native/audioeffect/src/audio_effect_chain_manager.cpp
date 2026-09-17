@@ -1488,7 +1488,7 @@ void AudioEffectChainManager::SendLowPowerParam()
 
         std::string value = std::to_string(toSend);
         AUDIO_INFO_LOG("SendLowPowerParam to arm, lowPower: %{public}s", value.c_str());
-        for(auto &[scene, audioEffectChain] : sceneTypeToEffectChainMap_) {
+        for (auto &[scene, audioEffectChain] : sceneTypeToEffectChainMap_) {
             if (audioEffectChain == nullptr) {
                 continue;
             }
