@@ -30,6 +30,7 @@ namespace AudioStandard {
 class MockILoopback : public ILoopback {
 public:
     MOCK_METHOD(ErrCode, Enable, (bool enable, int32_t &ret), (override));
+    MOCK_METHOD(ErrCode, NotifyStatus, (int32_t status, int32_t &ret), (override));
     MOCK_METHOD(ErrCode, GetStatus, (int32_t &status, int32_t &ret), (override));
     MOCK_METHOD(ErrCode, GetVolume, (float &volume, int32_t &ret), (override));
     MOCK_METHOD(sptr<IRemoteObject>, AsObject, (), (override));

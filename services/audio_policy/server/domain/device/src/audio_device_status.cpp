@@ -38,6 +38,7 @@
 #include "audio_collaborative_service.h"
 #include "audio_router_select_strategy.h"
 #include "audio_pipe_manager.h"
+#include "audio_rollback_manager.h"
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
 
@@ -54,6 +55,11 @@ const std::string DEFAULT_BUFFER_SIZE_8000 = "320";
 
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const int32_t DEFAULT_UID = -1;
+
+const std::unordered_map<AudioFlag, std::string> SUPPORT_FLAG_DYNAMIC_PIPE_MAP = {
+    {AudioFlag::AUDIO_OUTPUT_FLAG_LOWPOWER, "offload_distributed_output"},
+    {AudioFlag::AUDIO_OUTPUT_FLAG_MULTICHANNEL, "multichannel_distributed_output"},
+};
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -1387,6 +1393,12 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     bool isNeedExclude = CheckNeedExclude(updatedDesc, isConnected);
     UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
 
+    if (isNeedExclude) {
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = {};
+        descs.push_back(std::make_shared<AudioDeviceDescriptor>(updatedDesc));
+        AudioCoreService::GetCoreService()->ExcludeOutputDevices(D_ALL_DEVICES, descs);
+    }
+
     TriggerDeviceChangedCallback(descForCb, isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
 
@@ -1509,11 +1521,11 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
             (command == USAGE_UPDATE && (desc.deviceUsage_ & DeviceUsage::MEDIA)))) {
         audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
     }
-
 #ifdef BLUETOOTH_ENABLE
     ClearActiveHfpDevice(desc, command, reason);
 #endif
     UpdateChangeReasonForCollaboration(desc, command, reason);
+    AudioRollbackManager::GetInstance().OnConnectStateUpdate(desc, command);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnDeviceInfoUpdated", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceInfoUpdated", reason);
     if (portNeedClose != "" && oldPaIndex == GetPaIndexByPortName(portNeedClose)) {
@@ -1545,9 +1557,6 @@ bool AudioDeviceStatus::CheckNeedExclude(AudioDeviceDescriptor &desc, bool isCon
     AUDIO_INFO_LOG("isConnected=%{public}d", isConnected);
     CHECK_AND_RETURN_RET(isConnected, false);
     desc.visibleMode_ = SYSTEM_SERVICE_VISIBLE;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = {};
-    descs.push_back(std::make_shared<AudioDeviceDescriptor>(desc));
-    AudioCoreService::GetCoreService()->ExcludeOutputDevices(D_ALL_DEVICES, descs);
     return true;
 #endif
     return false;
@@ -1634,8 +1643,10 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             if (desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
                 UpdateNearlinkDeviceVolume(desc);
             }
+#ifndef MULTI_USER_ZONE
             auto unexcludedDevice = audioDeviceManager_.GetAvailableBluetoothDevice(desc.deviceType_, desc.macAddress_);
             AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
+#endif
             ClearPreferredWhenCategoryUpdated(desc);
         }
     }
@@ -1724,6 +1735,7 @@ void AudioDeviceStatus::RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDe
 #ifdef MULTI_USER_ZONE
     TriggerDeviceChangedCallback(descForCb, true, zoneId);
     TriggerAvailableDeviceChangedCallback(descForCb, true, zoneId);
+    AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(descForCb, D_ALL_DEVICES);
 #endif
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
@@ -1735,6 +1747,11 @@ void AudioDeviceStatus::AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDes
     AUDIO_INFO_LOG("add device back to global list only");
     audioConnectedDevice_.AddConnectedDevice(desc);
     audioDeviceManager_.AddNewDevice(desc);
+#ifdef MULTI_USER_ZONE
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = {};
+    descs.push_back(desc);
+    AudioCoreService::GetCoreService()->ExcludeOutputDevices(D_ALL_DEVICES, descs);
+#endif
     CHECK_AND_RETURN(isNeedFetch);
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("AddDeviceBackToGlobalOnly");
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("AddDeviceBackToGlobalOnly");
@@ -1849,10 +1866,11 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         device.audioStreamInfo_ = capability.streamInfoList_;
         std::list<std::string> supportDevices = { "Distributed_Output" };
         device.SetDeviceCapability(capability.streamInfoList_, 0);
-        AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "offload_distributed_output",
-            capability.streamInfoList_, supportDevices, device.networkId_);
-        AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "multichannel_distributed_output",
-            capability.streamInfoList_, supportDevices, device.networkId_);
+        for (const auto &[flag, propInfo] : SUPPORT_FLAG_DYNAMIC_PIPE_MAP) {
+            CHECK_AND_CONTINUE(capability.IsSupportDynamicPipe(flag));
+            AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", propInfo,
+                capability.streamInfoList_, supportDevices, device.networkId_);
+        }
         device.BuildCapabilitiesFromDeviceStreamInfo();
         AUDIO_INFO_LOG("Update audioStreamInfo success");
     }
@@ -1875,7 +1893,7 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         device.model_ = "hiplay";
         device.isSupportRemoteMultichannel_ = false;
     } else if (capability.protocol_ == 1) {
-        device.isSupportRemoteMultichannel_ = false;
+        device.isSupportRemoteMultichannel_ = true;
     }
 
     device.hdPlaybackMode_ = static_cast<HdPlaybackMode>(capability.hdPlaybackMode_);

@@ -41,6 +41,9 @@
 #include "audio_interrupt_dfx.h"
 #include "audio_interrupt_strategy.h"
 #include "audio_debug_info.h"
+#ifdef HAS_WINDOW_MANAGER
+#include "window_utils.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -122,11 +125,12 @@ public:
 
     // preempt audio focus interfaces
     int32_t ActivatePreemptMode();
+    int32_t SetDuckPassthroughMode(bool enable);
     // zone debug interfaces
     int32_t FindZoneByPid(int32_t pid);
     int32_t CreateAudioInterruptZone(const int32_t zoneId, const AudioZoneContext &context);
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal = false);
-    int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
+    int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal = false);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts,
         const std::vector<uint32_t> &bypassSessionIds = {});
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const std::string &deviceTag,
@@ -314,6 +318,7 @@ private:
     void SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,
         const uint32_t &streamId, const AudioInterrupt &audioInterrupt);
     void CollectInterruptDfx(const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt);
+    void RecordNavWithPauseStrategyEvent(const AudioInterrupt &audioInterrupt);
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activeInterrupt);
     bool UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType,
         int32_t zoneId = ZONEID_DEFAULT, bool notFromInterrupt = true, bool isInternal = false);
@@ -351,6 +356,8 @@ private:
     bool IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry);
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
+    void UpdateHintTypeByConcurrencyMode(AudioConcurrencyMode concurrencyMode, AudioFocusEntry &focusEntry);
+    void ApplyDuckPassthroughMode(AudioFocusEntry &focusEntry);
     void HandleSessionTimeOutEvent(const int32_t pid);
     int32_t GetAudioSessionZoneidByPid(const int32_t pid);
     bool HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
@@ -465,10 +472,10 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
     void UpdateIsCheckMuteStreamByPid(int32_t callerPid);
-    bool ProcessSilentChangeInterrupt(const MuteFocusInfo &audioFocusInfo);
     void RemoveStreamBySessionId(const uint32_t streamId);
     void RemoveStreamByPid(const int32_t callerPid);
     void AddStreamByPid(const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession);
+    void UpdateAudioFocusCheckMuteFlag(const int32_t zoneId, AudioInterrupt &audioInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -500,6 +507,7 @@ private:
     mutable std::atomic<int32_t> formerUid_ = -1;
     mutable int32_t ownerPid_ = 0;
     mutable int32_t ownerUid_ = 0;
+    std::atomic<bool> duckPassthroughMode_{false};
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
     AudioStreamType activeStreamType_ = STREAM_MUSIC;
 

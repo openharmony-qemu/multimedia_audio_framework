@@ -56,7 +56,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t uid = 0);
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID);
 
     /**
      * @brief Set the stream volume.
@@ -236,7 +236,7 @@ public:
      * @return Returns current stream volume.
      * @since 8
      */
-    int32_t GetVolume(AudioVolumeType volumeType, int32_t uid = 0) const;
+    int32_t GetVolume(AudioVolumeType volumeType, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID) const;
 
     /**
      * @brief Set volume discount factor.
@@ -950,6 +950,15 @@ public:
     int32_t ActivatePreemptMode() const;
 
     /**
+     * @brief Set duck passthrough mode. When enabled, DUCK is treated as concurrent mix.
+     *
+     * @param enable True to enable duck passthrough mode, false to disable.
+     * @return Returns {@link SUCCESS} if successful; returns an error code otherwise.
+     * @since 26.0.0
+     */
+    int32_t SetDuckPassthroughMode(bool enable) const;
+
+    /**
      * @brief registers the Interrupt callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
@@ -1580,7 +1589,8 @@ public:
      * @return Returns {@link SUCCESS} if the operation is successfully.
      * @since 21
      */
-    int32_t SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid = 0);
+    int32_t SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid = 0,
+        int32_t zoneId = INVALID_ZONEID);
 
     /**
      * @brief get stream volume degree.
@@ -1589,7 +1599,7 @@ public:
      * @return Returns the volume degree for the specified Audio stream type.
      * @since 21
      */
-    int32_t GetVolumeDegree(AudioVolumeType volumeType, int32_t uid = 0);
+    int32_t GetVolumeDegree(AudioVolumeType volumeType, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID);
 
     /**
      * @brief get stream min volume degree.

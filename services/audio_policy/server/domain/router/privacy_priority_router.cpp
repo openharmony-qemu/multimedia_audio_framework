@@ -17,6 +17,7 @@
 #endif
 
 #include "privacy_priority_router.h"
+#include <functional>
 
 using namespace std;
 
@@ -48,17 +49,28 @@ void PrivacyPriorityRouter::RemoveArmUsb(vector<shared_ptr<AudioDeviceDescriptor
     descs.erase(removeBeginIt, descs.end());
 }
 
-bool PrivacyPriorityRouter::IsA2dpDisable(shared_ptr<AudioDeviceDescriptor> &hfpDesc)
+bool PrivacyPriorityRouter::IsMediaOutputDisable(const AudioDeviceDescriptor &desc)
 {
-    vector<shared_ptr<AudioDeviceDescriptor>> descs =
-        AudioDeviceManager::GetAudioDeviceManager().GetDevicesByFilter(
-            DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, hfpDesc->macAddress_, "", CONNECTED);
-    auto isPresent = [] (const shared_ptr<AudioDeviceDescriptor> &desc) {
-        return desc != nullptr && !desc->isEnable_;
-    };
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    function<bool(const shared_ptr<AudioDeviceDescriptor> &)> isMediaOutDisable;
 
-    auto it = find_if(descs.begin(), descs.end(), isPresent);
-    return it != descs.end();
+    if (IsBtInputDevice(desc.deviceType_)) {
+        descs = deviceManager.GetDevicesByFilter(
+            DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, desc.macAddress_, "", CONNECTED);
+        isMediaOutDisable = [](const shared_ptr<AudioDeviceDescriptor> &a2dp) {
+            return a2dp != nullptr && !a2dp->isEnable_;
+        };
+    } else if (IsNearlinkInputDevice(desc.deviceType_)) {
+        descs = deviceManager.GetDevicesByFilter(
+            DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE, desc.macAddress_, "", CONNECTED);
+        isMediaOutDisable = [](const shared_ptr<AudioDeviceDescriptor> &nearlink) {
+            return nearlink != nullptr && 0 == (nearlink->deviceUsage_ & DeviceUsage::MEDIA);
+        };
+    } else {
+        return false;
+    }
+    return any_of(descs.begin(), descs.end(), isMediaOutDisable);
 }
 
 shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallRenderDevice(StreamUsage streamUsage,
@@ -163,7 +175,7 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
                 }), descs.end());
         }
         shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
-        if (desc && desc->deviceType_ != DEVICE_TYPE_NONE && !IsA2dpDisable(desc)) {
+        if (desc && desc->deviceType_ != DEVICE_TYPE_NONE && !IsMediaOutputDisable(*desc)) {
             AUDIO_DEBUG_LOG("Recognition sourceType %{public}d clientUID %{public}d fetch device %{public}d",
                 sourceType, clientUID, desc->deviceType_);
             return desc;

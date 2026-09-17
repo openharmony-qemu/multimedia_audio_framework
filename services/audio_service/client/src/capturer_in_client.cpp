@@ -1858,6 +1858,7 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
 {
     Trace trace("CapturerInClientInner::HandleCapturerRead " + std::to_string(userSize));
     while (readSize < userSize) {
+        SyncCapturerAttrFromSpan();
         AUDIO_DEBUG_LOG("readSize %{public}zu < userSize %{public}zu", readSize, userSize);
         OptResult result = ringCache_->GetReadableSize();
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "GetReadableSize err %{public}d", result.ret);
@@ -1903,7 +1904,6 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
 int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
 {
     Trace trace("CapturerInClientInner::Read " + std::to_string(userSize));
-    SyncCapturerAttrFromSpan();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(userSize < MAX_CLIENT_READ_SIZE && userSize > 0,
         ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -2551,22 +2551,22 @@ void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrIn
     } else {
         AUDIO_ERR_LOG("Invalid span size %{public}u, skip update", attr.spanSizeInFrame);
     }
-    cacheSizeInByte_ = attr.engineSize;
-    if (attr.routeFlag != 0) {
-        if ((attr.routeFlag & AUDIO_INPUT_FLAG_FAST) == 0) {
-            AUDIO_INFO_LOG("NotifyFastStatusChange to NORMAL, sessionId:%{public}u", sessionId_);
-            capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
-            NotifyFastStatusChange(FASTSTATUS_NORMAL);
-        } else if (attr.routeFlag & AUDIO_INPUT_FLAG_VOIP) {
-            AUDIO_INFO_LOG("NotifyFastStatusChange to FAST for VOIP, sessionId:%{public}u", sessionId_);
-            capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
-            NotifyFastStatusChange(FASTSTATUS_FAST);
-        } else {
-            AUDIO_INFO_LOG("NotifyFastStatusChange to FAST, sessionId:%{public}u", sessionId_);
-            capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
-            NotifyFastStatusChange(FASTSTATUS_FAST);
-        }
+    if ((attr.routeFlag & AUDIO_INPUT_FLAG_FAST) == 0) {
+        AUDIO_INFO_LOG("NotifyFastStatusChange to NORMAL, sessionId:%{public}u", sessionId_);
+        capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
+        NotifyFastStatusChange(FASTSTATUS_NORMAL);
+    } else if (attr.routeFlag & AUDIO_INPUT_FLAG_VOIP) {
+        AUDIO_INFO_LOG("NotifyFastStatusChange to FAST for VOIP, sessionId:%{public}u", sessionId_);
+        capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
+        NotifyFastStatusChange(FASTSTATUS_FAST);
+    } else {
+        AUDIO_INFO_LOG("NotifyFastStatusChange to FAST, sessionId:%{public}u", sessionId_);
+        capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
+        NotifyFastStatusChange(FASTSTATUS_FAST);
     }
+    InitCacheBuffer(clientSpanSizeInByte_);
+    uint64_t bufferDurationInUs = spanSizeInFrame_ * AUDIO_US_PER_S / streamParams_.samplingRate;
+    InitCallbackBuffer(bufferDurationInUs);
     clientBuffer_->UpdateSpanBasicInfo(spanSizeInFrame_, cacheSizeInByte_, sizePerFrameInByte_);
     AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}zu "
         "capturerFlags:0x%{public}x",

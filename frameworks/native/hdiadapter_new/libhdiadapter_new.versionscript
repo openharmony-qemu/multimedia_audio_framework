@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,9 +11,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Strict whitelist for libhdiadapter_new.z.so (target "hdiadapter_new").
+# Replaces the former umbrella script (global: *;  == no governance at all).
+# Every entry below is verified by-name referenced across DSO boundaries by
+# production consumers (audio_engine / audio_policy / audio_service), by the
+# hdiadapter AIUT+unittest suites (which construct sinks/sources/managers via
+# make_shared), or by cross-DSO derivation in audio_service.
+
 1.0 {
   global:
-    *;
+    *AudioRenderSink*;
+    *AuxiliarySink*;
+    *IAudioSinkCallback*;
+    *AudioCaptureSource*;
+    *VACaptureSource*;
+    *IAudioSourceCallback*;
+    *DeviceManager*;
+    *HdiAdapterFactory*;
+    *HdiAdapterManager*;
+    *HdiMonitor*;
+    *SinkCallbackWrapper*;
+    *SourceCallbackWrapper*;
+    *IdHandler*;
+    *RingBufferHandler*;
+    *AudioRunningLock*;
+    *AudioPlayingAppManager*;
+    *AudioHdiVersionManager*;
   local:
     *;
 };

@@ -468,7 +468,7 @@ void AudioStreamChecker::DataResume()
 {
     std::lock_guard<std::recursive_mutex> lock(checkLock_);
     for (size_t index = 0; index < checkParaVector_.size(); index++) {
-        auto& para = checkParaVector_[index];
+        auto &para = checkParaVector_[index];
         CHECK_AND_CONTINUE(para.para.needImmediateResumeNotify);
         if (para.isMonitorMuteFrame && para.lastStatus != DATA_TRANS_RESUME) {
             para.lastStatus = DATA_TRANS_RESUME;

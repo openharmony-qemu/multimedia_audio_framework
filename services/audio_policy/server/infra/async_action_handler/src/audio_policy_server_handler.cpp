@@ -257,6 +257,12 @@ bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &vol
     if (volumeEvent.volumeType == AudioStreamType::STREAM_VOICE_CALL_ASSISTANT) {
         return false;
     }
+    if (volumeEvent.volumeType == AudioStreamType::STREAM_NOTIFICATION &&
+        VolumeUtils::IsNotificationFollowRingtone()) {
+        AUDIO_INFO_LOG("NotificationFollowRingtone is true. No need send notification event.");
+        return false;
+    }
+
     eventContextObj->volumeEvent = volumeEvent;
     eventContextObj->zoneId = zoneId;
     lock_guard<mutex> runnerlock(runnerMutex_);
@@ -272,6 +278,12 @@ bool AudioPolicyServerHandler::SendVolumeDegreeEventCallback(const VolumeEvent &
     if (volumeEvent.volumeType == AudioStreamType::STREAM_VOICE_CALL_ASSISTANT) {
         return false;
     }
+    if (volumeEvent.volumeType == AudioStreamType::STREAM_NOTIFICATION &&
+        VolumeUtils::IsNotificationFollowRingtone()) {
+        AUDIO_INFO_LOG("NotificationFollowRingtone is true. No need send notification event.");
+        return false;
+    }
+
     eventContextObj->volumeEvent = volumeEvent;
     eventContextObj->zoneId = zoneId;
     lock_guard<mutex> runnerlock(runnerMutex_);

@@ -35,6 +35,7 @@
 #include "audio_select_interface_service.h"
 #include "audio_server_proxy.h"
 #include "audio_device_status.h"
+#include "audio_rollback_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -185,17 +186,18 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "desc is null");
     int32_t ret = SUCCESS;
     bool mediaControllerFlag = IsSelectedByMediaController();
+    auto &rollback = AudioRollbackManager::GetInstance();
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
     switch (preferredType) {
         case AUDIO_MEDIA_RENDER:
-            strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
+            rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
             break;
         case AUDIO_CALL_RENDER:
-            strategy.SetCallOutputDevice(AudioSelectInterfaceService::GetInstance().GetPreferredUid(uid),
+            rollback.SetCallOutputDevice(AudioSelectInterfaceService::GetInstance().GetPreferredUid(uid),
                 INVALID_STREAM_ID, desc, caller);
             break;
         case AUDIO_CALL_CAPTURE:
-            strategy.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
+            rollback.SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
             break;
         case AUDIO_RECORD_CAPTURE:
 #ifdef INPUT_FEATURE_INDEPENDENT_MODE
@@ -207,7 +209,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
                     UpdateType::SYSTEM_SELECT, info, mediaControllerFlag);
             }
             CHECK_AND_BREAK_LOG(!mediaControllerFlag, "selected by media controller");
-            strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
+            rollback.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
 #endif
             break;
         case AUDIO_RING_RENDER:
@@ -215,7 +217,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             ret = ERR_INVALID_PARAM;
             break;
         case AUDIO_RECOGNITION_CAPTURE:
-            audioStateManager_.SetPreferredRecognitionCaptureDevice(desc);
+            strategy.SetRecognitionInputDevice(desc);
             break;
         default:
             ret = ERR_INVALID_PARAM;
@@ -248,7 +250,7 @@ bool AudioPolicyUtils::ShouldUseSystemPreferredDeviceForVolume(const std::string
     if (it != shouldUseSystemPreferredDeviceCache_.end()) {
         return it->second;
     }
-    
+
     CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback_ != nullptr, false, "callback is nullptr");
     bool ret = false;
     audioClientInfoMgrCallback_->OnQueryUseSystemPreferredDeviceForVolume(bundleName, ret);
@@ -282,8 +284,8 @@ void AudioPolicyUtils::SetPreferredRecordCaptureDeviceInCar(
             AudioUsrSelectManager::GetAudioUsrSelectManager().UpdateRecordDeviceInfo(
                 UpdateType::SYSTEM_SELECT, info);
         }
-        auto &strategy = AudioRouterSelectStrategy::GetInstance();
-        strategy.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
+        auto &rollback = AudioRollbackManager::GetInstance();
+        rollback.SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
     }
 }
 #endif
@@ -1039,6 +1041,19 @@ bool AudioPolicyUtils::CheckInterphone(StreamUsage usage, const shared_ptr<Audio
     return true;
 }
 
+bool AudioPolicyUtils::IsCallOrRingStreamUsage(StreamUsage streamUsage)
+{
+    return streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
+           streamUsage == STREAM_USAGE_INTERPHONE ||
+           streamUsage == STREAM_USAGE_RINGTONE ||
+           streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
+           streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
+}
+
 int32_t AudioPolicyUtils::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -1097,7 +1112,7 @@ bool AudioPolicyUtils::UpdateDevicesListInfo(std::vector<std::shared_ptr<AudioDe
                 AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             break;
         case CONNECTSTATE_UPDATE:
-            ret = UpdateConnectState(devices, devDesc);
+            ret = UpdateConnectState(devices, devDesc, reason);
             break;
         case ENABLE_UPDATE:
             ret = UpdateEnableState(devices, devDesc);
@@ -1145,10 +1160,11 @@ bool AudioPolicyUtils::UpdateDeviceCategory(std::vector<std::shared_ptr<AudioDev
 }
 
 bool AudioPolicyUtils::UpdateConnectState(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
-    const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
+    const std::shared_ptr<AudioDeviceDescriptor> &devDesc, AudioStreamDeviceChangeReasonExt &reason)
 {
     bool updateFlag = false;
     bool isScoDevice = devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
+    bool isScoSuspend = false;
 
     for (const auto &desc : devices) {
         CHECK_AND_CONTINUE(desc != nullptr);
@@ -1157,6 +1173,7 @@ bool AudioPolicyUtils::UpdateConnectState(std::vector<std::shared_ptr<AudioDevic
             continue;
         }
         if (desc->deviceType_ == devDesc->deviceType_) {
+            isScoSuspend |= desc->connectState_ == CONNECTED && devDesc->connectState_ == SUSPEND_CONNECTED;
             desc->connectState_ = devDesc->connectState_;
             updateFlag = true;
             continue;
@@ -1177,6 +1194,8 @@ bool AudioPolicyUtils::UpdateConnectState(std::vector<std::shared_ptr<AudioDevic
             }
         }
     }
+    reason = isScoDevice && isScoSuspend ? AudioStreamDeviceChangeReasonExt::ExtEnum::DEVICE_RESELECT : reason;
+
     return updateFlag;
 }
 

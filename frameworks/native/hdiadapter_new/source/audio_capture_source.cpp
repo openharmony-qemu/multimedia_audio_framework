@@ -607,7 +607,11 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
     }
 
     AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
-    struct AudioFrameLen frameLen = { fdesc->frameLen, fdescEc->frameLen };
+    uint64_t micDataLen = fdesc->frameLen;
+    if (attr_.sourceType == SOURCE_TYPE_EC && attr_.adapterName == "dp") {
+        micDataLen = fdescEc->frameLen;
+    }
+    struct AudioFrameLen frameLen = { micDataLen, fdescEc->frameLen };
     struct AudioCaptureFrameInfo frameInfo = {};
     ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
     if (ret < 0) {

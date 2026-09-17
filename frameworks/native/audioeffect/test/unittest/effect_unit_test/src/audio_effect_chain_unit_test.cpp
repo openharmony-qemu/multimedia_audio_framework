@@ -973,5 +973,44 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_037, TestSize.Level1)
     EXPECT_EQ(channels, 2u);
     EXPECT_EQ(channelLayout, static_cast<uint64_t>(CH_LAYOUT_MONO)); // unchanged, kept as-is
 }
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_039
+ * @tc.desc  : Test ApplyEffectChain passthrough when input has fewer channels than output
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_039, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+
+    EXPECT_NE(audioEffectChain, nullptr);
+
+    constexpr uint32_t frameLen = 10;
+    constexpr uint32_t inChannels = 2;
+    constexpr uint32_t outChannels = 8;
+    audioEffectChain->ioBufferConfig_.inputCfg.channels = inChannels;
+    audioEffectChain->ioBufferConfig_.outputCfg.channels = outChannels;
+    audioEffectChain->standByEffectHandles_.clear();
+
+    std::vector<float> bufIn(frameLen * inChannels, 1.0f);
+    std::vector<float> bufOut(frameLen * outChannels, 0.5f);
+    AudioEffectProcInfo procInfo;
+    audioEffectChain->ApplyEffectChain(bufIn.data(), bufOut.data(), frameLen, procInfo);
+
+    EXPECT_EQ(bufOut[0], 1.0f);
+    EXPECT_EQ(bufOut[frameLen * inChannels - 1], 1.0f); // copied region matches input
+    for (size_t i = frameLen * inChannels; i < bufOut.size(); i++) {
+        EXPECT_EQ(bufOut[i], 0.0f); // tail is zero-filled, no stale data
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

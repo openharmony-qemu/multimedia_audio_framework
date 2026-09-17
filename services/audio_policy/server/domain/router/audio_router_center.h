@@ -46,13 +46,15 @@ public:
         return audioRouterCenter;
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo &info);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesNoArbiter(FetchDeviceInfo &info);
     OutputDeviceMap FetchOutputDevicesForAllOutputStreams(std::vector<FetchDeviceInfo> &infos);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(FetchDeviceInfo &info);
     InputDeviceMap FetchInputDeviceForAllInputStreams(std::vector<FetchDeviceInfo> &infos);
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceRefinerCallback();
-    bool isCallRenderRouter(StreamUsage streamUsage);
+    bool IsCallRenderRouter(StreamUsage streamUsage);
+    bool IsCallCaptureRouter(SourceType sourceType);
 
     int32_t GetSplitInfo(std::string &splitInfo);
 

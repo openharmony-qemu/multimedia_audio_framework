@@ -938,5 +938,55 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateVolumeDataForUserSwitch_Flow, Tes
     SUCCEED();
 }
 
+/**
+ * @tc.name: SaveBootAnimationVolumeToLocal
+ * @tc.desc: Test SaveBootAnimationVolumeToLocal
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, SaveBootAnimationVolumeToLocal, TestSize.Level4)
+{
+    AudioAdapterManager adapterManager;
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    VolumeUtils::SetPCVolumeEnable(false);
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    AudioVolumeType volumeType = STREAM_NOTIFICATION;
+    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
+ 
+    volumeType = STREAM_SYSTEM;
+    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
+    
+    VolumeUtils::SetPCVolumeEnable(true);
+    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    volumeType = STREAM_SYSTEM;
+    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
+ 
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
+ 
+    volumeType = STREAM_NOTIFICATION;
+    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
+ 
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    volumeType = STREAM_MUSIC;
+    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
+ 
+    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
+ 
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    volumeType = STREAM_NOTIFICATION;
+    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
+ 
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
+ 
+    VolumeUtils::SetPCVolumeEnable(false);
+    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    volumeType = STREAM_NOTIFICATION;
+    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
+ 
+    ASSERT_NE(device, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -3172,10 +3172,6 @@ int32_t AudioServer::NotifyStreamVolumeChanged(int32_t streamType, float volume)
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("NotifyStreamVolumeChanged failed");
     }
-    ret = SetVolumeInfoForEnhanceChain(streamTypeTmp);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("SetVolumeInfoForEnhanceChain failed");
-    }
     return SUCCESS;
 }
 

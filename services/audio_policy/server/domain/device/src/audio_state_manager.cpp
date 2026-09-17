@@ -63,18 +63,6 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredToneRenderDevic
     return devDesc;
 }
 
-void AudioStateManager::SetPreferredRecognitionCaptureDevice(const shared_ptr<AudioDeviceDescriptor> &desc)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    preferredRecognitionCaptureDevice_ = desc;
-}
-
-shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecognitionCaptureDevice()
-{
-    lock_guard<std::mutex> lock(mutex_);
-    return preferredRecognitionCaptureDevice_;
-}
-
 int32_t AudioStateManager::SetAudioVKBInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);

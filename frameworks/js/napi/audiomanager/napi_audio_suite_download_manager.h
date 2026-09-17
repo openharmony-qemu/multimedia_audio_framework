@@ -27,7 +27,6 @@ namespace OHOS {
 namespace AudioStandard {
 
 inline const std::string NAPI_AUDIO_SUITE_DOWNLOAD_MGR_CLASS_NAME = "AudioSuiteDownloadManager";
-inline const std::string DOWNLOAD_STATUS_CHANGE_CALLBACK_NAME_NAPI = "downloadStatusChange";
 
 class NapiAudioSuiteDownloadManager {
 public:
@@ -43,6 +42,7 @@ private:
         int32_t networkType = 0;
         std::string featureName;
         AudioSuite::AudioSuiteDownloadStatusInfo statusInfo;
+        std::vector<AudioSuite::AudioSuiteDownloadStatusInfo> statusInfos;
     };
 
     static napi_value Construct(napi_env env, napi_callback_info info);
@@ -58,8 +58,8 @@ private:
     static napi_value StartBackgroundDownload(napi_env env, napi_callback_info info);
     static napi_value GetDownloadStatus(napi_env env, napi_callback_info info);
     static napi_value UninstallCloudRom(napi_env env, napi_callback_info info);
-    static napi_value On(napi_env env, napi_callback_info info);
-    static napi_value Off(napi_env env, napi_callback_info info);
+    static napi_value OnDownloadStatusChange(napi_env env, napi_callback_info info);
+    static napi_value OffDownloadStatusChange(napi_env env, napi_callback_info info);
     static void RegisterDownloadStatusCallback(napi_env env, napi_value *args,
         NapiAudioSuiteDownloadManager *napi);
     static void UnregisterDownloadStatusCallback(napi_env env, napi_value *args,

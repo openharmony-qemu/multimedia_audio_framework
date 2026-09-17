@@ -322,7 +322,8 @@ bool AudioInterruptStrategy::IsCanMixwithMedia(const AudioInterrupt &currentInte
     SourceType incomingSourceType = currentInterrupt.audioFocusType.sourceType;
     bool isMixStream = (incomingStreamType == STREAM_ALARM);
     bool isMixSource = (incomingSourceType == SOURCE_TYPE_MIC || incomingSourceType == SOURCE_TYPE_CAMCORDER ||
-        incomingSourceType == SOURCE_TYPE_VOICE_MESSAGE || incomingSourceType == SOURCE_TYPE_LIVE);
+        incomingSourceType == SOURCE_TYPE_VOICE_MESSAGE || incomingSourceType == SOURCE_TYPE_LIVE ||
+        incomingSourceType == SOURCE_TYPE_UNPROCESSED);
     return (isMixStream || isMixSource);
 }
 

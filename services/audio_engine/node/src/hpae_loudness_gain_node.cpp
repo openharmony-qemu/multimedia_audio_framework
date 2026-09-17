@@ -112,7 +112,8 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
         "NodeId %{public}d, sessionId %{public}d input is empty", GetNodeId(), GetSessionId());
 
     CHECK_AND_RETURN_RET((!IsFloatValueEqual(loudnessGain_, 0.0f)), inputs[0]);
-    CHECK_AND_RETURN_RET(!inputs[0]->IsValid() && GetWaitValidInput(), inputs[0]);
+    bool reCond = !inputs[0]->IsValid() && GetWaitValidInput();
+    CHECK_AND_RETURN_RET(!reCond, inputs[0]);
     CheckUpdateInfo(inputs[0]);
     if (!dlHandle_ || !audioEffectLibHandle_) {
         float *pcmDataBuffer = inputs[0]->GetPcmDataBuffer();

@@ -348,6 +348,13 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     return descs;
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesNoArbiter(
+    FetchDeviceInfo &info)
+{
+    std::lock_guard<std::mutex> lock(routerMutex_);
+    return FetchOutputDevicesInner(info);
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevices(FetchDeviceInfo &info)
 {
     std::lock_guard<std::mutex> lock(routerMutex_);
@@ -649,9 +656,16 @@ int32_t AudioRouterCenter::UnsetAudioDeviceRefinerCallback()
     return SUCCESS;
 }
 
-bool AudioRouterCenter::isCallRenderRouter(StreamUsage streamUsage)
+bool AudioRouterCenter::IsCallRenderRouter(StreamUsage streamUsage)
 {
-    return renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS;
+    auto it = renderConfigMap_.find(streamUsage);
+    return it != renderConfigMap_.end() && it->second == CALL_RENDER_ROUTERS;
+}
+
+bool AudioRouterCenter::IsCallCaptureRouter(SourceType sourceType)
+{
+    auto it = capturerConfigMap_.find(sourceType);
+    return it != capturerConfigMap_.end() && it->second == CALL_CAPTURE_ROUTERS;
 }
 
 int32_t AudioRouterCenter::GetSplitInfo(std::string &splitInfo)

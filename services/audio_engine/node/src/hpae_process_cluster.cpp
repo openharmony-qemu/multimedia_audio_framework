@@ -158,8 +158,13 @@ void HpaeProcessCluster::CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &
         idGainMap_[sessionId] = std::make_shared<HpaeGainNode>(gainNodeInfo);
     } else {
         // Reuse existing node: clear stale fade state (e.g. DONE_FADEOUT left by a previous
-        // Pause) so SignalProcess won't keep silencing data after the reconnect.
-        gainNode->ResetFadeState();
+        // Pause) so SignalProcess won't keep silencing data after the reconnect. Arm fade-in
+        // only when resuming from a fade lifecycle; keep continuity for a cleanly playing node.
+        if (gainNode->HasPendingFade()) {
+            gainNode->ResetFadeState();
+        } else {
+            gainNode->ClearFadeState();
+        }
         AUDIO_INFO_LOG("sessionId %{public}d gainNode already exist, reset fade state", sessionId);
     }
 }
@@ -194,6 +199,7 @@ void HpaeProcessCluster::CreateLoudnessGainNode(uint32_t sessionId, const HpaeNo
     CHECK_AND_RETURN_LOG(!SafeGetMap(idLoudnessGainNodeMap_, sessionId),
         "sessionId %{public}d loudnessGainNode already exist", sessionId);
     HpaeNodeInfo loudnessGainNodeInfo = preNodeInfo;
+    loudnessGainNodeInfo.waitValidInput = false;
     idLoudnessGainNodeMap_[sessionId] = std::make_shared<HpaeLoudnessGainNode>(loudnessGainNodeInfo);
 }
 
@@ -233,7 +239,6 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
     AUDIO_INFO_LOG("sessionId is %{public}u, streamType is %{public}d, sceneType is %{public}d",
         sessionId, preNode->GetNodeInfo().streamType, preNode->GetNodeInfo().sceneType);
     if (SafeGetMap(idConverterMap_, sessionId)) {
-        idConverterMap_[sessionId]->DisConnect(preNode);
         auto seNode = SafeGetMap(idSessionEffectMap_, sessionId);
         if (seNode) {
             seNode->PauseEffect();
@@ -241,6 +246,7 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
         } else {
             idLoudnessGainNodeMap_[sessionId]->DisConnect(idConverterMap_[sessionId]);
         }
+        idConverterMap_[sessionId]->DisConnect(preNode);
         idGainMap_[sessionId]->DisConnect(idLoudnessGainNodeMap_[sessionId]);
         mixerNode_->DisConnect(idGainMap_[sessionId]);
         AUDIO_INFO_LOG("Exist converterNode preOutNum is %{public}zu", mixerNode_->GetPreOutNum());
@@ -713,6 +719,11 @@ std::shared_ptr<HpaeSessionEffectNode> HpaeProcessCluster::GetSessionEffectNode(
 std::shared_ptr<HpaeLoudnessGainNode> HpaeProcessCluster::GetLoudnessGainNode(uint32_t sessionId) const
 {
     return SafeGetMap(idLoudnessGainNodeMap_, sessionId);
+}
+
+std::shared_ptr<HpaeRenderEffectNode> HpaeProcessCluster::GetRenderEffectNode() const
+{
+    return renderEffectNode_;
 }
 
 void HpaeProcessCluster::SetCollaborationStateToMixNode(CollaborationState isCollaborationEnabled)

@@ -339,6 +339,7 @@ void HpaeDirectRendererManager::CreateProcessNodes(uint32_t sessionId)
     }
     converterForGain_ = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, nodeInfo);
     converterForGain_->SetDownmixNormalization(false);
+    CHECK_AND_RETURN(sinkInfo_.deviceClass != VOIP_DIRECT_DEVICE_CLASS);
     converterForGain_->RegisterCallback(this);
 }
 
@@ -1231,7 +1232,7 @@ void HpaeDirectRendererManager::NotifyStreamChangeToSink(
     CHECK_AND_RETURN(sinkOutputNode_ != nullptr);
     StreamUsage usage = STREAM_USAGE_UNKNOWN;
     if (sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end()) {
-        usage = AudioTypeUtils::GetStreamUsageByStreamType(sinkInputNodeMap_[sessionId]->GetStreamType());
+        usage = sinkInputNodeMap_[sessionId]->GetEffectStreamUsage();
     }
     sinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
 }

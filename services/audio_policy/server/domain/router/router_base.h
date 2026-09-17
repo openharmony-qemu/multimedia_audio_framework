@@ -143,7 +143,8 @@ public:
                 device->connectState_ != SUSPEND_CONNECTED) &&
                 device->connectState_ != VIRTUAL_CONNECTED &&
                 IsDeviceUsageSupported(audioDevUsage, device) &&
-                !AudioRouterSelectStrategy::GetInstance().IsDeviceExcluded(device, audioDevUsage)) {
+                !(Util::IsEnhancedRoutingSupported() &&
+                    AudioRouterSelectStrategy::GetInstance().IsDeviceExcluded(device, audioDevUsage))) {
                 return std::move(device);
             }
             AUDIO_WARNING_LOG("unavailable device state, type[%{public}d] connectState[%{public}d] " \

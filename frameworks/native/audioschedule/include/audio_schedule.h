@@ -34,8 +34,8 @@ void SetProcessDataThreadPriority(int32_t priority);
 void ResetProcessDataThreadPriority(void);
 void UnscheduleReportData(pid_t pid, pid_t tid, const char* bundleName);
 void AuthQosForAudio();
-bool SetEndpointThreadPriority();
-bool ResetEndpointThreadPriority();
+bool SetHpaeDataThreadPriority();
+bool ResetHpaeDataThreadPriority();
 
 #ifdef __cplusplus
 }

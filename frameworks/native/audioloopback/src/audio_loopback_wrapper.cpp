@@ -17,9 +17,15 @@
 #include "audio_policy_log.h"
 #include "audio_debug_manager.h"
 
+#undef LOG_TAG
+#define LOG_TAG "AudioLoopbackWrapper"
+
 namespace OHOS {
 namespace AudioStandard {
-
+namespace {
+    static const int32_t WAIT_SERVER_RESULT_TIMEOUT_IN_MS = 1500; // 1500MS
+    static const int32_t WAIT_SERVER_STATUS_TIMEOUT_IN_MS = 200; //200MS
+};
 AudioLoopbackWrapper::AudioLoopbackWrapper(AudioLoopbackMode mode, LoopbackType type, const AppInfo &appInfo)
     : mode_(mode), type_(type), appInfo_(appInfo)
 {
@@ -102,15 +108,7 @@ int32_t AudioLoopbackWrapper::EnableNormal(bool enable)
 
 int32_t AudioLoopbackWrapper::EnableHandler(bool enable)
 {
-    if (loopbackProxy_ != nullptr) {
-        int result = SUCCESS;
-        loopbackProxy_->Enable(enable, result);
-        if (result != SUCCESS) {
-            AUDIO_ERR_LOG("ILoopback.Enable failed %{public}d", result);
-            return result;
-        }
-    }
-
+    CHECK_AND_RETURN_RET_LOG(loopbackProxy_ != nullptr, ERR_INIT_FAILED, "no proxy");
     if (private_ != nullptr) {
         return private_->Enable(enable) ? SUCCESS : ERR_UNKNOWN;
     }
@@ -126,6 +124,15 @@ int32_t AudioLoopbackWrapper::EnableControl(bool enable)
 
     int result = SUCCESS;
     loopbackProxy_->Enable(enable, result);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "failed with %{public}d", result);
+
+    // wait server notify(timeout 500ms)
+    std::unique_lock<std::mutex> waitLock(waitMutex_);
+    auto ret = waitCv_.wait_for(waitLock, std::chrono::milliseconds(WAIT_SERVER_RESULT_TIMEOUT_IN_MS));
+    CHECK_AND_RETURN_RET_LOG(ret != std::cv_status::timeout, ERR_OPERATION_FAILED, "Client wait server timed out");
+
+    waitLock.unlock();
+    result = notifyStatus_ == LOOPBACK_AVAILABLE_RUNNING ? SUCCESS : ERR_OPERATION_FAILED;
     return result;
 }
 
@@ -134,22 +141,27 @@ AudioLoopbackStatus AudioLoopbackWrapper::GetStatus()
     if (type_ == LOOPBACK_TYPE_GLOBAL_CONTROL) {
         if (loopbackProxy_ == nullptr) {
             AUDIO_ERR_LOG("ILoopback proxy is nullptr");
-            return LOOPBACK_UNAVAILABLE_DEVICE;
+            return LOOPBACK_UNAVAILABLE_SCENE;
         }
         int status = 0;
         int result = SUCCESS;
         loopbackProxy_->GetStatus(status, result);
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("ILoopback.GetStatus failed %{public}d", result);
-            return LOOPBACK_UNAVAILABLE_DEVICE;
+            return LOOPBACK_UNAVAILABLE_SCENE;
         }
-        return static_cast<AudioLoopbackStatus>(status);
+        std::unique_lock<std::mutex> waitLock(waitMutex_);
+        auto ret = waitCv_.wait_for(waitLock, std::chrono::milliseconds(WAIT_SERVER_STATUS_TIMEOUT_IN_MS));
+        CHECK_AND_RETURN_RET_LOG(ret != std::cv_status::timeout, LOOPBACK_UNAVAILABLE_SCENE,
+            "Client wait server timed out");
+        waitLock.unlock();
+        return notifyStatus_;
     }
 
     if (private_ != nullptr) {
         return private_->GetStatus();
     }
-    return LOOPBACK_AVAILABLE_IDLE;
+    return LOOPBACK_UNAVAILABLE_SCENE;
 }
 
 int32_t AudioLoopbackWrapper::SetVolume(float volume)
@@ -194,7 +206,7 @@ int32_t AudioLoopbackWrapper::SetAudioLoopbackCallback(const std::shared_ptr<Aud
     userCallback_ = callback;
 
     if (private_ != nullptr) {
-        return private_->SetAudioLoopbackCallback(callback);
+        return private_->SetAudioLoopbackCallback(shared_from_this());
     }
     return SUCCESS;
 }
@@ -272,22 +284,56 @@ AudioDevicePair AudioLoopbackWrapper::GetPreferredDevicePair()
     return AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair();
 }
 
-void AudioLoopbackWrapper::OnCommandResult(int command, bool success, int errorCode)
+void AudioLoopbackWrapper::OnStatusChange(const AudioLoopbackStatus state, const StateChangeCmdType cmdType)
 {
-    AUDIO_DEBUG_LOG("OnCommandResultFromServer, command %{public}d, success %{public}d, error %{public}d",
-        command, success, errorCode);
-    bool isEnable = static_cast<LoopbackCommand>(command) == LOOPBACK_CMD_ENABLE ? true : false;
-    if (private_ != nullptr) {
-        private_->Enable(isEnable);
+    if (type_ == LOOPBACK_TYPE_GLOBAL_HANDLER) {
+        CHECK_AND_RETURN_LOG(loopbackProxy_ != nullptr, "no proxy");
+        int32_t ret = 0;
+        loopbackProxy_->NotifyStatus(state, ret);
     }
+    std::unique_lock<std::mutex> lock(callbackMutex_);
+    CHECK_AND_RETURN_LOG(userCallback_ != nullptr, "no client callback");
+    std::shared_ptr<AudioLoopbackCallback> temp = userCallback_;
+    lock.unlock();
+    temp->OnStatusChange(static_cast<AudioLoopbackStatus>(state), CMD_FROM_SYSTEM);
 }
 
-void AudioLoopbackWrapper::OnStatusChange(int status, int reason)
+// called from AudioLoopbackManager
+void AudioLoopbackWrapper::OnCommandResult(int command, bool success, int errorCode)
 {
-    AUDIO_DEBUG_LOG("OnStatusChangeFromServer, status %{public}d, reason %{public}d", status, reason);
+    AUDIO_DEBUG_LOG("server called: command %{public}d, success %{public}d, error %{public}d",
+        command, success, errorCode);
+    CHECK_AND_RETURN_LOG(type_ == LOOPBACK_TYPE_GLOBAL_HANDLER, "not handler!");
+    if (static_cast<LoopbackCommand>(command) == LOOPBACK_CMD_GETSTATUS) {
+        CHECK_AND_RETURN_LOG(private_ != nullptr && loopbackProxy_ != nullptr, "no proxy");
+        AudioLoopbackStatus status = private_->GetStatus();
+        loopbackProxy_->NotifyStatus(status, errorCode);
+        return;
+    }
+    bool isEnable = static_cast<LoopbackCommand>(command) == LOOPBACK_CMD_ENABLE ? true : false;
+    bool result = false;
+    AudioLoopbackStatus status = LOOPBACK_AVAILABLE_IDLE;
+    if (private_ != nullptr) {
+        result = private_->Enable(isEnable);
+        status = private_->GetStatus();
+    }
+    if (isEnable && result) {
+        return;
+    }
+    CHECK_AND_RETURN_LOG(loopbackProxy_ != nullptr, "no proxy");
+    int32_t ret = 0;
+    loopbackProxy_->NotifyStatus(status, ret); // notify to all controls when failed
+}
+
+// called from AudioLoopbackManager
+void AudioLoopbackWrapper::OnStatusNotify(int status, int reason)
+{
+    AUDIO_INFO_LOG("status %{public}d, reason %{public}d", status, reason);
 
     std::lock_guard<std::mutex> lock(callbackMutex_);
     if (userCallback_ != nullptr && type_ == LOOPBACK_TYPE_GLOBAL_CONTROL) {
+        notifyStatus_ = static_cast<AudioLoopbackStatus>(status);
+        waitCv_.notify_all();
         userCallback_->OnStatusChange(static_cast<AudioLoopbackStatus>(status), CMD_FROM_SYSTEM);
     }
 }

@@ -80,6 +80,8 @@
     *CheckAndAddSessionID*;
     *UpdateSceneTypeList*;
     *CreateAudioEffectChainDynamic*;
+    *CreateAudioEffectChain*;
+    *GenerateEffectChainKey*;
     *SessionInfoMapAdd*;
     *SessionInfoMapDelete*;
     *UpdateMultichannelConfig*;

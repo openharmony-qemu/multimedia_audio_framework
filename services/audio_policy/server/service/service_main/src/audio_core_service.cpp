@@ -56,7 +56,7 @@ namespace {
 const size_t SELECT_DEVICE_HISTORY_LIMIT = 10;
 const uint32_t FIRST_SESSIONID = 100000;
 static const char *CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
-const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
+const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02 * SOURCE_PERIOD_SIZE;
 const uint32_t PC_MIC_CHANNEL_NUM = 4;
 const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 
@@ -145,6 +145,7 @@ static const std::map<DeviceType, AudioAdapterType> DEVICE_HAL_MAP = {
     { DEVICE_TYPE_NEARLINK, AudioAdapterType::TYPE_PRIMARY },
     { DEVICE_TYPE_USB_ARM_HEADSET, AudioAdapterType::TYPE_USB },
     { DEVICE_TYPE_DP, AudioAdapterType::TYPE_DP },
+    { DEVICE_TYPE_HDMI, AudioAdapterType::TYPE_PRIMARY },
     { DEVICE_TYPE_ACCESSORY, AudioAdapterType::TYPE_ACCESSORY },
     { DEVICE_TYPE_LINE_DIGITAL, AudioAdapterType::TYPE_PRIMARY },
     { DEVICE_TYPE_WIRED_MICIN, AudioAdapterType::TYPE_PRIMARY },
@@ -767,6 +768,23 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
 
+    // xml bus flag (AUDIO_OUTPUT_FLAG_3DA_DIRECT) obtained by pipe routing must be passed
+    // down to the client as audioFlag, otherwise DecideStreamClass sees 0 -> normal path.
+    // audioFlag_ only carries 0x800 when the app sent it up; the xml-derived flag lands in
+    // routeFlag_ (set by the encoding-based bus selection inside FetchRendererPipeAndExecute),
+    // so routeFlag_ must be honored too, otherwise a client that does not send the flag
+    // never reaches the 3DA direct path.
+    if ((streamDesc->audioFlag_ | streamDesc->routeFlag_) & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
+        flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_3DA_DIRECT;
+        streamDesc->audioFlag_ = static_cast<AudioFlag>(streamDesc->audioFlag_ | AUDIO_OUTPUT_FLAG_3DA_DIRECT);
+        // Keep the server-side streamDesc in sync too: the client sent this desc before
+        // DecideStreamClass updated its local rendererInfo, so rendererFlags/pipeType stored
+        // here are stale (NORMAL). Without this, re-routing at Start overwrites the
+        // collector's pipeType back from PIPE_TYPE_OUT_3DA_DIRECT to NORMAL.
+        streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+        streamDesc->rendererInfo_.pipeType = PIPE_TYPE_OUT_3DA_DIRECT;
+    }
+
     pipeManager_->RemoveSwitchStream(sessionId);
     streamDesc->SetFutureRoute(AUDIO_FLAG_NONE);
 
@@ -822,7 +840,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
 
     SetPreferredInputDeviceIfValid(streamDesc);
-    streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+    pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
     std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc = GetCaptureClientDevice(streamDesc, sessionId);
     CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
     pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
@@ -1041,8 +1059,7 @@ AudioFlag AudioCoreService::SelectRemoteAudioFlag(std::shared_ptr<AudioStreamDes
             NeedRemoteMultichannel(streamDesc), AUDIO_OUTPUT_FLAG_NORMAL,
             "movie use normal for remote device or remotecast");
         AUDIO_INFO_LOG("remote multichannel active, movie use multichannel");
-        // depend on vehicle service modification, AUDIO_OUTPUT_FLAG_MULTICHANNEL is disabled temporarily.
-        return AUDIO_OUTPUT_FLAG_NORMAL;
+        return AUDIO_OUTPUT_FLAG_MULTICHANNEL;
     }
 
     AUDIO_INFO_LOG("Use normal for remote device or remotecast");
@@ -1277,7 +1294,7 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
     if (!forceUpdate) {
         CHECK_AND_RETURN(!audioSceneManager_.IsVoiceCallRelatedScene());
     }
-    if (audioDeviceManager_.HasScoDevicesConnected()) {
+    if (audioDeviceManager_.HasScoDevicesRealConnected()) {
         auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModemCopy();
         auto inputStreamDescs = pipeManager_->GetAllInputStreamDescsCopy();
         FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
@@ -1298,7 +1315,7 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
         auto sourceType = streamDesc->capturerInfo_.sourceType;
         auto sessionId = streamDesc->sessionId_;
         if (Util::IsScoSupportSource(sourceType)) {
-            audioStateManager_.SetPreferredRecognitionCaptureDevice(make_shared<AudioDeviceDescriptor>());
+            audioRouterSelectStrategy_.SetRecognitionInputDevice(make_shared<AudioDeviceDescriptor>());
         }
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionId);
     }
@@ -2891,7 +2908,7 @@ void AudioCoreService::PrepareInputFetchInfos(
     for (const auto &streamDesc : inputStreamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
 
-        streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+        pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
 
         FetchDeviceInfo info;
         info.sourceType = streamDesc->capturerInfo_.sourceType;

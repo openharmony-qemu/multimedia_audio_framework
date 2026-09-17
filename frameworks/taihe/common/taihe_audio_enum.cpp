@@ -120,6 +120,8 @@ static const std::map<OHOS::AudioStandard::SourceType, SourceType> SOURCE_TYPE_T
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_CAMCORDER, SourceType::key_t::SOURCE_TYPE_CAMCORDER},
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_UNPROCESSED, SourceType::key_t::SOURCE_TYPE_UNPROCESSED},
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_LIVE, SourceType::key_t::SOURCE_TYPE_LIVE},
+    {OHOS::AudioStandard::SourceType::SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT,
+        SourceType::key_t::SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT},
 };
 
 static const std::map<OHOS::AudioStandard::EffectFlag, EffectFlag> EFFECT_FLAG_TAIHE_MAP = {
@@ -544,6 +546,7 @@ bool TaiheAudioEnum::IsLegalCapturerType(int32_t type)
         case TYPE_CAMCORDER:
         case TYPE_UNPROCESSED:
         case TYPE_LIVE:
+        case TYPE_UNPROCESSED_VOICE_ASSISTANT:
             result = true;
             break;
         default:
@@ -1170,6 +1173,7 @@ bool TaiheAudioEnum::IsValidSourceType(int32_t intValue)
         case OHOS::AudioStandard::SourceType::SOURCE_TYPE_CAMCORDER:
         case OHOS::AudioStandard::SourceType::SOURCE_TYPE_UNPROCESSED:
         case OHOS::AudioStandard::SourceType::SOURCE_TYPE_LIVE:
+        case OHOS::AudioStandard::SourceType::SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
             return true;
         default:
             return false;

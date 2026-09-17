@@ -115,17 +115,17 @@ void OnAddResSchedServiceFuzzTest()
 #endif
 }
 
-void SetEndpointThreadPriorityFuzzTest()
+void SetHpaeDataThreadPriorityFuzzTest()
 {
 #ifdef RESSCHE_ENABLE
-    SetEndpointThreadPriority();
+    SetHpaeDataThreadPriority();
 #endif
 }
 
-void ResetEndpointThreadPriorityFuzzTest()
+void ResetHpaeDataThreadPriorityFuzzTest()
 {
 #ifdef RESSCHE_ENABLE
-    ResetEndpointThreadPriority();
+    ResetHpaeDataThreadPriority();
 #endif
 }
 
@@ -151,8 +151,8 @@ vector<TestFuncs> g_testFuncs = {
     ResetProcessDataThreadPriorityFuzzTest,
     SetProcessDataThreadPriorityFuzzTest,
     OnAddResSchedServiceFuzzTest,
-    SetEndpointThreadPriorityFuzzTest,
-    ResetEndpointThreadPriorityFuzzTest,
+    SetHpaeDataThreadPriorityFuzzTest,
+    ResetHpaeDataThreadPriorityFuzzTest,
     ScheduleReportProcessQosLevelFuzzTest,
     UnscheduleReportProcessQosLevelFuzzTest,
 };

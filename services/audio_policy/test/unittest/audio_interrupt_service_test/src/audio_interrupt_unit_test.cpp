@@ -4978,7 +4978,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioSessionFocusMode_002, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret1.retCode);
 
     auto &newAudioInterruptZone = audioInterruptService->zonesMap_[DEFAULT_ZONE_ID];
-    EXPECT_EQ(2, newAudioInterruptZone->audioFocusInfoList.size());
+    EXPECT_EQ(1, newAudioInterruptZone->audioFocusInfoList.size());
 
     ret = audioInterruptService->DeactivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID);
     EXPECT_EQ(SUCCESS, ret);

@@ -253,6 +253,10 @@ void AudioToneParser::ParseToneInfo(std::shared_ptr<AudioXmlNode> curNode,
 void AudioToneParser::ParseSegment(std::shared_ptr<AudioXmlNode> curNode,
     int SegInx, std::shared_ptr<ToneInfo> ltoneDesc)
 {
+    if (SegInx < 0 || static_cast<uint32_t>(SegInx) >= TONEINFO_MAX_SEGMENTS + 1) {
+        AUDIO_ERR_LOG("SegInx %{public}d out of range [0, %{public}u]", SegInx, TONEINFO_MAX_SEGMENTS + 1);
+        return;
+    }
     for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
         ltoneDesc->segments[SegInx].waveFreq[i]=0;
     }
@@ -294,7 +298,7 @@ void AudioToneParser::ParseFrequency(std::string freqList, ToneSegment &ltoneseg
         }
     }
 
-    for (std::size_t i = 0; i < vect.size(); i++) {
+    for (std::size_t i = 0; i < vect.size() && i < TONEINFO_MAX_WAVES + 1; i++) {
         AUDIO_DEBUG_LOG("Freq: %{public}d", vect[i]);
         ltonesegment.waveFreq[i] = vect[i];
     }

@@ -513,24 +513,6 @@ HWTEST_F(RendererInServerFourthUnitTest, GetStandbyStatus_001, TestSize.Level1)
     EXPECT_EQ(statusRet, SUCCESS);
 }
 
-// ==================== Write3DAModeData 测试 ====================
-
-/**
- * @tc.name  : Test Write3DAModeData with normal frames
- * @tc.type  : FUNC
- * @tc.number: Write3DAModeData_Normal_001
- * @tc.desc  : Test Write3DAModeData with normal frame values.
- */
-HWTEST_F(RendererInServerFourthUnitTest, Write3DAModeData_Normal_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    int32_t writeRet = rendererInServer->Write3DAModeData(100, 200);
-    EXPECT_EQ(writeRet, SUCCESS);
-}
-
 // ==================== CheckIsUnderrun 测试 ====================
 
 /**

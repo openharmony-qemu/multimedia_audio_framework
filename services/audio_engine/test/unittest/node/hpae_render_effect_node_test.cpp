@@ -747,6 +747,11 @@ HWTEST_F(HpaeRenderEffectNodeTest, testGetExpectedInputChannelInfoWithRenderId_0
     AudioBasicFormat basicFormat;
     basicFormat.rate = SAMPLE_RATE_48000;
     basicFormat.audioChannelInfo.numChannels = STEREO;
+    // Empty the manager so the query deterministically exercises its failure path.
+    // Under the unified singleton (shared audio_effect, c41f01401a) the chain
+    // created above is visible to node-side queries; ResetInfo restores the
+    // same empty state the node used to see under the dual-singleton link.
+    AudioEffectChainManager::GetInstance()->ResetInfo();
     int32_t ret = hpaeRenderEffectNode->GetExpectedInputChannelInfo(basicFormat);
     EXPECT_NE(ret, SUCCESS);
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -1455,11 +1460,12 @@ HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_remote_offload_returnsEa
 }
 
 HWTEST_F(HpaeRenderEffectNodeTest,
-    AudioOffloadRenderer_nonOffloadDevice_returnsEarlyWhenOffloadDisabled, TestSize.Level1)
+    AudioOffloadRenderer_nonOffloadDevice_createStartEarlyStopReleaseProceed, TestSize.Level1)
 {
     // sinkInfo.deviceClass != "remote_offload" → OffloadRendererCheckNotifyEffect
-    // proceeds through GetOffloadEnabled() checks. In the unit-test environment
-    // effect offload is disabled, so all operations return ERR_INVALID_HANDLE.
+    // checks GetOffloadEnabled() only when isPcmOffload is true. With effect
+    // offload disabled, Create/Start (isPcmOffload=true) return ERR_INVALID_HANDLE,
+    // while Stop/Release (isPcmOffload=false) skip the offload check and proceed.
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID + 300;
     nodeInfo.frameLen = TEST_FRAMELEN1;
@@ -1473,8 +1479,8 @@ HWTEST_F(HpaeRenderEffectNodeTest,
 
     EXPECT_NE(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), 0);
     EXPECT_NE(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), 0);
-    EXPECT_NE(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), 0);
-    EXPECT_NE(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), 0);
 }
 
 HWTEST_F(HpaeRenderEffectNodeTest, ReconfigOutputBuffer_monoChannels, TestSize.Level1)
@@ -1705,7 +1711,7 @@ static void AddBufferedPreOutput(HpaeRenderEffectNode &node, OutputPort<HpaePcmB
     node.inputStream_.AddPreOutput(nullptr, &output);
 }
 
-HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_nonRemoteStillReturnsEarlyWithCurrentManager, TestSize.Level1)
+HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_nonRemote_createStartEarlyStopReleaseProceed, TestSize.Level1)
 {
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 1400);
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
@@ -1714,8 +1720,10 @@ HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_nonRemoteStillReturnsEar
 
     EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
     EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
-    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
-    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    // Stop/Release pass isPcmOffload=false to OffloadRendererCheckNotifyEffect,
+    // so the GetOffloadEnabled() guard is skipped and the call proceeds.
+    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), SUCCESS);
+    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), SUCCESS);
 }
 
 HWTEST_F(HpaeRenderEffectNodeTest, SignalProcess_offloadEnabledReturnsOriginalInput, TestSize.Level1)
@@ -2365,6 +2373,11 @@ HWTEST_F(HpaeRenderEffectNodeTest, GetExpectedInputChannelInfo_Error_011, TestSi
     basicFormat.audioChannelInfo.numChannels = STEREO;
 
     // Should return error when no effect chain exists
+    // Empty the manager so the query deterministically exercises its failure path.
+    // Under the unified singleton (shared audio_effect, c41f01401a) the default
+    // chains from init are visible to node-side queries; ResetInfo restores the
+    // same empty state the node used to see under the dual-singleton link.
+    AudioEffectChainManager::GetInstance()->ResetInfo();
     int32_t ret = node->GetExpectedInputChannelInfo(basicFormat);
     EXPECT_NE(ret, SUCCESS);
 
@@ -2451,9 +2464,6 @@ HWTEST_F(HpaeRenderEffectNodeTest, OffloadRendererCheckNotifyEffect_NullManager_
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceClass = "speaker";
 
-    // With null manager or offload disabled, should return false
-    // Note: We can't easily make AudioEffectChainManager::GetInstance() return null,
-    // but we can verify the offload disabled path
     EXPECT_NE(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), 0);
 }
 
@@ -2680,20 +2690,46 @@ HWTEST_F(HpaeRenderEffectNodeTest, ReleaseAudioEffectChain_OffloadEnabled_031, T
 }
 
 /**
- * @tc.name   : Test UpdateAudioEffectChainInfo with null manager
- * @tc.number : UpdateAudioEffectChainInfo_NullManager_032
- * @tc.desc   : Test UpdateAudioEffectChainInfo returns early when manager is null.
+ * @tc.name   : Test AudioOffloadRenderer Stop/Release proceed when offload disabled
+ * @tc.number : AudioOffloadRenderer_PcmOffloadStopReleaseProceed_034
+ * @tc.desc   : Test the collab bug fix scenario: with effect offload disabled,
+ *              Stop/Release still proceed (isPcmOffload=false skips the offload gate)
+ *              while Create/Start are blocked (isPcmOffload=true keeps the gate).
  */
-HWTEST_F(HpaeRenderEffectNodeTest, UpdateAudioEffectChainInfo_NullManager_032, TestSize.Level1)
+HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_PcmOffloadStopReleaseProceed_034, TestSize.Level1)
 {
-    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6500);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    EffectManagerOffloadGuard guard;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6700);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
 
-    // Should not crash even if manager operations fail
-    node->UpdateAudioEffectChainInfo(nodeInfo);
-    SUCCEED();
-}
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "speaker";
+    // Enhanced-routing platforms force-disable effect offload regardless of spkOffloadEnabled_;
+    // with the flag set, a closed gate means the platform knob closed it. Create/Start are
+    // blocked there, while Stop/Release proceed (isPcmOffload=false skips the gate).
+    if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
+        EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), SUCCESS);
+        EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), SUCCESS);
+    } else {
+        EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+        EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    }
+    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), SUCCESS);
+    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), SUCCESS);
 
+    sinkInfo.deviceClass = "remote_offload";
+    EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -25,6 +25,7 @@
 #include "media_monitor_manager.h"
 #include "audio_effect_map.h"
 #include "audio_utils.h"
+#include <algorithm>
 #include <cinttypes>
 
 namespace OHOS {
@@ -372,7 +373,14 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     DumpEffectProcessData(dumpNameIn_, static_cast<void *>(bufIn), inTotlen);
 
     if (IsEmptyEffectHandles()) {
-        CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error in apply effect");
+        // Copy by input length so a smaller bufIn is never overread; zero the remaining output tail
+        size_t copyLen = std::min(inTotlen, outTotlen);
+        CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, copyLen) == 0, "memcpy error in apply effect");
+        size_t tailLen = outTotlen - copyLen;
+        if (tailLen > 0) {
+            CHECK_AND_RETURN_LOG(memset_s(bufOut + copyLen / sizeof(float), tailLen, 0, tailLen) == EOK,
+                "memset error in apply effect");
+        }
         DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
         return;
     }

@@ -12,11 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_SUITE_MANAGER_H
-#define AUDIO_SUITE_MANAGER_H
+#ifndef AUDIO_SUITE_PIPELINE_H
+#define AUDIO_SUITE_PIPELINE_H
 
-#include <cstdint>
+#include <string>
 #include <memory>
+#include <vector>
+#include <cstdint>
 #include "audio_suite_base.h"
 
 namespace OHOS {
@@ -35,20 +37,19 @@ public:
     virtual int32_t OnRequestDataCallBack(AudioMetaFrame &metaFrame, int32_t* responseMetaDataSize, bool *finished) = 0;
 };
 
-class IAudioSuiteManager {
+class AudioSuitePipeline {
 public:
-    virtual ~IAudioSuiteManager() = default;
+    virtual ~AudioSuitePipeline() = default;
 
-    static IAudioSuiteManager& GetAudioSuiteManager();
+    static int32_t Create(PipelineWorkMode workMode, std::shared_ptr<AudioSuitePipeline> &pipeline);
+    static int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool &isSupported);
 
-    virtual int32_t Init() = 0;
     virtual int32_t DeInit() = 0;
-    virtual int32_t CreatePipeline(uint32_t &pipelineId, PipelineWorkMode workMode) = 0;
-    virtual int32_t DestroyPipeline(uint32_t pipelineId) = 0;
-    virtual int32_t StartPipeline(uint32_t pipelineId) = 0;
-    virtual int32_t StopPipeline(uint32_t pipelineId) = 0;
-    virtual int32_t GetPipelineState(uint32_t pipelineId, AudioSuitePipelineState &state) = 0;
-    virtual int32_t CreateNode(uint32_t pipelineId, AudioNodeBuilder &builder, uint32_t &nodeId) = 0;
+    virtual int32_t Start() = 0;
+    virtual int32_t Stop() = 0;
+    virtual int32_t GetPipelineState(AudioSuitePipelineState &state) = 0;
+
+    virtual int32_t CreateNode(AudioNodeBuilder builder, uint32_t &nodeId) = 0;
     virtual int32_t DestroyNode(uint32_t nodeId) = 0;
     virtual int32_t BypassEffectNode(uint32_t nodeId, bool bypass) = 0;
     virtual int32_t GetNodeBypassStatus(uint32_t nodeId, bool &bypass) = 0;
@@ -57,21 +58,28 @@ public:
         std::shared_ptr<InputNodeRequestDataCallBack> callback) = 0;
     virtual int32_t SetRequestMetaDataCallback(uint32_t nodeId,
         std::shared_ptr<InputNodeRequestMetaDataCallBack> callback) = 0;
-    virtual int32_t GetSoundFieldType(uint32_t nodeId, SoundFieldType &soundFieldType) = 0;
-    virtual int32_t GetEqualizerFrequencyBandGains(uint32_t nodeId,
-        AudioEqualizerFrequencyBandGains &frequencyBandGains) = 0;
-    virtual int32_t GetVoiceBeautifierType(uint32_t nodeId,
-        VoiceBeautifierType &voiceBeautifierType) = 0;
-    virtual int32_t GetEnvironmentType(uint32_t nodeId, EnvironmentType &environmentType) = 0;
     virtual int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) = 0;
-    virtual int32_t DisConnectNodes(uint32_t srcNode, uint32_t destNode) = 0;
-    virtual int32_t SetEqualizerFrequencyBandGains(uint32_t nodeId, AudioEqualizerFrequencyBandGains gains) = 0;
-    virtual int32_t SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType) = 0;
-    virtual int32_t SetEnvironmentType(uint32_t nodeId, EnvironmentType environmentType) = 0;
-    virtual int32_t SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifierType voiceBeautifierType) = 0;
+    virtual int32_t DisconnectNodes(uint32_t srcNodeId, uint32_t destNodeId) = 0;
+    virtual int32_t RenderFrame(
+        uint8_t *audioData, int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) = 0;
+    virtual int32_t MultiRenderFrame(
+        uint8_t **audioDataArray, int32_t arraySize,
+        int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) = 0;
+    virtual int32_t MetaRenderFrame(AudioMetaFrame &metaFrame,
+        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag) = 0;
     virtual int32_t SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) = 0;
     virtual int32_t GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) = 0;
     virtual int32_t GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSize, uint32_t &outSize) = 0;
+
+    // Typed parameter Set/Get (with validation)
+    virtual int32_t SetEqualizerFrequencyBandGains(uint32_t nodeId, AudioEqualizerFrequencyBandGains gains) = 0;
+    virtual int32_t GetEqualizerFrequencyBandGains(uint32_t nodeId, AudioEqualizerFrequencyBandGains &gains) = 0;
+    virtual int32_t SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType) = 0;
+    virtual int32_t GetSoundFieldType(uint32_t nodeId, SoundFieldType &soundFieldType) = 0;
+    virtual int32_t SetEnvironmentType(uint32_t nodeId, EnvironmentType environmentType) = 0;
+    virtual int32_t GetEnvironmentType(uint32_t nodeId, EnvironmentType &environmentType) = 0;
+    virtual int32_t SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifierType voiceBeautifierType) = 0;
+    virtual int32_t GetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifierType &voiceBeautifierType) = 0;
     virtual int32_t SetSpaceRenderPositionParams(uint32_t nodeId, AudioSpaceRenderPositionParams position) = 0;
     virtual int32_t GetSpaceRenderPositionParams(uint32_t nodeId, AudioSpaceRenderPositionParams &position) = 0;
     virtual int32_t SetSpaceRenderRotationParams(uint32_t nodeId, AudioSpaceRenderRotationParams rotation) = 0;
@@ -84,18 +92,11 @@ public:
     virtual int32_t GetPureVoiceChangeOption(uint32_t nodeId, AudioPureVoiceChangeOption &option) = 0;
     virtual int32_t SetGeneralVoiceChangeType(uint32_t nodeId, AudioGeneralVoiceChangeType type) = 0;
     virtual int32_t GetGeneralVoiceChangeType(uint32_t nodeId, AudioGeneralVoiceChangeType &type) = 0;
-    virtual int32_t RenderFrame(
-        uint32_t pipelineId, uint8_t *audioData,
-        int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) = 0;
-    virtual int32_t MultiRenderFrame(uint32_t pipelineId,
-        AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag) = 0;
-    virtual int32_t MetaRenderFrame(uint32_t pipelineId, AudioMetaFrame &metaFrame,
-        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag) = 0;
-    virtual int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool &isSupported) = 0;
-    virtual int32_t PrintInfo(uint32_t pipelineId, int32_t fd) = 0;
+
+    virtual int32_t PrintInfo(int32_t fd) = 0;
 };
 
 }  // namespace AudioSuite
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif  // AUDIO_SUITE_MANAGER_H
+#endif  // AUDIO_SUITE_PIPELINE_H

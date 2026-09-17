@@ -26,6 +26,10 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t DEFAULT_STREAM_ID = 10;
+// 3DA HDI whole-frame contract, keep in sync with the constants in pro_renderer_stream_impl.cpp
+constexpr uint32_t AVS3METADATA_SIZE = 19824;
+constexpr uint32_t AUDIO_VIVID_SAMPLES = 1024;
+constexpr uint32_t THREE_DA_HDI_HEADER_FRAMES = 3;
 void ProRendererStreamImplUnitTest::SetUpTestCase(void)
 {
     // input testsuit setup step，setup invoked before all testcases
@@ -244,7 +248,7 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_003, TestSize.Level1)
 /**
  * @tc.name  : InitParams_Direct3DA_001
  * @tc.type  : FUNC
- * @tc.number: Test InitParams when direct3DATestFlag is 1 to verify bypass logic and buffer allocation
+ * @tc.number: Test InitParams 3DA direct stream to verify bypass logic and whole-frame buffer allocation
  */
 HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_001, TestSize.Level1)
 {
@@ -263,12 +267,17 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_FALSE(rendererStreamImpl->isNeedResample_);
     EXPECT_FALSE(rendererStreamImpl->isNeedMcr_);
+    // Each sinkBuffer slot holds one whole 3DA HDI frame: (PCM + header) frames + aligned metadata
+    uint32_t frameSize = 2 * 8; // S16LE 2 bytes per sample * 8 channels
+    uint32_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
+    size_t expectedSlotSize = (AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize + metaAligned;
+    EXPECT_EQ(rendererStreamImpl->sinkBuffer_[0].size(), expectedSlotSize);
 }
 
 /**
  * @tc.name  : InitParams_Direct3DA_002
  * @tc.type  : FUNC
- * @tc.number: Test InitParams when direct3DATestFlag is 0 to verify bypass logic and buffer allocation
+ * @tc.number: Test InitParams AUDIOVIVID stream without 3DA direct flag goes the resample and mixer path
  */
 HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_002, TestSize.Level1)
 {
@@ -288,6 +297,28 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_002, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_TRUE(rendererStreamImpl->isNeedResample_);
     EXPECT_TRUE(rendererStreamImpl->isNeedMcr_);
+}
+
+/**
+ * @tc.name  : InitParams_Direct3DA_003
+ * @tc.type  : FUNC
+ * @tc.number: Test InitParams 3DA direct stream with zero channels returns ERR_INVALID_PARAM
+ */
+HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.channels = CHANNEL_UNKNOW; // zero byteSizePerFrame_
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
+    rendererStreamImpl->status_ = I_STATUS_INVALID;
+
+    // zero channels -> zero byteSizePerFrame_ -> guard rejects before any division
+    int32_t ret = rendererStreamImpl->InitParams();
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -886,6 +917,115 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_010, TestSize.Level3)
     rendererStreamImpl->bufferInfo_.format = 24;
     rendererStreamImpl->EnqueueBuffer(bufferDesc);
     EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 6);
+}
+
+/**
+* @tc.name  : EnqueueBuffer_Direct3DA_011
+* @tc.type  : FUNC
+* @tc.number: Test EnqueueBuffer 3DA direct passthrough: whole frame copied byte-identical,
+*             oversize buffer dropped without overflowing the slot
+*/
+HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_Direct3DA_011, TestSize.Level3)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.channels = CHANNEL_8;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
+    rendererStreamImpl->status_ = I_STATUS_INVALID;
+    ASSERT_EQ(rendererStreamImpl->InitParams(), SUCCESS);
+
+    uint32_t frameSize = 2 * 8; // S16LE 2 bytes per sample * 8 channels
+    uint32_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
+    size_t slotSize = static_cast<size_t>((AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize
+        + metaAligned);
+    ASSERT_EQ(rendererStreamImpl->sinkBuffer_[0].size(), slotSize);
+
+    // one whole frame passes through byte-identical
+    std::vector<uint8_t> wholeFrame(slotSize, 0x5A);
+    BufferDesc bufferDesc;
+    bufferDesc.buffer = wholeFrame.data();
+    bufferDesc.bufLength = slotSize;
+    EXPECT_EQ(rendererStreamImpl->EnqueueBuffer(bufferDesc), SUCCESS);
+    int32_t writeIndex = rendererStreamImpl->readQueue_.front();
+    bool identical = true;
+    for (size_t i = 0; i < slotSize; i++) {
+        if (static_cast<uint8_t>(rendererStreamImpl->sinkBuffer_[writeIndex][i]) != wholeFrame[i]) {
+            identical = false;
+            break;
+        }
+    }
+    EXPECT_TRUE(identical);
+
+    // oversize buffer is dropped, never overflows the slot
+    std::vector<uint8_t> oversize(slotSize + 1, 0xA5);
+    bufferDesc.buffer = oversize.data();
+    bufferDesc.bufLength = oversize.size();
+    EXPECT_EQ(rendererStreamImpl->EnqueueBuffer(bufferDesc), SUCCESS);
+    writeIndex = rendererStreamImpl->readQueue_.back();
+    bool slotUntouched = true;
+    for (size_t i = 0; i < slotSize; i++) {
+        if (rendererStreamImpl->sinkBuffer_[writeIndex][i] != 0) {
+            slotUntouched = false;
+            break;
+        }
+    }
+    EXPECT_TRUE(slotUntouched);
+}
+
+/**
+* @tc.name  : Test WriteToSinkBuffer passes the 3DA whole frame through untouched
+* @tc.type  : FUNC
+* @tc.number: WriteToSinkBuffer_3DA_Direct_Passthrough_001
+* @tc.desc  : The client assembles the whole 3DA HDI frame; the server side copies it into
+*             the sink slot byte-identically and never assembles PCM/metadata itself.
+*/
+HWTEST(ProRendererStreamImplUnitTest, WriteToSinkBuffer_3DA_Direct_Passthrough_001, TestSize.Level3)
+{
+    constexpr uint8_t FRAME_SENTINEL = 0x5A;
+
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.channels = CHANNEL_8;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    processConfig.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
+    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
+    rendererStreamImpl->status_ = I_STATUS_INVALID;
+    ASSERT_EQ(rendererStreamImpl->InitParams(), SUCCESS);
+    EXPECT_FALSE(rendererStreamImpl->isNeedResample_);
+    EXPECT_FALSE(rendererStreamImpl->isNeedMcr_);
+
+    const uint32_t frameSize = static_cast<uint32_t>(processConfig.streamInfo.channels) * sizeof(int16_t);
+    const uint32_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
+    const uint32_t wholeFrameLen = (AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize
+        + metaAligned; // one whole HDI frame, 36256 bytes for 8ch S16LE
+
+    // The client (Write3DADirectBuffer) assembles magic|size1|metadata|align|size2|pcm; the
+    // server side only passes it through, so the slot must be a byte-identical copy.
+    std::vector<uint8_t> wholeFrame(wholeFrameLen, FRAME_SENTINEL);
+    BufferDesc bufferDesc;
+    bufferDesc.buffer = wholeFrame.data();
+    bufferDesc.bufLength = wholeFrameLen;
+
+    int32_t writeIndex = rendererStreamImpl->PopWriteBufferIndex();
+    ASSERT_GE(writeIndex, 0);
+    rendererStreamImpl->WriteToSinkBuffer(bufferDesc, static_cast<uint32_t>(writeIndex));
+
+    const auto &sinkSlot = rendererStreamImpl->sinkBuffer_[static_cast<size_t>(writeIndex)];
+    ASSERT_EQ(sinkSlot.size(), wholeFrameLen);
+    bool identical = true;
+    for (uint32_t i = 0; i < wholeFrameLen; i++) {
+        if (static_cast<uint8_t>(sinkSlot[i]) != FRAME_SENTINEL) {
+            identical = false;
+            break;
+        }
+    }
+    EXPECT_TRUE(identical);
 }
 
 /**
@@ -1584,10 +1724,13 @@ HWTEST(ProRendererStreamImplUnitTest, InitBasicInfo_002, TestSize.Level0)
         std::make_shared<ProRendererStreamImpl>(processConfig, false);
 
     rendererStreamImpl->InitBasicInfo(processConfig.streamInfo);
-    uint32_t metadataSize = 19824;
-    uint32_t audiovividSamples = 1024;
-    uint32_t expectedMinBufSize = audiovividSamples * 8 * 2 + metadataSize; // 8 for channel 2 bit format
-    EXPECT_EQ(rendererStreamImpl->spanSizeInFrame_, audiovividSamples);
+    // Whole-frame geometry: frameSize = 2 bytes * 8 ch = 16; metadata 19824 is already 16-aligned,
+    // span = PCM frames + header frames + metadata frames, minBufferSize = one whole frame.
+    uint32_t frameSize = 2 * 8; // S16LE 2 bytes per sample * 8 channels
+    uint32_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
+    uint32_t expectedSpanSize = AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES + metaAligned / frameSize;
+    uint32_t expectedMinBufSize = (AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize + metaAligned;
+    EXPECT_EQ(rendererStreamImpl->spanSizeInFrame_, expectedSpanSize);
     EXPECT_EQ(rendererStreamImpl->minBufferSize_, expectedMinBufSize);
 }
 
@@ -1877,56 +2020,6 @@ HWTEST(ProRendererStreamImplUnitTest, GetLatencyWithFlag_HardwareFetcherSuccess_
     EXPECT_EQ(ret, SUCCESS);
     const uint64_t expectedLatency = static_cast<uint64_t>(FETCHER_LATENCY_MS) * AUDIO_US_PER_MS;
     EXPECT_EQ(latency, expectedLatency);
-}
-
-/**
- * @tc.name  : Test WriteToSinkBuffer copies AVS3 metadata after PCM in the 3DA-direct path
- * @tc.type  : FUNC
- * @tc.number: WriteToSinkBuffer_3DA_Direct_001
- */
-HWTEST(ProRendererStreamImplUnitTest, WriteToSinkBuffer_3DA_Direct_001, TestSize.Level3)
-{
-    // Constants mirror the file-static values in pro_renderer_stream_impl.cpp.
-    constexpr uint32_t AVS3_METADATA_SIZE = 19824;             // AVS3METADATA_SIZE
-    constexpr uint32_t AUDIO_VIVID_SAMPLES_PER_FRAME = 1024;   // AUDIO_VIVID_SAMPLES
-    constexpr uint8_t METADATA_SENTINEL = 0x5A;
-
-    AudioProcessConfig processConfig;
-    processConfig.streamInfo.channels = CHANNEL_8;
-    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    processConfig.streamInfo.format = SAMPLE_S16LE;
-    processConfig.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
-    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
-    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
-
-    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
-    rendererStreamImpl->status_ = I_STATUS_INVALID;
-    ASSERT_EQ(rendererStreamImpl->InitParams(), SUCCESS);
-    // The 3DA-direct bypass disables both resample and multi-channel down-mix.
-    EXPECT_FALSE(rendererStreamImpl->isNeedResample_);
-    EXPECT_FALSE(rendererStreamImpl->isNeedMcr_);
-
-    const uint32_t bytesPerSample = sizeof(int16_t); // SAMPLE_S16LE -> 2 bytes
-    const uint32_t channelCount = static_cast<uint32_t>(processConfig.streamInfo.channels);
-    const uint32_t pcmLen = AUDIO_VIVID_SAMPLES_PER_FRAME * channelCount * bytesPerSample;
-    const uint32_t metaLen = AVS3_METADATA_SIZE;
-    std::vector<uint8_t> pcmBuffer(pcmLen, 0);
-    std::vector<uint8_t> metaBuffer(metaLen, METADATA_SENTINEL);
-
-    BufferDesc bufferDesc;
-    bufferDesc.buffer = pcmBuffer.data();
-    bufferDesc.bufLength = pcmLen;
-    bufferDesc.metaBuffer = metaBuffer.data();
-    bufferDesc.metaLength = metaLen;
-
-    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
-
-    // The first write slot holds PCM followed by metadata at offset bufLength.
-    const auto &sinkSlot = rendererStreamImpl->sinkBuffer_[0];
-    EXPECT_EQ(sinkSlot.size(), pcmLen + metaLen);
-    EXPECT_EQ(static_cast<uint8_t>(sinkSlot[pcmLen]), METADATA_SENTINEL);
-    EXPECT_EQ(static_cast<uint8_t>(sinkSlot[pcmLen + metaLen - 1]), METADATA_SENTINEL);
 }
 
 /**

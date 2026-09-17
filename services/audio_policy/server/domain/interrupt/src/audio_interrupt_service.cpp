@@ -340,6 +340,22 @@ void AudioInterruptService::RecordSilentWithPauseStrategyEvent(const AudioInterr
         }
 }
 
+void AudioInterruptService::RecordNavWithPauseStrategyEvent(const AudioInterrupt &audioInterrupt)
+{
+    if (audioInterrupt.audioFocusType.streamType != STREAM_NAVIGATION || interruptDfx_ == nullptr) {
+        return;
+    }
+    AudioConcurrencyMode mode = audioInterrupt.sessionStrategy.concurrencyMode;
+    if (IsIndependentStrategyValid(audioInterrupt)) {
+        mode = audioInterrupt.independentStrategy.concurrencyMode;
+    } else if (sessionService_.IsAudioSessionActivated(audioInterrupt.pid)) {
+        mode = sessionService_.GetSessionStrategy(audioInterrupt.pid);
+    }
+    if (mode == AudioConcurrencyMode::PAUSE_OTHERS) {
+        interruptDfx_->RecordNavWithPauseStrategyEvent(audioInterrupt);
+    }
+}
+
 void AudioInterruptService::AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
 {
     bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
@@ -1408,6 +1424,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         " zoneId: %{public}d usage: %{public}d source: %{public}d isCheckMuteStream: %{public}d deviceTag: %{public}s",
         incomingStreamId, currAudioInterrupt.pid, streamType, zoneId, currAudioInterrupt.streamUsage,
         incomingSourceType, currAudioInterrupt.isCheckMuteStream, incommingDeviceTag.c_str());
+    UpdateAudioFocusCheckMuteFlag(zoneId, currAudioInterrupt);
 
     if (AudioInterruptIsStandbyInFocusList(zoneId, incomingStreamId, incommingDeviceTag) ||
         (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId, incommingDeviceTag) && !isUpdatedAudioStrategy)) {
@@ -1415,6 +1432,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
             " active audio interrupt.");
         return SUCCESS;
     }
+    RecordNavWithPauseStrategyEvent(currAudioInterrupt);
     GameRecogSetParam(GetClientTypeByStreamId(incomingStreamId), incomingSourceType, true);
     ResetNonInterruptControl(currAudioInterrupt);
     bool shouldReturnSuccess = false;
@@ -1706,7 +1724,7 @@ void AudioInterruptService::UpdateContextForAudioZone(const int32_t zoneId,
     zoneManager_.UpdateContextForAudioZone(zoneId, context);
 }
 
-int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
+int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal)
 {
     std::unique_lock<std::mutex> lock(mutex_);
     int32_t ret = zoneManager_.MigrateAudioInterruptZone(zoneId, func);
@@ -1715,7 +1733,7 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, ZONEID_DEFAULT, true, isInternal);
     return SUCCESS;
 }
 
@@ -2142,11 +2160,18 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
                 AUDIO_INFO_LOG("Update hint type for system app anyway, pid: %{public}d, strategy: %{public}d",
                     incomingInterrupt.pid, static_cast<int32_t>(concurrencyMode));
                 focusEntry.hintType = modeToHint->second;
+                ApplyDuckPassthroughMode(focusEntry);
                 return;
             }
         }
     }
+    UpdateHintTypeByConcurrencyMode(concurrencyMode, focusEntry);
+    ApplyDuckPassthroughMode(focusEntry);
+}
 
+void AudioInterruptService::UpdateHintTypeByConcurrencyMode(AudioConcurrencyMode concurrencyMode,
+    AudioFocusEntry &focusEntry)
+{
     switch (concurrencyMode) {
         case AudioConcurrencyMode::DUCK_OTHERS:
             if (focusEntry.hintType == INTERRUPT_HINT_DUCK ||
@@ -2167,6 +2192,15 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
             AUDIO_INFO_LOG("The concurrency mode is %{public}d. No need to update hint type",
                 static_cast<int32_t>(concurrencyMode));
             break;
+    }
+}
+
+void AudioInterruptService::ApplyDuckPassthroughMode(AudioFocusEntry &focusEntry)
+{
+    if (duckPassthroughMode_ && focusEntry.hintType == INTERRUPT_HINT_DUCK) {
+        AUDIO_INFO_LOG("change duck to mix for enable duckPassthroughMode");
+        focusEntry.hintType = INTERRUPT_HINT_NONE;
+        focusEntry.actionOn = INCOMING;
     }
 }
 
@@ -2625,6 +2659,7 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     if (interruptCustom_ != nullptr) {
         interruptCustom_->UpdateCustomFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     }
+    ApplyDuckPassthroughMode(focusEntry);
 }
 
 bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator

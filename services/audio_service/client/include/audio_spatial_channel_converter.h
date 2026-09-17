@@ -51,6 +51,7 @@ class AudioSpatialChannelConverter {
 public:
     AudioSpatialChannelConverter() = default;
     bool Init(const AudioStreamParams info, const ConverterConfig cfg);
+    bool IsAlgoLoaded();
     bool GetInputBufferSize(size_t &bufferSize);
     size_t GetMetaSize();
     bool CheckInputValid(const BufferDesc bufDesc);

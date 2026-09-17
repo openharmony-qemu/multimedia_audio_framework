@@ -453,7 +453,7 @@ private:
     void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
         std::vector<VolumePoint> &volumePoints);
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
-    void SaveNotificationVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
+    void SaveBootAnimationVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
         AudioVolumeType volumeType);
     int32_t SetSystemVolumeToEffect(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     int32_t SetAppVolumeDb(int32_t appUid, DeviceType deviceType);
@@ -500,6 +500,9 @@ private:
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
+    static bool Is3daDirectBusPort(const AudioModuleInfo &audioModuleInfo);
+    static void ConvergeTo3daSink(const AudioModuleInfo &audioModuleInfo, std::string &deviceClass,
+        std::string &idInfo);
     void UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceDescriptor> device, AudioVolumeType volumeType);
     bool IsDistributedVolumeType(AudioStreamType streamType);
     void GetHdiSourceTypeToAudioSourceAttr(IAudioSourceAttr &attr, int32_t sourceType) const;

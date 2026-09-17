@@ -107,6 +107,9 @@ public:
     std::string GetClassNameBySessionId(uint32_t sessionId);
     std::shared_ptr<AudioDeviceDescriptor> GetProcessDeviceInfoBySessionId(uint32_t sessionId,
         AudioStreamInfo &streamInfo);
+    // Bus address of the 3da direct bus port pipe (module name when busAddress is empty);
+    // empty when this device has no 3da pipe.
+    std::string Get3daDirectBusAddress();
 
     void StartClient(uint32_t sessionId);
     void PauseClient(uint32_t sessionId);
@@ -195,6 +198,8 @@ public:
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsBySourceType(SourceType sourceType);
     void UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
+    void UpdateOldDeviceDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDesc);
     StreamUsage GetLastestRunningCallStreamUsage();
     bool HasUltraFastPipe();
     bool IsUltraFastSupportedDevice(DeviceType deviceType);

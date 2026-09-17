@@ -414,10 +414,11 @@ int32_t AudioSession::SetSessionDefaultOutputDevice(const DeviceType &deviceType
         AUDIO_INFO_LOG("The deviceType is illegal, the default device will not be changed.");
         return ERROR_INVALID_PARAM;
     }
-    CHECK_AND_RETURN_RET(defaultDeviceType_ != deviceType, SUCCESS);
+    CHECK_AND_RETURN_RET(!(defaultDeviceType_ == deviceType && deviceType == DEVICE_TYPE_DEFAULT), SUCCESS);
     if (defaultDeviceType_ != DEVICE_TYPE_INVALID && deviceType == DEVICE_TYPE_DEFAULT) {
         defaultDeviceType_ = deviceType;
         UpdateVoipStreamsDefaultOutputDevice();
+        needToFetch_ = true;
         return SUCCESS;
     } else {
         defaultDeviceType_ = deviceType;

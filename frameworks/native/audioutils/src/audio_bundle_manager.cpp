@@ -32,6 +32,7 @@
 namespace {
 constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 constexpr int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
+constexpr int32_t BASE_APP_UID = 10000;
 }
 
 namespace OHOS {
@@ -151,6 +152,7 @@ std::string AudioBundleManager::GetBundleNameImpl()
 
 std::string AudioBundleManager::GetBundleNameFromUidImpl(int32_t callingUid)
 {
+    CHECK_AND_RETURN_RET(callingUid >= BASE_APP_UID, "");
     std::lock_guard<std::mutex> processLock(processMutex_);
 
     std::string bundleName = FindBundleNameFromMap(callingUid);

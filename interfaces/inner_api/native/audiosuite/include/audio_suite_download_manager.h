@@ -38,18 +38,18 @@ public:
     AudioSuiteRomDownloadCallback() = default;
     virtual ~AudioSuiteRomDownloadCallback() = default;
 
-    virtual int32_t GetFeatureNewVersion(
-        const std::string featureName, AudioSuiteCloudRomVersionInfo &newfeatureNameInfos, int32_t &funcResult) = 0;
-    virtual int32_t GetFeatureStatus(
-        const std::string featureName, AudioSuiteDownloadStatusInfo &statusInfos, int32_t &funcResult) = 0;
+    virtual int32_t GetFeatureNewVersion(const std::vector<std::string>& featureNames,
+        std::vector<AudioSuiteCloudRomVersionInfo>& newfeatureNameInfos) = 0;
+    virtual int32_t GetFeatureStatus(const std::vector<std::string>& featureNames,
+        std::vector<AudioSuiteDownloadStatusInfo>& statusInfos) = 0;
     virtual int32_t DownloadAndInstall(
-        const bool downloadCondition, const std::string featureName, int32_t &funcResult) = 0;
-    virtual int32_t PauseCloudRom(const std::string featureName, int32_t &funcResult) = 0;
-    virtual int32_t CancelCloudRom(const std::string featureName, int32_t &funcResult) = 0;
-    virtual int32_t UninstallCloudRom(const std::string featureName, int32_t &funcResult) = 0;
+        const bool allowedCellularNet, const std::vector<std::string>& featureNames) = 0;
+    virtual int32_t PauseCloudRom(const std::vector<std::string>& featureNames) = 0;
+    virtual int32_t CancelCloudRom(const std::vector<std::string>& featureNames) = 0;
+    virtual int32_t UninstallCloudRom(const std::vector<std::string>& featureNames) = 0;
 
-    virtual int32_t RegisterDownloadStatusCallback(int32_t &funcResult) = 0;
-    virtual int32_t UnregisterDownloadStatusCallback(int32_t &funcResult) = 0;
+    virtual int32_t RegisterDownloadStatusCallback() = 0;
+    virtual int32_t UnregisterDownloadStatusCallback() = 0;
 };
 
 class AudioSuiteDownloadManager {
@@ -58,22 +58,31 @@ public:
     virtual ~AudioSuiteDownloadManager() = default;
 
     // for ohaudiosuite (with IPC timeout protection, for synchronous callers)
+    virtual int32_t GetInstallStatus(const std::vector<std::string>& featureNames,
+        std::vector<bool>& installStatus) = 0;
     virtual int32_t RegisterDownloadStatusCallback(std::shared_ptr<DownloadStatusCallback> callback) = 0;
     virtual int32_t UnregisterDownloadStatusCallback() = 0;
-    virtual int32_t StartDownload(const std::string& featureName, bool allowedCellularNet = true) = 0;
-    virtual int32_t PauseDownload(const std::string& featureName) = 0;
-    virtual int32_t CancelDownload(const std::string& featureName) = 0;
-    virtual int32_t StartBackgroundDownload(const std::string& featureName) = 0;
-    virtual int32_t GetDownloadStatus(const std::string& featureName, AudioSuiteDownloadStatusInfo& status) = 0;
-    virtual int32_t UninstallCloudRom(const std::string& featureName) = 0;
+    virtual int32_t StartDownload(const std::vector<std::string>& featureNames, bool allowedCellularNet) = 0;
+    virtual int32_t PauseDownload(const std::vector<std::string>& featureNames) = 0;
+    virtual int32_t CancelDownload(const std::vector<std::string>& featureNames) = 0;
+    virtual int32_t StartBackgroundDownload(const std::vector<std::string>& featureNames) = 0;
+    virtual int32_t GetDownloadStatus(const std::vector<std::string>& featureNames,
+        std::vector<AudioSuiteDownloadStatusInfo>& status) = 0;
+    virtual int32_t GetFeatureNewVersion(const std::vector<std::string>& featureNames,
+        std::vector<AudioSuiteCloudRomVersionInfo>& versionInfos) = 0;
+    virtual int32_t UninstallCloudRom(const std::vector<std::string>& featureNames) = 0;
 
     // Direct versions (without IPC timeout protection, for async callers like NAPI AsyncWork)
-    virtual int32_t StartDownloadDirect(const std::string& featureName, bool allowedCellularNet = true) = 0;
-    virtual int32_t PauseDownloadDirect(const std::string& featureName) = 0;
-    virtual int32_t CancelDownloadDirect(const std::string& featureName) = 0;
-    virtual int32_t StartBackgroundDownloadDirect(const std::string& featureName) = 0;
-    virtual int32_t GetDownloadStatusDirect(const std::string& featureName, AudioSuiteDownloadStatusInfo& status) = 0;
-    virtual int32_t UninstallCloudRomDirect(const std::string& featureName) = 0;
+    virtual int32_t StartDownloadDirect(const std::vector<std::string>& featureNames,
+        bool allowedCellularNet) = 0;
+    virtual int32_t PauseDownloadDirect(const std::vector<std::string>& featureNames) = 0;
+    virtual int32_t CancelDownloadDirect(const std::vector<std::string>& featureNames) = 0;
+    virtual int32_t StartBackgroundDownloadDirect(const std::vector<std::string>& featureNames) = 0;
+    virtual int32_t GetDownloadStatusDirect(const std::vector<std::string>& featureNames,
+        std::vector<AudioSuiteDownloadStatusInfo>& status) = 0;
+    virtual int32_t GetFeatureNewVersionDirect(const std::vector<std::string>& featureNames,
+        std::vector<AudioSuiteCloudRomVersionInfo>& versionInfos) = 0;
+    virtual int32_t UninstallCloudRomDirect(const std::vector<std::string>& featureNames) = 0;
 
     // for audio server
     virtual int32_t RegisterDownloadInterfaceCallback(

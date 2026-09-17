@@ -64,7 +64,8 @@ interface IAudioPolicy {
         [in] int volumeType, /* volumeType type is AudioVolumeType */
         [in] int volumeLevel,
         [in] int volumeFlag, /* volumeFlag default 0 */
-        [in] int uid /* uid default 0 */);
+        [in] int uid /* uid default 0 */,
+        [in] int zoneId /* default INVALID_ZONEID */);
     void SetSystemAppVolumePercentageForUid([in] int appUid, [in] int volumePercentage);
     void SetAppVolumeMuted([in] int appUid, [in] boolean muted, [in] int volumeFlag); /*volumeFlag default 0*/
     void SetAppRingMuted([in] int appUid, [in] boolean muted);
@@ -75,7 +76,8 @@ interface IAudioPolicy {
     void GetSystemVolumeLevel(
         [in] int volumeType, /* volumeType type is AudioVolumeType */
         [in] int uid,
-        [out] int volumeLevel);
+        [out] int volumeLevel,
+        [in] int zoneId /* default INVALID_ZONEID */);
     void GetSystemAppVolumePercentageForUid([in] int appUid, [out] int volumePercentage);
     void GetSelfAppVolumeLevel([out] int volumeLevel);
     void SetStreamMuteLegacy([in] int volumeType, [in] boolean mute, [in] int deviceType); /*deviceType default DEVICE_TYPE_NONE, AudioVolumeType volumeType*/
@@ -294,8 +296,8 @@ interface IAudioPolicy {
     void SetAppConcurrencyMode([in] int appUid, [in] int mode);
     void SetAppSilentOnDisplay([in] int displayId);
     void IsIntelligentNoiseReductionEnabledForCurrentDevice([in] int sourceType, [out] boolean ret);
-    void SetSystemVolumeDegree([in] int volumeType, [in] int volumeDegree, [in] int volumeFlag, [in] int uid);
-    void GetSystemVolumeDegree([in] int volumeType, [in] int uid, [out] int volumeDegree);
+    void SetSystemVolumeDegree([in] int volumeType, [in] int volumeDegree, [in] int volumeFlag, [in] int uid, [in] int zoneId /* default INVALID_ZONEID */);
+    void GetSystemVolumeDegree([in] int volumeType, [in] int uid, [out] int volumeDegree, [in] int zoneId /* default INVALID_ZONEID */);
     void GetMinVolumeDegree([in] int volumeType, [in] int deviceType, [out] int volumeDegree);
     void SetAncoSourceOutputStreamMute([in] int uid, [in] boolean setMute);
     void UpdateSafeVolumeByStrMode();
@@ -372,5 +374,8 @@ interface IAudioPolicy {
     void SetVoipRendererMute([in] int appUid, [in] long streamId, [in] boolean muted, [in] IRemoteObject callerObj);
     void SetVoipCapturerMute([in] int appUid, [in] long streamId, [in] boolean muted, [in] IRemoteObject callerObj);
     void SetStopStreamInfoWhenDisconnect([in] String networkId, [in] List<int> usages, [in] List<int> uids);
+    void SetDuckPassthroughMode([in] boolean enable);
     void FetchOutputDevicesByFilter([in] int streamUsage, [in] int bypass, [out] List<sharedptr<AudioDeviceDescriptor>> descs);  
+    void ExcludeUidForExtZone([in] int uid);
+    void UnexcludeUidForExtZone([in] int uid);
 }

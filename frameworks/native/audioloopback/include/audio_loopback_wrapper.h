@@ -43,11 +43,11 @@ public:
         return SUCCESS;
     }
 
-    int32_t OnStatusChange(int32_t status, int32_t reason) override
+    int32_t OnStatusNotify(int32_t status, int32_t reason) override
     {
         auto cb = cb_.lock();
         if (cb != nullptr) {
-            cb->OnStatusChange(status, reason);
+            cb->OnStatusNotify(status, reason);
         }
         return SUCCESS;
     }
@@ -55,7 +55,7 @@ private:
     std::weak_ptr<ILoopbackCB> cb_;
 };
 
-class AudioLoopbackWrapper : public AudioLoopback, public ILoopbackCB,
+class AudioLoopbackWrapper : public AudioLoopback, public ILoopbackCB, public AudioLoopbackCallback,
     public std::enable_shared_from_this<AudioLoopbackWrapper> {
 public:
     AudioLoopbackWrapper(AudioLoopbackMode mode, LoopbackType type, const AppInfo &appInfo);
@@ -76,8 +76,9 @@ public:
     std::vector<AudioDevicePair> GetSupportedDevicePairs() override;
     AudioDevicePair GetPreferredDevicePair() override;
 
+    void OnStatusChange(const AudioLoopbackStatus state, const StateChangeCmdType cmdType) override;
     void OnCommandResult(int command, bool success, int errorCode) override;
-    void OnStatusChange(int status, int reason) override;
+    void OnStatusNotify(int status, int reason) override;
 
     void SetDebugKey(uint32_t key) { debugKey_ = key; }
     uint32_t GetDebugKey() const override { return debugKey_; }
@@ -99,6 +100,10 @@ private:
     int32_t EnableNormal(bool enable);
     int32_t EnableHandler(bool enable);
     int32_t EnableControl(bool enable);
+
+    AudioLoopbackStatus notifyStatus_ = LOOPBACK_AVAILABLE_IDLE;
+    std::mutex waitMutex_;
+    std::condition_variable waitCv_;
 };
 
 } // namespace AudioStandard

@@ -2365,6 +2365,13 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelWithOption(AudioStreamType strea
         AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
         return ERR_OPERATION_FAILED;
     }
+
+    if (VolumeUtils::IsNotificationFollowRingtone() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_NOTIFICATION) {
+        AUDIO_INFO_LOG("notificationFollowRingtone_ is true. Use ringtone instead of notification");
+        streamType = STREAM_RING;
+    }
+
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_NOTIFICATION &&
         audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL) {
         AUDIO_INFO_LOG("Cannot adjust the notification volume because of the SILENT or VIBRATE mode");
@@ -2390,6 +2397,16 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelWithOption(AudioStreamType strea
                 return setResult;
             }
         }
+        return SUCCESS;
+    }
+
+    if (VolumeUtils::IsNotificationFollowRingtone() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
+        // The notificationFollowRingtone is true. Keep the volume of notification and ringtone the same.
+        int32_t setResult1 = SetSingleStreamVolume(STREAM_RING, volumeLevel, option);
+        CHECK_AND_RETURN_RET_LOG(setResult1 == SUCCESS, setResult1, "Failed for ringtone: %{public}d", setResult1);
+        int32_t setResult2 = SetSingleStreamVolume(STREAM_NOTIFICATION, volumeLevel, option);
+        AUDIO_INFO_LOG("degree=%{public}d, notification result=%{public}d", option.volumeDegree, setResult2);
         return SUCCESS;
     }
     return SetSingleStreamVolume(streamType, volumeLevel, option);
@@ -2452,6 +2469,13 @@ int32_t AudioVolumeManager::SetSingleStreamVolumeWithDevice(AudioStreamType stre
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "desc is nullptr");
     DeviceType curOutputDeviceType = desc->deviceType_;
+
+    if (VolumeUtils::IsNotificationFollowRingtone() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_NOTIFICATION) {
+        AUDIO_INFO_LOG("notificationFollowRingtone_ is true. Use ringtone instead of notification");
+        streamType = STREAM_RING;
+    }
+
     int32_t ret = SUCCESS;
     if (curOutputDeviceType != deviceType) {
         ret = SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
@@ -2459,6 +2483,20 @@ int32_t AudioVolumeManager::SetSingleStreamVolumeWithDevice(AudioStreamType stre
         bool mute = GetStreamMuteInterface(streamType);
         VolumeUpdateOption option{isUpdateUi, mute};
         ret = SetSingleStreamVolume(streamType, volumeLevel, option);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to set volume: %{public}d", ret);
+    if (VolumeUtils::IsNotificationFollowRingtone() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
+        int32_t resultOfNotification = SUCCESS;
+        if (curOutputDeviceType != deviceType) {
+            resultOfNotification = SaveSpecifiedDeviceVolume(STREAM_NOTIFICATION, volumeLevel, deviceType);
+        } else {
+            bool mute = GetStreamMuteInterface(STREAM_NOTIFICATION);
+            VolumeUpdateOption option{isUpdateUi, mute};
+            resultOfNotification = SetSingleStreamVolume(STREAM_NOTIFICATION, volumeLevel, option);
+        }
+        AUDIO_INFO_LOG(" Set notification volume result: %{public}d", resultOfNotification);
     }
     return ret;
 }

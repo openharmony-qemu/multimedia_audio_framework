@@ -272,9 +272,9 @@ int32_t AudioSystemManager::SetActiveVolumeTypeCallback(
     return AudioVolumeClientManager::GetInstance().SetActiveVolumeTypeCallback(callback);
 }
 
-int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid)
+int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid, int32_t zoneId)
 {
-    return AudioVolumeClientManager::GetInstance().SetVolume(volumeType, volumeLevel, uid);
+    return AudioVolumeClientManager::GetInstance().SetVolume(volumeType, volumeLevel, uid, zoneId);
 }
 
 int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
@@ -283,9 +283,9 @@ int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int3
     return AudioVolumeClientManager::GetInstance().SetVolumeWithDevice(volumeType, volumeLevel, deviceType);
 }
 
-int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType, int32_t uid) const
+int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType, int32_t uid, int32_t zoneId) const
 {
-    return AudioVolumeClientManager::GetInstance().GetVolume(volumeType, uid);
+    return AudioVolumeClientManager::GetInstance().GetVolume(volumeType, uid, zoneId);
 }
 
 int32_t AudioSystemManager::SetLowPowerVolume(int32_t streamId, float volume) const
@@ -656,6 +656,11 @@ int32_t AudioSystemManager::ActivatePreemptMode() const
     return AudioSystemClientPolicyManager::GetInstance().ActivatePreemptMode();
 }
 
+int32_t AudioSystemManager::SetDuckPassthroughMode(bool enable) const
+{
+    return AudioInterruptClientManager::GetInstance().SetDuckPassthroughMode(enable);
+}
+
 int32_t AudioSystemManager::SetForegroundList(const std::vector<std::string> &list)
 {
     return AudioSystemClientEngineManager::GetInstance().SetForegroundList(list);
@@ -1018,14 +1023,14 @@ void AudioSystemManager::CleanUpResource()
     AudioSystemClientPolicyManager::GetInstance().CleanUpResource();
 }
 
-int32_t AudioSystemManager::SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid)
+int32_t AudioSystemManager::SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid, int32_t zoneId)
 {
-    return AudioVolumeClientManager::GetInstance().SetVolumeDegree(volumeType, degree, uid);
+    return AudioVolumeClientManager::GetInstance().SetVolumeDegree(volumeType, degree, uid, zoneId);
 }
 
-int32_t AudioSystemManager::GetVolumeDegree(AudioVolumeType volumeType, int32_t uid)
+int32_t AudioSystemManager::GetVolumeDegree(AudioVolumeType volumeType, int32_t uid, int32_t zoneId)
 {
-    return AudioVolumeClientManager::GetInstance().GetVolumeDegree(volumeType, uid);
+    return AudioVolumeClientManager::GetInstance().GetVolumeDegree(volumeType, uid, zoneId);
 }
 
 int32_t AudioSystemManager::GetMinVolumeDegree(AudioVolumeType volumeType)

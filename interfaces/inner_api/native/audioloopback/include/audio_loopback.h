@@ -46,7 +46,7 @@ public:
 
     virtual void OnCommandResult(int command, bool success, int errorCode) = 0;
 
-    virtual void OnStatusChange(int status, int reason) = 0;
+    virtual void OnStatusNotify(int status, int reason) = 0;
 };
 
 /**

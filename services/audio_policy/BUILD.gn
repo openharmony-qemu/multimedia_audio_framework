@@ -259,6 +259,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/router/wireless_conflict_handler.cpp",
     "server/domain/router/input_conflict_handler.cpp",
     "server/domain/router_context/audio_device_simple_descriptor.cpp",
+    "server/domain/router_context/audio_rollback_manager.cpp",
     "server/domain/router_context/audio_router_follow_strategy.cpp",
     "server/domain/router_context/audio_router_independent_strategy.cpp",
     "server/domain/router_context/audio_router_infra.cpp",
@@ -460,6 +461,8 @@ audio_ohos_library("audio_policy_service") {
     "init:libbeget_proxy",
     "ffrt:libffrt",
   ]
+
+  public_external_deps = [ "ffrt:libffrt" ]
 
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]

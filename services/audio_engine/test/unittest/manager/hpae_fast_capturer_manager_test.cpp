@@ -118,6 +118,8 @@ std::shared_ptr<HpaeFastCapturerManager> CreateInitializedManager(
     manager->mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     manager->mixerNode_->Connect(manager->sourceInputNode_);
     manager->isInit_.store(true);
+    // Idle (non-activated) signal thread so SendRequest queues requests for manual HandleMsg.
+    manager->hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     return manager;
 }
 
@@ -180,7 +182,7 @@ HWTEST_F(HpaeFastCapturerManagerTest, ConstructAndSimpleApis, TestSize.Level0)
  * @tc.name  : SendRequestAndThreadBranches
  * @tc.type  : FUNC
  * @tc.number: HpaeFastCapturerManagerTest_012
- * @tc.desc  : Test SendRequest init guard and signal-thread null/non-null branches.
+ * @tc.desc  : Test SendRequest thread-null drop (isInit does not bypass) and thread-present branches.
  */
 HWTEST_F(HpaeFastCapturerManagerTest, SendRequestAndThreadBranches, TestSize.Level1)
 {
@@ -191,9 +193,10 @@ HWTEST_F(HpaeFastCapturerManagerTest, SendRequestAndThreadBranches, TestSize.Lev
     manager->HandleMsg();
     EXPECT_EQ(requestHandled, false);
 
+    // isInit no longer bypasses the thread-null check: request is dropped, not queued.
     manager->SendRequest([&requestHandled] { requestHandled = true; }, "test", true);
     manager->HandleMsg();
-    EXPECT_EQ(requestHandled, true);
+    EXPECT_EQ(requestHandled, false);
 
     requestHandled = false;
     manager->isInit_.store(true);
@@ -276,6 +279,8 @@ HWTEST_F(HpaeFastCapturerManagerTest, CreateStreamAndQuery, TestSize.Level1)
     EXPECT_EQ(manager->CreateStream(streamInfo), ERR_INVALID_OPERATION);
 
     manager->isInit_.store(true);
+    // Idle signal thread: without it SendRequest drops the request (thread-null guard).
+    manager->hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     HpaeStreamInfo invalidStreamInfo;
     EXPECT_NE(manager->CreateStream(invalidStreamInfo), SUCCESS);
 

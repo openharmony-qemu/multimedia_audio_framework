@@ -62,6 +62,7 @@ namespace {
     static const size_t CAPTURER_BUFFER_WAKE_UP_NUM = 100;
     static const uint32_t OVERFLOW_LOG_LOOP_COUNT = 100;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
+    constexpr int32_t TOTAL_SIZE_5MS_TO_20MS = 4;
     static const uint32_t OVERFLOW_REPORT_INTERVAL_MS = 60000;
 #ifdef FEATURE_CALL_MANAGER
 static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
@@ -155,10 +156,12 @@ int32_t CapturerInServer::ConfigServerBuffer()
     const size_t bufferNum = ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP)
         ? CAPTURER_BUFFER_WAKE_UP_NUM : CAPTURER_BUFFER_DEFAULT_NUM);
     totalSizeInFrame_ = spanSizeInFrame_ * bufferNum;
+    size_t totalSizeInFrameToCreate = processConfig_.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP ?
+        totalSizeInFrame_ * TOTAL_SIZE_5MS_TO_20MS : totalSizeInFrame_;
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     spanSizeInBytes_ = byteSizePerFrame_ * spanSizeInFrame_;
     AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}zu, spanSizeInFrame_: %{public}zu,"
-        "byteSizePerFrame_: %{public}zu, spanSizeInBytes_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_,
+        "byteSizePerFrame_: %{public}zu, spanSizeInBytes_ %{public}zu", totalSizeInFrameToCreate, spanSizeInFrame_,
         byteSizePerFrame_, spanSizeInBytes_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -174,7 +177,7 @@ int32_t CapturerInServer::ConfigServerBuffer()
         "InitCacheBuffer failed %{public}d", ret);
 
     // create OHAudioBuffer in server
-    audioServerBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
+    audioServerBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInFrameToCreate, spanSizeInFrame_, byteSizePerFrame_);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CREATE_MEMORY_ALLOC_FAILED, "Create oh audio buffer failed", false),
