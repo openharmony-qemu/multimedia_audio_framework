@@ -14,11 +14,13 @@
  */
 
 #include "audio_volume_manager_unit_test.h"
+#include "audio_utils.h"
 
 using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t DEFAULT_ZONE_ID = 0;
 
 /**
 * @tc.name  : Test AudioVolumeManager.
@@ -573,6 +575,162 @@ HWTEST_F(AudioVolumeManagerUnitTest, SendLoudVolumeMode_001, TestSize.Level4)
     testVolumeManager->DeInit();
 }
 #endif
+
+/**
+ * @tc.name  : SetVolumeProtectionInfo_001
+ * @tc.number: SetVolumeProtectionInfo_001
+ * @tc.desc  : Accept a valid volume-protection configuration and replace the stored state.
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeProtectionInfo_001, TestSize.Level1)
+{
+    auto volumeManager = std::make_shared<AudioVolumeManager>();
+    VolumeProtectionConfig config;
+    config.rules = {{STREAM_MUSIC, 60}, {STREAM_RING, 80}};
+    config.timeDuration = 24 * 60 * 60;
+
+    const int64_t bootTimeNs = ClockTime::GetBootNano();
+    ASSERT_GE(bootTimeNs, 0);
+    const int64_t currentTime = bootTimeNs / static_cast<int64_t>(AUDIO_NS_PER_SECOND);
+    EXPECT_EQ(volumeManager->SetVolumeProtectionInfo(config), SUCCESS);
+    EXPECT_EQ(volumeManager->volumeProtectionConfig_.rules.at(STREAM_MUSIC), 60);
+    EXPECT_EQ(volumeManager->volumeProtectionConfig_.rules.at(STREAM_RING), 80);
+    EXPECT_EQ(volumeManager->volumeProtectionConfig_.timeDuration, 24 * 60 * 60);
+    EXPECT_GE(volumeManager->volumeLimitExpiryTime_, currentTime);
+    EXPECT_LE(volumeManager->volumeLimitExpiryTime_,
+        ClockTime::GetBootNano() / static_cast<int64_t>(AUDIO_NS_PER_SECOND));
+    const int32_t currentVolume = volumeManager->GetSystemVolumeDegreeInterface(STREAM_MUSIC, DEFAULT_ZONE_ID);
+    EXPECT_EQ(volumeManager->CheckVolumeLimitExceeded(STREAM_MUSIC, 1000, 70, DEFAULT_ZONE_ID), 70 > currentVolume);
+
+    volumeManager->volumeLimitExpiryTime_ += config.timeDuration;
+    EXPECT_FALSE(volumeManager->CheckVolumeLimitExceeded(STREAM_MUSIC, 1000, 70, DEFAULT_ZONE_ID));
+    EXPECT_EQ(volumeManager->SetVolumeProtectionInfo(config), SUCCESS);
+    EXPECT_GE(volumeManager->volumeLimitExpiryTime_, currentTime);
+    EXPECT_LE(volumeManager->volumeLimitExpiryTime_,
+        ClockTime::GetBootNano() / static_cast<int64_t>(AUDIO_NS_PER_SECOND));
+    EXPECT_EQ(volumeManager->CheckVolumeLimitExceeded(STREAM_MUSIC, 1000, 70, DEFAULT_ZONE_ID), 70 > currentVolume);
+}
+
+/**
+ * @tc.name  : SetVolumeProtectionInfo_002
+ * @tc.number: SetVolumeProtectionInfo_002
+ * @tc.desc  : Reject invalid inputs without changing an accepted configuration.
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeProtectionInfo_002, TestSize.Level1)
+{
+    auto volumeManager = std::make_shared<AudioVolumeManager>();
+    VolumeProtectionConfig config;
+    config.rules = {{STREAM_MUSIC, 60}};
+    config.timeDuration = 60;
+    ASSERT_EQ(volumeManager->SetVolumeProtectionInfo(config), SUCCESS);
+
+    config.rules.clear();
+    EXPECT_EQ(volumeManager->SetVolumeProtectionInfo(config), ERR_INVALID_PARAM);
+
+    config.rules = {{STREAM_MUSIC, 101}};
+    EXPECT_EQ(volumeManager->SetVolumeProtectionInfo(config), ERR_INVALID_PARAM);
+    EXPECT_EQ(volumeManager->volumeProtectionConfig_.rules.at(STREAM_MUSIC), 60);
+
+    config.rules = {{static_cast<AudioVolumeType>(1000), 50}};
+    EXPECT_EQ(volumeManager->SetVolumeProtectionInfo(config), ERR_INVALID_PARAM);
+
+    config.rules = {{STREAM_MUSIC, 50}};
+    config.timeDuration = 0;
+    EXPECT_EQ(volumeManager->SetVolumeProtectionInfo(config), ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : ClearVolumeProtection_001
+ * @tc.number: ClearVolumeProtection_001
+ * @tc.desc  : Expire notification suppression, retain the rules, and allow repeated calls.
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, ClearVolumeProtection_001, TestSize.Level1)
+{
+    auto volumeManager = std::make_shared<AudioVolumeManager>();
+    VolumeProtectionConfig config;
+    config.rules = {{STREAM_MUSIC, 60}};
+    config.timeDuration = 60;
+    ASSERT_EQ(volumeManager->SetVolumeProtectionInfo(config), SUCCESS);
+    volumeManager->volumeLimitExpiryTime_ += config.timeDuration;
+    const int32_t currentVolume = volumeManager->GetSystemVolumeDegreeInterface(STREAM_MUSIC, DEFAULT_ZONE_ID);
+    EXPECT_FALSE(volumeManager->CheckVolumeLimitExceeded(STREAM_MUSIC, 1000, 70, DEFAULT_ZONE_ID));
+
+    const int64_t bootTimeNs = ClockTime::GetBootNano();
+    ASSERT_GE(bootTimeNs, 0);
+    const int64_t currentTime = bootTimeNs / static_cast<int64_t>(AUDIO_NS_PER_SECOND);
+    EXPECT_EQ(volumeManager->ClearVolumeProtection(), SUCCESS);
+    EXPECT_GE(volumeManager->volumeLimitExpiryTime_, currentTime);
+    EXPECT_LE(volumeManager->volumeLimitExpiryTime_,
+        ClockTime::GetBootNano() / static_cast<int64_t>(AUDIO_NS_PER_SECOND));
+    EXPECT_EQ(volumeManager->ClearVolumeProtection(), SUCCESS);
+    EXPECT_GE(volumeManager->volumeLimitExpiryTime_, currentTime);
+    EXPECT_LE(volumeManager->volumeLimitExpiryTime_,
+        ClockTime::GetBootNano() / static_cast<int64_t>(AUDIO_NS_PER_SECOND));
+    EXPECT_EQ(volumeManager->volumeProtectionConfig_.rules.at(STREAM_MUSIC), 60);
+    EXPECT_EQ(volumeManager->volumeProtectionConfig_.timeDuration, config.timeDuration);
+    EXPECT_EQ(volumeManager->CheckVolumeLimitExceeded(STREAM_MUSIC, 1000, 70, DEFAULT_ZONE_ID), 70 > currentVolume);
+}
+
+/**
+ * @tc.name  : VolumeProtectionLimitExceeded_001
+ * @tc.number: VolumeProtectionLimitExceeded_001
+ * @tc.desc  : Notify above the configured threshold when the suppression expiry is reached.
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, VolumeProtectionLimitExceeded_001, TestSize.Level1)
+{
+    auto volumeManager = std::make_shared<AudioVolumeManager>();
+    VolumeProtectionConfig config;
+    config.rules = {{STREAM_MUSIC, 60}};
+    config.timeDuration = 24 * 60 * 60;
+    ASSERT_EQ(volumeManager->SetVolumeProtectionInfo(config), SUCCESS);
+
+    const int32_t currentVolume = volumeManager->GetSystemVolumeDegreeInterface(STREAM_MUSIC, DEFAULT_ZONE_ID);
+    EXPECT_FALSE(volumeManager->CheckVolumeLimitExceeded(STREAM_MUSIC, 1000, 60, DEFAULT_ZONE_ID));
+    EXPECT_FALSE(volumeManager->CheckVolumeLimitExceeded(STREAM_RING, 1000, 70, DEFAULT_ZONE_ID));
+
+    EXPECT_EQ(volumeManager->CheckVolumeLimitExceeded(STREAM_MUSIC, 1000, 70, DEFAULT_ZONE_ID), 70 > currentVolume);
+
+    EXPECT_EQ(volumeManager->CheckVolumeLimitExceeded(STREAM_MUSIC, 1000, 61, DEFAULT_ZONE_ID), 61 > currentVolume);
+
+    const int64_t bootTimeNs = ClockTime::GetBootNano();
+    ASSERT_GE(bootTimeNs, 0);
+    const int64_t currentTime = bootTimeNs / static_cast<int64_t>(AUDIO_NS_PER_SECOND);
+    volumeManager->volumeLimitExpiryTime_ = currentTime + config.timeDuration;
+    EXPECT_FALSE(volumeManager->CheckVolumeLimitExceeded(STREAM_MUSIC, 2000, 70, DEFAULT_ZONE_ID));
+    volumeManager->volumeLimitExpiryTime_ = currentTime;
+    EXPECT_EQ(volumeManager->CheckVolumeLimitExceeded(STREAM_MUSIC, 2000, 70, DEFAULT_ZONE_ID), 70 > currentVolume);
+}
+
+/**
+ * @tc.name  : ConfirmVolumeLimitExceeded_001
+ * @tc.number: ConfirmVolumeLimitExceeded_001
+ * @tc.desc  : A positive confirmation sets the expiry to the current time plus the configured duration.
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, ConfirmVolumeLimitExceeded_001, TestSize.Level1)
+{
+    auto volumeManager = std::make_shared<AudioVolumeManager>();
+    VolumeProtectionConfig config;
+    config.rules = {{STREAM_MUSIC, 60}};
+    config.timeDuration = 60;
+    ASSERT_EQ(volumeManager->SetVolumeProtectionInfo(config), SUCCESS);
+
+    const int64_t initialExpiryTime = volumeManager->volumeLimitExpiryTime_;
+    EXPECT_EQ(volumeManager->ConfirmVolumeLimitExceeded(STREAM_MUSIC, false), SUCCESS);
+    EXPECT_EQ(volumeManager->volumeLimitExpiryTime_, initialExpiryTime);
+
+    const int64_t bootTimeNs = ClockTime::GetBootNano();
+    ASSERT_GE(bootTimeNs, 0);
+    const int64_t currentTime = bootTimeNs / static_cast<int64_t>(AUDIO_NS_PER_SECOND);
+    EXPECT_EQ(volumeManager->ConfirmVolumeLimitExceeded(STREAM_MUSIC, true), SUCCESS);
+    EXPECT_GE(volumeManager->volumeLimitExpiryTime_, currentTime + config.timeDuration);
+    EXPECT_LE(volumeManager->volumeLimitExpiryTime_,
+        ClockTime::GetBootNano() / static_cast<int64_t>(AUDIO_NS_PER_SECOND) + config.timeDuration);
+    EXPECT_FALSE(volumeManager->CheckVolumeLimitExceeded(STREAM_MUSIC, 1000, 70, DEFAULT_ZONE_ID));
+
+    volumeManager->volumeLimitExpiryTime_ = 100;
+    EXPECT_EQ(volumeManager->ConfirmVolumeLimitExceeded(STREAM_MUSIC, false), SUCCESS);
+    EXPECT_EQ(volumeManager->volumeLimitExpiryTime_, 100);
+    EXPECT_EQ(volumeManager->ConfirmVolumeLimitExceeded(static_cast<AudioVolumeType>(1000), true), ERR_INVALID_PARAM);
+}
 
 } // namespace AudioStandard
 } // namespace OHOS

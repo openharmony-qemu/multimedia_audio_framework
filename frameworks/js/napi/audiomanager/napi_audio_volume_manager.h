@@ -24,6 +24,7 @@
 #include "audio_policy_interface.h"
 #include "audio_system_manager.h"
 #include "napi_audio_volume_key_event.h"
+#include "napi_audio_volume_limit_exceeded_callback.h"
 #include "napi_audio_system_volume_change_callback.h"
 #include "napi_audio_system_volume_change_by_filter_callback.h"
 #include "napi_audio_stream_volume_change_callback.h"
@@ -110,6 +111,9 @@ private:
         size_t argc, const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
     static napi_value OnVolumePercentageChange(napi_env env, napi_callback_info info);
     static napi_value OffVolumePercentageChange(napi_env env, napi_callback_info info);
+    static napi_value OnVolumeLimitExceeded(napi_env env, napi_callback_info info);
+    static napi_value OffVolumeLimitExceeded(napi_env env, napi_callback_info info);
+    static napi_value ConfirmVolumeLimitExceeded(napi_env env, napi_callback_info info);
     static std::shared_ptr<NapiAudioVolumeKeyEvent> GetVolumeEventNapiCallback(napi_value argv,
         NapiAudioVolumeManager *napiVolumeManager);
     static napi_value RegisterActiveVolumeTypeChangeCallback(napi_env env, napi_value *args,
@@ -127,6 +131,10 @@ private:
     static napi_value RegisterVolumeDegreeChangeCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
     static void UnregisterVolumeDegreeChangeCallback(napi_env env, napi_value *args,
+        size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager);
+    static napi_value RegisterVolumeLimitExceededCallback(napi_env env, napi_value *args,
+        const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
+    static void UnregisterVolumeLimitExceededCallback(napi_env env, napi_value *args,
         size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager);
     static napi_value OnSystemVolumeChangeByFilter(napi_env env, napi_callback_info info);
     static napi_value OffSystemVolumeChangeByFilter(napi_env env, napi_callback_info info);
@@ -147,6 +155,7 @@ private:
     int32_t cachedClientId_ = -1;
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
     std::shared_ptr<VolumeKeyEventCallback> volumeDegreeCallbackNapi_ = nullptr;
+    std::shared_ptr<VolumeLimitExceededCallback> volumeLimitExceededCallbackNapi_ = nullptr;
     std::map<int32_t, std::shared_ptr<StreamVolumeChangeCallback>> streamVolumeChangeCallbackNapiMap_;
     std::shared_ptr<SystemVolumeChangeCallback> systemVolumeChangeCallbackNapi_ = nullptr;
     std::vector<std::shared_ptr<NapiAudioSystemVolumeChangeByFilterCallback>>

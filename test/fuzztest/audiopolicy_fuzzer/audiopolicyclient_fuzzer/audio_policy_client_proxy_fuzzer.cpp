@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +18,7 @@
 #include "audio_device_descriptor.h"
 #include "istandard_client_tracker.h"
 #include "audio_policy_client_proxy.h"
+#include "audio_info.h"
 #include "audio_stream_change_info.h"
 #include "audio_stream_manager.h"
 #include "audio_client_tracker_callback_service.h"
@@ -735,6 +736,21 @@ void AudioPolicyClientProxyOnSystemVolumeChangeByFilterFuzzTest(FuzzedDataProvid
     iAudioPolicyClient->OnSystemVolumeChangeByFilter(filter, volumeEvent);
 }
 
+void AudioPolicyClientProxyOnVolumeLimitExceededFuzzTest(FuzzedDataProvider& fdp)
+{
+    VolumeLimitExceedEvent event;
+    event.volumeType = PickValue(fdp, g_testAudioStreamTypes);
+    event.currentVolume = fdp.ConsumeIntegral<int32_t>();
+    event.volumeThreshold = fdp.ConsumeIntegral<int32_t>();
+    event.uid = fdp.ConsumeIntegral<int32_t>();
+    sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
+    auto iAudioPolicyClient = std::make_shared<AudioPolicyClientProxy>(impl);
+    if (iAudioPolicyClient == nullptr) {
+        return;
+    }
+    iAudioPolicyClient->OnVolumeLimitExceeded(event);
+}
+
 void AudioClientTrackerCallbackProxyMuteStreamImplFuzzTest(FuzzedDataProvider& fdp)
 {
     auto clientTrackerCallbackListener = CreateClientTrackerCallbackListener();
@@ -877,6 +893,7 @@ void Test(FuzzedDataProvider& fdp)
         AudioPolicyClientProxyOnFormatUnsupportedErrorFuzzTest,
         AudioPolicyClientProxyOnStreamVolumeChangeFuzzTest,
         AudioPolicyClientProxyOnSystemVolumeChangeByFilterFuzzTest,
+        AudioPolicyClientProxyOnVolumeLimitExceededFuzzTest,
         AudioClientTrackerCallbackProxyMuteStreamImplFuzzTest,
         AudioClientTrackerCallbackProxyUnmuteStreamImplFuzzTest,
         AudioClientTrackerCallbackProxyPausedStreamImplFuzzTest,

@@ -334,6 +334,13 @@ void AudioPolicyClientHolder::OnVolumeDegreeEvent(const VolumeEvent &volumeEvent
     audioPolicyClient_->OnVolumeDegreeEvent(volumeEvent);
 }
 
+void AudioPolicyClientHolder::OnVolumeLimitExceeded(const VolumeLimitExceedEvent &event)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    CHECK_AND_RETURN_LOG(hasSystemPermission_, "No system permission");
+    audioPolicyClient_->OnVolumeLimitExceeded(event);
+}
+
 void AudioPolicyClientHolder::OnPreferredDeviceSet(PreferredType preferredType,
     const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller)
 {

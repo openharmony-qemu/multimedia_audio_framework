@@ -50,6 +50,7 @@ sequenceable audio_info..OHOS.AudioStandard.SystemVolumeFilter;
 sequenceable audio_info..OHOS.AudioStandard.SystemRecordControllerConfig;
 sequenceable audio_info..OHOS.AudioStandard.SystemRecordControllerChangeInfo;
 sequenceable stream_flag_info..OHOS.AudioStandard.StreamFlagInfo;
+sequenceable audio_info..OHOS.AudioStandard.VolumeProtectionConfig;
 
 // ! WARNING !
 // ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
@@ -378,4 +379,7 @@ interface IAudioPolicy {
     void FetchOutputDevicesByFilter([in] int streamUsage, [in] int bypass, [out] List<sharedptr<AudioDeviceDescriptor>> descs);  
     void ExcludeUidForExtZone([in] int uid);
     void UnexcludeUidForExtZone([in] int uid);
+    void SetVolumeProtectionInfo([in] VolumeProtectionConfig config);
+    void ConfirmVolumeLimitExceeded([in] int volumeType, [in] boolean confirmResult);
+    void ClearVolumeProtection();
 }

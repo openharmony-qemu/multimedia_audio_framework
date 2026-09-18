@@ -33,6 +33,7 @@ sequenceable audio_stream_types..OHOS.AudioStandard.AudioCapturerFilter;
 sequenceable audio_route_select_info..OHOS.AudioStandard.AudioRouteSelectInfo;
 sequenceable audio_info..OHOS.AudioStandard.SystemVolumeFilter;
 sequenceable audio_info..OHOS.AudioStandard.SystemRecordControllerChangeInfo;
+sequenceable audio_info..OHOS.AudioStandard.VolumeLimitExceedEvent;
 
 interface IAudioPolicyClient {
     [ipccode 0, customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
@@ -112,4 +113,6 @@ interface IAudioPolicyClient {
     [oneway] void OnSystemVolumeChangeByFilter([in] SystemVolumeFilter filter, [in] VolumeEvent volumeEvent);
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnRecordControllerEnabledChange([in] SystemRecordControllerChangeInfo changeInfo);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnVolumeLimitExceeded([in] VolumeLimitExceedEvent event);
 }

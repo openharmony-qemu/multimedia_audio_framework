@@ -24,6 +24,7 @@
 #include "audio_device_stream_info.h"
 #include "oh_audio_buffer.h"
 #include "audio_shared_memory.h"
+#include "audio_info.h"
 #include "audio_ipc_serialization_unit_test.h"
 
 using namespace testing::ext;
@@ -48,6 +49,78 @@ void AudioIpcSerializationUnitTest::SetUpTestCase(void) {}
 void AudioIpcSerializationUnitTest::TearDownTestCase(void) {}
 void AudioIpcSerializationUnitTest::SetUp(void) {}
 void AudioIpcSerializationUnitTest::TearDown(void) {}
+
+/**
+ * @tc.name  : VolumeProtectionConfigSerialization_001
+ * @tc.number: VolumeProtectionConfigSerialization_001
+ * @tc.desc  : Verify that volume-protection configuration fields survive IPC serialization.
+ */
+HWTEST_F(AudioIpcSerializationUnitTest, VolumeProtectionConfigSerialization_001, TestSize.Level1)
+{
+    VolumeProtectionConfig config;
+    config.rules = {{STREAM_MUSIC, 60}, {STREAM_RING, 80}};
+    config.timeDuration = 24 * 60 * 60;
+
+    Parcel parcel;
+    ASSERT_TRUE(config.Marshalling(parcel));
+    std::shared_ptr<VolumeProtectionConfig> decoded(VolumeProtectionConfig::Unmarshalling(parcel));
+    ASSERT_NE(decoded, nullptr);
+    EXPECT_EQ(decoded->rules, config.rules);
+    EXPECT_EQ(decoded->timeDuration, config.timeDuration);
+}
+
+/**
+ * @tc.name  : VolumeProtectionConfigSerialization_002
+ * @tc.number: VolumeProtectionConfigSerialization_002
+ * @tc.desc  : Reject oversized or malformed rule maps.
+ */
+HWTEST_F(AudioIpcSerializationUnitTest, VolumeProtectionConfigSerialization_002, TestSize.Level1)
+{
+    VolumeProtectionConfig config;
+    for (uint32_t i = 0; i <= MAX_VOLUME_PROTECTION_RULES; ++i) {
+        config.rules.emplace(static_cast<AudioVolumeType>(i), static_cast<int32_t>(i));
+    }
+    Parcel oversizedParcel;
+    EXPECT_FALSE(config.Marshalling(oversizedParcel));
+
+    Parcel malformedParcel;
+    ASSERT_TRUE(malformedParcel.WriteUint32(MAX_VOLUME_PROTECTION_RULES + 1));
+    std::shared_ptr<VolumeProtectionConfig> decoded(VolumeProtectionConfig::Unmarshalling(malformedParcel));
+    EXPECT_EQ(decoded, nullptr);
+
+    Parcel duplicateRuleParcel;
+    ASSERT_TRUE(duplicateRuleParcel.WriteUint32(2));
+    ASSERT_TRUE(duplicateRuleParcel.WriteInt32(static_cast<int32_t>(STREAM_MUSIC)));
+    ASSERT_TRUE(duplicateRuleParcel.WriteInt32(60));
+    ASSERT_TRUE(duplicateRuleParcel.WriteInt32(static_cast<int32_t>(STREAM_MUSIC)));
+    ASSERT_TRUE(duplicateRuleParcel.WriteInt32(80));
+    std::shared_ptr<VolumeProtectionConfig> duplicateDecoded(
+        VolumeProtectionConfig::Unmarshalling(duplicateRuleParcel));
+    EXPECT_EQ(duplicateDecoded, nullptr);
+}
+
+/**
+ * @tc.name  : VolumeLimitExceedEventSerialization_001
+ * @tc.number: VolumeLimitExceedEventSerialization_001
+ * @tc.desc  : Verify that volume-limit event fields survive IPC serialization.
+ */
+HWTEST_F(AudioIpcSerializationUnitTest, VolumeLimitExceedEventSerialization_001, TestSize.Level1)
+{
+    VolumeLimitExceedEvent event;
+    event.volumeType = STREAM_MUSIC;
+    event.currentVolume = 75;
+    event.volumeThreshold = 60;
+    event.uid = 10001;
+
+    Parcel parcel;
+    ASSERT_TRUE(event.Marshalling(parcel));
+    std::shared_ptr<VolumeLimitExceedEvent> decoded(VolumeLimitExceedEvent::Unmarshalling(parcel));
+    ASSERT_NE(decoded, nullptr);
+    EXPECT_EQ(decoded->volumeType, event.volumeType);
+    EXPECT_EQ(decoded->currentVolume, event.currentVolume);
+    EXPECT_EQ(decoded->volumeThreshold, event.volumeThreshold);
+    EXPECT_EQ(decoded->uid, event.uid);
+}
 
 static bool IsAppInfoEqual(const AppInfo &a, const AppInfo &b)
 {
