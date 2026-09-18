@@ -1407,6 +1407,10 @@ int32_t AudioInterruptService::ActivateAudioInterruptCoreProcedure(
                 "VOICE_TRANSCRIPTION failed: no system permission", false));
     }
 
+    if (interruptDfx_ != nullptr) {
+        interruptDfx_->GetBehaviorUsageEvent(audioInterrupt);
+    }
+
     return ActivateAudioInterruptInternal(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
 }
 
@@ -2438,6 +2442,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         uint32_t activeStreamId = (iterActive->first).streamId;
         bool removeFocusInfo = false;
         ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt, removeFocusInfo, interruptEvent);
+        StartPausedStreamMonitor(zoneId, interruptEvent, incomingInterrupt, iterActive->first);
         AudioInterrupt currentInterrupt = iterActive->first;
         if (removeFocusInfo) {
             RemoveFocusInfo(iterActive, tmpFocusInfoList, targetZoneIt->second, removeFocusInfoPidList);
@@ -3186,6 +3191,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         AUDIO_DEBUG_LOG("stream (streamId %{public}u) is not active now", audioInterrupt.streamId);
         return;
     }
+    StopPausedStreamMonitor(audioInterrupt.sessionId);
     RemoveSuggestionRecord(audioInterrupt);
     DeactivateAudioInterruptInternalContinue(zoneId, isSessionTimeout);
     RemoveMuteCheckRecord(audioInterrupt);
@@ -3411,6 +3417,10 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
 
     if (interruptEvent.hintType == INTERRUPT_HINT_STOP) {
         muteAudioFocus_.erase(streamId);
+    }
+
+    if (interruptEvent.hintType == INTERRUPT_HINT_STOP || interruptEvent.hintType == INTERRUPT_HINT_RESUME) {
+        StopPausedStreamMonitor(streamId);
     }
 
     if ((interruptEvent.hintType == INTERRUPT_HINT_MUTE || interruptEvent.hintType == INTERRUPT_HINT_UNMUTE)) {

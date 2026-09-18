@@ -159,5 +159,25 @@ HWTEST_F(AudioInterruptDfxUnitTest, CheckShortInterruptEvent_001, TestSize.Level
     ret = interruptDfx->audioInterruptCheckInfo_[streamId].errorEvents.front().errorInfo;
     EXPECT_EQ(ret, "");
 }
+
+/**
+* @tc.name  : Test GetBehaviorUsageEvent
+* @tc.number: GetBehaviorUsageEvent_001
+* @tc.desc  : Test GetBehaviorUsageEvent
+*/
+HWTEST_F(AudioInterruptDfxUnitTest, GetBehaviorUsageEvent_001, TestSize.Level1)
+{
+    auto interruptDfx = std::make_shared<AudioInterruptDfx>();
+    ASSERT_NE(interruptDfx, nullptr);
+ 
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.behaviorFlags_.muteWhenInterruptFlag = true;
+    interruptDfx->GetBehaviorUsageEvent(audioInterrupt);
+    EXPECT_TRUE(audioInterrupt.behaviorFlags_.muteWhenInterruptFlag);
+ 
+    audioInterrupt.behaviorFlags_.muteWhenInterruptFlag = false;
+    interruptDfx->GetBehaviorUsageEvent(audioInterrupt);
+    EXPECT_FALSE(audioInterrupt.behaviorFlags_.muteWhenInterruptFlag);
+}
 } // namespace AudioStandard
 } // namespace OHOS
