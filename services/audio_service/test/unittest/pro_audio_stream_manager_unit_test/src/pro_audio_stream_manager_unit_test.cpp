@@ -676,5 +676,65 @@ HWTEST(ProAudioStreamManagerUnitTest, ReleaseRender_001, TestSize.Level1)
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(audioStreamManager->rendererStreamMap_.size(), 0);
 }
+
+/**
+* @tc.name   : Test CreateRender pre-eviction for 3DA direct
+* @tc.number : ProAudioStreamManager_024
+* @tc.desc   : Stale unreleased streams in the map are force-released before a new 3DA direct
+*              stream takes the single-slot engine; a late app Release becomes a no-op.
+*/
+HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_024, TestSize.Level1)
+{
+    shared_ptr<ProAudioStreamManager> audioStreamManager =
+        make_shared<ProAudioStreamManager>(AUDIO_VIVID_3DA_DIRECT_PLAYBACK);
+    ASSERT_TRUE(audioStreamManager != nullptr);
+
+    AudioProcessConfig config = GetInnerCapConfig();
+    shared_ptr<IRendererStream> staleStream1 = audioStreamManager->CreateRendererStream(config);
+    ASSERT_TRUE(staleStream1 != nullptr);
+    shared_ptr<IRendererStream> staleStream2 = audioStreamManager->CreateRendererStream(config);
+    ASSERT_TRUE(staleStream2 != nullptr);
+    // simulate app streams paused but never released (cross-player switch)
+    audioStreamManager->rendererStreamMap_.emplace(1001, staleStream1);
+    audioStreamManager->rendererStreamMap_.emplace(1002, staleStream2);
+    ASSERT_EQ(audioStreamManager->rendererStreamMap_.size(), 2);
+
+    shared_ptr<IRendererStream> newStream = nullptr;
+    int result = audioStreamManager->CreateRender(config, newStream);
+    EXPECT_NE(result, ERROR);
+    // both stale streams evicted; the new stream is not registered because engine creation
+    // fails in the HDI-less UT environment
+    EXPECT_EQ(audioStreamManager->rendererStreamMap_.size(), 0);
+
+    // the app's late Release for an evicted stream is a clean no-op
+    EXPECT_EQ(audioStreamManager->ReleaseRender(1001), SUCCESS);
+    EXPECT_EQ(audioStreamManager->ReleaseRender(1002), SUCCESS);
+    EXPECT_EQ(audioStreamManager->rendererStreamMap_.size(), 0);
+}
+
+/**
+* @tc.name   : Test CreateRender keeps stale entries for non-3DA managers
+* @tc.number : ProAudioStreamManager_025
+* @tc.desc   : The pre-eviction only applies to the 3DA direct manager; a DIRECT_PLAYBACK
+*              manager keeps its stale entries untouched across a CreateRender attempt.
+*/
+HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_025, TestSize.Level1)
+{
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
+    ASSERT_TRUE(audioStreamManager != nullptr);
+
+    AudioProcessConfig config = GetInnerCapConfig();
+    shared_ptr<IRendererStream> staleStream = audioStreamManager->CreateRendererStream(config);
+    ASSERT_TRUE(staleStream != nullptr);
+    audioStreamManager->rendererStreamMap_.emplace(2001, staleStream);
+    ASSERT_EQ(audioStreamManager->rendererStreamMap_.size(), 1);
+
+    shared_ptr<IRendererStream> newStream = nullptr;
+    int result = audioStreamManager->CreateRender(config, newStream);
+    EXPECT_NE(result, ERROR);
+    // no eviction for non-3DA managers: the stale entry survives the CreateRender attempt
+    EXPECT_EQ(audioStreamManager->rendererStreamMap_.size(), 1);
+    EXPECT_EQ(audioStreamManager->rendererStreamMap_.count(2001), 1);
+}
 }
 }
