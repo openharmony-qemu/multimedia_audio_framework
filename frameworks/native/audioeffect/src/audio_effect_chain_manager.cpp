@@ -3099,6 +3099,7 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBin(const int32_t &fd, co
 
 static int32_t CreateDirRecursively(const char *outPath)
 {
+    char *dirCopy = strdup(outPath);
     CHECK_AND_RETURN_RET_LOG(dirCopy != nullptr, ERR_SAVE_HRTF_FAIL, "dirCopy is nullptr");
     char *p = dirCopy;
     if (*p == '/') {
@@ -3113,7 +3114,7 @@ static int32_t CreateDirRecursively(const char *outPath)
         p++;
     }
     free(dirCopy);
-        return SUCCESS;
+    return SUCCESS;
 }
 
 static int32_t CopyFdToFile(const int32_t &fd, const long &length, const char *outPath, FILE *outFile)
