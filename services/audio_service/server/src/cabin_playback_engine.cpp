@@ -279,10 +279,8 @@ int32_t CabinPlayBackEngine::AddRenderer(const std::shared_ptr<IRendererStream> 
             RegisterSinkLatencyFetcherToStreamIfNeeded();
         }
         return result;
-    } else if (stream->GetStreamIndex() != stream_->GetStreamIndex()) {
-        return ERROR_UNSUPPORTED;
     }
-    return SUCCESS;
+    return SUCCESS; // re-add of the current stream
 }
 
 void CabinPlayBackEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &stream)
