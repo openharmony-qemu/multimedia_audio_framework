@@ -266,8 +266,7 @@ int32_t CabinPlayBackEngine::AddRenderer(const std::shared_ptr<IRendererStream> 
         // Single-slot engine: the new stream takes over the slot when the previous stream
         // has not been released yet (e.g. cross-process switch ordering), instead of
         // rejecting it with ERROR_UNSUPPORTED and blocking all later 3DA streams.
-        AUDIO_INFO_LOG("slot taken over, old stream:%{public}u new stream:%{public}u",
-            stream_->GetStreamIndex(), stream->GetStreamIndex());
+        AUDIO_INFO_LOG("slot taken over, old stream:%{public}u", stream_->GetStreamIndex());
         Stop();
         stream_ = nullptr;
     }
