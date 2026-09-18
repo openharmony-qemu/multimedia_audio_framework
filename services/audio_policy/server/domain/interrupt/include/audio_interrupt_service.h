@@ -41,6 +41,7 @@
 #include "audio_interrupt_dfx.h"
 #include "audio_interrupt_strategy.h"
 #include "audio_debug_info.h"
+#include "audio_policy_state_monitor.h"
 #ifdef HAS_WINDOW_MANAGER
 #include "window_utils.h"
 #endif
@@ -65,6 +66,7 @@ struct MuteFocusInfo {
 
 class AudioPolicyServerHandler;
 class AudioPolicyServer;
+class PausedStreamTimeoutMonitor;
 
 class AudioInterruptService : public std::enable_shared_from_this<AudioInterruptService>,
                               public IAudioInterruptEventDispatcher {
@@ -201,6 +203,7 @@ public:
     int32_t GetSessionDebugInfo(int32_t pid, AudioSessionDebugInfo &sessionDebugInfo);
     std::vector<int32_t> FindAudioZonesByPid(int32_t pid);
     void StopAudioFocusBySessionIds(const int32_t zoneId, const std::vector<std::pair<uint32_t, int32_t>> &sessions);
+    void HandlePausedTimeout(int32_t zoneId, uint32_t streamId);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -476,6 +479,9 @@ private:
     void RemoveStreamByPid(const int32_t callerPid);
     void AddStreamByPid(const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession);
     void UpdateAudioFocusCheckMuteFlag(const int32_t zoneId, AudioInterrupt &audioInterrupt);
+    void StartPausedStreamMonitor(const int32_t zoneId, const InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &incomingInterrupt, AudioInterrupt &activeInterrupt);
+    void StopPausedStreamMonitor(uint32_t streamId);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -496,6 +502,7 @@ private:
 
     std::map<uint32_t, std::list<MuteFocusInfo>> muteAudioFocus_;
     std::set<uint32_t> deferredResumeStreamIds_;
+    std::unordered_map<uint32_t, std::shared_ptr<PausedStreamTimeoutMonitor>> pauseStreamMonitors_;
 
     std::vector<AudioInterrupt> streamsInDeactivateAudioSession_;
 
@@ -528,6 +535,23 @@ private:
     AudioStreamCollector& streamCollector_;
     std::map<uint32_t, std::vector<AudioFocusBehavior>> audioFocusHisMap_;
     bool mediaInterruptedByRec_ = false;
+};
+
+class PausedStreamTimeoutMonitor : public AudioPolicyStateMonitorCallback {
+public:
+    explicit PausedStreamTimeoutMonitor(int32_t zoneId, uint32_t streamId,
+        std::weak_ptr<AudioInterruptService> service);
+    ~PausedStreamTimeoutMonitor() override;
+
+    void OnTimeOut() override;
+    void StartMonitor(int32_t duration, std::shared_ptr<PausedStreamTimeoutMonitor> cb);
+    void StopMonitor();
+
+private:
+    int32_t zoneId_;
+    uint32_t streamId_;
+    int32_t cbId_ = INVALID_CB_ID;
+    std::weak_ptr<AudioInterruptService> service_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
