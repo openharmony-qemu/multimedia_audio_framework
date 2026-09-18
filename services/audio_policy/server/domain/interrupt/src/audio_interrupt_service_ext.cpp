@@ -519,8 +519,9 @@ bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t
         // hintType is pause or mute, need reactivate interrupt
         bool tempUpdateScene = false;
         AUDIO_INFO_LOG("The stream %{public}d is reactiavted because of silent change", streamId);
-        int32_t ret = ActivateAudioInterruptCoreProcedure(incomingZoneId, incomingInterrupt, true, tempUpdateScene);
-        if (ret != SUCCESS) {
+        int32_t activateResult =
+            ActivateAudioInterruptCoreProcedure(incomingZoneId, incomingInterrupt, true, tempUpdateScene);
+        if (activateResult != SUCCESS) {
             AUDIO_ERR_LOG("ActivateAudioInterruptCoreProcedure failed for pid = %{public}d", incomingInterrupt.pid);
             StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
                 INTERRUPT_START_OPERATION_FAILED, "ActivateAudioInterruptCoreProcedure failed", false);
@@ -743,6 +744,72 @@ void AudioInterruptService::UpdateAudioFocusCheckMuteFlag(const int32_t zoneId, 
         AUDIO_INFO_LOG("Same app has same-type stream, update isCheckMuteStream flag");
         audioInterrupt.isCheckMuteStream = false;
     }
-} 
+}
+
+void AudioInterruptService::HandlePausedTimeout(int32_t zoneId, uint32_t streamId)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = pauseStreamMonitors_.find(streamId);
+    CHECK_AND_RETURN_LOG(it != pauseStreamMonitors_.end(),
+        "No pause monitor record for streamId %{public}u", streamId);
+
+    pauseStreamMonitors_.erase(it);
+    auto itZone = zonesMap_.find(zoneId);
+    CHECK_AND_RETURN_LOG(itZone != zonesMap_.end() && itZone->second != nullptr,
+        "zone not found or zone is null");
+    auto audioFocusInfoList = itZone->second->audioFocusInfoList;
+    auto isPresent = [streamId] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
+        return pair.first.sessionId == streamId;
+    };
+    auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresent);
+    CHECK_AND_RETURN_LOG(iter != audioFocusInfoList.end() && iter->second == PAUSE,
+        "streamId %{public}u not found or not in PAUSE state", streamId);
+    auto audioInterrupt = iter->first;
+
+    if (sessionService_.IsAudioSessionActivated(audioInterrupt.pid)) {
+        if (HandleLowPriorityEvent(audioInterrupt.pid, audioInterrupt, itZone->second)) {
+            RemovePlaceholderInterruptForSession(audioInterrupt.pid);
+        }
+    }
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+    SendInterruptEventCallback(interruptEvent, audioInterrupt.sessionId, audioInterrupt);
+    DeactivateAudioInterruptInternal(zoneId, audioInterrupt);
+    AUDIO_INFO_LOG("Stream %{public}d paused for timeout. Triggering stop callback.",
+        audioInterrupt.sessionId);
+}
+
+void AudioInterruptService::StopPausedStreamMonitor(uint32_t streamId)
+{
+    auto it = pauseStreamMonitors_.find(streamId);
+    CHECK_AND_RETURN(it != pauseStreamMonitors_.end() && it->second != nullptr);
+    AUDIO_INFO_LOG("Stop pause monitor for streamId %{public}u", streamId);
+    it->second->StopMonitor();
+    pauseStreamMonitors_.erase(it);
+}
+
+void AudioInterruptService::StartPausedStreamMonitor(const int32_t zoneId,
+    const InterruptEventInternal &interruptEvent, const AudioInterrupt &incomingInterrupt,
+    AudioInterrupt &activeInterrupt)
+{
+    bool isPausedForBehavior = interruptEvent.hintType == INTERRUPT_HINT_PAUSE &&
+        activeInterrupt.behaviorFlags_.pauseWhenInterruptFlag &&
+        AudioInterruptUtils::IsMediaStream(activeInterrupt.audioFocusType.streamType) &&
+        AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType) &&
+        sessionService_.GetSessionStrategy(incomingInterrupt.pid) != AudioConcurrencyMode::PAUSE_OTHERS &&
+        incomingInterrupt.independentStrategy.concurrencyMode != AudioConcurrencyMode::PAUSE_OTHERS;
+    CHECK_AND_RETURN(isPausedForBehavior);
+
+    uint32_t streamId = activeInterrupt.sessionId;
+    auto it = pauseStreamMonitors_.find(streamId);
+    CHECK_AND_RETURN_LOG(it == pauseStreamMonitors_.end(),
+        "streamId %{public}u already has a pause monitor", streamId);
+
+    int32_t pauseTimeout = interruptStrategy_->OnQueryPausedTime();
+    auto monitor = std::make_shared<PausedStreamTimeoutMonitor>(zoneId, streamId, shared_from_this());
+    monitor->StartMonitor(pauseTimeout, monitor);
+    pauseStreamMonitors_[streamId] = monitor;
+    AUDIO_INFO_LOG("streamId %{public}u pause monitor started, duration %{public}d s",
+        streamId, pauseTimeout);
+}
 }
 } // namespace OHOS
