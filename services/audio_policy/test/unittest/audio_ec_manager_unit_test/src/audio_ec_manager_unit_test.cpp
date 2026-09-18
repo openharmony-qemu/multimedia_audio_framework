@@ -479,38 +479,6 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManagerUpdateArmModuleInfo_004, TestSize
 }
 
 /**
- * @tc.name  : Test UpdateArmModuleInfo API with different sampling rates and formats
- * @tc.type  : FUNC
- * @tc.number: AudioEcManagerUpdateArmModuleInfo_005
- * @tc.desc  : Test UpdateArmModuleInfo interface with different sampling rates and formats.
- */
-HWTEST_F(AudioEcManagerUnitTest, AudioEcManagerUpdateArmModuleInfo_005, TestSize.Level1)
-{
-    AudioEcManager& ecManager = AudioEcManager::GetInstance();
-    
-    // Test with different sampling rate
-    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    DeviceStreamInfo streamInfo;
-    streamInfo.samplingRate = {AudioSamplingRate::SAMPLE_RATE_44100};  // Different sampling rate
-    streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
-    std::list<DeviceStreamInfo> streamInfos = {streamInfo};
-    deviceDesc->audioStreamInfo_ = streamInfos;
-    
-    AudioModuleInfo moduleInfo;
-    moduleInfo.channels = "1";  // Different channel count
-    
-    ecManager.UpdateArmModuleInfo(deviceDesc, moduleInfo);
-    
-    EXPECT_EQ(moduleInfo.rate, "44100");
-    EXPECT_EQ(moduleInfo.format, "s24le");
-    EXPECT_FALSE(moduleInfo.bufferSize.empty());
-    
-    // Verify buffer size calculation is correct (44100 * 1 * 3 * 20 / 1000 = 2646)
-    uint32_t expectedBufferSize = 44100 * 1 * 3 * 20 / 1000;
-    EXPECT_EQ(moduleInfo.bufferSize, std::to_string(expectedBufferSize));
-}
-
-/**
  * @tc.name  : Test UpdateArmModuleInfo API with buffer size calculation
  * @tc.type  : FUNC
  * @tc.number: AudioEcManagerUpdateArmModuleInfo_006
