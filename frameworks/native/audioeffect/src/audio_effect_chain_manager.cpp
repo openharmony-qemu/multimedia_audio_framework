@@ -27,6 +27,8 @@
 #include "audio_device_type.h"
 #include "audio_effect_map.h"
 #include "audio_effect_hdi_param.h"
+#include <thread>
+#include <chrono>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1431,6 +1433,9 @@ void AudioEffectChainManager::UpdateParamExtra(
         updateParam(frontendAppType_, HDI_FRONTEND_APP_TYPE);
     } else if (mainkey == "audio_effect" && subkey == "tablet_premium") {
         updateParam(stereoEnhancementMode_, HDI_STEREO_ENHANCEMENT);
+    } else if (mainkey == "audio_effect" && subkey == THERMAL_LEVEL_SUBKEY) {
+        CHECK_AND_RETURN(StringConverter(value, thermalLevelState_));
+        SendLowPowerParam();
     } else {
         AUDIO_INFO_LOG("UpdateParamExtra failed, mainkey is %{public}s, subkey is %{public}s, "
             "value is %{public}s", mainkey.c_str(), subkey.c_str(), value.c_str());
@@ -1438,6 +1443,63 @@ void AudioEffectChainManager::UpdateParamExtra(
     }
 }
 // LCOV_EXCL_STOP
+
+void AudioEffectChainManager::SetPowerState(bool isScreenOn)
+{
+    AUDIO_INFO_LOG("isScreenOn: %{public}d", isScreenOn);
+    powerState_ = isScreenOn ? 1 : 0;
+    SendLowPowerParam();
+}
+
+void AudioEffectChainManager::SendLowPowerParam()
+{
+    constexpr uint32_t LOW_POWER_THERMAL_LEVEL = 2;
+    uint32_t lowPower = 0;
+    if (powerState_ == 0 && thermalLevelState_ >= LOW_POWER_THERMAL_LEVEL) {
+        lowPower = 1;
+    }
+
+    uint64_t eventSeq = 0;
+    {
+        std::lock_guard<std::mutex> lock(lowPowerMutex_);
+        pendingLowPowerParam_ = lowPower;
+        eventSeq = ++lastLowPowerEventSeq_;
+    }
+    AUDIO_INFO_LOG("SendLowPowerParam event, target: %{public}u, powerState: %{public}u, "
+        "thermalLevel: %{public}u", lowPower, powerState_, thermalLevelState_);
+
+    std::thread([this, eventSeq]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(LOW_POWER_DEBOUNCE_MS));
+        uint32_t toSend = 0;
+        bool needSend = false;
+        {
+            std::lock_guard<std::mutex> lock(lowPowerMutex_);
+            if (eventSeq != lastLowPowerEventSeq_) {
+                return;
+            }
+            if (pendingLowPowerParam_ == lowPowerParam_) {
+                return;
+            }
+            toSend = pendingLowPowerParam_;
+            lowPowerParam_ = toSend;
+            needSend = true;
+        }
+        CHECK_AND_RETURN(needSend);
+
+        std::string value = std::to_string(toSend);
+        std::lock_guard<std::mutex> lock(dynamicMutex_);
+        AUDIO_INFO_LOG("SendLowPowerParam to arm, lowPower: %{public}s", value.c_str());
+        for (auto &[scene, audioEffectChain] : sceneTypeToEffectChainMap_) {
+            if (audioEffectChain == nullptr) {
+                continue;
+            }
+            audioEffectChain->SetLowPowerParam(value);
+            if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
+                AUDIO_WARNING_LOG("Update low power param to effect chain failed");
+            }
+        }
+    }).detach();
+}
 
 // LCOV_EXCL_START
 void AudioEffectChainManager::SetSpatializationSceneTypeToChains()

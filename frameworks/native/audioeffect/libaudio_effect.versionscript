@@ -53,6 +53,7 @@
     *StreamVolumeUpdate*;
     *SetStreamVolumeInfo*;
     *UpdateParamExtra*;
+    *SetPowerState*;
     *InitAudioEffectChainManager*;
     *InitAudioEnhanceChainManager*;
     *UpdateSpatializationState*;

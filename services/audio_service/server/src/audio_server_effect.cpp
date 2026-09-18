@@ -18,6 +18,10 @@
 
 #include "audio_server.h"
 
+#ifdef FEATURE_POWER_MANAGER
+#include "power_mgr_client.h"
+#endif
+
 #include "audio_effect_chain_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
@@ -494,6 +498,45 @@ int32_t AudioServer::IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, 
 #endif
     AUDIO_ERR_LOG("IsAudioLoopbackSupported not support");
     return SUCCESS;
+}
+
+void AudioServer::SetPowerState(int32_t state)
+{
+#ifdef FEATURE_POWER_MANAGER
+    static const std::set<PowerMgr::PowerState> screenOnTable = {
+        PowerMgr::PowerState::AWAKE,
+        PowerMgr::PowerState::FREEZE,
+        PowerMgr::PowerState::DIM,
+    };
+    static const std::set<PowerMgr::PowerState> screenOffTable = {
+        PowerMgr::PowerState::INACTIVE,
+        PowerMgr::PowerState::STAND_BY,
+        PowerMgr::PowerState::DOZE,
+        PowerMgr::PowerState::SLEEP,
+        PowerMgr::PowerState::HIBERNATE,
+    };
+
+    PowerMgr::PowerState currentState = static_cast<PowerMgr::PowerState>(state);
+    bool isScreenOn = true;
+    if (screenOnTable.count(currentState) > 0) {
+        isScreenOn = true;
+    } else if (screenOffTable.count(currentState) > 0) {
+        isScreenOn = false;
+    } else {
+        AUDIO_WARNING_LOG("SetPowerState %{public}d, ignored", state);
+        return;
+    }
+
+    if (isScreenOn == isScreenOn_) {
+        return;
+    }
+
+    isScreenOn_ = isScreenOn;
+
+    AudioEffectChainManager::GetInstance()->SetPowerState(isScreenOn);
+#else
+    AUDIO_ERR_LOG("SetPowerState not support");
+#endif
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
