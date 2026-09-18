@@ -85,6 +85,11 @@ enum class AudioSessionScene {
      * @since 20
      */
     VOICE_COMMUNICATION = 2,
+    /**
+     * Scene for voice message.
+     * @since 20
+     */
+    VOICE_MESSAGE = 3,
 };
 
 /**

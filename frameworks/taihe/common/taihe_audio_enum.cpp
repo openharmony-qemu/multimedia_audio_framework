@@ -1247,6 +1247,7 @@ bool TaiheAudioEnum::IsLegalInputArgumentSessionScene(int32_t scene)
         case static_cast<int32_t>(OHOS::AudioStandard::AudioSessionScene::MEDIA):
         case static_cast<int32_t>(OHOS::AudioStandard::AudioSessionScene::GAME):
         case static_cast<int32_t>(OHOS::AudioStandard::AudioSessionScene::VOICE_COMMUNICATION):
+        case static_cast<int32_t>(OHOS::AudioStandard::AudioSessionScene::VOICE_MESSAGE):
             result = true;
             break;
         default:
