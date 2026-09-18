@@ -177,6 +177,9 @@ void AudioInterruptStrategy::UpdateMuteAudioFocusStrategy(const AudioInterrupt &
         !(incomingInterrupt.behaviorFlags_.muteWhenInterruptFlag && focusEntry.actionOn == INCOMING)) {
         return;
     }
+    int32_t intpausedTimeMs = OnQueryPausedTime();
+    CHECK_AND_RETURN_LOG(intpausedTimeMs > 0,
+        "The set pause duration is 0s, no need to update PAUSE with PAUSE_WHEN_INTERRUPTED flag.");
 
     if ((focusEntry.hintType != INTERRUPT_HINT_STOP &&
         focusEntry.hintType != INTERRUPT_HINT_PAUSE) ||
@@ -360,5 +363,24 @@ void AudioInterruptStrategy::OnQueryBundleNameIsInList(const std::string &bundle
     }
 }
 
+int32_t AudioInterruptStrategy::OnQueryPausedTime()
+{
+    CHECK_AND_RETURN_RET(queryBundleNameListCallback_ != nullptr, 5);
+ 
+    const std::vector<std::pair<std::string, int32_t>> timeoutList = {
+        {"paused_0s", 0},
+        {"paused_2s", 2},
+        {"paused_3s", 3},
+        {"paused_4s", 4},
+        {"paused_5s", 5},
+    };
+ 
+    for (const auto &entry : timeoutList) {
+        bool isInList = false;
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList(entry.first, "audio_param", isInList);
+        CHECK_AND_RETURN_RET(!isInList, entry.second);
+    }
+    return 5; // default 5s
+}
 } // namespace AudioStandard
 } // namespace OHOS
