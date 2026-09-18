@@ -55,6 +55,39 @@ private:
     InterruptResponseCheckInfo info_;
 };
 
+PausedStreamTimeoutMonitor::PausedStreamTimeoutMonitor(int32_t zoneId, uint32_t streamId,
+    std::weak_ptr<AudioInterruptService> service)
+    : zoneId_(zoneId), streamId_(streamId), service_(std::move(service)) {}
+
+PausedStreamTimeoutMonitor::~PausedStreamTimeoutMonitor()
+{
+    StopMonitor();
+}
+
+void PausedStreamTimeoutMonitor::OnTimeOut()
+{
+    auto service = service_.lock();
+    CHECK_AND_RETURN_LOG(service != nullptr, "AudioInterruptService is null");
+    service->HandlePausedTimeout(zoneId_, streamId_);
+}
+
+void PausedStreamTimeoutMonitor::StartMonitor(int32_t duration, std::shared_ptr<PausedStreamTimeoutMonitor> cb)
+{
+    cbId_ = DelayedSingleton<AudioPolicyStateMonitor>::GetInstance()->RegisterCallback(
+        cb, duration, CallbackType::ONE_TIME);
+    if (cbId_ == INVALID_CB_ID) {
+        AUDIO_ERR_LOG("Register PausedStreamTimeoutMonitor failed for streamId %{public}u", streamId_);
+    }
+}
+
+void PausedStreamTimeoutMonitor::StopMonitor()
+{
+    if (cbId_ != INVALID_CB_ID) {
+        DelayedSingleton<AudioPolicyStateMonitor>::GetInstance()->UnRegisterCallback(cbId_);
+        cbId_ = INVALID_CB_ID;
+    }
+}
+
 void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
 {
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> audioInterruptZonesMapDump;
