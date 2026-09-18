@@ -3420,7 +3420,8 @@ int32_t AudioServer::SetPowerStateNotify(int32_t state)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
         callingUid);
-    return SetPowerState(state);
+    SetPowerState(state);
+    return SUCCESS;
 }
 
 void AudioServer::OnRenderSinkStateChange(uint32_t sinkId, bool started)
