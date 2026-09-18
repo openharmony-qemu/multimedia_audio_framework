@@ -28,6 +28,11 @@
 #include "audio_effect_map.h"
 #include "audio_effect_hdi_param.h"
 
+#include <cstdio>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -3114,8 +3119,10 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
     }
     free(dirCopy);
 
-    int32_t outFd = open(outPath, O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_OPEN_MODE);
-    CHECK_AND_RETURN_RET_LOG(outFd >= 0, ERR_SAVE_HRTF_FAIL, "outFd < 0");
+    FILE *outFile = fopen(outPath, "wb");
+    CHECK_AND_RETURN_RET_LOG(outFile != nullptr, ERR_SAVE_HRTF_FAIL, "outFile is nullptr, errno: %{public}d", errno);
+    int32_t chmodRet = fchmod(fileno(outFile), DEFAULT_OPEN_MODE);
+
     ssize_t remaining = length;
     std::vector<char> buffer(length);
     ssize_t n;
@@ -3125,7 +3132,7 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
             static_cast<size_t>(remaining) : sizeof(buffer);
         n = read(fd, buffer.data(), toRead);
         if (n <= 0) {
-            close(outFd);
+            fclose(outFile);
             unlink(outPath);
             if (n == 0) {
                 errno = EIO;
@@ -3134,9 +3141,9 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
             return ERR_SAVE_HRTF_FAIL;
         }
 
-        ssize_t written = write(outFd, buffer.data(), n);
-        if (written != n) {
-            close(outFd);
+        size_t written = fwrite(buffer.data(), 1, n, outFile);
+        if (written != static_cast<size_t>(n)) {
+            fclose(outFile);
             unlink(outPath);
             AUDIO_INFO_LOG("outPath write failed");
             return ERR_SAVE_HRTF_FAIL;
@@ -3145,7 +3152,10 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
         remaining -= n;
     }
 
-    close(outFd);
+    fclose(outFile);
+    if (chmodRet != 0) {
+        AUDIO_WARNING_LOG("fchmod outPath failed, errno: %{public}d", errno);
+    }
     AUDIO_INFO_LOG("personHrtf finish write in arm");
     return SUCCESS;
 }
