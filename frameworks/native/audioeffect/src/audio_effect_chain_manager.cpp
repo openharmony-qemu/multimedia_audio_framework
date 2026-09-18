@@ -3097,15 +3097,8 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBin(const int32_t &fd, co
     return ret;
 }
 
-int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &fd, const long &length)
+static int32_t CreateDirRecursively(const char *outPath)
 {
-    if (fd < 0 || length <= 0 || length > MAX_HRTF_LENGTH) {
-        AUDIO_INFO_LOG("fd < 0 or length invalid, UpdatePersonalizedHRTFBinToArm failed");
-        return ERR_SAVE_HRTF_FAIL;
-    }
-
-    const char *outPath = PERSONALIZED_HRTF_BIN_PATH.c_str();
-    char *dirCopy = strdup(outPath);
     CHECK_AND_RETURN_RET_LOG(dirCopy != nullptr, ERR_SAVE_HRTF_FAIL, "dirCopy is nullptr");
     char *p = dirCopy;
     if (*p == '/') p++;
@@ -3118,11 +3111,11 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
         p++;
     }
     free(dirCopy);
+        return SUCCESS;
+}
 
-    FILE *outFile = fopen(outPath, "wb");
-    CHECK_AND_RETURN_RET_LOG(outFile != nullptr, ERR_SAVE_HRTF_FAIL, "outFile is nullptr, errno: %{public}d", errno);
-    int32_t chmodRet = fchmod(fileno(outFile), DEFAULT_OPEN_MODE);
-
+static int32_t CopyFdToFile(const int32_t &fd, const long &length, const char *outPath, FILE *outFile)
+{
     ssize_t remaining = length;
     std::vector<char> buffer(length);
     ssize_t n;
@@ -3132,18 +3125,21 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
             static_cast<size_t>(remaining) : sizeof(buffer);
         n = read(fd, buffer.data(), toRead);
         if (n <= 0) {
-            fclose(outFile);
-            unlink(outPath);
-            if (n == 0) {
-                errno = EIO;
+            int32_t readErrno = (n == 0) ? EIO : errno;
+            if (fclose(outFile) != 0) {
+                AUDIO_WARNING_LOG("fclose outFile failed, errno: %{public}d", errno);
             }
-            AUDIO_INFO_LOG("failed to open file for writing, errno: %{public}d, %{public}s", errno, strerror(errno));
+            unlink(outPath);
+            AUDIO_ERR_LOG("failed to open file for writing, errno: %{public}d, %{public}s",
+                readErrno, strerror(readErrno));
             return ERR_SAVE_HRTF_FAIL;
         }
 
         size_t written = fwrite(buffer.data(), 1, n, outFile);
         if (written != static_cast<size_t>(n)) {
-            fclose(outFile);
+            if (fclose(outFile) != 0) {
+                AUDIO_WARNING_LOG("fclose outFile failed, errno: %{public}d", errno);
+            }
             unlink(outPath);
             AUDIO_INFO_LOG("outPath write failed");
             return ERR_SAVE_HRTF_FAIL;
@@ -3151,8 +3147,34 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
 
         remaining -= n;
     }
+    return SUCCESS;
+}
 
-    fclose(outFile);
+int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &fd, const long &length)
+{
+    if (fd < 0 || length <= 0 || length > MAX_HRTF_LENGTH) {
+        AUDIO_INFO_LOG("fd < 0 or length invalid, UpdatePersonalizedHRTFBinToArm failed");
+        return ERR_SAVE_HRTF_FAIL;
+    }
+
+    const char *outPath = PERSONALIZED_HRTF_BIN_PATH.c_str();
+    CHECK_AND_RETURN_RET_LOG(CreateDirRecursively(outPath) == SUCCESS, ERR_SAVE_HRTF_FAIL,
+        "create dir recursively failed");
+
+    FILE *outFile = fopen(outPath, "wb");
+    CHECK_AND_RETURN_RET_LOG(outFile != nullptr, ERR_SAVE_HRTF_FAIL, "outFile is nullptr, errno: %{public}d",
+        errno);
+    int32_t chmodRet = fchmod(fileno(outFile), DEFAULT_OPEN_MODE);
+
+    int32_t ret = CopyFdToFile(fd, length, outPath, outFile);
+    if (ret != SUCCESS) {
+        return ret;
+    }
+    if (fclose(outFile) != 0) {
+        unlink(outPath);
+        AUDIO_ERR_LOG("fclose outFile failed, errno: %{public}d", errno);
+        return ERR_SAVE_HRTF_FAIL;
+    }
     if (chmodRet != 0) {
         AUDIO_WARNING_LOG("fchmod outPath failed, errno: %{public}d", errno);
     }
