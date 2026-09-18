@@ -3101,7 +3101,9 @@ static int32_t CreateDirRecursively(const char *outPath)
 {
     CHECK_AND_RETURN_RET_LOG(dirCopy != nullptr, ERR_SAVE_HRTF_FAIL, "dirCopy is nullptr");
     char *p = dirCopy;
-    if (*p == '/') p++;
+    if (*p == '/') {
+        p++;
+    }
     while (*p) {
         if (*p == '/') {
             *p = '\0';
