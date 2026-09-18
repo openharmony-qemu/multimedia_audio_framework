@@ -1487,6 +1487,7 @@ void AudioEffectChainManager::SendLowPowerParam()
         CHECK_AND_RETURN(needSend);
 
         std::string value = std::to_string(toSend);
+        std::lock_guard<std::mutex> lock(dynamicMutex_);
         AUDIO_INFO_LOG("SendLowPowerParam to arm, lowPower: %{public}s", value.c_str());
         for (auto &[scene, audioEffectChain] : sceneTypeToEffectChainMap_) {
             if (audioEffectChain == nullptr) {
