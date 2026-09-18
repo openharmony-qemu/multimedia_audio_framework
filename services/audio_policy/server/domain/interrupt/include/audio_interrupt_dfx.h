@@ -91,6 +91,7 @@ public:
     void CheckInterruptResponse(const InterruptResponseCheckInfo &info,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
     void AudioSessionTimeoutErrorEvent(const AudioInterrupt &audioInterrupt);
+    void GetBehaviorUsageEvent(const AudioInterrupt &audioInterrupt);
 
 private:
     void WriteAudioInterruptErrorEvent(const AudioFocusErrorEvent &interruptError);
