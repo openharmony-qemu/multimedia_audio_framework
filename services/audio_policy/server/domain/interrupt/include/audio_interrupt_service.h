@@ -178,6 +178,7 @@ public:
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     void RegisterDefaultVolumeTypeListener();
+    void RegisterPCModeListener();
 
     void RemoveExistingFocus(
         const int32_t appUid, std::unordered_set<int32_t> &uidActivedSessions);

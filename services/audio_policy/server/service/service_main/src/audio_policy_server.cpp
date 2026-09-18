@@ -470,6 +470,12 @@ void AudioPolicyServer::RegisterDefaultVolumeTypeListener()
     interruptService_->RegisterDefaultVolumeTypeListener();
 }
 
+void AudioPolicyServer::RegisterPCModeListener()
+{
+    CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
+    interruptService_->RegisterPCModeListener();
+}
+
 // Handles audioserver-related SA events, including startup trigger and post-start callbacks.
 void AudioPolicyServer::HandleAudioServerRelatedSystemAbility(int32_t systemAbilityId,
     const std::string &deviceId)
@@ -1106,6 +1112,7 @@ void AudioPolicyServer::HandleDataShareReadyEvent()
         isInitSettingsData_ = true;
     }
     RegisterDefaultVolumeTypeListener();
+    RegisterPCModeListener();
     SubscribeAccessibilityConfigObserver();
 }
 
@@ -5376,6 +5383,7 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id, const int &oldId)
     audioPolicyService_.NotifyAccountsChanged(id);
     SendVolumeKeyEventToRssWhenAccountsChanged();
     RegisterDefaultVolumeTypeListener();
+    RegisterPCModeListener();
 }
 
 void AudioPolicyServer::NotifySubProfileChanged()
