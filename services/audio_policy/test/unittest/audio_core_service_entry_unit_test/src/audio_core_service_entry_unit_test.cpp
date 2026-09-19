@@ -69,7 +69,7 @@ public:
     MOCK_METHOD(bool, CompareName, (const char *propName), (override));
     MOCK_METHOD(bool, IsElementNode, (), (override));
     MOCK_METHOD(void, FreeDoc, (), (override));
-    MOCK_METHOD(void, FreeProp, (char *propName), (override));
+    MOCK_METHOD(void, FreeXmlString, (char *str), (override));
 };
 
 static void SetPipeProp(std::unordered_map<std::string, std::string> &props, bool principal)
