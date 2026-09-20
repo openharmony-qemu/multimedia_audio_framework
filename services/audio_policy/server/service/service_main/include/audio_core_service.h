@@ -532,6 +532,7 @@ public:
     void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
     void NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDeviceDescriptor> desc);
     void NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool lowered);
+    bool NeedSkipReloadForRemotePipe(const std::shared_ptr<AudioStreamDescriptor> &streamDesc) const;
     int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
     void TriggerVoipPriorityReload(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool lowered);
     int32_t ReloadCaptureSessionSoftLink();

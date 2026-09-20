@@ -1902,6 +1902,9 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         device.deviceTokenId_ = capability.deviceTokenId_;
         AUDIO_INFO_LOG("Update tokenId: %{public}u", device.deviceTokenId_);
     }
+
+    device.isSupportReload_ = capability.isSupportReload_;
+    AUDIO_INFO_LOG("Update isSupportReload: %{public}d", device.isSupportReload_);
 }
 
 bool AudioDeviceStatus::CheckIsIndexValidAndHandleErr(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,

@@ -959,6 +959,7 @@ bool AudioPipeSelector::IsNeedReloadForInputPipe(const std::shared_ptr<AudioPipe
     const std::shared_ptr<AudioPipeInfo> &oldPipe, const std::shared_ptr<AudioStreamDescriptor> &highestStream,
     const std::shared_ptr<AudioStreamDescriptor> &oldHighestStream) const
 {
+    CHECK_AND_RETURN_RET_LOG(!IsPipeNotSupportReload(newPipe), false, "remote pipe not support reload");
     if (newPipe->audioStreamInfo_.samplingRate != oldPipe->audioStreamInfo_.samplingRate) {
         return true;
     }
@@ -1043,7 +1044,7 @@ void AudioPipeSelector::HandleEmptyInputPipeReload(std::vector<std::shared_ptr<A
         ClearMicInModuleInfo(newPipe->moduleInfo_);
         ClearMicRefModuleInfo(newPipe->moduleInfo_);
         if (newPipe->pipeAction_ != PIPE_ACTION_NEW) {
-            newPipe->pipeAction_ = PIPE_ACTION_RELOAD;
+            newPipe->pipeAction_ = IsPipeNotSupportReload(newPipe) ? newPipe->pipeAction_ : PIPE_ACTION_RELOAD;
         }
     }
 }
@@ -2102,6 +2103,14 @@ bool AudioPipeSelector::IsUpdateActionForDeviceLevelHdPlay(
     CHECK_AND_RETURN_RET_LOG(existingHdPlayMode != HdPlaybackMode::DEVICE_LEVEL ||
         incomingHdPlayMode != HdPlaybackMode::DEVICE_LEVEL, false, "device level, not update action");
     return true;
+}
+
+bool AudioPipeSelector::IsPipeNotSupportReload(const std::shared_ptr<AudioPipeInfo> &pipe) const
+{
+    CHECK_AND_RETURN_RET(pipe != nullptr && pipe->IsSameAdapter(ADAPTER_TYPE_REMOTE) &&
+        pipe->pipeRole_ == PIPE_ROLE_INPUT && !pipe->streamDescriptors_.empty(), false);
+    auto mainDevice = pipe->streamDescriptors_.front()->GetMainNewDeviceDesc();
+    return mainDevice != nullptr && mainDevice->IsRemoteDevice() && !mainDevice->isSupportReload_;
 }
 
 void AudioPipeSelector::MatchCollaborativePipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
