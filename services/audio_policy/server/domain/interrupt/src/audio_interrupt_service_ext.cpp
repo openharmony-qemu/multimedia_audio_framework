@@ -825,10 +825,13 @@ void AudioInterruptService::StartPausedStreamMonitor(const int32_t zoneId,
     AudioInterrupt &activeInterrupt)
 {
     bool isIncomingBundleNameExist = false;
-    if (queryBundleNameListCallback_ != nullptr) {
+    int32_t pauseTimeout = DEFAULT_PAUSE_TIMEOUT_S;
+    if (interruptStrategy_ != nullptr) {
         std::string incomingBundleName = AudioInterruptUtils::GetAudioInterruptBundleName(incomingInterrupt);
-        queryBundleNameListCallback_->OnQueryBundleNameIsInList(incomingBundleName, "audio_param",
+        interruptStrategy_->OnQueryBundleNameIsInList(incomingBundleName, "audio_param",
             isIncomingBundleNameExist);
+        pauseTimeout = interruptStrategy_->OnQueryPausedTime();
+        CHECK_AND_RETURN(pauseTimeout > 0);
     }
     bool isPausedForBehavior = interruptEvent.hintType == INTERRUPT_HINT_PAUSE &&
         activeInterrupt.behaviorFlags_.pauseWhenInterruptFlag &&
@@ -844,8 +847,6 @@ void AudioInterruptService::StartPausedStreamMonitor(const int32_t zoneId,
     CHECK_AND_RETURN_LOG(it == pauseStreamMonitors_.end(),
         "streamId %{public}u already has a pause monitor", streamId);
 
-    int32_t pauseTimeout = interruptStrategy_->OnQueryPausedTime();
-    CHECK_AND_RETURN(pauseTimeout > 0);
     auto monitor = std::make_shared<PausedStreamTimeoutMonitor>(zoneId, streamId, shared_from_this());
     monitor->StartMonitor(pauseTimeout, monitor);
     pauseStreamMonitors_[streamId] = monitor;
