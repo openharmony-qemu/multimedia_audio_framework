@@ -215,7 +215,7 @@ std::vector<int32_t> SumS16SingleAbsNeno(const int16_t* pcm, uint32_t num_sample
     std::vector<int32_t> sum(1, 0);
 #if USE_ARM_NEON == 1
     int32x4_t sum_vec = vdupq_n_s32(0);  // 32-bit accumulator
-    for (uint32_t i = 0; i + DEFAULT_OFFSET_7 <= num_samples; i += DEFAULT_STEP_BY_8) {
+    for (uint32_t i = 0; i + DEFAULT_OFFSET_7 < num_samples; i += DEFAULT_STEP_BY_8) {
         int16x8_t v = vld1q_s16(&pcm[i]);           // load 8 int16 samples
 
         uint16x8_t mask = vcltq_s16(v, vdupq_n_s16(0));
