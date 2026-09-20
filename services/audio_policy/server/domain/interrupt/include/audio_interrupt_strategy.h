@@ -37,6 +37,7 @@ public:
     int32_t OnQueryPausedTime();
 
 private:
+    static constexpr int32_t DEFAULT_PAUSE_TIMEOUT_S = 5;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 
     void UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,

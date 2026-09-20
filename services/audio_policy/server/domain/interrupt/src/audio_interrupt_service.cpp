@@ -3191,9 +3191,8 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         AUDIO_DEBUG_LOG("stream (streamId %{public}u) is not active now", audioInterrupt.streamId);
         return;
     }
-    StopPausedStreamMonitor(audioInterrupt.sessionId);
     RemoveSuggestionRecord(audioInterrupt);
-    DeactivateAudioInterruptInternalContinue(zoneId, isSessionTimeout);
+    DeactivateAudioInterruptInternalContinue(zoneId, audioInterrupt, isSessionTimeout);
     RemoveMuteCheckRecord(audioInterrupt);
     return;
 }
@@ -3216,8 +3215,10 @@ bool AudioInterruptService::CheckNeedPlaceHolder(const AudioInterrupt &audioInte
     return needPlaceHolder;
 }
 
-void AudioInterruptService::DeactivateAudioInterruptInternalContinue(const int32_t zoneId, bool isSessionTimeout)
+void AudioInterruptService::DeactivateAudioInterruptInternalContinue(const int32_t zoneId,
+    const AudioInterrupt &audioInterrupt, bool isSessionTimeout)
 {
+    StopPausedStreamMonitor(audioInterrupt.sessionId);
     auto itZone = zonesMap_.find(zoneId);
     if (itZone->second->context.focusStrategy_ == AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY) {
         HILOG_COMM_INFO("[DeactivateAudioInterruptInternal]zone: %{public}d distributed focus strategy not "

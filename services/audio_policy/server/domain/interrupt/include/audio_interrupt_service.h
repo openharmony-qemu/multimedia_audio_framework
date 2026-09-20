@@ -315,7 +315,8 @@ private:
         bool isSessionTimeout = false);
     bool CheckNeedPlaceHolder(const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
-    void DeactivateAudioInterruptInternalContinue(const int32_t zoneId, bool isSessionTimeout = false);
+    void DeactivateAudioInterruptInternalContinue(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        bool isSessionTimeout = false);
     void SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive, bool &removeFocusInfo);
     void SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,

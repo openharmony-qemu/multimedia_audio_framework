@@ -838,6 +838,7 @@ void AudioInterruptService::StartPausedStreamMonitor(const int32_t zoneId,
         "streamId %{public}u already has a pause monitor", streamId);
 
     int32_t pauseTimeout = interruptStrategy_->OnQueryPausedTime();
+    CHECK_AND_RETURN(pauseTimeout > 0);
     auto monitor = std::make_shared<PausedStreamTimeoutMonitor>(zoneId, streamId, shared_from_this());
     monitor->StartMonitor(pauseTimeout, monitor);
     pauseStreamMonitors_[streamId] = monitor;

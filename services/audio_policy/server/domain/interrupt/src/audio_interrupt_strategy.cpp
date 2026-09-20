@@ -365,7 +365,7 @@ void AudioInterruptStrategy::OnQueryBundleNameIsInList(const std::string &bundle
 
 int32_t AudioInterruptStrategy::OnQueryPausedTime()
 {
-    CHECK_AND_RETURN_RET(queryBundleNameListCallback_ != nullptr, 5);
+    CHECK_AND_RETURN_RET(queryBundleNameListCallback_ != nullptr, DEFAULT_PAUSE_TIMEOUT_S);
 
     const std::vector<std::pair<std::string, int32_t>> timeoutList = {
         {"paused_0s", 0},
@@ -380,7 +380,7 @@ int32_t AudioInterruptStrategy::OnQueryPausedTime()
         queryBundleNameListCallback_->OnQueryBundleNameIsInList(entry.first, "audio_param", isInList);
         CHECK_AND_RETURN_RET(!isInList, entry.second);
     }
-    return 5; // default 5s
+    return DEFAULT_PAUSE_TIMEOUT_S; // default 5s
 }
 } // namespace AudioStandard
 } // namespace OHOS
