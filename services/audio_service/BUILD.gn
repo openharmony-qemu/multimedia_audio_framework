@@ -301,6 +301,7 @@ ohos_shared_library("audio_stream_client") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "ability_base:want",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
@@ -375,6 +376,7 @@ ohos_shared_library("audio_policy_manager") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "ability_base:want",
     "eventhandler:libeventhandler",
     "frame_aware_sched:rtg_interface",
@@ -515,6 +517,7 @@ ohos_shared_library("audio_client") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "c_utils:utils",
+    "bounds_checking_function:libsec_shared",
   ]
 
   public_external_deps = [ "c_utils:utils", ]
@@ -962,6 +965,7 @@ ohos_shared_library("audio_sasdk") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
