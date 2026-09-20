@@ -800,7 +800,7 @@ void AudioInterruptService::HandlePausedTimeout(int32_t zoneId, uint32_t streamI
     auto audioInterrupt = iter->first;
 
     if (sessionService_.IsAudioSessionActivated(audioInterrupt.pid)) {
-        if (HandleLowPriorityEvent(audioInterrupt.pid, audioInterrupt, itZone->second)) {
+        if (HandleLowPriorityEvent(audioInterrupt.pid, audioInterrupt.streamId)) {
             RemovePlaceholderInterruptForSession(audioInterrupt.pid);
         }
     }
