@@ -17,7 +17,6 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "sink/i_audio_render_sink.h"
-#include "sink/cabin_audio_render_sink.h"
 #include "cabin_playback_engine.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
@@ -573,23 +572,23 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_009, TestSize.Level1)
     streamInfo.channels = CHANNEL_8;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_S16LE;
+    streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
 
-    playbackEngine_->isInit_ = true;
-    playbackEngine_->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
-        HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT, "ut_reuse_seed", true);
-    auto sink = std::static_pointer_cast<CabinAudioRenderSink>(
-        HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_, true));
-    ASSERT_NE(sink, nullptr);
-    sink->sinkInited_ = true; // healthy sink: render alive in HAL
-    playbackEngine_->uChannel_ = CHANNEL_8;
-    playbackEngine_->uSampleRate_ = SAMPLE_RATE_48000;
-    playbackEngine_->uformat_ = SAMPLE_S16LE;
-    playbackEngine_->uLayout_ = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
-
-    uint32_t cachedId = playbackEngine_->renderId_;
+    // the first InitSink runs the full path and succeeds against the real HAL
     auto ret = playbackEngine_->InitSink(streamInfo);
-    EXPECT_EQ(ret, SUCCESS); // same params + healthy sink: reuse without re-init
-    EXPECT_EQ(playbackEngine_->renderId_, cachedId);
+    ASSERT_EQ(ret, SUCCESS);
+    playbackEngine_->isInit_ = true; // normally set by AddRenderer on success
+    auto sinkFirst = HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_);
+    ASSERT_NE(sinkFirst, nullptr);
+    ASSERT_TRUE(sinkFirst->IsInited());
+
+    // same params + healthy sink: reuse, no teardown / re-create
+    ret = playbackEngine_->InitSink(streamInfo);
+    EXPECT_EQ(ret, SUCCESS);
+    auto sinkSecond = HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_);
+    ASSERT_NE(sinkSecond, nullptr);
+    EXPECT_EQ(sinkSecond.get(), sinkFirst.get()); // a re-init removes and re-creates the sink
+    EXPECT_TRUE(sinkSecond->IsInited());
 }
 
  /**
@@ -881,7 +880,8 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_PollAndWrite_022, Test
  * @tc.type  : FUNC
  * @tc.number: CabinPlayBackEngine_023
  * @tc.desc  : Same cached params but the sink is NOT inited (husk left by a failed re-init):
- *             the health check must force a re-init instead of reusing the husk
+ *             the health check must re-init and bring back a healthy sink instead of
+ *             reusing the husk and returning SUCCESS
  */
 HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_023, TestSize.Level1)
 {
@@ -889,25 +889,23 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_023, TestSize.Level1)
     streamInfo.channels = CHANNEL_8;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_S16LE;
+    streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
 
-    playbackEngine_->isInit_ = true;
-    playbackEngine_->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
-        HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT, "ut_husk_seed", true);
-    auto sink = std::static_pointer_cast<CabinAudioRenderSink>(
-        HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_, true));
-    ASSERT_NE(sink, nullptr);
-    ASSERT_FALSE(sink->IsInited()); // husk: sink object exists, render creation never succeeded
-    playbackEngine_->uChannel_ = CHANNEL_8;
-    playbackEngine_->uSampleRate_ = SAMPLE_RATE_48000;
-    playbackEngine_->uformat_ = SAMPLE_S16LE;
-    playbackEngine_->uLayout_ = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
-
-    uint32_t cachedId = playbackEngine_->renderId_;
     auto ret = playbackEngine_->InitSink(streamInfo);
-    // old code returned SUCCESS here and reused the render-less sink; the health check now
-    // forces a re-init (which fails in the HDI-less UT environment)
-    EXPECT_NE(ret, SUCCESS);
-    EXPECT_NE(playbackEngine_->renderId_, cachedId);
+    ASSERT_EQ(ret, SUCCESS);
+    playbackEngine_->isInit_ = true;
+    // simulate the husk a failed re-init leaves: sink object alive, render destroyed
+    auto sink = HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_);
+    ASSERT_NE(sink, nullptr);
+    sink->DeInit();
+    ASSERT_FALSE(sink->IsInited());
+
+    ret = playbackEngine_->InitSink(streamInfo);
+    EXPECT_EQ(ret, SUCCESS); // the forced re-init succeeds against the HAL again
+    auto sinkNow = HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_);
+    ASSERT_NE(sinkNow, nullptr);
+    // old code early-returned SUCCESS here and left the dead sink in place
+    EXPECT_TRUE(sinkNow->IsInited());
 }
 
  /**
@@ -915,42 +913,41 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_023, TestSize.Level1)
  * @tc.type  : FUNC
  * @tc.number: CabinPlayBackEngine_024
  * @tc.desc  : Layout-only mismatch on a healthy sink must trigger a full re-init (Stop/DeInit)
- *             even when channel, format and rate are all identical
+ *             even when channel, format and rate are all identical; the HAL rejects the
+ *             unknown layout so the re-init outcome itself discriminates the fix
  */
 HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_024, TestSize.Level1)
 {
-    AudioStreamInfo streamInfo;
-    streamInfo.channels = CHANNEL_8;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_S16LE;
-    streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
+    AudioStreamInfo sameGeom;
+    sameGeom.channels = CHANNEL_8;
+    sameGeom.samplingRate = SAMPLE_RATE_48000;
+    sameGeom.format = SAMPLE_S16LE;
+    sameGeom.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
 
+    auto ret = playbackEngine_->InitSink(sameGeom);
+    ASSERT_EQ(ret, SUCCESS);
     playbackEngine_->isInit_ = true;
-    playbackEngine_->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
-        HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT, "ut_layout_seed", true);
-    auto sink = std::static_pointer_cast<CabinAudioRenderSink>(
-        HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_, true));
-    ASSERT_NE(sink, nullptr);
-    sink->sinkInited_ = true; // healthy sink, but cached layout differs from the request
-    playbackEngine_->uChannel_ = CHANNEL_8;
-    playbackEngine_->uSampleRate_ = SAMPLE_RATE_48000;
-    playbackEngine_->uformat_ = SAMPLE_S16LE;
-    playbackEngine_->uLayout_ = AudioChannelLayout::CH_LAYOUT_5POINT1POINT4;
+    auto sinkFirst = HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_);
+    ASSERT_NE(sinkFirst, nullptr);
+    ASSERT_TRUE(sinkFirst->IsInited());
 
-    auto ret = playbackEngine_->InitSink(streamInfo);
-    // old code ignored the layout in the reuse decision and returned SUCCESS; the compare
-    // now forces a re-init (fails HDI-less) after DeInit-ing the healthy sink
-    EXPECT_NE(ret, SUCCESS);
-    EXPECT_FALSE(sink->IsInited());
+    // layout-only change (channel/format/rate identical); the HAL rejects an unknown layout
+    AudioStreamInfo newLayout = sameGeom;
+    newLayout.channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
+    ret = playbackEngine_->InitSink(newLayout);
+    // old code ignored the layout in the reuse decision and returned SUCCESS via reuse;
+    // the compare now forces a full re-init which the HAL rejects with ERR_NOT_STARTED
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+    EXPECT_FALSE(sinkFirst->IsInited()); // the healthy sink was DeInit-ed before the retry
+    // the failed re-init must not update the cached layout
+    EXPECT_EQ(playbackEngine_->uLayout_, AudioChannelLayout::CH_LAYOUT_5POINT1POINT2);
 }
 
  /**
  * @tc.name  : Test CabinPlayBackEngine API
  * @tc.type  : FUNC
  * @tc.number: CabinPlayBackEngine_025
- * @tc.desc  : InitSink(4-arg) success path caches the full param set including channelLayout;
- *             pre-seeding the sink attr makes Init hit the sink-level same-attr early-exit
- *             so the success path runs without HDI
+ * @tc.desc  : InitSink(4-arg) success path caches the full param set including channelLayout
  */
 HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_025, TestSize.Level1)
 {
@@ -959,23 +956,8 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_025, TestSize.Level1)
     const uint32_t rate = SAMPLE_RATE_48000;
     const AudioChannelLayout layout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
 
-    // seed the sink the engine's 4-arg InitSink will fetch (it always uses the AV sink name)
-    uint32_t renderId = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
-        HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT, HDI_ID_INFO_3DA, true);
-    auto sink = std::static_pointer_cast<CabinAudioRenderSink>(
-        HdiAdapterManager::GetInstance().GetRenderSink(renderId, true));
-    ASSERT_NE(sink, nullptr);
-    sink->attr_.channel = channel;
-    sink->attr_.sampleRate = rate;
-    sink->attr_.format = format;
-    sink->attr_.encodingType = ENCODING_AUDIOVIVID;
-    sink->attr_.channelLayout = static_cast<uint64_t>(layout);
-    sink->sinkInited_ = true;
-
-    playbackEngine_->renderId_ = HDI_INVALID_ID; // stale id: straight into the 4-arg re-init
     auto ret = playbackEngine_->InitSink(channel, format, rate, layout);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(playbackEngine_->renderId_, renderId);
     EXPECT_EQ(playbackEngine_->uChannel_, channel);
     EXPECT_EQ(playbackEngine_->uSampleRate_, rate);
     EXPECT_EQ(playbackEngine_->uformat_, format);
