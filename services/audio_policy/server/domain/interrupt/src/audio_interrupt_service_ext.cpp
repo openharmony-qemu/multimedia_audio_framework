@@ -824,12 +824,19 @@ void AudioInterruptService::StartPausedStreamMonitor(const int32_t zoneId,
     const InterruptEventInternal &interruptEvent, const AudioInterrupt &incomingInterrupt,
     AudioInterrupt &activeInterrupt)
 {
+    bool isIncomingBundleNameExist = false;
+    if (queryBundleNameListCallback_ != nullptr) {
+        std::string incomingBundleName = AudioInterruptUtils::GetAudioInterruptBundleName(incomingInterrupt);
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList(incomingBundleName, "audio_param",
+            isIncomingBundleNameExist);
+    }
     bool isPausedForBehavior = interruptEvent.hintType == INTERRUPT_HINT_PAUSE &&
         activeInterrupt.behaviorFlags_.pauseWhenInterruptFlag &&
         AudioInterruptUtils::IsMediaStream(activeInterrupt.audioFocusType.streamType) &&
         AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType) &&
         sessionService_.GetSessionStrategy(incomingInterrupt.pid) != AudioConcurrencyMode::PAUSE_OTHERS &&
-        incomingInterrupt.independentStrategy.concurrencyMode != AudioConcurrencyMode::PAUSE_OTHERS;
+        incomingInterrupt.independentStrategy.concurrencyMode != AudioConcurrencyMode::PAUSE_OTHERS &&
+        !isIncomingBundleNameExist;
     CHECK_AND_RETURN(isPausedForBehavior);
 
     uint32_t streamId = activeInterrupt.sessionId;
