@@ -17,6 +17,8 @@
 
 #include <bitset>
 #include <list>
+#include <mutex>
+#include <unordered_map>
 #include "singleton.h"
 #include "audio_group_handle.h"
 #include "audio_device_descriptor.h"
@@ -28,6 +30,7 @@
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
 #include "common_event_manager.h"
+#include "audio_info.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"
@@ -131,6 +134,9 @@ public:
     int32_t ClearVoipMuteByCallerUid(int32_t callerUid);
     int32_t ClearVoipMuteByStreamId(int64_t streamId);
     int32_t SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage);
+    int32_t SetVolumeProtectionInfo(const VolumeProtectionConfig &config);
+    int32_t ClearVolumeProtection();
+    int32_t ConfirmVolumeLimitExceeded(AudioVolumeType volumeType, bool confirmResult);
     int32_t GetSystemAppVolumePercentage(int32_t appUid, int32_t &volumePercentage);
     int32_t SetSystemAppVolumePercentageWithCallback(int32_t appUid, int32_t volumePercentage);
     int32_t IsSystemAppVolumeMuted(int32_t appUid, bool &isMute);
@@ -263,6 +269,8 @@ private:
     void ChangeDeviceSafeStatus(SafeStatus safeStatus);
     bool CheckMixActiveMusicTime(int32_t safeVolume);
     bool CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType);
+    int32_t SetSystemVolumeLevelWithOptionInternal(AudioStreamType streamType, int32_t volumeLevel,
+        int32_t zoneId, const VolumeUpdateOption &info);
     void ProcUpdateRingerMode();
     int32_t HandleA2dpAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
         DeviceType curDeviceType);
@@ -284,6 +292,9 @@ private:
     int32_t RefreshKaraokePipeVolume();
     bool GetSpecialDeviceVolumeDegree(AudioStreamType streamType, AudioVolumeType volumeType,
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t &volumeDegree);
+    int32_t CheckVolumeProtectionConfig(const VolumeProtectionConfig &config) const;
+    bool CheckVolumeLimitExceeded(AudioStreamType streamType, int32_t uid, int32_t targetVolumeDegree, int32_t zoneId);
+    int32_t SetVolumeToProtectionThreshold(AudioVolumeType volumeType, int32_t volumeThreshold);
 
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
@@ -370,6 +381,11 @@ private:
     std::mutex nearlinkKaraokeMutex_;
     NearlinkKaraokeVolumeMode nearlinkKaraokeMode_ = NearlinkKaraokeVolumeMode::VOLUME_NEARLINK;
     std::shared_ptr<AudioPolicyStateMonitor> audioPolicyStateMonitor_;
+
+    std::mutex volumeProtectionMutex_;
+    VolumeProtectionConfig volumeProtectionConfig_;
+    // Volume-limit notification suppression expiry in seconds since boot, including suspend time.
+    int64_t volumeLimitExpiryTime_ = 0;
 };
 
 class ForceControlVolumeTypeMonitor : public AudioPolicyStateMonitorCallback {

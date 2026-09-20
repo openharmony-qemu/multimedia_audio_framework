@@ -81,6 +81,15 @@ public:
     int32_t SetSystemAppVolumePercentageForUid(const int32_t appUid, const int32_t volumePercentage);
 
     /**
+     * @brief Confirm volume adjustment and suppress notifications for the configured duration on success.
+     *
+     * @param volumeType The audio volume type reported by the prompt.
+     * @param confirmResult True to accept the adjustment; false to leave the state unchanged.
+     * @return Returns {@link SUCCESS} on success; returns an error code otherwise.
+     */
+    int32_t ConfirmVolumeLimitExceeded(AudioVolumeType volumeType, bool confirmResult);
+
+    /**
      * @brief Set self app volume.
      *
      * @param volume The volume to be set for the current app.
@@ -783,6 +792,12 @@ public:
      */
     int32_t UnregisterVolumeDegreeCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
+
+    int32_t RegisterVolumeLimitExceededCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeLimitExceededCallback> &callback);
+
+    int32_t UnregisterVolumeLimitExceededCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeLimitExceededCallback> &callback = nullptr);
 
     /**
      * @brief registers the systemVolumeChange callback listener

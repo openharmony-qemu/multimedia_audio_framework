@@ -188,6 +188,9 @@ napi_value NapiAudioVolumeManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getMinSystemVolumePercentage", GetMinSystemVolumePercentage),
         DECLARE_NAPI_FUNCTION("onVolumePercentageChange", OnVolumePercentageChange),
         DECLARE_NAPI_FUNCTION("offVolumePercentageChange", OffVolumePercentageChange),
+        DECLARE_NAPI_FUNCTION("onVolumeLimitExceeded", OnVolumeLimitExceeded),
+        DECLARE_NAPI_FUNCTION("offVolumeLimitExceeded", OffVolumeLimitExceeded),
+        DECLARE_NAPI_FUNCTION("confirmVolumeLimitExceeded", ConfirmVolumeLimitExceeded),
         DECLARE_NAPI_FUNCTION("onSystemVolumeChangeByFilter", OnSystemVolumeChangeByFilter),
         DECLARE_NAPI_FUNCTION("offSystemVolumeChangeByFilter", OffSystemVolumeChangeByFilter),
     };
@@ -1732,6 +1735,174 @@ napi_value NapiAudioVolumeManager::OffVolumePercentageChange(napi_env env, napi_
 
     UnregisterVolumeDegreeChangeCallback(env, args, argc, napiVolumeManager);
     return undefinedResult;
+}
+
+napi_value NapiAudioVolumeManager::OnVolumeLimitExceeded(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_NO_PERMISSION), "No system permission");
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
+    if (status != napi_ok || argc != ARGS_ONE) {
+        return NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM,
+            "one callback parameter is required");
+    }
+    napi_valuetype callbackType = napi_undefined;
+    if (napi_typeof(env, args[PARAM0], &callbackType) != napi_ok || callbackType != napi_function) {
+        return NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM,
+            "the callback must be a function");
+    }
+
+    NapiAudioVolumeManager *napiVolumeManager = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiVolumeManager));
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && napiVolumeManager != nullptr,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM), "unwrap failed");
+    return RegisterVolumeLimitExceededCallback(env, args,
+        VOLUME_LIMIT_EXCEEDED_CALLBACK_NAME, napiVolumeManager);
+}
+
+napi_value NapiAudioVolumeManager::OffVolumeLimitExceeded(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_NO_PERMISSION), "No system permission");
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
+        NAPI_ERR_INVALID_PARAM), "status error");
+
+    NapiAudioVolumeManager *napiVolumeManager = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiVolumeManager));
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
+        NAPI_ERR_INVALID_PARAM), "status error");
+    CHECK_AND_RETURN_RET_LOG(napiVolumeManager != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
+        NAPI_ERR_INVALID_PARAM), "napiVolumeManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiVolumeManager->audioSystemMngr_ != nullptr,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM),
+        "audioSystemMngr_ is nullptr");
+
+    UnregisterVolumeLimitExceededCallback(env, args, argc, napiVolumeManager);
+    return undefinedResult;
+}
+
+napi_value NapiAudioVolumeManager::ConfirmVolumeLimitExceeded(napi_env env, napi_callback_info info)
+{
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
+
+    size_t argc = ARGS_TWO;
+    napi_value args[ARGS_TWO] = {nullptr, nullptr};
+    auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_TWO && napiAudioVolumeManager != nullptr,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM, "invalid arguments"),
+        "invalid arguments");
+
+    napi_valuetype volumeTypeValueType = napi_undefined;
+    napi_valuetype confirmResultValueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &volumeTypeValueType);
+    napi_typeof(env, args[PARAM1], &confirmResultValueType);
+    CHECK_AND_RETURN_RET_LOG(volumeTypeValueType == napi_number && confirmResultValueType == napi_boolean,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM, "invalid arguments"),
+        "invalid argument types");
+
+    int32_t volumeType = STREAM_DEFAULT;
+    bool confirmResult = false;
+    CHECK_AND_RETURN_RET_LOG(NapiParamUtils::GetValueInt32(env, volumeType, args[PARAM0]) == napi_ok &&
+        NapiParamUtils::GetValueBoolean(env, confirmResult, args[PARAM1]) == napi_ok &&
+        NapiAudioEnum::IsLegalInputArgumentVolType(volumeType),
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM, "invalid volume type"),
+        "invalid volume type");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager->audioSystemMngr_ != nullptr,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_SYSTEM), "audioSystemMngr_ is nullptr");
+    int32_t ret = napiAudioVolumeManager->audioSystemMngr_->ConfirmVolumeLimitExceeded(
+        NapiAudioEnum::GetNativeAudioVolumeType(volumeType), confirmResult);
+    if (ret == ERR_SYSTEM_PERMISSION_DENIED) {
+        return NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED, "No system permission");
+    }
+    if (ret == ERR_INVALID_PARAM) {
+        return NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM, "invalid volume type");
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_SYSTEM, "confirm volume limit exceeded failed"),
+        "confirm volume limit exceeded failed, ret=%{public}d", ret);
+    return undefinedResult;
+}
+
+napi_value NapiAudioVolumeManager::RegisterVolumeLimitExceededCallback(napi_env env, napi_value *args,
+    const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager && napiAudioVolumeManager->audioSystemMngr_,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM), "audio volume manager is nullptr.");
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    if (napiAudioVolumeManager->volumeLimitExceededCallbackNapi_ == nullptr) {
+        napiAudioVolumeManager->volumeLimitExceededCallbackNapi_ = std::make_shared<
+            NapiAudioVolumeLimitExceededCallback>(env);
+        int32_t ret = napiAudioVolumeManager->audioSystemMngr_->RegisterVolumeLimitExceededCallback(
+            napiAudioVolumeManager->cachedClientId_, napiAudioVolumeManager->volumeLimitExceededCallbackNapi_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "Register Failed %{public}d", ret);
+    }
+
+    std::shared_ptr<NapiAudioVolumeLimitExceededCallback> cb =
+        std::static_pointer_cast<NapiAudioVolumeLimitExceededCallback>(
+            napiAudioVolumeManager->volumeLimitExceededCallbackNapi_);
+    CHECK_AND_RETURN_RET_LOG(cb && args,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM), "callback is nullptr");
+    cb->SaveCallbackReference(cbName, args[PARAM0]);
+    if (!cb->GetVolumeLimitExceededTsfnFlag()) {
+        cb->CreateVolumeLimitExceededTsfn();
+    }
+    return result;
+}
+
+void NapiAudioVolumeManager::UnregisterVolumeLimitExceededCallback(napi_env env, napi_value *args,
+    size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
+    CHECK_AND_RETURN_LOG(args != nullptr, "args is nullptr");
+    CHECK_AND_RETURN_LOG(napiAudioVolumeManager != nullptr, "napiAudioVolumeManager is nullptr");
+    CHECK_AND_RETURN_LOG(napiAudioVolumeManager->audioSystemMngr_ != nullptr, "audioSystemMngr_ is nullptr");
+    napi_value callback = argc == ARGS_ONE ? args[PARAM0] : nullptr;
+    if (argc == ARGS_ONE) {
+        napi_valuetype handler = napi_undefined;
+        CHECK_AND_RETURN_RET_LOG(napi_typeof(env, callback, &handler) == napi_ok && handler == napi_function,
+            NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INVALID_PARAM,
+                "incorrect parameter types: The type of callback must be function"),
+            "Off type mismatch for parameter 1");
+    }
+
+    std::shared_ptr<NapiAudioVolumeLimitExceededCallback> cb =
+        std::static_pointer_cast<NapiAudioVolumeLimitExceededCallback>(
+            napiAudioVolumeManager->volumeLimitExceededCallbackNapi_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "static_pointer_cast failed");
+
+    if (callback != nullptr) {
+        cb->RemoveCallbackReference(callback);
+    }
+    if (callback == nullptr || cb->GetVolumeLimitExceededCbListSize() == 0) {
+        int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterVolumeLimitExceededCallback(
+            napiAudioVolumeManager->cachedClientId_, napiAudioVolumeManager->volumeLimitExceededCallbackNapi_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "unregister callback failed");
+        napiAudioVolumeManager->volumeLimitExceededCallbackNapi_.reset();
+        napiAudioVolumeManager->volumeLimitExceededCallbackNapi_ = nullptr;
+        cb->RemoveAllCallbackReference();
+    }
 }
 
 napi_value NapiAudioVolumeManager::UnregisterCallback(napi_env env, napi_value jsThis,

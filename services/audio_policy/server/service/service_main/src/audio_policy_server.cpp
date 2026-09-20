@@ -1361,6 +1361,30 @@ int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUid(int32_t appUid, in
     return audioVolumeManager_.SetSystemAppVolumePercentageWithCallback(appUid, volumePercentage);
 }
 
+int32_t AudioPolicyServer::SetVolumeProtectionInfo(const VolumeProtectionConfig &config)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.SetVolumeProtectionInfo(config);
+}
+
+int32_t AudioPolicyServer::ClearVolumeProtection()
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.ClearVolumeProtection();
+}
+
+int32_t AudioPolicyServer::ConfirmVolumeLimitExceeded(int32_t volumeType, bool confirmResult)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.ConfirmVolumeLimitExceeded(static_cast<AudioVolumeType>(volumeType), confirmResult);
+}
+
 int32_t AudioPolicyServer::SetAppRingMuted(int32_t appUid, bool muted)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
@@ -6325,7 +6349,6 @@ int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t v
     if (!AudioVolumeUtils::GetInstance().IsVolumeTypeValid(streamType)) {
         return ERR_NOT_SUPPORTED;
     }
-
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     if (zoneId == INVALID_ZONEID) {
         int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();

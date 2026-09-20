@@ -72,6 +72,7 @@ public:
     void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent);
     void OnAudioSessionCurrentInputDeviceChanged(const CurrentInputDeviceChangedEvent &deviceChangedEvent);
     void OnVolumeDegreeEvent(const VolumeEvent &volumeEvent);
+    void OnVolumeLimitExceeded(const VolumeLimitExceedEvent &event);
     void OnCollaborationEnabledChangeForCurrentDevice(const bool &enabled);
     void OnPreferredDeviceSet(PreferredType preferredType,
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller);

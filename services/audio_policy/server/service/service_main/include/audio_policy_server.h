@@ -114,6 +114,10 @@ public:
 
     int32_t SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage) override;
 
+    int32_t SetVolumeProtectionInfo(const VolumeProtectionConfig &config) override;
+    int32_t ClearVolumeProtection() override;
+    int32_t ConfirmVolumeLimitExceeded(int32_t volumeType, bool confirmResult) override;
+
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) override;
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag) override;

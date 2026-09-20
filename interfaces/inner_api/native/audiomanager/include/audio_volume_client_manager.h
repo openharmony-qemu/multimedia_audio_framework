@@ -18,6 +18,7 @@
 
 #include "audio_policy_interface.h"
 #include "audio_group_manager.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,6 +58,12 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     int32_t SetSystemAppVolumePercentageForUid(const int32_t appUid, const int32_t volumePercentage);
+
+    int32_t SetVolumeProtectionInfo(const VolumeProtectionConfig &config);
+
+    int32_t ClearVolumeProtection();
+
+    int32_t ConfirmVolumeLimitExceeded(AudioVolumeType volumeType, bool confirmResult);
 
     /**
      * @brief Set self app volume.
@@ -407,6 +414,12 @@ public:
      */
     int32_t UnregisterVolumeDegreeCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
+
+    int32_t RegisterVolumeLimitExceededCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeLimitExceededCallback> &callback);
+
+    int32_t UnregisterVolumeLimitExceededCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeLimitExceededCallback> &callback = nullptr);
 
     /**
      * @brief registers the systemVolumeChange callback listener

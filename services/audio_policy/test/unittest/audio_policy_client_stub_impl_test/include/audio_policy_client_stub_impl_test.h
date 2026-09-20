@@ -142,6 +142,18 @@ class ConcreteSystemVolumeChangeCallback : public SystemVolumeChangeCallback {
     void OnSystemVolumeChange(VolumeEvent volumeEvent) override {};
 };
 
+class ConcreteVolumeLimitExceededCallback : public VolumeLimitExceededCallback {
+public:
+    void OnVolumeLimitExceeded(const VolumeLimitExceedEvent &event) override
+    {
+        called_ = true;
+        event_ = event;
+    }
+
+    bool called_ = false;
+    VolumeLimitExceedEvent event_;
+};
+
 class ConcreteAudioManagerActiveVolumeTypeChangeCallback : public AudioManagerActiveVolumeTypeChangeCallback {
     void OnActiveVolumeTypeChanged(const AudioVolumeType &event) override {};
 };

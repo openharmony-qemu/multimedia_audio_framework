@@ -200,6 +200,11 @@ int32_t AudioSystemManager::SetSystemAppVolumePercentageForUid(int32_t appUid, i
     return AudioVolumeClientManager::GetInstance().SetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
+int32_t AudioSystemManager::ConfirmVolumeLimitExceeded(AudioVolumeType volumeType, bool confirmResult)
+{
+    return AudioVolumeClientManager::GetInstance().ConfirmVolumeLimitExceeded(volumeType, confirmResult);
+}
+
 int32_t AudioSystemManager::GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage) const
 {
     return AudioVolumeClientManager::GetInstance().GetSystemAppVolumePercentageForUid(appUid, volumePercentage);
@@ -564,6 +569,18 @@ int32_t AudioSystemManager::UnregisterVolumeDegreeCallback(const int32_t clientP
     const std::shared_ptr<VolumeKeyEventCallback> &callback)
 {
     return AudioVolumeClientManager::GetInstance().UnregisterVolumeDegreeCallback(clientPid, callback);
+}
+
+int32_t AudioSystemManager::RegisterVolumeLimitExceededCallback(const int32_t clientPid,
+    const std::shared_ptr<VolumeLimitExceededCallback> &callback)
+{
+    return AudioVolumeClientManager::GetInstance().RegisterVolumeLimitExceededCallback(clientPid, callback);
+}
+
+int32_t AudioSystemManager::UnregisterVolumeLimitExceededCallback(const int32_t clientPid,
+    const std::shared_ptr<VolumeLimitExceededCallback> &callback)
+{
+    return AudioVolumeClientManager::GetInstance().UnregisterVolumeLimitExceededCallback(clientPid, callback);
 }
 
 int32_t AudioSystemManager::RegisterSystemVolumeChangeCallback(const int32_t clientPid,
