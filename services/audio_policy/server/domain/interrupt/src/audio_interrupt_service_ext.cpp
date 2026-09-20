@@ -792,7 +792,7 @@ void AudioInterruptService::HandlePausedTimeout(int32_t zoneId, uint32_t streamI
         "zone not found or zone is null");
     auto audioFocusInfoList = itZone->second->audioFocusInfoList;
     auto isPresent = [streamId] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
-        return pair.first.sessionId == streamId;
+        return pair.first.streamId == streamId;
     };
     auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresent);
     CHECK_AND_RETURN_LOG(iter != audioFocusInfoList.end() && iter->second == PAUSE,
@@ -805,10 +805,10 @@ void AudioInterruptService::HandlePausedTimeout(int32_t zoneId, uint32_t streamI
         }
     }
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
-    SendInterruptEventCallback(interruptEvent, audioInterrupt.sessionId, audioInterrupt);
+    SendInterruptEventCallback(interruptEvent, audioInterrupt.streamId, audioInterrupt);
     DeactivateAudioInterruptInternal(zoneId, audioInterrupt);
     AUDIO_INFO_LOG("Stream %{public}d paused for timeout. Triggering stop callback.",
-        audioInterrupt.sessionId);
+        audioInterrupt.streamId);
 }
 
 void AudioInterruptService::StopPausedStreamMonitor(uint32_t streamId)
@@ -842,7 +842,7 @@ void AudioInterruptService::StartPausedStreamMonitor(const int32_t zoneId,
         !isIncomingBundleNameExist;
     CHECK_AND_RETURN(isPausedForBehavior);
 
-    uint32_t streamId = activeInterrupt.sessionId;
+    uint32_t streamId = activeInterrupt.streamId;
     auto it = pauseStreamMonitors_.find(streamId);
     CHECK_AND_RETURN_LOG(it == pauseStreamMonitors_.end(),
         "streamId %{public}u already has a pause monitor", streamId);
