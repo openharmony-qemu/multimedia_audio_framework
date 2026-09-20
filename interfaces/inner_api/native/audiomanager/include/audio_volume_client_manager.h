@@ -182,6 +182,26 @@ public:
      */
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
 
+    /**
+     * @brief Set the mute whitelist for application volume.
+     * Applications not in the whitelist will be muted.
+     * Note that: This interface only allows one UID call at the same time.
+     * @param uids The uid array of whitelist applications.The max size is 100.
+     * @return Returns {@link SUCCESS} if the settings is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26.0.0 dynamic
+     */
+    int32_t SetUnmuteWhitelist(const std::vector<int32_t> &uids);
+
+    /**
+     * @brief Clear the mute whitelist for application volume.
+     * All applications will be unmuted after clearing.
+     * @return Returns {@link SUCCESS} if the settings is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26.0.0 dynamic
+     */
+    int32_t ClearUnmuteWhitelist();
+
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
 
     /**

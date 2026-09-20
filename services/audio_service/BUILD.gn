@@ -983,6 +983,7 @@ group("audio_service_test_packages") {
   deps = [
     ":audio_hdi_device_test",
     ":audio_engine_client_manager_test",
+    ":audio_volume_client_manager_test",
     "../../frameworks/native/hdiadapter_new:hdi_monitor_test",
   ]
 }
@@ -1058,6 +1059,43 @@ ohos_executable("audio_engine_client_manager_test") {
   install_enable = false
 
   sources = [ "test/example/audio_engine_client_manager_test.cpp" ]
+
+  configs = [ ":audio_client_public_config" ]
+
+  deps = [
+    ":audio_client",
+    ":audio_engine_manager",
+    ":audio_policy_manager",
+    ":audio_stream_client",
+    "../../frameworks/native/audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_volume_client_manager_test") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+  install_enable = false
+
+  sources = [ "test/example/audio_volume_client_manager_test.cpp" ]
 
   configs = [ ":audio_client_public_config" ]
 

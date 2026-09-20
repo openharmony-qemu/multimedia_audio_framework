@@ -469,6 +469,16 @@ int32_t AudioVolumeManager::ClearVoipMuteByStreamId(int64_t streamId)
     return appVolumeManager_.ClearVoipMuteByStreamId(streamId);
 }
 
+int32_t AudioVolumeManager::SetUnmuteWhitelist(const std::vector<int32_t> &uids)
+{
+    return audioPolicyManager_.SetUnmuteWhitelist(uids);
+}
+
+int32_t AudioVolumeManager::ClearUnmuteWhitelist()
+{
+    return audioPolicyManager_.ClearUnmuteWhitelist();
+}
+
 int32_t AudioVolumeManager::SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage)
 {
     auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(appUid);

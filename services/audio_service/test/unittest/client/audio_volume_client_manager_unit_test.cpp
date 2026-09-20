@@ -1153,5 +1153,46 @@ HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeControlPriority_008, TestSize.
     int32_t result = AudioVolumeClientManager::GetInstance().SetVolumeControlPriority(priorities);
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+* @tc.name   : Test SetUnmuteWhitelist API
+* @tc.number : SetUnmuteWhitelist_001
+* @tc.desc   : Test SetUnmuteWhitelist with valid uids returns SUCCESS through proxy.
+*/
+HWTEST(AudioVolumeClientManagerUnitTest, SetUnmuteWhitelist_001, TestSize.Level1)
+{
+    GetPermission();
+    std::vector<int32_t> uids = {1001, 1002};
+    int32_t result = AudioVolumeClientManager::GetInstance().SetUnmuteWhitelist(uids);
+    EXPECT_EQ(result, SUCCESS);
+    AudioVolumeClientManager::GetInstance().ClearUnmuteWhitelist();
+}
+
+/**
+* @tc.name   : Test SetUnmuteWhitelist API
+* @tc.number : SetUnmuteWhitelist_002
+* @tc.desc   : Test SetUnmuteWhitelist with empty uids returns ERR_INVALID_PARAM.
+*/
+HWTEST(AudioVolumeClientManagerUnitTest, SetUnmuteWhitelist_002, TestSize.Level1)
+{
+    GetPermission();
+    std::vector<int32_t> uids;
+    int32_t result = AudioVolumeClientManager::GetInstance().SetUnmuteWhitelist(uids);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name   : Test ClearUnmuteWhitelist API
+* @tc.number : ClearUnmuteWhitelist_001
+* @tc.desc   : Test ClearUnmuteWhitelist returns SUCCESS after setting whitelist.
+*/
+HWTEST(AudioVolumeClientManagerUnitTest, ClearUnmuteWhitelist_001, TestSize.Level1)
+{
+    GetPermission();
+    std::vector<int32_t> uids = {2001};
+    EXPECT_EQ(AudioVolumeClientManager::GetInstance().SetUnmuteWhitelist(uids), SUCCESS);
+    int32_t result = AudioVolumeClientManager::GetInstance().ClearUnmuteWhitelist();
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

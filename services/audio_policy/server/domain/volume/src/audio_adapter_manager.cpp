@@ -622,6 +622,20 @@ int32_t AudioAdapterManager::ClearVoipMuteByStreamId(int64_t streamId)
     return SUCCESS;
 }
 
+int32_t AudioAdapterManager::SetUnmuteWhitelist(const std::vector<int32_t> &uids)
+{
+    AudioMuteFactorManager::GetInstance().SetUnmuteWhitelist(uids);
+    SendOffloadVolume();
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::ClearUnmuteWhitelist()
+{
+    AudioMuteFactorManager::GetInstance().ClearUnmuteWhitelist();
+    SendOffloadVolume();
+    return SUCCESS;
+}
+
 int32_t AudioAdapterManager::GetSystemAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
 {
     if (volumeDataMaintainer_.IsSetSystemAppVolume(appUid)) {

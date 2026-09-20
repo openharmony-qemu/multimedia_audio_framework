@@ -2004,6 +2004,32 @@ void AudioPolicyServerAddRemoveUidUsagesToAudioZoneFuzzTest()
     server->ReleaseAudioZone(zoneId);
 }
 
+void AudioPolicyServerSetUnmuteWhitelistFuzzTest()
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    uint32_t count = GetData<uint32_t>() % (COUNT + 1);
+    std::vector<int32_t> uids;
+    for (uint32_t i = 0; i < count; ++i) {
+        uids.push_back(GetData<int32_t>());
+    }
+    sptr<IRemoteObject> callerObj = nullptr;
+    if (GetData<bool>()) {
+        callerObj = new RemoteObjectFuzzTestStub();
+    }
+    int32_t ret = server->SetUnmuteWhitelist(uids, callerObj);
+    if (ret == SUCCESS) {
+        server->ClearUnmuteWhitelist();
+    }
+}
+
+void AudioPolicyServerClearUnmuteWhitelistFuzzTest()
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    server->ClearUnmuteWhitelist();
+}
+
 TestFuncs g_testFuncs[] = {
     AudioPolicyServerRegisterDefaultVolumeTypeListenerFuzzTest,
     AudioPolicyServerHandleAudioServerRelatedSystemAbilityFuzzTest,
@@ -2177,6 +2203,8 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerStateOnChangeFuzzTest,
     AudioPolicyServerSetActiveHfpDeviceFuzzTest,
     AudioPolicyServerUpdateMicPrivacyByCapturerStateFuzzTest,
+    AudioPolicyServerSetUnmuteWhitelistFuzzTest,
+    AudioPolicyServerClearUnmuteWhitelistFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

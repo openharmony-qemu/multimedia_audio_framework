@@ -912,5 +912,244 @@ HWTEST_F(AudioPolicyServerMethodsTest, GetSystemVolumeDegree_002, TestSize.Level
     audioPolicyServer_->GetSystemVolumeDegree(STREAM_MUSIC, 1000, degree, INVALID_ZONEID);
     EXPECT_GE(degree, 0);
 }
+
+/**
+ * @tc.name  : SetUnmuteWhitelist_001
+ * @tc.desc  : Test callerObj is nullptr returns ERR_INVALID_PARAM.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, SetUnmuteWhitelist_001, TestSize.Level1)
+{
+    std::vector<int32_t> uids = {1000};
+    int32_t ret = audioPolicyServer_->SetUnmuteWhitelist(uids, nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : SetUnmuteWhitelist_002
+ * @tc.desc  : Test empty uids returns ERR_INVALID_PARAM.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, SetUnmuteWhitelist_002, TestSize.Level1)
+{
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    std::vector<int32_t> uids;
+    int32_t ret = audioPolicyServer_->SetUnmuteWhitelist(uids, obj);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : SetUnmuteWhitelist_003
+ * @tc.desc  : Test uids size exceeds MAX_UNMUTE_WHITELIST_SIZE returns ERR_INVALID_PARAM.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, SetUnmuteWhitelist_003, TestSize.Level1)
+{
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    std::vector<int32_t> uids(101, 1000);
+    int32_t ret = audioPolicyServer_->SetUnmuteWhitelist(uids, obj);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : SetUnmuteWhitelist_004
+ * @tc.desc  : Test whitelist already held by another caller returns ERR_ILLEGAL_STATE.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, SetUnmuteWhitelist_004, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> holderObj = new RemoteObjectTestStub();
+    holderObj->addDeathResult_ = true;
+    audioPolicyServer_->RegisterUnmuteWhitelistDeathRecipient(99990, holderObj);
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 1u);
+
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    std::vector<int32_t> uids = {1000};
+    int32_t ret = audioPolicyServer_->SetUnmuteWhitelist(uids, obj);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+}
+
+/**
+ * @tc.name  : SetUnmuteWhitelist_005
+ * @tc.desc  : Test successful set registers death recipient and returns SUCCESS.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, SetUnmuteWhitelist_005, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = true;
+    std::vector<int32_t> uids = {1100, 1101};
+    int32_t ret = audioPolicyServer_->SetUnmuteWhitelist(uids, obj);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 1u);
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    audioPolicyServer_->audioVolumeManager_.ClearUnmuteWhitelist();
+}
+
+/**
+ * @tc.name  : ClearUnmuteWhitelist_001
+ * @tc.desc  : Test clear returns ERR_ILLEGAL_STATE when held by another caller.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, ClearUnmuteWhitelist_001, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> holderObj = new RemoteObjectTestStub();
+    holderObj->addDeathResult_ = true;
+    audioPolicyServer_->RegisterUnmuteWhitelistDeathRecipient(99991, holderObj);
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 1u);
+
+    int32_t ret = audioPolicyServer_->ClearUnmuteWhitelist();
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+}
+
+/**
+ * @tc.name  : ClearUnmuteWhitelist_002
+ * @tc.desc  : Test clear succeeds when no caller holds the whitelist.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, ClearUnmuteWhitelist_002, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    int32_t ret = audioPolicyServer_->ClearUnmuteWhitelist();
+    EXPECT_EQ(ret, SUCCESS);
+    audioPolicyServer_->audioVolumeManager_.ClearUnmuteWhitelist();
+}
+
+/**
+ * @tc.name  : RegisterUnmuteWhitelistDeathRecipient_001
+ * @tc.desc  : Test returns ERR_ILLEGAL_STATE when whitelist held by another caller.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RegisterUnmuteWhitelistDeathRecipient_001, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> holderObj = new RemoteObjectTestStub();
+    holderObj->addDeathResult_ = true;
+    audioPolicyServer_->RegisterUnmuteWhitelistDeathRecipient(99992, holderObj);
+
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    int32_t ret = audioPolicyServer_->RegisterUnmuteWhitelistDeathRecipient(99993, obj);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+}
+
+/**
+ * @tc.name  : RegisterUnmuteWhitelistDeathRecipient_002
+ * @tc.desc  : Test returns SUCCESS when same caller already registered.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RegisterUnmuteWhitelistDeathRecipient_002, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj1 = new RemoteObjectTestStub();
+    obj1->addDeathResult_ = true;
+    EXPECT_EQ(audioPolicyServer_->RegisterUnmuteWhitelistDeathRecipient(99994, obj1), SUCCESS);
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 1u);
+
+    sptr<RemoteObjectTestStub> obj2 = new RemoteObjectTestStub();
+    int32_t ret = audioPolicyServer_->RegisterUnmuteWhitelistDeathRecipient(99994, obj2);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 1u);
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+}
+
+/**
+ * @tc.name  : RegisterUnmuteWhitelistDeathRecipient_003
+ * @tc.desc  : Test returns ERR_OPERATION_FAILED when AddDeathRecipient fails.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RegisterUnmuteWhitelistDeathRecipient_003, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = false;
+    int32_t ret = audioPolicyServer_->RegisterUnmuteWhitelistDeathRecipient(99995, obj);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 0u);
+}
+
+/**
+ * @tc.name  : RegisterUnmuteWhitelistDeathRecipient_004
+ * @tc.desc  : Test successful registration inserts into map.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RegisterUnmuteWhitelistDeathRecipient_004, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = true;
+    int32_t ret = audioPolicyServer_->RegisterUnmuteWhitelistDeathRecipient(99996, obj);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 1u);
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+}
+
+/**
+ * @tc.name  : OnUnmuteWhitelistCallerDied_001
+ * @tc.desc  : Test callerUid not found in map, no crash and clears whitelist.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, OnUnmuteWhitelistCallerDied_001, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    EXPECT_NO_THROW(audioPolicyServer_->OnUnmuteWhitelistCallerDied(99997));
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 0u);
+    audioPolicyServer_->audioVolumeManager_.ClearUnmuteWhitelist();
+}
+
+/**
+ * @tc.name  : OnUnmuteWhitelistCallerDied_002
+ * @tc.desc  : Test callerUid found in map, recipient removed and whitelist cleared.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, OnUnmuteWhitelistCallerDied_002, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = true;
+    audioPolicyServer_->RegisterUnmuteWhitelistDeathRecipient(99998, obj);
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 1u);
+
+    EXPECT_NO_THROW(audioPolicyServer_->OnUnmuteWhitelistCallerDied(99998));
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 0u);
+    audioPolicyServer_->audioVolumeManager_.ClearUnmuteWhitelist();
+}
+
+/**
+ * @tc.name  : RemoveUnmuteWhitelistDeathRecipient_001
+ * @tc.desc  : Test returns ERR_ILLEGAL_STATE when held by another caller.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RemoveUnmuteWhitelistDeathRecipient_001, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> holderObj = new RemoteObjectTestStub();
+    holderObj->addDeathResult_ = true;
+    audioPolicyServer_->RegisterUnmuteWhitelistDeathRecipient(88881, holderObj);
+
+    int32_t ret = audioPolicyServer_->RemoveUnmuteWhitelistDeathRecipient(88882);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+}
+
+/**
+ * @tc.name  : RemoveUnmuteWhitelistDeathRecipient_002
+ * @tc.desc  : Test returns SUCCESS when map is empty.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RemoveUnmuteWhitelistDeathRecipient_002, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    int32_t ret = audioPolicyServer_->RemoveUnmuteWhitelistDeathRecipient(88883);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 0u);
+}
+
+/**
+ * @tc.name  : RemoveUnmuteWhitelistDeathRecipient_003
+ * @tc.desc  : Test returns SUCCESS and removes entry when caller is the holder.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RemoveUnmuteWhitelistDeathRecipient_003, TestSize.Level1)
+{
+    audioPolicyServer_->unmuteWhitelistDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = true;
+    audioPolicyServer_->RegisterUnmuteWhitelistDeathRecipient(88884, obj);
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 1u);
+
+    int32_t ret = audioPolicyServer_->RemoveUnmuteWhitelistDeathRecipient(88884);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 0u);
+}
 } // namespace AudioStandard
 } // namespace OHOS

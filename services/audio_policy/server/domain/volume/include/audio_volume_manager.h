@@ -133,6 +133,8 @@ public:
     int32_t SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
     int32_t ClearVoipMuteByCallerUid(int32_t callerUid);
     int32_t ClearVoipMuteByStreamId(int64_t streamId);
+    int32_t SetUnmuteWhitelist(const std::vector<int32_t> &uids);
+    int32_t ClearUnmuteWhitelist();
     int32_t SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage);
     int32_t SetVolumeProtectionInfo(const VolumeProtectionConfig &config);
     int32_t ClearVolumeProtection();
