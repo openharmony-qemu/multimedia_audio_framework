@@ -855,7 +855,7 @@ audio_ohos_library("audio_service") {
   }
 
   if (audio_framework_feature_thermal_manager) {
-    source += [ "server/src/audio_thermal_listener.cpp" ]
+    sources += [ "server/src/audio_thermal_listener.cpp" ]
     external_deps += [
         "thermal_manager:thermalmgr_listener",
         "thermal_manager:thermalsrv_client",
