@@ -214,6 +214,7 @@ private:
     static constexpr int32_t SET_SCENE_DELAY = 120;
     static constexpr int32_t INTERRUPT_RESPONSE_CHECK_DELAY = 1000;
     static constexpr int32_t RECORDING_ACTIVATION_DELAY_MS = 200;
+    static constexpr int32_t DEFAULT_PAUSE_TIMEOUT_S = 5;
 
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
     std::unordered_map<int32_t, std::vector<CachedFocusInfo>> cachedFocusMap_;
