@@ -382,4 +382,6 @@ interface IAudioPolicy {
     void SetVolumeProtectionInfo([in] VolumeProtectionConfig config);
     void ConfirmVolumeLimitExceeded([in] int volumeType, [in] boolean confirmResult);
     void ClearVolumeProtection();
+    void SetUnmuteWhitelist([in] List<int> uids, [in] IRemoteObject callerObj);
+    void ClearUnmuteWhitelist();
 }

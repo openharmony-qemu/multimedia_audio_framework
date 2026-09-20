@@ -128,6 +128,11 @@ public:
     int32_t SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted,
         const sptr<IRemoteObject> &callerObj) override;
 
+    int32_t SetUnmuteWhitelist(const std::vector<int32_t> &uids,
+        const sptr<IRemoteObject> &callerObj) override;
+
+    int32_t ClearUnmuteWhitelist() override;
+
     int32_t SetAppRingMuted(int32_t appUid, bool muted) override;
 
     int32_t SetAdjustVolumeForZone(int32_t zoneId) override;
@@ -385,6 +390,12 @@ public:
     void RegisterVoipMuteDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj);
 
     void OnVoipMuteCallerDied(int32_t callerUid);
+
+    int32_t RegisterUnmuteWhitelistDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj);
+
+    void OnUnmuteWhitelistCallerDied(int32_t callerUid);
+
+    int32_t RemoveUnmuteWhitelistDeathRecipient(int32_t callerUid);
 
     int32_t ResumeStreamState();
 
@@ -1044,6 +1055,8 @@ private:
     std::mutex clientDiedListenerStateMutex_;
     std::mutex voipMuteMutex_;
     std::unordered_map<int32_t, sptr<IRemoteObject::DeathRecipient>> voipMuteDeathRecipients_;
+    std::mutex unmuteWhitelistMutex_;
+    std::unordered_map<int32_t, sptr<IRemoteObject::DeathRecipient>> unmuteWhitelistDeathRecipients_;
     std::mutex subscribeVolumeKey_;
 
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
@@ -1140,10 +1153,10 @@ private:
     std::function<void(const EventFwk::CommonEventData&)> eventReceiver_;
 };
 
-class VoipMuteDeathRecipient : public IRemoteObject::DeathRecipient {
+class PolicyClientDeathRecipient : public IRemoteObject::DeathRecipient {
 public:
-    explicit VoipMuteDeathRecipient(std::function<void()> callback) : callback_(std::move(callback)) {}
-    ~VoipMuteDeathRecipient() = default;
+    explicit PolicyClientDeathRecipient(std::function<void()> callback) : callback_(std::move(callback)) {}
+    ~PolicyClientDeathRecipient() = default;
     void OnRemoteDied(const wptr<IRemoteObject> &remote) override
     {
         if (callback_) {

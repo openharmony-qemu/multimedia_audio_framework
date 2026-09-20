@@ -215,6 +215,16 @@ int32_t AudioSystemManager::GetSelfAppVolume(int32_t &volumeLevel) const
     return AudioVolumeClientManager::GetInstance().GetSelfAppVolume(volumeLevel);
 }
 
+int32_t AudioSystemManager::SetUnmuteWhitelist(const std::vector<int32_t> &uids)
+{
+    return AudioVolumeClientManager::GetInstance().SetUnmuteWhitelist(uids);
+}
+
+int32_t AudioSystemManager::ClearUnmuteWhitelist()
+{
+    return AudioVolumeClientManager::GetInstance().ClearUnmuteWhitelist();
+}
+
 int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
 {
     return AudioVolumeClientManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);

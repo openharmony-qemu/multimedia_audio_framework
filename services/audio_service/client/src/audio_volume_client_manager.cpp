@@ -1010,6 +1010,18 @@ int32_t AudioVolumeClientManager::SetAppRingMuted(int32_t appUid, bool muted)
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppRingMuted: No system permission");
     return AudioPolicyManager::GetInstance().SetAppRingMuted(appUid, muted);
 }
+
+int32_t AudioVolumeClientManager::SetUnmuteWhitelist(const std::vector<int32_t> &uids)
+{
+    AUDIO_INFO_LOG("SetUnmuteWhitelist, uids size:%{public}zu", uids.size());
+    return AudioPolicyManager::GetInstance().SetUnmuteWhitelist(uids);
+}
+
+int32_t AudioVolumeClientManager::ClearUnmuteWhitelist()
+{
+    AUDIO_INFO_LOG("ClearUnmuteWhitelist");
+    return AudioPolicyManager::GetInstance().ClearUnmuteWhitelist();
+}
 // LCOV_EXCL_STOP
 
 int32_t AudioVolumeClientManager::UnsetSelfAppVolumeCallback(

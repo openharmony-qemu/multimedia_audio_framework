@@ -16,6 +16,11 @@
 #ifndef AUDIO_MUTE_FACTOR_MANAGER_H
 #define AUDIO_MUTE_FACTOR_MANAGER_H
 
+#include <memory>
+#include <unordered_set>
+#include <vector>
+#include "audio_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -32,11 +37,19 @@ public:
 
     void SetMdmMuteStatus(const bool mdmMute);
 
+    void SetUnmuteWhitelist(const std::vector<int32_t> &uids);
+
+    void ClearUnmuteWhitelist();
+
+    float GetAacMuteFactor(int32_t appUid) const;
+
 private:
     AudioMuteFactorManager();
     ~AudioMuteFactorManager();
 
     bool isMdmMute_ = false;
+    std::shared_ptr<std::unordered_set<int32_t>> unmuteWhitelist_ =
+        std::make_shared<std::unordered_set<int32_t>>();
 };
 
 } // namespace AudioStandard

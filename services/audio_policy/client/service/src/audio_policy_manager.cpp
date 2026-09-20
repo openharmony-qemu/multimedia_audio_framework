@@ -418,6 +418,30 @@ int32_t AudioPolicyManager::SetVoipCapturerMute(int32_t appUid, int64_t streamId
     return gsp->SetVoipCapturerMute(appUid, streamId, muted, callerObj);
 }
 
+int32_t AudioPolicyManager::SetUnmuteWhitelist(const std::vector<int32_t> &uids)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    sptr<IRemoteObject> callerObj;
+    {
+        std::unique_lock<std::mutex> lock(registerCallbackMutex_);
+        if (audioPolicyClientStubCB_ == nullptr) {
+            audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+        }
+        if (audioPolicyClientStubCB_ != nullptr) {
+            callerObj = audioPolicyClientStubCB_->AsObject();
+        }
+    }
+    return gsp->SetUnmuteWhitelist(uids, callerObj);
+}
+
+int32_t AudioPolicyManager::ClearUnmuteWhitelist()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    return gsp->ClearUnmuteWhitelist();
+}
+
 int32_t AudioPolicyManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

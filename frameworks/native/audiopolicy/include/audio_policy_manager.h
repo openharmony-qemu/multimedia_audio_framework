@@ -76,6 +76,10 @@ public:
 
     int32_t SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted);
 
+    int32_t SetUnmuteWhitelist(const std::vector<int32_t> &uids);
+
+    int32_t ClearUnmuteWhitelist();
+
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
 
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
