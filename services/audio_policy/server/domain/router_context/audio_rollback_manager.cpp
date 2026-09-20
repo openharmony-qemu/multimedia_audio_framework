@@ -18,10 +18,11 @@
 
 #include <thread>
 #include "audio_rollback_manager.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_device_manager.h"
 #include "audio_router_infra.h"
 #include "audio_router_select_strategy.h"
+#include "audio_active_device.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,7 +30,7 @@ using namespace std;
 
 constexpr int32_t CONTINUE_TIMEOUT_SEC = 2;
 constexpr int32_t ROLLBACK_TIMEOUT_SEC = 1;
-const set<ConnectState> NOT_CONNECTED{VIRTUAL_CONNECTED, DEACTIVE_CONNECTED};
+const set<ConnectState> NOT_CONNECTED{SUSPEND_CONNECTED, VIRTUAL_CONNECTED, DEACTIVE_CONNECTED};
 
 AudioRollbackManager& AudioRollbackManager::GetInstance()
 {
@@ -37,85 +38,14 @@ AudioRollbackManager& AudioRollbackManager::GetInstance()
     return instance;
 }
 
-bool AudioRollbackManager::HandleNonConnected(int32_t uid, SelectDeviceType type,
-    uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor> &device)
+void AudioRollbackManager::OnDeviceNewConnect(const AudioDeviceDescriptor &desc)
 {
-    CHECK_AND_RETURN_RET_LOG(device && device->deviceId_ > 0, false, "Invalid desc");
-    if (uid < SYSTEM_UID) {
-        uid = SYSTEM_UID;
-    }
-    auto deviceId = device->deviceId_;
-    auto pred = [uid, type, streamId] (Selection &item) {
-        return item.uid == uid && item.type == type && item.streamId == streamId;
-    };
+    CHECK_AND_RETURN(NOT_CONNECTED.contains(desc.connectState_) && desc.deviceRole_ == OUTPUT_DEVICE);
+    auto deviceId = desc.deviceId_;
+    AUDIO_INFO_LOG("id=%{public}d, devType=%{public}d, connectState=%{public}d",
+        deviceId, desc.deviceType_, desc.connectState_);
     std::lock_guard lg(mutex_);
-    rollbackInfo_.reset();
-    auto it = remove_if(continueSelections_.begin(), continueSelections_.end(), pred);
-    if (!NOT_CONNECTED.contains(device->connectState_)) {
-        continueSelections_.erase(it, continueSelections_.end());
-        return false;
-    }
-    AUDIO_INFO_LOG("uid=%{public}d, id=%{public}d, type=%{public}d", uid, deviceId, type);
-    if (it != continueSelections_.end()) {
-        if (it->deviceId == deviceId) {
-            return true;
-        }
-        *it = {uid, type, deviceId, streamId};
-    } else {
-        continueSelections_.push_back({uid, type, deviceId, streamId});
-    }
-    thread([deviceId, uid, type, streamId, this]() {
-        this_thread::sleep_for(chrono::seconds(CONTINUE_TIMEOUT_SEC));
-        auto pred = [deviceId, uid, type, streamId] (Selection &item) {
-            return item.deviceId == deviceId && item.uid == uid && item.type == type && item.streamId == streamId;
-        };
-        std::lock_guard lg(mutex_);
-        auto it = remove_if(continueSelections_.begin(), continueSelections_.end(), pred);
-        continueSelections_.erase(it, continueSelections_.end());
-    }).detach();
-    return true;
-}
-
-void AudioRollbackManager::ContinueSelection(const std::shared_ptr<AudioDeviceDescriptor> &device)
-{
-    CHECK_AND_RETURN(device && device->connectState_ == CONNECTED);
-    auto id = device->deviceId_;
-    auto pred = [id] (Selection &item) {
-        return item.deviceId == id;
-    };
-    AUDIO_INFO_LOG("id=%{public}d, devType=%{public}d", id, device->deviceType_);
-    auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    std::lock_guard lg(mutex_);
-    auto rmIt = remove_if(continueSelections_.begin(), continueSelections_.end(), pred);
-    CHECK_AND_RETURN(rmIt != continueSelections_.end());
-    for (auto it = rmIt; it < continueSelections_.end(); it++) {
-        switch (it->type) {
-            case SelectDeviceType::MEDIA_INPUT:
-                strategy.SetMediaInputDevice(it->uid, it->streamId, device);
-                break;
-            case SelectDeviceType::MEDIA_OUTPUT:
-                strategy.SetMediaOutputDevice(it->uid, it->streamId, device);
-                break;
-            case SelectDeviceType::CALL_INPUT:
-                strategy.SetCallInputDevice(it->uid, it->streamId, device);
-                break;
-            case SelectDeviceType::CALL_OUTPUT:
-                strategy.SetCallOutputDevice(it->uid, it->streamId, device);
-                break;
-            default:
-                AUDIO_ERR_LOG("Error: invalid type");
-        }
-    }
-    continueSelections_.erase(rmIt, continueSelections_.end());
-}
-
-void AudioRollbackManager::SetNewConnectRollback(const std::shared_ptr<AudioDeviceDescriptor> &device)
-{
-    CHECK_AND_RETURN(device && NOT_CONNECTED.contains(device->connectState_));
-    auto deviceId = device->deviceId_;
-    AUDIO_INFO_LOG("id=%{public}d, devType=%{public}d", deviceId, device->deviceType_);
-    std::lock_guard lg(mutex_);
-    continueSelections_.clear();
+    selectionRollbacks_.clear();
     if (!rollbackInfo_) {
         rollbackInfo_ = std::make_unique<RollbackInfo>();
     }
@@ -125,7 +55,7 @@ void AudioRollbackManager::SetNewConnectRollback(const std::shared_ptr<AudioDevi
         {SelectDeviceType::CALL_OUTPUT, SelectDeviceType::MEDIA_OUTPUT});
     thread([deviceId, this]() {
         this_thread::sleep_for(chrono::seconds(CONTINUE_TIMEOUT_SEC));
-        RollbackSelection(deviceId, NEW_CONNECT_ROLLBACK);
+        RollbackSelections(deviceId, NEW_CONNECT_ROLLBACK);
     }).detach();
 }
 
@@ -135,6 +65,7 @@ void AudioRollbackManager::SetConnectLostRollback(const std::shared_ptr<AudioDev
     auto deviceId = device->deviceId_;
     AUDIO_INFO_LOG("id=%{public}d, devType=%{public}d", deviceId, device->deviceType_);
     std::lock_guard lg(mutex_);
+    selectionRollbacks_.clear();
     if (!rollbackInfo_) {
         rollbackInfo_ = std::make_unique<RollbackInfo>();
     }
@@ -155,77 +86,151 @@ void AudioRollbackManager::SetConnectLostRollback(const std::shared_ptr<AudioDev
     }).detach();
 }
 
-void AudioRollbackManager::RollbackSelection(int32_t deviceId, RollbackType type)
+void AudioRollbackManager::RollbackSelections(int32_t deviceId, RollbackType type)
 {
     std::lock_guard lg(mutex_);
     CHECK_AND_RETURN(rollbackInfo_ && rollbackInfo_->deviceId == deviceId && rollbackInfo_->type == type);
     AUDIO_INFO_LOG("id=%{public}d, rollbackType=%{public}d", deviceId, type);
-    auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     for (auto &item : rollbackInfo_->selections) {
-        auto device = deviceManager.FindConnectedDeviceById(item.deviceId);
-        CHECK_AND_CONTINUE_LOG(device && device->connectState_ == CONNECTED, "Not connect[%{public}d]", item.deviceId);
-        switch (item.type) {
-            case SelectDeviceType::MEDIA_INPUT:
-                strategy.SetMediaInputDevice(item.uid, item.streamId, device);
-                break;
-            case SelectDeviceType::MEDIA_OUTPUT:
-                strategy.SetMediaOutputDevice(item.uid, item.streamId, device);
-                break;
-            case SelectDeviceType::CALL_INPUT:
-                strategy.SetCallInputDevice(item.uid, item.streamId, device);
-                break;
-            case SelectDeviceType::CALL_OUTPUT:
-                strategy.SetCallOutputDevice(item.uid, item.streamId, device);
-                break;
-            default:
-                AUDIO_ERR_LOG("Error: invalid type");
-        }
+        RollbackSelection(item);
     }
     rollbackInfo_.reset();
 }
 
-void AudioRollbackManager::OnConnectStateUpdate(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
+void AudioRollbackManager::OnConnectStateUpdate(
+    const AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     CHECK_AND_RETURN(command == CONNECTSTATE_UPDATE);
     auto devices = AudioDeviceManager::GetAudioDeviceManager()
         .GetAvailableBluetoothDevice(desc.deviceType_, desc.macAddress_);
-    CHECK_AND_RETURN_LOG(!devices.empty() && devices[0] && devices[0]->deviceId_ > 0, "Invalid desc");
-    auto device = devices[0];
+    CHECK_AND_RETURN_LOG(!devices.empty(), "Absent desc");
+    auto it = find_if(devices.begin(), devices.end(),
+        [](auto &item) { return item && item->deviceRole_ == OUTPUT_DEVICE; });
+    CHECK_AND_RETURN(it != devices.end() && *it);
+    auto &device = *it;
+    AUDIO_INFO_LOG("id=%{public}d, devType=%{public}d, role=%{public}d, connectState=%{public}d",
+        device->deviceId_, device->deviceType_, device->deviceRole_, device->connectState_);
     if (device->connectState_ == CONNECTED) {
         SetConnectLostRollback(device);
-        ContinueSelection(device);
     } else {
-        RollbackSelection(device->deviceId_, CONNECT_LOST_ROLLBACK);
+        RollbackSelections(device->deviceId_, CONNECT_LOST_ROLLBACK);
     }
+}
+
+void AudioRollbackManager::OnDeviceDisconnect(const AudioDeviceDescriptor &desc)
+{
+    AUDIO_INFO_LOG("id=%{public}d, devType=%{public}d, connectState=%{public}d",
+        desc.deviceId_, desc.deviceType_, desc.connectState_);
+    auto deviceId = desc.deviceId_;
+    auto pred = [deviceId] (SelectionRollback &item) {
+        return item.targetId == deviceId;
+    };
+    std::lock_guard lg(mutex_);
+    auto rmIt = remove_if(selectionRollbacks_.begin(), selectionRollbacks_.end(), pred);
+    for (auto it = rmIt; it < selectionRollbacks_.end(); it++) {
+        RollbackSelection(it->selection);
+    }
+    selectionRollbacks_.erase(rmIt, selectionRollbacks_.end());
+
+    CHECK_AND_RETURN(rollbackInfo_ && rollbackInfo_->deviceId == deviceId &&
+        rollbackInfo_->type == CONNECT_LOST_ROLLBACK);
+    for (auto &item : rollbackInfo_->selections) {
+        RollbackSelection(item);
+    }
+    rollbackInfo_.reset();
 }
 
 void AudioRollbackManager::SetMediaInputDevice(int32_t uid, uint32_t streamId,
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
-    CHECK_AND_RETURN(!HandleNonConnected(uid, SelectDeviceType::MEDIA_INPUT, streamId, device));
     AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(uid, streamId, device);
 }
 
 void AudioRollbackManager::SetMediaOutputDevice(int32_t uid, uint32_t streamId,
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
-    CHECK_AND_RETURN(!HandleNonConnected(uid, SelectDeviceType::MEDIA_OUTPUT, streamId, device));
+    SetSelectionRollback(uid, SelectDeviceType::MEDIA_OUTPUT, streamId, device);
     AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(uid, streamId, device);
 }
 
 void AudioRollbackManager::SetCallInputDevice(int32_t uid, uint32_t streamId,
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
-    CHECK_AND_RETURN(!HandleNonConnected(uid, SelectDeviceType::CALL_INPUT, streamId, device));
     AudioRouterSelectStrategy::GetInstance().SetCallInputDevice(uid, streamId, device);
 }
 
 void AudioRollbackManager::SetCallOutputDevice(int32_t uid, uint32_t streamId,
     const std::shared_ptr<AudioDeviceDescriptor> &device, const std::string caller)
 {
-    CHECK_AND_RETURN(!HandleNonConnected(uid, SelectDeviceType::CALL_OUTPUT, streamId, device));
+    SetSelectionRollback(uid, SelectDeviceType::CALL_OUTPUT, streamId, device);
     AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(uid, streamId, device, caller);
+}
+
+void AudioRollbackManager::SetSelectionRollback(int32_t uid, SelectDeviceType type,
+    uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    CHECK_AND_RETURN(device && device->deviceId_ > 0);
+    if (uid < SYSTEM_UID) {
+        uid = SYSTEM_UID;
+    }
+    auto deviceId = device->deviceId_;
+    auto pred = [uid, type, streamId] (SelectionRollback &item) {
+        return item.selection.uid == uid && item.selection.type == type && item.selection.streamId == streamId;
+    };
+    std::lock_guard lg(mutex_);
+    rollbackInfo_.reset();
+    selectionRollbacks_.erase(remove_if(
+        selectionRollbacks_.begin(), selectionRollbacks_.end(), pred), selectionRollbacks_.end());
+    CHECK_AND_RETURN(NOT_CONNECTED.contains(device->connectState_));
+    AUDIO_INFO_LOG("id=%{public}d, devType=%{public}d, connectState=%{public}d",
+        deviceId, device->deviceType_, device->connectState_);
+    for (auto &item : AudioRouterInfra::GetInstance().GetSelections({type})) {
+        CHECK_AND_CONTINUE(item.uid == uid && item.streamId == streamId && item.deviceId != deviceId);
+        selectionRollbacks_.push_back({deviceId, item});
+    }
+    thread([deviceId, uid, type, streamId, this]() {
+        this_thread::sleep_for(chrono::seconds(CONTINUE_TIMEOUT_SEC));
+        auto pred = [deviceId, uid, type, streamId] (SelectionRollback &item) {
+            return item.targetId == deviceId && item.selection.uid == uid &&
+                item.selection.type == type && item.selection.streamId == streamId;
+        };
+        std::lock_guard lg(mutex_);
+        auto rmIt = remove_if(selectionRollbacks_.begin(), selectionRollbacks_.end(), pred);
+        for (auto it = rmIt; it < selectionRollbacks_.end(); it++) {
+            RollbackSelection(it->selection);
+        }
+        selectionRollbacks_.erase(rmIt, selectionRollbacks_.end());
+    }).detach();
+}
+
+void AudioRollbackManager::RollbackSelection(const Selection &selection)
+{
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto device = deviceManager.FindConnectedDeviceById(selection.deviceId);
+    CHECK_AND_RETURN_LOG(device && (device->connectState_ == CONNECTED ||
+        device->connectState_ == DEACTIVE_CONNECTED), "NotConnect[%{public}d]", selection.deviceId);
+    AUDIO_INFO_LOG("id=%{public}d, devType=%{public}d, connectState=%{public}d",
+        selection.deviceId, device->deviceType_, device->connectState_);
+    switch (selection.type) {
+        case SelectDeviceType::MEDIA_INPUT:
+            strategy.SetMediaInputDevice(selection.uid, selection.streamId, device);
+            break;
+        case SelectDeviceType::MEDIA_OUTPUT:
+            strategy.SetMediaOutputDevice(selection.uid, selection.streamId, device);
+            break;
+        case SelectDeviceType::CALL_INPUT:
+            strategy.SetCallInputDevice(selection.uid, selection.streamId, device);
+            break;
+        case SelectDeviceType::CALL_OUTPUT:
+            strategy.SetCallOutputDevice(selection.uid, selection.streamId, device);
+            break;
+        default:
+            AUDIO_ERR_LOG("Error: invalid type");
+    }
+    if (device->connectState_ == DEACTIVE_CONNECTED) {
+        AudioActiveDevice::GetInstance().NotifyUserSelectionEventToBt(device);
+    }
 }
 
 }
