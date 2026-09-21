@@ -42,6 +42,7 @@
 #include "boot_animation_state_info.h"
 #include "stream_dfx_manager.h"
 #include "securec.h"
+#include "audio_anco_playback_info.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -466,7 +467,6 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
     rendererInfo_.isCallWaitingTone = rendererOptions.rendererInfo.isCallWaitingTone;
     strategy_ = rendererOptions.strategy;
     originalStrategy_ = rendererOptions.strategy;
-    ancoBundleName_ = rendererOptions.ancoBundleName;
 }
 
 std::shared_ptr<AudioRendererPrivate> AudioRenderer::CreateAndInitRendererObject(

@@ -1148,6 +1148,22 @@ int32_t AudioAdapterManager::SetSourceOutputStreamMuteByStreamId(int32_t session
     return audioServiceAdapter_->SetSourceOutputStreamMuteByStreamId(sessionId, setMute);
 }
 
+int32_t AudioAdapterManager::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    AUDIO_INFO_LOG("SetAncoPlaybackInfo infos size: %{public}zu", ancoPlaybackInfos.size());
+    std::lock_guard<std::mutex> lock(ancoBundleNameMutex_);
+    lastAncoPlaybackInfos_ = ancoPlaybackInfos;
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::GetAncoPlaybackInfo(std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    AUDIO_INFO_LOG("GetAncoPlaybackInfo infos size: %{public}zu", ancoPlaybackInfos.size());
+    std::lock_guard<std::mutex> lock(ancoBundleNameMutex_);
+    ancoPlaybackInfos = lastAncoPlaybackInfos_;
+    return SUCCESS;
+}
+
 bool AudioAdapterManager::GetAppMute(int32_t appUid)
 {
     bool isMute = false;

@@ -25,6 +25,7 @@
 #include "audio_workgroup_client_manager.h"
 #include "audio_capturer_types.h"
 #include "audio_record_control_manager.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1285,6 +1286,7 @@ public:
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);
+    int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
     int32_t SetAudioVKBInfoMgrCallback(const std::shared_ptr<AudioVKBInfoMgrCallback> &callback);
     int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);

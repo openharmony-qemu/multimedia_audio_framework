@@ -75,6 +75,7 @@
 #include "audio_pipe_manager.h"
 #include "audio_policy_dump.h"
 #include "boot_animation_state_info.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -99,6 +100,9 @@ public:
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute) const;
+
+    int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
+    int32_t GetAncoPlaybackInfo(std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 

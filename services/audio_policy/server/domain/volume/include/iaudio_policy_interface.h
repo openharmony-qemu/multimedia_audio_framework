@@ -31,6 +31,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -147,6 +148,9 @@ public:
     virtual int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) = 0;
 
     virtual int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute) = 0;
+
+    virtual int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos) = 0;
+    virtual int32_t GetAncoPlaybackInfo(std::vector<AncoPlaybackInfo> &ancoPlaybackInfos) = 0;
 
     virtual bool GetStreamMute(AudioStreamType streamType,
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc, int32_t zoneId = 0) = 0;

@@ -643,6 +643,11 @@ std::string AudioSystemManager::GetSystemSoundPath(const int32_t systemSoundType
     return AudioSystemClientPolicyManager::GetInstance().GetSystemSoundPath(systemSoundType);
 }
 
+int32_t AudioSystemManager::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    return AudioSystemClientPolicyManager::GetInstance().SetAncoPlaybackInfo(ancoPlaybackInfos);
+}
+
 // Below stub implementation is added to handle compilation error in call manager
 // Once call manager adapt to new interrupt implementation, this will be removed
 int32_t AudioSystemManager::SetAudioManagerCallback(const AudioVolumeType streamType,

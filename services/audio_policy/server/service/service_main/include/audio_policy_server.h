@@ -50,6 +50,7 @@
 #include "audio_policy_manager_listener.h"
 #include "audio_device_manager.h"
 #include "audio_policy_dump.h"
+#include "audio_anco_playback_info.h"
 #include "app_state_listener.h"
 #include "audio_core_service.h"
 #include "audio_converter_parser.h"
@@ -339,6 +340,9 @@ public:
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute) override;
+
+    int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos) override;
+    int32_t GetAncoPlaybackInfo(std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
 
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) override;
 
