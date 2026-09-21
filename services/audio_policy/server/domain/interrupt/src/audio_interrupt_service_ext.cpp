@@ -519,19 +519,19 @@ void AudioInterruptService::ProcessSilentChangeInterrupt(const MuteFocusInfo &au
 {
     const AudioInterrupt& activeInterrupt = audioFocusInfo.currInterrupt;
     const AudioInterrupt& incomingInterrupt = audioFocusInfo.incomingInterrupt;
-    int32_t activeZoneId = FindAudioZoneByStreamIdInternal(activeInterrupt.sessionId);
-    int32_t incomingZoneId = FindAudioZoneByStreamIdInternal(incomingInterrupt.sessionId);
+    int32_t activeZoneId = FindAudioZoneByStreamIdInternal(activeInterrupt.streamId);
+    int32_t incomingZoneId = FindAudioZoneByStreamIdInternal(incomingInterrupt.streamId);
     CHECK_AND_RETURN_LOG(activeZoneId == incomingZoneId,
         "NotifyStreamSilentChange:streamId %{public}d(zoneId:%{public}d) and streamId "
         "%{public}d(zoneId:%{public}d) are not in the same zone, skip interrupt",
-        activeInterrupt.sessionId, activeZoneId, incomingInterrupt.sessionId, incomingZoneId);
+        activeInterrupt.streamId, activeZoneId, incomingInterrupt.streamId, incomingZoneId);
 
     auto itZone = zonesMap_.find(activeZoneId);
     CHECK_AND_RETURN_LOG(itZone != zonesMap_.end() && itZone->second != nullptr,
         "zone not found or zone is null");
     auto audioFocusInfoList = itZone->second->audioFocusInfoList;
     std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator activeIter;
-    CHECK_AND_RETURN_LOG(IsInterruptExist(activeInterrupt.sessionId, audioFocusInfoList, activeIter),
+    CHECK_AND_RETURN_LOG(IsInterruptExist(activeInterrupt.streamId, audioFocusInfoList, activeIter),
         "the active interrupt is not exist");
 
     bool isIncomingBundleNameExist = false;
@@ -540,22 +540,23 @@ void AudioInterruptService::ProcessSilentChangeInterrupt(const MuteFocusInfo &au
         interruptStrategy_->OnQueryBundleNameIsInList(incomingBundleName, "audio_param",
             isIncomingBundleNameExist);
     }
-    InterruptHint hintType = INTERRUPT_HINT_STOP;
     if (activeInterrupt.behaviorFlags_.pauseWhenInterruptFlag || isIncomingBundleNameExist) {
-        hintType = INTERRUPT_HINT_PAUSE;
+        CHECK_AND_RETURN(activeIter->second === ACTIVE || activeIter->second == DUCK);
         activeIter->second  = PAUSE;
-        AUDIO_INFO_LOG("Update hintType for whiteList or pauseWhenInterruptFlag");
-    }
-    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, hintType, 1.0f};
-    AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
-        activeInterrupt.sessionId, incomingInterrupt.sessionId);
-    StartPausedStreamMonitor(activeZoneId, interruptEvent, incomingInterrupt, activeInterrupt);
-    SendInterruptEventCallback(interruptEvent, activeInterrupt.sessionId, activeInterrupt);
-    if (hintType == INTERRUPT_HINT_STOP) {
+        AUDIO_INFO_LOG("streamId %{public}d is paused by streamId: %{public}d for whiteList or pauseWhenInterruptFlag",
+            activeInterrupt.streamId, incomingInterrupt.streamId);
+        StartPausedStreamMonitor(activeZoneId, interruptEvent, incomingInterrupt, activeInterrupt);
+        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
+        SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
+        itZone->second->audioFocusInfoList = audioFocusInfoList;
+        zonesMap_[activeZoneId] = itZone->second;
+    } else {
+        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, hintType, 1.0f};
+        AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
+            activeInterrupt.streamId, incomingInterrupt.streamId);
+        SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
         DeactivateAudioInterruptInternal(activeZoneId, activeInterrupt);
     }
-    itZone->second->audioFocusInfoList = audioFocusInfoList;
-    zonesMap_[activeZoneId] = itZone->second;
 }
 
 bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t streamId)

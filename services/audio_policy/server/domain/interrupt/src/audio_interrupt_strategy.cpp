@@ -178,9 +178,6 @@ void AudioInterruptStrategy::UpdateMuteAudioFocusStrategy(const AudioInterrupt &
         !(incomingInterrupt.behaviorFlags_.muteWhenInterruptFlag && focusEntry.actionOn == INCOMING)) {
         return;
     }
-    int32_t intpausedTimeMs = OnQueryPausedTime();
-    CHECK_AND_RETURN_LOG(intpausedTimeMs > 0,
-        "The set pause duration is 0s, no need to update PAUSE with PAUSE_WHEN_INTERRUPTED flag.");
 
     if ((focusEntry.hintType != INTERRUPT_HINT_STOP &&
         focusEntry.hintType != INTERRUPT_HINT_PAUSE) ||
@@ -209,6 +206,9 @@ void AudioInterruptStrategy::UpdatePauseAudioFocusStrategy(const AudioInterrupt 
     if (focusEntry.actionOn != CURRENT || !currentInterrupt.behaviorFlags_.pauseWhenInterruptFlag) {
         return;
     }
+    int32_t intpausedTimeMs = OnQueryPausedTime();
+    CHECK_AND_RETURN_LOG(intpausedTimeMs > 0,
+        "The set pause duration is 0s, no need to update PAUSE with PAUSE_WHEN_INTERRUPTED flag.");
 
     if (AudioInterruptUtils::IsMediaStream(currentInterrupt.audioFocusType.streamType) &&
         AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType) &&
