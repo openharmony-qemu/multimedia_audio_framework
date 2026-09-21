@@ -31,17 +31,18 @@ struct RollbackInfo {
     std::vector<Selection> selections;
 };
 
+struct SelectionRollback {
+    int32_t targetId{0};
+    Selection selection;
+};
+
 class AudioRollbackManager {
 public:
     static AudioRollbackManager& GetInstance();
 
-    bool HandleNonConnected(int32_t uid, SelectDeviceType type,
-        uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor> &device);
-    void ContinueSelection(const std::shared_ptr<AudioDeviceDescriptor> &device);
-    void SetNewConnectRollback(const std::shared_ptr<AudioDeviceDescriptor> &device);
-    void SetConnectLostRollback(const std::shared_ptr<AudioDeviceDescriptor> &device);
-    void RollbackSelection(int32_t deviceId, RollbackType type);
-    void OnConnectStateUpdate(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
+    void OnDeviceNewConnect(const AudioDeviceDescriptor &desc);
+    void OnDeviceDisconnect(const AudioDeviceDescriptor &desc);
+    void OnConnectStateUpdate(const AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
 
     void SetMediaInputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);
@@ -57,8 +58,15 @@ private:
     AudioRollbackManager(AudioRollbackManager &&src) = delete;
     AudioRollbackManager& operator=(const AudioRollbackManager &oth) = delete;
     AudioRollbackManager& operator=(AudioRollbackManager &&src) = delete;
+
+    void SetSelectionRollback(int32_t uid, SelectDeviceType type,
+        uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor> &device);
+    void SetConnectLostRollback(const std::shared_ptr<AudioDeviceDescriptor> &device);
+    void RollbackSelection(const Selection &selection);
+    void RollbackSelections(int32_t deviceId, RollbackType type);
+
     std::mutex mutex_;
-    std::vector<Selection> continueSelections_;
+    std::vector<SelectionRollback> selectionRollbacks_;
     std::unique_ptr<RollbackInfo> rollbackInfo_;
 };
 
