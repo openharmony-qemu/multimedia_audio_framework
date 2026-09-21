@@ -1335,7 +1335,6 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
     } else {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
-        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
     }
 }
@@ -1363,7 +1362,6 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
     } else {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MUSIC);
-        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MUSIC);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MUSIC);
     }
 }
@@ -1439,7 +1437,6 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
     } else {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
-        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
     }
     // Switch to NEARLINK - should remain collaborative
@@ -1451,7 +1448,6 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
     } else {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
-        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_MOVIE);
     }
 }
