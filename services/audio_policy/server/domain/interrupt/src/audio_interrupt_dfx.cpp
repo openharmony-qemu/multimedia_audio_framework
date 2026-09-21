@@ -466,5 +466,24 @@ void AudioInterruptDfx::AudioSessionTimeoutErrorEvent(const AudioInterrupt &audi
     }
     WriteAudioInterruptErrorEvent(interruptErrorEvent);
 }
+
+void AudioInterruptDfx::GetBehaviorUsageEvent(const AudioInterrupt &audioInterrupt)
+{
+    const std::vector<std::pair<bool, const char *>> flagList = {
+        {audioInterrupt.behaviorFlags_.muteWhenInterruptFlag, "muteWhenInterruptFlag"},
+        {audioInterrupt.behaviorFlags_.pauseWhenInterruptFlag, "pauseWhenInterruptFlag"},
+    };
+
+    for (const auto &entry : flagList) {
+        if (entry.first) {
+            AudioFocusErrorEvent interruptEvent;
+            interruptEvent.appName = AudioInterruptUtils::GetAudioInterruptBundleName(audioInterrupt);
+            interruptEvent.errorInfo = entry.second;
+            interruptEvent.rendererInfo = "streamType: " + std::to_string(audioInterrupt.audioFocusType.streamType) +
+                " sourceType: " + std::to_string(audioInterrupt.audioFocusType.sourceType) + ";";
+            WriteAudioInterruptErrorEvent(interruptEvent);
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
