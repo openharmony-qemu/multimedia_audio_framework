@@ -65,6 +65,7 @@ private:
     uint32_t uChannel_;
     AudioSampleFormat uformat_; // cached sample-format enum (never store byte size)
     uint32_t uSampleRate_;
+    AudioChannelLayout uLayout_; // cached layout; mismatch forces a full sink re-init
     uint64_t latency_;
     bool firstSetVolume_;
     std::shared_ptr<IRendererStream> stream_;

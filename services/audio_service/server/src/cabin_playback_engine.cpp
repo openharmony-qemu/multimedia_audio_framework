@@ -52,6 +52,7 @@ CabinPlayBackEngine::CabinPlayBackEngine()
       uChannel_(0),
       uformat_(INVALID_WIDTH),
       uSampleRate_(0),
+      uLayout_(CH_LAYOUT_UNKNOWN),
       latency_(0),
       firstSetVolume_(true),
       stream_(nullptr)
@@ -261,6 +262,14 @@ int32_t CabinPlayBackEngine::AddRenderer(const std::shared_ptr<IRendererStream> 
 {
     AUDIO_INFO_LOG("Enter add 3da direct");
     CHECK_AND_RETURN_RET_LOG(stream != nullptr, ERR_INVALID_PARAM, "stream is null");
+    if (stream_ && stream->GetStreamIndex() != stream_->GetStreamIndex()) {
+        // Single-slot engine: the new stream takes over the slot when the previous stream
+        // has not been released yet (e.g. cross-process switch ordering), instead of
+        // rejecting it with ERROR_UNSUPPORTED and blocking all later 3DA streams.
+        AUDIO_INFO_LOG("slot taken over, old stream:%{public}u", stream_->GetStreamIndex());
+        Stop();
+        stream_ = nullptr;
+    }
     if (!stream_) {
         AudioProcessConfig config = stream->GetAudioProcessConfig();
         int32_t result = InitSink(config.streamInfo);
@@ -270,10 +279,8 @@ int32_t CabinPlayBackEngine::AddRenderer(const std::shared_ptr<IRendererStream> 
             RegisterSinkLatencyFetcherToStreamIfNeeded();
         }
         return result;
-    } else if (stream->GetStreamIndex() != stream_->GetStreamIndex()) {
-        return ERROR_UNSUPPORTED;
     }
-    return SUCCESS;
+    return SUCCESS; // re-add of the current stream
 }
 
 void CabinPlayBackEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &stream)
@@ -303,13 +310,18 @@ int32_t CabinPlayBackEngine::InitSink(const AudioStreamInfo &clientStreamInfo)
     AudioChannelLayout channelLayout = clientStreamInfo.channelLayout;
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (isInit_ && sink) {
-        if (uChannel_ != channel || uformat_ != format || uSampleRate_ != samplingRate) {
-            if (sink && sink->IsInited()) {
-                sink->Stop();
-                sink->DeInit();
-            }
-        } else {
+        // Reuse only when all cached params (incl. layout) match AND the sink is still healthy:
+        // a failed re-init leaves a render-less sink, and a layout change needs a new HAL render.
+        bool paramsSame = uChannel_ == channel && uformat_ == format && uSampleRate_ == samplingRate
+            && uLayout_ == channelLayout;
+        if (paramsSame && sink->IsInited()) {
             return SUCCESS;
+        }
+        AUDIO_INFO_LOG("re-init 3da direct sink, paramsSame:%{public}d sinkInited:%{public}d",
+            static_cast<int32_t>(paramsSame), static_cast<int32_t>(sink->IsInited()));
+        if (sink->IsInited()) {
+            sink->Stop();
+            sink->DeInit();
         }
     }
     HdiAdapterManager::GetInstance().ReleaseId(renderId_);
@@ -338,7 +350,7 @@ int32_t CabinPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat format
     attr.address = device_.deviceName_; // routed bus port name, passed down to HDI port selection
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;
-    attr.encodingType = ENCODING_AUDIOVIVID_3DA_DIRECT;
+    attr.encodingType = ENCODING_AUDIOVIVID;
     AUDIO_INFO_LOG("sinkName:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d,channel:%{public}d,"
         "encodingType: %{public}d",
         sinkName.c_str(), attr.deviceType, attr.sampleRate, attr.format, attr.channel, attr.encodingType);
@@ -354,6 +366,7 @@ int32_t CabinPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat format
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;
     uformat_ = attr.format;
+    uLayout_ = static_cast<AudioChannelLayout>(attr.channelLayout);
 
     dumpFileName_ = "3da_playback_engine_.pcm";
     AUDIO_DEBUG_LOG("dump file name: %{public}s", dumpFileName_.c_str());
