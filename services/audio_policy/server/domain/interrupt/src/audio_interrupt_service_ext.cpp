@@ -614,9 +614,7 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     AudioInterrupt currentInterrupt = audioFocusInfo.first;
     AudioStreamType currentStreamType = currentInterrupt.audioFocusType.streamType;
     AudioStreamType incomingStreamType = incomingInterrupt.audioFocusType.streamType;
-    if ((focusEntry.hintType != INTERRUPT_HINT_STOP &&
-        focusEntry.hintType != INTERRUPT_HINT_PAUSE &&
-        focusEntry.hintType != INTERRUPT_HINT_MUTE) ||
+    if (focusEntry.hintType != INTERRUPT_HINT_STOP ||
         !AudioInterruptUtils::IsMediaStream(currentStreamType) ||
         !AudioInterruptUtils::IsMediaStream(incomingStreamType)) {
         AUDIO_INFO_LOG("focusEntry.hintType = %{public}d", focusEntry.hintType);
