@@ -21,9 +21,14 @@
 #include "audio_log.h"
 #include "audio_policy_log.h"
 #include "ipc_skeleton.h"
+#include "audio_setting_provider.h"
+#include "system_ability_definition.h"
+#include "parameters.h"
 
 namespace OHOS {
 namespace AudioStandard {
+const std::string PC_MODE_KEY = "settings.sceneboard.ispcmode";
+
 AudioInterruptStrategy::AudioInterruptStrategy()
     : sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance())
 {}
@@ -159,7 +164,7 @@ void AudioInterruptStrategy::UpdatePCModeFocusStrategy(const AudioInterrupt &cur
 {
     if (!AudioInterruptUtils::IsMediaStream(currentInterrupt.audioFocusType.streamType) ||
         !AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType) ||
-        !AudioInterruptUtils::GetPCModeState()) {
+        !isPCMode_.load()) {
         return;
     }
     AUDIO_INFO_LOG("The current mode is pc");
@@ -361,6 +366,28 @@ void AudioInterruptStrategy::OnQueryBundleNameIsInList(const std::string &bundle
     if (queryBundleNameListCallback_ != nullptr) {
         queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, params, ret);
     }
+}
+
+void AudioInterruptStrategy::RegisterPCModeListener()
+{
+    bool supportPCMode = system::GetBoolParameter("const.window.support_window_pcmode_switch", false);
+    CHECK_AND_RETURN_LOG(supportPCMode == true, "not support pc mode");
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_LOG(settingProvider.CheckOsAccountReady(), "os account not ready");
+    AudioSettingObserver::UpdateFunc updateFuncPcMode = [this, &settingProvider](const std::string &key) {
+        bool isPCMode = false;
+        ErrCode ret = settingProvider.GetBoolValue(PC_MODE_KEY, isPCMode, "system", AudioSettingProvider::MAIN_USER_ID);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Get isPCMode failed");
+        isPCMode_.store(isPCMode);
+        AUDIO_INFO_LOG("Get isPCMode: %{public}d", isPCMode_.load());
+    };
+    sptr observer = settingProvider.CreateObserver(PC_MODE_KEY, updateFuncPcMode);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "system");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterPCModeListener failed");
+    }
+    updateFuncPcMode(PC_MODE_KEY);
+    AUDIO_INFO_LOG("RegisterPCModeListener successfully, isPCMode:%{public}d", isPCMode_.load());
 }
 
 int32_t AudioInterruptStrategy::OnQueryPausedTime()

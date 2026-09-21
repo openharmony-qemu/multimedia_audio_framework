@@ -4060,6 +4060,12 @@ void AudioInterruptService::RegisterDefaultVolumeTypeListener()
     AUDIO_INFO_LOG("DefaultVolumeTypeListener mono successfully, defaultVolumeType:%{public}d", defaultVolumeType_);
 }
 
+void AudioInterruptService::RegisterPCModeListener()
+{
+    CHECK_AND_RETURN_LOG(interruptStrategy_ != nullptr, "interruptStrategy_ is nullptr!");
+    interruptStrategy_->RegisterPCModeListener();
+}
+
 void AudioInterruptService::PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId)
 {
     OHOS::AAFwk::Want want;
