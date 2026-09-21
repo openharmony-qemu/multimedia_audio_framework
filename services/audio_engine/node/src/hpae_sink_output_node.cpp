@@ -74,6 +74,23 @@ HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeSinkOutputNode::OnTraceInfoChanged()
+{
+    RebuildTraceName();
+}
+
+void HpaeSinkOutputNode::RebuildTraceName()
+{
+    processTraceName_ = "HpaeSinkOutputNode::DoProcess " + GetTraceInfo();
+}
+
+void HpaeSinkOutputNode::RebuildAuxTraceName()
+{
+    auxTraceName_ = "HpaeSinkOutputNode::RenderFrameForAuxiliarySink sinkName:" + sinkOutAttr_.sinkName +
+        " isEnabled:" + std::to_string(auxSinkEnable_) + " state:" + std::to_string(auxSinkState_);
 }
 
 HpaeSinkOutputNode::~HpaeSinkOutputNode()
@@ -103,7 +120,7 @@ void HpaeSinkOutputNode::HandleRemoteTiming()
 
 void HpaeSinkOutputNode::DoProcess()
 {
-    Trace trace("HpaeSinkOutputNode::DoProcess " + GetTraceInfo());
+    Trace trace(processTraceName_);
     if (audioRendererSink_ == nullptr) {
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
         return;
@@ -160,8 +177,7 @@ void HpaeSinkOutputNode::RenderFrameForAuxiliarySink()
         sinkOutAttr_.sinkName.c_str(), auxSinkEnable_ ? "true" : "false", auxSinkState_);
     CHECK_AND_RETURN(auxSinkEnable_ && auxSinkState_ == STREAM_MANAGER_RUNNING &&
         AUXILIARY_SPEAKER_LIST.count(sinkOutAttr_.sinkName) > 0);
-    Trace trace("HpaeSinkOutputNode::RenderFrameForAuxiliarySink sinkName:" + sinkOutAttr_.sinkName +
-       " isEnabled:" + std::to_string(auxSinkEnable_) + " state:" + std::to_string(auxSinkState_));
+    Trace trace(auxTraceName_);
 
     CHECK_AND_RETURN_LOG(auxiliarySink_ != nullptr, "auxiliarySink_ is null");
     uint64_t writeLen = 0;
@@ -284,6 +300,7 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 
     sinkOutAttr_ = attr;
     auxSinkEnable_ = attr.auxSinkEnable;
+    RebuildAuxTraceName();
     if (audioRendererSink_->IsInited()) {
         AUDIO_WARNING_LOG("audioRenderSink already inited");
         SetSinkState(STREAM_MANAGER_IDLE);
@@ -570,6 +587,7 @@ void HpaeSinkOutputNode::UpdateAuxiliarySinkState(StreamChangeType change,
         " state:%{public}d usage:%{public}d", ConvertStreamManagerState2Str(auxSinkState_).c_str(),
         ConvertStreamManagerState2Str(auxState).c_str(), sessionId, change, state, usage);
     auxSinkState_ = auxState;
+    RebuildAuxTraceName();
 }
 
 void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
@@ -690,6 +708,7 @@ int32_t HpaeSinkOutputNode::SetAuxiliarySinkEnable(bool isEnabled)
     AUDIO_INFO_LOG("set to isEnabled:%{public}s for sinkName:%{public}s",
         isEnabled ? "true" : "false", sinkOutAttr_.sinkName.c_str());
     auxSinkEnable_ = isEnabled;
+    RebuildAuxTraceName();
     if (auxSinkEnable_) {
         if (auxiliarySink_ == nullptr) {
             AUDIO_ERR_LOG("auxiliarySink_ is null, need get auxiliarySink");

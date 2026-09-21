@@ -62,6 +62,7 @@ public:
     virtual void SetNodeInfo(HpaeNodeInfo& nodeInfo)
     {
         nodeInfo_ = nodeInfo;
+        RefreshTraceInfo();
     }
 
     virtual void SetNodeId(uint32_t nodeId)
@@ -72,6 +73,14 @@ public:
     virtual void SetNodeName(std::string nodeName)
     {
         nodeInfo_.nodeName = nodeName;
+        RefreshTraceInfo();
+    }
+
+    // Updates frameLen (replacing direct GetNodeInfo().frameLen writes) and refreshes trace cache
+    void SetFrameLen(uint32_t frameLen)
+    {
+        nodeInfo_.frameLen = frameLen;
+        RefreshTraceInfo();
     }
 
     virtual AudioSamplingRate GetSampleRate() const
@@ -166,14 +175,27 @@ public:
 
     virtual std::string GetTraceInfo()
     {
-        CHECK_AND_RETURN_RET(traceInfo_.empty(), traceInfo_);
-        auto rate = "rate[" + std::to_string(nodeInfo_.samplingRate) + "]_";
-        auto ch = "ch[" + std::to_string(static_cast<int32_t>(nodeInfo_.channels)) + "]_";
-        auto len = "len[" + std::to_string(nodeInfo_.frameLen) + "]_";
-        auto bit = "bit[" + std::to_string(static_cast<int32_t>(nodeInfo_.format)) + "]";
-        traceInfo_ = rate + ch + len + bit;
+        if (traceInfo_.empty()) {
+            auto rate = "rate[" + std::to_string(nodeInfo_.samplingRate) + "]_";
+            auto ch = "ch[" + std::to_string(static_cast<int32_t>(nodeInfo_.channels)) + "]_";
+            auto len = "len[" + std::to_string(nodeInfo_.frameLen) + "]_";
+            auto bit = "bit[" + std::to_string(static_cast<int32_t>(nodeInfo_.format)) + "]";
+            traceInfo_ = rate + ch + len + bit;
+        }
         return traceInfo_;
     }
+
+protected:
+    // Derived nodes rebuild their cached trace name members here, right after node info changed.
+    virtual void OnTraceInfoChanged() {}
+
+    // Clears cached trace info and notifies derived nodes; called on every node info change
+    void RefreshTraceInfo()
+    {
+        traceInfo_.clear();
+        OnTraceInfoChanged();
+    }
+
 private:
     static uint32_t GenerateHpaeNodeId()
     {

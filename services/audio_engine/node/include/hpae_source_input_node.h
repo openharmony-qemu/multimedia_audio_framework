@@ -80,6 +80,8 @@ private:
     void SetConcatMicEcFlag(HpaeNodeInfo &nodeInfo);
     void ConCatMicEcAndPushData(const uint64_t &replyBytes, const uint64_t replyBytesEc);
     void DoProcessInnerMicAndEc(const uint64_t &replyBytes, const uint64_t replyBytesEc);
+    void OnTraceInfoChanged() override;
+    void RebuildTraceName();
     void DumpInput(HpaeSourceBufferType &micType, HpaeSourceBufferType &ecType,
         const uint64_t &replyBytes, const uint64_t &replyBytesEc);
     void DumpOutput(HpaeSourceBufferType &micType);
@@ -109,6 +111,9 @@ private:
     HpaeBackoffController backoffController_;
     bool concatMicEcFlag_ = false;
     std::vector<char> concatDataBuffer_;
+
+    // Cached DoProcess trace name; rebuilt in ctor and whenever node info changes
+    std::string processTraceName_;
 #ifdef ENABLE_HOOK_PCM
     std::unordered_map<HpaeSourceBufferType, std::unique_ptr<HpaePcmDumper>> inputPcmDumperMap_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;

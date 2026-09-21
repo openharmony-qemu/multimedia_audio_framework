@@ -56,6 +56,19 @@ HpaeSinkVirtualOutputNode::HpaeSinkVirtualOutputNode(HpaeNodeInfo &nodeInfo)
         "_rate_" + std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
 
 #endif
+    RebuildTraceNames();
+}
+
+void HpaeSinkVirtualOutputNode::OnTraceInfoChanged()
+{
+    RebuildTraceNames();
+}
+
+void HpaeSinkVirtualOutputNode::RebuildTraceNames()
+{
+    renderTraceName_ = "HpaeSinkVirtualOutputNode::DoRenderProcess " + GetTraceInfo();
+    processTraceName_ = "HpaeSinkVirtualOutputNode::DoProcess " + GetTraceInfo();
+    innerTraceName_ = "HpaeSinkVirtualOutputNode::DoProcessInner " + GetTraceInfo();
 }
 
 HpaeSinkVirtualOutputNode::~HpaeSinkVirtualOutputNode()
@@ -71,7 +84,7 @@ HpaeSinkVirtualOutputNode::~HpaeSinkVirtualOutputNode()
 
 void HpaeSinkVirtualOutputNode::DoRenderProcess()
 {
-    Trace trace("HpaeSinkVirtualOutputNode::DoRenderProcess " + GetTraceInfo());
+    Trace trace(renderTraceName_);
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     CHECK_AND_RETURN(!outputVec.empty());
     HpaePcmBuffer *outputData = outputVec.front();
@@ -91,14 +104,14 @@ void HpaeSinkVirtualOutputNode::DoRenderProcess()
 
 void HpaeSinkVirtualOutputNode::DoProcess()
 {
-    Trace trace("HpaeSinkVirtualOutputNode::DoProcess " + GetTraceInfo());
+    Trace trace(processTraceName_);
     std::lock_guard<std::mutex> lock(mutex_);
     DoProcessInner();
 }
 
 void HpaeSinkVirtualOutputNode::DoProcessInner()
 {
-    Trace trace("HpaeSinkVirtualOutputNode::DoProcessInner " + GetTraceInfo());
+    Trace trace(innerTraceName_);
     OptResult result = ringCache_->Dequeue(
         {reinterpret_cast<uint8_t *>(outputAudioBuffer_.GetPcmDataBuffer()), outputAudioBuffer_.DataSize()});
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "ringCache dequeue fail");

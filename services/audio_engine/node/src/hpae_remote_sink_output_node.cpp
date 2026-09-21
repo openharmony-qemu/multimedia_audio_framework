@@ -53,6 +53,21 @@ HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo, HpaeS
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeRemoteSinkOutputNode::OnTraceInfoChanged()
+{
+    RebuildTraceName();
+}
+
+void HpaeRemoteSinkOutputNode::RebuildTraceName()
+{
+    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
+    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
+    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
+    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
+    processTraceName_ = "HpaeRemoteSinkOutputNode::DoProcess " + rate + ch + len + format;
 }
 
 HpaeRemoteSinkOutputNode::~HpaeRemoteSinkOutputNode()
@@ -103,11 +118,7 @@ void HpaeRemoteSinkOutputNode::HandlePcmDumping(SplitStreamType streamType, char
 
 void HpaeRemoteSinkOutputNode::DoProcess()
 {
-    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
-    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
-    Trace trace("HpaeRemoteSinkOutputNode::DoProcess " + rate + ch + len + format);
+    Trace trace(processTraceName_);
     if (audioRendererSink_ == nullptr) {
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
         return;

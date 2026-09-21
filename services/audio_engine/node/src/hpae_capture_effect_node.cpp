@@ -50,6 +50,31 @@ HpaeCaptureEffectNode::HpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeCaptureEffectNode::OnTraceInfoChanged()
+{
+    HpaePluginNode::OnTraceInfoChanged();
+    RebuildTraceName();
+}
+
+void HpaeCaptureEffectNode::RebuildTraceName()
+{
+    traceName_ = "[" + sceneType_ + "]HpaeCaptureEffectNode::SignalProcess inputs num[" +
+        std::to_string(inputStream_.GetPreOutputNum()) + "]";
+}
+
+void HpaeCaptureEffectNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
+{
+    HpaePluginNode::Connect(preNode);
+    RebuildTraceName();
+}
+
+void HpaeCaptureEffectNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
+{
+    HpaePluginNode::DisConnect(preNode);
+    RebuildTraceName();
 }
 
 HpaeCaptureEffectNode::~HpaeCaptureEffectNode()
@@ -70,8 +95,7 @@ bool HpaeCaptureEffectNode::Reset()
 
 HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    Trace trace("[" + sceneType_ + "]HpaeCaptureEffectNode::SignalProcess inputs num[" +
-        std::to_string(inputs.size()) + "]");
+    Trace trace(traceName_);
     if (inputs.empty()) {
         AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
         return nullptr;
