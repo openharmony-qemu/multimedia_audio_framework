@@ -76,6 +76,5 @@ bool AudioInterruptUtils::GetWindowState(const AudioInterrupt &audioInterrupt)
     return false;
 #endif
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
