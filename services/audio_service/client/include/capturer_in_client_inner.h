@@ -279,6 +279,7 @@ private:
     void RefreshCapturerAttrInfoFromSpan(const CapturerAttrInfo &attr);
     bool SyncCapturerAttrFromSpan();
     bool JudgeFastStreamByCapturerAttr();
+    void CheckRefreshCbBuffer();
 
     int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
@@ -422,6 +423,7 @@ private:
 
     int32_t playbackCaptureMode_ = 0;
     bool isModernInnerCapturer_ = false;
+    std::atomic<bool> isNeedRefreshCbBuffer_ = false;
 
     enum {
         STATE_CHANGE_EVENT = 0,
