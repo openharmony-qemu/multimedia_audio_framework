@@ -2109,30 +2109,7 @@ int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid,
     vector<uint32_t> sessionIDList = pipeManager_->GetStreamIdsByPid(callerPid);
     CHECK_AND_RETURN_RET_LOG(pipeManager_->GetHasEarpiece(), ERR_NOT_SUPPORTED,
         "the device has no earpiece");
-    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    bool forceFetch = false;
-    for (auto &changeInfo : audioRendererChangeInfos) {
-        bool currentSessionID = false;
-        uint32_t sessionIDListSize = sessionIDList.size();
-        for (uint32_t i = 0; i < sessionIDListSize; i++) {
-            if (changeInfo->sessionId == static_cast<int32_t>(sessionIDList[i])) {
-                currentSessionID = true;
-                break;
-            }
-        }
-        if (currentSessionID &&
-            (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_INTERPHONE)) {
-            CHECK_AND_CONTINUE(!skipForce);
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
-            forceFetch = true;
-        }
-    }
-    return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType, forceFetch, callerUid);
+    return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType, false, callerUid);
 }
 
 bool AudioCoreService::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos)

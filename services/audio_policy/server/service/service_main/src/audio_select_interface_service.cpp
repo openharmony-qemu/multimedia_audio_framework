@@ -815,16 +815,6 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
     for (auto &desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr && desc->sessionId_ == sessionID);
         clientUid = desc->GetRealUid();
-        if (desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-            desc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
-            desc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
-            CHECK_AND_CONTINUE(!skipForce && !ClearBlockFirstOverrode());
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), desc->GetRealUid(), "SetDefaultOutputDevice");
-            forceFetch = true;
-        }
     }
     if (clientUid == INVALID_UID) {
         return SUCCESS;
