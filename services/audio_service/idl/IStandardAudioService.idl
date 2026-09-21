@@ -167,4 +167,5 @@ interface IStandardAudioService {
     void RemoveDeviceSpatialEnabled([in] String address);
     void ClearDeviceSpatialEnabled();
     void GetSinkLatency([in] unsigned int renderId, [out] unsigned int sinkLatency);
+    void SetPowerStateNotify([in] int state);
 }

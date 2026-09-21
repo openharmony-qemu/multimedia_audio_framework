@@ -36,8 +36,10 @@ public:
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     void OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &params, bool& ret);
     void RegisterPCModeListener();
+    int32_t OnQueryPausedTime();
 
 private:
+    static constexpr int32_t DEFAULT_PAUSE_TIMEOUT_S = 5;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     std::atomic_bool isPCMode_ = false;
 

@@ -125,7 +125,8 @@ float AudioVolume::GetVolume(const std::shared_ptr<StreamVolume>& streamVolume,
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(
         GetDoNotDisturbStatusVolumeFromStream(*streamVolume, streamVolume->GetStreamType(), appUid));
     float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
-    volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume * mdmMuteFactor;
+    float aacMuteFactor = AudioMuteFactorManager::GetInstance().GetAacMuteFactor(appUid);
+    volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume * mdmMuteFactor * aacMuteFactor;
 
     {
         std::shared_lock<std::shared_mutex> lock(streamVolume->volumeFactorsMutex_);
@@ -222,7 +223,8 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolumeInternal(streamType,
         appUid, sessionId));
     float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
-    volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume * mdmMuteFactor;
+    float aacMuteFactor = AudioMuteFactorManager::GetInstance().GetAacMuteFactor(appUid);
+    volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume * mdmMuteFactor * aacMuteFactor;
     if (it != streamVolume_.end() && !IsSameVolume(it->second->GetMonitorVolume(), volumes->volume)) {
         it->second->SetMonitorVolumeAtomic(volumes->volume, volumeLevel);
         HILOG_COMM_INFO("volume,sessionId:%{public}u,volume:%{public}f,volumeType:%{public}d,pipeId:%{public}d,"

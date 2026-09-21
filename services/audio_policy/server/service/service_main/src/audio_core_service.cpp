@@ -1825,14 +1825,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     }
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
-        AudioRouterInfra::GetInstance().UpdateInputStreamState(GetRealUid(streamDesc), sessionId,
-            streamDesc->capturerInfo_.sourceType, CapturerState::CAPTURER_RELEASED);
-    }
-    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-        AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
-            streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_RELEASED);
-    }
+    UpdateReleaseStreamState(streamDesc, sessionId);
     ForceRemoveSleStreamType(streamDesc);
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.UnsetOffloadStatus(sessionId);
@@ -1848,6 +1841,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     }
     DeleteSessionId(sessionId);
     ClearMuteVoipState(streamDesc, sessionId);
+    ClearRingerFlags(streamDesc);
     UnmuteDualStreamAfterAlarm(streamDesc);
 
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
@@ -1868,6 +1862,19 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         isFirstScreenOn_.store(true);
     }
     return SUCCESS;
+}
+
+void AudioCoreService::UpdateReleaseStreamState(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    uint32_t sessionId)
+{
+    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
+        AudioRouterInfra::GetInstance().UpdateInputStreamState(GetRealUid(streamDesc), sessionId,
+            streamDesc->capturerInfo_.sourceType, CapturerState::CAPTURER_RELEASED);
+    }
+    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
+            streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_RELEASED);
+    }
 }
 
 int32_t AudioCoreService::GetPhoneCallSceneType(AudioScene audioScene, AudioScene lastAudioScene)

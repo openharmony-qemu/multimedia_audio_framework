@@ -81,6 +81,15 @@ public:
     int32_t SetSystemAppVolumePercentageForUid(const int32_t appUid, const int32_t volumePercentage);
 
     /**
+     * @brief Confirm volume adjustment and suppress notifications for the configured duration on success.
+     *
+     * @param volumeType The audio volume type reported by the prompt.
+     * @param confirmResult True to accept the adjustment; false to leave the state unchanged.
+     * @return Returns {@link SUCCESS} on success; returns an error code otherwise.
+     */
+    int32_t ConfirmVolumeLimitExceeded(AudioVolumeType volumeType, bool confirmResult);
+
+    /**
      * @brief Set self app volume.
      *
      * @param volume The volume to be set for the current app.
@@ -196,6 +205,26 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
+
+    /**
+     * @brief Set the mute whitelist for application volume.
+     * Applications not in the whitelist will be muted.
+     * Note that: This interface only allows one UID call at the same time.
+     * @param uids The uid array of whitelist applications.The max size is 100.
+     * @return Returns {@link SUCCESS} if the settings is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26.0.0 dynamic
+     */
+    int32_t SetUnmuteWhitelist(const std::vector<int32_t> &uids);
+
+    /**
+     * @brief Clear the mute whitelist for application volume.
+     * All applications will be unmuted after clearing.
+     * @return Returns {@link SUCCESS} if the settings is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26.0.0 dynamic
+     */
+    int32_t ClearUnmuteWhitelist();
 
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
 
@@ -783,6 +812,12 @@ public:
      */
     int32_t UnregisterVolumeDegreeCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
+
+    int32_t RegisterVolumeLimitExceededCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeLimitExceededCallback> &callback);
+
+    int32_t UnregisterVolumeLimitExceededCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeLimitExceededCallback> &callback = nullptr);
 
     /**
      * @brief registers the systemVolumeChange callback listener

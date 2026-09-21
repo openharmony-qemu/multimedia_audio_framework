@@ -39,6 +39,7 @@
 #include "audio_capturer_options.h"
 #include "boot_animation_state_info.h"
 #include "audio_separation_effect_enabled_change_callback.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -75,6 +76,10 @@ public:
 
     int32_t SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted);
 
+    int32_t SetUnmuteWhitelist(const std::vector<int32_t> &uids);
+
+    int32_t ClearUnmuteWhitelist();
+
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
 
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
@@ -82,6 +87,10 @@ public:
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 
     int32_t SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage);
+
+    int32_t SetVolumeProtectionInfo(const VolumeProtectionConfig &config);
+    int32_t ClearVolumeProtection();
+    int32_t ConfirmVolumeLimitExceeded(AudioVolumeType volumeType, bool confirmResult);
 
     int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0);
 
@@ -827,6 +836,9 @@ public:
     int32_t SetVolumeDegreeCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
     int32_t UnsetVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t SetVolumeLimitExceededCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeLimitExceededCallback> &callback);
+    int32_t UnsetVolumeLimitExceededCallback(const std::shared_ptr<VolumeLimitExceededCallback> &callback);
     int32_t SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
         int32_t volumeFlag, int32_t uid, int32_t zoneId = INVALID_ZONEID);
     int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid, int32_t zoneId = INVALID_ZONEID);

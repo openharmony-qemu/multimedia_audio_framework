@@ -98,6 +98,7 @@ public:
         PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE,
         AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE,
         RECORD_CONTROLLER_ENABLED_CHANGE_EVENT,
+        VOLUME_LIMIT_EXCEEDED_EVENT,
     };
     /* event data */
     class EventContextObj {
@@ -105,6 +106,7 @@ public:
         DeviceChangeAction deviceChangeAction;
         MicrophoneBlockedInfo microphoneBlockedInfo;
         VolumeEvent volumeEvent;
+        VolumeLimitExceedEvent volumeLimitExceedEvent;
         AudioVolumeType volumeType;
         AudioInterrupt audioInterrupt;
         std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
@@ -195,6 +197,7 @@ public:
     void HandleMicrophoneBlockedCallback(const AppExecFwk::InnerEvent::Pointer &event);
     bool SendVolumeKeyEventCallback(const VolumeEvent &volumeEvent, const int32_t zoneId = 0);
     bool SendVolumeDegreeEventCallback(const VolumeEvent &volumeEvent, const int32_t zoneId = 0);
+    bool SendVolumeLimitExceededCallback(const VolumeLimitExceedEvent &event);
     bool SendAudioFocusInfoChangeCallback(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
@@ -276,6 +279,7 @@ private:
     void HandleAvailableDeviceChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleVolumeKeyEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleVolumeDegreeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleVolumeLimitExceeded(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRequestCateGoryEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAbandonCateGoryEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleFocusInfoChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);

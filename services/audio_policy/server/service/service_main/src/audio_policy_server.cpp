@@ -84,6 +84,7 @@ constexpr int32_t PARAMS_VOLUME_NUM = 5;
 constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 80;
+constexpr size_t MAX_UNMUTE_WHITELIST_SIZE = 100;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
 constexpr pid_t FIRST_SCREEN_ON_PID = 1000;
@@ -1318,9 +1319,9 @@ void AudioPolicyServer::RegisterVoipMuteDeathRecipient(int32_t callerUid, const 
         AUDIO_DEBUG_LOG("voip mute death recipient already registered for callerUid:%{public}d", callerUid);
         return;
     }
-    sptr<IRemoteObject::DeathRecipient> dr = new(std::nothrow) VoipMuteDeathRecipient(
+    sptr<IRemoteObject::DeathRecipient> dr = new(std::nothrow) PolicyClientDeathRecipient(
         [this, callerUid]() { this->OnVoipMuteCallerDied(callerUid); });
-    CHECK_AND_RETURN_LOG(dr != nullptr, "create VoipMuteDeathRecipient failed");
+    CHECK_AND_RETURN_LOG(dr != nullptr, "create PolicyClientDeathRecipient failed for voip Mute");
     if (!callerObj->AddDeathRecipient(dr)) {
         AUDIO_WARNING_LOG("AddDeathRecipient failed for callerUid:%{public}d", callerUid);
         return;
@@ -1368,6 +1369,30 @@ int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUid(int32_t appUid, in
     return audioVolumeManager_.SetSystemAppVolumePercentageWithCallback(appUid, volumePercentage);
 }
 
+int32_t AudioPolicyServer::SetVolumeProtectionInfo(const VolumeProtectionConfig &config)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.SetVolumeProtectionInfo(config);
+}
+
+int32_t AudioPolicyServer::ClearVolumeProtection()
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.ClearVolumeProtection();
+}
+
+int32_t AudioPolicyServer::ConfirmVolumeLimitExceeded(int32_t volumeType, bool confirmResult)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.ConfirmVolumeLimitExceeded(static_cast<AudioVolumeType>(volumeType), confirmResult);
+}
+
 int32_t AudioPolicyServer::SetAppRingMuted(int32_t appUid, bool muted)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
@@ -1375,6 +1400,90 @@ int32_t AudioPolicyServer::SetAppRingMuted(int32_t appUid, bool muted)
     AUDIO_INFO_LOG("SetAppRingMutedInternal appUid: %{public}d, muted: %{public}d", appUid, muted);
     int32_t ret = audioVolumeManager_.SetAppRingMuted(appUid, muted);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to set app ring to mute");
+    return SUCCESS;
+}
+
+
+int32_t AudioPolicyServer::SetUnmuteWhitelist(const std::vector<int32_t> &uids,
+    const sptr<IRemoteObject> &callerObj)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission for SetUnmuteWhitelist");
+    CHECK_AND_RETURN_RET_LOG(callerObj != nullptr, ERR_INVALID_PARAM,
+        "callerObj is null for SetUnmuteWhitelist");
+    CHECK_AND_RETURN_RET_LOG(uids.size() > 0 && uids.size() <= MAX_UNMUTE_WHITELIST_SIZE, ERR_INVALID_PARAM,
+        "uids size %{public}zu invalid for SetUnmuteWhitelist", uids.size());
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    int32_t ret = RegisterUnmuteWhitelistDeathRecipient(callerUid, callerObj);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.SetUnmuteWhitelist(uids);
+}
+
+int32_t AudioPolicyServer::ClearUnmuteWhitelist()
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    int32_t ret = RemoveUnmuteWhitelistDeathRecipient(callerUid);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.ClearUnmuteWhitelist();
+}
+
+int32_t AudioPolicyServer::RegisterUnmuteWhitelistDeathRecipient(int32_t callerUid,
+    const sptr<IRemoteObject> &callerObj)
+{
+    std::lock_guard<std::mutex> lock(unmuteWhitelistMutex_);
+    if (!unmuteWhitelistDeathRecipients_.empty()) {
+        if (unmuteWhitelistDeathRecipients_.find(callerUid) == unmuteWhitelistDeathRecipients_.end()) {
+            AUDIO_ERR_LOG("unmutelist already held by %{public}d, not available for %{public}d",
+                unmuteWhitelistDeathRecipients_.begin()->first, callerUid);
+            return ERR_ILLEGAL_STATE;
+        }
+        AUDIO_DEBUG_LOG("unmutelist death recipient already registered for uid:%{public}d",
+            callerUid);
+        return SUCCESS;
+    }
+    sptr<IRemoteObject::DeathRecipient> dr = new(std::nothrow) PolicyClientDeathRecipient(
+        [this, callerUid]() { this->OnUnmuteWhitelistCallerDied(callerUid); });
+    CHECK_AND_RETURN_RET_LOG(dr != nullptr, ERR_NO_MEMORY,
+        "create PolicyClientDeathRecipient failed for unmute whitelist");
+    if (!callerObj->AddDeathRecipient(dr)) {
+        AUDIO_WARNING_LOG("AddDeathRecipient failed for uid:%{public}d", callerUid);
+        return ERR_OPERATION_FAILED;
+    }
+    unmuteWhitelistDeathRecipients_[callerUid] = dr;
+    AUDIO_INFO_LOG("register unmute list death recipient for uid:%{public}d", callerUid);
+    return SUCCESS;
+}
+
+void AudioPolicyServer::OnUnmuteWhitelistCallerDied(int32_t callerUid)
+{
+    AUDIO_INFO_LOG("unmute list caller died, callerUid:%{public}d", callerUid);
+    sptr<IRemoteObject::DeathRecipient> dr;
+    {
+        std::lock_guard<std::mutex> lock(unmuteWhitelistMutex_);
+        auto it = unmuteWhitelistDeathRecipients_.find(callerUid);
+        if (it != unmuteWhitelistDeathRecipients_.end()) {
+            dr = std::move(it->second);
+            unmuteWhitelistDeathRecipients_.erase(it);
+        }
+    }
+    audioVolumeManager_.ClearUnmuteWhitelist();
+}
+
+int32_t AudioPolicyServer::RemoveUnmuteWhitelistDeathRecipient(int32_t callerUid)
+{
+    std::lock_guard<std::mutex> lock(unmuteWhitelistMutex_);
+    if (!unmuteWhitelistDeathRecipients_.empty() &&
+        unmuteWhitelistDeathRecipients_.find(callerUid) == unmuteWhitelistDeathRecipients_.end()) {
+        AUDIO_ERR_LOG("clear unmute list abort for callerUid:%{public}d, heldUid:%{public}d",
+            callerUid, unmuteWhitelistDeathRecipients_.begin()->first);
+        return ERR_ILLEGAL_STATE;
+    }
+    AUDIO_INFO_LOG("remove unmute list death recipient for uid:%{public}d", callerUid);
+    unmuteWhitelistDeathRecipients_.erase(callerUid);
     return SUCCESS;
 }
 
@@ -6333,7 +6442,6 @@ int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t v
     if (!AudioVolumeUtils::GetInstance().IsVolumeTypeValid(streamType)) {
         return ERR_NOT_SUPPORTED;
     }
-
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     if (zoneId == INVALID_ZONEID) {
         int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();

@@ -27,6 +27,7 @@ declare_args() {
   audio_framework_config_policy_enable = true
   audio_framework_feature_input = true
   audio_framework_feature_power_manager = true
+  audio_framework_feature_thermal_manager = false
   audio_framework_feature_device_manager = true
   audio_framework_enable_unittest_debug = false
   audio_framework_feature_hiview_enable = true
@@ -88,6 +89,13 @@ declare_args() {
     audio_framework_feature_power_manager = true
   } else {
     audio_framework_feature_power_manager = false
+  }
+
+    if (!defined(global_parts_info) ||
+      defined(global_parts_info.powermgr_thermal_manager)) {
+    audio_framework_feature_thermal_manager = true
+  } else {
+    audio_framework_feature_thermal_manager = false
   }
 
   if (!defined(global_parts_info) ||

@@ -104,6 +104,10 @@ public:
 
     int32_t ClearVoipMuteByStreamId(int64_t streamId);
 
+    int32_t SetUnmuteWhitelist(const std::vector<int32_t> &uids);
+
+    int32_t ClearUnmuteWhitelist();
+
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 
     int32_t GetSystemAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);

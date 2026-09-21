@@ -41,6 +41,7 @@ AudioVolumeClientManager::~AudioVolumeClientManager()
         (void)UnregisterStreamVolumeChangeCallback(volumeChangeClientPid_);
         (void)UnregisterSystemVolumeChangeCallback(volumeChangeClientPid_);
         (void)UnregisterVolumeDegreeCallback(volumeChangeClientPid_);
+        (void)UnregisterVolumeLimitExceededCallback(volumeChangeClientPid_);
     }
 }
 
@@ -476,6 +477,20 @@ int32_t AudioVolumeClientManager::UnregisterVolumeDegreeCallback(const int32_t c
         AUDIO_DEBUG_LOG("success");
     }
     return ret;
+}
+
+int32_t AudioVolumeClientManager::RegisterVolumeLimitExceededCallback(const int32_t clientPid,
+    const std::shared_ptr<VolumeLimitExceededCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    volumeChangeClientPid_ = clientPid;
+    return AudioPolicyManager::GetInstance().SetVolumeLimitExceededCallback(clientPid, callback);
+}
+
+int32_t AudioVolumeClientManager::UnregisterVolumeLimitExceededCallback(const int32_t clientPid,
+    const std::shared_ptr<VolumeLimitExceededCallback> &callback)
+{
+    return AudioPolicyManager::GetInstance().UnsetVolumeLimitExceededCallback(callback);
 }
 
 int32_t AudioVolumeClientManager::RegisterSystemVolumeChangeCallback(const int32_t clientPid,
@@ -925,6 +940,29 @@ int32_t AudioVolumeClientManager::SetSystemAppVolumePercentageForUid(int32_t app
     return AudioPolicyManager::GetInstance().SetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
+int32_t AudioVolumeClientManager::SetVolumeProtectionInfo(const VolumeProtectionConfig &config)
+{
+    AUDIO_INFO_LOG("enter");
+    bool hasPermission = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioPolicyManager::GetInstance().SetVolumeProtectionInfo(config);
+}
+
+int32_t AudioVolumeClientManager::ClearVolumeProtection()
+{
+    AUDIO_INFO_LOG("enter");
+    bool hasPermission = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioPolicyManager::GetInstance().ClearVolumeProtection();
+}
+
+int32_t AudioVolumeClientManager::ConfirmVolumeLimitExceeded(AudioVolumeType volumeType, bool confirmResult)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    return AudioPolicyManager::GetInstance().ConfirmVolumeLimitExceeded(volumeType, confirmResult);
+}
+
 int32_t AudioVolumeClientManager::GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage) const
 {
     AUDIO_INFO_LOG("enter");
@@ -971,6 +1009,18 @@ int32_t AudioVolumeClientManager::SetAppRingMuted(int32_t appUid, bool muted)
     bool ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppRingMuted: No system permission");
     return AudioPolicyManager::GetInstance().SetAppRingMuted(appUid, muted);
+}
+
+int32_t AudioVolumeClientManager::SetUnmuteWhitelist(const std::vector<int32_t> &uids)
+{
+    AUDIO_INFO_LOG("SetUnmuteWhitelist, uids size:%{public}zu", uids.size());
+    return AudioPolicyManager::GetInstance().SetUnmuteWhitelist(uids);
+}
+
+int32_t AudioVolumeClientManager::ClearUnmuteWhitelist()
+{
+    AUDIO_INFO_LOG("ClearUnmuteWhitelist");
+    return AudioPolicyManager::GetInstance().ClearUnmuteWhitelist();
 }
 // LCOV_EXCL_STOP
 

@@ -69,6 +69,7 @@ public:
     void SetVoiceVolumeProxy(float volume);
     void UnsetOffloadModeProxy(uint32_t sessionId);
     void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);
+    void SetPowerStateNotifyProxy(int32_t state);
     void CheckHibernateStateProxy(bool hibernate);
     void RestoreSessionProxy(const uint32_t &sessionID, RestoreInfo RestoreInfo);
     void SetSinkMuteForSwitchDeviceProxy(const std::string &deviceClass, int32_t durationUs, bool mute,

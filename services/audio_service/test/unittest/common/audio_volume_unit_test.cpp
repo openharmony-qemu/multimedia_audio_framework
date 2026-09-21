@@ -18,6 +18,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_volume.h"
+#include "audio_mute_factor_manager.h"
 #include "audio_utils.h"
 
 using namespace testing::ext;
@@ -2746,6 +2747,78 @@ HWTEST_F(AudioVolumeUnitTest, GetVirtualKeyboardMode_003, TestSize.Level1)
     EXPECT_EQ(it->second->GetVirtualKeyboardMode(), VKB_ALL_RING);
 
     AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_AacMuteFactor_001
+ * @tc.desc  : Test GetVolume applies aac mute factor from unmute whitelist.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolume_AacMuteFactor_001, TestSize.Level1)
+{
+    uint32_t sessionId = 1;
+    int32_t volumeType = STREAM_MUSIC_TEST;
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+
+    std::vector<int32_t> whitelist = {9999};
+    AudioMuteFactorManager::GetInstance().SetUnmuteWhitelist(whitelist);
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
+    EXPECT_EQ(volume, 0.0f);
+
+    whitelist = {1000};
+    AudioMuteFactorManager::GetInstance().SetUnmuteWhitelist(whitelist);
+    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
+    EXPECT_EQ(volume, 1.0f);
+
+    AudioMuteFactorManager::GetInstance().ClearUnmuteWhitelist();
+    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, TEST_PIPE_ID, &volumes);
+    EXPECT_EQ(volume, 1.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_AacMuteFactor_002
+ * @tc.desc  : Test GetVolume(shared_ptr) applies aac mute factor from unmute whitelist.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolume_AacMuteFactor_002, TestSize.Level1)
+{
+    uint32_t sessionId = 110;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t uid = 1110;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    VkbMode isVKB = VKB_INVALID;
+    StreamVolumeParams params = { sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB };
+    audioVolumeTest->AddStreamVolume(params);
+
+    audioVolumeTest->SetStreamVolume(sessionId, 0.8f);
+
+    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.7f, 10, false);
+    audioVolumeTest->SetPipeVolume(pipeVolume);
+
+    std::shared_ptr<StreamVolume> streamVolumePtr;
+    std::shared_ptr<PipeVolume> pipeVolumePtr;
+    int32_t result = audioVolumeTest->GetStreamAndPipeVolume(
+        sessionId, streamType, TEST_PIPE_ID, streamVolumePtr, pipeVolumePtr);
+    ASSERT_EQ(result, 0);
+
+    std::vector<int32_t> whitelist = {9999};
+    AudioMuteFactorManager::GetInstance().SetUnmuteWhitelist(whitelist);
+    VolumeValues volumes;
+    float volume = audioVolumeTest->GetVolume(streamVolumePtr, pipeVolumePtr, &volumes);
+    EXPECT_EQ(volume, 0.0f);
+
+    whitelist = {uid};
+    AudioMuteFactorManager::GetInstance().SetUnmuteWhitelist(whitelist);
+    volume = audioVolumeTest->GetVolume(streamVolumePtr, pipeVolumePtr, &volumes);
+    EXPECT_GT(volume, 0.0f);
+
+    AudioMuteFactorManager::GetInstance().ClearUnmuteWhitelist();
+    audioVolumeTest->RemoveStreamVolume(sessionId);
 }
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
