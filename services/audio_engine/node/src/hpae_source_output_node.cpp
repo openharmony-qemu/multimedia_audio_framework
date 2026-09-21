@@ -422,7 +422,9 @@ void HpaeSourceOutputNode::SetPcEnableState(int32_t val)
 
 void HpaeSourceOutputNode::SetNodeInfo(HpaeNodeInfo &nodeInfo)
 {
-    if (nodeInfo.frameLen != GetNodeInfo().frameLen) {
+    // Channels-only change (same frameLen) also changes the sample count per frame;
+    // resize on either difference or later ConvertFromFloat overruns the stale buffer.
+    if (nodeInfo.frameLen != GetNodeInfo().frameLen || nodeInfo.channels != GetNodeInfo().channels) {
         sourceOutputData_.resize(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
         interleveData_.resize(nodeInfo.frameLen * nodeInfo.channels);
     }

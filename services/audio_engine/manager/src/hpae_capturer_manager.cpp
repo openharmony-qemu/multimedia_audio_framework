@@ -109,6 +109,11 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
 {
     AUDIO_INFO_LOG("CreateStream sessionId %{public}u deviceName %{public}s,channel:%{public}u,rate:%{public}u",
         streamInfo.sessionId, sourceInfo_.deviceName.c_str(), streamInfo.channels, streamInfo.samplingRate);
+    // Defense-in-depth for unprocessed VA (streamInfo.channels is already the concat total): the
+    // main gate in CreateStream rejects this synchronously; kept here for direct in-process callers.
+    CHECK_AND_RETURN_RET_LOG(streamInfo.sourceType != SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT ||
+        static_cast<uint32_t>(streamInfo.channels) <= CHANNEL_16, ERROR,
+        "unprocessed VA concat total channels[%{public}u] exceed max 16", streamInfo.channels);
     HpaeNodeInfo nodeInfo;
     ConfigNodeInfo(nodeInfo, streamInfo);
     HpaeProcessorType sceneType = TransSourceTypeToSceneType(streamInfo.sourceType);
@@ -303,8 +308,16 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
     if (checkRet != SUCCESS) {
         return checkRet;
     }
+    // Gate hoisted from CreateOutputSession (still kept there as defense-in-depth) so over-limit
+    // unprocessed VA streams fail synchronously; the async request below assumes the output node
+    // was created and would dereference a null map entry on rejection.
+    CHECK_AND_RETURN_RET_LOG(streamInfo.sourceType != SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT ||
+        static_cast<uint32_t>(streamInfo.channels) <= CHANNEL_16, ERROR,
+        "unprocessed VA concat total channels[%{public}u] exceed max 16", streamInfo.channels);
     auto request = [this, streamInfo]() {
-        CreateOutputSession(streamInfo);
+        int32_t ret = CreateOutputSession(streamInfo);
+        // Skip state/notify when no node was created, otherwise map lookups dereference null.
+        CHECK_AND_RETURN(ret == SUCCESS);
         SetSessionState(streamInfo.sessionId, HPAE_SESSION_PREPARED);
         NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_ADD, streamInfo.sessionId, CAPTURER_PREPARED,
             sourceOutputNodeMap_[streamInfo.sessionId]->GetAppUid());

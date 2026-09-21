@@ -222,6 +222,34 @@ HWTEST_F(HpaeSourceOutputNodeTest, SetNodeInfo_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetNodeInfo_003
+ * @tc.type: FUNC
+ * @tc.number: SetNodeInfo_003
+ * @tc.desc: Test SetNodeInfo resizes internal buffers when only channels changes (same frameLen).
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, SetNodeInfo_003, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.frameLen = 160;
+    nodeInfo.channels = CHANNEL_8;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceType = SOURCE_TYPE_MIC;
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    // Same frameLen, channels-only change: buffers must be refreshed to the new geometry.
+    HpaeNodeInfo newNodeInfo = nodeInfo;
+    newNodeInfo.channels = CHANNEL_16;
+    node->SetNodeInfo(newNodeInfo);
+
+    EXPECT_EQ(node->GetNodeInfo().channels, CHANNEL_16);
+    EXPECT_EQ(node->GetNodeInfo().frameLen, newNodeInfo.frameLen);
+    EXPECT_EQ(node->sourceOutputData_.size(),
+        newNodeInfo.frameLen * newNodeInfo.channels * GetSizeFromFormat(newNodeInfo.format));
+    EXPECT_EQ(node->interleveData_.size(), newNodeInfo.frameLen * newNodeInfo.channels);
+}
+
+/**
  * @tc.name: TestHpaeSourceOutputNode_002
  * @tc.type: FUNC
  * @tc.number: TestHpaeSourceOutputNode_002

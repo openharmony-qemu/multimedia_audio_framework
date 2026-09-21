@@ -1310,6 +1310,42 @@ HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceDeInit_001, TestSize.Level1)
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceDeInit(), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->audioCapturerSource_, nullptr);
 }
+
+static HpaeNodeInfo BuildNodeInfo(HpaeSourceBufferType bufferType, uint8_t channels,
+    SourceType sourceType)
+{
+    HpaeNodeInfo nodeInfo = {};
+    nodeInfo.sourceBufferType = bufferType;
+    nodeInfo.channels = static_cast<AudioChannel>(channels);
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.frameLen = 960; // 960 for 20ms at 48k
+    nodeInfo.sourceType = sourceType;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC_EC;
+    return nodeInfo;
+}
+
+/**
+* @tc.name  : concatMicEcTotalChannelsGate_001
+* @tc.desc  : concat total <= 16 rewrites mic channels to total; > 16 keeps original.
+*/
+HWTEST_F(HpaeSourceInputNodeTest, concatMicEcTotalChannelsGate_001, TestSize.Level1)
+{
+    // blocked: mic 15 + ec 2 = 17 > 16, mic channels keep 15
+    std::vector<HpaeNodeInfo> nodeInfosOver = {
+        BuildNodeInfo(HPAE_SOURCE_BUFFER_TYPE_MIC, 15, SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT),
+        BuildNodeInfo(HPAE_SOURCE_BUFFER_TYPE_EC, 2, SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT)};
+    auto nodeOver = std::make_shared<HpaeSourceInputNode>(nodeInfosOver);
+    HpaeSourceBufferType micType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    EXPECT_EQ(nodeOver->GetNodeInfoWithInfo(micType).channels, 15);
+
+    // allowed: mic 14 + ec 2 = 16, mic channels rewritten to 16
+    std::vector<HpaeNodeInfo> nodeInfosOk = {
+        BuildNodeInfo(HPAE_SOURCE_BUFFER_TYPE_MIC, 14, SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT),
+        BuildNodeInfo(HPAE_SOURCE_BUFFER_TYPE_EC, 2, SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT)};
+    auto nodeOk = std::make_shared<HpaeSourceInputNode>(nodeInfosOk);
+    EXPECT_EQ(nodeOk->GetNodeInfoWithInfo(micType).channels, 16);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
