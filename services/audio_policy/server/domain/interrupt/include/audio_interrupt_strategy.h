@@ -60,7 +60,7 @@ private:
     void UpdateMapFocusStrategy(const std::string &bundleName,
         AudioFocusEntry &focusEntry, bool isExistMediaStream, SourceType incomingSourceType);
     void UpdateFocusStrategy(const std::string& bundleName,
-        AudioFocusEntry& focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
+        AudioFocusEntry& focusEntry, bool isExistMediaStream, bool isIncomingMediaStream, bool isCheckMuteStream);
     bool IsMicSource(SourceType sourceType);
     void UpdateMediaWithMixStrategy(const AudioInterrupt &activeInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
