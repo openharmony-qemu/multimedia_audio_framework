@@ -36,14 +36,15 @@ bool AudioInterruptStrategy::IsMicSource(SourceType sourceType)
 }
 
 void AudioInterruptStrategy::UpdateFocusStrategy(const std::string &bundleName,
-    AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream)
+    AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream, bool isCheckMuteStream)
 {
     bool ret = false;
     if (queryBundleNameListCallback_ != nullptr) {
         queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, "audio_param", ret);
     }
     if (isExistMediaStream && isIncomingMediaStream && ret &&
-        focusEntry.hintType == INTERRUPT_HINT_STOP) {
+        focusEntry.hintType == INTERRUPT_HINT_STOP &&
+        !isCheckMuteStream) {
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
         AUDIO_INFO_LOG("%{public}s update audio focus strategy", bundleName.c_str());
     }
@@ -209,6 +210,12 @@ void AudioInterruptStrategy::UpdatePauseAudioFocusStrategy(const AudioInterrupt 
         return;
     }
 
+    if (AudioInterruptUtils::IsMediaStream(currentInterrupt.audioFocusType.streamType) &&
+        AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType) &&
+        incomingInterrupt.isCheckMuteStream) {
+        return;
+    }
+
     if (focusEntry.hintType == INTERRUPT_HINT_STOP &&
         incomingInterrupt.audioFocusType.streamType != STREAM_INTERNAL_FORCE_STOP) {
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
@@ -261,7 +268,7 @@ void AudioInterruptStrategy::UpdateAudioFocusStrategy(const AudioInterrupt &curr
     SourceType existSourceType = existAudioFocusType.sourceType;
     SourceType incomingSourceType = incomingAudioFocusType.sourceType;
     UpdateFocusStrategy(bundleName, focusEntry, AudioInterruptUtils::IsMediaStream(existStreamType),
-        AudioInterruptUtils::IsMediaStream(incomingStreamType));
+        AudioInterruptUtils::IsMediaStream(incomingStreamType), incomingInterrupt.isCheckMuteStream);
     UpdateMapFocusStrategy(bundleName, focusEntry, AudioInterruptUtils::IsMediaStream(existStreamType),
         incomingSourceType);
     UpdateMediaWithMixStrategy(currentInterrupt, incomingInterrupt, focusEntry);
