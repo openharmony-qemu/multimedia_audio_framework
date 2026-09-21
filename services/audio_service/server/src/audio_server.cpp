@@ -3480,7 +3480,8 @@ int32_t AudioServer::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64
 int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
 {
     int32_t uid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(GENERATE_SESSIONID_UID_SET.count(uid) == 1, ERROR, "uid is %{public}d, not mcu uid", uid);
+    CHECK_AND_RETURN_RET_LOG(GENERATE_SESSIONID_UID_SET.count(uid) == 1 || PermissionUtil::VerifySystemPermission(),
+        ERROR, "Refused for %{public}d", uid);
     sessionId = CoreServiceHandler::GetInstance().GenerateSessionId();
     return SUCCESS;
 }
