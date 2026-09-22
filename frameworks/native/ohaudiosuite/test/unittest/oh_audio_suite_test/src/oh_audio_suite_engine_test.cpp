@@ -3171,6 +3171,11 @@ HWTEST_F(OHAudioSuiteEngineTest, OHAudioSuitePipeline_RemoveNode_001, TestSize.L
 
     pipeline->RemoveNode(nullptr);
     EXPECT_FALSE(pipeline->IsNodeExists(eqNode));
+    delete eqNode;
+    delete noiseNode;
+    delete soundNode;
+    delete aissNode;
+    delete beautifierNode;
     delete pipeline;
 }
 
@@ -3234,7 +3239,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OHAudioSuiteEngine_RemoveNode_001, TestSize.Lev
     {
         OHAudioNode* otherNode = new OHAudioNode(789, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER, nullPipeline);
         engine.RemoveNode(otherNode);
-        EXPECT_FALSE(pipeline->IsNodeExists(otherNode));
+        EXPECT_TRUE(engine.nodes_.find(otherNode) == engine.nodes_.end());
         delete otherNode;
     }
     // Conditions 3: node is nullptr

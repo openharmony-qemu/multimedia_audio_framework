@@ -42,7 +42,8 @@ static constexpr float FADE_HIGH = 1.0f;
 static constexpr float SHORT_FADE_PERIOD = 0.005f; // 5ms fade for 10ms < playback duration <= 40ms
 static constexpr float EPSILON = 1e-6f;
 
-HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
+HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo, bool isFast)
+    : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo), isFast_(isFast)
 {
     isInnerCapturerOrInjector_ = !GetDeviceClass().compare(0, strlen(INNER_CAPTURER_SINK), INNER_CAPTURER_SINK) ||
         GetDeviceClass() == VIRTUAL_INJECTOR;
@@ -264,7 +265,7 @@ void HpaeGainNode::ApplyFadeOut(HpaePcmBuffer *input, FadeOutState &fadeOutState
 void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
     uint32_t &processedBytes, uint32_t &totalFadeBytes)
 {
-    if (!input->IsValid() || IsSilentData(input)) {
+    if (!input->IsValid() || (IsSilentData(input) && !isFast_)) {
         if (processedBytes > 0) {
             AUDIO_DEBUG_LOG("[%{public}d]: silent or invalid data no need to do fade in", GetSessionId());
             fadeInState = false;
@@ -324,7 +325,7 @@ void HpaeGainNode::ProcessDefaultFadeIn(HpaePcmBuffer *input, uint8_t *data,
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
         processedBytes += avail;
     }
-    if (processedBytes >= totalFadeBytes) {
+    if (processedBytes >= totalFadeBytes || isFast_) {
         fadeInState = false;
         processedBytes = 0;
     }

@@ -445,7 +445,8 @@ int32_t TaiheParamUtils::GetSpatialDeviceState(OHOS::AudioStandard::AudioSpatial
     return AUDIO_OK;
 }
 
-int32_t TaiheParamUtils::GetAudioHRTFDescriptor(int32_t *fd, int64_t *length, HRTFDescriptor hrtfDescriptor)
+int32_t TaiheParamUtils::GetAudioHRTFDescriptor(int32_t *fd, int64_t *length,
+    AudioHRTFAnonymousDescriptor hrtfDescriptor)
 {
     if (fd == nullptr || length == nullptr) {
         AUDIO_ERR_LOG("GetAudioHRTFDescriptor: fd or length is nullptr");

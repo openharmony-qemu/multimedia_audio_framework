@@ -357,6 +357,7 @@ ohos_shared_library("audio_engine_monitor") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",

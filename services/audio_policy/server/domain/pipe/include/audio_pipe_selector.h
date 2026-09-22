@@ -138,6 +138,8 @@ private:
         std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void MatchFastArmusbPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchArmUsbInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStreamDescriptor> streamDesc,
