@@ -379,13 +379,15 @@ IAudioSinkAttr HpaeFastRendererManager::CreateSinkAttr()
         attr.pin = AUDIO_PIN_OUT_DP;
     }
     if (sinkInfo_.isUltraFast) {
-        attr.period = static_cast<int32_t>(
-            static_cast<float>(sinkInfo_.samplingRate) * ULTRA_FAST_PERIOD_TIME_IN_MS /
-            static_cast<float>(MILLISECOND_PER_SECOND));
+        uint32_t formatByteSize = GetFormatByteSize(attr.format);
+        attr.period = static_cast<uint32_t>(
+            static_cast<float>(attr.sampleRate * attr.channel * formatByteSize) *
+            ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
         AUDIO_INFO_LOG("UltraFast period set: %{public}u frames for rate %{public}u",
             attr.period, sinkInfo_.samplingRate);
         attr.isUltraFast = true;
     }
+    attr.address = sinkInfo_.macAddress;
     return attr;
 }
 

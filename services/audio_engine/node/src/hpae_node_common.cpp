@@ -367,7 +367,7 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.fixedLatency = static_cast<uint32_t>(StringToNum(audioModuleInfo.fixedLatency));
     sinkInfo.deviceName = audioModuleInfo.name;
     sinkInfo.routeFlag = audioModuleInfo.routeFlag;
-    sinkInfo.isUltraFast = (audioModuleInfo.className == "ultra_fast");
+    sinkInfo.isUltraFast = (sinkInfo.deviceClass.find("ultra_fast") != std::string::npos) ? true : false;
     if (audioModuleInfo.needEmptyChunk) {
         sinkInfo.needEmptyChunk = audioModuleInfo.needEmptyChunk.value();
     }

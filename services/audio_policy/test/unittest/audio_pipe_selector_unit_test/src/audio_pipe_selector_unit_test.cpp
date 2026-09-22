@@ -1859,6 +1859,76 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Lev
     EXPECT_EQ(moduleInfo.rate, "8000");
 }
 
+/**
+ * @tc.name: MatchFastArmusbPipe_001
+ * @tc.desc: Test MatchFastArmusbPipe with non-matching pipe name does not update moduleInfo.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MatchFastArmusbPipe_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "new_addr";
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    auto pipeInfo = MakeTestPipe(PIPE_ROLE_OUTPUT, "primary", AUDIO_OUTPUT_FLAG_FAST);
+    pipeInfo->name_ = "primary_output";
+    pipeInfo->moduleInfo_.macAddress = "old_addr";
+    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamDesc);
+    EXPECT_EQ(pipeInfo->moduleInfo_.macAddress, "old_addr");
+}
+
+/**
+ * @tc.name: MatchFastArmusbPipe_002
+ * @tc.desc: Test MatchFastArmusbPipe with same macAddress does not update moduleInfo.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MatchFastArmusbPipe_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    auto pipeInfo = MakeTestPipe(PIPE_ROLE_OUTPUT, "usb", AUDIO_OUTPUT_FLAG_FAST);
+    pipeInfo->name_ = "fast_usb_arm_output";
+    pipeInfo->moduleInfo_.macAddress = "same_addr";
+    pipeInfo->moduleInfo_.rate = "8000";
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "same_addr";
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamDesc);
+    EXPECT_EQ(pipeInfo->moduleInfo_.macAddress, "same_addr");
+    EXPECT_EQ(pipeInfo->moduleInfo_.rate, "8000");
+}
+
+/**
+ * @tc.name: MatchFastArmusbPipe_003
+ * @tc.desc: Test MatchFastArmusbPipe with different macAddress updates moduleInfo.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MatchFastArmusbPipe_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    auto pipeInfo = MakeTestPipe(PIPE_ROLE_OUTPUT, "usb", AUDIO_OUTPUT_FLAG_FAST);
+    pipeInfo->name_ = "fast_usb_arm_output";
+    pipeInfo->moduleInfo_.macAddress = "old_addr";
+    pipeInfo->moduleInfo_.rate = "8000";
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "new_addr";
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    DeviceStreamInfo deviceStreamInfo;
+    deviceStreamInfo.samplingRate.insert(SAMPLE_RATE_96000);
+    deviceDesc->audioStreamInfo_.push_back(deviceStreamInfo);
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamDesc);
+    EXPECT_EQ(pipeInfo->moduleInfo_.macAddress, "new_addr");
+    EXPECT_EQ(pipeInfo->moduleInfo_.rate, "96000");
+}
+
 #ifdef MULTI_BUS_ENABLE
 /**
  * @tc.name: HandleFindBusPipe_001
