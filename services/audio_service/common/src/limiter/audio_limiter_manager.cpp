@@ -24,6 +24,8 @@
 #include "securec.h"
 namespace OHOS {
 namespace AudioStandard {
+const int32_t MAX_LIMITER_FRAME_LEN = 96000;  // upper bound of frameLen, 1s of 48kHz stereo float
+
 AudioLmtManager::AudioLmtManager()
 {
     sinkIndexToLimiterMap_.clear();
@@ -79,7 +81,8 @@ int32_t AudioLmtManager::ProcessLimiter(int32_t sinkIndex, int32_t frameLen, flo
 {
     std::lock_guard<std::mutex> lock(limiterMutex_);
     CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr && outBuffer != nullptr, ERROR, "inBuffer or outBuffer is nullptr");
-    CHECK_AND_RETURN_RET_LOG(frameLen > 0, ERROR, "invalid frameLen: %{public}d", frameLen);
+    CHECK_AND_RETURN_RET_LOG(frameLen > 0 && frameLen <= MAX_LIMITER_FRAME_LEN, ERROR,
+        "invalid frameLen: %{public}d", frameLen);
     auto iter = sinkIndexToLimiterMap_.find(sinkIndex);
     if (iter == sinkIndexToLimiterMap_.end()) {
         AUDIO_INFO_LOG("The limiter has not been created, sinkIndex = %{public}d", sinkIndex);
