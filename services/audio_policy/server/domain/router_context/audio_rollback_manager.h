@@ -63,7 +63,7 @@ private:
         uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor> &device);
     void SetConnectLostRollback(const std::shared_ptr<AudioDeviceDescriptor> &device);
     void RollbackSelection(const Selection &selection);
-    void RollbackSelections(int32_t deviceId, RollbackType type);
+    bool RollbackSelections(int32_t deviceId, RollbackType type);
 
     std::mutex mutex_;
     std::vector<SelectionRollback> selectionRollbacks_;
