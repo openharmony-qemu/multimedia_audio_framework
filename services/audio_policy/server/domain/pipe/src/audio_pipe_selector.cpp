@@ -798,7 +798,6 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
             MatchUltraFastPipe(*newPipeIter, streamDesc);
             MatchFastArmusbPipe(*newPipeIter, streamDesc);
             MatchArmUsbInputPipe(*newPipeIter, streamDesc);
-            MatchFastArmusbPipe(*newPipeIter, streamDesc);
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
             continue;
@@ -1963,7 +1962,6 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
         MatchUltraFastPipe(pipeInfo, streamDesc);
         MatchFastArmusbPipe(pipeInfo, streamDesc);
         MatchArmUsbInputPipe(pipeInfo, streamDesc);
-        MatchFastArmusbPipe(pipeInfo, streamDesc);
 
         pipeManager_->AddStreamToPipe(pipeInfo, streamDesc, PIPE_ACTION_UPDATE);
         HILOG_COMM_INFO("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
