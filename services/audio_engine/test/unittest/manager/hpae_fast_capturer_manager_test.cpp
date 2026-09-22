@@ -160,7 +160,7 @@ HWTEST_F(HpaeFastCapturerManagerTest, ConstructAndSimpleApis, TestSize.Level0)
     EXPECT_EQ(manager->IsInit(), false);
     EXPECT_EQ(manager->IsRunning(), false);
     EXPECT_EQ(manager->IsMsgProcessing(), false);
-    EXPECT_EQ(manager->GetThreadName(), sourceInfo.deviceName);
+    EXPECT_EQ(manager->GetThreadName(), ThreadName::FAST_AUDIO_IN);
     EXPECT_EQ(manager->GetAllSourceOutputsInfo().empty(), true);
 
     uint64_t latency = 100;
