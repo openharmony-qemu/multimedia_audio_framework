@@ -48,6 +48,7 @@ constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 static const int32_t INTERRUPT_SERVICE_TIMEOUT = 10; // 10s
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
+const std::string ACCESSIBILITY_DUCK_FACTOR_KEY = "accessibility_audio_duck_ratio";
 constexpr int32_t RETRY_TIME_S = 5;
 constexpr int64_t SLEEP_TIME_S = 1;
 constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
@@ -2254,7 +2255,7 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
         case INTERRUPT_HINT_DUCK:
             if (iterActive->second == ACTIVE) {
                 iterActive->second = DUCK;
-                interruptEvent.duckVolume = duckFactor_.load();
+                interruptEvent.duckVolume = GetDuckFactorForStreams(iterActive->first, incomingInterrupt);
                 interruptEvent.hintType = focusEntry.hintType;
             }
             break;
@@ -2933,7 +2934,7 @@ bool AudioInterruptService::TryHandleStreamCallbackInSession(
 
     if (iter->second == AudioFocuState::DUCK) {
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK,
-            duckFactor_.load()};
+            GetDuckFactorForStreams(incomingInterrupt, incomingInterrupt)}; // to do.
         handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, incomingInterrupt.streamId);
     }
 
@@ -3018,7 +3019,7 @@ void AudioInterruptService::HandleIncomingState(const int32_t &zoneId, const Aud
             interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
         } else if (incomingState == DUCK) {
             interruptEvent.hintType = INTERRUPT_HINT_DUCK;
-            interruptEvent.duckVolume = duckFactor_.load();
+            interruptEvent.duckVolume = GetDuckFactorForStreams(incomingInterrupt, incomingInterrupt); // to do.
         } else if (incomingState == MUTED) {
             interruptEvent.hintType = INTERRUPT_HINT_MUTE;
         }
@@ -3360,6 +3361,16 @@ bool AudioInterruptService::UpdateFocusStateByHintType(const AudioFocusEntry &fo
     return true;
 }
 
+float AudioInterruptService::GetDuckFactorForStreams(const AudioInterrupt &first,
+    const AudioInterrupt &second) const
+{
+    if (first.audioFocusType.streamType == STREAM_ACCESSIBILITY ||
+        second.audioFocusType.streamType == STREAM_ACCESSIBILITY) {
+        return accessibilityDuckFactor_.load();
+    }
+    return duckFactor_.load();
+}
+
 void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
     std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive, bool &removeFocusInfo)
 {
@@ -3376,7 +3387,7 @@ void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFoc
     // The force type will be changed to INTERRUPT_SHARE in client.
     InterruptEventInternal forceUnduck {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNDUCK, 1.0f};
     InterruptEventInternal forceDuck {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK,
-        duckFactor_.load()};
+        GetDuckFactorForStreams(audioInterrupt, audioInterrupt)}; // to do
     InterruptEventInternal forcePause {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
     InterruptEventInternal forceUnmute {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE, 1.0f};
     switch (newState) {
@@ -4060,6 +4071,29 @@ void AudioInterruptService::RegisterDefaultVolumeTypeListener()
     }
     updateFuncMono(DEFAULT_VOLUME_KEY);
     AUDIO_INFO_LOG("DefaultVolumeTypeListener mono successfully, defaultVolumeType:%{public}d", defaultVolumeType_);
+}
+
+void AudioInterruptService::RegisterAccessibilityDuckFactorListener()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncDuckFactor = [this, &settingProvider](const std::string &key) {
+        int32_t currentDuckFactor = -1;
+        ErrCode ret = settingProvider.GetIntValue(ACCESSIBILITY_DUCK_FACTOR_KEY, currentDuckFactor, "system");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "ACCESSIBILITY_DUCK_FACTOR_KEY get value failed");
+        const int32_t MAX_DUCK_FACTOR = 100; // percentage
+        if (currentDuckFactor >= 0 && currentDuckFactor <= MAX_DUCK_FACTOR) {
+            accessibilityDuckFactor_ = currentDuckFactor / 100.0f;
+            AUDIO_INFO_LOG("Get accessibilityDuckFactor: %{public}f", accessibilityDuckFactor_.load());
+        }
+    };
+    sptr observer = settingProvider.CreateObserver(ACCESSIBILITY_DUCK_FACTOR_KEY, updateFuncDuckFactor);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "system");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterAccessibilityDuckFactorListener failed");
+    }
+    updateFuncDuckFactor(ACCESSIBILITY_DUCK_FACTOR_KEY);
+    AUDIO_INFO_LOG("AccessibilityDuckFactorListener successfully, accessibilityDuckFactor:%{public}f",
+        accessibilityDuckFactor_.load());
 }
 
 void AudioInterruptService::RegisterPCModeListener()

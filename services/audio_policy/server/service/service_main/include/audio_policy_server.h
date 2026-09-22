@@ -967,6 +967,7 @@ private:
     void SubscribeBackgroundTask();
     void SendMonitortEvent(const int32_t keyType, int32_t resultOfVolumeKey);
     void RegisterDefaultVolumeTypeListener();
+    void RegisterAccessibilityDuckFactorListener();
     void RegisterPCModeListener();
     int32_t SetVolumeInternalByKeyEvent(AudioStreamType streamInFocus, int32_t zoneId, const int32_t keyType);
 

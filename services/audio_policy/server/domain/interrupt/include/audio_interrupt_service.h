@@ -181,6 +181,7 @@ public:
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     void RegisterDefaultVolumeTypeListener();
+    void RegisterAccessibilityDuckFactorListener();
     void RegisterPCModeListener();
 
     void RemoveExistingFocus(
@@ -485,6 +486,7 @@ private:
     void StartPausedStreamMonitor(const int32_t zoneId, const InterruptEventInternal &interruptEvent,
         const AudioInterrupt &incomingInterrupt, AudioInterrupt &activeInterrupt);
     void StopPausedStreamMonitor(uint32_t streamId);
+    float GetDuckFactorForStreams(const AudioInterrupt &first, const AudioInterrupt &second) const;
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -519,6 +521,7 @@ private:
     mutable int32_t ownerUid_ = 0;
     std::atomic<bool> duckPassthroughMode_{false};
     std::atomic<float> duckFactor_{DUCK_FACTOR};
+    std::atomic<float> accessibilityDuckFactor_{DUCK_FACTOR};
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
     AudioStreamType activeStreamType_ = STREAM_MUSIC;
 

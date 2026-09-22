@@ -472,6 +472,15 @@ void AudioPolicyServer::RegisterDefaultVolumeTypeListener()
     interruptService_->RegisterDefaultVolumeTypeListener();
 }
 
+void AudioPolicyServer::RegisterAccessibilityDuckFactorListener()
+{
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("RegisterAccessibilityDuckFactorListener interruptService_ is nullptr!");
+        return;
+    }
+    interruptService_->RegisterAccessibilityDuckFactorListener();
+}
+
 void AudioPolicyServer::RegisterPCModeListener()
 {
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
@@ -1114,6 +1123,7 @@ void AudioPolicyServer::HandleDataShareReadyEvent()
         isInitSettingsData_ = true;
     }
     RegisterDefaultVolumeTypeListener();
+    RegisterAccessibilityDuckFactorListener();
     RegisterPCModeListener();
     SubscribeAccessibilityConfigObserver();
 }
@@ -5515,6 +5525,7 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id, const int &oldId)
     audioPolicyService_.NotifyAccountsChanged(id);
     SendVolumeKeyEventToRssWhenAccountsChanged();
     RegisterDefaultVolumeTypeListener();
+    RegisterAccessibilityDuckFactorListener();
     RegisterPCModeListener();
 }
 
