@@ -147,6 +147,12 @@ int32_t AudioInterruptClientManager::SetDuckPassthroughMode(bool enable)
     return AudioPolicyManager::GetInstance().SetDuckPassthroughMode(enable);
 }
 
+int32_t AudioInterruptClientManager::SetDuckFactor(int32_t duckFactor)
+{
+    AUDIO_DEBUG_LOG("SetDuckFactor: %{public}d", duckFactor);
+    return AudioPolicyManager::GetInstance().SetDuckFactor(duckFactor);
+}
+
 int32_t AudioInterruptClientManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
 {
     AUDIO_DEBUG_LOG("stub implementation");

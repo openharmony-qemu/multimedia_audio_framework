@@ -688,6 +688,11 @@ int32_t AudioSystemManager::SetDuckPassthroughMode(bool enable) const
     return AudioInterruptClientManager::GetInstance().SetDuckPassthroughMode(enable);
 }
 
+int32_t AudioSystemManager::SetDuckFactor(int32_t duckFactor) const
+{
+    return AudioInterruptClientManager::GetInstance().SetDuckFactor(duckFactor);
+}
+
 int32_t AudioSystemManager::SetForegroundList(const std::vector<std::string> &list)
 {
     return AudioSystemClientEngineManager::GetInstance().SetForegroundList(list);
@@ -802,6 +807,11 @@ int32_t AudioSystemManager::SetNearlinkDeviceVolume(const std::string &macAddres
 int32_t AudioSystemManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
 {
     return AudioSystemClientPolicyManager::GetInstance().SetSleVoiceStatusFlag(isSleVoiceStatus);
+}
+
+int32_t AudioSystemManager::DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit)
+{
+    return AudioSystemClientPolicyManager::GetInstance().DisableVolumeLimitWhenVoiceCall(disableVolumeLimit);
 }
 
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const

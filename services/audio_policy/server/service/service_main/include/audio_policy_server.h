@@ -332,6 +332,8 @@ public:
 
     int32_t SetDuckPassthroughMode(bool enable) override;
 
+    int32_t SetDuckFactor(int32_t duckFactor) override;
+
     int32_t SetAudioManagerInterruptCallback(int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioManagerInterruptCallback(int32_t clientId) override;
@@ -493,6 +495,8 @@ public:
         int32_t volume, bool updateUi) override;
 
     int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus) override;
+
+    int32_t DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit) override;
 
     int32_t GetAvailableDevices(int32_t usage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) override;
@@ -963,6 +967,7 @@ private:
     void SubscribeBackgroundTask();
     void SendMonitortEvent(const int32_t keyType, int32_t resultOfVolumeKey);
     void RegisterDefaultVolumeTypeListener();
+    void RegisterAccessibilityDuckFactorListener();
     void RegisterPCModeListener();
     int32_t SetVolumeInternalByKeyEvent(AudioStreamType streamInFocus, int32_t zoneId, const int32_t keyType);
 

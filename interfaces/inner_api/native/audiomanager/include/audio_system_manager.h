@@ -994,6 +994,16 @@ public:
     int32_t SetDuckPassthroughMode(bool enable) const;
 
     /**
+     * @brief Set the duck factor used when sending DUCK interrupt callbacks.
+     *
+     * @param duckFactor The duck volume factor percentage, range [0, 100].
+     * @return Returns {@link SUCCESS} if successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 26.0.0
+     */
+    int32_t SetDuckFactor(int32_t duckFactor) const;
+
+    /**
      * @brief registers the Interrupt callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
@@ -1178,6 +1188,15 @@ public:
      * @return Returns success or not
      */
     int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+
+    /**
+     * @brief Disable volume limit when voice call flag. When the flag is true, DepressVolume is skipped.
+     *
+     * @param disableVolumeLimit True to skip volume depression, false to restore.
+     * @return Returns {@link SUCCESS} if successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     */
+    int32_t DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit);
 
     /**
      * @brief Registers the availbale deviceChange callback listener.

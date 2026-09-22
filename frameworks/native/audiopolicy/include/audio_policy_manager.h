@@ -271,6 +271,8 @@ public:
 
     int32_t SetDuckPassthroughMode(bool enable);
 
+    int32_t SetDuckFactor(int32_t duckFactor);
+
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);
@@ -487,6 +489,8 @@ public:
         const int32_t volume, const bool updateUi);
 
     int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+
+    int32_t DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 

@@ -297,6 +297,7 @@ public:
     virtual int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) = 0;
 
     virtual void SetSleVoiceStatusFlag(bool isSleVoiceStatus) = 0;
+    virtual void DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit) = 0;
     virtual void SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state) = 0;
     virtual void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType,
         int32_t volumeLevel) = 0;
