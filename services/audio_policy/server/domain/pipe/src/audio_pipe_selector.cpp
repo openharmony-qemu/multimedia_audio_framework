@@ -2001,6 +2001,18 @@ void AudioPipeSelector::MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> 
 void AudioPipeSelector::MatchArmUsbInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
     std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
+    CHECK_AND_RETURN(streamDesc && !streamDesc->newDeviceDescs_.empty() &&
+        pipeInfo && pipeInfo->name_ == "usb_arm_input");
+    auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN(deviceDesc && deviceDesc->macAddress_ != pipeInfo->moduleInfo_.macAddress);
+ 
+    AUDIO_INFO_LOG("ArmUsb input pipe device changed, update moduleInfo with new device info, "
+        "oldMac=%{public}s, newMac=%{public}s",
+        AudioPolicyUtils::GetInstance().EncUsbAddr(pipeInfo->moduleInfo_.macAddress).c_str(),
+        AudioPolicyUtils::GetInstance().EncUsbAddr(deviceDesc->macAddress_).c_str());
+    UpdateMouleInfoWitchDevice(deviceDesc, pipeInfo->moduleInfo_);
+    pipeInfo->InitAudioStreamInfo();
+    pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
 }
 
 bool AudioPipeSelector::IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
