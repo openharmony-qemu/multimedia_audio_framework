@@ -760,6 +760,17 @@ int32_t AudioInterruptService::SetDuckPassthroughMode(bool enable)
     return SUCCESS;
 }
 
+int32_t AudioInterruptService::SetDuckFactor(int32_t duckFactor)
+{
+    const int32_t MAX_FACTOR = 100; // percentage
+    CHECK_AND_RETURN_RET_LOG(duckFactor >= 0 && duckFactor <= MAX_FACTOR, ERR_INVALID_PARAM,
+        "SetDuckFactor invalid param: %{public}d", duckFactor);
+    std::lock_guard<std::mutex> lock(mutex_);
+    duckFactor_.store(duckFactor / 100.0f);
+    AUDIO_INFO_LOG("SetDuckFactor: %{public}d", duckFactor);
+    return SUCCESS;
+}
+
 void AudioInterruptService::UpdateAudioFocusCheckMuteFlag(const int32_t zoneId, AudioInterrupt &audioInterrupt)
 {
     CHECK_AND_RETURN(AudioInterruptUtils::IsMediaStream(audioInterrupt.audioFocusType.streamType));

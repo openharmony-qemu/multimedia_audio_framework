@@ -1333,6 +1333,12 @@ void AudioAdapterManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
     SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);
 }
 
+void AudioAdapterManager::DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit)
+{
+    disableVolumeLimit_.store(disableVolumeLimit);
+    AUDIO_INFO_LOG("DisableVolumeLimitWhenVoiceCall: %{public}d", disableVolumeLimit);
+}
+
 void AudioAdapterManager::RedirectVolumeType(std::shared_ptr<AudioStreamDescriptor> streamDescriptor,
     AudioVolumeType &volumeType)
 {
@@ -1409,9 +1415,10 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
     AudioStreamType streamType, std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
+    CHECK_AND_RETURN_LOG(!disableVolumeLimit_.load(), "DepressVolume skipped due to volumeLimitWhenVoiceCall");
+
     DeviceType deviceType = device->deviceType_;
-    if (streamType == STREAM_VOICE_CALL_ASSISTANT ||
-        streamType == STREAM_ULTRASONIC) {
+    if (streamType == STREAM_VOICE_CALL_ASSISTANT || streamType == STREAM_ULTRASONIC) {
         return;
     }
     auto volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);

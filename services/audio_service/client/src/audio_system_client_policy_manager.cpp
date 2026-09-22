@@ -303,6 +303,12 @@ int32_t AudioSystemClientPolicyManager::SetSleVoiceStatusFlag(bool isSleVoiceSta
     return AudioPolicyManager::GetInstance().SetSleVoiceStatusFlag(isSleVoiceStatus);
 }
 
+int32_t AudioSystemClientPolicyManager::DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit)
+{
+    AUDIO_INFO_LOG("DisableVolumeLimitWhenVoiceCall: %{public}d", disableVolumeLimit);
+    return AudioPolicyManager::GetInstance().DisableVolumeLimitWhenVoiceCall(disableVolumeLimit);
+}
+
 int32_t AudioSystemClientPolicyManager::SetAvailableDeviceChangeCallback(AudioDeviceUsage usage,
     const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback> &callback)
 {

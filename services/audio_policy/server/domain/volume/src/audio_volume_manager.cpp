@@ -1592,6 +1592,12 @@ int32_t AudioVolumeManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
     return SUCCESS;
 }
 
+int32_t AudioVolumeManager::DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit)
+{
+    audioPolicyManager_.DisableVolumeLimitWhenVoiceCall(disableVolumeLimit);
+    return SUCCESS;
+}
+
 int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
     const DeviceType &deviceType, int32_t zoneId)
 {

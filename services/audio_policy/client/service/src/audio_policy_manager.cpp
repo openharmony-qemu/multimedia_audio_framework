@@ -1408,6 +1408,13 @@ int32_t AudioPolicyManager::SetDuckPassthroughMode(bool enable)
     return gsp->SetDuckPassthroughMode(enable);
 }
 
+int32_t AudioPolicyManager::SetDuckFactor(int32_t duckFactor)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
+    return gsp->SetDuckFactor(duckFactor);
+}
+
 int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clientId,
     const std::shared_ptr<AudioInterruptCallback> &callback)
 {
@@ -2078,6 +2085,13 @@ int32_t AudioPolicyManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetSleVoiceStatusFlag(isSleVoiceStatus);
+}
+
+int32_t AudioPolicyManager::DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
+    return gsp->DisableVolumeLimitWhenVoiceCall(disableVolumeLimit);
 }
 
 int32_t AudioPolicyManager::ConfigDistributedRoutingRole(

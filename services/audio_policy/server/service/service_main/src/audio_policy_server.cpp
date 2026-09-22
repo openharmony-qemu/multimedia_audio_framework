@@ -3261,6 +3261,19 @@ int32_t AudioPolicyServer::SetDuckPassthroughMode(bool enable)
     return ERR_UNKNOWN;
 }
 
+int32_t AudioPolicyServer::SetDuckFactor(int32_t duckFactor)
+{
+    const int32_t MAX_FACTOR = 100; // percentage
+    CHECK_AND_RETURN_RET_LOG(duckFactor >= 0 && duckFactor <= MAX_FACTOR, ERR_INVALID_PARAM,
+        "SetDuckFactor invalid param: %{public}d", duckFactor);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "SetDuckFactor permission denied");
+    if (interruptService_ != nullptr) {
+        return interruptService_->SetDuckFactor(duckFactor);
+    }
+    return ERR_UNKNOWN;
+}
+
 void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t sessionID)
 {
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
@@ -4321,6 +4334,13 @@ int32_t AudioPolicyServer::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "Uid Check Failed");
     sleVoiceFlagFromNearlink_ = isSleVoiceStatus;
     return audioVolumeManager_.SetSleVoiceStatusFlag(isSleVoiceStatus);
+}
+
+int32_t AudioPolicyServer::DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "DisableVolumeLimitWhenVoiceCall permission denied");
+    return audioVolumeManager_.DisableVolumeLimitWhenVoiceCall(disableVolumeLimit);
 }
 
 int32_t AudioPolicyServer::GetSelectedInputDevice(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)

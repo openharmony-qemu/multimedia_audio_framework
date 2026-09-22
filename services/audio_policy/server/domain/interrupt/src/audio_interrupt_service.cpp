@@ -2254,7 +2254,7 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
         case INTERRUPT_HINT_DUCK:
             if (iterActive->second == ACTIVE) {
                 iterActive->second = DUCK;
-                interruptEvent.duckVolume = DUCK_FACTOR;
+                interruptEvent.duckVolume = duckFactor_.load();
                 interruptEvent.hintType = focusEntry.hintType;
             }
             break;
@@ -2932,7 +2932,8 @@ bool AudioInterruptService::TryHandleStreamCallbackInSession(
     }
 
     if (iter->second == AudioFocuState::DUCK) {
-        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK, DUCK_FACTOR};
+        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK,
+            duckFactor_.load()};
         handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, incomingInterrupt.streamId);
     }
 
@@ -3017,7 +3018,7 @@ void AudioInterruptService::HandleIncomingState(const int32_t &zoneId, const Aud
             interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
         } else if (incomingState == DUCK) {
             interruptEvent.hintType = INTERRUPT_HINT_DUCK;
-            interruptEvent.duckVolume = DUCK_FACTOR;
+            interruptEvent.duckVolume = duckFactor_.load();
         } else if (incomingState == MUTED) {
             interruptEvent.hintType = INTERRUPT_HINT_MUTE;
         }
@@ -3374,7 +3375,8 @@ void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFoc
     // RESUME event should be INTERRUPT_SHARE. But mark it as INTERRUPT_FORCE here for state checking.
     // The force type will be changed to INTERRUPT_SHARE in client.
     InterruptEventInternal forceUnduck {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNDUCK, 1.0f};
-    InterruptEventInternal forceDuck {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK, DUCK_FACTOR};
+    InterruptEventInternal forceDuck {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK,
+        duckFactor_.load()};
     InterruptEventInternal forcePause {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
     InterruptEventInternal forceUnmute {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE, 1.0f};
     switch (newState) {

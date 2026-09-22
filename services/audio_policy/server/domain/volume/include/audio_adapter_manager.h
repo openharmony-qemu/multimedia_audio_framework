@@ -327,6 +327,7 @@ public:
     void RegisterCloneStateObserver();
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+    void DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit);
     void SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state);
     void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
@@ -622,6 +623,7 @@ private:
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
     std::atomic<bool> isSleVoiceStatus_ {false};
+    std::atomic<bool> disableVolumeLimit_{false};
     std::atomic<bool> isAbsVolumeMuteNearlink_ {false};
     bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;

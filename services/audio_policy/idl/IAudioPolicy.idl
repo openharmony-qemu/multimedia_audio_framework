@@ -371,6 +371,8 @@ interface IAudioPolicy {
     void GetSystemVolumeDegreeWithDevice([in] int volumeType, [in] int deviceType,
         [in] String networkId, [out] int volumeDegree);
     void SkipDeviceTypes([in] boolean skipped, [in] List<int> deviceTypes);
+    void SetDuckFactor([in] int duckFactor);
+    void DisableVolumeLimitWhenVoiceCall([in] boolean disableVolumeLimit);
     void SetVolumeControlPriority([in] List<int> priorities, [out] int ret);
     void SetVoipRendererMute([in] int appUid, [in] long streamId, [in] boolean muted, [in] IRemoteObject callerObj);
     void SetVoipCapturerMute([in] int appUid, [in] long streamId, [in] boolean muted, [in] IRemoteObject callerObj);
