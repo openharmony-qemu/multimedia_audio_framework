@@ -1458,7 +1458,7 @@ struct AudioSpatialEnabledStateForDevice {
   enabled: bool;
 }
 
-struct HRTFDescriptor {
+struct AudioHRTFAnonymousDescriptor {
   fd: i32;
   length: i64;
 }
@@ -1489,7 +1489,7 @@ interface AudioSpatializationManager {
   IsPersonalizedSpatializationEnabled(deviceDescriptor: AudioDeviceDescriptor): bool;
 
   @gen_promise("downloadPersonalizedHRTF")
-  DownloadPersonalizedHRTFSync(hrtfDescriptor: HRTFDescriptor): void;
+  DownloadPersonalizedHRTFSync(hrtfDescriptor: AudioHRTFAnonymousDescriptor): void;
 
   UpdateSpatialDeviceState(spatialDeviceState: AudioSpatialDeviceState): void;
 

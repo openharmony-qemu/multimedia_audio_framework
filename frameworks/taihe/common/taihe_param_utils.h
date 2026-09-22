@@ -64,7 +64,7 @@ public:
     static int32_t GetAppInfo(OHOS::AudioStandard::AppInfo &appInfo, AppIdInfo const &options);
     static int32_t GetSpatialDeviceState(OHOS::AudioStandard::AudioSpatialDeviceState *spatialDeviceState,
         AudioSpatialDeviceState in);
-    static int32_t GetAudioHRTFDescriptor(int32_t *fd, int64_t *length, HRTFDescriptor hrtfDescriptor);
+    static int32_t GetAudioHRTFDescriptor(int32_t *fd, int64_t *length, AudioHRTFAnonymousDescriptor hrtfDescriptor);
     static int32_t GetAudioDeviceDescriptor(
         std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> &selectedAudioDevice,
         bool &argTransFlag, AudioDeviceDescriptor in);
