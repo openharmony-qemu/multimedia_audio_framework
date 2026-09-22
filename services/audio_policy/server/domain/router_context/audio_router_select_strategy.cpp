@@ -26,6 +26,7 @@
 #include "audio_policy_log.h"
 #include "audio_policy_utils.h"
 #include "audio_core_config_manager.h"
+#include "audio_select_interface_service.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -238,6 +239,9 @@ int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceTy
         if (!IsSameDeviceDeviceDescriptor(before, after) ||
             !IsSameDeviceDeviceDescriptor(current, after)) {
             AUDIO_WARNING_LOG("media default output device change");
+            if (AudioSelectInterfaceService::GetInstance().GetBlockFirstOverrode()) {
+                return SUCCESS;
+            }
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
                 std::make_shared<AudioDeviceDescriptor>(), uid, "SetDefaultOutputDevice");
             return NEED_TO_FETCH;
@@ -254,6 +258,9 @@ int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceTy
         if (!IsSameDeviceDeviceDescriptor(before, after) ||
             !IsSameDeviceDeviceDescriptor(current, after)) {
             AUDIO_WARNING_LOG("call default output device change");
+            if (AudioSelectInterfaceService::GetInstance().GetBlockFirstOverrode()) {
+                return SUCCESS;
+            }
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
                 std::make_shared<AudioDeviceDescriptor>(), uid, "SetDefaultOutputDevice");
             return NEED_TO_FETCH;
