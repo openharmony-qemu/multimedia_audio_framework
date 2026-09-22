@@ -1121,10 +1121,6 @@ void HpaeDirectRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &l
         processLatency += converterForOutput_->GetLatency();
     }
 
-    if (sinkOutputNode_) {
-        processLatency += sinkOutputNode_->GetLatency();
-    }
-
     latency += processLatency;
     return;
 }
