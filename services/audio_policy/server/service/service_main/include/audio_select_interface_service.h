@@ -80,6 +80,8 @@ public:
     bool GetEnhancedRoutingSupported() const;
     void SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         DeviceUsage deviceUsage = ALL_USAGE);
+    bool GetBlockFirstOverrode();
+    void SetBlockFirstOverrode(bool blockFirstOverrode);
 
 private:
     int32_t ExcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
@@ -118,8 +120,6 @@ private:
     void HandleActiveBtOriginalLogic(DeviceType deviceType, const std::string &macAddress);
     int32_t SelectOutputDevicePrepare(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
         StreamUsage strUsage);
-    void SetBlockFirstOverrode();
-    bool ClearBlockFirstOverrode();
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;

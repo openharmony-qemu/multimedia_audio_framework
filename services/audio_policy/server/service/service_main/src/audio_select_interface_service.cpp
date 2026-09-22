@@ -279,7 +279,7 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
         ERROR, "ptr exception");
     SelectOutputDeviceLog(audioRendererFilter, selectedDesc, audioDeviceSelectMode);
     if (audioRendererFilter->blockFirstOverrode) {
-        SetBlockFirstOverrode();
+        SetBlockFirstOverrode(true);
     }
     CHECK_AND_RETURN_RET_LOG(selectedDesc.size() == 1 && selectedDesc[0] &&
         selectedDesc[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE, ERR_INVALID_OPERATION, "DeviceCheck no success");
@@ -324,14 +324,14 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     return SUCCESS;
 }
 
-void AudioSelectInterfaceService::SetBlockFirstOverrode()
+void AudioSelectInterfaceService::SetBlockFirstOverrode(bool blockFirstOverrode)
 {
-    blockFirstOverrodePending_.store(true);
+    blockFirstOverrodePending_.store(blockFirstOverrode);
 }
 
-bool AudioSelectInterfaceService::ClearBlockFirstOverrode()
+bool AudioSelectInterfaceService::GetBlockFirstOverrode()
 {
-    return blockFirstOverrodePending_.exchange(false);
+    return blockFirstOverrodePending_.load();
 }
 
 int32_t AudioSelectInterfaceService::SelectOutputDevicePrepare(
