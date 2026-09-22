@@ -796,6 +796,7 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
             MatchSpecialRemotePipe(streamPropInfo, *newPipeIter, streamDesc);
             MatchCollaborativePipe(streamPropInfo, *newPipeIter, streamDesc);
             MatchUltraFastPipe(*newPipeIter, streamDesc);
+            MatchArmUsbInputPipe(*newPipeIter, streamDesc);
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
             continue;
@@ -1958,6 +1959,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
         MatchCollaborativePipe(streamPropInfo, pipeInfo, streamDesc);
 
         MatchUltraFastPipe(pipeInfo, streamDesc);
+        MatchArmUsbInputPipe(pipeInfo, streamDesc);
 
         pipeManager_->AddStreamToPipe(pipeInfo, streamDesc, PIPE_ACTION_UPDATE);
         HILOG_COMM_INFO("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
@@ -1994,6 +1996,11 @@ void AudioPipeSelector::MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> 
     CHECK_AND_RETURN(streamDesc != nullptr && pipeInfo != nullptr, "streamDesc or pipeInfo is nullptr");
     CHECK_AND_RETURN(pipeInfo->GetRoute() & AUDIO_OUTPUT_FLAG_FAST);
     streamDesc->SetUltraFastImplemented(pipeInfo->GetUltraFastFlag());
+}
+
+void AudioPipeSelector::MatchArmUsbInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
 }
 
 bool AudioPipeSelector::IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
