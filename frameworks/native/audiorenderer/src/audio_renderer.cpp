@@ -1523,7 +1523,9 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
             PLAY_START_OPERATION_FAILED, "ActivateAudioInterrupt Failed", false, state));
     ret = GetStartStreamResult(cmdType) ? SUCCESS : ERROR;
     RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::START_RENDERER_END);
-    AudioPolicyManager::GetInstance().RecordBootAnimationClientStateTime(g_bootAnimationInfo);
+    if (appInfo_.appUid == BOOT_ANIMATION_UID) {
+        AudioPolicyManager::GetInstance().RecordBootAnimationClientStateTime(g_bootAnimationInfo);
+    }
     return ret;
 }
 

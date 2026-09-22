@@ -6192,6 +6192,8 @@ int32_t AudioPolicyServer::UpdateSafeVolumeByStrMode()
 
 int32_t AudioPolicyServer::RecordBootAnimationClientStateTime(const BootAnimationInfo &info)
 {
+    CHECK_AND_RETURN_RET(IPCSkeleton::GetCallingUid() == BOOT_ANIMATION_UID, ERROR);
+    CHECK_AND_RETURN_RET(info.size() == static_cast<size_t>(BootAnimationState::MAX), ERR_INVALID_PARAM);
     audioPolicyDump_.RecordBootAnimationClientStateTime(info);
     return SUCCESS;
 }
