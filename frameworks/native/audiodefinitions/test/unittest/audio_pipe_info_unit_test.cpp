@@ -157,6 +157,24 @@ HWTEST_F(AudioPipeInfoUnitTest, AllSimpleAdapter_001, TestSize.Level2)
 }
 
 /**
+ * @tc.name   : AudioPipeInfo_IsSameUsbDevice_001
+ * @tc.number : IsSameUsbDevice_001
+ * @tc.desc   : Test USB device comparison by MAC address.
+ */
+HWTEST_F(AudioPipeInfoUnitTest, IsSameUsbDevice_001, TestSize.Level2)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "00:11:22:33:44:55";
+    testOutputPipe_->moduleInfo_.macAddress = deviceDesc->macAddress_;
+
+    EXPECT_TRUE(testOutputPipe_->IsSameUsbDevice(deviceDesc));
+
+    deviceDesc->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    EXPECT_FALSE(testOutputPipe_->IsSameUsbDevice(deviceDesc));
+    EXPECT_FALSE(testOutputPipe_->IsSameUsbDevice(nullptr));
+}
+
+/**
  * @tc.name   : AudioPipeInfo_Dump_001
  * @tc.number : Dump_001
  * @tc.desc   : Test dump funcs by default output pipe

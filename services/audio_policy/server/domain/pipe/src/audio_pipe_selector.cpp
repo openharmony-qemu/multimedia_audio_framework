@@ -1715,7 +1715,7 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
     }
 }
 
-void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
+void AudioPipeSelector::UpdateModuleInfoWithDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
     AudioModuleInfo &moduleInfo)
 {
     CHECK_AND_RETURN_LOG(deviceDesc, "streamDesc is nullptr");
@@ -1798,7 +1798,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.renderInIdleState = pipeInfoPtr->paProp_.renderInIdleState_;
 
     if (!streamDesc->newDeviceDescs_.empty()) {
-        UpdateMouleInfoWitchDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
+        UpdateModuleInfoWithDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
 
     if (streamDesc->IsUltraFastRequested() &&
@@ -1808,7 +1808,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     }
 
     // engine uses networkId to distinguish different renders,
-    // so we need to set networkId after UpdateMouleInfoWitchDevice;
+    // so we need to set networkId after UpdateModuleInfoWithDevice;
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
     info.streamDescriptors_.push_back(streamDesc);
@@ -2004,13 +2004,10 @@ void AudioPipeSelector::MatchArmUsbInputPipe(const std::shared_ptr<AudioPipeInfo
     CHECK_AND_RETURN(streamDesc && !streamDesc->newDeviceDescs_.empty() &&
         pipeInfo && pipeInfo->name_ == "usb_arm_input");
     auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
-    CHECK_AND_RETURN(deviceDesc && deviceDesc->macAddress_ != pipeInfo->moduleInfo_.macAddress);
+    CHECK_AND_RETURN(!pipeInfo->IsSameUsbDevice(deviceDesc));
  
-    AUDIO_INFO_LOG("ArmUsb input pipe device changed, update moduleInfo with new device info, "
-        "oldMac=%{public}s, newMac=%{public}s",
-        AudioPolicyUtils::GetInstance().EncUsbAddr(pipeInfo->moduleInfo_.macAddress).c_str(),
-        AudioPolicyUtils::GetInstance().EncUsbAddr(deviceDesc->macAddress_).c_str());
-    UpdateMouleInfoWitchDevice(deviceDesc, pipeInfo->moduleInfo_);
+    AUDIO_INFO_LOG("ArmUsb input pipe device changed, update moduleInfo with new device info");
+    UpdateModuleInfoWithDevice(deviceDesc, pipeInfo->moduleInfo_);
     pipeInfo->InitAudioStreamInfo();
     pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
 }
@@ -2041,7 +2038,7 @@ void AudioPipeSelector::UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStream
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
     info.isCollaborationEnable_ = streamPropInfo->isCollaborationEnable_;
     if (!streamDesc->newDeviceDescs_.empty()) {
-        UpdateMouleInfoWitchDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
+        UpdateModuleInfoWithDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
 
     AUDIO_INFO_LOG("Pipe name: %{public}s, channels: %{public}s, channelLayout: %{public}s",

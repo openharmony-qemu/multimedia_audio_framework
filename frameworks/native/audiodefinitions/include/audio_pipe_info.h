@@ -141,6 +141,11 @@ public:
         return moduleInfo_.networkId == targetNetworkId;
     }
 
+    bool IsSameUsbDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc) const
+    {
+        return deviceDesc != nullptr && deviceDesc->macAddress_ == moduleInfo_.macAddress;
+    }
+
     bool IsSameRole(const std::shared_ptr<AudioStreamDescriptor> stream) const
     {
         if (stream == nullptr) {
