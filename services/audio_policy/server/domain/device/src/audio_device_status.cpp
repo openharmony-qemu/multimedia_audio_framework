@@ -1479,7 +1479,7 @@ void AudioDeviceStatus::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
         CHECK_AND_RETURN(preferredDeviceList[0] != nullptr);
         if (preferredDeviceList[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::AudioHfpManager::SetActiveHfpDevice(preferredDeviceList[0]->macAddress_);
-        } else {
+        } else if (preferredDeviceList[0]->deviceType_ == DEVICE_TYPE_NEARLINK) {
             Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
         }
     }
