@@ -541,17 +541,17 @@ void AudioInterruptService::ProcessSilentChangeInterrupt(const MuteFocusInfo &au
             isIncomingBundleNameExist);
     }
     if (activeInterrupt.behaviorFlags_.pauseWhenInterruptFlag || isIncomingBundleNameExist) {
-        CHECK_AND_RETURN(activeIter->second === ACTIVE || activeIter->second == DUCK);
+        CHECK_AND_RETURN(activeIter->second == ACTIVE || activeIter->second == DUCK);
         activeIter->second  = PAUSE;
         AUDIO_INFO_LOG("streamId %{public}d is paused by streamId: %{public}d for whiteList or pauseWhenInterruptFlag",
             activeInterrupt.streamId, incomingInterrupt.streamId);
-        StartPausedStreamMonitor(activeZoneId, interruptEvent, incomingInterrupt, activeInterrupt);
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
+        StartPausedStreamMonitor(activeZoneId, interruptEvent, incomingInterrupt, activeInterrupt);
         SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
         itZone->second->audioFocusInfoList = audioFocusInfoList;
         zonesMap_[activeZoneId] = itZone->second;
     } else {
-        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, hintType, 1.0f};
+        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
         AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
             activeInterrupt.streamId, incomingInterrupt.streamId);
         SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
