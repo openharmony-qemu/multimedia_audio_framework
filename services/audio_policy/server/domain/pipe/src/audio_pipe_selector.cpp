@@ -797,7 +797,7 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
             MatchCollaborativePipe(streamPropInfo, *newPipeIter, streamDesc);
             MatchUltraFastPipe(*newPipeIter, streamDesc);
             MatchFastArmusbPipe(*newPipeIter, streamDesc);
-            MatchArmUsbInputPipe(*newPipeIter, streamDesc);
+            MatchArmusbInputPipe(*newPipeIter, streamDesc);
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
             continue;
@@ -1961,7 +1961,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
 
         MatchUltraFastPipe(pipeInfo, streamDesc);
         MatchFastArmusbPipe(pipeInfo, streamDesc);
-        MatchArmUsbInputPipe(pipeInfo, streamDesc);
+        MatchArmusbInputPipe(pipeInfo, streamDesc);
 
         pipeManager_->AddStreamToPipe(pipeInfo, streamDesc, PIPE_ACTION_UPDATE);
         HILOG_COMM_INFO("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
@@ -2014,14 +2014,14 @@ void AudioPipeSelector::MatchFastArmusbPipe(const std::shared_ptr<AudioPipeInfo>
     pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
 }
 
-void AudioPipeSelector::MatchArmUsbInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+void AudioPipeSelector::MatchArmusbInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
     std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN(streamDesc && !streamDesc->newDeviceDescs_.empty() &&
-        pipeInfo && pipeInfo->name_ == "usb_arm_input");
+        pipeInfo && pipeInfo->name_ == USB_MIC_PIPENAME);
     auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
     CHECK_AND_RETURN(!pipeInfo->IsSameUsbDevice(deviceDesc));
- 
+
     AUDIO_INFO_LOG("ArmUsb input pipe device changed, update moduleInfo with new device info");
     UpdateModuleInfoWithDevice(deviceDesc, pipeInfo->moduleInfo_);
     pipeInfo->InitAudioStreamInfo();
