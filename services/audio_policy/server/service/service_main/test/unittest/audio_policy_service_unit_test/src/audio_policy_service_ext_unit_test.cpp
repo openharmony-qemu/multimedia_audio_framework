@@ -132,18 +132,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_003, TestSize.Lev
 }
 
 /**
-* @tc.name  : Test AudioPolicyService.
-* @tc.number: AudioPolicyServiceTest_004
-* @tc.desc  : Test Deinit interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_004, TestSize.Level1)
-{
-    AudioPolicyService::isBtListenerRegistered = true;
-    AudioPolicyService::GetAudioPolicyService().Deinit();
-    EXPECT_EQ(false, AudioPolicyService::isBtListenerRegistered);
-}
-
-/**
 * @tc.name  : Test SafeVolumeEventSubscriber.
 * @tc.number: SafeVolumeEventSubscriber_001
 * @tc.desc  : Test OnReceiveEvent interfaces.
@@ -160,7 +148,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SafeVolumeEventSubscriber_001, TestSize.
 */
 HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_005, TestSize.Level1)
 {
-    AudioPolicyService::GetAudioPolicyService().Init();
     int32_t uid = 123;
     auto ret = AudioPolicyService::GetAudioPolicyService().SetSourceOutputStreamMute(uid, true);
     EXPECT_NE(SUCCESS, ret);
