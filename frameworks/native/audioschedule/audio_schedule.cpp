@@ -207,7 +207,7 @@ void AuthQosForAudio()
 
 bool SetHpaeDataThreadPriority()
 {
-    Trace trace("SetEndpointThreadPriority");
+    Trace trace("SetHpaeDataThreadPriority");
     AuthQosForAudio();
     bool res = false;
     int32_t ret = OHOS::QOS::SetThreadQos(OHOS::QOS::QosLevel::QOS_KEY_BACKGROUND);
