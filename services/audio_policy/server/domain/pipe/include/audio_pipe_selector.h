@@ -140,6 +140,8 @@ private:
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchFastArmusbPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void MatchArmusbInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
     bool IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
@@ -151,7 +153,7 @@ private:
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void SetPipeTypeByStreamType(AudioPipeType &nowPipeType, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsBothFastArmUsbNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe);
-    void UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
+    void UpdateModuleInfoWithDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
         AudioModuleInfo &moduleInfo);
     bool IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName, const std::string &pipeName);

@@ -1818,11 +1818,11 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsBothFastArmUsbNeedRecreate_003, TestSize.L
 }
 
 /**
- * @tc.name: UpdateMouleInfoWitchDevice_001
- * @tc.desc: Test UpdateMouleInfoWitchDevice
+ * @tc.name: UpdateModuleInfoWithDevice_001
+ * @tc.desc: Test UpdateModuleInfoWithDevice
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_001, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateModuleInfoWithDevice_001, TestSize.Level1)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
 
@@ -1834,16 +1834,16 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_001, TestSize.Lev
     moduleInfo.rate = "8000";
 
     deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
+    audioPipeSelector->UpdateModuleInfoWithDevice(deviceDesc, moduleInfo);
     EXPECT_EQ(moduleInfo.rate, "96000");
 }
 
 /**
- * @tc.name: UpdateMouleInfoWitchDevice_002
- * @tc.desc: Test UpdateMouleInfoWitchDevice
+ * @tc.name: UpdateModuleInfoWithDevice_002
+ * @tc.desc: Test UpdateModuleInfoWithDevice
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateModuleInfoWithDevice_002, TestSize.Level1)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
 
@@ -1855,7 +1855,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Lev
     moduleInfo.rate = "8000";
 
     deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
+    audioPipeSelector->UpdateModuleInfoWithDevice(deviceDesc, moduleInfo);
     EXPECT_EQ(moduleInfo.rate, "8000");
 }
 

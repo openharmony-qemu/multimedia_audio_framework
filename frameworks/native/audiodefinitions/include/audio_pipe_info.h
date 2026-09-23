@@ -141,6 +141,15 @@ public:
         return moduleInfo_.networkId == targetNetworkId;
     }
 
+    bool IsSameUsbDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc) const
+    {
+        bool isPipeUsbDevice = moduleInfo_.deviceType == std::to_string(DEVICE_TYPE_USB_HEADSET) ||
+            moduleInfo_.deviceType == std::to_string(DEVICE_TYPE_USB_ARM_HEADSET) ||
+            moduleInfo_.deviceType == std::to_string(DEVICE_TYPE_LINE_DIGITAL);
+        return deviceDesc != nullptr && IsUsb(deviceDesc->deviceType_) && isPipeUsbDevice &&
+            deviceDesc->macAddress_ == moduleInfo_.macAddress;
+    }
+
     bool IsSameRole(const std::shared_ptr<AudioStreamDescriptor> stream) const
     {
         if (stream == nullptr) {

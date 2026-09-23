@@ -875,7 +875,7 @@ void MatchUltraFastPipeFuzzTest(FuzzedDataProvider& fdp)
     AudioPipeSelector::GetPipeSelector()->MatchUltraFastPipe(pipeInfo, streamDesc);
 }
 
-void UpdateMouleInfoWitchDeviceFuzzTest(FuzzedDataProvider& fdp)
+void UpdateModuleInfoWithDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     auto deviceDesc = MakeDeviceDescriptor(fdp, OUTPUT_DEVICE);
@@ -888,7 +888,7 @@ void UpdateMouleInfoWitchDeviceFuzzTest(FuzzedDataProvider& fdp)
         deviceDesc->audioStreamInfo_ = {deviceStreamInfo};
     }
     AudioModuleInfo moduleInfo;
-    audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
+    audioPipeSelector->UpdateModuleInfoWithDevice(deviceDesc, moduleInfo);
 }
 
 void UpdateRendererPipeInfoFuzzTest(FuzzedDataProvider& fdp)
@@ -972,7 +972,7 @@ void Test(FuzzedDataProvider& fdp)
     IsSpecialRemotePipeFuzzTest,
     MatchSpecialRemotePipeFuzzTest,
     MatchUltraFastPipeFuzzTest,
-    UpdateMouleInfoWitchDeviceFuzzTest,
+    UpdateModuleInfoWithDeviceFuzzTest,
     IsPipeFormatMatchFuzzTest,
     UpdatePipeInfoFromStreamPropFuzzTest,
     UpdateRendererPipeInfoFuzzTest,
