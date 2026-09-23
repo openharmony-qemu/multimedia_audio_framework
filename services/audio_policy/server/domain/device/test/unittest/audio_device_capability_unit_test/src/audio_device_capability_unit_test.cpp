@@ -128,5 +128,35 @@ HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString_SupportDynamicPipes_002, 
     capability.FromJsonString(json);
     EXPECT_EQ(capability.supportDynamicPipes_, AUDIO_OUTPUT_FLAG_MULTICHANNEL);
 }
+
+/**
+ * @tc.name  : FromJsonString_IsSupportReload_001
+ * @tc.number: FromJsonString_IsSupportReload_001
+ * @tc.desc  : Test FromJsonString when is_support_reload is not a bool type (default true).
+ */
+HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString_IsSupportReload_001, TestSize.Level1)
+{
+    RemoteDeviceCapability capability;
+    std::string json = R"({
+        "is_support_reload": "invalid_string"
+    })";
+    capability.FromJsonString(json);
+    EXPECT_EQ(capability.isSupportReload_, true);
+}
+
+/**
+ * @tc.name  : FromJsonString_IsSupportReload_002
+ * @tc.number: FromJsonString_IsSupportReload_002
+ * @tc.desc  : Test FromJsonString when is_support_reload is false.
+ */
+HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString_IsSupportReload_002, TestSize.Level1)
+{
+    RemoteDeviceCapability capability;
+    std::string json = R"({
+        "is_support_reload": false
+    })";
+    capability.FromJsonString(json);
+    EXPECT_EQ(capability.isSupportReload_, false);
+}
 }
 }

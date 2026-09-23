@@ -125,6 +125,8 @@ public:
 
     void UnmarshallingSelf(Parcel &parcel);
 
+    void UnmarshallingSelfExt(Parcel &parcel);
+
     static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
 
     static void MapInputDeviceType(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
@@ -273,6 +275,7 @@ public:
     uint32_t deviceTokenId_ = 0;
     bool isSupportWearDetectionEnable_ = false;
     bool isSupportMultiZone_ = false;
+    bool isSupportReload_ = true;
     VisibleMode visibleMode_ = GLOBAL_VISIBLE;
 
     // Raw sink/HDI baseline latency. The value is in milliseconds and is usable
