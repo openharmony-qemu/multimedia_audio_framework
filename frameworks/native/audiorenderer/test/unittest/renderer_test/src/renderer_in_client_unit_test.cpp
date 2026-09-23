@@ -53,6 +53,7 @@ public:
     int32_t calculateCacheCountRet = SUCCESS;
     uint32_t calculatedCacheCount = 0;
     bool calculateCacheCountCalled = false;
+    int32_t setSpeedRet = SUCCESS;
 
     virtual int32_t RegisterStreamListener(const sptr<IRemoteObject> &object) override { return 0; }
 
@@ -161,7 +162,7 @@ public:
 
     virtual int32_t SetSourceDuration(int64_t duration) override { return 0; }
 
-    virtual int32_t SetSpeed(float speed) override { return 0; }
+    int32_t SetSpeed(float speed) override { return setSpeedRet; }
 
     virtual int32_t SetOffloadDataCallbackState(int32_t state) override { return 0; }
 
@@ -4460,9 +4461,57 @@ HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_NormalStream_001, TestSize.Le
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
     rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     rendererInClientInner->ipcStream_ = new IpcStreamMock();
-    
+
     int32_t ret = rendererInClientInner->SetSpeed(2.0f);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSpeed falls back to client-side speed on HDI rejection
+ * @tc.type  : FUNC
+ * @tc.number: SetSpeed_HdiRejectedFallback_001
+ * @tc.desc  : Server SetSpeed rejection must apply local sonic speed instead of failing.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_HdiRejectedFallback_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    auto ipcStream = new IpcStreamTest();
+    ipcStream->setSpeedRet = ERR_NOT_SUPPORTED;
+    rendererInClientInner->ipcStream_ = ipcStream;
+    rendererInClientInner->isHdiSpeed_ = true;
+
+    int32_t ret = rendererInClientInner->SetSpeed(2.0f);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(rendererInClientInner->GetSpeed(), 2.0f);
+    EXPECT_EQ(rendererInClientInner->speed_, 2.0f);
+    EXPECT_TRUE(rendererInClientInner->speedEnable_);
+    EXPECT_EQ(rendererInClientInner->hdiSpeed_, 1.0f);
+}
+
+/**
+ * @tc.name  : Test NotifyRouteUpdate keeps client speed on HDI rejection
+ * @tc.type  : FUNC
+ * @tc.number: NotifyRouteUpdate_HdiRejectedKeepSpeed_001
+ * @tc.desc  : Switching to HDI speed mode with a rejected speed keeps the client-side speed.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_HdiRejectedKeepSpeed_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    auto ipcStream = new IpcStreamTest();
+    ipcStream->setSpeedRet = ERR_NOT_SUPPORTED;
+    rendererInClientInner->ipcStream_ = ipcStream;
+
+    EXPECT_EQ(rendererInClientInner->SetSpeed(2.0f), SUCCESS);
+    EXPECT_EQ(rendererInClientInner->speed_, 2.0f);
+
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    rendererInClientInner->NotifyRouteUpdate(flagInfo, "remoteNetworkId");
+
+    EXPECT_TRUE(rendererInClientInner->isHdiSpeed_.load());
+    EXPECT_EQ(rendererInClientInner->speed_, 2.0f);
+    EXPECT_TRUE(rendererInClientInner->speedEnable_);
+    EXPECT_EQ(rendererInClientInner->hdiSpeed_, 1.0f);
 }
 
 /**
@@ -5190,6 +5239,121 @@ HWTEST(RendererInClientPublicNewUnitTest, SetupFastStreamThreadPriority_NormalSt
     
     EXPECT_FALSE(rendererInClientInner->JudgeFastStreamByRendererAttr());
     EXPECT_FALSE(rendererInClientInner->IsUltraFastStream());
+}
+
+/**
+ * @tc.name  : Test 3DA direct layout adoption
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_097
+ * @tc.desc  : 3DA direct keeps a channelLayout already consistent with channels.
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_097, TestSize.Level1)
+{
+    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    renderer->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+    AudioStreamParams params = {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.encoding = ENCODING_AUDIOVIVID;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_10;
+    params.channelLayout = CH_LAYOUT_5POINT1POINT4; // positional 10ch, consistent
+    int32_t ret = renderer->SetAudioStreamInfo(params, nullptr, AudioPlaybackCaptureConfig());
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED); // layout branch passed; later IPC init may fail in UT
+    AudioStreamParams out = {};
+    EXPECT_EQ(renderer->GetAudioStreamInfo(out), SUCCESS);
+    EXPECT_EQ(out.channelLayout, CH_LAYOUT_5POINT1POINT4);
+}
+
+/**
+ * @tc.name  : Test 3DA direct layout adoption
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_098
+ * @tc.desc  : 3DA direct falls back to a consistent remoteChannelLayout.
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_098, TestSize.Level1)
+{
+    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    renderer->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+    AudioStreamParams params = {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.encoding = ENCODING_AUDIOVIVID;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_10;
+    params.channelLayout = CH_LAYOUT_5POINT1POINT2; // 8ch layout, inconsistent with 10ch
+    params.remoteChannelLayout = CH_LAYOUT_5POINT1POINT4;
+    int32_t ret = renderer->SetAudioStreamInfo(params, nullptr, AudioPlaybackCaptureConfig());
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+    AudioStreamParams out = {};
+    EXPECT_EQ(renderer->GetAudioStreamInfo(out), SUCCESS);
+    EXPECT_EQ(out.channelLayout, CH_LAYOUT_5POINT1POINT4);
+}
+
+/**
+ * @tc.name  : Test 3DA direct layout adoption
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_099
+ * @tc.desc  : 3DA direct defaults to the framework default-layout map (CHANNEL_10 -> 7.1.2).
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_099, TestSize.Level1)
+{
+    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    renderer->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+    AudioStreamParams params = {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.encoding = ENCODING_AUDIOVIVID;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_10;
+    params.channelLayout = CH_LAYOUT_UNKNOWN;
+    params.remoteChannelLayout = CH_LAYOUT_UNKNOWN;
+    int32_t ret = renderer->SetAudioStreamInfo(params, nullptr, AudioPlaybackCaptureConfig());
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+    AudioStreamParams out = {};
+    EXPECT_EQ(renderer->GetAudioStreamInfo(out), SUCCESS);
+    EXPECT_EQ(out.channelLayout, CH_LAYOUT_7POINT1POINT2);
+}
+
+/**
+ * @tc.name  : Test 3DA direct layout adoption
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_100
+ * @tc.desc  : 3DA direct keeps a consistent HOA layout ((order+1)^2 == channels).
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_100, TestSize.Level1)
+{
+    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    renderer->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+    AudioStreamParams params = {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.encoding = ENCODING_AUDIOVIVID;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_16;
+    params.channelLayout = CH_LAYOUT_HOA_ORDER3_ACN_N3D; // (3+1)^2 == 16
+    int32_t ret = renderer->SetAudioStreamInfo(params, nullptr, AudioPlaybackCaptureConfig());
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+    AudioStreamParams out = {};
+    EXPECT_EQ(renderer->GetAudioStreamInfo(out), SUCCESS);
+    EXPECT_EQ(out.channelLayout, CH_LAYOUT_HOA_ORDER3_ACN_N3D);
+}
+
+/**
+ * @tc.name  : Test 3DA direct layout adoption
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_101
+ * @tc.desc  : 3DA direct rejects when no layout matches (channels without default map entry).
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_101, TestSize.Level1)
+{
+    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    renderer->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+    AudioStreamParams params = {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.encoding = ENCODING_AUDIOVIVID;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_11; // no entry in the default layout map
+    params.channelLayout = CH_LAYOUT_UNKNOWN;
+    params.remoteChannelLayout = CH_LAYOUT_UNKNOWN;
+    int32_t ret = renderer->SetAudioStreamInfo(params, nullptr, AudioPlaybackCaptureConfig());
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
 } // namespace AudioStandard

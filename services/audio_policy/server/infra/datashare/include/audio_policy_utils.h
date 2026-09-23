@@ -118,7 +118,7 @@ public:
     bool UpdateDeviceCategory(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
         const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     bool UpdateConnectState(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
-        const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+        const std::shared_ptr<AudioDeviceDescriptor> &devDesc, AudioStreamDeviceChangeReasonExt &reason);
     bool UpdateEnableState(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
         const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     bool UpdateExceptionFlag(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,

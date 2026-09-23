@@ -47,12 +47,17 @@ public:
 
     int32_t RegisterDownloadStatusCallback(std::shared_ptr<DownloadStatusCallback> callback);
     int32_t UnregisterDownloadStatusCallback();
-    int32_t StartDownload(const std::string& featureName, bool allowedCellularNet = true);
-    int32_t PauseDownload(const std::string& featureName);
-    int32_t CancelDownload(const std::string& featureName);
-    int32_t StartBackgroundDownload(const std::string& featureName);
-    int32_t GetDownloadStatus(const std::string& featureName, AudioSuiteDownloadStatusInfo& status);
-    int32_t UninstallCloudRom(const std::string& featureName);
+    int32_t GetInstallStatus(const std::vector<std::string>& featureNames,
+        std::vector<bool>& installStatus);
+    int32_t StartDownload(const std::vector<std::string>& featureNames, bool allowedCellularNet);
+    int32_t PauseDownload(const std::vector<std::string>& featureNames);
+    int32_t CancelDownload(const std::vector<std::string>& featureNames);
+    int32_t StartBackgroundDownload(const std::vector<std::string>& featureNames);
+    int32_t GetDownloadStatus(const std::vector<std::string>& featureNames,
+        std::vector<AudioSuiteDownloadStatusInfo>& status);
+    int32_t GetFeatureNewVersion(const std::vector<std::string>& featureNames,
+        std::vector<AudioSuiteCloudRomVersionInfo>& versionInfos);
+    int32_t UninstallCloudRom(const std::vector<std::string>& featureNames);
 
     int32_t RegisterDownloadInterfaceCallback(const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback);
     int32_t UnregisterDownloadInterfaceCallback();

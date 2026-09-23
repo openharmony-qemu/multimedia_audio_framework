@@ -33,6 +33,7 @@
 #include "audio_recovery_device.h"
 #include "audio_bundle_manager.h"
 #include "audio_volume.h"
+#include "audio_rollback_manager.h"
 #include "audio_router_select_strategy.h"
 #include "audio_zone_service.h"
 
@@ -341,6 +342,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
     std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Create device descriptor failed");
     audioDeviceManager_.RemoveNewDevice(devDesc);
+    AudioRollbackManager::GetInstance().OnDeviceDisconnect(*devDesc);
     audioMicrophoneDescriptor_.RemoveMicrophoneDescriptor(devDesc);
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == updatedDesc.macAddress_) {
@@ -383,9 +385,8 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
 
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     UpdateDeviceAfterConnectAndAddtoList(audioDescriptor);
-    if (!NeedUpdatePreferredDevice(updatedDesc)) {
-        return;
-    }
+    CHECK_AND_RETURN(NeedUpdatePreferredDevice(updatedDesc));
+    AudioRollbackManager::GetInstance().OnDeviceNewConnect(*audioDescriptor);
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
     DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
     FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "updateConnectedDescWhenCon_1", ROUTER_TYPE_USER_SELECT };

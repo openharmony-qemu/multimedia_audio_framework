@@ -218,7 +218,34 @@
         "properties": {
           "type": {
             "type": "string",
-            "description": "Device type. Values: [DEVICE_TYPE_INVALID, DEVICE_TYPE_EARPIECE, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_WIRED_HEADPHONES, DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_TYPE_MIC, DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_DP, DEVICE_TYPE_REMOTE_CAST, DEVICE_TYPE_USB_DEVICE, DEVICE_TYPE_HDMI, DEVICE_TYPE_LINE_DIGITAL, DEVICE_TYPE_REMOTE_DAUDIO, DEVICE_TYPE_HEARING_AID, DEVICE_TYPE_NEARLINK, DEVICE_TYPE_SYSTEM_PRIVATE, DEFAULT]. Can be specified multiple times"
+            "description": "Device type. Values: [DEVICE_TYPE_INVALID, DEVICE_TYPE_EARPIECE, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_WIRED_HEADPHONES, DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_DP, DEVICE_TYPE_REMOTE_CAST, DEVICE_TYPE_USB_DEVICE, DEVICE_TYPE_HDMI, DEVICE_TYPE_LINE_DIGITAL, DEVICE_TYPE_REMOTE_DAUDIO, DEVICE_TYPE_HEARING_AID, DEVICE_TYPE_NEARLINK, DEVICE_TYPE_SYSTEM_PRIVATE, DEFAULT]. Can be specified multiple times"
+          }
+        },
+        "required": ["type"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "devices": {
+            "type": "array",
+            "description": "List of selected device types",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": ["devices"]
+      }
+    },
+    "select-input-device": {
+      "description": "Select the input audio device. Used for switching audio input device. Does not support simultaneous input to multiple devices.",
+      "requirePermissions": [],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Device type. Values: [DEVICE_TYPE_MIC, DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_USB_HEADSET, DEFAULT]. Can be specified multiple times"
           }
         },
         "required": ["type"]

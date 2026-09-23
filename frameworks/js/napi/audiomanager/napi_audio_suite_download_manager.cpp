@@ -93,8 +93,8 @@ napi_value NapiAudioSuiteDownloadManager::Init(napi_env env, napi_value exports)
     napi_get_undefined(env, &result);
 
     napi_property_descriptor audio_suite_download_mgr_properties[] = {
-        DECLARE_NAPI_FUNCTION("on", On),
-        DECLARE_NAPI_FUNCTION("off", Off),
+        DECLARE_NAPI_FUNCTION("onDownloadStatusChange", OnDownloadStatusChange),
+        DECLARE_NAPI_FUNCTION("offDownloadStatusChange", OffDownloadStatusChange),
         DECLARE_NAPI_FUNCTION("startDownload", StartDownload),
         DECLARE_NAPI_FUNCTION("pauseDownload", PauseDownload),
         DECLARE_NAPI_FUNCTION("cancelDownload", CancelDownload),
@@ -212,7 +212,7 @@ napi_value NapiAudioSuiteDownloadManager::StartDownload(napi_env env, napi_callb
             return;
         }
         int32_t ret = napi->audioSuiteDownloadMgr_->StartDownloadDirect(
-            context->featureName,
+            std::vector<std::string>{context->featureName},
             context->networkType == NETWORK_TYPE_CELLULAR ||
             context->networkType == NETWORK_TYPE_CELLULAR_AND_WIFI);
         if (ret != SUCCESS) {
@@ -258,7 +258,8 @@ napi_value NapiAudioSuiteDownloadManager::PauseDownload(napi_env env, napi_callb
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->PauseDownloadDirect(context->featureName);
+        int32_t ret = napi->audioSuiteDownloadMgr_->PauseDownloadDirect(
+            std::vector<std::string>{context->featureName});
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "PauseDownload failed");
@@ -302,7 +303,8 @@ napi_value NapiAudioSuiteDownloadManager::CancelDownload(napi_env env, napi_call
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->CancelDownloadDirect(context->featureName);
+        int32_t ret = napi->audioSuiteDownloadMgr_->CancelDownloadDirect(
+            std::vector<std::string>{context->featureName});
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "CancelDownload failed");
@@ -346,7 +348,8 @@ napi_value NapiAudioSuiteDownloadManager::StartBackgroundDownload(napi_env env, 
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->StartBackgroundDownloadDirect(context->featureName);
+        int32_t ret = napi->audioSuiteDownloadMgr_->StartBackgroundDownloadDirect(
+            std::vector<std::string>{context->featureName});
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "StartBackgroundDownload failed");
@@ -391,7 +394,10 @@ napi_value NapiAudioSuiteDownloadManager::GetDownloadStatus(napi_env env, napi_c
             return;
         }
         int32_t ret = napi->audioSuiteDownloadMgr_->GetDownloadStatusDirect(
-            context->featureName, context->statusInfo);
+            std::vector<std::string>{context->featureName}, context->statusInfos);
+        if (ret == SUCCESS && !context->statusInfos.empty()) {
+            context->statusInfo = context->statusInfos[0];
+        }
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "GetDownloadStatus failed");
@@ -400,8 +406,7 @@ napi_value NapiAudioSuiteDownloadManager::GetDownloadStatus(napi_env env, napi_c
 
     auto complete = [env, context](napi_value &output) {
         napi_value statusObj = nullptr;
-        napi_status nstatus = NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(
-            env, context->statusInfo, statusObj);
+        napi_status nstatus = NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(env, context->statusInfo, statusObj);
         if (nstatus != napi_ok || statusObj == nullptr) {
             AUDIO_ERR_LOG("GetDownloadStatus: SetValueAudioSuiteDownloadStatusInfo failed");
             napi_get_undefined(env, &output);
@@ -444,7 +449,8 @@ napi_value NapiAudioSuiteDownloadManager::UninstallCloudRom(napi_env env, napi_c
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->UninstallCloudRomDirect(context->featureName);
+        int32_t ret = napi->audioSuiteDownloadMgr_->UninstallCloudRomDirect(
+            std::vector<std::string>{context->featureName});
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "UninstallCloudRom failed");
@@ -461,7 +467,7 @@ void NapiAudioSuiteDownloadManager::RegisterDownloadStatusCallback(napi_env env,
     NapiAudioSuiteDownloadManager *napi)
 {
     std::lock_guard<std::mutex> lock(napi->downloadCbMutex_);
-    if (args[PARAM1] == nullptr) {
+    if (args[PARAM0] == nullptr) {
         AUDIO_ERR_LOG("RegisterDownloadStatusCallback: callback is nullptr");
         NapiAudioError::ThrowError(env, "callback function is nullptr", NAPI_ERR_INVALID_PARAM);
         return;
@@ -483,12 +489,12 @@ void NapiAudioSuiteDownloadManager::RegisterDownloadStatusCallback(napi_env env,
         }
     }
 
-    if (napi->downloadCallback_->ContainSameJsCallback(env, args[PARAM1])) {
+    if (napi->downloadCallback_->ContainSameJsCallback(env, args[PARAM0])) {
         AUDIO_WARNING_LOG("RegisterDownloadStatusCallback: callback already registered");
         return;
     }
 
-    napi->downloadCallback_->SaveCallbackReference(args[PARAM1]);
+    napi->downloadCallback_->SaveCallbackReference(args[PARAM0]);
     if (!napi->downloadCallback_->GetDownloadStatusTsfnFlag()) {
         napi->downloadCallback_->CreateDownloadStatusTsfn(env);
     }
@@ -504,8 +510,8 @@ void NapiAudioSuiteDownloadManager::UnregisterDownloadStatusCallback(napi_env en
         return;
     }
 
-    if (args[PARAM1] != nullptr) {
-        napi->downloadCallback_->RemoveCallbackReference(env, args[PARAM1]);
+    if (args[PARAM0] != nullptr) {
+        napi->downloadCallback_->RemoveCallbackReference(env, args[PARAM0]);
     } else {
         napi->downloadCallback_->ClearCallbacks();
     }
@@ -520,57 +526,43 @@ void NapiAudioSuiteDownloadManager::UnregisterDownloadStatusCallback(napi_env en
     AUDIO_INFO_LOG("UnregisterDownloadStatusCallback success");
 }
 
-napi_value NapiAudioSuiteDownloadManager::On(napi_env env, napi_callback_info info)
+napi_value NapiAudioSuiteDownloadManager::OnDownloadStatusChange(napi_env env, napi_callback_info info)
 {
-    size_t argc = ARGS_TWO;
-    napi_value argv[ARGS_TWO] = {0};
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {0};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && jsThis != nullptr, nullptr,
-        "On: napi_get_cb_info failed");
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, nullptr, "On: invalid argument count");
+        "OnDownloadStatusChange: napi_get_cb_info failed");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, nullptr,
+        "OnDownloadStatusChange: invalid argument count");
 
     NapiAudioSuiteDownloadManager *napi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napi));
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok && napi != nullptr, nullptr, "On: napi_unwrap failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && napi != nullptr, nullptr,
+        "OnDownloadStatusChange: napi_unwrap failed");
     CHECK_AND_RETURN_RET_LOG(napi->audioSuiteDownloadMgr_ != nullptr, nullptr,
-        "On: audioSuiteDownloadMgr_ is nullptr");
-
-    std::string type = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
-    if (type != DOWNLOAD_STATUS_CHANGE_CALLBACK_NAME_NAPI) {
-        AUDIO_ERR_LOG("On: type %{public}s is not supported", type.c_str());
-        NapiAudioError::ThrowError(env,
-            "parameter verification failed: The param of type is not supported", NAPI_ERR_INVALID_PARAM);
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
+        "OnDownloadStatusChange: audioSuiteDownloadMgr_ is nullptr");
 
     RegisterDownloadStatusCallback(env, argv, napi);
     return NapiParamUtils::GetUndefinedValue(env);
 }
 
-napi_value NapiAudioSuiteDownloadManager::Off(napi_env env, napi_callback_info info)
+napi_value NapiAudioSuiteDownloadManager::OffDownloadStatusChange(napi_env env, napi_callback_info info)
 {
-    size_t argc = ARGS_TWO;
-    napi_value argv[ARGS_TWO] = {0};
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {0};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && jsThis != nullptr, nullptr,
-        "Off: napi_get_cb_info failed");
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, nullptr, "Off: invalid argument count");
+        "OffDownloadStatusChange: napi_get_cb_info failed");
 
     NapiAudioSuiteDownloadManager *napi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napi));
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok && napi != nullptr, nullptr, "Off: napi_unwrap failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && napi != nullptr, nullptr,
+        "OffDownloadStatusChange: napi_unwrap failed");
     CHECK_AND_RETURN_RET_LOG(napi->audioSuiteDownloadMgr_ != nullptr, nullptr,
-        "Off: audioSuiteDownloadMgr_ is nullptr");
-
-    std::string type = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
-    if (type != DOWNLOAD_STATUS_CHANGE_CALLBACK_NAME_NAPI) {
-        AUDIO_ERR_LOG("Off: type %{public}s is not supported", type.c_str());
-        NapiAudioError::ThrowError(env,
-            "parameter verification failed: The param of type is not supported", NAPI_ERR_INVALID_PARAM);
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
+        "OffDownloadStatusChange: audioSuiteDownloadMgr_ is nullptr");
 
     UnregisterDownloadStatusCallback(env, argv, napi);
     return NapiParamUtils::GetUndefinedValue(env);

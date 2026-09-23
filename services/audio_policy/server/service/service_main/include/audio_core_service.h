@@ -721,6 +721,7 @@ private:
     void DeleteSessionId(const uint32_t sessionId);
     void ClearMuteVoipState(const std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t sessionId);
     void UnmuteDualStreamAfterAlarm(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void ClearRingerFlags(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
     int32_t HandleFetchOutputWhenNoRunningStream(const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleFetchInputWhenNoRunningStream();
@@ -812,6 +813,7 @@ private:
     void UpdateFastState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void UpdateReleaseStreamState(std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t sessionId);
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     void FetchDevicesForDescs(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &outStreamDescs,

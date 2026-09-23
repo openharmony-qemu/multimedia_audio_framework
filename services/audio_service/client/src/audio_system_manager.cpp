@@ -200,6 +200,11 @@ int32_t AudioSystemManager::SetSystemAppVolumePercentageForUid(int32_t appUid, i
     return AudioVolumeClientManager::GetInstance().SetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
+int32_t AudioSystemManager::ConfirmVolumeLimitExceeded(AudioVolumeType volumeType, bool confirmResult)
+{
+    return AudioVolumeClientManager::GetInstance().ConfirmVolumeLimitExceeded(volumeType, confirmResult);
+}
+
 int32_t AudioSystemManager::GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage) const
 {
     return AudioVolumeClientManager::GetInstance().GetSystemAppVolumePercentageForUid(appUid, volumePercentage);
@@ -208,6 +213,16 @@ int32_t AudioSystemManager::GetSystemAppVolumePercentageForUid(int32_t appUid, i
 int32_t AudioSystemManager::GetSelfAppVolume(int32_t &volumeLevel) const
 {
     return AudioVolumeClientManager::GetInstance().GetSelfAppVolume(volumeLevel);
+}
+
+int32_t AudioSystemManager::SetUnmuteWhitelist(const std::vector<int32_t> &uids)
+{
+    return AudioVolumeClientManager::GetInstance().SetUnmuteWhitelist(uids);
+}
+
+int32_t AudioSystemManager::ClearUnmuteWhitelist()
+{
+    return AudioVolumeClientManager::GetInstance().ClearUnmuteWhitelist();
 }
 
 int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
@@ -272,9 +287,9 @@ int32_t AudioSystemManager::SetActiveVolumeTypeCallback(
     return AudioVolumeClientManager::GetInstance().SetActiveVolumeTypeCallback(callback);
 }
 
-int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid)
+int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid, int32_t zoneId)
 {
-    return AudioVolumeClientManager::GetInstance().SetVolume(volumeType, volumeLevel, uid);
+    return AudioVolumeClientManager::GetInstance().SetVolume(volumeType, volumeLevel, uid, zoneId);
 }
 
 int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
@@ -283,9 +298,9 @@ int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int3
     return AudioVolumeClientManager::GetInstance().SetVolumeWithDevice(volumeType, volumeLevel, deviceType);
 }
 
-int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType, int32_t uid) const
+int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType, int32_t uid, int32_t zoneId) const
 {
-    return AudioVolumeClientManager::GetInstance().GetVolume(volumeType, uid);
+    return AudioVolumeClientManager::GetInstance().GetVolume(volumeType, uid, zoneId);
 }
 
 int32_t AudioSystemManager::SetLowPowerVolume(int32_t streamId, float volume) const
@@ -566,6 +581,18 @@ int32_t AudioSystemManager::UnregisterVolumeDegreeCallback(const int32_t clientP
     return AudioVolumeClientManager::GetInstance().UnregisterVolumeDegreeCallback(clientPid, callback);
 }
 
+int32_t AudioSystemManager::RegisterVolumeLimitExceededCallback(const int32_t clientPid,
+    const std::shared_ptr<VolumeLimitExceededCallback> &callback)
+{
+    return AudioVolumeClientManager::GetInstance().RegisterVolumeLimitExceededCallback(clientPid, callback);
+}
+
+int32_t AudioSystemManager::UnregisterVolumeLimitExceededCallback(const int32_t clientPid,
+    const std::shared_ptr<VolumeLimitExceededCallback> &callback)
+{
+    return AudioVolumeClientManager::GetInstance().UnregisterVolumeLimitExceededCallback(clientPid, callback);
+}
+
 int32_t AudioSystemManager::RegisterSystemVolumeChangeCallback(const int32_t clientPid,
     const std::shared_ptr<SystemVolumeChangeCallback> &callback)
 {
@@ -654,6 +681,16 @@ int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
 int32_t AudioSystemManager::ActivatePreemptMode() const
 {
     return AudioSystemClientPolicyManager::GetInstance().ActivatePreemptMode();
+}
+
+int32_t AudioSystemManager::SetDuckPassthroughMode(bool enable) const
+{
+    return AudioInterruptClientManager::GetInstance().SetDuckPassthroughMode(enable);
+}
+
+int32_t AudioSystemManager::SetDuckFactor(int32_t duckFactor) const
+{
+    return AudioInterruptClientManager::GetInstance().SetDuckFactor(duckFactor);
 }
 
 int32_t AudioSystemManager::SetForegroundList(const std::vector<std::string> &list)
@@ -770,6 +807,11 @@ int32_t AudioSystemManager::SetNearlinkDeviceVolume(const std::string &macAddres
 int32_t AudioSystemManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
 {
     return AudioSystemClientPolicyManager::GetInstance().SetSleVoiceStatusFlag(isSleVoiceStatus);
+}
+
+int32_t AudioSystemManager::DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit)
+{
+    return AudioSystemClientPolicyManager::GetInstance().DisableVolumeLimitWhenVoiceCall(disableVolumeLimit);
 }
 
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const
@@ -1018,14 +1060,14 @@ void AudioSystemManager::CleanUpResource()
     AudioSystemClientPolicyManager::GetInstance().CleanUpResource();
 }
 
-int32_t AudioSystemManager::SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid)
+int32_t AudioSystemManager::SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid, int32_t zoneId)
 {
-    return AudioVolumeClientManager::GetInstance().SetVolumeDegree(volumeType, degree, uid);
+    return AudioVolumeClientManager::GetInstance().SetVolumeDegree(volumeType, degree, uid, zoneId);
 }
 
-int32_t AudioSystemManager::GetVolumeDegree(AudioVolumeType volumeType, int32_t uid)
+int32_t AudioSystemManager::GetVolumeDegree(AudioVolumeType volumeType, int32_t uid, int32_t zoneId)
 {
-    return AudioVolumeClientManager::GetInstance().GetVolumeDegree(volumeType, uid);
+    return AudioVolumeClientManager::GetInstance().GetVolumeDegree(volumeType, uid, zoneId);
 }
 
 int32_t AudioSystemManager::GetMinVolumeDegree(AudioVolumeType volumeType)

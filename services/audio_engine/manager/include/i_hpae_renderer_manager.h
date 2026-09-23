@@ -84,6 +84,9 @@ public:
     virtual int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) = 0;
     virtual int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) { return ERR_NOT_SUPPORTED; };
     virtual void SetSpeed(uint32_t sessionId, float speed) {}
+    // True only for managers whose sink chain implements HDI-side speed (e.g. offload);
+    // the client falls back to local sonic time-stretch when the server rejects HDI speed.
+    virtual bool IsHdiSpeedSupported() { return false; }
     virtual std::vector<SinkInput> GetAllSinkInputsInfo() = 0;
     virtual int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) = 0;
     virtual int32_t RefreshProcessClusterByDevice() = 0;

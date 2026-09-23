@@ -102,12 +102,8 @@ void HpaeAudioFormatConverterCluster::BuildFrontExtractChain(HpaeNodeInfo &preNo
     HpaeNodeInfo mainInfo = preNodeInfo;   // extract output: pre fields at main width
     mainInfo.channels = static_cast<AudioChannel>(mainCh);
     extractNode_ = std::make_shared<HpaeMicInFrontExtractNode>(preNodeInfo, mainInfo);
-    HpaeNodeInfo sanitized = SanitizedMainInfo(nodeInfo, mainCh);
-    converterNode_ = std::make_shared<HpaeAudioFormatConverterNode>(mainInfo, sanitized);
-    // ConnectWithInfo (not plain Connect) so the DFX edge is reported pre->self (extract as
-    // parent); its side effect tags converterOutput_ with sanitized.sourceBufferType, which
-    // is the app mic/ec tag -- never INJECTOR, the only value consumers distinguish.
-    converterNode_->ConnectWithInfo(extractNode_, sanitized); // extract is the converter's upstream
+    converterNode_ = std::make_shared<HpaeAudioFormatConverterNode>(mainInfo, nodeInfo);
+    converterNode_->ConnectWithInfo(extractNode_, nodeInfo); // extract is the converter's upstream
     head_ = extractNode_;
     tail_ = converterNode_;
     AUDIO_INFO_LOG("scenario B chain: extract(%{public}u->%{public}u ch) -> converter",

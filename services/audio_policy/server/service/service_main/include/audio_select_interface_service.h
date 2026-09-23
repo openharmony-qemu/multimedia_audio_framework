@@ -22,6 +22,7 @@
 #include "audio_stream_types.h"
 #include "istandard_audio_policy_manager_listener.h"
 #include "audio_router_select_strategy.h"
+#include <atomic>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -79,6 +80,8 @@ public:
     bool GetEnhancedRoutingSupported() const;
     void SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         DeviceUsage deviceUsage = ALL_USAGE);
+    bool GetBlockFirstOverrode();
+    void SetBlockFirstOverrode(bool blockFirstOverrode);
 
 private:
     int32_t ExcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
@@ -120,6 +123,7 @@ private:
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;
+    std::atomic<bool> blockFirstOverrodePending_ {false};
 };
 } // namespace AudioStandard
 } // namespace OHOS

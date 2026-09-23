@@ -1391,6 +1391,9 @@ HWTEST_F(AudioRenderSinkUnitTest, DeInitClearsDeviceCallback_001, TestSize.Level
  */
 HWTEST_F(AudioRenderSinkUnitTest, StartForceRouteBypassesDedup_001, TestSize.Level1)
 {
+    if (!Util::IsEnhancedRoutingSupported()) {
+        GTEST_SKIP() << "enhanced routing disabled; Start-force-route (Change 1) not exercised in this env";
+    }
     InitPrimarySink();
     ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
     EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_SPEAKER);

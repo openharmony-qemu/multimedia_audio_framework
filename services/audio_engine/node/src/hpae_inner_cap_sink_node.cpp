@@ -32,7 +32,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-constexpr auto DEFAULT_NANO_SECONDS = std::chrono::nanoseconds(20000000); // 20000000ns = 20ms
+constexpr uint64_t NANO_SECONDS_PER_SECOND = 1000000000ULL; // 1s in nanoseconds
+constexpr auto DEFAULT_NANO_SECONDS = std::chrono::nanoseconds(20000000); // fallback tick: 20ms
 
 HpaeInnerCapSinkNode::HpaeInnerCapSinkNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), outputStream_(this),
@@ -41,6 +42,19 @@ HpaeInnerCapSinkNode::HpaeInnerCapSinkNode(HpaeNodeInfo &nodeInfo)
     silenceData_.Reset();
     historyTime_ = std::chrono::high_resolution_clock::now();
     sleepTime_ = std::chrono::nanoseconds(0);
+    // The tick duration derives from the stream geometry (frameLen frames at samplingRate), so
+    // the node always paces at real time no matter which frame length the sink negotiated.
+    // A hardcoded tick breaks real time whenever frameLen and tick disagree (e.g. 960 frames
+    // ticked every 100ms delivers audio at 1/5 real time and stretches recorded duration).
+    uint32_t tickRate = nodeInfo.GetEffectiveSampleRate();
+    if (nodeInfo.frameLen > 0 && tickRate > 0) {
+        tickDuration_ = std::chrono::nanoseconds(static_cast<uint64_t>(nodeInfo.frameLen) *
+            NANO_SECONDS_PER_SECOND / tickRate);
+    } else {
+        tickDuration_ = DEFAULT_NANO_SECONDS;
+    }
+    AUDIO_INFO_LOG("InnerCapSink tick: frameLen:%{public}u rate:%{public}u tickNs:%{public}" PRIi64,
+        static_cast<uint32_t>(nodeInfo.frameLen), tickRate, static_cast<int64_t>(tickDuration_.count()));
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeInnerCapSinkNode_bit_" +
                        std::to_string(SAMPLE_F32LE) + "_ch_" + std::to_string(GetChannelCount()) +
@@ -91,15 +105,15 @@ void HpaeInnerCapSinkNode::DoProcess()
     }
     // sleep
     endTime_ = std::chrono::high_resolution_clock::now();
-    std::this_thread::sleep_for(std::chrono::duration_cast<std::chrono::nanoseconds>(DEFAULT_NANO_SECONDS -
+    std::this_thread::sleep_for(std::chrono::duration_cast<std::chrono::nanoseconds>(tickDuration_ -
         (endTime_ - historyTime_ - sleepTime_)));
     AUDIO_DEBUG_LOG("sleeptime : %{public} " PRIi64"", static_cast<int64_t>(std::chrono::duration_cast
-        <std::chrono::nanoseconds>(DEFAULT_NANO_SECONDS - (endTime_ - historyTime_ - sleepTime_)).count()));
-    if (static_cast<int64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(DEFAULT_NANO_SECONDS -
+        <std::chrono::nanoseconds>(tickDuration_ - (endTime_ - historyTime_ - sleepTime_)).count()));
+    if (static_cast<int64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(tickDuration_ -
         (endTime_ - historyTime_ - sleepTime_)).count()) <= 0) {
         sleepTime_ = std::chrono::nanoseconds(0);
     } else {
-        sleepTime_ = DEFAULT_NANO_SECONDS - (endTime_ - historyTime_ - sleepTime_);
+        sleepTime_ = tickDuration_ - (endTime_ - historyTime_ - sleepTime_);
     }
     historyTime_ = endTime_;
 }

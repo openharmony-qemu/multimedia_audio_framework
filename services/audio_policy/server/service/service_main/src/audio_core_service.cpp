@@ -56,7 +56,7 @@ namespace {
 const size_t SELECT_DEVICE_HISTORY_LIMIT = 10;
 const uint32_t FIRST_SESSIONID = 100000;
 static const char *CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
-const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
+const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02 * SOURCE_PERIOD_SIZE;
 const uint32_t PC_MIC_CHANNEL_NUM = 4;
 const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 
@@ -145,6 +145,7 @@ static const std::map<DeviceType, AudioAdapterType> DEVICE_HAL_MAP = {
     { DEVICE_TYPE_NEARLINK, AudioAdapterType::TYPE_PRIMARY },
     { DEVICE_TYPE_USB_ARM_HEADSET, AudioAdapterType::TYPE_USB },
     { DEVICE_TYPE_DP, AudioAdapterType::TYPE_DP },
+    { DEVICE_TYPE_HDMI, AudioAdapterType::TYPE_PRIMARY },
     { DEVICE_TYPE_ACCESSORY, AudioAdapterType::TYPE_ACCESSORY },
     { DEVICE_TYPE_LINE_DIGITAL, AudioAdapterType::TYPE_PRIMARY },
     { DEVICE_TYPE_WIRED_MICIN, AudioAdapterType::TYPE_PRIMARY },
@@ -839,7 +840,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
 
     SetPreferredInputDeviceIfValid(streamDesc);
-    streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+    pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
     std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc = GetCaptureClientDevice(streamDesc, sessionId);
     CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
     pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
@@ -1058,8 +1059,7 @@ AudioFlag AudioCoreService::SelectRemoteAudioFlag(std::shared_ptr<AudioStreamDes
             NeedRemoteMultichannel(streamDesc), AUDIO_OUTPUT_FLAG_NORMAL,
             "movie use normal for remote device or remotecast");
         AUDIO_INFO_LOG("remote multichannel active, movie use multichannel");
-        // depend on vehicle service modification, AUDIO_OUTPUT_FLAG_MULTICHANNEL is disabled temporarily.
-        return AUDIO_OUTPUT_FLAG_NORMAL;
+        return AUDIO_OUTPUT_FLAG_MULTICHANNEL;
     }
 
     AUDIO_INFO_LOG("Use normal for remote device or remotecast");
@@ -1315,7 +1315,7 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
         auto sourceType = streamDesc->capturerInfo_.sourceType;
         auto sessionId = streamDesc->sessionId_;
         if (Util::IsScoSupportSource(sourceType)) {
-            audioStateManager_.SetPreferredRecognitionCaptureDevice(make_shared<AudioDeviceDescriptor>());
+            audioRouterSelectStrategy_.SetRecognitionInputDevice(make_shared<AudioDeviceDescriptor>());
         }
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionId);
     }
@@ -1825,14 +1825,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     }
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
-        AudioRouterInfra::GetInstance().UpdateInputStreamState(GetRealUid(streamDesc), sessionId,
-            streamDesc->capturerInfo_.sourceType, CapturerState::CAPTURER_RELEASED);
-    }
-    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-        AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
-            streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_RELEASED);
-    }
+    UpdateReleaseStreamState(streamDesc, sessionId);
     ForceRemoveSleStreamType(streamDesc);
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.UnsetOffloadStatus(sessionId);
@@ -1848,6 +1841,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     }
     DeleteSessionId(sessionId);
     ClearMuteVoipState(streamDesc, sessionId);
+    ClearRingerFlags(streamDesc);
     UnmuteDualStreamAfterAlarm(streamDesc);
 
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
@@ -1868,6 +1862,19 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         isFirstScreenOn_.store(true);
     }
     return SUCCESS;
+}
+
+void AudioCoreService::UpdateReleaseStreamState(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    uint32_t sessionId)
+{
+    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
+        AudioRouterInfra::GetInstance().UpdateInputStreamState(GetRealUid(streamDesc), sessionId,
+            streamDesc->capturerInfo_.sourceType, CapturerState::CAPTURER_RELEASED);
+    }
+    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
+            streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_RELEASED);
+    }
 }
 
 int32_t AudioCoreService::GetPhoneCallSceneType(AudioScene audioScene, AudioScene lastAudioScene)
@@ -2102,30 +2109,7 @@ int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid,
     vector<uint32_t> sessionIDList = pipeManager_->GetStreamIdsByPid(callerPid);
     CHECK_AND_RETURN_RET_LOG(pipeManager_->GetHasEarpiece(), ERR_NOT_SUPPORTED,
         "the device has no earpiece");
-    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    bool forceFetch = false;
-    for (auto &changeInfo : audioRendererChangeInfos) {
-        bool currentSessionID = false;
-        uint32_t sessionIDListSize = sessionIDList.size();
-        for (uint32_t i = 0; i < sessionIDListSize; i++) {
-            if (changeInfo->sessionId == static_cast<int32_t>(sessionIDList[i])) {
-                currentSessionID = true;
-                break;
-            }
-        }
-        if (currentSessionID &&
-            (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_INTERPHONE)) {
-            CHECK_AND_CONTINUE(!skipForce);
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
-            forceFetch = true;
-        }
-    }
-    return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType, forceFetch, callerUid);
+    return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType, false, callerUid);
 }
 
 bool AudioCoreService::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos)
@@ -2931,7 +2915,7 @@ void AudioCoreService::PrepareInputFetchInfos(
     for (const auto &streamDesc : inputStreamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
 
-        streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+        pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
 
         FetchDeviceInfo info;
         info.sourceType = streamDesc->capturerInfo_.sourceType;

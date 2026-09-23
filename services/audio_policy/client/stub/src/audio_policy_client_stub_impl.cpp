@@ -136,6 +136,53 @@ int32_t AudioPolicyClientStubImpl::OnVolumeDegreeEvent(const VolumeEvent &volume
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::AddVolumeLimitExceededCallback(
+    const std::shared_ptr<VolumeLimitExceededCallback> &cb)
+{
+    std::lock_guard<std::mutex> lock(volumeLimitExceededMutex_);
+    volumeLimitExceededCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveVolumeLimitExceededCallback(
+    const std::shared_ptr<VolumeLimitExceededCallback> &cb)
+{
+    std::lock_guard<std::mutex> lock(volumeLimitExceededMutex_);
+    if (cb == nullptr) {
+        volumeLimitExceededCallbackList_.clear();
+        return SUCCESS;
+    }
+    auto it = find_if(volumeLimitExceededCallbackList_.begin(), volumeLimitExceededCallbackList_.end(),
+        [&cb](const std::weak_ptr<VolumeLimitExceededCallback> &item) {
+            return item.lock() == cb;
+        });
+    if (it != volumeLimitExceededCallbackList_.end()) {
+        volumeLimitExceededCallbackList_.erase(it);
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetVolumeLimitExceededCallbackSize() const
+{
+    std::lock_guard<std::mutex> lock(volumeLimitExceededMutex_);
+    return volumeLimitExceededCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::OnVolumeLimitExceeded(const VolumeLimitExceedEvent &event)
+{
+    std::lock_guard<std::mutex> lock(volumeLimitExceededMutex_);
+    for (auto it = volumeLimitExceededCallbackList_.begin(); it != volumeLimitExceededCallbackList_.end();) {
+        std::shared_ptr<VolumeLimitExceededCallback> callback = it->lock();
+        if (callback != nullptr) {
+            callback->OnVolumeLimitExceeded(event);
+            ++it;
+        } else {
+            it = volumeLimitExceededCallbackList_.erase(it);
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyClientStubImpl::AddSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeMutex_);
@@ -1843,12 +1890,18 @@ int32_t AudioPolicyClientStubImpl::RemoveStreamVolumeChangeCallback(
 
 int32_t AudioPolicyClientStubImpl::OnStreamVolumeChange(const StreamVolumeEvent &streamVolumeEvent)
 {
-    std::lock_guard<std::mutex> lockCbMap(streamVolumeChangeMutex_);
-    for (auto &[streamUsages, cb] : streamVolumeChangeCallbackList_) {
-        std::shared_ptr<StreamVolumeChangeCallback> streamVolumeChangeCallback = cb.lock();
-        if (streamVolumeChangeCallback != nullptr && streamUsages.count(streamVolumeEvent.streamUsage)) {
-            streamVolumeChangeCallback->OnStreamVolumeChange(streamVolumeEvent);
+    std::vector<std::shared_ptr<StreamVolumeChangeCallback>> callbacks;
+    {
+        std::lock_guard<std::mutex> lockCbMap(streamVolumeChangeMutex_);
+        for (auto &[streamUsages, cb] : streamVolumeChangeCallbackList_) {
+            std::shared_ptr<StreamVolumeChangeCallback> streamVolumeChangeCallback = cb.lock();
+            if (streamVolumeChangeCallback != nullptr && streamUsages.count(streamVolumeEvent.streamUsage)) {
+                callbacks.push_back(streamVolumeChangeCallback);
+            }
         }
+    }
+    for (const auto &callback : callbacks) {
+        callback->OnStreamVolumeChange(streamVolumeEvent);
     }
     return SUCCESS;
 }

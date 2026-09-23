@@ -130,6 +130,11 @@ uint32_t AudioZoneBindKey::GetStreamId() const
     return streamId_;
 }
 
+StreamUsage AudioZoneBindKey::GetUsage() const
+{
+    return usage_;
+}
+
 const std::string AudioZoneBindKey::GetString() const
 {
     std::string str = "uid=";

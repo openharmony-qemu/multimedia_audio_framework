@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
+#include <algorithm>
 #include "audio_log.h"
 #include "../fuzz_utils.h"
-#include "native_audio_suite_base.h"
-#include "OHAudioSuiteEngine.h"
+#include "audio_suite_pipeline.h"
 #include "audio_suite_download_manager.h"
 #include "securec.h"
 
@@ -32,12 +32,16 @@ FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 
 static const uint32_t MAX_PIPELINE_NUM = 10;
-static const uint32_t MAX_NODE_NUM = 5;
+static const uint32_t MAX_NODE_NUM = 7;
 static const uint32_t MAX_CHANNEL_NUM = 16;
 static const uint32_t MAX_FRAME_SIZE = 1000;
 static const uint32_t MAX_FEATURE_NAME_SIZE = 256;
 static bool g_downloadManagerInited = false;
 AudioSuite::AudioSuiteDownloadManager *g_downloadManager = nullptr;
+
+static std::vector<std::shared_ptr<AudioSuite::AudioSuitePipeline>> g_pipelines;
+std::shared_ptr<AudioSuite::AudioSuitePipeline> g_pipeline = nullptr;
+static std::vector<uint32_t> g_nodeIds;
 
 class DownloadStatusCallbackTestImpl : public AudioSuite::DownloadStatusCallback {
 public:
@@ -81,52 +85,65 @@ public:
     }
 };
 
-void AudioSuiteManagerInitFuzzTest()
+static void EnsureFuzzSetup()
 {
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().Init();
+    if (g_pipeline != nullptr) {
+        return;
+    }
+
+    int32_t ret = AudioSuite::AudioSuitePipeline::Create(AudioSuite::PIPELINE_EDIT_MODE, g_pipeline);
+    if (ret != 0 || g_pipeline == nullptr) {
+        return;
+    }
+
+    auto tryCreateNode = [](AudioSuite::AudioNodeType type) {
+        AudioSuite::AudioNodeBuilder builder;
+        builder.nodeType = type;
+        uint32_t nodeId = 0;
+        if (g_pipeline->CreateNode(builder, nodeId) == 0) {
+            g_nodeIds.push_back(nodeId);
+        }
+    };
+
+    tryCreateNode(AudioSuite::NODE_TYPE_INPUT);
+    tryCreateNode(AudioSuite::NODE_TYPE_EQUALIZER);
+    tryCreateNode(AudioSuite::NODE_TYPE_SPACE_RENDER);
+    tryCreateNode(AudioSuite::NODE_TYPE_TEMPO_PITCH);
+    tryCreateNode(AudioSuite::NODE_TYPE_PURE_VOICE_CHANGE);
+    tryCreateNode(AudioSuite::NODE_TYPE_GENERAL_VOICE_CHANGE);
+    tryCreateNode(AudioSuite::NODE_TYPE_OUTPUT);
 }
 
-void AudioSuiteManagerDeInitFuzzTest()
+static uint32_t GetRandomNodeId()
 {
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().DeInit();
+    if (g_nodeIds.empty()) {
+        return GetData<uint32_t>() % MAX_NODE_NUM;
+    }
+    return g_nodeIds[GetData<uint32_t>() % g_nodeIds.size()];
+}
+
+static std::shared_ptr<AudioSuite::AudioSuitePipeline> GetOrCreatePipeline(uint32_t index)
+{
+    if (g_pipelines.empty()) {
+        return nullptr;
+    }
+    return g_pipelines[index % g_pipelines.size()];
 }
 
 void AudioSuiteManagerCreatePipelineFuzzTest()
 {
     AudioSuite::PipelineWorkMode workMode = GetData<AudioSuite::PipelineWorkMode>();
-    uint32_t pipelineId = GetData<uint32_t>() % MAX_PIPELINE_NUM;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().CreatePipeline(pipelineId, workMode);
-}
+    std::shared_ptr<AudioSuite::AudioSuitePipeline> pipeline;
+    int32_t ret = AudioSuite::AudioSuitePipeline::Create(workMode, pipeline);
+    if (ret == 0 && pipeline && g_pipelines.size() < MAX_PIPELINE_NUM) {
+        g_pipelines.push_back(pipeline);
+    }
 
-void AudioSuiteManagerDestroyPipelineFuzzTest()
-{
-    uint32_t pipelineId = GetData<uint32_t>() % MAX_PIPELINE_NUM;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().DestroyPipeline(pipelineId);
-}
+    pipeline = GetOrCreatePipeline(GetData<uint32_t>());
+    if (pipeline == nullptr) {
+        return;
+    }
 
-void AudioSuiteManagerStartPipelineFuzzTest()
-{
-    uint32_t pipelineId = GetData<uint32_t>() % MAX_PIPELINE_NUM;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().StartPipeline(pipelineId);
-}
-
-void AudioSuiteManagerStopPipelineFuzzTest()
-    {
-    uint32_t pipelineId = GetData<uint32_t>() % MAX_PIPELINE_NUM;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().StopPipeline(pipelineId);
-}
-
-void AudioSuiteManagerGetPipelineStateFuzzTest()
-{
-    uint32_t pipelineId = GetData<uint32_t>() % MAX_PIPELINE_NUM;
-    AudioSuite::AudioSuitePipelineState pipelineState;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetPipelineState(pipelineId, pipelineState);
-}
-
-void AudioSuiteManagerCreateNodeFuzzTest()
-{
-    uint32_t pipelineId = GetData<uint32_t>() % MAX_PIPELINE_NUM;
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
     AudioSuite::AudioNodeBuilder nodeBuilder;
     nodeBuilder.nodeType = GetData<AudioSuite::AudioNodeType>();
     nodeBuilder.nodeFormat.audioChannelInfo.channelLayout = GetData<AudioChannelLayout>();
@@ -134,172 +151,243 @@ void AudioSuiteManagerCreateNodeFuzzTest()
     nodeBuilder.nodeFormat.format = GetData<AudioSampleFormat>();
     nodeBuilder.nodeFormat.rate = GetData<AudioSamplingRate>();
     nodeBuilder.nodeFormat.encodingType = GetData<AudioSuite::AudioStreamEncodingType>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().CreateNode(pipelineId, nodeBuilder, nodeId);
+    uint32_t nodeId = 0;
+    pipeline->CreateNode(nodeBuilder, nodeId);
+    pipeline->DestroyNode(nodeId);
+    nodeId = GetRandomNodeId();
+    pipeline->DestroyNode(nodeId);
+
+    if (g_pipelines.empty()) {
+        return;
+    }
+    uint32_t index = GetData<uint32_t>() % g_pipelines.size();
+    g_pipelines.erase(g_pipelines.begin() + index);
 }
 
-void AudioSuiteManagerDestroyNodeFuzzTest()
+void AudioSuiteManagerStartPipelineFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().DestroyNode(nodeId);
+    if (g_pipeline != nullptr) {
+        g_pipeline->Start();
+    }
+}
+
+void AudioSuiteManagerStopPipelineFuzzTest()
+{
+    if (g_pipeline != nullptr) {
+        g_pipeline->Stop();
+    }
+}
+
+void AudioSuiteManagerGetPipelineStateFuzzTest()
+{
+    if (g_pipeline != nullptr) {
+        AudioSuite::AudioSuitePipelineState pipelineState;
+        g_pipeline->GetPipelineState(pipelineState);
+    }
 }
 
 void AudioSuiteManagerBypassEffectNodeFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    bool nodeEnable = GetData<bool>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().BypassEffectNode(nodeId, nodeEnable);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        bool nodeEnable = GetData<bool>();
+        g_pipeline->BypassEffectNode(nodeId, nodeEnable);
+    }
 }
 
 void AudioSuiteManagerGetNodeBypassStatusFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    bool nodeEnable;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetNodeBypassStatus(nodeId, nodeEnable);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        bool nodeEnable;
+        g_pipeline->GetNodeBypassStatus(nodeId, nodeEnable);
+    }
 }
 
 void AudioSuiteManagerSetAudioFormatFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    if (g_pipeline == nullptr) {
+        return;
+    }
+    uint32_t nodeId = GetRandomNodeId();
     AudioSuite::AudioFormat nodeFormat;
     nodeFormat.audioChannelInfo.channelLayout = GetData<AudioChannelLayout>();
     nodeFormat.audioChannelInfo.numChannels = GetData<uint32_t>() % MAX_CHANNEL_NUM;
     nodeFormat.format = GetData<AudioSampleFormat>();
     nodeFormat.rate = GetData<AudioSamplingRate>();
     nodeFormat.encodingType = GetData<AudioSuite::AudioStreamEncodingType>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetAudioFormat(nodeId, nodeFormat);
+    g_pipeline->SetAudioFormat(nodeId, nodeFormat);
 }
 
 void AudioSuiteManagerSetRequestDataCallbackFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    std::shared_ptr<AudioSuite::InputNodeRequestDataCallBack> callback =
-        std::make_shared<InputNodeRequestDataCallBackTestImpl>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetRequestDataCallback(nodeId, callback);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        std::shared_ptr<AudioSuite::InputNodeRequestDataCallBack> callback =
+            std::make_shared<InputNodeRequestDataCallBackTestImpl>();
+        g_pipeline->SetRequestDataCallback(nodeId, callback);
+    }
 }
 
 void AudioSuiteManagerConnectNodesFuzzTest()
 {
-    uint32_t srcNodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    uint32_t dstNodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().ConnectNodes(srcNodeId, dstNodeId);
+    if (g_pipeline != nullptr) {
+        uint32_t srcNodeId = GetRandomNodeId();
+        uint32_t dstNodeId = GetRandomNodeId();
+        g_pipeline->ConnectNodes(srcNodeId, dstNodeId);
+    }
 }
 
-void AudioSuiteManagerDisConnectNodesFuzzTest()
+void AudioSuiteManagerDisconnectNodesFuzzTest()
 {
-    uint32_t srcNodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    uint32_t dstNodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().DisConnectNodes(srcNodeId, dstNodeId);
+    if (g_pipeline != nullptr) {
+        uint32_t srcNodeId = GetRandomNodeId();
+        uint32_t dstNodeId = GetRandomNodeId();
+        g_pipeline->DisconnectNodes(srcNodeId, dstNodeId);
+    }
 }
 
 void AudioSuiteManagerSetEqFrequencyBandGainsModeFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    if (g_pipeline == nullptr) {
+        return;
+    }
+    uint32_t nodeId = GetRandomNodeId();
     AudioSuite::AudioEqualizerFrequencyBandGains gains;
     for (int i = 0; i < EQUALIZER_BAND_NUM; i++) {
         gains.gains[i] = GetData<int32_t>();
     }
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetEqualizerFrequencyBandGains(nodeId, gains);
+    g_pipeline->SetEqualizerFrequencyBandGains(nodeId, gains);
 }
 
 void AudioSuiteManagerSetSoundFieldTypeFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::SoundFieldType soundFieldType = GetData<AudioSuite::SoundFieldType>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetSoundFieldType(nodeId, soundFieldType);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::SoundFieldType soundFieldType = GetData<AudioSuite::SoundFieldType>();
+        g_pipeline->SetSoundFieldType(nodeId, soundFieldType);
+    }
 }
 
 void AudioSuiteManagerSetEnvironmentTypeFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::EnvironmentType environmentType = GetData<AudioSuite::EnvironmentType>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetEnvironmentType(nodeId, environmentType);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::EnvironmentType environmentType = GetData<AudioSuite::EnvironmentType>();
+        g_pipeline->SetEnvironmentType(nodeId, environmentType);
+    }
 }
 
 void AudioSuiteManagerSetVoiceBeautifierTypeFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::VoiceBeautifierType voiceBeautifierType = GetData<AudioSuite::VoiceBeautifierType>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetVoiceBeautifierType(nodeId, voiceBeautifierType);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::VoiceBeautifierType voiceBeautifierType = GetData<AudioSuite::VoiceBeautifierType>();
+        g_pipeline->SetVoiceBeautifierType(nodeId, voiceBeautifierType);
+    }
 }
 
 void AudioSuiteEngineSetTempoAndPitchFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    float speed = GetData<float>();
-    float pitch = GetData<float>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetTempoAndPitch(nodeId, speed, pitch);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        float speed = GetData<float>();
+        float pitch = GetData<float>();
+        g_pipeline->SetTempoAndPitch(nodeId, speed, pitch);
+    }
 }
 
 void AudioSuiteEngineSetPureVoiceChangeOptionFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    if (g_pipeline == nullptr) {
+        return;
+    }
+    uint32_t nodeId = GetRandomNodeId();
     AudioSuite::AudioPureVoiceChangeOption option;
     option.optionGender = GetData<AudioSuite::AudioPureVoiceChangeGenderOption>();
     option.optionType = GetData<AudioSuite::AudioPureVoiceChangeType>();
     option.pitch = GetData<float>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetPureVoiceChangeOption(nodeId, option);
+    g_pipeline->SetPureVoiceChangeOption(nodeId, option);
 }
 
 void AudioSuiteEngineSetGeneralVoiceChangeTypeFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::AudioGeneralVoiceChangeType changeType = GetData<AudioSuite::AudioGeneralVoiceChangeType>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetGeneralVoiceChangeType(nodeId, changeType);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::AudioGeneralVoiceChangeType changeType = GetData<AudioSuite::AudioGeneralVoiceChangeType>();
+        g_pipeline->SetGeneralVoiceChangeType(nodeId, changeType);
+    }
 }
 
 void AudioSuiteManagerGetEqFrequencyBandGainsModeFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::AudioEqualizerFrequencyBandGains gains;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetEqualizerFrequencyBandGains(nodeId, gains);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::AudioEqualizerFrequencyBandGains gains;
+        g_pipeline->GetEqualizerFrequencyBandGains(nodeId, gains);
+    }
 }
 
 void AudioSuiteManagerGetSoundFieldTypeFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::SoundFieldType soundFieldType;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSoundFieldType(nodeId, soundFieldType);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::SoundFieldType soundFieldType;
+        g_pipeline->GetSoundFieldType(nodeId, soundFieldType);
+    }
 }
 
 void AudioSuiteManagerGetEnvironmentTypeFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::EnvironmentType environmentType;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetEnvironmentType(nodeId, environmentType);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::EnvironmentType environmentType;
+        g_pipeline->GetEnvironmentType(nodeId, environmentType);
+    }
 }
 
 void AudioSuiteManagerGetVoiceBeautifierTypeFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::VoiceBeautifierType voiceBeautifierType;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetVoiceBeautifierType(nodeId, voiceBeautifierType);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::VoiceBeautifierType voiceBeautifierType;
+        g_pipeline->GetVoiceBeautifierType(nodeId, voiceBeautifierType);
+    }
 }
 
 void AudioSuiteEngineGetTempoAndPitchFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    float speed;
-    float pitch;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetTempoAndPitch(nodeId, speed, pitch);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        float speed;
+        float pitch;
+        g_pipeline->GetTempoAndPitch(nodeId, speed, pitch);
+    }
 }
 
 void AudioSuiteEngineGetPureVoiceChangeOptionFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::AudioPureVoiceChangeOption option;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetPureVoiceChangeOption(nodeId, option);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::AudioPureVoiceChangeOption option;
+        g_pipeline->GetPureVoiceChangeOption(nodeId, option);
+    }
 }
 
 void AudioSuiteEngineGetGeneralVoiceChangeTypeFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::AudioGeneralVoiceChangeType changeType;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetGeneralVoiceChangeType(nodeId, changeType);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::AudioGeneralVoiceChangeType changeType;
+        g_pipeline->GetGeneralVoiceChangeType(nodeId, changeType);
+    }
 }
 
 void AudioSuiteRenderFrameFuzzTest()
 {
-    uint32_t pipelineId = GetData<uint32_t>() % MAX_PIPELINE_NUM;
+    if (g_pipeline == nullptr) {
+        return;
+    }
     uint8_t audioData[MAX_FRAME_SIZE] = {0};
     uint32_t frameSize = GetData<uint32_t>() % MAX_FRAME_SIZE;
     for (uint32_t i = 0; i < frameSize; i++) {
@@ -307,77 +395,90 @@ void AudioSuiteRenderFrameFuzzTest()
     }
     int32_t writeLen = GetData<int32_t>();
     bool finishedFlag = GetData<bool>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().RenderFrame(pipelineId, audioData,
-        frameSize, &writeLen, &finishedFlag);
+    g_pipeline->RenderFrame(audioData, frameSize, &writeLen, &finishedFlag);
 }
 
 void AudioSuiteMultiRenderFrameFuzzTest()
 {
-    uint32_t pipelineId = GetData<uint32_t>() % MAX_PIPELINE_NUM;
-    AudioSuite::AudioDataArray audioDataArray;
+    if (g_pipeline == nullptr) {
+        return;
+    }
     uint8_t audioData[MAX_FRAME_SIZE] = {0};
-    audioDataArray.arraySize = GetData<int32_t>() % MAX_FRAME_SIZE;
-    for (int i = 0; i < audioDataArray.arraySize; i++) {
+    int32_t arraySize = GetData<int32_t>() % MAX_FRAME_SIZE;
+    for (int i = 0; i < arraySize; i++) {
         audioData[i] = GetData<uint8_t>();
     }
-    audioDataArray.audioDataArray = (void**)&audioData;
-    audioDataArray.requestFrameSize = GetData<int32_t>();
+    uint8_t *audioDataPtr = audioData;
+    int32_t requestFrameSize = GetData<int32_t>();
     int32_t responseSize = GetData<int32_t>();
     bool finishedFlag = GetData<bool>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().MultiRenderFrame(pipelineId, &audioDataArray,
-        &responseSize, &finishedFlag);
+    g_pipeline->MultiRenderFrame(&audioDataPtr, arraySize, requestFrameSize, &responseSize, &finishedFlag);
 }
 
 void AudioSuiteManagerSetSpaceRenderPositionParamsFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::AudioSpaceRenderPositionParams spaceRenderPosition;
-    spaceRenderPosition.x = GetData<float>();
-    spaceRenderPosition.y = GetData<float>();
-    spaceRenderPosition.z = GetData<float>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderPositionParams(nodeId, spaceRenderPosition);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::AudioSpaceRenderPositionParams spaceRenderPosition;
+        spaceRenderPosition.x = GetData<float>();
+        spaceRenderPosition.y = GetData<float>();
+        spaceRenderPosition.z = GetData<float>();
+        g_pipeline->SetSpaceRenderPositionParams(nodeId, spaceRenderPosition);
+    }
 }
- 
+
 void AudioSuiteManagerGetSpaceRenderPositionParamsFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::AudioSpaceRenderPositionParams spaceRenderPosition;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderPositionParams(nodeId, spaceRenderPosition);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::AudioSpaceRenderPositionParams spaceRenderPosition;
+        g_pipeline->GetSpaceRenderPositionParams(nodeId, spaceRenderPosition);
+    }
 }
- 
+
 void AudioSuiteManagerSetSpaceRenderRotationParamsFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    if (g_pipeline == nullptr) {
+        return;
+    }
+    uint32_t nodeId = GetRandomNodeId();
     AudioSuite::AudioSpaceRenderRotationParams spaceRenderRotation;
     spaceRenderRotation.x = GetData<float>();
     spaceRenderRotation.y = GetData<float>();
     spaceRenderRotation.z = GetData<float>();
     spaceRenderRotation.surroundTime = GetData<int32_t>();
     spaceRenderRotation.surroundDirection = GetData<AudioSuite::AudioSurroundDirection>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderRotationParams(nodeId, spaceRenderRotation);
+    g_pipeline->SetSpaceRenderRotationParams(nodeId, spaceRenderRotation);
 }
- 
+
 void AudioSuiteManagerGetSpaceRenderRotationParamsFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::AudioSpaceRenderRotationParams spaceRenderRotation;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderRotationParams(nodeId, spaceRenderRotation);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::AudioSpaceRenderRotationParams spaceRenderRotation;
+        g_pipeline->GetSpaceRenderRotationParams(nodeId, spaceRenderRotation);
+    }
 }
- 
+
 void AudioSuiteManagerSetSpaceRenderExtensionParamsFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    if (g_pipeline == nullptr) {
+        return;
+    }
+    uint32_t nodeId = GetRandomNodeId();
     AudioSuite::AudioSpaceRenderExtensionParams spaceRenderExtension;
     spaceRenderExtension.extRadius = GetData<float>();
     spaceRenderExtension.extAngle = GetData<int32_t>();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderExtensionParams(nodeId, spaceRenderExtension);
+    g_pipeline->SetSpaceRenderExtensionParams(nodeId, spaceRenderExtension);
 }
- 
+
 void AudioSuiteManagerGetSpaceRenderExtensionParamsFuzzTest()
 {
-    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::AudioSpaceRenderExtensionParams spaceRenderExtension;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderExtensionParams(nodeId, spaceRenderExtension);
+    if (g_pipeline != nullptr) {
+        uint32_t nodeId = GetRandomNodeId();
+        AudioSuite::AudioSpaceRenderExtensionParams spaceRenderExtension;
+        g_pipeline->GetSpaceRenderExtensionParams(nodeId, spaceRenderExtension);
+    }
 }
 
 void AudioSuiteManagerRegisterDownloadCallbackFuzzTest()
@@ -412,7 +513,7 @@ void AudioSuiteManagerStartDownloadFuzzTest()
     } else {
         featureName[nameLen] = '\0';
     }
-    g_downloadManager->StartDownload(std::string(featureName));
+    g_downloadManager->StartDownload(std::vector<std::string>{std::string(featureName)}, true);
 }
 
 void AudioSuiteManagerCancelDownloadFuzzTest()
@@ -435,7 +536,7 @@ void AudioSuiteManagerCancelDownloadFuzzTest()
     } else {
         featureName[nameLen] = '\0';
     }
-    g_downloadManager->CancelDownload(std::string(featureName));
+    g_downloadManager->CancelDownload(std::vector<std::string>{std::string(featureName)});
 }
 
 void AudioSuiteManagerStartBackgroundDownloadFuzzTest()
@@ -458,7 +559,7 @@ void AudioSuiteManagerStartBackgroundDownloadFuzzTest()
     } else {
         featureName[nameLen] = '\0';
     }
-    g_downloadManager->StartBackgroundDownload(std::string(featureName));
+    g_downloadManager->StartBackgroundDownload(std::vector<std::string>{std::string(featureName)});
 }
 
 void AudioSuiteManagerGetDownloadStatusFuzzTest()
@@ -481,8 +582,32 @@ void AudioSuiteManagerGetDownloadStatusFuzzTest()
     } else {
         featureName[nameLen] = '\0';
     }
-    AudioSuite::AudioSuiteDownloadStatusInfo status;
-    g_downloadManager->GetDownloadStatus(std::string(featureName), status);
+    std::vector<AudioSuite::AudioSuiteDownloadStatusInfo> status;
+    g_downloadManager->GetDownloadStatus(std::vector<std::string>{std::string(featureName)}, status);
+}
+
+void AudioSuiteManagerGetFeatureNewVersionFuzzTest()
+{
+    if (!g_downloadManagerInited) {
+        g_downloadManager = &AudioSuite::AudioSuiteDownloadManager::GetInstance();
+        g_downloadManagerInited = true;
+    }
+    if (g_downloadManager == nullptr) {
+        return;
+    }
+    char featureName[MAX_FEATURE_NAME_SIZE] = {0};
+    uint32_t nameLen = GetData<uint32_t>() % MAX_FEATURE_NAME_SIZE;
+    for (uint32_t i = 0; i < nameLen; i++) {
+        featureName[i] = GetData<uint8_t>();
+    }
+    if (nameLen == 0) {
+        featureName[0] = 'v';
+        featureName[1] = '\0';
+    } else {
+        featureName[nameLen] = '\0';
+    }
+    std::vector<AudioSuite::AudioSuiteCloudRomVersionInfo> versionInfos;
+    g_downloadManager->GetFeatureNewVersion(std::vector<std::string>{std::string(featureName)}, versionInfos);
 }
 
 void AudioSuiteManagerUninstallCloudRomFuzzTest()
@@ -505,7 +630,7 @@ void AudioSuiteManagerUninstallCloudRomFuzzTest()
     } else {
         featureName[nameLen] = '\0';
     }
-    g_downloadManager->UninstallCloudRom(std::string(featureName));
+    g_downloadManager->UninstallCloudRom(std::vector<std::string>{std::string(featureName)});
 }
 
 void AudioSuiteManagerUnregisterDownloadCallbackFuzzTest()
@@ -521,21 +646,16 @@ void AudioSuiteManagerUnregisterDownloadCallbackFuzzTest()
 }
 
 vector g_testFuncs = {
-    AudioSuiteManagerInitFuzzTest,
-    AudioSuiteManagerDeInitFuzzTest,
     AudioSuiteManagerCreatePipelineFuzzTest,
-    AudioSuiteManagerDestroyPipelineFuzzTest,
     AudioSuiteManagerStartPipelineFuzzTest,
     AudioSuiteManagerStopPipelineFuzzTest,
     AudioSuiteManagerGetPipelineStateFuzzTest,
-    AudioSuiteManagerCreateNodeFuzzTest,
-    AudioSuiteManagerDestroyNodeFuzzTest,
     AudioSuiteManagerBypassEffectNodeFuzzTest,
     AudioSuiteManagerGetNodeBypassStatusFuzzTest,
     AudioSuiteManagerSetAudioFormatFuzzTest,
     AudioSuiteManagerSetRequestDataCallbackFuzzTest,
     AudioSuiteManagerConnectNodesFuzzTest,
-    AudioSuiteManagerDisConnectNodesFuzzTest,
+    AudioSuiteManagerDisconnectNodesFuzzTest,
     AudioSuiteManagerSetEqFrequencyBandGainsModeFuzzTest,
     AudioSuiteManagerSetSoundFieldTypeFuzzTest,
     AudioSuiteManagerSetEnvironmentTypeFuzzTest,
@@ -563,6 +683,7 @@ vector g_testFuncs = {
     AudioSuiteManagerCancelDownloadFuzzTest,
     AudioSuiteManagerStartBackgroundDownloadFuzzTest,
     AudioSuiteManagerGetDownloadStatusFuzzTest,
+    AudioSuiteManagerGetFeatureNewVersionFuzzTest,
     AudioSuiteManagerUninstallCloudRomFuzzTest,
     AudioSuiteManagerUnregisterDownloadCallbackFuzzTest,
 };
@@ -577,6 +698,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return 0;
     }
 
+    OHOS::AudioStandard::EnsureFuzzSetup();
     OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
     return 0;
 }

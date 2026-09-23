@@ -1020,6 +1020,7 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionBehavior(const uint3
 
 void OHAudioSessionCallback::OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent)
 {
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the function is nullptr");
     OH_AudioSession_DeactivatedEvent event = {};
     event.reason = static_cast<OH_AudioSession_DeactivatedReason>(deactiveEvent.deactiveReason);
     callback_(event);

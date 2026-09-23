@@ -1242,6 +1242,14 @@ bool CapturerInClientInner::WaitForRunning()
     return true;
 }
 
+void CapturerInClientInner::CheckRefreshCbBuffer()
+{
+    CHECK_AND_RETURN(isNeedRefreshCbBuffer_);
+    uint64_t bufferDurationInUs = spanSizeInFrame_ * AUDIO_US_PER_S / streamParams_.samplingRate;
+    InitCallbackBuffer(bufferDurationInUs);
+    isNeedRefreshCbBuffer_ = false;
+}
+
 bool CapturerInClientInner::ReadCallbackFunc()
 {
     if (cbThreadReleased_) {
@@ -1252,6 +1260,7 @@ bool CapturerInClientInner::ReadCallbackFunc()
         return true;
     }
     SyncCapturerAttrFromSpan();
+    CheckRefreshCbBuffer();
 
     // If client didn't call GetBufferDesc/Enqueue in OnReadData, pop will block here.
     BufferDesc temp = cbBufferQueue_.Pop();
@@ -2564,9 +2573,8 @@ void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrIn
         capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
         NotifyFastStatusChange(FASTSTATUS_FAST);
     }
-    InitCacheBuffer(attr.engineSize);
-    uint64_t bufferDurationInUs = spanSizeInFrame_ * AUDIO_US_PER_S / streamParams_.samplingRate;
-    InitCallbackBuffer(bufferDurationInUs);
+    InitCacheBuffer(clientSpanSizeInByte_);
+    isNeedRefreshCbBuffer_ = true;
     clientBuffer_->UpdateSpanBasicInfo(spanSizeInFrame_, cacheSizeInByte_, sizePerFrameInByte_);
     AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}zu "
         "capturerFlags:0x%{public}x",

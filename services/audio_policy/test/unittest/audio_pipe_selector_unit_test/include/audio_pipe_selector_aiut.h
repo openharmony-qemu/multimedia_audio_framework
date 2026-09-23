@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+﻿/*
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,22 @@
  * limitations under the License.
  */
 
-#ifndef IAUDIO_SUITE_MANAGER_THREAD_H
-#define IAUDIO_SUITE_MANAGER_THREAD_H
+#ifndef AUDIO_PIPE_SELECTOR_AIUT_H
+#define AUDIO_PIPE_SELECTOR_AIUT_H
+
+#include "gtest/gtest.h"
+#include "audio_pipe_selector.h"
 
 namespace OHOS {
 namespace AudioStandard {
-namespace AudioSuite {
 
-class IAudioSuiteManagerThread {
+class AudioPipeSelectorAiut : public testing::Test {
 public:
-    virtual ~IAudioSuiteManagerThread() = default;
-
-    virtual bool IsRunning() = 0;
-    virtual bool IsMsgProcessing() = 0;
-    virtual void HandleMsg() = 0;
+    // GTest fixture methods (SetUpTestCase/TearDownTestCase/SetUp/TearDown)
+    // are inherited from testing::Test; derived classes override as needed.
 };
 
-}  // namespace AudioSuite
-}  // namespace AudioStandard
-}  // namespace OHOS
-#endif  // IAUDIO_SUITE_MANAGER_THREAD_H
+} // namespace AudioStandard
+} // namespace OHOS
+
+#endif // AUDIO_PIPE_SELECTOR_AIUT_H

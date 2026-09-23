@@ -41,6 +41,8 @@ AudioSuiteEnvNode::~AudioSuiteEnvNode()
 
 int32_t AudioSuiteEnvNode::Init()
 {
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
     if (isInit_) {
         AUDIO_ERR_LOG("AudioSuiteEnvNode::Init failed, already inited");
         return ERROR;
@@ -62,7 +64,6 @@ int32_t AudioSuiteEnvNode::Init()
         static_cast<AudioSampleFormat>(nodeParameter_.outFormat),
         static_cast<AudioSamplingRate>(nodeParameter_.outSampleRate)});
     
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     nodeNeedDataDuration_ =
         static_cast<uint64_t>(nodeParameter_.frameLen) * MILLISECONDS_TO_MICROSECONDS / nodeParameter_.inSampleRate;
 

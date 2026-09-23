@@ -56,7 +56,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t uid = 0);
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID);
 
     /**
      * @brief Set the stream volume.
@@ -79,6 +79,15 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     int32_t SetSystemAppVolumePercentageForUid(const int32_t appUid, const int32_t volumePercentage);
+
+    /**
+     * @brief Confirm volume adjustment and suppress notifications for the configured duration on success.
+     *
+     * @param volumeType The audio volume type reported by the prompt.
+     * @param confirmResult True to accept the adjustment; false to leave the state unchanged.
+     * @return Returns {@link SUCCESS} on success; returns an error code otherwise.
+     */
+    int32_t ConfirmVolumeLimitExceeded(AudioVolumeType volumeType, bool confirmResult);
 
     /**
      * @brief Set self app volume.
@@ -197,6 +206,26 @@ public:
      */
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
 
+    /**
+     * @brief Set the mute whitelist for application volume.
+     * Applications not in the whitelist will be muted.
+     * Note that: This interface only allows one UID call at the same time.
+     * @param uids The uid array of whitelist applications.The max size is 100.
+     * @return Returns {@link SUCCESS} if the settings is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26.0.0 dynamic
+     */
+    int32_t SetUnmuteWhitelist(const std::vector<int32_t> &uids);
+
+    /**
+     * @brief Clear the mute whitelist for application volume.
+     * All applications will be unmuted after clearing.
+     * @return Returns {@link SUCCESS} if the settings is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26.0.0 dynamic
+     */
+    int32_t ClearUnmuteWhitelist();
+
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
 
     /**
@@ -236,7 +265,7 @@ public:
      * @return Returns current stream volume.
      * @since 8
      */
-    int32_t GetVolume(AudioVolumeType volumeType, int32_t uid = 0) const;
+    int32_t GetVolume(AudioVolumeType volumeType, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID) const;
 
     /**
      * @brief Set volume discount factor.
@@ -784,6 +813,12 @@ public:
     int32_t UnregisterVolumeDegreeCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
 
+    int32_t RegisterVolumeLimitExceededCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeLimitExceededCallback> &callback);
+
+    int32_t UnregisterVolumeLimitExceededCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeLimitExceededCallback> &callback = nullptr);
+
     /**
      * @brief registers the systemVolumeChange callback listener
      *
@@ -948,6 +983,25 @@ public:
      * @since 18
      */
     int32_t ActivatePreemptMode() const;
+
+    /**
+     * @brief Set duck passthrough mode. When enabled, DUCK is treated as concurrent mix.
+     *
+     * @param enable True to enable duck passthrough mode, false to disable.
+     * @return Returns {@link SUCCESS} if successful; returns an error code otherwise.
+     * @since 26.0.0
+     */
+    int32_t SetDuckPassthroughMode(bool enable) const;
+
+    /**
+     * @brief Set the duck factor used when sending DUCK interrupt callbacks.
+     *
+     * @param duckFactor The duck volume factor percentage, range [0, 100].
+     * @return Returns {@link SUCCESS} if successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 26.0.0
+     */
+    int32_t SetDuckFactor(int32_t duckFactor) const;
 
     /**
      * @brief registers the Interrupt callback listener
@@ -1134,6 +1188,15 @@ public:
      * @return Returns success or not
      */
     int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+
+    /**
+     * @brief Disable volume limit when voice call flag. When the flag is true, DepressVolume is skipped.
+     *
+     * @param disableVolumeLimit True to skip volume depression, false to restore.
+     * @return Returns {@link SUCCESS} if successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     */
+    int32_t DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit);
 
     /**
      * @brief Registers the availbale deviceChange callback listener.
@@ -1580,7 +1643,8 @@ public:
      * @return Returns {@link SUCCESS} if the operation is successfully.
      * @since 21
      */
-    int32_t SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid = 0);
+    int32_t SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid = 0,
+        int32_t zoneId = INVALID_ZONEID);
 
     /**
      * @brief get stream volume degree.
@@ -1589,7 +1653,7 @@ public:
      * @return Returns the volume degree for the specified Audio stream type.
      * @since 21
      */
-    int32_t GetVolumeDegree(AudioVolumeType volumeType, int32_t uid = 0);
+    int32_t GetVolumeDegree(AudioVolumeType volumeType, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID);
 
     /**
      * @brief get stream min volume degree.

@@ -1314,6 +1314,7 @@ std::string AudioCoreService::GetModuleNameBySessionId(uint32_t sessionId)
 uint32_t AudioCoreService::QueryPipeIdBySessionId(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is null");
     return pipeManager_->QueryPipeIdBySessionId(sessionId);
 }
 
@@ -1476,6 +1477,24 @@ void AudioCoreService::UnmuteDualStreamAfterAlarm(const std::shared_ptr<AudioStr
         audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
     }
     streamsWhenRingDualOnPrimarySpeaker_.clear();
+}
+
+void AudioCoreService::ClearRingerFlags(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
+    CHECK_AND_RETURN(Util::IsRingerOrAlarmerStreamUsage(streamUsage));
+
+    CHECK_AND_RETURN_LOG(!pipeManager_->HasRingerOrAlarmStreamRunning(),
+        "other ringer or alarm stream still running, no need to clear flags");
+
+    if (!audioVolumeManager_.IsRingerModeMute()) {
+        AUDIO_INFO_LOG("reset ringer mode mute, stream usage:%{public}d", streamUsage);
+        audioVolumeManager_.ResetRingerModeMute();
+    }
+
+    AUDIO_INFO_LOG("disable primary speaker dual tone flag, no other ringer or alarm stream running");
+    isRingDualToneOnPrimarySpeaker_ = false;
 }
 
 bool AudioCoreService::IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId)
@@ -2076,7 +2095,7 @@ void AudioCoreService::HandleRingerOrAlarmerRoute(std::shared_ptr<AudioStreamDes
     InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage)
 {
     if (!streamDesc->newDeviceDescs_.front()->isSupportWearDetectionEnable_ ||
-        streamUsage == STREAM_USAGE_ALARM) {
+        (streamUsage == STREAM_USAGE_ALARM && !audioSceneManager_.IsRingScene())) {
         UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, pipeId);
         return;
     }
@@ -3530,7 +3549,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     const AudioRouterCenter::OutputDeviceMap &outResult)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
-    streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
+    pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_.load()) {
@@ -3567,7 +3586,7 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", streamDesc->GetSessionId());
-    streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
+    pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
 
     FetchDeviceInfo info = { streamDesc->GetRenderUsage(), GetRealUid(streamDesc),
         streamDesc->GetRenderPrivacyType(), caller, streamDesc->bundleName_ };
@@ -3876,8 +3895,7 @@ bool AudioCoreService::HasRunningScoNormalCapturerStream(
     for (const auto &desc : inputStreamDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
         if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
-            (desc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_RECOGNITION &&
-            desc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
+            !Util::IsScoSupportSource(desc->capturerInfo_.sourceType) &&
             (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
             desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
             AUDIO_INFO_LOG("Running Normal Capturer stream : %{public}d", desc->sessionId_);
@@ -3893,8 +3911,7 @@ bool AudioCoreService::HasRunningScoRecognitionCapturerStream(
     for (const auto &desc : inputStreamDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
         if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
-            (desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
-            desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
+            Util::IsScoSupportSource(desc->capturerInfo_.sourceType) &&
             (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
             desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
             desc->newDeviceDescs_[0]->isVrSupported_)) {

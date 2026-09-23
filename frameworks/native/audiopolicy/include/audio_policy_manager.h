@@ -39,6 +39,7 @@
 #include "audio_capturer_options.h"
 #include "boot_animation_state_info.h"
 #include "audio_separation_effect_enabled_change_callback.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -60,8 +61,10 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
-        int32_t volumeFlag = 0, int32_t uid = 0);
+    int32_t SetSystemVolumeLevelLegacy(AudioVolumeType volumeType, int32_t volumeLevel);
+
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel,
+        int32_t volumeFlag = 0, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID);
 
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
         int32_t volumeFlag = 0);
@@ -73,6 +76,10 @@ public:
 
     int32_t SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted);
 
+    int32_t SetUnmuteWhitelist(const std::vector<int32_t> &uids);
+
+    int32_t ClearUnmuteWhitelist();
+
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
 
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
@@ -81,13 +88,17 @@ public:
 
     int32_t SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage);
 
+    int32_t SetVolumeProtectionInfo(const VolumeProtectionConfig &config);
+    int32_t ClearVolumeProtection();
+    int32_t ConfirmVolumeLimitExceeded(AudioVolumeType volumeType, bool confirmResult);
+
     int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0);
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid);
 
     bool ReloadLoudVolumeMode(AudioStreamType streamType, SetLoudVolMode setVolMode);
 
-    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
+    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID);
 
     int32_t GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage);
 
@@ -257,6 +268,10 @@ public:
         bool isRemoveFocusHis = false);
 
     int32_t ActivatePreemptMode(void);
+
+    int32_t SetDuckPassthroughMode(bool enable);
+
+    int32_t SetDuckFactor(int32_t duckFactor);
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
@@ -475,6 +490,8 @@ public:
 
     int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus);
 
+    int32_t DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit);
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
     std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDevice();
@@ -629,6 +646,10 @@ public:
     int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
 
     int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
+
+    int32_t ExcludeUidForExtZone(int32_t uid);
+
+    int32_t UnexcludeUidForExtZone(int32_t uid);
 
     void SetZoneDeviceVisible(bool visible);
 
@@ -819,9 +840,12 @@ public:
     int32_t SetVolumeDegreeCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
     int32_t UnsetVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t SetVolumeLimitExceededCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeLimitExceededCallback> &callback);
+    int32_t UnsetVolumeLimitExceededCallback(const std::shared_ptr<VolumeLimitExceededCallback> &callback);
     int32_t SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
-        int32_t volumeFlag, int32_t uid);
-    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
+        int32_t volumeFlag, int32_t uid, int32_t zoneId = INVALID_ZONEID);
+    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid, int32_t zoneId = INVALID_ZONEID);
     int32_t GetSystemVolumeDegreeWithDevice(AudioVolumeType volumeType, DeviceType deviceType,
         std::string networkId = LOCAL_NETWORK_ID);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
@@ -863,6 +887,7 @@ private:
     int32_t RemoveAllSystemVolumeChangeCallbackInfo();
     int32_t CheckAudioPolicyClientRegisted();
     void RecoverSystemVolumeChangeByFilterCallback(const sptr<IAudioPolicy> &gsp);
+    void NotifyAudioSeparationEffectDisabledForServerDied();
 
     std::mutex listenerStubMutex_;
     std::mutex registerCallbackMutex_;

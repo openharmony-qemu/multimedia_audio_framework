@@ -106,12 +106,17 @@ public:
 
     int32_t SetSystemVolumeLevelLegacy(int32_t streamTypeIn, int32_t volumeLevel) override;
 
-    int32_t SetSystemVolumeLevel(int32_t volumeType, int32_t volumeLevel, int32_t volumeFlag, int32_t uid) override;
+    int32_t SetSystemVolumeLevel(int32_t volumeType, int32_t volumeLevel, int32_t volumeFlag,
+        int32_t uid, int32_t zoneId = INVALID_ZONEID) override;
 
     int32_t SetSystemVolumeLevelWithDevice(int32_t volumeType, int32_t volumeLevel, int32_t deviceType,
         int32_t volumeFlag = 0) override;
 
     int32_t SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage) override;
+
+    int32_t SetVolumeProtectionInfo(const VolumeProtectionConfig &config) override;
+    int32_t ClearVolumeProtection() override;
+    int32_t ConfirmVolumeLimitExceeded(int32_t volumeType, bool confirmResult) override;
 
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) override;
 
@@ -123,6 +128,11 @@ public:
     int32_t SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted,
         const sptr<IRemoteObject> &callerObj) override;
 
+    int32_t SetUnmuteWhitelist(const std::vector<int32_t> &uids,
+        const sptr<IRemoteObject> &callerObj) override;
+
+    int32_t ClearUnmuteWhitelist() override;
+
     int32_t SetAppRingMuted(int32_t appUid, bool muted) override;
 
     int32_t SetAdjustVolumeForZone(int32_t zoneId) override;
@@ -131,7 +141,8 @@ public:
 
     int32_t GetSystemActiveVolumeType(int32_t clientUid, int32_t &streamType) override;
 
-    int32_t GetSystemVolumeLevel(int32_t streamType, int32_t uid, int32_t &volumeLevel) override;
+    int32_t GetSystemVolumeLevel(int32_t streamType, int32_t uid, int32_t &volumeLevel,
+        int32_t zoneId = INVALID_ZONEID) override;
 
     int32_t GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage) override;
 
@@ -319,6 +330,10 @@ public:
 
     int32_t ActivatePreemptMode(void) override;
 
+    int32_t SetDuckPassthroughMode(bool enable) override;
+
+    int32_t SetDuckFactor(int32_t duckFactor) override;
+
     int32_t SetAudioManagerInterruptCallback(int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioManagerInterruptCallback(int32_t clientId) override;
@@ -377,6 +392,12 @@ public:
     void RegisterVoipMuteDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj);
 
     void OnVoipMuteCallerDied(int32_t callerUid);
+
+    int32_t RegisterUnmuteWhitelistDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj);
+
+    void OnUnmuteWhitelistCallerDied(int32_t callerUid);
+
+    int32_t RemoveUnmuteWhitelistDeathRecipient(int32_t callerUid);
 
     int32_t ResumeStreamState();
 
@@ -474,6 +495,8 @@ public:
         int32_t volume, bool updateUi) override;
 
     int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus) override;
+
+    int32_t DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit) override;
 
     int32_t GetAvailableDevices(int32_t usage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) override;
@@ -593,6 +616,10 @@ public:
     int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
     int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
+
+    int32_t ExcludeUidForExtZone(int32_t uid) override;
+
+    int32_t UnexcludeUidForExtZone(int32_t uid) override;
 
     int32_t SetZoneDeviceVisible(bool visible) override;
 
@@ -810,8 +837,10 @@ public:
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
     int32_t CallRingtoneLibrary();
     int32_t ReloadLoudVolumeMode(const int32_t streamInFocus, const int32_t setVolMode, bool &ret) override;
-    int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
-    int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
+    int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid,
+        int32_t zoneId = INVALID_ZONEID) override;
+    int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree,
+        int32_t zoneId = INVALID_ZONEID) override;
     int32_t GetSystemVolumeDegreeWithDevice(int32_t streamType, int32_t deviceType,
         const std::string &networkId, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
@@ -938,6 +967,8 @@ private:
     void SubscribeBackgroundTask();
     void SendMonitortEvent(const int32_t keyType, int32_t resultOfVolumeKey);
     void RegisterDefaultVolumeTypeListener();
+    void RegisterAccessibilityDuckFactorListener();
+    void RegisterPCModeListener();
     int32_t SetVolumeInternalByKeyEvent(AudioStreamType streamInFocus, int32_t zoneId, const int32_t keyType);
 
     void InitPolicyDumpMap();
@@ -1030,6 +1061,8 @@ private:
     std::mutex clientDiedListenerStateMutex_;
     std::mutex voipMuteMutex_;
     std::unordered_map<int32_t, sptr<IRemoteObject::DeathRecipient>> voipMuteDeathRecipients_;
+    std::mutex unmuteWhitelistMutex_;
+    std::unordered_map<int32_t, sptr<IRemoteObject::DeathRecipient>> unmuteWhitelistDeathRecipients_;
     std::mutex subscribeVolumeKey_;
 
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
@@ -1126,10 +1159,10 @@ private:
     std::function<void(const EventFwk::CommonEventData&)> eventReceiver_;
 };
 
-class VoipMuteDeathRecipient : public IRemoteObject::DeathRecipient {
+class PolicyClientDeathRecipient : public IRemoteObject::DeathRecipient {
 public:
-    explicit VoipMuteDeathRecipient(std::function<void()> callback) : callback_(std::move(callback)) {}
-    ~VoipMuteDeathRecipient() = default;
+    explicit PolicyClientDeathRecipient(std::function<void()> callback) : callback_(std::move(callback)) {}
+    ~PolicyClientDeathRecipient() = default;
     void OnRemoteDied(const wptr<IRemoteObject> &remote) override
     {
         if (callback_) {

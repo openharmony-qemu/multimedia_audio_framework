@@ -29,6 +29,18 @@ namespace {
 
 float VolumeUtils::enforcedToneVolume_ = -1.0f;
 int32_t VolumeUtils::legacyVolumeNotificationLevel_ = -1;
+bool VolumeUtils::notificationFollowRingtone_ = false;
+
+void VolumeUtils::SetNotificationFollowRingtone(const bool notificationFollowRingtone)
+{
+    AUDIO_INFO_LOG("notificationFollowRingtone: %{public}d", notificationFollowRingtone);
+    notificationFollowRingtone_ = notificationFollowRingtone;
+}
+
+bool VolumeUtils::IsNotificationFollowRingtone()
+{
+    return notificationFollowRingtone_;
+}
 
 void VolumeUtils::InitEnforcedToneVolume()
 {

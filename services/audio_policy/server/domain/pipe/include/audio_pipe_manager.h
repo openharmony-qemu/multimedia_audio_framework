@@ -175,6 +175,7 @@ public:
     std::shared_ptr<AudioPipeInfo> FindPipeBySessionId(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId);
     bool IsStreamUsageActive(const StreamUsage &usage);
+    bool HasRingerOrAlarmStreamRunning();
     bool IsInterphoneStreamActive();
     bool IsInterphoneCapturerActive();
     bool IsVoipOrCellularStreamActive();
@@ -198,6 +199,8 @@ public:
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsBySourceType(SourceType sourceType);
     void UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
+    void UpdateOldDeviceDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDesc);
     StreamUsage GetLastestRunningCallStreamUsage();
     bool HasUltraFastPipe();
     bool IsUltraFastSupportedDevice(DeviceType deviceType);

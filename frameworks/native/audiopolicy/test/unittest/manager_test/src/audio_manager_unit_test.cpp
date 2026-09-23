@@ -2279,5 +2279,123 @@ HWTEST(AudioManagerUnitTest, GetMinVolumeDegree_001, TestSize.Level0)
     ret = manager->GetMinVolumeDegree(streamType3);
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+ * @tc.name  : Test SetDuckFactor API
+ * @tc.number: SetDuckFactor_001
+ * @tc.desc  : SetDuckFactor
+ * @tc.require:
+ */
+HWTEST(AudioManagerUnitTest, SetDuckFactor_001, TestSize.Level1)
+{
+    auto manager = AudioSystemManager::GetInstance();
+
+    int32_t duckFactor = 10;
+    int32_t ret = manager->SetDuckFactor(duckFactor);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetDuckFactor API
+ * @tc.number: SetDuckFactor_002
+ * @tc.desc  : SetDuckFactor
+ * @tc.require:
+ */
+HWTEST(AudioManagerUnitTest, SetDuckFactor_002, TestSize.Level1)
+{
+    auto manager = AudioSystemManager::GetInstance();
+
+    int32_t duckFactor = 50;
+    int32_t ret = manager->SetDuckFactor(duckFactor);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetDuckFactor API
+ * @tc.number: SetDuckFactor_003
+ * @tc.desc  : SetDuckFactor
+ * @tc.require:
+ */
+HWTEST(AudioManagerUnitTest, SetDuckFactor_003, TestSize.Level1)
+{
+    auto manager = AudioSystemManager::GetInstance();
+
+    int32_t duckFactor = 100;
+    int32_t ret = manager->SetDuckFactor(duckFactor);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetDuckFactor API
+ * @tc.number: SetDuckFactor_004
+ * @tc.desc  : SetDuckFactor
+ * @tc.require:
+ */
+HWTEST(AudioManagerUnitTest, SetDuckFactor_004, TestSize.Level1)
+{
+    auto manager = AudioSystemManager::GetInstance();
+
+    int32_t duckFactor = 0;
+    int32_t ret = manager->SetDuckFactor(duckFactor);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetDuckFactor API
+ * @tc.number: SetDuckFactor_005
+ * @tc.desc  : SetDuckFactor
+ * @tc.require:
+ */
+HWTEST(AudioManagerUnitTest, SetDuckFactor_005, TestSize.Level1)
+{
+    auto manager = AudioSystemManager::GetInstance();
+
+    int32_t duckFactor = -10;
+    int32_t ret = manager->SetDuckFactor(duckFactor);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+ * @tc.name  : Test SetDuckFactor API
+ * @tc.number: SetDuckFactor_006
+ * @tc.desc  : SetDuckFactor
+ * @tc.require:
+ */
+HWTEST(AudioManagerUnitTest, SetDuckFactor_006, TestSize.Level1)
+{
+    auto manager = AudioSystemManager::GetInstance();
+
+    int32_t duckFactor = 150;
+    int32_t ret = manager->SetDuckFactor(duckFactor);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+ * @tc.name  : Test DisableVolumeLimitWhenVoiceCall API
+ * @tc.number: DisableVolumeLimitWhenVoiceCall_001
+ * @tc.desc  : DisableVolumeLimitWhenVoiceCall
+ * @tc.require:
+ */
+HWTEST(AudioManagerUnitTest, DisableVolumeLimitWhenVoiceCall_001, TestSize.Level1)
+{
+    auto manager = AudioSystemManager::GetInstance();
+
+    int32_t ret = manager->DisableVolumeLimitWhenVoiceCall(true);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test DisableVolumeLimitWhenVoiceCall API
+ * @tc.number: DisableVolumeLimitWhenVoiceCall_002
+ * @tc.desc  : DisableVolumeLimitWhenVoiceCall
+ * @tc.require:
+ */
+HWTEST(AudioManagerUnitTest, DisableVolumeLimitWhenVoiceCall_002, TestSize.Level1)
+{
+    auto manager = AudioSystemManager::GetInstance();
+
+    int32_t ret = manager->DisableVolumeLimitWhenVoiceCall(false);
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

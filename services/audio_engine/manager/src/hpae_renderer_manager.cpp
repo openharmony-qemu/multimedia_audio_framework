@@ -982,7 +982,9 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
     auto request = [this, sceneType]() {
         AUDIO_INFO_LOG("mixerNode trigger callback, sceneType %{public}d", sceneType);
         if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
-            AudioEffectChainManager::GetInstance()->SetInitEffectBufferFlag(false);
+            if (sceneClusterMap_[sceneType]->GetRenderEffectNode() != nullptr) {
+                AudioEffectChainManager::GetInstance()->SetInitEffectBufferFlag(false);
+            }
             DisConnectOutputCluster(sceneType);
             // for collaboration
             DisConnectCoBufferFromOnDisConnectProcessCluster(sceneType);
@@ -1638,7 +1640,7 @@ void HpaeRendererManager::NotifyStreamChangeToSink(
     CHECK_AND_RETURN(outputCluster_ != nullptr);
     StreamUsage usage = STREAM_USAGE_UNKNOWN;
     if (sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end()) {
-        usage = AudioTypeUtils::GetStreamUsageByStreamType(sinkInputNodeMap_[sessionId]->GetStreamType());
+        usage = sinkInputNodeMap_[sessionId]->GetEffectStreamUsage();
     }
     outputCluster_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
 }

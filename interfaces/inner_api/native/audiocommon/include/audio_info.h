@@ -390,6 +390,7 @@ enum CallbackChange : int32_t {
     CALLBACK_ROUTE_SELECTOR,
     CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE,
     CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE,
+    CALLBACK_VOLUME_LIMIT_EXCEEDED,
     CALLBACK_MAX,
 };
 
@@ -477,10 +478,91 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_ROUTE_SELECTOR,
     CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE,
     CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE,
+    CALLBACK_VOLUME_LIMIT_EXCEEDED,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
     "check CALLBACK_ENUMS");
+
+constexpr uint32_t MAX_VOLUME_PROTECTION_RULES = 1000;
+
+class VolumeLimitExceedEvent : public Parcelable {
+public:
+    AudioVolumeType volumeType = STREAM_DEFAULT;
+    int32_t currentVolume = 0;
+    int32_t volumeThreshold = 0;
+    int32_t uid = -1;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(volumeType)) &&
+            parcel.WriteInt32(currentVolume) &&
+            parcel.WriteInt32(volumeThreshold) &&
+            parcel.WriteInt32(uid);
+    }
+
+    static VolumeLimitExceedEvent *Unmarshalling(Parcel &parcel)
+    {
+        auto event = new (std::nothrow) VolumeLimitExceedEvent();
+        if (event == nullptr) {
+            return nullptr;
+        }
+        event->volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
+        event->currentVolume = parcel.ReadInt32();
+        event->volumeThreshold = parcel.ReadInt32();
+        event->uid = parcel.ReadInt32();
+        return event;
+    }
+};
+
+class VolumeProtectionConfig : public Parcelable {
+public:
+    std::unordered_map<AudioVolumeType, int32_t> rules;
+    // Protection duration in seconds. For example, 24 hours is 86400 seconds.
+    int32_t timeDuration = 0;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        if (rules.size() > MAX_VOLUME_PROTECTION_RULES) {
+            return false;
+        }
+
+        if (!parcel.WriteUint32(static_cast<uint32_t>(rules.size()))) {
+            return false;
+        }
+        for (const auto &entry : rules) {
+            if (!parcel.WriteInt32(static_cast<int32_t>(entry.first)) || !parcel.WriteInt32(entry.second)) {
+                return false;
+            }
+        }
+        return parcel.WriteInt32(timeDuration);
+    }
+
+    static VolumeProtectionConfig *Unmarshalling(Parcel &parcel)
+    {
+        auto config = new (std::nothrow) VolumeProtectionConfig();
+        if (config == nullptr) {
+            return nullptr;
+        }
+
+        uint32_t ruleCount = parcel.ReadUint32();
+        if (ruleCount > MAX_VOLUME_PROTECTION_RULES) {
+            delete config;
+            return nullptr;
+        }
+        config->rules.reserve(ruleCount);
+        for (uint32_t i = 0; i < ruleCount; ++i) {
+            AudioVolumeType volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
+            int32_t volumeThreshold = parcel.ReadInt32();
+            if (!config->rules.emplace(volumeType, volumeThreshold).second) {
+                delete config;
+                return nullptr;
+            }
+        }
+        config->timeDuration = parcel.ReadInt32();
+        return config;
+    }
+};
 
 struct VolumeEvent : public Parcelable {
     AudioVolumeType volumeType;

@@ -44,6 +44,13 @@ struct StreamDefaultDeviceEntry {
     SelectDeviceType type = SelectDeviceType::INVALID_TYPE;
 };
 
+struct Selection {
+    int32_t uid{INVALID_UID};
+    SelectDeviceType type{SelectDeviceType::INVALID_TYPE};
+    int32_t deviceId{0};
+    uint32_t streamId{INVALID_STREAM_ID};
+};
+
 class AudioRouterInfra {
 public:
     static AudioRouterInfra& GetInstance()
@@ -110,6 +117,7 @@ public:
     int32_t GetHighestInputPriorityApp();
     int32_t GetHighestOutputPriorityApp();
     bool HasHighestPriorityRunningSourceType(const std::vector<SourceType>& sourceTypes);
+    std::vector<Selection> GetSelections(const std::set<SelectDeviceType> &types);
     std::vector<SourceType> GetAppRunningSourceTypes(int32_t uid);
     std::vector<StreamUsage> GetAppRunningStreamUsages(int32_t uid);
     SourceType GetStreamSourceType(int32_t uid, uint32_t streamId);

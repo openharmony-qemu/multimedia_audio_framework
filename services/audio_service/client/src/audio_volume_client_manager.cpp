@@ -41,10 +41,12 @@ AudioVolumeClientManager::~AudioVolumeClientManager()
         (void)UnregisterStreamVolumeChangeCallback(volumeChangeClientPid_);
         (void)UnregisterSystemVolumeChangeCallback(volumeChangeClientPid_);
         (void)UnregisterVolumeDegreeCallback(volumeChangeClientPid_);
+        (void)UnregisterVolumeLimitExceededCallback(volumeChangeClientPid_);
     }
 }
 
-int32_t AudioVolumeClientManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid)
+int32_t AudioVolumeClientManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid,
+    int32_t zoneId)
 {
     HILOG_COMM_INFO("[SetVolume]SetSystemVolume: volumeType[%{public}d], volumeLevel[%{public}d]",
         volumeType, volumeLevel);
@@ -88,7 +90,8 @@ int32_t AudioVolumeClientManager::SetVolume(AudioVolumeType volumeType, int32_t 
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    int32_t ret = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, uid == 0, 0, uid);
+    int32_t ret = uid == 0 ? AudioPolicyManager::GetInstance().SetSystemVolumeLevelLegacy(volumeType, volumeLevel) :
+        AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, 0, uid, zoneId);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             ERR_SET_VOLUME_FAILED, "SetVolume failed", true));
@@ -138,7 +141,7 @@ int32_t AudioVolumeClientManager::SetVolumeWithDevice(AudioVolumeType volumeType
     return AudioPolicyManager::GetInstance().SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType);
 }
 
-int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t uid) const
+int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t uid, int32_t zoneId) const
 {
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -176,7 +179,7 @@ int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t 
             return ERR_NOT_SUPPORTED;
     }
 
-    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType, uid);
+    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType, uid, zoneId);
 }
 
 int32_t AudioVolumeClientManager::SetLowPowerVolume(int32_t streamId, float volume) const
@@ -476,6 +479,20 @@ int32_t AudioVolumeClientManager::UnregisterVolumeDegreeCallback(const int32_t c
     return ret;
 }
 
+int32_t AudioVolumeClientManager::RegisterVolumeLimitExceededCallback(const int32_t clientPid,
+    const std::shared_ptr<VolumeLimitExceededCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    volumeChangeClientPid_ = clientPid;
+    return AudioPolicyManager::GetInstance().SetVolumeLimitExceededCallback(clientPid, callback);
+}
+
+int32_t AudioVolumeClientManager::UnregisterVolumeLimitExceededCallback(const int32_t clientPid,
+    const std::shared_ptr<VolumeLimitExceededCallback> &callback)
+{
+    return AudioPolicyManager::GetInstance().UnsetVolumeLimitExceededCallback(callback);
+}
+
 int32_t AudioVolumeClientManager::RegisterSystemVolumeChangeCallback(const int32_t clientPid,
     const std::shared_ptr<SystemVolumeChangeCallback> &callback)
 {
@@ -528,7 +545,8 @@ int32_t AudioVolumeClientManager::UnregisterSystemVolumeChangeByFilterCallback(c
     return ret;
 }
 
-int32_t AudioVolumeClientManager::SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid)
+int32_t AudioVolumeClientManager::SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid,
+    int32_t zoneId)
 {
     AUDIO_INFO_LOG("volumeType[%{public}d], volumeDegree[%{public}d]", volumeType, degree);
 
@@ -563,10 +581,10 @@ int32_t AudioVolumeClientManager::SetVolumeDegree(AudioVolumeType volumeType, in
             return ERR_NOT_SUPPORTED;
     }
 
-    return AudioPolicyManager::GetInstance().SetSystemVolumeDegree(volumeType, degree, 0, uid);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeDegree(volumeType, degree, 0, uid, zoneId);
 }
 
-int32_t AudioVolumeClientManager::GetVolumeDegree(AudioVolumeType volumeType, int32_t uid)
+int32_t AudioVolumeClientManager::GetVolumeDegree(AudioVolumeType volumeType, int32_t uid, int32_t zoneId)
 {
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -599,7 +617,7 @@ int32_t AudioVolumeClientManager::GetVolumeDegree(AudioVolumeType volumeType, in
             return ERR_NOT_SUPPORTED;
     }
 
-    return AudioPolicyManager::GetInstance().GetSystemVolumeDegree(volumeType, uid);
+    return AudioPolicyManager::GetInstance().GetSystemVolumeDegree(volumeType, uid, zoneId);
 }
 
 int32_t AudioVolumeClientManager::GetMinVolumeDegree(AudioVolumeType volumeType)
@@ -922,6 +940,29 @@ int32_t AudioVolumeClientManager::SetSystemAppVolumePercentageForUid(int32_t app
     return AudioPolicyManager::GetInstance().SetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
+int32_t AudioVolumeClientManager::SetVolumeProtectionInfo(const VolumeProtectionConfig &config)
+{
+    AUDIO_INFO_LOG("enter");
+    bool hasPermission = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioPolicyManager::GetInstance().SetVolumeProtectionInfo(config);
+}
+
+int32_t AudioVolumeClientManager::ClearVolumeProtection()
+{
+    AUDIO_INFO_LOG("enter");
+    bool hasPermission = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioPolicyManager::GetInstance().ClearVolumeProtection();
+}
+
+int32_t AudioVolumeClientManager::ConfirmVolumeLimitExceeded(AudioVolumeType volumeType, bool confirmResult)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    return AudioPolicyManager::GetInstance().ConfirmVolumeLimitExceeded(volumeType, confirmResult);
+}
+
 int32_t AudioVolumeClientManager::GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage) const
 {
     AUDIO_INFO_LOG("enter");
@@ -968,6 +1009,18 @@ int32_t AudioVolumeClientManager::SetAppRingMuted(int32_t appUid, bool muted)
     bool ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppRingMuted: No system permission");
     return AudioPolicyManager::GetInstance().SetAppRingMuted(appUid, muted);
+}
+
+int32_t AudioVolumeClientManager::SetUnmuteWhitelist(const std::vector<int32_t> &uids)
+{
+    AUDIO_INFO_LOG("SetUnmuteWhitelist, uids size:%{public}zu", uids.size());
+    return AudioPolicyManager::GetInstance().SetUnmuteWhitelist(uids);
+}
+
+int32_t AudioVolumeClientManager::ClearUnmuteWhitelist()
+{
+    AUDIO_INFO_LOG("ClearUnmuteWhitelist");
+    return AudioPolicyManager::GetInstance().ClearUnmuteWhitelist();
 }
 // LCOV_EXCL_STOP
 

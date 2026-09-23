@@ -39,7 +39,8 @@ AudioSuiteVoiceBeautifierNode::~AudioSuiteVoiceBeautifierNode()
 int32_t AudioSuiteVoiceBeautifierNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode Init begin");
-    
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
     if (!isOutputStreamInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
         isOutputStreamInit_ = true;
@@ -61,7 +62,6 @@ int32_t AudioSuiteVoiceBeautifierNode::Init()
         static_cast<AudioSampleFormat>(nodeParameter_.outFormat),
         static_cast<AudioSamplingRate>(nodeParameter_.outSampleRate)});
 
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     nodeNeedDataDuration_ =
         static_cast<uint64_t>(nodeParameter_.frameLen) * MILLISECONDS_TO_MICROSECONDS / nodeParameter_.inSampleRate;
     AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode Init end");

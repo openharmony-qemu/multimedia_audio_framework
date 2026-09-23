@@ -469,11 +469,95 @@ int32_t AudioVolumeManager::ClearVoipMuteByStreamId(int64_t streamId)
     return appVolumeManager_.ClearVoipMuteByStreamId(streamId);
 }
 
+int32_t AudioVolumeManager::SetUnmuteWhitelist(const std::vector<int32_t> &uids)
+{
+    return audioPolicyManager_.SetUnmuteWhitelist(uids);
+}
+
+int32_t AudioVolumeManager::ClearUnmuteWhitelist()
+{
+    return audioPolicyManager_.ClearUnmuteWhitelist();
+}
+
 int32_t AudioVolumeManager::SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage)
 {
     auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(appUid);
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_POINTER, "deviceDesc is nullptr");
     return appVolumeManager_.SetSystemAppVolumePercentage(appUid, volumePercentage, deviceDesc->deviceType_);
+}
+
+int32_t AudioVolumeManager::CheckVolumeProtectionConfig(const VolumeProtectionConfig &config) const
+{
+    const size_t ruleCount = config.rules.size();
+    CHECK_AND_RETURN_RET_LOG(ruleCount > 0 && ruleCount <= MAX_VOLUME_PROTECTION_RULES,
+        ERR_INVALID_PARAM, "invalid rule count");
+    CHECK_AND_RETURN_RET_LOG(config.timeDuration > 0, ERR_INVALID_PARAM, "invalid protection duration");
+
+    for (const auto &entry : config.rules) {
+        CHECK_AND_RETURN_RET_LOG(AudioVolumeUtils::GetInstance().IsVolumeTypeValid(
+            static_cast<AudioStreamType>(entry.first)),
+            ERR_INVALID_PARAM, "invalid volume type");
+        CHECK_AND_RETURN_RET_LOG(entry.second >= 0 && entry.second <= MAX_VOLUME_DEGREE,
+            ERR_INVALID_PARAM, "invalid volume threshold");
+    }
+    return SUCCESS;
+}
+
+int32_t AudioVolumeManager::SetVolumeProtectionInfo(const VolumeProtectionConfig &config)
+{
+    int32_t ret = CheckVolumeProtectionConfig(config);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    const int64_t bootTimeNs = ClockTime::GetBootNano();
+    CHECK_AND_RETURN_RET_LOG(bootTimeNs >= 0, ERR_OPERATION_FAILED, "get boot time failed");
+    std::lock_guard<std::mutex> lock(volumeProtectionMutex_);
+    volumeProtectionConfig_ = config;
+    volumeLimitExpiryTime_ = bootTimeNs / static_cast<int64_t>(AUDIO_NS_PER_SECOND);
+    AUDIO_INFO_LOG("volume protection configured: ruleCount=%{public}zu, duration=%{public}d, "
+        "volumeLimitExpiryTime=%{public}" PRId64, config.rules.size(), config.timeDuration,
+        volumeLimitExpiryTime_);
+    return SUCCESS;
+}
+
+int32_t AudioVolumeManager::ClearVolumeProtection()
+{
+    const int64_t bootTimeNs = ClockTime::GetBootNano();
+    CHECK_AND_RETURN_RET_LOG(bootTimeNs >= 0, ERR_OPERATION_FAILED, "get boot time failed");
+    std::lock_guard<std::mutex> lock(volumeProtectionMutex_);
+    volumeLimitExpiryTime_ = bootTimeNs / static_cast<int64_t>(AUDIO_NS_PER_SECOND);
+    return SUCCESS;
+}
+
+int32_t AudioVolumeManager::ConfirmVolumeLimitExceeded(AudioVolumeType volumeType, bool confirmResult)
+{
+    CHECK_AND_RETURN_RET_LOG(AudioVolumeUtils::GetInstance().IsVolumeTypeValid(
+        static_cast<AudioStreamType>(volumeType)), ERR_INVALID_PARAM, "invalid volume type");
+    CHECK_AND_RETURN_RET(confirmResult, SUCCESS);
+
+    const int64_t bootTimeNs = ClockTime::GetBootNano();
+    CHECK_AND_RETURN_RET_LOG(bootTimeNs >= 0, ERR_OPERATION_FAILED, "get boot time failed");
+    int32_t volumeThreshold = 0;
+    {
+        std::lock_guard<std::mutex> lock(volumeProtectionMutex_);
+        const auto rule = volumeProtectionConfig_.rules.find(volumeType);
+        CHECK_AND_RETURN_RET_LOG(volumeProtectionConfig_.timeDuration > 0 &&
+            rule != volumeProtectionConfig_.rules.end(),
+            ERR_OPERATION_FAILED, "volume protection is not configured for the volume type");
+        volumeThreshold = rule->second;
+        volumeLimitExpiryTime_ = bootTimeNs / static_cast<int64_t>(AUDIO_NS_PER_SECOND) +
+            volumeProtectionConfig_.timeDuration;
+        AUDIO_INFO_LOG("volumeType=%{public}d, volumeThreshold=%{public}d, volumeLimitExpiryTime=%{public}" PRId64,
+            volumeType, volumeThreshold, volumeLimitExpiryTime_);
+    }
+    return SetVolumeToProtectionThreshold(volumeType, volumeThreshold);
+}
+
+int32_t AudioVolumeManager::SetVolumeToProtectionThreshold(AudioVolumeType volumeType, int32_t volumeThreshold)
+{
+    const int32_t maxVolumeLevel = GetMaxVolumeLevel(volumeType);
+    CHECK_AND_RETURN_RET_LOG(maxVolumeLevel > 0, ERR_OPERATION_FAILED, "invalid maximum volume level");
+    const int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(volumeThreshold, maxVolumeLevel);
+    VolumeUpdateOption option { false, false, DEFAULT_ZONE_ID, volumeThreshold };
+    return SetSingleStreamVolume(static_cast<AudioStreamType>(volumeType), volumeLevel, option);
 }
 
 int32_t AudioVolumeManager::GetSystemAppVolumePercentage(int32_t appUid, int32_t &volumePercentage)
@@ -1508,6 +1592,12 @@ int32_t AudioVolumeManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
     return SUCCESS;
 }
 
+int32_t AudioVolumeManager::DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit)
+{
+    audioPolicyManager_.DisableVolumeLimitWhenVoiceCall(disableVolumeLimit);
+    return SUCCESS;
+}
+
 int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
     const DeviceType &deviceType, int32_t zoneId)
 {
@@ -2335,6 +2425,35 @@ int32_t AudioVolumeManager::SetSingleStreamVolume(AudioStreamType streamType, in
     return ret;
 }
 
+bool AudioVolumeManager::CheckVolumeLimitExceeded(AudioStreamType streamType, int32_t uid,
+    int32_t targetVolumeDegree, int32_t zoneId)
+{
+    CHECK_AND_RETURN_RET_LOG(targetVolumeDegree > GetSystemVolumeDegreeInterface(streamType, zoneId),
+        false, "target volume is not higher than current volume");
+    const int64_t bootTimeNs = ClockTime::GetBootNano();
+    const int64_t currentTime = bootTimeNs < 0 ? -1 : bootTimeNs / static_cast<int64_t>(AUDIO_NS_PER_SECOND);
+    const AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    VolumeLimitExceedEvent volumeLimitEvent;
+    {
+        std::lock_guard<std::mutex> lock(volumeProtectionMutex_);
+        const auto rule = volumeProtectionConfig_.rules.find(volumeType);
+        if (rule == volumeProtectionConfig_.rules.end() || targetVolumeDegree <= rule->second ||
+            (currentTime >= 0 && currentTime < volumeLimitExpiryTime_)) {
+            return false;
+        }
+
+        volumeLimitEvent.volumeType = volumeType;
+        volumeLimitEvent.currentVolume = targetVolumeDegree;
+        volumeLimitEvent.volumeThreshold = rule->second;
+        volumeLimitEvent.uid = uid;
+    }
+
+    if (audioPolicyServerHandler_ != nullptr) {
+        (void)audioPolicyServerHandler_->SendVolumeLimitExceededCallback(volumeLimitEvent);
+    }
+    return true;
+}
+
 bool AudioVolumeManager::CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType)
 {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
@@ -2365,11 +2484,30 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelWithOption(AudioStreamType strea
         AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
         return ERR_OPERATION_FAILED;
     }
+
+    if (VolumeUtils::IsNotificationFollowRingtone() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_NOTIFICATION) {
+        AUDIO_INFO_LOG("notificationFollowRingtone_ is true. Use ringtone instead of notification");
+        streamType = STREAM_RING;
+    }
+
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_NOTIFICATION &&
         audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL) {
         AUDIO_INFO_LOG("Cannot adjust the notification volume because of the SILENT or VIBRATE mode");
         return ERR_OPERATION_FAILED;
     }
+#ifdef MULTI_USER_ZONE
+    int32_t volumeDegree = info.volumeDegree >= 0 ? info.volumeDegree : VolumeUtils::VolumeLevelToDegree(
+        volumeLevel, GetMaxVolumeLevel(streamType, DEVICE_TYPE_NONE, zoneId));
+    CHECK_AND_RETURN_RET(!CheckVolumeLimitExceeded(streamType, IPCSkeleton::GetCallingUid(), volumeDegree, zoneId),
+        ERR_OPERATION_FAILED);
+#endif
+    return SetSystemVolumeLevelWithOptionInternal(streamType, volumeLevel, zoneId, info);
+}
+
+int32_t AudioVolumeManager::SetSystemVolumeLevelWithOptionInternal(AudioStreamType streamType, int32_t volumeLevel,
+    int32_t zoneId, const VolumeUpdateOption &info)
+{
     bool mute = GetStreamMuteInterface(streamType, zoneId);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT && !info.hasCheckLoudVolume) {
@@ -2390,6 +2528,16 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelWithOption(AudioStreamType strea
                 return setResult;
             }
         }
+        return SUCCESS;
+    }
+
+    if (VolumeUtils::IsNotificationFollowRingtone() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
+        // The notificationFollowRingtone is true. Keep the volume of notification and ringtone the same.
+        int32_t setResult1 = SetSingleStreamVolume(STREAM_RING, volumeLevel, option);
+        CHECK_AND_RETURN_RET_LOG(setResult1 == SUCCESS, setResult1, "Failed for ringtone: %{public}d", setResult1);
+        int32_t setResult2 = SetSingleStreamVolume(STREAM_NOTIFICATION, volumeLevel, option);
+        AUDIO_INFO_LOG("degree=%{public}d, notification result=%{public}d", option.volumeDegree, setResult2);
         return SUCCESS;
     }
     return SetSingleStreamVolume(streamType, volumeLevel, option);
@@ -2452,6 +2600,13 @@ int32_t AudioVolumeManager::SetSingleStreamVolumeWithDevice(AudioStreamType stre
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "desc is nullptr");
     DeviceType curOutputDeviceType = desc->deviceType_;
+
+    if (VolumeUtils::IsNotificationFollowRingtone() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_NOTIFICATION) {
+        AUDIO_INFO_LOG("notificationFollowRingtone_ is true. Use ringtone instead of notification");
+        streamType = STREAM_RING;
+    }
+
     int32_t ret = SUCCESS;
     if (curOutputDeviceType != deviceType) {
         ret = SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
@@ -2459,6 +2614,20 @@ int32_t AudioVolumeManager::SetSingleStreamVolumeWithDevice(AudioStreamType stre
         bool mute = GetStreamMuteInterface(streamType);
         VolumeUpdateOption option{isUpdateUi, mute};
         ret = SetSingleStreamVolume(streamType, volumeLevel, option);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to set volume: %{public}d", ret);
+    if (VolumeUtils::IsNotificationFollowRingtone() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
+        int32_t resultOfNotification = SUCCESS;
+        if (curOutputDeviceType != deviceType) {
+            resultOfNotification = SaveSpecifiedDeviceVolume(STREAM_NOTIFICATION, volumeLevel, deviceType);
+        } else {
+            bool mute = GetStreamMuteInterface(STREAM_NOTIFICATION);
+            VolumeUpdateOption option{isUpdateUi, mute};
+            resultOfNotification = SetSingleStreamVolume(STREAM_NOTIFICATION, volumeLevel, option);
+        }
+        AUDIO_INFO_LOG(" Set notification volume result: %{public}d", resultOfNotification);
     }
     return ret;
 }

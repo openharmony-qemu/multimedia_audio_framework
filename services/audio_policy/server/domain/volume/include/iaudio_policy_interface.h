@@ -92,6 +92,10 @@ public:
 
     virtual int32_t ClearVoipMuteByStreamId(int64_t streamId) = 0;
 
+    virtual int32_t SetUnmuteWhitelist(const std::vector<int32_t> &uids) = 0;
+
+    virtual int32_t ClearUnmuteWhitelist() = 0;
+
     virtual int32_t GetSystemAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;
 
     virtual int32_t SetSystemAppVolumeLevel(int32_t appUid, int32_t volumeLevel, DeviceType deviceType) = 0;
@@ -293,6 +297,7 @@ public:
     virtual int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) = 0;
 
     virtual void SetSleVoiceStatusFlag(bool isSleVoiceStatus) = 0;
+    virtual void DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit) = 0;
     virtual void SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state) = 0;
     virtual void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType,
         int32_t volumeLevel) = 0;

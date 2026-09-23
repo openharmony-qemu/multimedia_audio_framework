@@ -472,6 +472,13 @@ ohos_unittest("audio_policy_service_ext_unit_test") {
   if (bluetooth_part_enable == true) {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
+
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
 }
 
 ohos_unittest("device_init_callback_unit_test") {

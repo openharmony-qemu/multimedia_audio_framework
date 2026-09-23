@@ -1020,9 +1020,6 @@ void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid
             continue;
         }
         sessionID = audioRendererChangeInfo->sessionId;
-        if (audioRendererChangeInfo->rendererState == RENDERER_RUNNING) {
-            ResetRingerModeMute(RENDERER_RELEASED, audioRendererChangeInfo->rendererInfo.streamUsage);
-        }
         audioRendererChangeInfo->rendererState = RENDERER_RELEASED;
         WriteRenderStreamReleaseSysEvent(audioRendererChangeInfo);
         if (audioPolicyServerHandler_ != nullptr) {

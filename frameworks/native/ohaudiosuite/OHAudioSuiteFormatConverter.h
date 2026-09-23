@@ -22,7 +22,6 @@
 #include <vector>
 #include <numeric>
 #include "native_audio_suite_engine.h"
-#include "audio_suite_manager.h"
 #include "OHAudioSuiteNodeBuilder.h"
 #include "audio_suite_format_conversion.h"
 #include "audio_suite_pcm_buffer.h"

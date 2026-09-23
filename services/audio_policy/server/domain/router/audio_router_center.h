@@ -53,7 +53,8 @@ public:
     InputDeviceMap FetchInputDeviceForAllInputStreams(std::vector<FetchDeviceInfo> &infos);
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceRefinerCallback();
-    bool isCallRenderRouter(StreamUsage streamUsage);
+    bool IsCallRenderRouter(StreamUsage streamUsage);
+    bool IsCallCaptureRouter(SourceType sourceType);
 
     int32_t GetSplitInfo(std::string &splitInfo);
 

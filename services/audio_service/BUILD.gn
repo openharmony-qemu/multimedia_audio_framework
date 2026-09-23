@@ -319,11 +319,6 @@ ohos_shared_library("audio_stream_client") {
     "c_utils:utils",
   ]
 
-  defines = []
-  if (audio_framework_feature_multi_zone_volume) {
-    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
-  }
-
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
   cflags = [ "-Os" ]
@@ -512,7 +507,6 @@ ohos_shared_library("audio_client") {
   ]
 
   external_deps = [
-    "bounds_checking_function:libsec_shared",
     "ability_base:want",
     "eventhandler:libeventhandler",
     "frame_aware_sched:rtg_interface",
@@ -523,14 +517,10 @@ ohos_shared_library("audio_client") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "c_utils:utils",
+    "bounds_checking_function:libsec_shared",
   ]
 
-  public_external_deps = [ "c_utils:utils" ]
-
-  defines = []
-  if (audio_framework_feature_multi_zone_volume) {
-    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
-  }
+  public_external_deps = [ "c_utils:utils", ]
 
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
@@ -561,7 +551,7 @@ config("audio_service_config") {
     "../../services/audio_service/test/unittest:audio_server_extra_unit_test",
     "../../services/audio_service/test/unittest:audio_service_second_unit_test",
     "../../services/audio_service/test/unittest:audio_manager_stub_unit_test",
-    "../../services/audio_service/test/unittest:audio_service_common_unit_test",
+    "../../services/audio_service/test/unittest:audio_service_core_aiut",
   ]
 
   include_dirs = [
@@ -770,10 +760,6 @@ audio_ohos_library("audio_process_service") {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
-  if (audio_framework_feature_multi_zone_volume) {
-    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
-  }
-
   if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
     defines += [
       "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
@@ -819,6 +805,7 @@ audio_ohos_library("audio_service") {
     "server/src/audio_system_load_listener.cpp",
     "server/src/config/audio_param_parser.cpp",
     "server/src/audio_injector_service.cpp",
+    "server/src/audio_thermal_listener.cpp",
   ]
 
   configs = [ ":audio_service_config" ]
@@ -861,11 +848,24 @@ audio_ohos_library("audio_service") {
     "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "qos_manager:concurrent_task_client",
   ]
   defines = []
+  if (audio_framework_feature_power_manager) {
+    external_deps += [ "power_manager:powermgr_client" ]
+    defines += [ "FEATURE_POWER_MANAGER" ]
+  }
+
+  if (audio_framework_feature_thermal_manager) {
+    external_deps += [
+        "thermal_manager:thermalmgr_listener",
+        "thermal_manager:thermalsrv_client",
+    ]
+    defines += [ "FEATURE_THERMAL_MANAGER" ]
+  }
+
   if (!audio_framework_feature_new_engine_flag) {
     sources += [ "server/src/audio_server_dump.cpp" ]
     external_deps += [
@@ -923,10 +923,6 @@ audio_ohos_library("audio_service") {
 
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
-  }
-
-  if (audio_framework_feature_multi_zone_volume) {
-    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
   }
 
   cflags = [ "-Os" ]
@@ -991,6 +987,7 @@ group("audio_service_test_packages") {
   deps = [
     ":audio_hdi_device_test",
     ":audio_engine_client_manager_test",
+    ":audio_volume_client_manager_test",
     "../../frameworks/native/hdiadapter_new:hdi_monitor_test",
   ]
 }
@@ -1066,6 +1063,43 @@ ohos_executable("audio_engine_client_manager_test") {
   install_enable = false
 
   sources = [ "test/example/audio_engine_client_manager_test.cpp" ]
+
+  configs = [ ":audio_client_public_config" ]
+
+  deps = [
+    ":audio_client",
+    ":audio_engine_manager",
+    ":audio_policy_manager",
+    ":audio_stream_client",
+    "../../frameworks/native/audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_volume_client_manager_test") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+  install_enable = false
+
+  sources = [ "test/example/audio_volume_client_manager_test.cpp" ]
 
   configs = [ ":audio_client_public_config" ]
 

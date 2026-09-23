@@ -41,6 +41,10 @@
 #include "audio_interrupt_dfx.h"
 #include "audio_interrupt_strategy.h"
 #include "audio_debug_info.h"
+#include "audio_policy_state_monitor.h"
+#ifdef HAS_WINDOW_MANAGER
+#include "window_utils.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -62,6 +66,7 @@ struct MuteFocusInfo {
 
 class AudioPolicyServerHandler;
 class AudioPolicyServer;
+class PausedStreamTimeoutMonitor;
 
 class AudioInterruptService : public std::enable_shared_from_this<AudioInterruptService>,
                               public IAudioInterruptEventDispatcher {
@@ -122,6 +127,8 @@ public:
 
     // preempt audio focus interfaces
     int32_t ActivatePreemptMode();
+    int32_t SetDuckPassthroughMode(bool enable);
+    int32_t SetDuckFactor(int32_t duckFactor);
     // zone debug interfaces
     int32_t FindZoneByPid(int32_t pid);
     int32_t CreateAudioInterruptZone(const int32_t zoneId, const AudioZoneContext &context);
@@ -174,6 +181,8 @@ public:
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     void RegisterDefaultVolumeTypeListener();
+    void RegisterAccessibilityDuckFactorListener();
+    void RegisterPCModeListener();
 
     void RemoveExistingFocus(
         const int32_t appUid, std::unordered_set<int32_t> &uidActivedSessions);
@@ -197,6 +206,7 @@ public:
     int32_t GetSessionDebugInfo(int32_t pid, AudioSessionDebugInfo &sessionDebugInfo);
     std::vector<int32_t> FindAudioZonesByPid(int32_t pid);
     void StopAudioFocusBySessionIds(const int32_t zoneId, const std::vector<std::pair<uint32_t, int32_t>> &sessions);
+    void HandlePausedTimeout(int32_t zoneId, uint32_t streamId);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -207,6 +217,7 @@ private:
     static constexpr int32_t SET_SCENE_DELAY = 120;
     static constexpr int32_t INTERRUPT_RESPONSE_CHECK_DELAY = 1000;
     static constexpr int32_t RECORDING_ACTIVATION_DELAY_MS = 200;
+    static constexpr int32_t DEFAULT_PAUSE_TIMEOUT_S = 5;
 
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
     std::unordered_map<int32_t, std::vector<CachedFocusInfo>> cachedFocusMap_;
@@ -314,6 +325,7 @@ private:
     void SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,
         const uint32_t &streamId, const AudioInterrupt &audioInterrupt);
     void CollectInterruptDfx(const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt);
+    void RecordNavWithPauseStrategyEvent(const AudioInterrupt &audioInterrupt);
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activeInterrupt);
     bool UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType,
         int32_t zoneId = ZONEID_DEFAULT, bool notFromInterrupt = true, bool isInternal = false);
@@ -351,6 +363,8 @@ private:
     bool IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry);
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
+    void UpdateHintTypeByConcurrencyMode(AudioConcurrencyMode concurrencyMode, AudioFocusEntry &focusEntry);
+    void ApplyDuckPassthroughMode(AudioFocusEntry &focusEntry);
     void HandleSessionTimeOutEvent(const int32_t pid);
     int32_t GetAudioSessionZoneidByPid(const int32_t pid);
     bool HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
@@ -465,10 +479,14 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
     void UpdateIsCheckMuteStreamByPid(int32_t callerPid);
-    bool ProcessSilentChangeInterrupt(const MuteFocusInfo &audioFocusInfo);
     void RemoveStreamBySessionId(const uint32_t streamId);
     void RemoveStreamByPid(const int32_t callerPid);
     void AddStreamByPid(const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession);
+    void UpdateAudioFocusCheckMuteFlag(const int32_t zoneId, AudioInterrupt &audioInterrupt);
+    void StartPausedStreamMonitor(const int32_t zoneId, const InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &incomingInterrupt, AudioInterrupt &activeInterrupt);
+    void StopPausedStreamMonitor(uint32_t streamId);
+    float GetDuckFactorForStreams(const AudioInterrupt &first, const AudioInterrupt &second) const;
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -489,6 +507,7 @@ private:
 
     std::map<uint32_t, std::list<MuteFocusInfo>> muteAudioFocus_;
     std::set<uint32_t> deferredResumeStreamIds_;
+    std::unordered_map<uint32_t, std::shared_ptr<PausedStreamTimeoutMonitor>> pauseStreamMonitors_;
 
     std::vector<AudioInterrupt> streamsInDeactivateAudioSession_;
 
@@ -500,6 +519,9 @@ private:
     mutable std::atomic<int32_t> formerUid_ = -1;
     mutable int32_t ownerPid_ = 0;
     mutable int32_t ownerUid_ = 0;
+    std::atomic<bool> duckPassthroughMode_{false};
+    std::atomic<float> duckFactor_{DUCK_FACTOR};
+    std::atomic<float> accessibilityDuckFactor_{DUCK_FACTOR};
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
     AudioStreamType activeStreamType_ = STREAM_MUSIC;
 
@@ -520,6 +542,23 @@ private:
     AudioStreamCollector& streamCollector_;
     std::map<uint32_t, std::vector<AudioFocusBehavior>> audioFocusHisMap_;
     bool mediaInterruptedByRec_ = false;
+};
+
+class PausedStreamTimeoutMonitor : public AudioPolicyStateMonitorCallback {
+public:
+    explicit PausedStreamTimeoutMonitor(int32_t zoneId, uint32_t streamId,
+        std::weak_ptr<AudioInterruptService> service);
+    ~PausedStreamTimeoutMonitor() override;
+
+    void OnTimeOut() override;
+    void StartMonitor(int32_t duration, std::shared_ptr<PausedStreamTimeoutMonitor> cb);
+    void StopMonitor();
+
+private:
+    int32_t zoneId_;
+    uint32_t streamId_;
+    int32_t cbId_ = INVALID_CB_ID;
+    std::weak_ptr<AudioInterruptService> service_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

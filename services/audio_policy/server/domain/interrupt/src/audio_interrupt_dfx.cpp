@@ -158,6 +158,20 @@ void AudioInterruptDfx::RecordSilentWithPauseStrategyEvent(const AudioInterrupt 
     WriteAudioInterruptErrorEvent(interruptError);
 }
 
+void AudioInterruptDfx::RecordNavWithPauseStrategyEvent(const AudioInterrupt &incomingInterrupt)
+{
+    AudioFocusErrorEvent interruptError;
+    interruptError.appName = AudioInterruptUtils::GetAudioInterruptBundleName(incomingInterrupt);
+    interruptError.rendererInfo += "streamType: " + std::to_string(incomingInterrupt.audioFocusType.streamType) +
+        " sourceType: " + std::to_string(incomingInterrupt.audioFocusType.sourceType) + ";";
+    interruptError.errorInfo = "NavigationWithPauseStrategy";
+    interruptError.audiosessionInfo = "sessionConcurrencyMode:" +
+        std::to_string(static_cast<int32_t>(sessionService_.GetSessionStrategy(incomingInterrupt.pid))) +
+        " independentConcurrencyMode:" +
+        std::to_string(static_cast<int32_t>(incomingInterrupt.independentStrategy.concurrencyMode));
+    WriteAudioInterruptErrorEvent(interruptError);
+}
+
 std::string AudioInterruptDfx::GetInterruptRendererInfo(const AudioInterrupt &audioInterrupt)
 {
     std::string rendererInfoStr = "";
@@ -451,6 +465,25 @@ void AudioInterruptDfx::AudioSessionTimeoutErrorEvent(const AudioInterrupt &audi
         interruptErrorEvent.errorInfo = "V1Timeout";
     }
     WriteAudioInterruptErrorEvent(interruptErrorEvent);
+}
+
+void AudioInterruptDfx::GetBehaviorUsageEvent(const AudioInterrupt &audioInterrupt)
+{
+    const std::vector<std::pair<bool, const char *>> flagList = {
+        {audioInterrupt.behaviorFlags_.muteWhenInterruptFlag, "muteWhenInterruptFlag"},
+        {audioInterrupt.behaviorFlags_.pauseWhenInterruptFlag, "pauseWhenInterruptFlag"},
+    };
+
+    for (const auto &entry : flagList) {
+        if (entry.first) {
+            AudioFocusErrorEvent interruptEvent;
+            interruptEvent.appName = AudioInterruptUtils::GetAudioInterruptBundleName(audioInterrupt);
+            interruptEvent.errorInfo = entry.second;
+            interruptEvent.rendererInfo = "streamType: " + std::to_string(audioInterrupt.audioFocusType.streamType) +
+                " sourceType: " + std::to_string(audioInterrupt.audioFocusType.sourceType) + ";";
+            WriteAudioInterruptErrorEvent(interruptEvent);
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

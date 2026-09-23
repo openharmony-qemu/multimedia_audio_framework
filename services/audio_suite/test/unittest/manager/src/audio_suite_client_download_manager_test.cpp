@@ -43,19 +43,24 @@ public:
 class MockAudioSuiteRomDownloadCallback : public AudioSuiteRomDownloadCallback {
 public:
     MOCK_METHOD(int32_t, GetFeatureNewVersion,
-                (const std::string featureName, AudioSuiteCloudRomVersionInfo &newfeatureNameInfos,
-                 int32_t &funcResult),
+                (const std::vector<std::string>& featureNames,
+                 std::vector<AudioSuiteCloudRomVersionInfo>& newfeatureNameInfos),
                 (override));
     MOCK_METHOD(int32_t, GetFeatureStatus,
-                (const std::string featureName, AudioSuiteDownloadStatusInfo &statusInfos, int32_t &funcResult),
+                (const std::vector<std::string>& featureNames,
+                 std::vector<AudioSuiteDownloadStatusInfo>& statusInfos),
                 (override));
     MOCK_METHOD(int32_t, DownloadAndInstall,
-                (const bool downloadCondition, const std::string featureName, int32_t &funcResult), (override));
-    MOCK_METHOD(int32_t, PauseCloudRom, (const std::string featureName, int32_t &funcResult), (override));
-    MOCK_METHOD(int32_t, CancelCloudRom, (const std::string featureName, int32_t &funcResult), (override));
-    MOCK_METHOD(int32_t, UninstallCloudRom, (const std::string featureName, int32_t &funcResult), (override));
-    MOCK_METHOD(int32_t, RegisterDownloadStatusCallback, (int32_t &funcResult), (override));
-    MOCK_METHOD(int32_t, UnregisterDownloadStatusCallback, (int32_t &funcResult), (override));
+                (const bool allowedCellularNet, const std::vector<std::string>& featureNames),
+                (override));
+    MOCK_METHOD(int32_t, PauseCloudRom,
+                (const std::vector<std::string>& featureNames), (override));
+    MOCK_METHOD(int32_t, CancelCloudRom,
+                (const std::vector<std::string>& featureNames), (override));
+    MOCK_METHOD(int32_t, UninstallCloudRom,
+                (const std::vector<std::string>& featureNames), (override));
+    MOCK_METHOD(int32_t, RegisterDownloadStatusCallback, (), (override));
+    MOCK_METHOD(int32_t, UnregisterDownloadStatusCallback, (), (override));
 };
 
 class MockIAudioSuiteService : public IAudioSuiteService {
@@ -64,18 +69,24 @@ public:
         (const sptr<IRemoteObject>& object, int32_t& funcResult), (override));
     MOCK_METHOD(ErrCode, UnregisterDownloadStatusCallback,
         (int32_t& funcResult), (override));
+    MOCK_METHOD(ErrCode, GetInstallStatus,
+        (const std::vector<std::string>& featureNames, std::vector<bool>& installStatus, ErrCode& result), (override));
     MOCK_METHOD(ErrCode, StartDownload,
-        (const std::string& version, bool allowedCellularNet, int32_t& funcResult), (override));
+        (const std::vector<std::string>& featureNames, bool allowedCellularNet, int32_t& funcResult), (override));
     MOCK_METHOD(ErrCode, PauseDownload,
-        (const std::string& version, int32_t& funcResult), (override));
+        (const std::vector<std::string>& featureNames, int32_t& funcResult), (override));
     MOCK_METHOD(ErrCode, CancelDownload,
-        (const std::string& version, int32_t& funcResult), (override));
+        (const std::vector<std::string>& featureNames, int32_t& funcResult), (override));
     MOCK_METHOD(ErrCode, StartBackgroundDownload,
-        (const std::string& version, int32_t& funcResult), (override));
+        (const std::vector<std::string>& featureNames, int32_t& funcResult), (override));
     MOCK_METHOD(ErrCode, GetDownloadStatus,
-        (const std::string& version, AudioSuiteDownloadStatusInfo& status, int32_t& funcResult), (override));
+        (const std::vector<std::string>& featureNames,
+         std::vector<AudioSuiteDownloadStatusInfo>& status, int32_t& funcResult), (override));
+    MOCK_METHOD(ErrCode, GetFeatureNewVersion,
+        (const std::vector<std::string>& featureNames,
+         std::vector<AudioSuiteCloudRomVersionInfo>& newVersion, int32_t& funcResult), (override));
     MOCK_METHOD(ErrCode, UninstallCloudRom,
-        (const std::string& version, int32_t& funcResult), (override));
+        (const std::vector<std::string>& featureNames, int32_t& funcResult), (override));
     MOCK_METHOD(ErrCode, RegisterDownloadInterfaceCallback,
         (const sptr<IRemoteObject>& object, int32_t& funcResult), (override));
     MOCK_METHOD(ErrCode, UnregisterDownloadInterfaceCallback,
@@ -130,7 +141,7 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, StartDownload_001, TestSize.Level0)
     EXPECT_CALL(*mockService_, StartDownload(_, _, _))
         .WillOnce(DoAll(SetArgReferee<2>(result), Return(SUCCESS)));
 
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().StartDownload("v1");
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().StartDownload(std::vector<std::string>{"v1"}, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -140,7 +151,7 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, StartDownload_002, TestSize.Level0)
     EXPECT_CALL(*mockService_, StartDownload(_, _, _))
         .WillOnce(DoAll(SetArgReferee<2>(result), Return(SUCCESS)));
 
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().StartDownload("v1");
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().StartDownload(std::vector<std::string>{"v1"}, true);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -150,7 +161,7 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, PauseDownload_001, TestSize.Level0)
     EXPECT_CALL(*mockService_, PauseDownload(_, _))
         .WillOnce(DoAll(SetArgReferee<1>(result), Return(SUCCESS)));
 
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().PauseDownload("v1");
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().PauseDownload(std::vector<std::string>{"v1"});
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -160,7 +171,7 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, PauseDownload_002, TestSize.Level0)
     EXPECT_CALL(*mockService_, PauseDownload(_, _))
         .WillOnce(DoAll(SetArgReferee<1>(result), Return(SUCCESS)));
 
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().PauseDownload("v1");
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().PauseDownload(std::vector<std::string>{"v1"});
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -170,7 +181,7 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, CancelDownload_001, TestSize.Level0)
     EXPECT_CALL(*mockService_, CancelDownload(_, _))
         .WillOnce(DoAll(SetArgReferee<1>(result), Return(SUCCESS)));
 
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().CancelDownload("v1");
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().CancelDownload(std::vector<std::string>{"v1"});
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -180,7 +191,7 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, CancelDownload_002, TestSize.Level0)
     EXPECT_CALL(*mockService_, CancelDownload(_, _))
         .WillOnce(DoAll(SetArgReferee<1>(result), Return(SUCCESS)));
 
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().CancelDownload("v1");
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().CancelDownload(std::vector<std::string>{"v1"});
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -190,7 +201,7 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, StartBackgroundDownload_001, TestSiz
     EXPECT_CALL(*mockService_, StartBackgroundDownload(_, _))
         .WillOnce(DoAll(SetArgReferee<1>(result), Return(SUCCESS)));
 
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().StartBackgroundDownload("v1");
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().StartBackgroundDownload(std::vector<std::string>{"v1"});
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -200,29 +211,55 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, StartBackgroundDownload_002, TestSiz
     EXPECT_CALL(*mockService_, StartBackgroundDownload(_, _))
         .WillOnce(DoAll(SetArgReferee<1>(result), Return(SUCCESS)));
 
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().StartBackgroundDownload("v1");
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().StartBackgroundDownload(std::vector<std::string>{"v1"});
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 HWTEST_F(AudioSuiteDownloadManagerUnitTest, GetDownloadStatus_001, TestSize.Level0)
 {
-    AudioSuiteDownloadStatusInfo status;
+    std::vector<AudioSuiteDownloadStatusInfo> status;
     int32_t result = SUCCESS;
     EXPECT_CALL(*mockService_, GetDownloadStatus(_, _, _))
         .WillOnce(DoAll(SetArgReferee<2>(result), Return(SUCCESS)));
 
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().GetDownloadStatus("v1", status);
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().GetDownloadStatus(
+        std::vector<std::string>{"v1"}, status);
     EXPECT_EQ(ret, SUCCESS);
 }
 
 HWTEST_F(AudioSuiteDownloadManagerUnitTest, GetDownloadStatus_002, TestSize.Level0)
 {
-    AudioSuiteDownloadStatusInfo status;
+    std::vector<AudioSuiteDownloadStatusInfo> status;
     int32_t result = ERR_INVALID_PARAM;
     EXPECT_CALL(*mockService_, GetDownloadStatus(_, _, _))
         .WillOnce(DoAll(SetArgReferee<2>(result), Return(SUCCESS)));
 
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().GetDownloadStatus("v1", status);
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().GetDownloadStatus(
+        std::vector<std::string>{"v1"}, status);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+HWTEST_F(AudioSuiteDownloadManagerUnitTest, GetFeatureNewVersion_001, TestSize.Level0)
+{
+    int32_t result = SUCCESS;
+    EXPECT_CALL(*mockService_, GetFeatureNewVersion(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<2>(result), Return(SUCCESS)));
+
+    std::vector<AudioSuiteCloudRomVersionInfo> versionInfos;
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().GetFeatureNewVersion(
+        std::vector<std::string>{"v1"}, versionInfos);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(AudioSuiteDownloadManagerUnitTest, GetFeatureNewVersion_002, TestSize.Level0)
+{
+    int32_t result = ERR_INVALID_PARAM;
+    EXPECT_CALL(*mockService_, GetFeatureNewVersion(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<2>(result), Return(SUCCESS)));
+
+    std::vector<AudioSuiteCloudRomVersionInfo> versionInfos;
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().GetFeatureNewVersion(
+        std::vector<std::string>{"v1"}, versionInfos);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -232,7 +269,7 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, UninstallCloudRom_001, TestSize.Leve
     EXPECT_CALL(*mockService_, UninstallCloudRom(_, _))
         .WillOnce(DoAll(SetArgReferee<1>(result), Return(SUCCESS)));
 
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().UninstallCloudRom("v1");
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().UninstallCloudRom(std::vector<std::string>{"v1"});
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -242,7 +279,7 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, UninstallCloudRom_002, TestSize.Leve
     EXPECT_CALL(*mockService_, UninstallCloudRom(_, _))
         .WillOnce(DoAll(SetArgReferee<1>(result), Return(SUCCESS)));
 
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().UninstallCloudRom("v1");
+    int32_t ret = AudioSuiteDownloadManager::GetInstance().UninstallCloudRom(std::vector<std::string>{"v1"});
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 

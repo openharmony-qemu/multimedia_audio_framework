@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,17 +17,14 @@
 #define LOG_TAG "OHAudioSuiteEngine"
 #endif
 
-#include <string>
-#include <thread>
+#include <new>
+#include "securec.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
-#include "audio_common_log.h"
+#include "audio_suite_log.h"
 #include "OHAudioSuiteEngine.h"
-#include "audio_suite_manager.h"
 #include "OHAudioSuiteNodeBuilder.h"
-#include "audio_suite_capabilities.h"
 #include "stream_dfx_manager.h"
-#include "securec.h"
 
 using OHOS::AudioStandard::OHAudioSuiteEngine;
 using OHOS::AudioStandard::OHAudioSuitePipeline;
@@ -44,6 +41,8 @@ const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_JAZZ = {2, 0, 2, 3, 6, 5
 const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_POP = {5, 2, 1, -1, -5, -5, -2, 1, 2, 4};
 const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_RB = {1, 4, 5, 3, -2, -2, 2, 3, 5, 5};
 const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_ROCK = {6, 4, 4, 2, 0, 1, 3, 3, 5, 4};
+
+static constexpr size_t SYSTEM_NODE_MAX_PARAM_SIZE = 8192;
 
 static OHAudioSuiteEngine *ConvertAudioSuiteEngine(OH_AudioSuiteEngine *audioSuiteEngine)
 {
@@ -107,15 +106,11 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_Create(OH_AudioSuiteEngine **audioSuite
     CHECK_AND_RETURN_RET_LOG(audioSuiteEngine != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "Create suiteEngine audioSuiteEngine is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_INVALID_STATE, "Get suiteEngine suiteEngine is nullptr");
+    int32_t error = OHAudioSuiteEngine::GetInstance().CreateEngine();
+    CHECK_AND_RETURN_RET_LOG(error == OHOS::AudioStandard::SUCCESS,
+        ConvertError(error), "Create suiteEngine failed, error is %{public}d.", error);
 
-    int32_t ret = suiteEngine->CreateEngine();
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIOSUITE_SUCCESS,
-        ConvertError(ret), "Create suiteEngine failed, ret is %{public}d.", ret);
-
-    *audioSuiteEngine = (OH_AudioSuiteEngine *)suiteEngine;
+    *audioSuiteEngine = (OH_AudioSuiteEngine *)&OHAudioSuiteEngine::GetInstance();
     return AUDIOSUITE_SUCCESS;
 }
 
@@ -123,13 +118,10 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_Destroy(OH_AudioSuiteEngine *audioSuite
 {
     CHECK_AND_RETURN_RET_LOG(audioSuiteEngine != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "Destroy audioSuiteEngine is nullptr");
-    OHAudioSuiteEngine *suiteEngine = ConvertAudioSuiteEngine(audioSuiteEngine);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "Destroy suiteEngine is nullptr");
-    if (suiteEngine != OHAudioSuiteEngine::GetInstance()) {
-        return AUDIOSUITE_ERROR_INVALID_PARAM;
-    }
-    int32_t error = suiteEngine->DestroyEngine();
+    CHECK_AND_RETURN_RET_LOG(ConvertAudioSuiteEngine(audioSuiteEngine) == &OHAudioSuiteEngine::GetInstance(),
+        AUDIOSUITE_ERROR_INVALID_PARAM, "Destroy audioSuiteEngine is invalid");
+
+    int32_t error = OHAudioSuiteEngine::GetInstance().DestroyEngine();
     return ConvertError(error);
 }
 
@@ -139,11 +131,10 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_CreatePipeline(
 {
     CHECK_AND_RETURN_RET_LOG(audioSuiteEngine != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "CreatePipeline audioSuiteEngine is nullptr");
-    OHAudioSuiteEngine *suiteEngine = ConvertAudioSuiteEngine(audioSuiteEngine);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "CreatePipeline suiteEngine is nullptr");
+    CHECK_AND_RETURN_RET_LOG(ConvertAudioSuiteEngine(audioSuiteEngine) == &OHAudioSuiteEngine::GetInstance(),
+        AUDIOSUITE_ERROR_INVALID_PARAM, "CreatePipeline audioSuiteEngine is invalid");
 
-    int32_t error = suiteEngine->CreatePipeline(audioSuitePipeline, workMode);
+    int32_t error = OHAudioSuiteEngine::GetInstance().CreatePipeline(audioSuitePipeline, workMode);
     return ConvertError(error);
 }
 
@@ -153,10 +144,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DestroyPipeline(OH_AudioSuitePipeline *
     CHECK_AND_RETURN_RET_LOG(pipeline != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "DestroyPipeline pipeline is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "DestroyPipeline suiteEngine is nullptr");
-    int32_t error = suiteEngine->DestroyPipeline(pipeline);
+    int32_t error = OHAudioSuiteEngine::GetInstance().DestroyPipeline(pipeline);
     return ConvertError(error);
 }
 
@@ -166,11 +154,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_StartPipeline(OH_AudioSuitePipeline *au
     CHECK_AND_RETURN_RET_LOG(pipeline != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "StartPipeline pipeline is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "StartPipeline suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->StartPipeline(pipeline);
+    int32_t error = OHAudioSuiteEngine::GetInstance().StartPipeline(pipeline);
     return ConvertError(error);
 }
 
@@ -180,11 +164,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_StopPipeline(OH_AudioSuitePipeline *aud
     CHECK_AND_RETURN_RET_LOG(pipeline != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "StopPipeline pipeline is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "StopPipeline suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->StopPipeline(pipeline);
+    int32_t error = OHAudioSuiteEngine::GetInstance().StopPipeline(pipeline);
     return ConvertError(error);
 }
 
@@ -197,11 +177,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetPipelineState(
     CHECK_AND_RETURN_RET_LOG(pipelineState != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "GetPipelineState pipelineState is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetPipelineState suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->GetPipelineState(pipeline, pipelineState);
+    int32_t error = OHAudioSuiteEngine::GetInstance().GetPipelineState(pipeline, pipelineState);
     return ConvertError(error);
 }
 
@@ -218,10 +194,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_RenderFrame(OH_AudioSuitePipeline *audi
     CHECK_AND_RETURN_RET_LOG(requestFrameSize > 0,
         AUDIOSUITE_ERROR_INVALID_PARAM, "RenderFrame requestFrameSize is zero");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "RenderFrame suiteEngine is nullptr");
-    int32_t error = suiteEngine->RenderFrame(pipeline,
+    int32_t error = OHAudioSuiteEngine::GetInstance().RenderFrame(pipeline,
         static_cast<uint8_t *>(audioData), requestFrameSize, responseSize, finishedFlag);
     return ConvertError(error);
 }
@@ -246,10 +219,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_MultiRenderFrame(OH_AudioSuitePipeline 
     CHECK_AND_RETURN_RET_LOG(dataFrame->arraySize > 0,
         AUDIOSUITE_ERROR_INVALID_PARAM, "MultiRenderFrame arraySize is zero");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "MultiRenderFrame suiteEngine is nullptr");
-    int32_t error = suiteEngine->MultiRenderFrame(pipeline,
+    int32_t error = OHAudioSuiteEngine::GetInstance().MultiRenderFrame(pipeline,
         dataFrame, responseSize, finishedFlag);
     return ConvertError(error);
 }
@@ -277,17 +247,13 @@ int32_t OH_AudioSuiteEngine_MetaRenderFrame(OH_AudioSuitePipeline *audioSuitePip
     CHECK_AND_RETURN_RET_LOG(metaFrame->metaDataSize > 0,
         AUDIOSUITE_ERROR_INVALID_PARAM, "MetaRenderFrame metaDataSize is zero");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "MetaRenderFrame suiteEngine is nullptr");
-
     AudioMetaFrame audioMetaFrame;
     audioMetaFrame.audioData = metaFrame->audioData;
     audioMetaFrame.audioDataSize = metaFrame->audioDataSize;
     audioMetaFrame.metaData = metaFrame->metaData;
     audioMetaFrame.metaDataSize = metaFrame->metaDataSize;
 
-    int32_t error = suiteEngine->MetaRenderFrame(
+    int32_t error = OHAudioSuiteEngine::GetInstance().MetaRenderFrame(
         pipeline, audioMetaFrame, responseAudioSize, responseMetaSize, finishedFlag);
     return ConvertError(error);
 }
@@ -298,15 +264,11 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_CreateNode(
     OHAudioSuitePipeline *pipeline = ConvertAudioSuitePipeline(audioSuitePipeline);
     CHECK_AND_RETURN_RET_LOG(pipeline != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "CreateNode pipeline is nullptr");
-    OHAudioSuiteNodeBuilder  *nodeBuilder = ConvertAudioSuitBuilder(builder);
+    OHAudioSuiteNodeBuilder *nodeBuilder = ConvertAudioSuitBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(nodeBuilder != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "CreateNode builder is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "CreateNode suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->CreateNode(pipeline, nodeBuilder, audioNode);
+    int32_t error = OHAudioSuiteEngine::GetInstance().CreateNode(pipeline, nodeBuilder, audioNode);
     return ConvertError(error);
 }
 
@@ -316,11 +278,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DestroyNode(OH_AudioNode *audioNode)
     CHECK_AND_RETURN_RET_LOG(node != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "DestroyNode node is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "DestroyNode suiteEngine is nullptr");
-        
-    int32_t error = suiteEngine->DestroyNode(node);
+    int32_t error = OHAudioSuiteEngine::GetInstance().DestroyNode(node);
     return ConvertError(error);
 }
 
@@ -333,11 +291,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetNodeBypassStatus(
     CHECK_AND_RETURN_RET_LOG(bypassStatus != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "GetNodeBypassStatus audioNodeEnable is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetNodeBypassStatus suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->GetNodeBypassStatus(node, bypassStatus);
+    int32_t error = OHAudioSuiteEngine::GetInstance().GetNodeBypassStatus(node, bypassStatus);
     return ConvertError(error);
 }
 
@@ -347,11 +301,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_BypassEffectNode(OH_AudioNode *audioNod
     CHECK_AND_RETURN_RET_LOG(node != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "BypassEffectNode node is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "DestroyNode suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->BypassEffectNode(node, bypass);
+    int32_t error = OHAudioSuiteEngine::GetInstance().BypassEffectNode(node, bypass);
     return ConvertError(error);
 }
 
@@ -363,11 +313,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetAudioFormat(OH_AudioNode *audioNode,
     CHECK_AND_RETURN_RET_LOG(audioFormat != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "SetAudioFormat audioFormat is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetAudioFormat suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->SetAudioFormat(node, audioFormat);
+    int32_t error = OHAudioSuiteEngine::GetInstance().SetAudioFormat(node, audioFormat);
     return ConvertError(error);
 }
 
@@ -380,11 +326,7 @@ int32_t OH_AudioSuiteEngineSystem_SetAudioFormat(
     CHECK_AND_RETURN_RET_LOG(audioFormat != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "SetSystemAudioFormat audioFormat is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetSystemAudioFormat suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->SetAudioFormat(node, audioFormat);
+    int32_t error = OHAudioSuiteEngine::GetInstance().SetAudioFormat(node, audioFormat);
     return ConvertError(error);
 }
 
@@ -398,11 +340,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_ConnectNodes(
     CHECK_AND_RETURN_RET_LOG(destNode != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "ConnectNodes destNode is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "ConnectNodes suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->ConnectNodes(srcNode, destNode);
+    int32_t error = OHAudioSuiteEngine::GetInstance().ConnectNodes(srcNode, destNode);
     return ConvertError(error);
 }
 
@@ -410,16 +348,12 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DisconnectNodes(OH_AudioNode *sourceAud
 {
     OHAudioNode *srcNode = ConvertAudioNode(sourceAudioNode);
     CHECK_AND_RETURN_RET_LOG(srcNode != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "DisConnectNodes srcNode is nullptr");
+        AUDIOSUITE_ERROR_INVALID_PARAM, "DisconnectNodes srcNode is nullptr");
     OHAudioNode *destNode = ConvertAudioNode(destAudioNode);
     CHECK_AND_RETURN_RET_LOG(destNode != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "DisConnectNodes destNode is nullptr");
+        AUDIOSUITE_ERROR_INVALID_PARAM, "DisconnectNodes destNode is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "DisConnectNodes suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->DisConnectNodes(srcNode, destNode);
+    int32_t error = OHAudioSuiteEngine::GetInstance().DisconnectNodes(srcNode, destNode);
     return ConvertError(error);
 }
 
@@ -430,10 +364,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_IsNodeTypeSupported(OH_AudioNode_Type n
     CHECK_AND_RETURN_RET_LOG(
         isSupported != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "isSupported is nullptr.");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(
-        suiteEngine != nullptr, AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "isNodeTypeSupported suiteEngine is nullptr");
-    int32_t error = suiteEngine->IsNodeTypeSupported(nodeType, isSupported);
+    int32_t error = OHAudioSuiteEngine::GetInstance().IsNodeTypeSupported(nodeType, isSupported);
     AUDIO_DEBUG_LOG("IsNodeTypeSupported leave with code: %{public}d.", error);
     return ConvertError(error);
 }
@@ -449,12 +380,9 @@ OH_AudioSuite_Result TemplateGetter(
             param != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "%{public}s param is nullptr", getterName);
     }
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(
-        suiteEngine != nullptr, AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "%{public}s suiteEngine is nullptr", getterName);
     CHECK_AND_RETURN_RET_LOG(
         getter != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "%{public}s getter is nullptr", getterName);
-    int32_t error = (suiteEngine->*getter)(node, params...);
+    int32_t error = (OHAudioSuiteEngine::GetInstance().*getter)(node, params...);
     return ConvertError(error);
 }
 
@@ -464,10 +392,7 @@ OH_AudioSuite_Result TemplateSetter(
 {
     OHAudioNode *node = ConvertAudioNode(audioNode);
     CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "%{public}s node is nullptr", setterName);
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(
-        suiteEngine != nullptr, AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "%{public}s suiteEngine is nullptr", setterName);
-    int32_t error = (suiteEngine->*setter)(node, params...);
+    int32_t error = (OHAudioSuiteEngine::GetInstance().*setter)(node, params...);
     return ConvertError(error);
 }
 
@@ -602,17 +527,18 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetTempoAndPitch(
 OH_AudioSuite_Result OH_AudioSuite_PrintInfo(
     OH_AudioSuiteEngine *audioSuiteEngine, OH_AudioSuitePipeline *audioSuitePipeline, int fd)
 {
-    CHECK_AND_RETURN_RET_LOG(
-        audioSuiteEngine != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "PrintInfo audioSuiteEngine is nullptr");
-    OHAudioSuiteEngine *suiteEngine = ConvertAudioSuiteEngine(audioSuiteEngine);
-    CHECK_AND_RETURN_RET_LOG(
-        suiteEngine != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "PrintInfo suiteEngine is nullptr");
-    OHAudioSuitePipeline *pipeline = nullptr;  // ← 改用指针
+    CHECK_AND_RETURN_RET_LOG(audioSuiteEngine != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "PrintInfo audioSuiteEngine is nullptr");
+    CHECK_AND_RETURN_RET_LOG(ConvertAudioSuiteEngine(audioSuiteEngine) == &OHAudioSuiteEngine::GetInstance(),
+        AUDIOSUITE_ERROR_INVALID_PARAM, "PrintInfo audioSuiteEngine is invalid");
+    
+    OHAudioSuitePipeline *pipeline = nullptr;
     if (audioSuitePipeline != nullptr) {
         pipeline = ConvertAudioSuitePipeline(audioSuitePipeline);
         CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "PrintInfo pipeline is nullptr");
     }
-    int32_t error = suiteEngine->PrintInfo(pipeline, fd);  // ← 直接传指针
+
+    int32_t error = OHAudioSuiteEngine::GetInstance().PrintInfo(pipeline, fd);
     return ConvertError(error);
 }
 
@@ -624,15 +550,11 @@ int32_t OH_AudioSuiteEngineSystem_SetNodeParam(
         AUDIOSUITE_ERROR_INVALID_PARAM, "SetSystemNodeParam audioNode is nullptr");
     CHECK_AND_RETURN_RET_LOG(param != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "SetSystemNodeParam param is nullptr");
-    CHECK_AND_RETURN_RET_LOG(paramSize > 0,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "SetSystemNodeParam paramSize is zero");
-
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetSystemNodeParam suiteEngine is nullptr");
+    CHECK_AND_RETURN_RET_LOG(paramSize > 0 && paramSize <= SYSTEM_NODE_MAX_PARAM_SIZE,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "SetSystemNodeParam paramSize is %{public}u", paramSize);
 
     std::vector<uint8_t> paramVector(param, param + paramSize);
-    int32_t error = suiteEngine->SetSystemNodeParam(node, paramVector);
+    int32_t error = OHAudioSuiteEngine::GetInstance().SetSystemNodeParam(node, paramVector);
     return ConvertError(error);
 }
 
@@ -644,15 +566,11 @@ int32_t OH_AudioSuiteEngineSystem_GetNodeParam(
         AUDIOSUITE_ERROR_INVALID_PARAM, "GetSystemNodeParam audioNode is nullptr");
     CHECK_AND_RETURN_RET_LOG(param != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "GetSystemNodeParam param is nullptr");
-    CHECK_AND_RETURN_RET_LOG(paramSize > 0,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetSystemNodeParam paramSize is zero");
-
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetSystemNodeParam suiteEngine is nullptr");
+    CHECK_AND_RETURN_RET_LOG(paramSize > 0 && paramSize <= SYSTEM_NODE_MAX_PARAM_SIZE,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "GetSystemNodeParam paramSize is %{public}u", paramSize);
 
     std::vector<uint8_t> paramVector(param, param + paramSize);
-    int32_t error = suiteEngine->GetSystemNodeParam(node, paramVector);
+    int32_t error = OHAudioSuiteEngine::GetInstance().GetSystemNodeParam(node, paramVector);
     if (error == OHOS::AudioStandard::SUCCESS) {
         int32_t ret = memcpy_s(param, paramSize, paramVector.data(), paramVector.size());
         CHECK_AND_RETURN_RET_LOG(ret == EOK, AUDIOSUITE_ERROR_INVALID_PARAM, "memcpy inbuffer failed err%{public}d:, "
@@ -672,13 +590,9 @@ int32_t OH_AudioSuiteEngineSystem_GetNodeInOutSize(
     CHECK_AND_RETURN_RET_LOG(outSize != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "GetSystemNodeInOutSize outSize is nullptr");
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetSystemNodeInOutSize suiteEngine is nullptr");
-
     uint32_t inSizeValue = 0;
     uint32_t outSizeValue = 0;
-    int32_t error = suiteEngine->GetSystemNodeInOutSize(node, inSizeValue, outSizeValue);
+    int32_t error = OHAudioSuiteEngine::GetInstance().GetSystemNodeInOutSize(node, inSizeValue, outSizeValue);
     if (error == OHOS::AudioStandard::SUCCESS) {
         *inSize = inSizeValue;
         *outSize = outSizeValue;
@@ -732,47 +646,84 @@ int32_t OHSuiteInputNodeRequestMetaDataCallBack::OnRequestDataCallBack(
     return callback_(audioNode_, userData_, &metaData, responseMetaDataSize, finished);
 }
 
+uint32_t OHAudioNode::GetNodeId() const
+{
+    return nodeId_;
+}
+
+AudioSuite::AudioNodeType OHAudioNode::GetNodeType() const
+{
+    return type_;
+}
+
+std::shared_ptr<AudioSuitePipeline> OHAudioNode::GetPipeline() const
+{
+    return pipeline_;
+}
+
 OHAudioSuiteEngine::~OHAudioSuiteEngine()
 {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-    std::unordered_set<OHAudioSuitePipeline*> tempPipelines(pipelines_.begin(), pipelines_.end());
-    for (auto pipeline : tempPipelines) {
-        RemovePipeline(pipeline);
-    }
-    pipelines_.clear();
+    CleanupAll();
 }
 
-OHAudioSuiteEngine *OHAudioSuiteEngine::GetInstance()
+OHAudioSuiteEngine &OHAudioSuiteEngine::GetInstance()
 {
     static OHAudioSuiteEngine manager;
-    return &manager;
+    return manager;
 }
 
-int32_t OHAudioSuiteEngine::CreateEngine() const
+int32_t OHAudioSuiteEngine::CreateEngine()
 {
-    return IAudioSuiteManager::GetAudioSuiteManager().Init();
+    std::lock_guard<std::mutex> lock(engineMutex_);
+    CHECK_AND_RETURN_RET_LOG(!isInitialized_, ERR_ILLEGAL_STATE, "CreateEngine failed, engine already initialized.");
+    isInitialized_ = true;
+    return SUCCESS;
 }
 
-int32_t OHAudioSuiteEngine::DestroyEngine() const
+int32_t OHAudioSuiteEngine::DestroyEngine()
 {
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DeInit();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyEngine DeInit failed, ret = %{public}d.", ret);
-    return ret;
+    std::lock_guard<std::mutex> lock(engineMutex_);
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERR_ILLEGAL_STATE, "DestroyEngine failed, engine not initialized.");
+    CleanupAll();
+    isInitialized_ = false;
+    return SUCCESS;
+}
+
+void OHAudioSuiteEngine::CleanupAll()
+{
+    std::lock_guard<std::mutex> lock(pipelinesMutex_);
+    for (auto pipeline : pipelines_) {
+        if (pipeline != nullptr) {
+            delete pipeline;
+        }
+    }
+    pipelines_.clear();
+
+    std::lock_guard<std::mutex> nodelock(nodesMutex_);
+    for (auto node : nodes_) {
+        if (node != nullptr) {
+            delete node;
+        }
+    }
+    nodes_.clear();
 }
 
 int32_t OHAudioSuiteEngine::CreatePipeline(
     OH_AudioSuitePipeline **audioSuitePipeline, OH_AudioSuite_PipelineWorkMode ohWorkMode)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSuitePipeline != nullptr,
-        ERR_INVALID_PARAM, "CreatePipeline pipeline is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioSuitePipeline != nullptr, ERR_INVALID_PARAM, "CreatePipeline pipeline is nullptr");
+    std::lock_guard<std::mutex> lock(engineMutex_);
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST,
+        "CreatePipeline failed, engine not initialized.");
 
-    uint32_t pipelineId = INVALID_PIPELINE_ID;
     PipelineWorkMode workMode = static_cast<PipelineWorkMode>(ohWorkMode);
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().CreatePipeline(pipelineId, workMode);
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    int32_t ret = AudioSuitePipeline::Create(workMode, pipeline);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CreatePipeline failed, ret = %{public}d.", ret);
-    CHECK_AND_RETURN_RET_LOG(pipelineId != INVALID_PIPELINE_ID, ret, "CreatePipeline failed, pipelineId invaild");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_MEMORY_ALLOC_FAILED,
+        "CreatePipeline malloc failed, ret = %{public}d.", ret);
 
-    OHAudioSuitePipeline *audioPipeline = new OHAudioSuitePipeline(pipelineId);
+    OHAudioSuitePipeline *audioPipeline = new (std::nothrow) OHAudioSuitePipeline(std::move(pipeline));
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_MEMORY_ALLOC_FAILED,
         "CreatePipeline pipeline failed, malloc failed.");
     *audioSuitePipeline = (OH_AudioSuitePipeline *)audioPipeline;
@@ -782,51 +733,55 @@ int32_t OHAudioSuiteEngine::CreatePipeline(
 
 int32_t OHAudioSuiteEngine::DestroyPipeline(OHAudioSuitePipeline *audioPipeline)
 {
-    CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
-        "DestroyPipeline failed, audioPipeline is nullptr.");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(IsPipelineExists(audioPipeline), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
-                                       StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                                           static_cast<int32_t>(getuid()), ERR_DESTROY_PIPELINE_NOT_FOUND,
-                                           "OHAudioSuiteEngine::The pipeline does not exist.", true),
-                                       "OHAudioSuiteEngine::The pipeline does not exist.");
-    uint32_t pipelineId = audioPipeline->GetPipelineId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DestroyPipeline(pipelineId);
+    auto pipeline = GetAudioSuitePipeline(audioPipeline);
+    if (pipeline == nullptr) {
+        (void)StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), ERR_DESTROY_PIPELINE_NOT_FOUND,
+            "OHAudioSuiteEngine::The pipeline does not exist.", true);
+        return ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST;
+    }
+
+    int32_t ret = pipeline->DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyPipeline failed, ret = %{public}d.", ret);
+
+    std::vector<OHAudioNode*> nodesToClean;
+    audioPipeline->GetAllNodes(nodesToClean);
+    RemoveNodes(nodesToClean);
     RemovePipeline(audioPipeline);
-    return ret;
+    return SUCCESS;
 }
 
-int32_t OHAudioSuiteEngine::StartPipeline(OHAudioSuitePipeline *audioPipeline) const
+int32_t OHAudioSuiteEngine::StartPipeline(OHAudioSuitePipeline *audioPipeline)
 {
-    CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
-        "StartPipeline failed, audioPipeline is nullptr.");
+    auto pipeline = GetAudioSuitePipeline(audioPipeline);
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "StartPipeline failed, pipeline does not exist.");
 
-    uint32_t pipelineId = audioPipeline->GetPipelineId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().StartPipeline(pipelineId);
+    int32_t ret = pipeline->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartPipeline failed, ret = %{public}d.", ret);
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::StopPipeline(OHAudioSuitePipeline *audioPipeline) const
+int32_t OHAudioSuiteEngine::StopPipeline(OHAudioSuitePipeline *audioPipeline)
 {
-    CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
-        "StopPipeline failed, audioPipeline is nullptr.");
+    auto pipeline = GetAudioSuitePipeline(audioPipeline);
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "StopPipeline failed, pipeline does not exist.");
 
-    uint32_t pipelineId = audioPipeline->GetPipelineId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().StopPipeline(pipelineId);
+    int32_t ret = pipeline->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StopPipeline failed, ret = %{public}d.", ret);
     return ret;
 }
 
 int32_t OHAudioSuiteEngine::GetPipelineState(OHAudioSuitePipeline *audioPipeline, OH_AudioSuite_PipelineState *state)
 {
-    CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
-        "GetPipelineState failed, audioPipeline is nullptr.");
+    auto pipeline = GetAudioSuitePipeline(audioPipeline);
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "GetPipelineState failed, pipeline does not exist.");
     CHECK_AND_RETURN_RET_LOG(state != nullptr, ERR_INVALID_PARAM, "GetPipelineState failed, state is nullptr.");
 
-    uint32_t pipelineId = audioPipeline->GetPipelineId();
     AudioSuitePipelineState pipelineState = PIPELINE_STOPPED;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetPipelineState(pipelineId, pipelineState);
+    int32_t ret = pipeline->GetPipelineState(pipelineState);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetPipelineState failed, ret = %{public}d.", ret);
 
     *state = static_cast<OH_AudioSuite_PipelineState>(pipelineState);
@@ -837,29 +792,28 @@ int32_t OHAudioSuiteEngine::RenderFrame(OHAudioSuitePipeline *audioPipeline,
     uint8_t *audioData, int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag)
 {
     Trace trace("OHAudioSuiteEngine::RenderFrame Start");
-    CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
-        "RenderFrame failed, audioPipeline is nullptr.");
+    auto pipeline = GetAudioSuitePipeline(audioPipeline);
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "RenderFrame failed, pipeline does not exist.");
 
-    uint32_t pipelineId = audioPipeline->GetPipelineId();
-
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().RenderFrame(
-        pipelineId, audioData, requestFrameSize, responseSize, finishedFlag);
+    int32_t ret = pipeline->RenderFrame(
+        audioData, requestFrameSize, responseSize, finishedFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderFrame failed, ret = %{public}d.", ret);
     trace.End();
     return ret;
 }
 
 int32_t OHAudioSuiteEngine::MultiRenderFrame(OHAudioSuitePipeline *audioPipeline,
-    AudioSuite::AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag)
+    AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag)
 {
     Trace trace("OHAudioSuiteEngine::MultiRenderFrame Start");
-    CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
-        "MultiRenderFrame failed, audioPipeline is nullptr.");
+    auto pipeline = GetAudioSuitePipeline(audioPipeline);
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "MultiRenderFrame failed, pipeline does not exist.");
 
-    uint32_t pipelineId = audioPipeline->GetPipelineId();
-
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().MultiRenderFrame(
-        pipelineId, audioDataArray, responseSize, finishedFlag);
+    int32_t ret = pipeline->MultiRenderFrame(
+        reinterpret_cast<uint8_t**>(audioDataArray->audioDataArray), audioDataArray->arraySize,
+        audioDataArray->requestFrameSize, responseSize, finishedFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "MultiRenderFrame failed, ret = %{public}d.", ret);
     trace.End();
     return ret;
@@ -870,13 +824,12 @@ int32_t OHAudioSuiteEngine::MetaRenderFrame(OHAudioSuitePipeline *audioPipeline,
     int32_t *responseMetaSize, bool *finishedFlag)
 {
     Trace trace("OHAudioSuiteEngine::MetaRenderFrame Start");
-    CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
-        "MetaRenderFrame failed, audioPipeline is nullptr.");
+    auto pipeline = GetAudioSuitePipeline(audioPipeline);
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "MetaRenderFrame failed, pipeline does not exist.");
 
-    uint32_t pipelineId = audioPipeline->GetPipelineId();
-
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().MetaRenderFrame(
-        pipelineId, metaFrame, responseAudioSize, responseMetaSize, finishedFlag);
+    int32_t ret = pipeline->MetaRenderFrame(
+        metaFrame, responseAudioSize, responseMetaSize, finishedFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "MetaRenderFrame failed, ret = %{public}d.", ret);
     trace.End();
     return ret;
@@ -884,20 +837,21 @@ int32_t OHAudioSuiteEngine::MetaRenderFrame(OHAudioSuitePipeline *audioPipeline,
 
 
 int32_t OHAudioSuiteEngine::InitInputCallback(
-    OHAudioSuiteNodeBuilder *builder, uint32_t nodeId, OH_AudioNode **audioNode)
+    std::shared_ptr<AudioSuitePipeline> pipeline,
+    OHAudioSuiteNodeBuilder *builder, uint32_t nodeId, OH_AudioNode *audioNode)
 {
     int32_t ret = SUCCESS;
     if (builder->IsSetRequestDataCallback()) {
         if (builder->IsSetRequestMetaDataCallback()) {
             std::shared_ptr<OHSuiteInputNodeRequestMetaDataCallBack> metaDataCallback =
-                std::make_shared<OHSuiteInputNodeRequestMetaDataCallBack>(reinterpret_cast<OH_AudioNode *>(audioNode),
+                std::make_shared<OHSuiteInputNodeRequestMetaDataCallBack>(audioNode,
                     builder->GetRequestMetaDataCallback(), builder->GetCallBackUserData());
-            ret = IAudioSuiteManager::GetAudioSuiteManager().SetRequestMetaDataCallback(nodeId, metaDataCallback);
+            ret = pipeline->SetRequestMetaDataCallback(nodeId, metaDataCallback);
         } else {
             std::shared_ptr<OHSuiteInputNodeRequestDataCallBack> callback =
-                std::make_shared<OHSuiteInputNodeRequestDataCallBack>(reinterpret_cast<OH_AudioNode *>(audioNode),
+                std::make_shared<OHSuiteInputNodeRequestDataCallBack>(audioNode,
                     builder->GetRequestDataCallback(), builder->GetCallBackUserData());
-            ret = IAudioSuiteManager::GetAudioSuiteManager().SetRequestDataCallback(nodeId, callback);
+            ret = pipeline->SetRequestDataCallback(nodeId, callback);
         }
     }
     return ret;
@@ -911,7 +865,9 @@ int32_t OHAudioSuiteEngine::CreateNode(
     CHECK_AND_RETURN_RET_LOG(builder != nullptr, ERR_INVALID_PARAM, "CreateNode failed, builder is nullptr.");
     CHECK_AND_RETURN_RET_LOG(audioNode != nullptr, ERR_INVALID_PARAM, "CreateNode audioNode is nullptr");
 
-    uint32_t pipelineId = audioSuitePipeline->GetPipelineId();
+    auto pipeline = GetAudioSuitePipeline(audioSuitePipeline);
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "CreateNode failed, pipeline does not exist.");
     AudioNodeBuilder nodeCfg;
     nodeCfg.nodeType = builder->GetNodeType();
     if (builder->IsSetFormat()) {
@@ -934,62 +890,72 @@ int32_t OHAudioSuiteEngine::CreateNode(
     }
 
     uint32_t nodeId = INVALID_NODE_ID;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().CreateNode(pipelineId, nodeCfg, nodeId);
+    int32_t ret = pipeline->CreateNode(nodeCfg, nodeId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CreateNode failed, ret = %{public}d.", ret);
     CHECK_AND_RETURN_RET_LOG(nodeId != INVALID_PIPELINE_ID, ERR_OPERATION_FAILED, "CreateNode failed, nodeId invail");
 
-    ret = InitInputCallback(builder, nodeId, audioNode);
+    OHAudioNode *node = new (std::nothrow) OHAudioNode(nodeId, nodeCfg.nodeType, pipeline);
+    if (node == nullptr) {
+        AUDIO_ERR_LOG("CreateNode failed, malloc failed.");
+        pipeline->DestroyNode(nodeId);
+        return ERR_MEMORY_ALLOC_FAILED;
+    }
+    ret = InitInputCallback(pipeline, builder, nodeId, (OH_AudioNode *)node);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("CreateNode SetRequestDataCallback failed, ret = %{public}d.", ret);
-        IAudioSuiteManager::GetAudioSuiteManager().DestroyNode(nodeId);
+        pipeline->DestroyNode(nodeId);
         return ret;
     }
 
-    OHAudioNode *node = new OHAudioNode(nodeId, nodeCfg.nodeType);
-    if (node == nullptr) {
-        AUDIO_ERR_LOG("CreateNode failed, malloc failed.");
-        IAudioSuiteManager::GetAudioSuiteManager().DestroyNode(nodeId);
-        return ERR_MEMORY_ALLOC_FAILED;
-    }
-
-    *audioNode = (OH_AudioNode *)node;
     audioSuitePipeline->AddNode(node);
+    AddNode(node);
+    *audioNode = (OH_AudioNode *)node;
     return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::DestroyNode(OHAudioNode *node)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "DestroyNode failed, node is nullptr.");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-        IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RELEASE,
-                           ERR_AUDIO_SUITE_NODE_NOT_EXIST),
-            "OHAudioSuiteEngine::The node does not exist.", true),
-        "OHAudioSuiteEngine::The node does not exist.");
-    uint32_t nodeId = node->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DestroyNode(nodeId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyNode failed, ret = %{public}d.", ret);
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_EMPTY, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyNode failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "DestroyNode failed, node is invalid.");
 
+    ret = pipeline->DestroyNode(nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyNode failed, ret = %{public}d.", ret);
+    {
+        std::lock_guard<std::mutex> lock(pipelinesMutex_);
+        for (auto *p : pipelines_) {
+            if (p != nullptr && p->IsNodeExists(node)) {
+                p->RemoveNode(node);
+                break;
+            }
+        }
+    }
     RemoveNode(node);
-    return ret;
+    return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::GetNodeBypassStatus(OHAudioNode *node, bool *bypassStatus)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetNodeBypassStatus failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG(bypassStatus != nullptr, ERR_INVALID_PARAM,
         "GetNodeBypassStatus failed, bypassStatus is nullptr.");
-    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() != NODE_TYPE_INPUT) && (node->GetNodeType() != NODE_TYPE_OUTPUT),
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    AudioNodeType nodeType = NODE_TYPE_EMPTY;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, pipeline, nodeId, nodeType);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetNodeBypassStatus failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetNodeBypassStatus failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(nodeType != NODE_TYPE_INPUT && nodeType != NODE_TYPE_OUTPUT,
         ERR_NOT_SUPPORTED, "GetNodeBypassStatus failed, node type %{public}d not support option.",
-        static_cast<int32_t>(node->GetNodeType()));
-    uint32_t nodeId = node->GetNodeId();
+        static_cast<int32_t>(nodeType));
 
     bool bypass = false;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetNodeBypassStatus(nodeId, bypass);
+    ret = pipeline->GetNodeBypassStatus(nodeId, bypass);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetNodeBypassStatus failed, ret = %{public}d.", ret);
 
     *bypassStatus = bypass;
@@ -999,14 +965,18 @@ int32_t OHAudioSuiteEngine::GetNodeBypassStatus(OHAudioNode *node, bool *bypassS
 int32_t OHAudioSuiteEngine::BypassEffectNode(OHAudioNode *node, bool bypass)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "EnableNode failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The node does not exist.");
-    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() != NODE_TYPE_INPUT) && (node->GetNodeType() != NODE_TYPE_OUTPUT),
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    AudioNodeType nodeType = NODE_TYPE_EMPTY;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, pipeline, nodeId, nodeType);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "BypassEffectNode failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "BypassEffectNode failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(nodeType != NODE_TYPE_INPUT && nodeType != NODE_TYPE_OUTPUT,
         ERR_NOT_SUPPORTED, "BypassEffectNode failed, enable type %{public}d not support option.",
-        static_cast<int32_t>(node->GetNodeType()));
-    uint32_t nodeId = node->GetNodeId();
+        static_cast<int32_t>(nodeType));
 
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().BypassEffectNode(nodeId, bypass);
+    ret = pipeline->BypassEffectNode(nodeId, bypass);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "BypassEffectNode failed, ret = %{public}d.", ret);
     return ret;
 }
@@ -1014,14 +984,19 @@ int32_t OHAudioSuiteEngine::BypassEffectNode(OHAudioNode *node, bool bypass)
 int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioFormat *audioFormat)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetAudioFormat failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG(audioFormat != nullptr, ERR_INVALID_PARAM,
         "SetAudioFormat failed, audioFormat is nullptr.");
-    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_INPUT) || (node->GetNodeType() == NODE_TYPE_OUTPUT),
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    AudioNodeType nodeType = NODE_TYPE_EMPTY;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, pipeline, nodeId, nodeType);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetAudioFormat failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetAudioFormat failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(nodeType == NODE_TYPE_INPUT || nodeType == NODE_TYPE_OUTPUT,
         ERR_NOT_SUPPORTED, "SetAudioFormat failed, enable type %{public}d not support.",
-        static_cast<int32_t>(node->GetNodeType()));
-    if (node->GetNodeType() == NODE_TYPE_INPUT && IsHoaFormat(audioFormat->channelLayout)) {
+        static_cast<int32_t>(nodeType));
+    if (nodeType == NODE_TYPE_INPUT && IsHoaFormat(audioFormat->channelLayout)) {
         CHECK_AND_RETURN_RET_LOG(CheckHoaInputFormat(*audioFormat), ERR_AUDIO_SUITE_UNSUPPORTED_FORMAT,
             "SetAudioFormat failed, input node HOA format check error.");
     } else {
@@ -1029,14 +1004,13 @@ int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioFormat *au
             "SetAudioFormat failed, audio format check error.");
     }
 
-    uint32_t nodeId = node->GetNodeId();
     AudioFormat format;
     format.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(audioFormat->channelLayout);
     format.audioChannelInfo.numChannels = audioFormat->channelCount;
     format.encodingType = static_cast<AudioStreamEncodingType>(audioFormat->encodingType);
     format.format = static_cast<AudioSampleFormat>(audioFormat->sampleFormat);
     format.rate =  static_cast<AudioSamplingRate>(audioFormat->samplingRate);
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetAudioFormat(nodeId, format);
+    ret = pipeline->SetAudioFormat(nodeId, format);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetAudioFormat failed, ret = %{public}d.", ret);
     return ret;
 }
@@ -1044,24 +1018,28 @@ int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioFormat *au
 int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioSuite_SystemNodeFormat *audioFormat)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetAudioFormat failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-        "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG(audioFormat != nullptr, ERR_INVALID_PARAM,
         "SetAudioFormat failed, audioFormat is nullptr.");
-    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_INPUT) || (node->GetNodeType() == NODE_TYPE_OUTPUT),
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    AudioNodeType nodeType = NODE_TYPE_EMPTY;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, pipeline, nodeId, nodeType);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetAudioFormat failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetAudioFormat failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(nodeType == NODE_TYPE_INPUT || nodeType == NODE_TYPE_OUTPUT,
         ERR_NOT_SUPPORTED, "SetAudioFormat failed, enable type %{public}d not support.",
-        static_cast<int32_t>(node->GetNodeType()));
+        static_cast<int32_t>(nodeType));
     CHECK_AND_RETURN_RET_LOG(CheckAudioFormat(*audioFormat), ERR_AUDIO_SUITE_UNSUPPORTED_FORMAT,
-        "SetFormat failed AudioFormat invalid, nodeid = %{public}u.", node->GetNodeId());
+        "SetFormat failed AudioFormat invalid, nodeid = %{public}u.", nodeId);
 
-    uint32_t nodeId = node->GetNodeId();
     AudioFormat format;
     format.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(audioFormat->channelLayout);
     format.audioChannelInfo.numChannels = audioFormat->channelCount;
     format.encodingType = static_cast<AudioStreamEncodingType>(audioFormat->encoding);
     format.format = static_cast<AudioSampleFormat>(audioFormat->sampleFormat);
     format.rate =  static_cast<AudioSamplingRate>(audioFormat->samplingRate);
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetAudioFormat(nodeId, format);
+    ret = pipeline->SetAudioFormat(nodeId, format);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetAudioFormat failed, ret = %{public}d.", ret);
     return ret;
 }
@@ -1069,304 +1047,350 @@ int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioSuite_Syst
 int32_t OHAudioSuiteEngine::ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode)
 {
     CHECK_AND_RETURN_RET_LOG(srcNode != nullptr, ERR_INVALID_PARAM, "ConnectNodes failed, srcNode is nullptr.");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-        IsNodeExists(srcNode), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()), EDIT_CONNECT_NODES_INVAILD,
-                                                            "OHAudioSuiteEngine::The sec node does not exist.", true),
-        "OHAudioSuiteEngine::The sec node does not exist.");
-    CHECK_AND_RETURN_RET_LOG(destNode != nullptr, ERR_INVALID_PARAM, "ConnectNodes failed, srcNode is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(destNode), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The dest node does not exist.");
-    uint32_t srcNodeId = srcNode->GetNodeId();
-    uint32_t destNodeId = destNode->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().ConnectNodes(srcNodeId, destNodeId);
+    std::shared_ptr<AudioSuitePipeline> srcPipeline;
+    uint32_t srcNodeId;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(srcNode, NODE_TYPE_EMPTY, srcPipeline, srcNodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ConnectNodes failed, srcNode is invalid.");
+    CHECK_AND_RETURN_RET_LOG(srcPipeline != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "ConnectNodes failed, srcPipeline is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(destNode != nullptr, ERR_INVALID_PARAM, "ConnectNodes failed, destNode is nullptr.");
+    std::shared_ptr<AudioSuitePipeline> destPipeline;
+    uint32_t destNodeId;
+    ret = GetAudioSuitePipelineAndNodeId(destNode, NODE_TYPE_EMPTY, destPipeline, destNodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ConnectNodes failed, destNode is invalid.");
+    CHECK_AND_RETURN_RET_LOG(destPipeline != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "ConnectNodes failed, destPipeline is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(srcPipeline == destPipeline, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT,
+        "ConnectNodes failed, nodes belong to different pipelines.");
+    ret = srcPipeline->ConnectNodes(srcNodeId, destNodeId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ConnectNodes failed, ret = %{public}d.", ret);
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::DisConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode)
+int32_t OHAudioSuiteEngine::DisconnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode)
 {
-    CHECK_AND_RETURN_RET_LOG(srcNode != nullptr, ERR_INVALID_PARAM, "DisConnectNodes failed, srcNode is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(srcNode), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The sec node does not exist.");
-    CHECK_AND_RETURN_RET_LOG(destNode != nullptr, ERR_INVALID_PARAM, "DisConnectNodes failed, srcNode is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(destNode), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The dest node does not exist.");
-    uint32_t srcNodeId = srcNode->GetNodeId();
-    uint32_t destNodeId = destNode->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DisConnectNodes(srcNodeId, destNodeId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DisConnectNodes failed, ret = %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(srcNode != nullptr, ERR_INVALID_PARAM, "DisconnectNodes failed, srcNode is nullptr.");
+    std::shared_ptr<AudioSuitePipeline> srcPipeline;
+    uint32_t srcNodeId;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(srcNode, NODE_TYPE_EMPTY, srcPipeline, srcNodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DisconnectNodes failed, srcNode is invalid.");
+    CHECK_AND_RETURN_RET_LOG(srcPipeline != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "DisconnectNodes failed, srcPipeline is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(destNode != nullptr, ERR_INVALID_PARAM, "DisconnectNodes failed, destNode is nullptr.");
+    std::shared_ptr<AudioSuitePipeline> destPipeline;
+    uint32_t destNodeId;
+    ret = GetAudioSuitePipelineAndNodeId(destNode, NODE_TYPE_EMPTY, destPipeline, destNodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DisconnectNodes failed, destNode is invalid.");
+    CHECK_AND_RETURN_RET_LOG(destPipeline != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "DisconnectNodes failed, destPipeline is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(srcPipeline == destPipeline, ERR_NOT_SUPPORTED,
+        "DisconnectNodes failed, nodes belong to different pipelines.");
+    ret = srcPipeline->DisconnectNodes(srcNodeId, destNodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DisconnectNodes failed, ret = %{public}d.", ret);
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::ValidateNode(OHAudioNode* node, AudioNodeType expectedType, const char* funcName)
+int32_t OHAudioSuiteEngine::LookupPipelineAndNodeId(OHAudioNode* node,
+    std::shared_ptr<AudioSuitePipeline>& pipeline, uint32_t& nodeId, AudioNodeType& nodeType)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "%{public}s failed, node is nullptr.", funcName);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-        IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
-                           ERR_AUDIO_SUITE_NODE_NOT_EXIST),
-            "node does not exist.", true),
-        "%{public}s failed, node does not exist.", funcName);
+    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "get pipeline fail, node is nullptr");
+    nodeType = NODE_TYPE_EMPTY;
+    std::lock_guard<std::mutex> lock(nodesMutex_);
+    if (nodes_.find(node) != nodes_.end()) {
+        pipeline = node->GetPipeline();
+        nodeId = node->GetNodeId();
+        nodeType = node->GetNodeType();
+        return SUCCESS;
+    }
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+            BusinessScenario::CONFIG, ERR_AUDIO_SUITE_NODE_NOT_EXIST), "node does not exist.", true);
+    return ERR_AUDIO_SUITE_NODE_NOT_EXIST;
+}
+
+int32_t OHAudioSuiteEngine::GetAudioSuitePipelineAndNodeId(OHAudioNode* node, AudioNodeType expectedType,
+    std::shared_ptr<AudioSuitePipeline>& pipeline, uint32_t& nodeId)
+{
+    AudioNodeType nodeType = NODE_TYPE_EMPTY;
+    int32_t ret = LookupPipelineAndNodeId(node, pipeline, nodeId, nodeType);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get pipeline and nodeId failed, ret = %{public}d.", ret);
 
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-        (node->GetNodeType() == expectedType), ERR_NOT_SUPPORTED,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()),
+        expectedType == NODE_TYPE_EMPTY || nodeType == expectedType, ERR_NOT_SUPPORTED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
-                           ERR_NOT_SUPPORTED),
-            "Node type does not match the parameters.", true),
-        "%{public}s failed, node type = %{public}d must be %{public}d type.", funcName,
-        static_cast<int32_t>(node->GetNodeType()), static_cast<int32_t>(expectedType));
+                ERR_NOT_SUPPORTED), "Node type does not match the parameters.", true),
+        "Operation failed, node type = %{public}d must be %{public}d type",
+        static_cast<int32_t>(nodeType), static_cast<int32_t>(expectedType));
     return SUCCESS;
 }
 
-template <typename T>
-int32_t OHAudioSuiteEngine::SetAudioNodeProperty(OHAudioNode* node, T value, AudioNodeType nodeType,
-                                                 std::function<int32_t(uint32_t, T)> setter, const char* funcName)
+int32_t OHAudioSuiteEngine::GetAudioSuitePipelineAndNodeId(OHAudioNode* node,
+    std::shared_ptr<AudioSuitePipeline>& pipeline, uint32_t& nodeId, AudioNodeType& nodeType)
 {
-    int32_t valid = ValidateNode(node, nodeType, funcName);
-    CHECK_AND_RETURN_RET_LOG(valid == SUCCESS, valid, "node operation is invalid");
-    uint32_t nodeId = node->GetNodeId();
-    int32_t ret = setter(nodeId, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s failed, ret = %{public}d.", funcName, ret);
-    return SUCCESS;
-}
-
-template <typename T>
-int32_t OHAudioSuiteEngine::GetAudioNodeProperty(OHAudioNode* node, T* outValue, AudioNodeType nodeType,
-                                                 std::function<int32_t(uint32_t, T&)> getter, const char* funcName)
-{
-    int32_t valid = ValidateNode(node, nodeType, funcName);
-    CHECK_AND_RETURN_RET_LOG(valid == SUCCESS, valid, "node operation is invalid");
-    CHECK_AND_RETURN_RET_LOG(outValue != nullptr, ERR_INVALID_PARAM, "node set point is nullptr");
-    uint32_t nodeId = node->GetNodeId();
-    T value;
-    int32_t ret = getter(nodeId, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s failed, ret = %{public}d.", funcName, ret);
-    *outValue = value;
+    int32_t ret = LookupPipelineAndNodeId(node, pipeline, nodeId, nodeType);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get pipeline and nodeId failed, ret = %{public}d.", ret);
     return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::SetEqualizerFrequencyBandGains(
     OHAudioNode *node, OH_EqualizerFrequencyBandGains frequencyBandGains)
 {
-    auto setter = [](uint32_t nodeId, OH_EqualizerFrequencyBandGains value) {
-        AudioEqualizerFrequencyBandGains audioGains;
-        size_t ohGainsNum = sizeof(value.gains) / sizeof(value.gains[0]);
-        size_t gainsNum = sizeof(audioGains.gains) / sizeof(audioGains.gains[0]);
-        for (uint32_t idx = 0; idx < (ohGainsNum < gainsNum ? ohGainsNum : gainsNum); idx++) {
-            audioGains.gains[idx] = value.gains[idx];
-            CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-                (audioGains.gains[idx] >= EQ_FREQUENCY_BAND_GAINS_MIN) &&
-                    (audioGains.gains[idx] <= EQ_FREQUENCY_BAND_GAINS_MAX),
-                ERR_INVALID_PARAM,
-                StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                    static_cast<int32_t>(getuid()),
-                    BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                                   BusinessScenario::CONFIG, ERR_INVALID_PARAM),
-                    "SetEqualizerFrequencyBandGains failed, input value not in -10, 10.", true),
-                "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.", audioGains.gains[idx]);
-        }
-        return IAudioSuiteManager::GetAudioSuiteManager().SetEqualizerFrequencyBandGains(nodeId, audioGains);
-    };
-    return SetAudioNodeProperty(node, frequencyBandGains, NODE_TYPE_EQUALIZER,
-                                std::function<int32_t(uint32_t, OH_EqualizerFrequencyBandGains)>(setter), __func__);
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_EQUALIZER, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetEqualizerFrequencyBandGains failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetEqualizerFrequencyBandGains failed, pipeline is nullptr.");
+
+    AudioEqualizerFrequencyBandGains audioGains;
+    size_t ohGainsNum = sizeof(frequencyBandGains.gains) / sizeof(frequencyBandGains.gains[0]);
+    size_t gainsNum = sizeof(audioGains.gains) / sizeof(audioGains.gains[0]);
+    for (uint32_t idx = 0; idx < (ohGainsNum < gainsNum ? ohGainsNum : gainsNum); idx++) {
+        audioGains.gains[idx] = frequencyBandGains.gains[idx];
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+            (audioGains.gains[idx] >= EQ_FREQUENCY_BAND_GAINS_MIN) &&
+                (audioGains.gains[idx] <= EQ_FREQUENCY_BAND_GAINS_MAX),
+            ERR_INVALID_PARAM,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::CONFIG, ERR_INVALID_PARAM),
+                "SetEqualizerFrequencyBandGains failed, input value not in -10, 10.", true),
+            "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.", audioGains.gains[idx]);
+    }
+    ret = pipeline->SetEqualizerFrequencyBandGains(nodeId, audioGains);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetEqualizerFrequencyBandGains failed, ret = %{public}d.", ret);
+    return ret;
 }
 
 int32_t OHAudioSuiteEngine::GetEqualizerFrequencyBandGains(
     OHAudioNode *node, OH_EqualizerFrequencyBandGains *frequencyBandGains)
 {
-    auto getter = [](uint32_t nodeId, OH_EqualizerFrequencyBandGains& value) {
-        AudioEqualizerFrequencyBandGains frequency = {
-            .gains = {0}
-        };
-        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetEqualizerFrequencyBandGains(nodeId, frequency);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetEqualizerFrequencyBandGains failed, ret = %{public}d.", ret);
-        size_t ohGainsNum = sizeof(value.gains) / sizeof(value.gains[0]);
-        size_t gainsNum = sizeof(frequency.gains) / sizeof(frequency.gains[0]);
-        for (uint32_t idx = 0; idx < (ohGainsNum < gainsNum ? ohGainsNum : gainsNum); idx++) {
-            value.gains[idx] = frequency.gains[idx];
-        }
-        return SUCCESS;
-    };
-    return GetAudioNodeProperty(node, frequencyBandGains, NODE_TYPE_EQUALIZER,
-                                std::function<int32_t(uint32_t, OH_EqualizerFrequencyBandGains&)>(getter), __func__);
+    CHECK_AND_RETURN_RET_LOG(frequencyBandGains != nullptr, ERR_INVALID_PARAM,
+        "GetEqualizerFrequencyBandGains failed, frequencyBandGains is nullptr.");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_EQUALIZER, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetEqualizerFrequencyBandGains failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetEqualizerFrequencyBandGains failed, pipeline is nullptr.");
+
+    AudioEqualizerFrequencyBandGains frequency = {.gains = {0}};
+    ret = pipeline->GetEqualizerFrequencyBandGains(nodeId, frequency);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetEqualizerFrequencyBandGains failed, ret = %{public}d.", ret);
+    size_t ohGainsNum = sizeof(frequencyBandGains->gains) / sizeof(frequencyBandGains->gains[0]);
+    size_t gainsNum = sizeof(frequency.gains) / sizeof(frequency.gains[0]);
+    for (uint32_t idx = 0; idx < (ohGainsNum < gainsNum ? ohGainsNum : gainsNum); idx++) {
+        frequencyBandGains->gains[idx] = frequency.gains[idx];
+    }
+    return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::SetSoundFieldType(
     OHAudioNode *node, OH_SoundFieldType soundFieldType)
 {
-    auto setter = [](uint32_t nodeId, OH_SoundFieldType value) {
-        return IAudioSuiteManager::GetAudioSuiteManager().SetSoundFieldType(
-            nodeId, static_cast<SoundFieldType>(value));
-    };
-    return SetAudioNodeProperty(node, soundFieldType, NODE_TYPE_SOUND_FIELD,
-                                std::function<int32_t(uint32_t, OH_SoundFieldType)>(setter), __func__);
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_SOUND_FIELD, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSoundFieldType failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetSoundFieldType failed, pipeline is nullptr.");
+    ret = pipeline->SetSoundFieldType(nodeId, static_cast<SoundFieldType>(soundFieldType));
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSoundFieldType failed, ret = %{public}d.", ret);
+    return ret;
 }
 
 int32_t OHAudioSuiteEngine::SetEnvironmentType(
     OHAudioNode *node, OH_EnvironmentType environmentType)
 {
-    auto setter = [](uint32_t nodeId, OH_EnvironmentType value) {
-        return IAudioSuiteManager::GetAudioSuiteManager().SetEnvironmentType(
-            nodeId, static_cast<EnvironmentType>(value));
-    };
-    return SetAudioNodeProperty(node, environmentType, NODE_TYPE_ENVIRONMENT_EFFECT,
-                                std::function<int32_t(uint32_t, OH_EnvironmentType)>(setter), __func__);
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_ENVIRONMENT_EFFECT, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetEnvironmentType failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetEnvironmentType failed, pipeline is nullptr.");
+    ret = pipeline->SetEnvironmentType(nodeId, static_cast<EnvironmentType>(environmentType));
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetEnvironmentType failed, ret = %{public}d.", ret);
+    return ret;
 }
 
 int32_t OHAudioSuiteEngine::SetVoiceBeautifierType(
     OHAudioNode *node, OH_VoiceBeautifierType voiceBeautifierType)
 {
-    auto setter = [](uint32_t nodeId, OH_VoiceBeautifierType value) {
-        return IAudioSuiteManager::GetAudioSuiteManager().SetVoiceBeautifierType(
-            nodeId, static_cast<VoiceBeautifierType>(value));
-    };
-    return SetAudioNodeProperty(node, voiceBeautifierType, NODE_TYPE_VOICE_BEAUTIFIER,
-                                std::function<int32_t(uint32_t, OH_VoiceBeautifierType)>(setter), __func__);
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_VOICE_BEAUTIFIER, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetVoiceBeautifierType failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetVoiceBeautifierType failed, pipeline is nullptr.");
+    ret = pipeline->SetVoiceBeautifierType(nodeId, static_cast<VoiceBeautifierType>(voiceBeautifierType));
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetVoiceBeautifierType failed, ret = %{public}d.", ret);
+    return ret;
 }
 
 int32_t OHAudioSuiteEngine::SetSpaceRenderPositionParams(
     OHAudioNode *node, OH_AudioSuite_SpaceRenderPositionParams position)
 {
-    auto setter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderPositionParams value) {
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-            value.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE &&
-                value.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE &&
-                value.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
-            ERR_INVALID_PARAM,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
-                "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f", true),
-            "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
-        AudioSpaceRenderPositionParams positionParams;
-        positionParams.x = value.x;
-        positionParams.y = value.y;
-        positionParams.z = value.z;
-        return IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderPositionParams(nodeId, positionParams);
-    };
-    return SetAudioNodeProperty(node, position, NODE_TYPE_SPACE_RENDER,
-        std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderPositionParams)>(setter), __func__);
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_SPACE_RENDER, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSpaceRenderPositionParams failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetSpaceRenderPositionParams failed, pipeline is nullptr.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        position.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && position.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE &&
+            position.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && position.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE &&
+            position.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && position.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f", true),
+        "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
+    AudioSpaceRenderPositionParams positionParams;
+    positionParams.x = position.x;
+    positionParams.y = position.y;
+    positionParams.z = position.z;
+    ret = pipeline->SetSpaceRenderPositionParams(nodeId, positionParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSpaceRenderPositionParams failed, ret = %{public}d.", ret);
+    return ret;
 }
 
 int32_t OHAudioSuiteEngine::GetSpaceRenderPositionParams(
     OHAudioNode *node, OH_AudioSuite_SpaceRenderPositionParams *position)
 {
-    auto getter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderPositionParams &value) {
-        AudioSpaceRenderPositionParams positionParams;
-        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderPositionParams(
-            nodeId, positionParams);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSpaceRenderPositionParams failed, ret = %{public}d.", ret);
-        value.x = positionParams.x;
-        value.y = positionParams.y;
-        value.z = positionParams.z;
-        return SUCCESS;
-    };
-    return GetAudioNodeProperty(node, position, NODE_TYPE_SPACE_RENDER,
-        std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderPositionParams&)>(getter), __func__);
+    CHECK_AND_RETURN_RET_LOG(position != nullptr, ERR_INVALID_PARAM,
+        "GetSpaceRenderPositionParams failed, position is nullptr.");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_SPACE_RENDER, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSpaceRenderPositionParams failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetSpaceRenderPositionParams failed, pipeline is nullptr.");
+
+    AudioSpaceRenderPositionParams positionParams;
+    ret = pipeline->GetSpaceRenderPositionParams(nodeId, positionParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSpaceRenderPositionParams failed, ret = %{public}d.", ret);
+    position->x = positionParams.x;
+    position->y = positionParams.y;
+    position->z = positionParams.z;
+    return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::SetSpaceRenderRotationParams(
     OHAudioNode *node, OH_AudioSuite_SpaceRenderRotationParams rotation)
 {
-    auto setter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderRotationParams value) {
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-            value.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE &&
-            value.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE &&
-            value.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
-            ERR_INVALID_PARAM,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
-                "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f.", true),
-            "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f.");
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-            value.surroundTime >= SPACE_RENDER_MIN_TIME && value.surroundTime <= SPACE_RENDER_MAX_TIME,
-            ERR_INVALID_PARAM,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
-                "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f.", true),
-            "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f.");
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-            value.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW ||
-            value.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW,
-            ERR_INVALID_PARAM,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
-                "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1.", true),
-            "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1.");
-        AudioSpaceRenderRotationParams rotationParams;
-        rotationParams.x = value.x;
-        rotationParams.y = value.y;
-        rotationParams.z = value.z;
-        rotationParams.surroundTime = value.surroundTime;
-        rotationParams.surroundDirection = static_cast<AudioSurroundDirection>(value.surroundDirection);
-        return IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderRotationParams(nodeId, rotationParams);
-    };
-    return SetAudioNodeProperty(node, rotation, NODE_TYPE_SPACE_RENDER,
-        std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderRotationParams)>(setter), __func__);
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_SPACE_RENDER, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSpaceRenderRotationParams failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetSpaceRenderRotationParams failed, pipeline is nullptr.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        rotation.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && rotation.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE &&
+        rotation.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && rotation.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE &&
+        rotation.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && rotation.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f.", true),
+        "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        rotation.surroundTime >= SPACE_RENDER_MIN_TIME && rotation.surroundTime <= SPACE_RENDER_MAX_TIME,
+        ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f.", true),
+        "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        rotation.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW ||
+        rotation.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW,
+        ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1.", true),
+        "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1.");
+    AudioSpaceRenderRotationParams rotationParams;
+    rotationParams.x = rotation.x;
+    rotationParams.y = rotation.y;
+    rotationParams.z = rotation.z;
+    rotationParams.surroundTime = rotation.surroundTime;
+    rotationParams.surroundDirection = static_cast<AudioSurroundDirection>(rotation.surroundDirection);
+    ret = pipeline->SetSpaceRenderRotationParams(nodeId, rotationParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSpaceRenderRotationParams failed, ret = %{public}d.", ret);
+    return ret;
 }
 
 int32_t OHAudioSuiteEngine::GetSpaceRenderRotationParams(
     OHAudioNode* node, OH_AudioSuite_SpaceRenderRotationParams* rotation)
 {
-    auto getter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderRotationParams& value) {
-        AudioSpaceRenderRotationParams rotationParams;
-        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderRotationParams(
-            nodeId, rotationParams);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSpaceRenderRotationParams failed, ret = %{public}d.", ret);
-        value.x = rotationParams.x;
-        value.y = rotationParams.y;
-        value.z = rotationParams.z;
-        value.surroundTime = rotationParams.surroundTime;
-        value.surroundDirection = static_cast<OH_AudioSuite_SurroundDirection>(rotationParams.surroundDirection);
-        return SUCCESS;
-    };
-    return GetAudioNodeProperty(node, rotation, NODE_TYPE_SPACE_RENDER,
-        std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderRotationParams&)>(getter), __func__);
+    CHECK_AND_RETURN_RET_LOG(rotation != nullptr, ERR_INVALID_PARAM,
+        "GetSpaceRenderRotationParams failed, rotation is nullptr.");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_SPACE_RENDER, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSpaceRenderRotationParams failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetSpaceRenderRotationParams failed, pipeline is nullptr.");
+
+    AudioSpaceRenderRotationParams rotationParams;
+    ret = pipeline->GetSpaceRenderRotationParams(nodeId, rotationParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSpaceRenderRotationParams failed, ret = %{public}d.", ret);
+    rotation->x = rotationParams.x;
+    rotation->y = rotationParams.y;
+    rotation->z = rotationParams.z;
+    rotation->surroundTime = rotationParams.surroundTime;
+    rotation->surroundDirection = static_cast<OH_AudioSuite_SurroundDirection>(rotationParams.surroundDirection);
+    return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::SetSpaceRenderExtensionParams(
     OHAudioNode* node, OH_AudioSuite_SpaceRenderExtensionParams extension)
 {
-    auto setter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderExtensionParams value) {
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-            value.extRadius >= SPACE_RENDER_MIN_EXPAND_RADIUS && value.extRadius <= SPACE_RENDER_MAX_EXPAND_RADIUS,
-            ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
-                "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f", true),
-            "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f");
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-            value.extAngle > SPACE_RENDER_MIN_EXPAND_ANGLE && value.extAngle < SPACE_RENDER_MAX_EXPAND_ANGLE,
-            ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
-                "SetSpaceRenderExtensionParams failed, Angle must be in the (0, 360)", true),
-            "SetSpaceRenderExtensionParams failed, Angle must be in the (0, 360).");
-        AudioSpaceRenderExtensionParams extensionParams;
-        extensionParams.extAngle = value.extAngle;
-        extensionParams.extRadius = value.extRadius;
-        return IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderExtensionParams(nodeId, extensionParams);
-    };
-    return SetAudioNodeProperty(node, extension, NODE_TYPE_SPACE_RENDER,
-        std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderExtensionParams)>(setter), __func__);
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_SPACE_RENDER, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSpaceRenderExtensionParams failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetSpaceRenderExtensionParams failed, pipeline is nullptr.");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        extension.extRadius >= SPACE_RENDER_MIN_EXPAND_RADIUS && extension.extRadius <= SPACE_RENDER_MAX_EXPAND_RADIUS,
+        ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f", true),
+        "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        extension.extAngle > SPACE_RENDER_MIN_EXPAND_ANGLE && extension.extAngle < SPACE_RENDER_MAX_EXPAND_ANGLE,
+        ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSpaceRenderExtensionParams failed, Angle must be in the (0, 360)", true),
+        "SetSpaceRenderExtensionParams failed, Angle must be in the (0, 360).");
+    AudioSpaceRenderExtensionParams extensionParams;
+    extensionParams.extAngle = extension.extAngle;
+    extensionParams.extRadius = extension.extRadius;
+    ret = pipeline->SetSpaceRenderExtensionParams(nodeId, extensionParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSpaceRenderExtensionParams failed, ret = %{public}d.", ret);
+    return ret;
 }
 
 int32_t OHAudioSuiteEngine::GetSpaceRenderExtensionParams(
     OHAudioNode *node, OH_AudioSuite_SpaceRenderExtensionParams *extension)
 {
-    auto getter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderExtensionParams &value) {
-        AudioSpaceRenderExtensionParams extensionParams;
-        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderExtensionParams(
-            nodeId, extensionParams);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSpaceRenderExtensionParams failed, ret = %{public}d.", ret);
-        value.extRadius = extensionParams.extRadius;
-        value.extAngle = extensionParams.extAngle;
-        return SUCCESS;
-    };
-    return GetAudioNodeProperty(node, extension, NODE_TYPE_SPACE_RENDER,
-        std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderExtensionParams&)>(getter), __func__);
+    CHECK_AND_RETURN_RET_LOG(extension != nullptr, ERR_INVALID_PARAM,
+        "GetSpaceRenderExtensionParams failed, extension is nullptr.");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_SPACE_RENDER, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSpaceRenderExtensionParams failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetSpaceRenderExtensionParams failed, pipeline is nullptr.");
+
+    AudioSpaceRenderExtensionParams extensionParams;
+    ret = pipeline->GetSpaceRenderExtensionParams(nodeId, extensionParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSpaceRenderExtensionParams failed, ret = %{public}d.", ret);
+    extension->extRadius = extensionParams.extRadius;
+    extension->extAngle = extensionParams.extAngle;
+    return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::SetTempoAndPitch(OHAudioNode* node, float speed, float pitch)
@@ -1378,36 +1402,31 @@ int32_t OHAudioSuiteEngine::SetTempoAndPitch(OHAudioNode* node, float speed, flo
             static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetTempoAndPitch failed, speed must be in the 0.5~10.0 and pitch must be in the 0.1~5.0.", true),
         "SetTempoAndPitch failed, speed must be in the 0.5~10.0 and pitch must be in the 0.1~5.0.");
-    struct TempoAndPitch {
-        float speed;
-        float pitch;
-    } value = {speed, pitch};
-    std::function<int32_t(uint32_t, TempoAndPitch)> setter =
-        [](uint32_t nodeId, TempoAndPitch value) -> int32_t {
-            return IAudioSuiteManager::GetAudioSuiteManager().SetTempoAndPitch(nodeId, value.speed, value.pitch);
-        };
-    return SetAudioNodeProperty(node, value, NODE_TYPE_TEMPO_PITCH, setter, "SetTempoAndPitch");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_TEMPO_PITCH, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetTempoAndPitch failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetTempoAndPitch failed, pipeline is nullptr.");
+    ret = pipeline->SetTempoAndPitch(nodeId, speed, pitch);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetTempoAndPitch failed, ret = %{public}d.", ret);
+    return ret;
 }
 
 int32_t OHAudioSuiteEngine::GetTempoAndPitch(OHAudioNode* node, float* speed, float* pitch)
 {
     CHECK_AND_RETURN_RET_LOG(speed != nullptr && pitch != nullptr, ERR_INVALID_PARAM,
         "GetTempoAndPitch failed, parameter is nullptr.");
-    struct TempoAndPitch {
-        float speed;
-        float pitch;
-    };
-    std::function<int32_t(uint32_t, TempoAndPitch&)> getter =
-        [](uint32_t nodeId, TempoAndPitch& value) -> int32_t {
-            return IAudioSuiteManager::GetAudioSuiteManager().GetTempoAndPitch(
-                nodeId, value.speed, value.pitch);
-        };
-    TempoAndPitch result = {1.0f, 1.0f};
-    int32_t ret = GetAudioNodeProperty(node, &result, NODE_TYPE_TEMPO_PITCH, getter, "GetTempoAndPitch");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_TEMPO_PITCH, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetTempoAndPitch failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetTempoAndPitch failed, pipeline is nullptr.");
+
+    ret = pipeline->GetTempoAndPitch(nodeId, *speed, *pitch);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetTempoAndPitch failed, ret = %{public}d.", ret);
-    *speed = result.speed;
-    *pitch = result.pitch;
-    return SUCCESS;
+    return ret;
 }
 
 int32_t OHAudioSuiteEngine::SetPureVoiceChangeOption(
@@ -1421,94 +1440,126 @@ int32_t OHAudioSuiteEngine::SetPureVoiceChangeOption(
             static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetPureVoiceChangeOption failed, pitch must be in the 0.3f~3.0f or 0.0f.", true),
         "SetPureVoiceChangeOption failed, pitch must be in the 0.3f~3.0f or 0.0f.");
-    auto setter = [](uint32_t nodeId, OH_AudioSuite_PureVoiceChangeOption value) {
-        AudioPureVoiceChangeOption optionParams;
-        optionParams.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(value.optionGender);
-        optionParams.optionType = static_cast<AudioPureVoiceChangeType>(value.optionType);
-        optionParams.pitch = static_cast<float>(value.pitch);
-        return IAudioSuiteManager::GetAudioSuiteManager().SetPureVoiceChangeOption(nodeId, optionParams);
-    };
-    return SetAudioNodeProperty(node, option, NODE_TYPE_PURE_VOICE_CHANGE,
-        std::function<int32_t(uint32_t, OH_AudioSuite_PureVoiceChangeOption)>(setter), __func__);
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_PURE_VOICE_CHANGE, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetPureVoiceChangeOption failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetPureVoiceChangeOption failed, pipeline is nullptr.");
+    AudioPureVoiceChangeOption optionParams;
+    optionParams.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(option.optionGender);
+    optionParams.optionType = static_cast<AudioPureVoiceChangeType>(option.optionType);
+    optionParams.pitch = static_cast<float>(option.pitch);
+    ret = pipeline->SetPureVoiceChangeOption(nodeId, optionParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetPureVoiceChangeOption failed, ret = %{public}d.", ret);
+    return ret;
 }
 
 int32_t OHAudioSuiteEngine::GetPureVoiceChangeOption(
     OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption* option)
 {
-    auto getter = [](uint32_t nodeId, OH_AudioSuite_PureVoiceChangeOption& value) {
-        AudioPureVoiceChangeOption optionParams;
-        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetPureVoiceChangeOption(nodeId, optionParams);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetPureVoiceChangeOption failed, ret = %{public}d.", ret);
-        value.optionGender = static_cast<OH_AudioSuite_PureVoiceChangeGenderOption>(optionParams.optionGender);
-        value.optionType = static_cast<OH_AudioSuite_PureVoiceChangeType>(optionParams.optionType);
-        value.pitch = static_cast<float>(optionParams.pitch);
-        return SUCCESS;
-    };
-    return GetAudioNodeProperty(node, option, NODE_TYPE_PURE_VOICE_CHANGE,
-        std::function<int32_t(uint32_t, OH_AudioSuite_PureVoiceChangeOption&)>(getter), __func__);
+    CHECK_AND_RETURN_RET_LOG(option != nullptr, ERR_INVALID_PARAM,
+        "GetPureVoiceChangeOption failed, option is nullptr.");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_PURE_VOICE_CHANGE, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetPureVoiceChangeOption failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetPureVoiceChangeOption failed, pipeline is nullptr.");
+
+    AudioPureVoiceChangeOption optionParams;
+    ret = pipeline->GetPureVoiceChangeOption(nodeId, optionParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetPureVoiceChangeOption failed, ret = %{public}d.", ret);
+    option->optionGender = static_cast<OH_AudioSuite_PureVoiceChangeGenderOption>(optionParams.optionGender);
+    option->optionType = static_cast<OH_AudioSuite_PureVoiceChangeType>(optionParams.optionType);
+    option->pitch = static_cast<float>(optionParams.pitch);
+    return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::SetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType type)
 {
-    auto setter = [](uint32_t nodeId, OH_AudioSuite_GeneralVoiceChangeType value) {
-        return IAudioSuiteManager::GetAudioSuiteManager().SetGeneralVoiceChangeType(
-            nodeId, static_cast<AudioGeneralVoiceChangeType>(value));
-    };
-    return SetAudioNodeProperty(node, type, NODE_TYPE_GENERAL_VOICE_CHANGE,
-        std::function<int32_t(uint32_t, OH_AudioSuite_GeneralVoiceChangeType)>(setter), __func__);
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_GENERAL_VOICE_CHANGE, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetGeneralVoiceChangeType failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetGeneralVoiceChangeType failed, pipeline is nullptr.");
+    ret = pipeline->SetGeneralVoiceChangeType(nodeId, static_cast<AudioGeneralVoiceChangeType>(type));
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetGeneralVoiceChangeType failed, ret = %{public}d.", ret);
+    return ret;
 }
 
 int32_t OHAudioSuiteEngine::GetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType* type)
 {
-    auto getter = [](uint32_t nodeId, OH_AudioSuite_GeneralVoiceChangeType& value) {
-        AudioGeneralVoiceChangeType typeParam;
-        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetGeneralVoiceChangeType(nodeId, typeParam);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetGeneralVoiceChangeType failed, ret = %{public}d.", ret);
-        value = static_cast<OH_AudioSuite_GeneralVoiceChangeType>(typeParam);
-        return SUCCESS;
-    };
-    return GetAudioNodeProperty(node, type, NODE_TYPE_GENERAL_VOICE_CHANGE,
-        std::function<int32_t(uint32_t, OH_AudioSuite_GeneralVoiceChangeType&)>(getter), __func__);
+    CHECK_AND_RETURN_RET_LOG(type != nullptr, ERR_INVALID_PARAM,
+        "GetGeneralVoiceChangeType failed, type is nullptr.");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_GENERAL_VOICE_CHANGE, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetGeneralVoiceChangeType failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetGeneralVoiceChangeType failed, pipeline is nullptr.");
+
+    AudioGeneralVoiceChangeType typeParam;
+    ret = pipeline->GetGeneralVoiceChangeType(nodeId, typeParam);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetGeneralVoiceChangeType failed, ret = %{public}d.", ret);
+    *type = static_cast<OH_AudioSuite_GeneralVoiceChangeType>(typeParam);
+    return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::GetEnvironmentType(OHAudioNode *node, OH_EnvironmentType *environmentType)
 {
-    auto getter = [](uint32_t nodeId, OH_EnvironmentType& value) {
-        EnvironmentType environment = AUDIO_SUITE_ENVIRONMENT_TYPE_CLOSE;
-        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetEnvironmentType(nodeId, environment);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetEnvironmentType failed, ret = %{public}d.", ret);
-        value = static_cast<OH_EnvironmentType>(environment);
-        return SUCCESS;
-    };
-    return GetAudioNodeProperty(node, environmentType, NODE_TYPE_ENVIRONMENT_EFFECT,
-                                std::function<int32_t(uint32_t, OH_EnvironmentType&)>(getter), __func__);
+    CHECK_AND_RETURN_RET_LOG(environmentType != nullptr, ERR_INVALID_PARAM,
+        "GetEnvironmentType failed, environmentType is nullptr.");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_ENVIRONMENT_EFFECT, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetEnvironmentType failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetEnvironmentType failed, pipeline is nullptr.");
+
+    EnvironmentType environment = AUDIO_SUITE_ENVIRONMENT_TYPE_CLOSE;
+    ret = pipeline->GetEnvironmentType(nodeId, environment);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetEnvironmentType failed, ret = %{public}d.", ret);
+    *environmentType = static_cast<OH_EnvironmentType>(environment);
+    return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::GetSoundFieldType(OHAudioNode *node, OH_SoundFieldType *soundFieldType)
 {
-    auto getter = [](uint32_t nodeId, OH_SoundFieldType& value) {
-        SoundFieldType soundField = AUDIO_SUITE_SOUND_FIELD_CLOSE;
-        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSoundFieldType(nodeId, soundField);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSoundFieldType failed, ret = %{public}d.", ret);
-        value = static_cast<OH_SoundFieldType>(soundField);
-        return SUCCESS;
-    };
-    return GetAudioNodeProperty(node, soundFieldType, NODE_TYPE_SOUND_FIELD,
-                                std::function<int32_t(uint32_t, OH_SoundFieldType&)>(getter), __func__);
+    CHECK_AND_RETURN_RET_LOG(soundFieldType != nullptr, ERR_INVALID_PARAM,
+        "GetSoundFieldType failed, soundFieldType is nullptr.");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_SOUND_FIELD, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSoundFieldType failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetSoundFieldType failed, pipeline is nullptr.");
+
+    SoundFieldType soundField = AUDIO_SUITE_SOUND_FIELD_CLOSE;
+    ret = pipeline->GetSoundFieldType(nodeId, soundField);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSoundFieldType failed, ret = %{public}d.", ret);
+    *soundFieldType = static_cast<OH_SoundFieldType>(soundField);
+    return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::GetVoiceBeautifierType(OHAudioNode *node,
     OH_VoiceBeautifierType *voiceBeautifierType)
 {
-    auto getter = [](uint32_t nodeId, OH_VoiceBeautifierType& value) {
-        VoiceBeautifierType voiceBeautifier = AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR;
-        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetVoiceBeautifierType(nodeId, voiceBeautifier);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetVoiceBeautifierType failed, ret = %{public}d.", ret);
-        value = static_cast<OH_VoiceBeautifierType>(voiceBeautifier);
-        return SUCCESS;
-    };
-    return GetAudioNodeProperty(node, voiceBeautifierType, NODE_TYPE_VOICE_BEAUTIFIER,
-                                std::function<int32_t(uint32_t, OH_VoiceBeautifierType&)>(getter), __func__);
+    CHECK_AND_RETURN_RET_LOG(voiceBeautifierType != nullptr, ERR_INVALID_PARAM,
+        "GetVoiceBeautifierType failed, voiceBeautifierType is nullptr.");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_VOICE_BEAUTIFIER, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetVoiceBeautifierType failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetVoiceBeautifierType failed, pipeline is nullptr.");
+
+    VoiceBeautifierType voiceBeautifier = AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR;
+    ret = pipeline->GetVoiceBeautifierType(nodeId, voiceBeautifier);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetVoiceBeautifierType failed, ret = %{public}d.", ret);
+    *voiceBeautifierType = static_cast<OH_VoiceBeautifierType>(voiceBeautifier);
+    return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported)
@@ -1516,7 +1567,7 @@ int32_t OHAudioSuiteEngine::IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool
     CHECK_AND_RETURN_RET_LOG(
         isSupported != nullptr, ERR_INVALID_PARAM, "IsNodeTypeSupported function failed, isSupported is nullptr.");
     bool tempIsSupported = false;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().IsNodeTypeSupported(
+    int32_t ret = AudioSuitePipeline::IsNodeTypeSupported(
         static_cast<AudioNodeType>(nodeType), tempIsSupported);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "IsNodeTypeSupported function failed, ret = %{public}d.", ret);
     *isSupported = tempIsSupported;
@@ -1526,11 +1577,14 @@ int32_t OHAudioSuiteEngine::IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool
 int32_t OHAudioSuiteEngine::SetSystemNodeParam(OHAudioNode* node, std::vector<uint8_t> &param)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetSystemNodeParam failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-        "SetSystemNodeParam failed, node does not exist.");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_EMPTY, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSystemNodeParam failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "SetSystemNodeParam failed, pipeline is nullptr.");
 
-    uint32_t nodeId = node->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetSystemNodeParam(nodeId, param);
+    ret = pipeline->SetSystemNodeParam(nodeId, param);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSystemNodeParam failed, ret = %{public}d.", ret);
     return ret;
 }
@@ -1538,11 +1592,14 @@ int32_t OHAudioSuiteEngine::SetSystemNodeParam(OHAudioNode* node, std::vector<ui
 int32_t OHAudioSuiteEngine::GetSystemNodeParam(OHAudioNode* node, std::vector<uint8_t> &param)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetSystemNodeParam failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-        "GetSystemNodeParam failed, node does not exist.");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_EMPTY, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSystemNodeParam failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetSystemNodeParam failed, pipeline is nullptr.");
 
-    uint32_t nodeId = node->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSystemNodeParam(nodeId, param);
+    ret = pipeline->GetSystemNodeParam(nodeId, param);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSystemNodeParam failed, ret = %{public}d.", ret);
     return ret;
 }
@@ -1550,38 +1607,44 @@ int32_t OHAudioSuiteEngine::GetSystemNodeParam(OHAudioNode* node, std::vector<ui
 int32_t OHAudioSuiteEngine::GetSystemNodeInOutSize(OHAudioNode* node, uint32_t &inSize, uint32_t &outSize)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetSystemNodeInOutSize failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-        "GetSystemNodeInOutSize failed, node does not exist.");
+    std::shared_ptr<AudioSuitePipeline> pipeline;
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_EMPTY, pipeline, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSystemNodeInOutSize failed, node is invalid.");
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "GetSystemNodeInOutSize failed, pipeline is nullptr.");
 
-    uint32_t nodeId = node->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSystemNodeInOutSize(nodeId, inSize, outSize);
+    ret = pipeline->GetSystemNodeInOutSize(nodeId, inSize, outSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSystemNodeInOutSize failed, ret = %{public}d.", ret);
     return ret;
 }
 
 void OHAudioSuiteEngine::AddPipeline(OHAudioSuitePipeline *pipeline)
 {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(pipelinesMutex_);
     pipelines_.insert(pipeline);
 }
 
 void OHAudioSuiteEngine::RemovePipeline(OHAudioSuitePipeline *pipeline)
 {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-    if (pipeline != nullptr) {
-        pipelines_.erase(pipeline);
+    std::lock_guard<std::mutex> lock(pipelinesMutex_);
+    if (pipelines_.erase(pipeline) > 0 && pipeline != nullptr) {
         delete pipeline;
     }
 }
 
-bool OHAudioSuiteEngine::IsPipelineExists(OHAudioSuitePipeline *pipeline)
+std::shared_ptr<AudioSuitePipeline> OHAudioSuiteEngine::GetAudioSuitePipeline(OHAudioSuitePipeline *pipeline)
 {
-    if (pipeline == nullptr) {
-        return false;
+    std::lock_guard<std::mutex> lock(pipelinesMutex_);
+    if (pipelines_.find(pipeline) == pipelines_.end()) {
+        return nullptr;
     }
+    return pipeline->GetPipeline();
+}
 
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-    return pipelines_.find(pipeline) != pipelines_.end();
+std::shared_ptr<AudioSuitePipeline> OHAudioSuitePipeline::GetPipeline() const
+{
+    return pipeline_;
 }
 
 void OHAudioSuitePipeline::AddNode(OHAudioNode *node)
@@ -1590,61 +1653,68 @@ void OHAudioSuitePipeline::AddNode(OHAudioNode *node)
     nodes_.insert(node);
 }
 
+void OHAudioSuitePipeline::RemoveNode(OHAudioNode *node)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    nodes_.erase(node);
+}
+
 bool OHAudioSuitePipeline::IsNodeExists(OHAudioNode *node)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     return nodes_.find(node) != nodes_.end();
 }
 
-void OHAudioSuitePipeline::RemoveNode(OHAudioNode *node)
+void OHAudioSuitePipeline::GetAllNodes(std::vector<OHAudioNode*> &nodes)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (node != nullptr) {
-        nodes_.erase(node);
-        delete node;
+    for (auto node : nodes_) {
+        nodes.push_back(node);
     }
-}
-OHAudioSuitePipeline::~OHAudioSuitePipeline()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    for (OHAudioNode* node : nodes_) {
-        if (node != nullptr) {
-            delete node;
-        }
-    }
-    nodes_.clear();
 }
 
-bool OHAudioSuiteEngine::IsNodeExists(OHAudioNode *node)
+void OHAudioSuiteEngine::AddNode(OHAudioNode *node)
 {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-    for (auto pipeline : pipelines_) {
-        if (pipeline && node && pipeline->IsNodeExists(node)) {
-            return true;
-        }
-    }
-    return false;
+    std::lock_guard<std::mutex> lock(nodesMutex_);
+    nodes_.insert(node);
 }
 
 void OHAudioSuiteEngine::RemoveNode(OHAudioNode *node)
 {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-    for (auto pipeline : pipelines_) {
-        if (pipeline && node && pipeline->IsNodeExists(node)) {
-            pipeline->RemoveNode(node);
+    std::lock_guard<std::mutex> lock(nodesMutex_);
+    if (nodes_.erase(node) > 0 && node != nullptr) {
+        delete node;
+    }
+}
+
+void OHAudioSuiteEngine::RemoveNodes(std::vector<OHAudioNode*> &nodes)
+{
+    std::lock_guard<std::mutex> lock(nodesMutex_);
+    for (auto node : nodes) {
+        if (nodes_.erase(node) > 0 && node != nullptr) {
+            delete node;
         }
     }
 }
 
 int32_t OHAudioSuiteEngine::PrintInfo(OHAudioSuitePipeline *pipeline, int32_t fd)
 {
-    uint32_t pipelineId = INVALID_PIPELINE_ID;
     if (pipeline != nullptr) {
-        pipelineId = pipeline->GetPipelineId();
+        auto p = GetAudioSuitePipeline(pipeline);
+        CHECK_AND_RETURN_RET_LOG(p != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+            "PrintInfo failed, pipeline does not exist.");
+        return p->PrintInfo(fd);
     }
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().PrintInfo(pipelineId, fd);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "PrintInfo failed, ret = %{public}d", ret);
-    return ret;
+    std::lock_guard<std::mutex> lock(pipelinesMutex_);
+    for (auto *p : pipelines_) {
+        if (p != nullptr) {
+            auto innerPipeline = p->GetPipeline();
+            if (innerPipeline != nullptr) {
+                innerPipeline->PrintInfo(fd);
+            }
+        }
+    }
+    return SUCCESS;
 }
 
 }  // namespace AudioStandard

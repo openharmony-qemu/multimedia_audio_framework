@@ -2149,6 +2149,21 @@ int32_t HpaeManager::GetStreamRouteFlag(HpaeStreamClassType streamClassType, uin
     return ERR_INVALID_OPERATION;
 }
 
+// Sync map read mirroring GetStreamRouteFlag above: called from the IPC thread by
+// HpaeRendererStreamImpl::SetSpeed to decide whether speed can be delegated to the engine
+// (offload chain forwards it to HDI) or must be rejected so the client keeps local sonic speed.
+bool HpaeManager::IsSessionHdiSpeedSupported(uint32_t sessionId)
+{
+    if (rendererIdSinkNameMap_.find(sessionId) == rendererIdSinkNameMap_.end()) {
+        return false;
+    }
+    const std::string &sinkName = rendererIdSinkNameMap_[sessionId];
+    if (rendererManagerMap_.find(sinkName) == rendererManagerMap_.end()) {
+        return false;
+    }
+    return rendererManagerMap_[sinkName]->IsHdiSpeedSupported();
+}
+
 // record stream interface
 int32_t HpaeManager::RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback)
 {
@@ -3425,7 +3440,7 @@ void HpaeManager::FinishPendingAissDisable()
 {
     InvalidatePendingAissDisable();
     if (boundSessionId_ != UNBOUND_SESSION_ID) {
-        ClearAissSession(boundSessionId_, true); // clears boundSessionId_ + boundUid_ when matched
+        ClearAissSession(boundSessionId_, true, true); // clears boundSessionId_ + boundUid_ when matched
         // Destroy-timeout: ClearAissSession aborts before unbinding (keep-binding contract for
         // switch retries). A deferred-disable terminal has no retry event (the stream stops here),
         // so unlike the switch paths the logical state is dropped unconditionally - mirroring

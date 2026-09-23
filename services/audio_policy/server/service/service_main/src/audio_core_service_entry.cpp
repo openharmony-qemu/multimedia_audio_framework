@@ -200,7 +200,8 @@ std::string AudioCoreService::EventEntry::GetModuleNameBySessionId(uint32_t sess
 
 uint32_t AudioCoreService::EventEntry::QueryPipeIdBySessionId(uint32_t sessionId)
 {
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    std::shared_lock<<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_UNKNOWN, "coreService_ is nullptr");
     return coreService_->QueryPipeIdBySessionId(sessionId);
 }
 

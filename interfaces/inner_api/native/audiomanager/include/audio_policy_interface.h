@@ -236,6 +236,12 @@ public:
     virtual void OnVolumeDegreeEvent(VolumeEvent volumeEvent) {}
 };
 
+class VolumeLimitExceededCallback {
+public:
+    virtual ~VolumeLimitExceededCallback() = default;
+    virtual void OnVolumeLimitExceeded(const VolumeLimitExceedEvent &event) = 0;
+};
+
 class StreamVolumeChangeCallback {
 public:
     virtual ~StreamVolumeChangeCallback() = default;

@@ -981,10 +981,6 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_Direct3DA_011, TestSize.Leve
 * @tc.number: WriteToSinkBuffer_3DA_Direct_Passthrough_001
 * @tc.desc  : The client assembles the whole 3DA HDI frame; the server side copies it into
 *             the sink slot byte-identically and never assembles PCM/metadata itself.
-*             Named differently from master's WriteToSinkBuffer_3DA_Direct_001 (which tests
-*             the removed server-side [PCM|meta] assembly): the two insertion points do not
-*             overlap, so a merge would silently keep both and break the build with a
-*             duplicate gtest definition. Master's version is deleted at the master sync.
 */
 HWTEST(ProRendererStreamImplUnitTest, WriteToSinkBuffer_3DA_Direct_Passthrough_001, TestSize.Level3)
 {
@@ -2024,56 +2020,6 @@ HWTEST(ProRendererStreamImplUnitTest, GetLatencyWithFlag_HardwareFetcherSuccess_
     EXPECT_EQ(ret, SUCCESS);
     const uint64_t expectedLatency = static_cast<uint64_t>(FETCHER_LATENCY_MS) * AUDIO_US_PER_MS;
     EXPECT_EQ(latency, expectedLatency);
-}
-
-/**
- * @tc.name  : Test WriteToSinkBuffer copies AVS3 metadata after PCM in the 3DA-direct path
- * @tc.type  : FUNC
- * @tc.number: WriteToSinkBuffer_3DA_Direct_001
- */
-HWTEST(ProRendererStreamImplUnitTest, WriteToSinkBuffer_3DA_Direct_001, TestSize.Level3)
-{
-    // Constants mirror the file-static values in pro_renderer_stream_impl.cpp.
-    constexpr uint32_t AVS3_METADATA_SIZE = 19824;             // AVS3METADATA_SIZE
-    constexpr uint32_t AUDIO_VIVID_SAMPLES_PER_FRAME = 1024;   // AUDIO_VIVID_SAMPLES
-    constexpr uint8_t METADATA_SENTINEL = 0x5A;
-
-    AudioProcessConfig processConfig;
-    processConfig.streamInfo.channels = CHANNEL_8;
-    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    processConfig.streamInfo.format = SAMPLE_S16LE;
-    processConfig.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
-    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
-    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
-
-    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
-    rendererStreamImpl->status_ = I_STATUS_INVALID;
-    ASSERT_EQ(rendererStreamImpl->InitParams(), SUCCESS);
-    // The 3DA-direct bypass disables both resample and multi-channel down-mix.
-    EXPECT_FALSE(rendererStreamImpl->isNeedResample_);
-    EXPECT_FALSE(rendererStreamImpl->isNeedMcr_);
-
-    const uint32_t bytesPerSample = sizeof(int16_t); // SAMPLE_S16LE -> 2 bytes
-    const uint32_t channelCount = static_cast<uint32_t>(processConfig.streamInfo.channels);
-    const uint32_t pcmLen = AUDIO_VIVID_SAMPLES_PER_FRAME * channelCount * bytesPerSample;
-    const uint32_t metaLen = AVS3_METADATA_SIZE;
-    std::vector<uint8_t> pcmBuffer(pcmLen, 0);
-    std::vector<uint8_t> metaBuffer(metaLen, METADATA_SENTINEL);
-
-    BufferDesc bufferDesc;
-    bufferDesc.buffer = pcmBuffer.data();
-    bufferDesc.bufLength = pcmLen;
-    bufferDesc.metaBuffer = metaBuffer.data();
-    bufferDesc.metaLength = metaLen;
-
-    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
-
-    // The first write slot holds PCM followed by metadata at offset bufLength.
-    const auto &sinkSlot = rendererStreamImpl->sinkBuffer_[0];
-    EXPECT_EQ(sinkSlot.size(), pcmLen + metaLen);
-    EXPECT_EQ(static_cast<uint8_t>(sinkSlot[pcmLen]), METADATA_SENTINEL);
-    EXPECT_EQ(static_cast<uint8_t>(sinkSlot[pcmLen + metaLen - 1]), METADATA_SENTINEL);
 }
 
 /**

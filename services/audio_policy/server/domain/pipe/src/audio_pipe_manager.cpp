@@ -347,6 +347,7 @@ void AudioPipeManager::UpdateAudioPipeInfo(std::shared_ptr<AudioPipeInfo> newPip
 
 bool AudioPipeManager::IsSamePipe(std::shared_ptr<AudioPipeInfo> info, std::shared_ptr<AudioPipeInfo> cmpInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(info && cmpInfo, false, "info or cmpInfo is nullptr");
     if (info->name_ == cmpInfo->name_ || info->id_ == cmpInfo->id_) {
         return true;
     }
@@ -1346,6 +1347,23 @@ bool AudioPipeManager::IsStreamUsageActive(const StreamUsage &usage)
     return false;
 }
 
+bool AudioPipeManager::HasRingerOrAlarmStreamRunning()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        CHECK_AND_CONTINUE(pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT);
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (Util::IsRingerOrAlarmerStreamUsage(desc->rendererInfo_.streamUsage) &&
+                desc->streamStatus_ == STREAM_STATUS_STARTED) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 int32_t AudioPipeManager::IsCaptureVoipCall()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
@@ -1547,6 +1565,14 @@ void AudioPipeManager::UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamD
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     streamDesc->UpdateNewDevice(newDeviceDesc);
+}
+
+void AudioPipeManager::UpdateOldDeviceDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDesc)
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    streamDesc->UpdateOldDevice(oldDeviceDesc);
 }
 
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByStreamUsage(StreamUsage streamUsage)

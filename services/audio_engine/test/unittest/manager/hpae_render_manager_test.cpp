@@ -5110,6 +5110,19 @@ HWTEST_F(HpaeRendererManagerTest, IsRemoteDeviceClass_Values_001, TestSize.Level
     EXPECT_EQ(IsRemoteDeviceClass(""), false);
 }
 
+/**
+ * @tc.name  : IsHdiSpeedSupported_NormalManager_001
+ * @tc.type  : FUNC
+ * @tc.number: IsHdiSpeedSupported_NormalManager_001
+ * @tc.desc  : Normal renderer manager has no HDI speed capability (client keeps sonic speed).
+ */
+HWTEST_F(HpaeRendererManagerTest, IsHdiSpeedSupported_NormalManager_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->IsHdiSpeedSupported(), false);
+}
+
 HWTEST_F(HpaeRendererManagerTest, IsRemoteDevice_RemoteClass_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;

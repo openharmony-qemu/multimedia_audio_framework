@@ -379,7 +379,8 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_Pause_004, TestSize.Le
  * @tc.name  : CabinPlayabackEngine_Addrender_005
  * @tc.type  : FUNC
  * @tc.number: CabinPlayabackEngine_Addrender_005
- * @tc.desc  : Test AddRender stream management and Sink initialization trigger
+ * @tc.desc  : Test AddRender stream management: same-stream re-add keeps the slot, a
+ *             different-index stream takes the slot over instead of being rejected
  */
 HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_AddRenderer_005, TestSize.Level1)
 {
@@ -390,7 +391,7 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_AddRenderer_005, TestS
     auto stream1 = std::make_shared<ProRendererStreamImpl>(config1, false);
     stream1->SetStreamIndex(10);
     // The first AddRenderer runs InitSink which needs real HDI; pre-set stream_ so the
-    // re-add and reject branches below are testable without it.
+    // re-add and take-over branches below are testable without it.
     playbackEngine_->stream_ = stream1;
     ret = playbackEngine_->AddRenderer(stream1);
     EXPECT_EQ(ret, SUCCESS);
@@ -401,8 +402,14 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_AddRenderer_005, TestS
 
     auto stream2 = std::make_shared<ProRendererStreamImpl>(config1, true);
     stream2->SetStreamIndex(20);
+    // deterministic render id for the take-over's InitSink attempt
+    playbackEngine_->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
+        HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT, "ut_takeover_seed", true);
+    // A different-index stream now TAKES OVER the slot: stop, clear the stale stream, and
+    // retry InitSink (which fails in the HDI-less UT environment).
     ret = playbackEngine_->AddRenderer(stream2);
-    EXPECT_EQ(ret, ERROR_UNSUPPORTED);
+    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(playbackEngine_->stream_, nullptr);
 }
 
  /**
@@ -556,7 +563,8 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_PollAndWrite_009, Test
  * @tc.name  : Test CabinPlayabackEngine API
  * @tc.type  : FUNC
  * @tc.number: CabinPlayabackEngine_009
- * @tc.desc  : Test CabinPlayBackEngine::InitSink
+ * @tc.desc  : Test CabinPlayBackEngine::InitSink reuse when all cached params match and the
+ *             sink is still healthy
  */
 HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_009, TestSize.Level1)
 {
@@ -564,16 +572,23 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_009, TestSize.Level1)
     streamInfo.channels = CHANNEL_8;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_S16LE;
+    streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
 
-    playbackEngine_->isInit_ = true;
-    playbackEngine_->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
-        HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT, HDI_ID_INFO_DEFAULT, true);
-    playbackEngine_->uChannel_ = CHANNEL_8;
-    playbackEngine_->uSampleRate_ = SAMPLE_RATE_48000;
-    playbackEngine_->uformat_ = SAMPLE_S16LE;
-
+    // the first InitSink runs the full path and succeeds against the real HAL
     auto ret = playbackEngine_->InitSink(streamInfo);
+    ASSERT_EQ(ret, SUCCESS);
+    playbackEngine_->isInit_ = true; // normally set by AddRenderer on success
+    auto sinkFirst = HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_);
+    ASSERT_NE(sinkFirst, nullptr);
+    ASSERT_TRUE(sinkFirst->IsInited());
+
+    // same params + healthy sink: reuse, no teardown / re-create
+    ret = playbackEngine_->InitSink(streamInfo);
     EXPECT_EQ(ret, SUCCESS);
+    auto sinkSecond = HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_);
+    ASSERT_NE(sinkSecond, nullptr);
+    EXPECT_EQ(sinkSecond.get(), sinkFirst.get()); // a re-init removes and re-creates the sink
+    EXPECT_TRUE(sinkSecond->IsInited());
 }
 
  /**
@@ -858,6 +873,95 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_PollAndWrite_022, Test
     EXPECT_TRUE(playbackEngine_->firstSetVolume_); // null-sink guard stops AdjustVolume
 
     playbackEngine_->stream_ = nullptr;
+}
+
+ /**
+ * @tc.name  : Test CabinPlayBackEngine API
+ * @tc.type  : FUNC
+ * @tc.number: CabinPlayBackEngine_023
+ * @tc.desc  : Same cached params but the sink is NOT inited (husk left by a failed re-init):
+ *             the health check must re-init and bring back a healthy sink instead of
+ *             reusing the husk and returning SUCCESS
+ */
+HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_023, TestSize.Level1)
+{
+    AudioStreamInfo streamInfo;
+    streamInfo.channels = CHANNEL_8;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_S16LE;
+    streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
+
+    auto ret = playbackEngine_->InitSink(streamInfo);
+    ASSERT_EQ(ret, SUCCESS);
+    playbackEngine_->isInit_ = true;
+    // simulate the husk a failed re-init leaves: sink object alive, render destroyed
+    auto sink = HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_);
+    ASSERT_NE(sink, nullptr);
+    sink->DeInit();
+    ASSERT_FALSE(sink->IsInited());
+
+    ret = playbackEngine_->InitSink(streamInfo);
+    EXPECT_EQ(ret, SUCCESS); // the forced re-init succeeds against the HAL again
+    auto sinkNow = HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_);
+    ASSERT_NE(sinkNow, nullptr);
+    // old code early-returned SUCCESS here and left the dead sink in place
+    EXPECT_TRUE(sinkNow->IsInited());
+}
+
+ /**
+ * @tc.name  : Test CabinPlayBackEngine API
+ * @tc.type  : FUNC
+ * @tc.number: CabinPlayBackEngine_024
+ * @tc.desc  : Layout-only mismatch on a healthy sink must trigger a full re-init (Stop/DeInit)
+ *             even when channel, format and rate are all identical; the HAL rejects the
+ *             unknown layout so the re-init outcome itself discriminates the fix
+ */
+HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_024, TestSize.Level1)
+{
+    AudioStreamInfo sameGeom;
+    sameGeom.channels = CHANNEL_8;
+    sameGeom.samplingRate = SAMPLE_RATE_48000;
+    sameGeom.format = SAMPLE_S16LE;
+    sameGeom.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
+
+    auto ret = playbackEngine_->InitSink(sameGeom);
+    ASSERT_EQ(ret, SUCCESS);
+    playbackEngine_->isInit_ = true;
+    auto sinkFirst = HdiAdapterManager::GetInstance().GetRenderSink(playbackEngine_->renderId_);
+    ASSERT_NE(sinkFirst, nullptr);
+    ASSERT_TRUE(sinkFirst->IsInited());
+
+    // layout-only change (channel/format/rate identical); the HAL rejects an unknown layout
+    AudioStreamInfo newLayout = sameGeom;
+    newLayout.channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
+    ret = playbackEngine_->InitSink(newLayout);
+    // old code ignored the layout in the reuse decision and returned SUCCESS via reuse;
+    // the compare now forces a full re-init which the HAL rejects with ERR_NOT_STARTED
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+    EXPECT_FALSE(sinkFirst->IsInited()); // the healthy sink was DeInit-ed before the retry
+    // the failed re-init must not update the cached layout
+    EXPECT_EQ(playbackEngine_->uLayout_, AudioChannelLayout::CH_LAYOUT_5POINT1POINT2);
+}
+
+ /**
+ * @tc.name  : Test CabinPlayBackEngine API
+ * @tc.type  : FUNC
+ * @tc.number: CabinPlayBackEngine_025
+ * @tc.desc  : InitSink(4-arg) success path caches the full param set including channelLayout
+ */
+HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngine_025, TestSize.Level1)
+{
+    const uint32_t channel = CHANNEL_8;
+    const AudioSampleFormat format = SAMPLE_S16LE;
+    const uint32_t rate = SAMPLE_RATE_48000;
+    const AudioChannelLayout layout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
+
+    auto ret = playbackEngine_->InitSink(channel, format, rate, layout);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(playbackEngine_->uChannel_, channel);
+    EXPECT_EQ(playbackEngine_->uSampleRate_, rate);
+    EXPECT_EQ(playbackEngine_->uformat_, format);
+    EXPECT_EQ(playbackEngine_->uLayout_, layout);
 }
 }
 }

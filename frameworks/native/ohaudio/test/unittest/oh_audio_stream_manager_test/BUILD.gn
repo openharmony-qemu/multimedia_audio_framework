@@ -14,7 +14,7 @@
 import("//build/test.gni")
 import("../../../../../../config.gni")
 
-module_output_path = "audio_framework/audio_framework_route/audio_ndk"
+module_output_path = "audio_framework/audio_framework_common/oh_audio_stream_manager"
 
 config("audio_stream_manager_config") {
   include_dirs = [
@@ -69,4 +69,32 @@ ohos_unittest("audio_oh_stream_manager_unit_test") {
     "hilog:libhilog",
     "ffrt:libffrt",
   ]
+}
+
+ohos_unittest("oh_audio_stream_manager_aiut") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "../../../../../../test/unittest/audio_test_utils/include",
+  ]
+
+  configs = [
+    ":audio_stream_manager_config",
+    ":audio_ohaudio_config",
+  ]
+
+  sources = [ "src/oh_audio_stream_manager_aiut.cpp" ]
+
+  deps = [
+    "../../../../../../services/audio_policy:audio_policy_service_static",
+    "../../../../ohaudio:ohaudio",
+  ]
+
+  external_deps = [ "hilog:libhilog" ]
+}
+
+group("oh_audio_stream_manager_aiut_group") {
+  testonly = true
+  deps = [ ":oh_audio_stream_manager_aiut" ]
 }
