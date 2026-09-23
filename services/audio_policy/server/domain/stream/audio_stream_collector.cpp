@@ -854,7 +854,16 @@ bool AudioStreamCollector::CheckAudioStateIdle()
     }
     for (const auto& capturerInfo : audioCapturerChangeInfos_) {
         if (capturerInfo->capturerState == CAPTURER_RUNNING) {
+#ifdef MULTI_BUS_ENABLE
+            // In the smart cockpit scenario, resident voice recognition capturer stream is kept running.
+            // Treat the audio state as idle when only voice recognition capturers are running so that
+            // memory reclaim can proceed.
+            if (capturerInfo->capturerInfo.sourceType != SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+                return false;
+            }
+#else
             return false;
+#endif
         }
     }
 
