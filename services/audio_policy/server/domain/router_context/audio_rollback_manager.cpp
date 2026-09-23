@@ -23,6 +23,7 @@
 #include "audio_router_infra.h"
 #include "audio_router_select_strategy.h"
 #include "audio_active_device.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,6 +32,12 @@ using namespace std;
 constexpr int32_t CONTINUE_TIMEOUT_SEC = 2;
 constexpr int32_t ROLLBACK_TIMEOUT_SEC = 1;
 const set<ConnectState> NOT_CONNECTED{SUSPEND_CONNECTED, VIRTUAL_CONNECTED, DEACTIVE_CONNECTED};
+
+static void FetchAndRoute(const char* caller = "")
+{
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(caller);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute(caller);
+}
 
 AudioRollbackManager& AudioRollbackManager::GetInstance()
 {
@@ -55,7 +62,8 @@ void AudioRollbackManager::OnDeviceNewConnect(const AudioDeviceDescriptor &desc)
         {SelectDeviceType::CALL_OUTPUT, SelectDeviceType::MEDIA_OUTPUT});
     thread([deviceId, this]() {
         this_thread::sleep_for(chrono::seconds(CONTINUE_TIMEOUT_SEC));
-        RollbackSelections(deviceId, NEW_CONNECT_ROLLBACK);
+        CHECK_AND_RETURN(RollbackSelections(deviceId, NEW_CONNECT_ROLLBACK));
+        FetchAndRoute("RollbackNewConnect");
     }).detach();
 }
 
@@ -86,15 +94,17 @@ void AudioRollbackManager::SetConnectLostRollback(const std::shared_ptr<AudioDev
     }).detach();
 }
 
-void AudioRollbackManager::RollbackSelections(int32_t deviceId, RollbackType type)
+bool AudioRollbackManager::RollbackSelections(int32_t deviceId, RollbackType type)
 {
     std::lock_guard lg(mutex_);
-    CHECK_AND_RETURN(rollbackInfo_ && rollbackInfo_->deviceId == deviceId && rollbackInfo_->type == type);
+    CHECK_AND_RETURN_RET(rollbackInfo_ && rollbackInfo_->deviceId == deviceId && rollbackInfo_->type == type, false);
     AUDIO_INFO_LOG("id=%{public}d, rollbackType=%{public}d", deviceId, type);
+    auto result = !rollbackInfo_->selections.empty();
     for (auto &item : rollbackInfo_->selections) {
         RollbackSelection(item);
     }
     rollbackInfo_.reset();
+    return result;
 }
 
 void AudioRollbackManager::OnConnectStateUpdate(
@@ -113,7 +123,7 @@ void AudioRollbackManager::OnConnectStateUpdate(
     if (device->connectState_ == CONNECTED) {
         SetConnectLostRollback(device);
     } else {
-        RollbackSelections(device->deviceId_, CONNECT_LOST_ROLLBACK);
+        OnDeviceDisconnect(*device);
     }
 }
 
@@ -132,8 +142,7 @@ void AudioRollbackManager::OnDeviceDisconnect(const AudioDeviceDescriptor &desc)
     }
     selectionRollbacks_.erase(rmIt, selectionRollbacks_.end());
 
-    CHECK_AND_RETURN(rollbackInfo_ && rollbackInfo_->deviceId == deviceId &&
-        rollbackInfo_->type == CONNECT_LOST_ROLLBACK);
+    CHECK_AND_RETURN(rollbackInfo_ && rollbackInfo_->deviceId == deviceId);
     for (auto &item : rollbackInfo_->selections) {
         RollbackSelection(item);
     }
@@ -174,6 +183,8 @@ void AudioRollbackManager::SetSelectionRollback(int32_t uid, SelectDeviceType ty
         uid = SYSTEM_UID;
     }
     auto deviceId = device->deviceId_;
+    auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(deviceId);
+    auto connectState = desc ? desc->connectState_ : CONNECTED;
     auto pred = [uid, type, streamId] (SelectionRollback &item) {
         return item.selection.uid == uid && item.selection.type == type && item.selection.streamId == streamId;
     };
@@ -181,25 +192,31 @@ void AudioRollbackManager::SetSelectionRollback(int32_t uid, SelectDeviceType ty
     rollbackInfo_.reset();
     selectionRollbacks_.erase(remove_if(
         selectionRollbacks_.begin(), selectionRollbacks_.end(), pred), selectionRollbacks_.end());
-    CHECK_AND_RETURN(NOT_CONNECTED.contains(device->connectState_));
+    CHECK_AND_RETURN(NOT_CONNECTED.contains(connectState));
     AUDIO_INFO_LOG("id=%{public}d, devType=%{public}d, connectState=%{public}d",
-        deviceId, device->deviceType_, device->connectState_);
+        deviceId, device->deviceType_, connectState);
     for (auto &item : AudioRouterInfra::GetInstance().GetSelections({type})) {
         CHECK_AND_CONTINUE(item.uid == uid && item.streamId == streamId && item.deviceId != deviceId);
         selectionRollbacks_.push_back({deviceId, item});
     }
     thread([deviceId, uid, type, streamId, this]() {
         this_thread::sleep_for(chrono::seconds(CONTINUE_TIMEOUT_SEC));
-        auto pred = [deviceId, uid, type, streamId] (SelectionRollback &item) {
-            return item.targetId == deviceId && item.selection.uid == uid &&
-                item.selection.type == type && item.selection.streamId == streamId;
-        };
-        std::lock_guard lg(mutex_);
-        auto rmIt = remove_if(selectionRollbacks_.begin(), selectionRollbacks_.end(), pred);
-        for (auto it = rmIt; it < selectionRollbacks_.end(); it++) {
-            RollbackSelection(it->selection);
+        bool needRoute = false;
+        {
+            auto pred = [deviceId, uid, type, streamId] (SelectionRollback &item) {
+                return item.targetId == deviceId && item.selection.uid == uid &&
+                    item.selection.type == type && item.selection.streamId == streamId;
+            };
+            std::lock_guard lg(mutex_);
+            auto rmIt = remove_if(selectionRollbacks_.begin(), selectionRollbacks_.end(), pred);
+            needRoute = rmIt != selectionRollbacks_.end();
+            for (auto it = rmIt; it < selectionRollbacks_.end(); it++) {
+                RollbackSelection(it->selection);
+            }
+            selectionRollbacks_.erase(rmIt, selectionRollbacks_.end());
         }
-        selectionRollbacks_.erase(rmIt, selectionRollbacks_.end());
+        CHECK_AND_RETURN(needRoute);
+        FetchAndRoute("RollbackSetDevice");
     }).detach();
 }
 

@@ -109,7 +109,12 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRollbackManagerTest::AddConnectedDev
 std::shared_ptr<AudioDeviceDescriptor> AudioRollbackManagerTest::MakeLocalDevice(DeviceType type,
     const std::string &mac, ConnectState state)
 {
-    auto dev = CreateDeviceDescriptor(type, OUTPUT_DEVICE, mac);
+    auto dev = AddDeviceDescriptor(type, OUTPUT_DEVICE, mac);
+    auto stored = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(dev->deviceId_);
+    if (stored) {
+        stored->connectState_ = state;
+        return stored;
+    }
     dev->connectState_ = state;
     return dev;
 }
@@ -252,7 +257,7 @@ HWTEST_F(AudioRollbackManagerTest, Scenario6_NewDeviceOnline_ConnectIn2s_LostIn1
 
     newDev->connectState_ = CONNECTED;
     rollback.SetConnectLostRollback(newDev);
-    rollback.RollbackSelections(newDev->deviceId_, CONNECT_LOST_ROLLBACK);
+    EXPECT_TRUE(rollback.RollbackSelections(newDev->deviceId_, CONNECT_LOST_ROLLBACK));
     EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
 }
 
@@ -351,9 +356,9 @@ HWTEST_F(AudioRollbackManagerTest, RollbackSelections_MismatchAndSkipNotConnecte
 
     rollback.OnDeviceNewConnect(*newDev);
     EXPECT_EQ(RollbackDeviceId(), newDev->deviceId_);
-    rollback.RollbackSelections(oldDev->deviceId_, NEW_CONNECT_ROLLBACK);
+    EXPECT_FALSE(rollback.RollbackSelections(oldDev->deviceId_, NEW_CONNECT_ROLLBACK));
     EXPECT_TRUE(HasRollbackInfo());
-    rollback.RollbackSelections(newDev->deviceId_, CONNECT_LOST_ROLLBACK);
+    EXPECT_FALSE(rollback.RollbackSelections(newDev->deviceId_, CONNECT_LOST_ROLLBACK));
     EXPECT_TRUE(HasRollbackInfo());
 
     AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, newDev);
@@ -362,6 +367,46 @@ HWTEST_F(AudioRollbackManagerTest, RollbackSelections_MismatchAndSkipNotConnecte
     std::this_thread::sleep_for(std::chrono::milliseconds(MS_OVER_2SEC));
     EXPECT_FALSE(HasRollbackInfo());
     EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), newDev->deviceId_);
+}
+
+/**
+ * @tc.name  : RollbackSelections_ReturnsTrueOnSuccess
+ * @tc.type  : FUNC
+ * @tc.desc  : RollbackSelections returns true when rollback happens with non-empty selections.
+ */
+HWTEST_F(AudioRollbackManagerTest, RollbackSelections_ReturnsTrueOnSuccess, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:93");
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:93", VIRTUAL_CONNECTED);
+    SetOutputBaseline(oldDev);
+    auto &rollback = AudioRollbackManager::GetInstance();
+
+    rollback.OnDeviceNewConnect(*newDev);
+    EXPECT_TRUE(HasRollbackInfo());
+
+    bool result = rollback.RollbackSelections(newDev->deviceId_, NEW_CONNECT_ROLLBACK);
+    EXPECT_TRUE(result);
+    EXPECT_FALSE(HasRollbackInfo());
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+}
+
+/**
+ * @tc.name  : RollbackSelections_ReturnsFalseOnEmpty
+ * @tc.type  : FUNC
+ * @tc.desc  : RollbackSelections returns false when selections are empty (no original selection to
+ *             roll back to, e.g. no prior force-select existed).
+ */
+HWTEST_F(AudioRollbackManagerTest, RollbackSelections_ReturnsFalseOnEmpty, TestSize.Level1)
+{
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:94", VIRTUAL_CONNECTED);
+    auto &rollback = AudioRollbackManager::GetInstance();
+
+    rollback.OnDeviceNewConnect(*newDev);
+    EXPECT_TRUE(HasRollbackInfo());
+
+    bool result = rollback.RollbackSelections(newDev->deviceId_, NEW_CONNECT_ROLLBACK);
+    EXPECT_FALSE(result);
+    EXPECT_FALSE(HasRollbackInfo());
 }
 
 /**
@@ -477,6 +522,59 @@ HWTEST_F(AudioRollbackManagerTest, OnDeviceDisconnect_NoMatch, TestSize.Level1)
     rollback.OnDeviceDisconnect(*otherDev);
     EXPECT_TRUE(HasSelectionRollback(newDev->deviceId_));
     EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), newDev->deviceId_);
+}
+
+/**
+ * @tc.name  : OnDeviceDisconnect_NewConnectRollback_Rollback
+ * @tc.type  : FUNC
+ * @tc.desc  : OnDeviceDisconnect rolls back NEW_CONNECT_ROLLBACK info when device
+ *             fails without ever connecting (A2DP connection failure scenario).
+ */
+HWTEST_F(AudioRollbackManagerTest, OnDeviceDisconnect_NewConnectRollback_Rollback, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:85");
+    SetOutputBaseline(oldDev);
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:85", VIRTUAL_CONNECTED);
+    auto &rollback = AudioRollbackManager::GetInstance();
+
+    rollback.OnDeviceNewConnect(*newDev);
+    EXPECT_TRUE(HasRollbackInfo());
+    EXPECT_EQ(RollbackDeviceId(), newDev->deviceId_);
+    AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, newDev);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), newDev->deviceId_);
+
+    rollback.OnDeviceDisconnect(*newDev);
+    EXPECT_FALSE(HasRollbackInfo());
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+}
+
+/**
+ * @tc.name  : OnConnectStateUpdate_ForceSelectNotConnected_Rollback
+ * @tc.type  : FUNC
+ * @tc.desc  : OnConnectStateUpdate with non-CONNECTED device triggers immediate
+ *             rollback of force-select entries (A2DP/SCO failure scenario).
+ */
+HWTEST_F(AudioRollbackManagerTest, OnConnectStateUpdate_ForceSelectNotConnected_Rollback, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:84");
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "AA:BB:CC:DD:EE:F2", VIRTUAL_CONNECTED);
+    newDev->networkId_ = LOCAL_NETWORK_ID;
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, newDev);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), newDev->deviceId_);
+    EXPECT_TRUE(HasSelectionRollback(newDev->deviceId_));
+
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(newDev);
+    EXPECT_NO_THROW(rollback.OnConnectStateUpdate(*newDev, CONNECTSTATE_UPDATE));
+    EXPECT_FALSE(HasSelectionRollback(newDev->deviceId_));
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    newDev->connectState_ = VIRTUAL_CONNECTED;
+    AudioDeviceManager::GetAudioDeviceManager().RemoveConnectedDevices(newDev);
+    std::this_thread::sleep_for(std::chrono::milliseconds(MS_OVER_2SEC));
 }
 
 /**
