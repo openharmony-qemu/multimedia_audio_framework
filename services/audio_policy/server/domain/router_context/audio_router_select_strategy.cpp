@@ -34,10 +34,6 @@ namespace OHOS {
 namespace AudioStandard {
 AudioRouterSelectStrategy& AudioRouterSelectStrategy::GetInstance()
 {
-#ifdef INPUT_FEATURE_INDEPENDENT_MODE
-    static AudioRouterIndependentStrategy independent;
-    return independent;
-#else
     if (Util::IsEnhancedRoutingSupported()) {
         static AudioRouterIndependentStrategy independent;
         return independent;
@@ -45,7 +41,6 @@ AudioRouterSelectStrategy& AudioRouterSelectStrategy::GetInstance()
 
     static AudioRouterFollowStrategy follow;
     return follow;
-#endif
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetHighestPriorityMediaInputDevice()

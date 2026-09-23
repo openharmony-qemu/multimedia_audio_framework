@@ -281,9 +281,13 @@ std::vector<std::string> Util::SplitString(const std::string& str, char delimite
 
 bool Util::IsEnhancedRoutingSupported()
 {
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+    return true;
+#else
     static const bool isEnhancedRoutingSupported =
         OHOS::system::GetBoolParameter("const.multimedia.audio.sys_multidevice_capability.enable", false);
     return isEnhancedRoutingSupported;
+#endif
 }
 
 bool Util::IsCustomSampleRateValid(uint32_t customSampleRate)
@@ -2170,6 +2174,11 @@ void VolumeUtils::SetPCVolumeEnable(const bool& isPCVolumeEnable)
 bool VolumeUtils::IsPCVolumeEnable()
 {
     return isPCVolumeEnable_;
+}
+
+bool VolumeUtils::IsPCEnhancedRoutingSupported()
+{
+    return IsPCVolumeEnable() && Util::IsEnhancedRoutingSupported();
 }
 
 void VolumeUtils::SetVolumeFixEnable(const bool& isVolumeFixEnable)

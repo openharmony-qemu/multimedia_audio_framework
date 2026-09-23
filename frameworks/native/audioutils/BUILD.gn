@@ -117,6 +117,10 @@ ohos_shared_library("audio_utils") {
     defines += [ "MULTI_BUS_ENABLE" ]
   }
 
+  if (audio_framework_feature_input_independent_routing_rule) {
+    defines += [ "INPUT_FEATURE_INDEPENDENT_MODE" ]
+  }
+
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
