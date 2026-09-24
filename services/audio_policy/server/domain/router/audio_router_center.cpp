@@ -779,6 +779,7 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectOutputStreamDevices(cons
     info.sessionId = deviceInfo.streamId;
     info.streamUsage = deviceInfo.streamUsage;
     info.isRunning = deviceInfo.isRunning;
+    CHECK_AND_RETURN_RET(info.isRunning, outputDevices);
 
     FetchDeviceInfo fetchInfo(info.streamUsage, info.uid, "Arbiter");
     fetchInfo.bypassType = deviceInfo.bypassType;
@@ -807,6 +808,7 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectOutputStreamDevices(Rout
         info.streamUsage = desc->rendererInfo_.streamUsage;
         info.isRunning = (desc->streamStatus_ == STREAM_STATUS_STARTED &&
             !pipeManager->IsFocusStandby(desc->sessionId_));
+        CHECK_AND_CONTINUE(info.isRunning);
 
         FetchDeviceInfo fetchInfo(info.streamUsage, info.uid, "Arbiter");
         fetchInfo.bypassType = bypassType;
@@ -831,6 +833,7 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectInputStreamDevices(const
     info.sessionId = deviceInfo.streamId;
     info.sourceType = deviceInfo.sourceType;
     info.isRunning = deviceInfo.isRunning;
+    CHECK_AND_RETURN_RET(info.isRunning, inputDevices);
 
     RouterType routerType = ROUTER_TYPE_NONE;
     info.device = FetchCapturerInputDevice(info.sourceType, info.uid, routerType, info.sessionId);
@@ -854,6 +857,7 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectInputStreamDevices()
         info.sessionId = desc->sessionId_;
         info.sourceType = desc->capturerInfo_.sourceType;
         info.isRunning = (desc->streamStatus_ == STREAM_STATUS_STARTED);
+        CHECK_AND_CONTINUE(info.isRunning);
 
         RouterType routerType = ROUTER_TYPE_NONE;
         info.device = FetchCapturerInputDevice(info.sourceType, info.uid, routerType, info.sessionId);
