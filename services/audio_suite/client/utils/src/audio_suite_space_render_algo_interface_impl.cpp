@@ -115,7 +115,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetPositionParameter(const std::stri
     
     AudioSpaceRenderPositionParams params;
     if (!Serializer<AudioSpaceRenderPositionParams>::Deserialize(paramValue, params)) {
-        AUDIO_ERR_LOG("Invalid Position parameter format. ");
+        AUDIO_ERR_LOG("Invalid Position parameter format.");
         return ERR_INVALID_PARAM;
     }
     
@@ -184,7 +184,7 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::SetParameter(const std::string &
     } else if (paramType == SPACE_RENDER_EXTENSION_MOD) {
         ret = SetExtensionParameter(paramValue);
     } else {
-        AUDIO_ERR_LOG("Invalid space render mod format");
+        AUDIO_ERR_LOG("Invalid space render mod format, paramType: %{public}s", paramType.c_str());
         return ERR_INVALID_PARAM;
     }
  
@@ -257,7 +257,7 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::GetParameter(const std::string &
     } else if (paramType == SPACE_RENDER_EXTENSION_MOD) {
         ret = GetExtensionParameter(paramValue);
     } else {
-        AUDIO_ERR_LOG("Invalid space render mod format");
+        AUDIO_ERR_LOG("Invalid space render mod format, paramType: %{public}s", paramType.c_str());
         return ERR_INVALID_PARAM;
     }
  

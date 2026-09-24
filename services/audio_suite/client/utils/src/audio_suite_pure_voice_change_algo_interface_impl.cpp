@@ -93,7 +93,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::ApplyAndWaitReady(void)
         "LoadLibrary failed with path: %{private}s", soPath.c_str());
 
     if (LoadAlgorithmFunction() != SUCCESS) {
-        AUDIO_ERR_LOG("LoadAlgorithmFunction fail ");
+        AUDIO_ERR_LOG("LoadAlgorithmFunction fail, dlerror: %{public}s", dlerror());
         UnApply();
         return ERROR;
     }
@@ -124,7 +124,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
     AudioVoiceMphMemSize memSize;
     ret = vmAlgoApi_.getSize(&memSize);
     if (ret != AUDIO_VOICEMPH_EOK) {
-        AUDIO_ERR_LOG("AudioVoiceMphGetsize fail");
+        AUDIO_ERR_LOG("AudioVoiceMphGetsize fail, ret = %{public}d", ret);
         return ERROR;
     }
     handle_.resize(memSize.stateSize);
@@ -218,7 +218,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Apply(
     int32_t ret = vmAlgoApi_.applyAlgo(handle_.data(), scratchBuf_.data(), &data);
 
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == AUDIO_VOICEMPH_EOK, ERROR,
-        HILOG_COMM_ERROR("[Apply]PureVoice algo apply failed, return error is %{public}d", ret));
+        AUDIO_ERR_LOG("[Apply]PureVoice algo apply failed, return error is %{public}d", ret));
 
     int32_t outIndex = 0;
     for (uint32_t i = 0; i < nodeParameter_.frameLen; i++) {

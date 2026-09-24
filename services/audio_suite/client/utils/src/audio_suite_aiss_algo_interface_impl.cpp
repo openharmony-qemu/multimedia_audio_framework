@@ -80,7 +80,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Init()
     }
     audioEffectLibHandle_ = static_cast<AudioEffectLibrary *>(dlsym(soHandle_, AISS_LIB.c_str()));
     if (!audioEffectLibHandle_) {
-        AUDIO_ERR_LOG("Error loading symbol: %s ", dlerror());
+        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
         Deinit();
         return ERROR;
     }
@@ -91,14 +91,18 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Init()
     };
     int32_t ret = audioEffectLibHandle_->createEffect(descriptor, &algoHandle_);
     if (ret != SUCCESS || !algoHandle_) {
-        AUDIO_ERR_LOG("Failed to create algo instance, return value is %d", ret);
+        AUDIO_ERR_LOG("Failed to create algo instance, return value is %{public}d", ret);
         Deinit();
         return ERROR;
     }
     AUDIO_DEBUG_LOG("Create effect success");
-    if (InitIOBufferConfig() != SUCCESS || InitAudioEffectParam() != SUCCESS || InitConfig() != SUCCESS ||
-        InitAudioEffectProperty() != SUCCESS) {
-        AUDIO_ERR_LOG("Failed to init aiss algo param");
+    int32_t ioRet = InitIOBufferConfig();
+    int32_t paramRet = InitAudioEffectParam();
+    int32_t cfgRet = InitConfig();
+    int32_t propRet = InitAudioEffectProperty();
+    if (ioRet != SUCCESS || paramRet != SUCCESS || cfgRet != SUCCESS || propRet != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to init aiss algo param, ioRet=%{public}d, paramRet=%{public}d, "
+            "cfgRet=%{public}d, propRet=%{public}d", ioRet, paramRet, cfgRet, propRet);
         Deinit();
         return ERROR;
     }
@@ -176,7 +180,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Apply(std::vector<uint8_t*>& v1, std::v
 int32_t AudioSuiteAissAlgoInterfaceImpl::CheckFilePath(std::string &filePath)
 {
     if (filePath.size() >= PATH_MAX) {
-        AUDIO_ERR_LOG("File path size is too large: %d", (uint32_t)(filePath.size()));
+        AUDIO_ERR_LOG("File path size is too large: %{public}d", (uint32_t)(filePath.size()));
         return ERROR;
     }
     char buffer[PATH_MAX] = {0};
@@ -209,12 +213,12 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::InitIOBufferConfig()
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     int32_t ret = (*algoHandle_)->command(algoHandle_, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("EFFECT_CMD_INIT failed, return value is %d", ret);
+        AUDIO_ERR_LOG("EFFECT_CMD_INIT failed, return value is %{public}d", ret);
         return ERROR;
     }
     ret = (*algoHandle_)->command(algoHandle_, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("EFFECT_CMD_ENABLE failed, return value is %d", ret);
+        AUDIO_ERR_LOG("EFFECT_CMD_ENABLE failed, return value is %{public}d", ret);
         return ERROR;
     }
     AUDIO_DEBUG_LOG("AudioSuiteAissAlgoInterfaceImpl::InitIOBufferConfig success");
@@ -240,7 +244,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::InitConfig()
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     int32_t ret = (*algoHandle_)->command(algoHandle_, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("EFFECT_CMD_SET_CONFIG failed, return value %d", ret);
+        AUDIO_ERR_LOG("EFFECT_CMD_SET_CONFIG failed, return value %{public}d", ret);
         return ERROR;
     }
     AUDIO_DEBUG_LOG("AudioSuiteAissAlgoInterfaceImpl::InitConfig success");
@@ -276,7 +280,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::InitAudioEffectParam()
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
     int32_t ret = (*algoHandle_)->command(algoHandle_, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("EFFECT_CMD_SET_PARAM failed, return value is %d", ret);
+        AUDIO_ERR_LOG("EFFECT_CMD_SET_PARAM failed, return value is %{public}d", ret);
         return ERROR;
     }
     AUDIO_DEBUG_LOG("AudioSuiteAissAlgoInterfaceImpl::InitAudioEffectParam success");
@@ -292,7 +296,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::InitAudioEffectProperty()
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     int32_t ret = (*algoHandle_)->command(algoHandle_, EFFECT_CMD_SET_PROPERTY, &cmdInfo, &replyInfo);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("EFFECT_CMD_SET_PROPERTY failed, return value is %d", ret);
+        AUDIO_ERR_LOG("EFFECT_CMD_SET_PROPERTY failed, return value is %{public}d", ret);
         return ERROR;
     }
     AUDIO_DEBUG_LOG("AudioSuiteAissAlgoInterfaceImpl::InitAudioEffectProperty success");

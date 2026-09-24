@@ -47,7 +47,7 @@ int32_t AudioSuiteSpaceRenderNode::Init()
     CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
     if (isInit_) {
-        AUDIO_ERR_LOG("AudioSuiteSpaceRenderNode::Init failed, already inited ");
+        AUDIO_DEBUG_LOG("AudioSuiteSpaceRenderNode::Init failed, already inited ");
         return ERROR;
     }
 

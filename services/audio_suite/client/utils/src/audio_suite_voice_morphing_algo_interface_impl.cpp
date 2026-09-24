@@ -87,7 +87,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::ApplyAndWaitReady(void)
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", soPath.c_str());
 
     if (LoadAlgorithmFunction() != SUCCESS) {
-        AUDIO_ERR_LOG("LoadAlgorithmFunction fail ");
+        AUDIO_ERR_LOG("LoadAlgorithmFunction fail, dlerror: %{public}s", dlerror());
         UnApply();
         return ERROR;
     }
@@ -119,7 +119,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Init()
     AudioVoiceMorphingMemSize memSize;
     ret = vmAlgoApi_.getSize(&memSize);
     if (ret != AUDIO_VMP_EOK) {
-        AUDIO_ERR_LOG("AudioVoiceMorphingGetsize fail");
+        AUDIO_ERR_LOG("AudioVoiceMorphingGetsize fail, ret = %{public}d", ret);
         return ERROR;
     }
     handle_.resize(memSize.stateSize);
@@ -164,7 +164,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::SetParameter(
         typeMap = &generalVoiceChangeTypeMap;
         typeIt = generalVoiceChangeTypeMap.find(paramValue);
     } else {
-        AUDIO_ERR_LOG("SetOptions UNKNOWN TYPE");
+        AUDIO_ERR_LOG("SetOptions UNKNOWN TYPE, paramType: %{public}s", paramType_.c_str());
         return ERROR;
     }
 
@@ -172,7 +172,8 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::SetParameter(
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetVoiceBeautifierType/SetGeneralVoiceChangeType not match the parameters.", true),
-        "SetOptions UNKNOWN TYPE");
+        "SetOptions UNKNOWN TYPE, paramType: %{public}s, paramValue: %{public}s",
+        paramType_.c_str(), paramValue.c_str());
 
     int32_t ret = vmAlgoApi_.setParam(handle_.data(), typeIt->second);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VMP_EOK, ERROR, "Algo setParam failed with %{public}d", ret);

@@ -98,13 +98,13 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Init()
         "Init error, parse so name fail");
 
     if (TempoInit(tempoSoName) != SUCCESS) {
-        AUDIO_ERR_LOG("Tempo init error" );
+        AUDIO_ERR_LOG("Tempo init error, tempoSoName: %{private}s", tempoSoName.c_str());
         Deinit();
         return ERROR;
     }
 
     if (PitchInit(pitchSoName) != SUCCESS) {
-        AUDIO_ERR_LOG("Pitch init error");
+        AUDIO_ERR_LOG("Pitch init error, pitchSoName: %{private}s", pitchSoName.c_str());
         Deinit();
         return ERROR;
     }

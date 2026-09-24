@@ -66,7 +66,7 @@ short AudioSuiteEqAlgoInterfaceImpl::setEqParam(int left, int right)
 int32_t AudioSuiteEqAlgoInterfaceImpl::Init()
 {
     if (IsEqAlgoInit()) {
-        AUDIO_ERR_LOG("AudioSuiteEqAlgoInterfaceImpl already inited ");
+        AUDIO_DEBUG_LOG("AudioSuiteEqAlgoInterfaceImpl already inited");
         return ERROR;
     }
     std::string soPath = nodeParameter_.soPath + nodeParameter_.soName;
