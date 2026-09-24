@@ -152,7 +152,7 @@ int32_t AudioOutputNode::DoProcess(uint8_t **audioDataArray, int32_t arraySize,
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RENDER,
                            ERR_NOT_SUPPORTED),
             "SetEqualizerFrequencyBandGains failed", true);
-        AUDIO_ERR_LOG("multi output finished completed.");
+        AUDIO_ERR_LOG("multi output finished completed. ");
         return ERR_NOT_SUPPORTED;
     }
 

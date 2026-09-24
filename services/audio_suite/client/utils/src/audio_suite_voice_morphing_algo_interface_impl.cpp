@@ -87,7 +87,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::ApplyAndWaitReady(void)
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", soPath.c_str());
 
     if (LoadAlgorithmFunction() != SUCCESS) {
-        AUDIO_ERR_LOG("LoadAlgorithmFunction fail");
+        AUDIO_ERR_LOG("LoadAlgorithmFunction fail ");
         UnApply();
         return ERROR;
     }

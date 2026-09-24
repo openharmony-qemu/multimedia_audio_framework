@@ -14,7 +14,7 @@
  */
 
 #ifndef LOG_TAG
-#define LOG_TAG "AudioSuitePorcessNode"
+#define LOG_TAG "AudioSuitePorcessNode "
 #endif
 
 #include <vector>

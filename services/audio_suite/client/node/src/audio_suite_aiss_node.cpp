@@ -55,7 +55,7 @@ int32_t AudioSuiteAissNode::Init()
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create Aiss algoInterface");
 
     if (algoInterface_->Init() != SUCCESS) {
-        AUDIO_ERR_LOG("InitAlgorithm failed");
+        AUDIO_ERR_LOG("InitAlgorithm failed ");
         return ERROR;
     }
     resultNumber_ = AISS_OUTPUT_NUM;

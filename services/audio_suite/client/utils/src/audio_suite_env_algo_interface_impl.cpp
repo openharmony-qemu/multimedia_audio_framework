@@ -54,7 +54,7 @@ AudioSuiteEnvAlgoInterfaceImpl::~AudioSuiteEnvAlgoInterfaceImpl()
 int32_t AudioSuiteEnvAlgoInterfaceImpl::Init()
 {
     if (isEnvAlgoInit_) {
-        AUDIO_ERR_LOG("AudioSuiteEnvAlgoInterfaceImpl already inited");
+        AUDIO_ERR_LOG("AudioSuiteEnvAlgoInterfaceImpl already inited ");
         return ERROR;
     }
     std::string soPath = nodeParameter_.soPath + nodeParameter_.soName;

@@ -88,7 +88,7 @@ bool DownloadManager::ValidateFeatureNameSafe(const std::vector<std::string>& fe
     for (const auto& featureName : featureNames) {
         for (char c : featureName) {
             CHECK_AND_RETURN_RET_LOG(std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-',
-                false, "ValidateFeatureNameSafe: featureName contains invalid character");
+                false, "ValidateFeatureNameSafe: featureName contains invalid character" );
         }
     }
     return true;

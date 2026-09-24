@@ -78,7 +78,7 @@ int32_t BackgroundDownload::Init()
 
     subscriber_ = std::make_shared<EventSubscriber>(*this, subscribeInfo);
     if (!EventFwk::CommonEventManager::SubscribeCommonEvent(subscriber_)) {
-        AUDIO_ERR_LOG("Failed to subscribe common event");
+        AUDIO_ERR_LOG("Failed to subscribe common event ");
         return -1;
     }
 

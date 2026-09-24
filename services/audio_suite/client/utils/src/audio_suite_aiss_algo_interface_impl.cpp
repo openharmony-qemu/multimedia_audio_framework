@@ -80,7 +80,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Init()
     }
     audioEffectLibHandle_ = static_cast<AudioEffectLibrary *>(dlsym(soHandle_, AISS_LIB.c_str()));
     if (!audioEffectLibHandle_) {
-        AUDIO_ERR_LOG("Error loading symbol: %s", dlerror());
+        AUDIO_ERR_LOG("Error loading symbol: %s ", dlerror());
         Deinit();
         return ERROR;
     }

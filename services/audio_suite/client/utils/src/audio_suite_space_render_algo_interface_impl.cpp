@@ -115,7 +115,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetPositionParameter(const std::stri
     
     AudioSpaceRenderPositionParams params;
     if (!Serializer<AudioSpaceRenderPositionParams>::Deserialize(paramValue, params)) {
-        AUDIO_ERR_LOG("Invalid Position parameter format.");
+        AUDIO_ERR_LOG("Invalid Position parameter format. ");
         return ERR_INVALID_PARAM;
     }
     

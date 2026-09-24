@@ -93,7 +93,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::ApplyAndWaitReady(void)
         "LoadLibrary failed with path: %{private}s", soPath.c_str());
 
     if (LoadAlgorithmFunction() != SUCCESS) {
-        AUDIO_ERR_LOG("LoadAlgorithmFunction fail");
+        AUDIO_ERR_LOG("LoadAlgorithmFunction fail ");
         UnApply();
         return ERROR;
     }
