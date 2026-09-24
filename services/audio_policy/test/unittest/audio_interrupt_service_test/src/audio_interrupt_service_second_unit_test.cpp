@@ -1175,9 +1175,11 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_039, TestSize.
     AudioFocusEntry focusEntry;
     bool isExistMediaStream = true;
     bool isIncomingMediaStream = true;
+    bool isCheckMuteStream = true;
     sptr<IStandardAudioPolicyManagerListener> listener(new IStandardAudioPolicyManagerListenerStub());
     audioInterruptStrategy->queryBundleNameListCallback_ = listener;
-    audioInterruptStrategy->UpdateFocusStrategy(bundleName, focusEntry, isExistMediaStream, isIncomingMediaStream);
+    audioInterruptStrategy->UpdateFocusStrategy(bundleName, focusEntry,
+        isExistMediaStream, isIncomingMediaStream, isCheckMuteStream);
 }
 
 /**
@@ -2001,5 +2003,43 @@ HWTEST(AudioInterruptServiceSecondUnitTest, SendActiveInterruptEvent_001, TestSi
     EXPECT_TRUE(audioInterruptService->mediaInterruptedByRec_);
 }
 
+/**
+ * @tc.name  : Test UpdatePauseAudioFocusStrategy_001
+ * @tc.number: UpdatePauseAudioFocusStrategy_001
+ * @tc.desc  : Test UpdatePauseAudioFocusStrategy
+ */
+HWTEST(AudioInterruptServiceSecondUnitTest, UpdatePauseAudioFocusStrategy_001, TestSize.Level1)
+{
+    auto strategy = std::make_shared<AudioInterruptStrategy>();
+    ASSERT_NE(strategy, nullptr);
+    AudioInterrupt currentInterrupt;
+    currentInterrupt.behaviorFlags_.pauseWhenInterruptFlag = true;
+    AudioInterrupt incomingInterrupt;
+    AudioFocusEntry focusEntry;
+    focusEntry.actionOn = CURRENT;
+
+    focusEntry.hintType = INTERRUPT_HINT_STOP;
+    currentInterrupt.audioFocusType.streamType = STREAM_ALARM;
+    incomingInterrupt.audioFocusType.streamType = STREAM_ALARM;
+    incomingInterrupt.isCheckMuteStream = false;
+    strategy->UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
+
+    focusEntry.hintType = INTERRUPT_HINT_STOP;
+    currentInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    incomingInterrupt.audioFocusType.streamType = STREAM_ALARM;
+    strategy->UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
+
+    focusEntry.hintType = INTERRUPT_HINT_STOP;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    strategy->UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
+
+    focusEntry.hintType = INTERRUPT_HINT_STOP;
+    incomingInterrupt.isCheckMuteStream = true;
+    strategy->UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_STOP);
+}
 } // namespace AudioStandard
 } // namespace OHOS
