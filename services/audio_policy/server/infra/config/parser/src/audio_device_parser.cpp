@@ -70,6 +70,7 @@ bool AudioDeviceParser::LoadConfiguration()
 
 void AudioDeviceParser::Destroy()
 {
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "Destroy: curNode is nullptr");
     curNode_->FreeDoc();
 }
 

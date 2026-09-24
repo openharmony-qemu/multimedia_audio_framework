@@ -335,6 +335,7 @@ LowerVolumeInfoMap AudioVolumeParser::GetLowerVolumeInfoCfg()
 void AudioVolumeParser::ParseDeviceVolumeInfos(std::shared_ptr<AudioXmlNode> curNode,
     std::shared_ptr<StreamVolumeInfo> &streamVolInfo)
 {
+    CHECK_AND_RETURN_LOG(curNode != nullptr, "ParseDeviceVolumeInfos:curNode is nullptr");
     AUDIO_DEBUG_LOG("AudioVolumeParser::ParseDeviceVolumeInfos");
     while (curNode->IsNodeValid()) {
         if (curNode->CompareName("volumecurve")) {
@@ -374,6 +375,7 @@ void AudioVolumeParser::ParseDeviceVolumeInfos(std::shared_ptr<AudioXmlNode> cur
 void AudioVolumeParser::ParseVolumePoints(std::shared_ptr<AudioXmlNode> curNode,
     std::shared_ptr<DeviceVolumeInfo> &deviceVolInfo)
 {
+    CHECK_AND_RETURN_LOG(curNode != nullptr, "ParseVolumePoints:curNode is nullptr");
     AUDIO_DEBUG_LOG("AudioVolumeParser::ParseVolumePoints");
     while (curNode->IsNodeValid()) {
         if (curNode->CompareName("point")) {
