@@ -553,7 +553,7 @@ std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> AudioPipeMa
 
 void AudioPipeManager::UpdateModemStreamStatus(AudioStreamStatus streamStatus)
 {
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::lock_guard<std::shared_mutex> pLock(pipeListLock_);
     for (auto &entry : modemCommunicationIdMap_) {
         CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
         entry.second->streamStatus_ = streamStatus;
@@ -562,7 +562,7 @@ void AudioPipeManager::UpdateModemStreamStatus(AudioStreamStatus streamStatus)
 
 void AudioPipeManager::UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::lock_guard<std::shared_mutex> pLock(pipeListLock_);
     for (auto &entry : modemCommunicationIdMap_) {
         CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
         entry.second->oldDeviceDescs_ = entry.second->newDeviceDescs_;
