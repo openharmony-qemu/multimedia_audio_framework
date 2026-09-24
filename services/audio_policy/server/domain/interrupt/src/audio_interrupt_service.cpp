@@ -1344,8 +1344,9 @@ AudioInterruptResult AudioInterruptService::ActivateAudioInterrupt(
     result.targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     result.ownerUid = ownerUid_;
     result.ownerPid = ownerPid_;
+    bool needDelay = activateNeedDelay_;
     lock.unlock();
-    if (activateNeedDelay_) {
+    if (needDelay) {
         AUDIO_INFO_LOG("ActivateInterrupt needs to delay %{public}d ms to allow media callback delivery",
             ACTIVATE_DELAY_MS);
         std::this_thread::sleep_for(std::chrono::milliseconds(ACTIVATE_DELAY_MS));
