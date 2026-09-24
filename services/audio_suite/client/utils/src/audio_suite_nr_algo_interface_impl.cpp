@@ -62,7 +62,7 @@ int32_t AudioSuiteNrAlgoInterfaceImpl::Init()
     bool loadAlgoApiFail = algoApi_.getVersion == nullptr || algoApi_.getSize == nullptr ||
                            algoApi_.initAlgo == nullptr || algoApi_.applyAlgo == nullptr;
     if (loadAlgoApiFail) {
-        AUDIO_ERR_LOG("load ainr algorithm function fail");
+        AUDIO_ERR_LOG("load ainr algorithm function fail, dlerror: %{public}s", dlerror());
         Deinit();
         return ERROR;
     }

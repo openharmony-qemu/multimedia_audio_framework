@@ -82,12 +82,12 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Init()
     CHECK_AND_RETURN_RET_LOG(algoApi_.setParamsAlgo != nullptr, ERROR, "Failed to get symbol SpaceRenderSetParams");
  
     int32_t handleSize = algoApi_.getSize(&spaceRenderParam_);
-    CHECK_AND_RETURN_RET_LOG(handleSize >= 0, handleSize, "getSize error.");
+    CHECK_AND_RETURN_RET_LOG(handleSize >= 0, handleSize, "getSize error, handleSize=%{public}d", handleSize);
  
     spaceRenderHandle_.resize(handleSize);
  
     int32_t ret = algoApi_.initAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render init failed.");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render init failed, ret=%{public}d", ret);
 
     isSpaceRenderAlgoInit_ = true;
     return SUCCESS;
@@ -188,17 +188,17 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::SetParameter(const std::string &
         return ERR_INVALID_PARAM;
     }
  
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to set parameter.");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to set parameter, ret=%{public}d", ret);
  
     if (paramType == SPACE_RENDER_EXTENSION_MOD) {
         ret = algoApi_.initAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render extension init failed.");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render extension init failed, ret=%{public}d", ret);
     } else {
         ret = algoApi_.setParamsAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
         if (ret == SPACE_RENDER_ERR_SET_MODE) {
             ret = algoApi_.initAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
         }
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render SetParameter failed.");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render SetParameter failed, ret=%{public}d", ret);
     }
 
     return SUCCESS;
@@ -261,7 +261,7 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::GetParameter(const std::string &
         return ERR_INVALID_PARAM;
     }
  
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Space render mode is not support.");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Space render mode is not support, ret=%{public}d", ret);
 
     AUDIO_INFO_LOG("SpaceRender get %{public}s : %{public}s", paramType.c_str(), paramValue.c_str());
  
