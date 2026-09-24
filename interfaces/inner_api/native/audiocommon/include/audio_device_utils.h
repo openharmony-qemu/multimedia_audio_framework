@@ -27,7 +27,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr size_t AUDIO_DEVICE_INFO_SIZE_LIMIT = 50;
+constexpr size_t AUDIO_DEVICE_INFO_SIZE_LIMIT = 1000;
 constexpr uint32_t BASE_DEC = 10;
 
 template<typename T> bool MarshallingSetInt32(const std::set<T> &value, Parcel &parcel)
