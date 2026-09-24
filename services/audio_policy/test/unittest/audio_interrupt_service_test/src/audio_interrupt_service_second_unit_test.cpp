@@ -1947,7 +1947,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptInternal01, Te
 /**
 * @tc.name  : Test AudioInterruptService
 * @tc.number: SendActiveInterruptEvent_001
-* @tc.desc  : Test mediaInterruptedByRec_ flag in SendActiveInterruptEvent
+* @tc.desc  : Test activateNeedDelay_ flag in SendActiveInterruptEvent
 */
 HWTEST(AudioInterruptServiceSecondUnitTest, SendActiveInterruptEvent_001, TestSize.Level1)
 {
@@ -1964,42 +1964,78 @@ HWTEST(AudioInterruptServiceSecondUnitTest, SendActiveInterruptEvent_001, TestSi
     AudioInterrupt incomingInterrupt;
     incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
 
-    audioInterruptService->mediaInterruptedByRec_ = false;
+    audioInterruptService->activateNeedDelay_ = false;
     activeInterrupt.audioFocusType.streamType = STREAM_RING;
     interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
     audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
-    EXPECT_FALSE(audioInterruptService->mediaInterruptedByRec_);
+    EXPECT_FALSE(audioInterruptService->activateNeedDelay_);
 
     activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
     audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
-    EXPECT_TRUE(audioInterruptService->mediaInterruptedByRec_);
+    EXPECT_TRUE(audioInterruptService->activateNeedDelay_);
 
-    audioInterruptService->mediaInterruptedByRec_ = false;
+    audioInterruptService->activateNeedDelay_ = false;
     incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
     incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
     audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
-    EXPECT_FALSE(audioInterruptService->mediaInterruptedByRec_);
+    EXPECT_FALSE(audioInterruptService->activateNeedDelay_);
 
     incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
     incomingInterrupt.audioFocusType.streamType = STREAM_DEFAULT;
     interruptEvent.hintType = INTERRUPT_HINT_STOP;
     audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
-    EXPECT_TRUE(audioInterruptService->mediaInterruptedByRec_);
+    EXPECT_TRUE(audioInterruptService->activateNeedDelay_);
 
-    audioInterruptService->mediaInterruptedByRec_ = false;
+    audioInterruptService->activateNeedDelay_ = false;
     interruptEvent.hintType = INTERRUPT_HINT_NONE;
     audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
-    EXPECT_FALSE(audioInterruptService->mediaInterruptedByRec_);
+    EXPECT_FALSE(audioInterruptService->activateNeedDelay_);
 
     interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
     audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
-    EXPECT_TRUE(audioInterruptService->mediaInterruptedByRec_);
+    EXPECT_TRUE(audioInterruptService->activateNeedDelay_);
 
-    audioInterruptService->mediaInterruptedByRec_ = false;
+    audioInterruptService->activateNeedDelay_ = false;
     interruptEvent.hintType = INTERRUPT_HINT_MUTE;
     audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
-    EXPECT_TRUE(audioInterruptService->mediaInterruptedByRec_);
+    EXPECT_TRUE(audioInterruptService->activateNeedDelay_);
 }
 
+/**
+* @tc.name  : Test ShouldBypassAudioSessionFocus_003
+* @tc.number: ShouldBypassAudioSessionFocus_003
+* @tc.desc  : Test ShouldBypassAudioSessionFocus
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, ShouldBypassAudioSessionFocus_003, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+    int32_t zoneId = 0;
+    auto pid = getpid();
+
+    audioInterruptService->sessionService_.SetAudioSessionScene(pid, AudioSessionScene::VOICE_COMMUNICATION);
+    audioInterruptService->sessionService_.sessionMap_[pid]->audioSessionScene_ =
+        AudioSessionScene::VOICE_COMMUNICATION;
+    audioInterruptService->sessionService_.sessionMap_[pid]->state_ = AudioSessionState::SESSION_ACTIVE;
+
+    auto audioInterruptZone = make_shared<AudioInterruptZone>();
+    AudioInterrupt fakeInterrupt;
+    fakeInterrupt.pid = pid;
+    fakeInterrupt.isAudioSessionInterrupt = true;
+    audioInterruptZone->audioFocusInfoList.push_back({fakeInterrupt, STOP});
+    audioInterruptService->zonesMap_[zoneId] = audioInterruptZone;
+
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.pid = pid;
+    audioInterrupt.isAudioSessionInterrupt = false;
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+
+    auto ret = audioInterruptService->ShouldBypassAudioSessionFocus(zoneId, audioInterrupt);
+    EXPECT_EQ(true, ret);
+
+    audioInterrupt.audioFocusType.streamType = STREAM_RING;
+    ret = audioInterruptService->ShouldBypassAudioSessionFocus(zoneId, audioInterrupt);
+    EXPECT_EQ(true, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
