@@ -107,6 +107,27 @@ typedef enum {
      * @error A system error has occurred.
      */
     AUDIOCOMMON_RESULT_ERROR_SYSTEM = 6800301,
+
+    /**
+     * @error System service died.
+     *
+     * @since 26.0.1
+     */
+    AUDIOCOMMON_RESULT_ERROR_SERVICE_DIED = 6800302,
+
+    /**
+     * @error System service died.
+     *
+     * @since 26.0.1
+     */
+    AUDIOCOMMON_RESULT_ERROR_NETWORK = 6800501,
+
+    /**
+     * @error System service died.
+     *
+     * @since 26.0.1
+     */
+    AUDIOCOMMON_RESULT_ERROR_STORAGE_NOT_ENOUGH = 6800502,
 } OH_AudioCommon_Result;
 
 /**

@@ -257,6 +257,21 @@ int32_t AudioSuiteClientPolicy::GetDownloadStatus(
     return SUCCESS;
 }
 
+int32_t AudioSuiteClientPolicy::GetFeatureStatus(
+    const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo>& status)
+{
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::GetFeatureStatus, featureNames size=%{public}zu", featureNames.size());
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
+
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->GetFeatureStatus(featureNames, status, result);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureStatus IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "GetFeatureStatus result: %{public}d", result);
+    return SUCCESS;
+}
+
 int32_t AudioSuiteClientPolicy::GetFeatureNewVersion(
     const std::vector<std::string>& featureNames, std::vector<AudioSuiteCloudRomVersionInfo>& versionInfos)
 {
