@@ -70,17 +70,7 @@ int32_t AudioSuiteDownloadManagerImpl::UnregisterDownloadStatusCallback()
 int32_t AudioSuiteDownloadManagerImpl::GetInstallStatus(
     const std::vector<std::string>& featureNames, std::vector<bool>& installStatus)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::GetInstallStatus");
-    auto installStatusPtr = std::make_shared<std::vector<bool>>();
-    int32_t ret = CallWithTimeout(
-        [featureNames, installStatusPtr]() {
-            return AudioSuiteClientPolicy::GetInstance().GetInstallStatus(featureNames, *installStatusPtr);
-        },
-        "GetInstallStatus");
-    if (ret == SUCCESS) {
-        installStatus = *installStatusPtr;
-    }
-    return ret;
+    return AudioSuiteClientPolicy::GetInstance().GetInstallStatus(featureNames, installStatus);
 }
 
 int32_t AudioSuiteDownloadManagerImpl::StartDownload(
@@ -184,7 +174,7 @@ int32_t AudioSuiteDownloadManagerImpl::StartBackgroundDownloadDirect(const std::
 int32_t AudioSuiteDownloadManagerImpl::GetDownloadStatusDirect(
     const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo>& status)
 {
-    return AudioSuiteClientPolicy::GetInstance().GetDownloadStatus(featureNames, status);
+    return AudioSuiteClientPolicy::GetInstance().GetFeatureStatus(featureNames, status);
 }
 
 int32_t AudioSuiteDownloadManagerImpl::GetFeatureNewVersionDirect(

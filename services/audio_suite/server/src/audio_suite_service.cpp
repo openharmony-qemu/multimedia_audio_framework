@@ -280,6 +280,24 @@ ErrCode AudioSuiteService::GetDownloadStatus(
     return SUCCESS;
 }
 
+ErrCode AudioSuiteService::GetFeatureStatus(
+    const std::vector<std::string> &featureNames, std::vector<AudioSuiteDownloadStatusInfo> &status, ErrCode &result)
+{
+    AUDIO_INFO_LOG("AudioSuiteService::GetFeatureStatus, featureNames size=%{public}zu", featureNames.size());
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::GetFeatureStatus", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] GetFeatureStatus timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
+    PostDelayUnloadTask();
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "GetFeatureStatus: not permission");
+
+    result = downloadManager_.GetFeatureStatus(featureNames, status);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "GetFeatureStatus failed, result:%{public}d", result);
+    return SUCCESS;
+}
+
 ErrCode AudioSuiteService::GetFeatureNewVersion(
     const std::vector<std::string> &featureNames, std::vector<AudioSuiteCloudRomVersionInfo> &newVersion,
     ErrCode &result)

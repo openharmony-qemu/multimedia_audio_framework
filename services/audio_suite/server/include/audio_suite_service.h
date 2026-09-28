@@ -66,6 +66,9 @@ public:
     ErrCode GetDownloadStatus(
         const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo> &status,
         ErrCode &result) override;
+    ErrCode GetFeatureStatus(
+        const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo> &status,
+        ErrCode &result) override;
     ErrCode GetFeatureNewVersion(
         const std::vector<std::string>& featureNames, std::vector<AudioSuiteCloudRomVersionInfo> &newVersion,
         ErrCode &result) override;
