@@ -45,7 +45,7 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
     CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
     if (isInit_) {
-        AUDIO_ERR_LOG("AudioSuitePureVoiceChangeNode::Init failed, already inited ");
+        AUDIO_ERR_LOG("AudioSuitePureVoiceChangeNode::Init failed, already inited");
         return ERROR;
     }
     
