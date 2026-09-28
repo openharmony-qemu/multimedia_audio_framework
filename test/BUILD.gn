@@ -263,6 +263,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioserverbalance_fuzzer:fuzztest",
     "fuzztest/audioservermore_fuzzer:fuzztest",
     "fuzztest/audioserverproxy_fuzzer:fuzztest",
+    "fuzztest/audioserverproxymore_fuzzer:fuzztest",
     "fuzztest/audioservice_fuzzer:fuzztest",
     # "fuzztest/audioserviceclient_fuzzer:fuzztest",
     "fuzztest/audioservicecommon_fuzzer:fuzztest",

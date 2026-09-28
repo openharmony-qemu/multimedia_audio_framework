@@ -113,5 +113,165 @@ HWTEST_F(OHAudioSuiteDownloadManagerTest, UnregisterDownloadCallbackNullManager,
     EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
+HWTEST_F(OHAudioSuiteDownloadManagerTest, IsFeatureInstalledNullManager, TestSize.Level0)
+{
+    bool installStatus[1] = {false};
+    const char *names[] = {"v1"};
+    int32_t ret = OH_AudioSuite_IsFeatureInstalled(nullptr, names, 1, installStatus, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, IsFeatureInstalledNullInstallStatus, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadManager *manager = nullptr;
+    OH_AudioSuite_GetDownloadManager(&manager);
+    ASSERT_NE(manager, nullptr);
+    const char *names[] = {"v1"};
+    int32_t ret = OH_AudioSuite_IsFeatureInstalled(manager, names, 1, nullptr, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, IsFeatureInstalledSizeLessThanCount, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadManager *manager = nullptr;
+    OH_AudioSuite_GetDownloadManager(&manager);
+    ASSERT_NE(manager, nullptr);
+    bool installStatus[1] = {false};
+    const char *names[] = {"v1"};
+    int32_t ret = OH_AudioSuite_IsFeatureInstalled(manager, names, 2, installStatus, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, IsFeatureInstalledNullFeatureNames, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadManager *manager = nullptr;
+    OH_AudioSuite_GetDownloadManager(&manager);
+    ASSERT_NE(manager, nullptr);
+    bool installStatus[1] = {false};
+    int32_t ret = OH_AudioSuite_IsFeatureInstalled(manager, nullptr, 1, installStatus, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, IsFeatureInstalledCountZero, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadManager *manager = nullptr;
+    OH_AudioSuite_GetDownloadManager(&manager);
+    ASSERT_NE(manager, nullptr);
+    bool installStatus[1] = {false};
+    const char *names[] = {"v1"};
+    int32_t ret = OH_AudioSuite_IsFeatureInstalled(manager, names, 0, installStatus, 0);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, IsFeatureInstalledCountExceedMax, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadManager *manager = nullptr;
+    OH_AudioSuite_GetDownloadManager(&manager);
+    ASSERT_NE(manager, nullptr);
+    bool installStatus[6] = {false};
+    const char *names[] = {"v1", "v2", "v3", "v4", "v5", "v6"};
+    int32_t ret = OH_AudioSuite_IsFeatureInstalled(manager, names, 6, installStatus, 6);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, IsFeatureInstalledNullElement, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadManager *manager = nullptr;
+    OH_AudioSuite_GetDownloadManager(&manager);
+    ASSERT_NE(manager, nullptr);
+    bool installStatus[1] = {false};
+    const char *names[] = {nullptr};
+    int32_t ret = OH_AudioSuite_IsFeatureInstalled(manager, names, 1, installStatus, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, IsFeatureInstalledInvalidManager, TestSize.Level0)
+{
+    int dummy = 0;
+    OH_AudioSuite_DownloadManager *fakeManager = reinterpret_cast<OH_AudioSuite_DownloadManager *>(&dummy);
+    bool installStatus[1] = {false};
+    const char *names[] = {"v1"};
+    int32_t ret = OH_AudioSuite_IsFeatureInstalled(fakeManager, names, 1, installStatus, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, GetFeatureStatusNullManager, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadStatusInfo statusInfos[1];
+    const char *names[] = {"v1"};
+    int32_t ret = OH_AudioSuite_GetFeatureStatus(nullptr, names, 1, statusInfos, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, GetFeatureStatusNullStatusInfos, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadManager *manager = nullptr;
+    OH_AudioSuite_GetDownloadManager(&manager);
+    ASSERT_NE(manager, nullptr);
+    const char *names[] = {"v1"};
+    int32_t ret = OH_AudioSuite_GetFeatureStatus(manager, names, 1, nullptr, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, GetFeatureStatusSizeLessThanCount, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadManager *manager = nullptr;
+    OH_AudioSuite_GetDownloadManager(&manager);
+    ASSERT_NE(manager, nullptr);
+    OH_AudioSuite_DownloadStatusInfo statusInfos[1];
+    const char *names[] = {"v1"};
+    int32_t ret = OH_AudioSuite_GetFeatureStatus(manager, names, 2, statusInfos, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, GetFeatureStatusNullFeatureNames, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadManager *manager = nullptr;
+    OH_AudioSuite_GetDownloadManager(&manager);
+    ASSERT_NE(manager, nullptr);
+    OH_AudioSuite_DownloadStatusInfo statusInfos[1];
+    int32_t ret = OH_AudioSuite_GetFeatureStatus(manager, nullptr, 1, statusInfos, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, GetNewVersionInfoNullManager, TestSize.Level0)
+{
+    OH_AudioSuite_CloudRomVersionInfo versionInfos[1];
+    const char *names[] = {"v1"};
+    int32_t ret = OH_AudioSuite_GetNewVersionInfo(nullptr, names, 1, versionInfos, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, GetNewVersionInfoNullVersionInfos, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadManager *manager = nullptr;
+    OH_AudioSuite_GetDownloadManager(&manager);
+    ASSERT_NE(manager, nullptr);
+    const char *names[] = {"v1"};
+    int32_t ret = OH_AudioSuite_GetNewVersionInfo(manager, names, 1, nullptr, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, GetNewVersionInfoSizeLessThanCount, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadManager *manager = nullptr;
+    OH_AudioSuite_GetDownloadManager(&manager);
+    ASSERT_NE(manager, nullptr);
+    OH_AudioSuite_CloudRomVersionInfo versionInfos[1];
+    const char *names[] = {"v1"};
+    int32_t ret = OH_AudioSuite_GetNewVersionInfo(manager, names, 2, versionInfos, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST_F(OHAudioSuiteDownloadManagerTest, GetNewVersionInfoNullFeatureNames, TestSize.Level0)
+{
+    OH_AudioSuite_DownloadManager *manager = nullptr;
+    OH_AudioSuite_GetDownloadManager(&manager);
+    ASSERT_NE(manager, nullptr);
+    OH_AudioSuite_CloudRomVersionInfo versionInfos[1];
+    int32_t ret = OH_AudioSuite_GetNewVersionInfo(manager, nullptr, 1, versionInfos, 1);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -40,6 +40,43 @@ static constexpr size_t DOWNLOAD_FEATURE_NAME_MAX_LEN = 256;
 static const std::string CLOUD_ROM_BASE_PATH = "/data/service/el1/public/update/cloudRom/";
 static const std::string PRODUCT_BASE_VERSION_KEY = "const.comp.hl.product_base_version.real";
 
+static constexpr int32_t DOWNLOAD_ERROR_NETWORK = 503;
+static constexpr int32_t DOWNLOAD_ERROR_STORAGE_NOT_ENOUGH = 402;
+static constexpr int32_t RESULT_ERROR_SERVICE_DIED = 6800302;
+static constexpr int32_t ERROR_NETWORK = 6800501;
+static constexpr int32_t ERROR_STORAGE_NOT_ENOUGH = 6800502;
+
+static constexpr int32_t WAIT_REBOOT_THEN_INSTALL = 31;
+static constexpr int32_t WAIT_UPGRADE_THEN_INSTALL = 32;
+static constexpr int32_t RESTARTED_WAIT_FOR_INSTALL = 33;
+static constexpr int32_t UPGRADED_WAIT_FOR_INSTALL = 34;
+
+static int32_t ConvertToApiErrCode(int32_t errCode)
+{
+    if (errCode == SUCCESS) {
+        return 0;
+    }
+    if (errCode == DOWNLOAD_ERROR_NETWORK) {
+        return ERROR_NETWORK;
+    }
+    if (errCode == DOWNLOAD_ERROR_STORAGE_NOT_ENOUGH) {
+        return ERROR_STORAGE_NOT_ENOUGH;
+    }
+    AUDIO_WARNING_LOG("Error codes:%{public}d not intended for external use", errCode);
+    return RESULT_ERROR_SERVICE_DIED;
+}
+
+static int32_t ConvertToApiState(int32_t state)
+{
+    if (state == WAIT_UPGRADE_THEN_INSTALL ||
+        state == RESTARTED_WAIT_FOR_INSTALL ||
+        state == UPGRADED_WAIT_FOR_INSTALL) {
+        AUDIO_WARNING_LOG("state:%{public}d not intended for external use", state);
+        return WAIT_REBOOT_THEN_INSTALL;
+    }
+    return state;
+}
+
 DownloadManager::DownloadManager()
 {
     AUDIO_INFO_LOG("DownloadManager constructor");
@@ -136,18 +173,8 @@ int32_t DownloadManager::StartDownload(const std::vector<std::string>& featureNa
     CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "donwload callback is null");
 
     int32_t funcResult = SUCCESS;
-    std::vector<AudioSuiteCloudRomVersionInfo> newVersionInfos;
-    int32_t ret = downloadCallback_->GetFeatureNewVersion(featureNames, newVersionInfos, funcResult);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureNewVersion IPC failed, ret=%{public}d", ret);
-    CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
-        "GetFeatureNewVersion failed, funcResult=%{public}d", funcResult);
-    for (const auto& info : newVersionInfos) {
-        CHECK_AND_RETURN_RET_LOG(info.errorCode == 0, info.errorCode,
-            "GetFeatureNewVersion failed, errorCode=%{public}d", info.errorCode);
-    }
-
     AUDIO_INFO_LOG("DownloadAndInstall: featureNames size=%{public}zu", featureNames.size());
-    ret = downloadCallback_->DownloadAndInstall(allowedCellularNet, featureNames, funcResult);
+    int32_t ret = downloadCallback_->DownloadAndInstall(allowedCellularNet, featureNames, funcResult);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DownloadAndInstall IPC failed, ret=%{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
         "DownloadAndInstall failed, funcResult=%{public}d", funcResult);
@@ -334,6 +361,35 @@ int32_t DownloadManager::GetDownloadStatus(
     return SUCCESS;
 }
 
+int32_t DownloadManager::GetFeatureStatus(
+    const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo>& status)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_INFO_LOG("GetFeatureStatus: featureNames size=%{public}zu", featureNames.size());
+
+    CHECK_AND_RETURN_RET_LOG(ValidateFeatureNames(featureNames), ERR_INVALID_PARAM,
+        "GetFeatureStatus featureNames validation failed");
+    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "donwload callback not reg");
+
+    std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
+    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "donwload callback is null");
+
+    int32_t funcResult = SUCCESS;
+    int32_t ret = downloadCallback_->GetFeatureStatus(featureNames, status, funcResult);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureStatus IPC failed, ret=%{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
+        "GetFeatureStatus failed, funcResult=%{public}d", funcResult);
+
+    for (auto& s : status) {
+        s.size = 0;
+        s.errorCode = ConvertToApiErrCode(s.errorCode);
+        s.state = ConvertToApiState(s.state);
+        AUDIO_INFO_LOG("%{public}s GetFeatureStatus status:%{public}d, errorCode:%{public}d",
+            s.featureName.c_str(), s.state, s.errorCode);
+    }
+    return SUCCESS;
+}
+
 int32_t DownloadManager::GetFeatureNewVersion(
     const std::vector<std::string>& featureNames, std::vector<AudioSuiteCloudRomVersionInfo>& versionInfos)
 {
@@ -354,6 +410,10 @@ int32_t DownloadManager::GetFeatureNewVersion(
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureNewVersion IPC failed, ret=%{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
         "GetFeatureNewVersion failed, funcResult=%{public}d", funcResult);
+    for (auto& versionInfo : versionInfos) {
+        versionInfo.errorCode = ConvertToApiErrCode(versionInfo.errorCode);
+        versionInfo.status = ConvertToApiState(versionInfo.status);
+    }
     AUDIO_INFO_LOG("GetFeatureNewVersion success, versionInfos count=%{public}zu", versionInfos.size());
     return SUCCESS;
 }
@@ -476,10 +536,16 @@ int32_t DownloadManager::SetUpdateEngineCallback(const sptr<IRemoteObject> objec
 
 int32_t DownloadManager::OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status)
 {
+    std::vector<AudioSuiteDownloadStatusInfo> convertedStatus(status);
+    for (auto& statu : convertedStatus) {
+        statu.errorCode = ConvertToApiErrCode(statu.errorCode);
+        statu.state = ConvertToApiState(statu.state);
+    }
+
     std::unique_lock<std::mutex> statusCallbacksLock(statusCallbacksMutex_);
     for (const auto& pair : statusCallbacks_) {
         if (pair.second) {
-            pair.second->OnDownloadStatusChanged(status);
+            pair.second->OnDownloadStatusChanged(convertedStatus);
         }
     }
     return SUCCESS;

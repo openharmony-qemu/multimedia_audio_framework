@@ -994,6 +994,36 @@ HWTEST_F(AudioSuiteServiceTest, StartBackgroundDownload_Service_001, TestSize.Le
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+ * @tc.name  OnDownloadStatusChanged_ConvertErrCode_001
+ * @tc.desc  Test ConvertToApiErrCode branches: errCode=0, 503, 402, 999.
+ */
+HWTEST_F(AudioSuiteServiceTest, OnDownloadStatusChanged_ConvertErrCode_001, TestSize.Level0)
+{
+    std::vector<AudioSuiteDownloadStatusInfo> status;
+    AudioSuiteDownloadStatusInfo info1 = {0, 0, "feat1", "", 0, "", 0};
+    AudioSuiteDownloadStatusInfo info2 = {0, 0, "feat2", "", 0, "", 503};
+    AudioSuiteDownloadStatusInfo info3 = {0, 0, "feat3", "", 0, "", 402};
+    AudioSuiteDownloadStatusInfo info4 = {0, 0, "feat4", "", 0, "", 999};
+    status = {info1, info2, info3, info4};
+    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().OnDownloadStatusChanged(status), SUCCESS);
+}
+
+/**
+ * @tc.name  OnDownloadStatusChanged_ConvertState_001
+ * @tc.desc  Test ConvertToApiState branches: state=32, 33, 34, 0.
+ */
+HWTEST_F(AudioSuiteServiceTest, OnDownloadStatusChanged_ConvertState_001, TestSize.Level0)
+{
+    std::vector<AudioSuiteDownloadStatusInfo> status;
+    AudioSuiteDownloadStatusInfo info1 = {32, 0, "feat1", "", 0, "", 0};
+    AudioSuiteDownloadStatusInfo info2 = {33, 0, "feat2", "", 0, "", 0};
+    AudioSuiteDownloadStatusInfo info3 = {34, 0, "feat3", "", 0, "", 0};
+    AudioSuiteDownloadStatusInfo info4 = {0, 0, "feat4", "", 0, "", 0};
+    status = {info1, info2, info3, info4};
+    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().OnDownloadStatusChanged(status), SUCCESS);
+}
+
 } // namespace AudioSuite
 } // namespace AudioStandard
 } // namespace OHOS

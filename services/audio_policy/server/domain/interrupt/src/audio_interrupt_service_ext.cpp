@@ -515,6 +515,50 @@ void AudioInterruptService::UpdateIsCheckMuteStreamByPid(int32_t callerPid)
     }
 }
 
+void AudioInterruptService::ProcessSilentChangeInterrupt(const MuteFocusInfo &audioFocusInfo)
+{
+    const AudioInterrupt& activeInterrupt = audioFocusInfo.currInterrupt;
+    const AudioInterrupt& incomingInterrupt = audioFocusInfo.incomingInterrupt;
+    int32_t activeZoneId = FindAudioZoneByStreamIdInternal(activeInterrupt.streamId);
+    int32_t incomingZoneId = FindAudioZoneByStreamIdInternal(incomingInterrupt.streamId);
+    CHECK_AND_RETURN_LOG(activeZoneId == incomingZoneId,
+        "NotifyStreamSilentChange:streamId %{public}d(zoneId:%{public}d) and streamId "
+        "%{public}d(zoneId:%{public}d) are not in the same zone, skip interrupt",
+        activeInterrupt.streamId, activeZoneId, incomingInterrupt.streamId, incomingZoneId);
+
+    auto itZone = zonesMap_.find(activeZoneId);
+    CHECK_AND_RETURN_LOG(itZone != zonesMap_.end() && itZone->second != nullptr,
+        "zone not found or zone is null");
+    auto audioFocusInfoList = itZone->second->audioFocusInfoList;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator activeIter;
+    CHECK_AND_RETURN_LOG(IsInterruptExist(activeInterrupt.streamId, audioFocusInfoList, activeIter),
+        "the active interrupt is not exist");
+
+    bool isIncomingBundleNameExist = false;
+    if (interruptStrategy_ != nullptr) {
+        std::string incomingBundleName = AudioInterruptUtils::GetAudioInterruptBundleName(incomingInterrupt);
+        interruptStrategy_->OnQueryBundleNameIsInList(incomingBundleName, "audio_param",
+            isIncomingBundleNameExist);
+    }
+    if (activeInterrupt.behaviorFlags_.pauseWhenInterruptFlag || isIncomingBundleNameExist) {
+        CHECK_AND_RETURN(activeIter->second == ACTIVE || activeIter->second == DUCK);
+        activeIter->second  = PAUSE;
+        AUDIO_INFO_LOG("streamId %{public}d is paused by streamId: %{public}d for whiteList or pauseWhenInterruptFlag",
+            activeInterrupt.streamId, incomingInterrupt.streamId);
+        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
+        StartPausedStreamMonitor(activeZoneId, interruptEvent, incomingInterrupt, activeInterrupt);
+        SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
+        itZone->second->audioFocusInfoList = audioFocusInfoList;
+        zonesMap_[activeZoneId] = itZone->second;
+    } else {
+        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+        AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
+            activeInterrupt.streamId, incomingInterrupt.streamId);
+        SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
+        DeactivateAudioInterruptInternal(activeZoneId, activeInterrupt);
+    }
+}
+
 bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t streamId)
 {
     bool ret = false;
@@ -531,35 +575,7 @@ bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t
             "now record size: %{public}zu", callerPid, muteAudioFocus_.size());
     }
     for (const auto& audioFocusInfo : tempMuteList) {
-        const AudioInterrupt& activeInterrupt = audioFocusInfo.currInterrupt;
-        const AudioInterrupt& incomingInterrupt = audioFocusInfo.incomingInterrupt;
-        int32_t activeZoneId = FindAudioZoneByStreamIdInternal(activeInterrupt.streamId);
-        int32_t incomingZoneId = FindAudioZoneByStreamIdInternal(incomingInterrupt.streamId);
-        CHECK_AND_CONTINUE_LOG(activeZoneId == incomingZoneId,
-            "NotifyStreamSilentChange:streamId %{public}d(zoneId:%{public}d) and streamId "
-            "%{public}d(zoneId:%{public}d) are not in same zone, skip interrupt",
-            activeInterrupt.streamId, activeZoneId, incomingInterrupt.streamId, incomingZoneId);
-        if (audioFocusInfo.focusEntry.hintType == INTERRUPT_HINT_STOP) {
-            InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
-            AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
-                activeInterrupt.streamId, streamId);
-            SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
-            DeactivateAudioInterruptInternal(activeZoneId, activeInterrupt);
-            ret = true;
-            continue;
-        }
-
-        // hintType is pause or mute, need reactivate interrupt
-        bool tempUpdateScene = false;
-        AUDIO_INFO_LOG("The stream %{public}d is reactiavted because of silent change", streamId);
-        int32_t activateResult =
-            ActivateAudioInterruptCoreProcedure(incomingZoneId, incomingInterrupt, true, tempUpdateScene);
-        if (activateResult != SUCCESS) {
-            AUDIO_ERR_LOG("ActivateAudioInterruptCoreProcedure failed for pid = %{public}d", incomingInterrupt.pid);
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
-                INTERRUPT_START_OPERATION_FAILED, "ActivateAudioInterruptCoreProcedure failed", false);
-            return false;
-        }
+        ProcessSilentChangeInterrupt(audioFocusInfo);
         ret = true;
     }
     return ret;
@@ -589,7 +605,8 @@ void AudioInterruptService::RemoveMuteCheckRecord(const AudioInterrupt &audioInt
 void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt)
 {
-    CHECK_AND_RETURN(IsAudioStreamActive(audioFocusInfo.second));
+    CHECK_AND_RETURN(IsAudioStreamActive(audioFocusInfo.second) ||
+        audioFocusInfo.first.behaviorFlags_.pauseWhenInterruptFlag);
     if (!incomingInterrupt.isCheckMuteStream) {
         AUDIO_INFO_LOG("is not check mute stream");
         return;
@@ -598,20 +615,12 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     AudioInterrupt currentInterrupt = audioFocusInfo.first;
     AudioStreamType currentStreamType = currentInterrupt.audioFocusType.streamType;
     AudioStreamType incomingStreamType = incomingInterrupt.audioFocusType.streamType;
-    if ((focusEntry.hintType != INTERRUPT_HINT_STOP &&
-        focusEntry.hintType != INTERRUPT_HINT_PAUSE &&
-        focusEntry.hintType != INTERRUPT_HINT_MUTE) ||
+    if (focusEntry.hintType != INTERRUPT_HINT_STOP ||
         !AudioInterruptUtils::IsMediaStream(currentStreamType) ||
         !AudioInterruptUtils::IsMediaStream(incomingStreamType)) {
         AUDIO_INFO_LOG("focusEntry.hintType = %{public}d", focusEntry.hintType);
         return;
     }
-
-#ifdef HAS_WINDOW_MANAGER
-    bool needSkipMuteCheck = WindowUtils::CheckWindowState(incomingInterrupt.pid) &&
-        sessionService_.IsAudioSessionActivated(incomingInterrupt.pid);
-    CHECK_AND_RETURN_LOG(!needSkipMuteCheck, "Incoming app is foreground and audioSession activated, skip mute check.");
-#endif
 
     auto& focusList = muteAudioFocus_[incomingInterrupt.pid];
     bool exists = std::any_of(focusList.begin(), focusList.end(), [&](const MuteFocusInfo& info) {
@@ -833,7 +842,7 @@ void AudioInterruptService::StopPausedStreamMonitor(uint32_t streamId)
 
 void AudioInterruptService::StartPausedStreamMonitor(const int32_t zoneId,
     const InterruptEventInternal &interruptEvent, const AudioInterrupt &incomingInterrupt,
-    AudioInterrupt &activeInterrupt)
+    const AudioInterrupt &activeInterrupt)
 {
     bool isIncomingBundleNameExist = false;
     int32_t pauseTimeout = DEFAULT_PAUSE_TIMEOUT_S;
