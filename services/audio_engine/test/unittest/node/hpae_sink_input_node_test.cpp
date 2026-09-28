@@ -54,6 +54,7 @@ static void PrepareNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.deviceClass = "primary";
     nodeInfo.deviceNetId = "local";
+    nodeInfo.macAddress = "11:22:33:44:55:66";
     nodeInfo.historyFrameCount = DEFAULT_HISTROY_FRAME_COUNT;
 }
 
@@ -493,6 +494,7 @@ HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_StreamDataParametersCorrect, 
     expectedInfo.requestDataLen = node_->interleveData_.size();
     expectedInfo.deviceClass = "primary";
     expectedInfo.deviceNetId = "local";
+    expectedInfo.macAddress = "11:22:33:44:55:66";
     expectedInfo.needData = true;
     expectedInfo.forceData = true; // Because offloadEnable_ is false by default
 
@@ -506,6 +508,7 @@ HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_StreamDataParametersCorrect, 
             EXPECT_EQ(info.requestDataLen, expectedInfo.requestDataLen);
             EXPECT_EQ(info.deviceClass, expectedInfo.deviceClass);
             EXPECT_EQ(info.deviceNetId, expectedInfo.deviceNetId);
+            EXPECT_EQ(info.macAddress, expectedInfo.macAddress);
             EXPECT_EQ(info.needData, expectedInfo.needData);
             EXPECT_EQ(info.forceData, expectedInfo.forceData);
             return SUCCESS;

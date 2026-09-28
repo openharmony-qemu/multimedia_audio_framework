@@ -1266,6 +1266,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_074, TestSize.Level0)
     sinkInfo.samplingRate = SAMPLE_RATE_48000;
     sinkInfo.deviceNetId = "local";
     sinkInfo.deviceClass = "primary";
+    sinkInfo.macAddress = "11:22:33:44:55:66";
     
     std::weak_ptr<INodeCallback> statusCallback;
     HpaeNodeInfo nodeInfo;
@@ -1279,6 +1280,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_074, TestSize.Level0)
     EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_EFFECT_OUT);
     EXPECT_EQ(nodeInfo.deviceNetId, "local");
     EXPECT_EQ(nodeInfo.deviceClass, "primary");
+    EXPECT_EQ(nodeInfo.macAddress, "11:22:33:44:55:66");
 }
 
 /**

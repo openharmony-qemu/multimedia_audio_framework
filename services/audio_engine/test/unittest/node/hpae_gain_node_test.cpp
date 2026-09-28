@@ -24,6 +24,7 @@
 #include "audio_errors.h"
 #include "audio_volume.h"
 #include "audio_info.h"
+#include "util/id_handler.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -267,6 +268,39 @@ HWTEST_F(HpaeGainNodeTest, ResetVolume_CacheStreamAndPipeVolume_Normal, TestSize
     EXPECT_NE(hpaeGainNode->pipeVolume_, nullptr);
 
     CleanupStreamAndPipeVolume(UT_SESSION_ID);
+}
+
+HWTEST_F(HpaeGainNodeTest, ResetVolume_MacAddressPriorityForIdInfo, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 20;
+    const std::string mac = "11:22:33:44:55:66";
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = "primary_extra";
+    nodeInfo.deviceNetId = "LocalDevice";
+    nodeInfo.macAddress = mac;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    // primary_extra keys pipe volume by id info; mac must win over deviceNetId
+    uint32_t renderId = IdHandler::GetInstance().GetRenderIdByDeviceClass("primary_extra", mac);
+    auto *audioVolume = AudioVolume::GetInstance();
+    SetupStreamVolumeOnly(sessionId, UT_HALF_GAIN);
+    PipeVolume pipeVolume(renderId, STREAM_MUSIC, UT_HALF_GAIN, UT_VOLUME_LEVEL, false);
+    audioVolume->SetPipeVolume(pipeVolume);
+
+    hpaeGainNode->ResetVolume();
+
+    EXPECT_NE(hpaeGainNode->streamVolume_, nullptr);
+    EXPECT_NE(hpaeGainNode->pipeVolume_, nullptr);
+
+    audioVolume->RemoveStreamVolume(sessionId);
+    audioVolume->RemovePipeVolume(renderId);
 }
 
 HWTEST_F(HpaeGainNodeTest, DoGain_NormalUsesCachedVolume, TestSize.Level0)
