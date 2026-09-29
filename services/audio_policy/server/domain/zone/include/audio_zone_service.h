@@ -186,9 +186,9 @@ private:
 #endif
     std::vector<uint32_t> GetLocalSessionIds(const std::shared_ptr<AudioInterruptService> &interruptService,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
-    void WriteZoneDeviceChange(int32_t zoneId, bool isBind,
+    void WriteZoneDeviceChange(const std::string &zoneName, bool isBind,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
-    void WriteZoneKeyChange(int32_t zoneId, bool isBind, const AudioZoneBindKey &key);
+    void WriteZoneKeyChange(const std::string &zoneName, bool isBind, const AudioZoneBindKey &key);
 };
 } // namespace AudioStandard
 } // namespace OHOS

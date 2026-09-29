@@ -252,7 +252,7 @@ int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
 #endif
         RemoveDeviceFromGlobal(device, zoneId);
     }
-    WriteZoneDeviceChange(zoneId, true, devices);
+    WriteZoneDeviceChange(zonePtr->GetName(), true, devices);
     return SUCCESS;
 }
 
@@ -299,7 +299,7 @@ int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
             "support multi zone, no need move to global");
         AudioDeviceStatus::GetInstance().AddDeviceBackToGlobalOnly(it, isNeedFetch);
     }
-    WriteZoneDeviceChange(zoneId, false, devices);
+    WriteZoneDeviceChange(zonePtr->GetName(), false, devices);
     return SUCCESS;
 }
 
@@ -402,7 +402,7 @@ int32_t AudioZoneService::RemoveStreamsFromAudioZone(int32_t zoneId, std::vector
         CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
         for (auto stream : streams) {
             zone->RemoveKey(AudioZoneBindKey(INVALID_UID, "", INVALID_STREAM_ID, stream.streamUsage));
-            WriteZoneKeyChange(zoneId, false,
+            WriteZoneKeyChange(zone->GetName(), false,
                 AudioZoneBindKey(INVALID_UID, "", INVALID_STREAM_ID, stream.streamUsage));
         }
         tmp = interruptService_;
@@ -466,7 +466,7 @@ int32_t AudioZoneService::AddKeyToAudioZone(int32_t zoneId, int32_t uid, const s
             it.second->RemoveKey(AudioZoneBindKey(uid, deviceTag, streamId, usage));
         }
         zone->BindByKey(AudioZoneBindKey(uid, deviceTag, streamId, usage));
-        WriteZoneKeyChange(zoneId, true, AudioZoneBindKey(uid, deviceTag, streamId, usage));
+        WriteZoneKeyChange(zone->GetName(), true, AudioZoneBindKey(uid, deviceTag, streamId, usage));
         tmp = interruptService_;
     }
 
@@ -623,7 +623,7 @@ int32_t AudioZoneService::RemoveKeysFromAudioZone(int32_t zoneId, const std::vec
         for (const auto &bindKey : bindKeys) {
             AUDIO_DEBUG_LOG("remove key '%{public}s' from zone %{public}d", bindKey.GetString().c_str(), zoneId);
             zone->RemoveKey(bindKey);
-            WriteZoneKeyChange(zoneId, false, bindKey);
+            WriteZoneKeyChange(zone->GetName(), false, bindKey);
             tmp = interruptService_;
         }
     }
@@ -1421,7 +1421,7 @@ void AudioZoneService::StopAudioFocusBySessionIds(const int32_t zoneId,
     tmp->StopAudioFocusBySessionIds(zoneId, sessions);
 }
 
-void AudioZoneService::WriteZoneDeviceChange(int32_t zoneId, bool isBind,
+void AudioZoneService::WriteZoneDeviceChange(const std::string &zoneName, bool isBind,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
 {
     for (const auto &device : devices) {
@@ -1432,13 +1432,12 @@ void AudioZoneService::WriteZoneDeviceChange(int32_t zoneId, bool isBind,
         bean->Add("DEVICETYPE", static_cast<int32_t>(device->deviceType_));
         bean->Add("NETWORKID", ConvertNetworkId(device->networkId_));
         bean->Add("ADDRESS", AudioPolicyUtils::GetInstance().GetEncryptAddr(device->macAddress_));
-        bean->Add("ZONE_INFO", (isBind ? "bind device to zoneid " : "unbind device to zoneid ")
-            + std::to_string(zoneId));
+        bean->Add("ZONE_INFO", (isBind ? "bind device to zone " : "unbind device to zone ") + zoneName);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     }
 }
 
-void AudioZoneService::WriteZoneKeyChange(int32_t zoneId, bool isBind, const AudioZoneBindKey &key)
+void AudioZoneService::WriteZoneKeyChange(const std::string &zoneName, bool isBind, const AudioZoneBindKey &key)
 {
     AudioStreamType streamType = AudioStreamCollector::GetAudioStreamCollector()
         .GetStreamTypeFromUsageContent(key.GetUsage());
@@ -1448,8 +1447,7 @@ void AudioZoneService::WriteZoneKeyChange(int32_t zoneId, bool isBind, const Aud
     bean->Add("UID", key.GetUid());
     bean->Add("STREAMTYPE", static_cast<int32_t>(streamType));
     bean->Add("STREAMID", static_cast<int32_t>(key.GetStreamId()));
-    bean->Add("ZONE_INFO", (isBind ? "bind key to zoneid " : "unbind key to zoneid ")
-        + std::to_string(zoneId));
+    bean->Add("ZONE_INFO", (isBind ? "bind key to zone " : "unbind key to zone ") + zoneName);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 } // namespace AudioStandard
