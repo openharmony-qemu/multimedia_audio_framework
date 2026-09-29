@@ -556,6 +556,8 @@ struct AudioCallBackStreamInfo {
     size_t requestDataLen = 0;
     std::string deviceClass;
     std::string deviceNetId;
+    // Sensitive: never print in plain text logs or hidump
+    std::string macAddress;
     bool needData = false;
     bool forceData = false;
     uint64_t writePos_ = 0;

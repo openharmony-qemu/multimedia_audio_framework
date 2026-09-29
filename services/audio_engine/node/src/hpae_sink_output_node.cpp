@@ -24,6 +24,7 @@
 #include "hpae_format_convert.h"
 #include "audio_utils.h"
 #include "hpae_node_common.h"
+#include "util/id_handler.h"
 #include "audio_engine_log.h"
 #include "audio_stream_enum.h"
 #include "stream_dfx_manager.h"
@@ -228,8 +229,7 @@ int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass
     const std::string &macAddress)
 {
     // macAddress has highest priority for device selection, then deviceNetId, then default
-    const std::string &info = !macAddress.empty() ? macAddress
-        : (!deviceNetId.empty() ? deviceNetId : HDI_ID_INFO_DEFAULT);
+    const std::string &info = IdHandler::SelectIdInfo(macAddress, deviceNetId);
     renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info, true,
         true, GetNodeInfo().routeFlag);
 

@@ -144,6 +144,11 @@ public:
         return nodeInfo_.deviceNetId;
     }
 
+    virtual std::string GetMacAddress() const
+    {
+        return nodeInfo_.macAddress;
+    }
+
     virtual std::string GetDeviceName() const
     {
         return nodeInfo_.deviceName;

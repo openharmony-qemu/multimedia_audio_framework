@@ -600,6 +600,7 @@ void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<I
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
     nodeInfo.deviceNetId = sinkInfo.deviceNetId;
     nodeInfo.deviceClass = sinkInfo.deviceClass;
+    nodeInfo.macAddress = sinkInfo.macAddress;
     nodeInfo.statusCallback = statusCallback;
 }
 

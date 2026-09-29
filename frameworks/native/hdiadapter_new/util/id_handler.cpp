@@ -33,6 +33,15 @@ IdHandler &IdHandler::GetInstance(void)
     return instance;
 }
 
+const std::string &IdHandler::SelectIdInfo(const std::string &macAddress, const std::string &deviceNetId)
+{
+    static const std::string defaultInfo = HDI_ID_INFO_DEFAULT;
+    if (!macAddress.empty()) {
+        return macAddress;
+    }
+    return !deviceNetId.empty() ? deviceNetId : defaultInfo;
+}
+
 uint32_t IdHandler::GetId(HdiIdBase base, HdiIdType type, const std::string &info)
 {
     CHECK_AND_RETURN_RET_LOG(base < HDI_ID_BASE_NUM, HDI_INVALID_ID, "invalid id base %{public}u", base);
