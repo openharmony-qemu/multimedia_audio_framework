@@ -2437,6 +2437,15 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
     uint32_t bytesPerSample = (streamInfo.channels * Util::GetSamplePerFrame(streamInfo.format));
     size_t bufferSize = Util::CalculatePcmSizeFromDurationCeiling(
         std::chrono::microseconds(MAX_CBBUF_IN_USEC), sampleRate, bytesPerSample);
+#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
+    // The platform write callback can request more than 100 ms of PCM data.
+    size_t platformBufferSize = 0;
+    int32_t sizeRet = napiRenderer->audioRenderer_->GetBufferSize(platformBufferSize);
+    CHECK_AND_RETURN_LOG(sizeRet == SUCCESS && platformBufferSize > 0, "GetBufferSize failed");
+    if (platformBufferSize > bufferSize) {
+        bufferSize = platformBufferSize;
+    }
+#endif
     napiRenderer->rendererWriteDataCallbackNapi_ = std::make_shared<NapiRendererWriteDataCallback>(
         env, napiRenderer, bufferSize);
 

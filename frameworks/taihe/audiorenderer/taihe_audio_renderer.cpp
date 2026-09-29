@@ -942,6 +942,15 @@ void AudioRendererImpl::RegisterRendererWriteDataCallback(std::shared_ptr<uintpt
     uint32_t bytesPerSample = streamInfo.channels * OHOS::AudioStandard::Util::GetSamplePerFrame(streamInfo.format);
     size_t bufferSize = OHOS::AudioStandard::Util::CalculatePcmSizeFromDurationCeiling(
         std::chrono::microseconds(OHOS::AudioStandard::MAX_CBBUF_IN_USEC), sampleRate, bytesPerSample);
+#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
+    // The platform write callback can request more than 100 ms of PCM data.
+    size_t platformBufferSize = 0;
+    int32_t sizeRet = taiheRenderer->audioRenderer_->GetBufferSize(platformBufferSize);
+    CHECK_AND_RETURN_LOG(sizeRet == OHOS::AudioStandard::SUCCESS && platformBufferSize > 0, "GetBufferSize failed");
+    if (platformBufferSize > bufferSize) {
+        bufferSize = platformBufferSize;
+    }
+#endif
 
     taiheRenderer->rendererWriteDataCallbackTaihe_ =
         std::make_shared<TaiheRendererWriteDataCallback>(taiheRenderer, bufferSize);
