@@ -528,10 +528,10 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_006, TestSize.Level1)
 /**
  * @tc.name  : Test OnStreamData macAddress refresh.
  * @tc.type  : FUNC
- * @tc.number: HpaeRenderer_043
+ * @tc.number: HpaeRenderer_044
  * @tc.desc  : Test OnStreamData refreshes macAddress from callback info.
  */
-HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_043, TestSize.Level1)
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_044, TestSize.Level1)
 {
     auto unit = CreateHpaeRendererStreamImpl();
     EXPECT_NE(unit, nullptr);
