@@ -491,7 +491,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetSinkLatencyProxy_001, TestSize.Lev
     uint32_t sinkLatency = 123;
     const int32_t ret = AudioServerProxy::GetInstance().GetSinkLatencyProxy(1, sinkLatency);
 
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
     EXPECT_EQ(sinkLatency, 0U);
 }
 
