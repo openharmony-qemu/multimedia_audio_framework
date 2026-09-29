@@ -70,8 +70,8 @@ public:
 
 /**
  * @tc.name  InitDownloadManager_SysParaFail_001
- * @tc.desc  Test InitDownloadManager when GetSysPara returns false
- *           (ClearPersistedData + early return path).
+ * @tc.desc  Test InitDownloadManager when the download system parameter is not set,
+ *           verifying persisted data is cleared and background download is not initialized.
  */
 HWTEST_F(DownloadManagerTest, InitDownloadManager_SysParaFail_001, TestSize.Level0)
 {
@@ -374,8 +374,8 @@ HWTEST_F(DownloadManagerTest, IsFeatureReady_IPCFail_001, TestSize.Level0)
 
 /**
  * @tc.name  InitDownloadManager_SysParaSet_BgExists_001
- * @tc.desc  Test InitDownloadManager when syspara=1 and backgroundDownload_ already exists:
- *           covers branch B-false (skip creation, reuse existing instance).
+ * @tc.desc  Test InitDownloadManager when the download system parameter is set and
+ *           background download already exists, verifying the existing instance is reused.
  */
 HWTEST_F(DownloadManagerTest, InitDownloadManager_SysParaSet_BgExists_001, TestSize.Level0)
 {
@@ -390,7 +390,7 @@ HWTEST_F(DownloadManagerTest, InitDownloadManager_SysParaSet_BgExists_001, TestS
         dm.backgroundDownload_ = existingBg;
     }
 
-    // InitDownloadManager should skip creation (branch B-false), call RestoreFromFile
+    // InitDownloadManager should skip creation and reuse the existing instance
     dm.InitDownloadManager(true);
 
     // Verify: backgroundDownload_ is the same instance (not recreated)
@@ -400,10 +400,9 @@ HWTEST_F(DownloadManagerTest, InitDownloadManager_SysParaSet_BgExists_001, TestS
 
 /**
  * @tc.name  InitDownloadManager_SysParaSet_NoPendingFile_001
- * @tc.desc  Test InitDownloadManager when syspara=1 but no pending file exists:
- *           BackgroundDownload created, Init succeeds, RestoreFromFile finds empty file
- *           → calls PersistPendingQueueLocked (empty map) → file deleted.
- *           Verifies full path B-true + C-success + RestoreFromFile empty-file path.
+ * @tc.desc  Test InitDownloadManager when the download system parameter is set but no
+ *           pending file exists, verifying background download is created and an empty
+ *           queue is persisted (file deleted).
  */
 HWTEST_F(DownloadManagerTest, InitDownloadManager_SysParaSet_NoPendingFile_001, TestSize.Level0)
 {

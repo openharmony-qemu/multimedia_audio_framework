@@ -64,10 +64,8 @@ public:
 
 /**
  * @tc.name  AddFeatureAndRemove_001
- * @tc.desc  Test AddFeature adds feature to map and RemoveFeature removes it.
- *           Covers AddFeature L251 false, RemoveFeature erase, PersistPendingQueueLocked
- *           L273 false (single feature), WritePendingTasksFile normal path,
- *           UpdateDownloadStatusPara L392 false (empty after remove).
+ * @tc.desc  Test adding a feature to the pending queue and removing it,
+ *           verifying the persisted file is empty after removal.
  */
 HWTEST_F(BackgroundDownloadTest, AddFeatureAndRemove_001, TestSize.Level0)
 {
@@ -78,8 +76,7 @@ HWTEST_F(BackgroundDownloadTest, AddFeatureAndRemove_001, TestSize.Level0)
 
 /**
  * @tc.name  AddFeatureDuplicate_001
- * @tc.desc  Test AddFeature called twice with same featureName (alreadyExists path,
- *           AddFeature L251 true).
+ * @tc.desc  Test adding the same feature twice, verifying idempotency.
  */
 HWTEST_F(BackgroundDownloadTest, AddFeatureDuplicate_001, TestSize.Level0)
 {
@@ -91,7 +88,7 @@ HWTEST_F(BackgroundDownloadTest, AddFeatureDuplicate_001, TestSize.Level0)
 /**
  * @tc.name  GetFeatureConfig_Known_Unknown_001
  * @tc.desc  Test GetFeatureConfig returns wifi-only config for known feature names
- *           (L192 true) and default config (all true) for unknown feature (L192 false).
+ *           and default all-conditions config for unknown feature.
  */
 HWTEST_F(BackgroundDownloadTest, GetFeatureConfig_Known_Unknown_001, TestSize.Level0)
 {
@@ -110,9 +107,8 @@ HWTEST_F(BackgroundDownloadTest, GetFeatureConfig_Known_Unknown_001, TestSize.Le
 
 /**
  * @tc.name  RestorePendingFeatures_001
- * @tc.desc  Test RestorePendingFeatures with empty input (L285 true), valid input
- *           (L285 false, L293 false, L299 true), duplicate skip (L299 false),
- *           and empty token from leading ";" (L293 true).
+ * @tc.desc  Test restoring pending tasks from string: empty input, normal parsing,
+ *           duplicate feature skip, and empty token from leading semicolon.
  */
 HWTEST_F(BackgroundDownloadTest, RestorePendingFeatures_001, TestSize.Level0)
 {
@@ -131,10 +127,8 @@ HWTEST_F(BackgroundDownloadTest, RestorePendingFeatures_001, TestSize.Level0)
 
 /**
  * @tc.name  ProcessPendingDownloads_001
- * @tc.desc  Test ProcessPendingDownloads success path via RestoreFromFile with
- *           syncProcess=true. Covers RestoreFromFile L466 true, L468 false, L478 true,
- *           ProcessPendingDownloads L113 true, L124 false, L129 true,
- *           AreConditionsMet 4×true (default config via unknown feature name).
+ * @tc.desc  Test processing pending downloads in sync mode with all conditions met
+ *           and callback succeeding.
  */
 HWTEST_F(BackgroundDownloadTest, ProcessPendingDownloads_001, TestSize.Level0)
 {
@@ -148,8 +142,8 @@ HWTEST_F(BackgroundDownloadTest, ProcessPendingDownloads_001, TestSize.Level0)
 
 /**
  * @tc.name  ProcessPendingDownloads_CallbackFail_001
- * @tc.desc  Test ProcessPendingDownloads when callback returns non-SUCCESS
- *           (L129 false, L135 false: retryCount < MAX_RETRY_COUNT, feature put back).
+ * @tc.desc  Test processing pending downloads when callback fails, verifying the
+ *           feature is put back to queue with incremented retry count.
  */
 HWTEST_F(BackgroundDownloadTest, ProcessPendingDownloads_CallbackFail_001, TestSize.Level0)
 {
@@ -164,7 +158,8 @@ HWTEST_F(BackgroundDownloadTest, ProcessPendingDownloads_CallbackFail_001, TestS
 
 /**
  * @tc.name  ProcessPendingDownloads_EmptyMap_001
- * @tc.desc  Test ProcessPendingDownloads with empty map (L113 false: early return).
+ * @tc.desc  Test processing pending downloads with empty queue, verifying callback
+ *           is not invoked.
  */
 HWTEST_F(BackgroundDownloadTest, ProcessPendingDownloads_EmptyMap_001, TestSize.Level0)
 {
@@ -180,8 +175,8 @@ HWTEST_F(BackgroundDownloadTest, ProcessPendingDownloads_EmptyMap_001, TestSize.
 
 /**
  * @tc.name  ProcessPendingDownloads_MaxRetry_001
- * @tc.desc  Test ProcessPendingDownloads when retryCount reaches MAX_RETRY_COUNT
- *           (L135 true: feature discarded, not put back to map).
+ * @tc.desc  Test processing pending downloads when retry count reaches maximum,
+ *           verifying the feature is discarded.
  */
 HWTEST_F(BackgroundDownloadTest, ProcessPendingDownloads_MaxRetry_001, TestSize.Level0)
 {
@@ -199,7 +194,7 @@ HWTEST_F(BackgroundDownloadTest, ProcessPendingDownloads_MaxRetry_001, TestSize.
 
 /**
  * @tc.name  RestoreFromFile_NullPtr_001
- * @tc.desc  Test RestoreFromFile with null selfPtr (L466 false: early return).
+ * @tc.desc  Test RestoreFromFile with null selfPtr, verifying no processing occurs.
  */
 HWTEST_F(BackgroundDownloadTest, RestoreFromFile_NullPtr_001, TestSize.Level0)
 {
@@ -213,8 +208,8 @@ HWTEST_F(BackgroundDownloadTest, RestoreFromFile_NullPtr_001, TestSize.Level0)
 
 /**
  * @tc.name  RestoreFromFile_Async_001
- * @tc.desc  Test RestoreFromFile with syncProcess=false (L478 false: async thread path).
- *           No assertion on thread result to avoid timing issues.
+ * @tc.desc  Test RestoreFromFile with syncProcess=false, verifying the async thread
+ *           path is taken. No assertion on thread result to avoid timing issues.
  */
 HWTEST_F(BackgroundDownloadTest, RestoreFromFile_Async_001, TestSize.Level0)
 {
@@ -230,23 +225,22 @@ HWTEST_F(BackgroundDownloadTest, RestoreFromFile_Async_001, TestSize.Level0)
 
 /**
  * @tc.name  UpdateDownloadStatusPara_All_001
- * @tc.desc  Test UpdateDownloadStatusPara with all scenarios:
- *           empty input (L392 false), wifi-only feature (L402 true),
- *           full-condition feature (L402 false), empty token (L396 true),
- *           both types in one call (L408 true: break early).
+ * @tc.desc  Test UpdateDownloadStatusPara with all scenarios: empty input,
+ *           wifi-only feature, full-condition feature, empty token from leading
+ *           semicolon, and both feature types in one call.
  */
 HWTEST_F(BackgroundDownloadTest, UpdateDownloadStatusPara_All_001, TestSize.Level0)
 {
     auto bg = std::make_shared<BackgroundDownload>([](const std::string&) { return SUCCESS; });
-    // Empty input → L392 false
+    // Empty input
     bg->UpdateDownloadStatusPara("");
-    // Wifi-only feature → L392 true, L396 false, L402 true, L408 false
+    // Wifi-only feature
     bg->UpdateDownloadStatusPara("RecordDefinition:0");
-    // Full-condition feature → L402 false, L408 false
+    // Full-condition feature
     bg->UpdateDownloadStatusPara("UnknownFull:0");
-    // Empty token from leading ";" → L396 true
+    // Empty token from leading semicolon
     bg->UpdateDownloadStatusPara(";RecordDefinition:0");
-    // Both types in one call → L408 true (break early)
+    // Both feature types in one call
     bg->UpdateDownloadStatusPara("RecordDefinition:0;UnknownFull:0");
     // Verify: no crash and operations completed
     EXPECT_TRUE(bg->ReadPendingTasksFromFile().empty());
@@ -254,10 +248,8 @@ HWTEST_F(BackgroundDownloadTest, UpdateDownloadStatusPara_All_001, TestSize.Leve
 
 /**
  * @tc.name  PersistPendingQueueLocked_MultiFeature_001
- * @tc.desc  Test PersistPendingQueueLocked with 2+ features in map (L273 true:
- *           non-empty featureList triggers ";" separator).
- *           Also covers ReadPendingTasksFromFile for-loop happy path
- *           (L355 false, L371 true, L372 false, L375 false, L379 C-true).
+ * @tc.desc  Test persisting multiple features to XML file, verifying the semicolon
+ *           separator between features and successful read-back.
  */
 HWTEST_F(BackgroundDownloadTest, PersistPendingQueueLocked_MultiFeature_001, TestSize.Level0)
 {
@@ -274,11 +266,8 @@ HWTEST_F(BackgroundDownloadTest, PersistPendingQueueLocked_MultiFeature_001, Tes
 
 /**
  * @tc.name  AreConditionsMet_KnownFeature_001
- * @tc.desc  Test AreConditionsMet with "RecordDefinition" (config requireCharging=false,
- *           requireBatteryLevel=false, requireScreenLocked=false).
- *           Covers L172/L175/L178 false paths (skip condition check).
- *           (L169 true and L172/L175/L178 true are covered by ProcessPendingDownloads_001
- *           via unknown feature name using default config.)
+ * @tc.desc  Test AreConditionsMet with a known feature that requires only wifi,
+ *           verifying charging/battery/screen-lock checks are skipped.
  */
 HWTEST_F(BackgroundDownloadTest, AreConditionsMet_KnownFeature_001, TestSize.Level0)
 {
@@ -288,8 +277,8 @@ HWTEST_F(BackgroundDownloadTest, AreConditionsMet_KnownFeature_001, TestSize.Lev
 
 /**
  * @tc.name  ReadPendingTasksFromFile_Oversize_001
- * @tc.desc  Test ReadPendingTasksFromFile when file size exceeds MAX_XML_CONTENT_SIZE
- *           (L360 false: st.st_size > MAX → return "").
+ * @tc.desc  Test ReadPendingTasksFromFile when file size exceeds the maximum allowed,
+ *           verifying an empty string is returned.
  */
 HWTEST_F(BackgroundDownloadTest, ReadPendingTasksFromFile_Oversize_001, TestSize.Level0)
 {
@@ -302,8 +291,8 @@ HWTEST_F(BackgroundDownloadTest, ReadPendingTasksFromFile_Oversize_001, TestSize
 
 /**
  * @tc.name  ReadPendingTasksFromFile_MalformedXml_001
- * @tc.desc  Test ReadPendingTasksFromFile with malformed XML content
- *           (L366 false: Config returns ERROR → return "").
+ * @tc.desc  Test ReadPendingTasksFromFile with malformed XML content,
+ *           verifying an empty string is returned on parse failure.
  */
 HWTEST_F(BackgroundDownloadTest, ReadPendingTasksFromFile_MalformedXml_001, TestSize.Level0)
 {
@@ -316,8 +305,8 @@ HWTEST_F(BackgroundDownloadTest, ReadPendingTasksFromFile_MalformedXml_001, Test
 /**
  * @tc.name  ReadPendingTasksFromFile_NonElementNode_001
  * @tc.desc  Test ReadPendingTasksFromFile with XML containing whitespace text nodes
- *           as children of root (L372 true: !IsElementNode() → continue).
- *           Also covers L372 false, L375 false, L379 C-true (break on match).
+ *           as children of root, verifying non-element nodes are skipped and the
+ *           pending tasks content is still correctly read.
  */
 HWTEST_F(BackgroundDownloadTest, ReadPendingTasksFromFile_NonElementNode_001, TestSize.Level0)
 {
@@ -333,8 +322,8 @@ HWTEST_F(BackgroundDownloadTest, ReadPendingTasksFromFile_NonElementNode_001, Te
 
 /**
  * @tc.name  ReadPendingTasksFromFile_WrongNodeName_001
- * @tc.desc  Test ReadPendingTasksFromFile with XML child element named "int" instead of "string"
- *           (L375 true: !CompareName("string") → continue, L371 false: loop exit no match).
+ * @tc.desc  Test ReadPendingTasksFromFile with XML child element named "int" instead
+ *           of "string", verifying no match is found and an empty string is returned.
  */
 HWTEST_F(BackgroundDownloadTest, ReadPendingTasksFromFile_WrongNodeName_001, TestSize.Level0)
 {
@@ -347,8 +336,8 @@ HWTEST_F(BackgroundDownloadTest, ReadPendingTasksFromFile_WrongNodeName_001, Tes
 
 /**
  * @tc.name  ReadPendingTasksFromFile_WrongAttrName_001
- * @tc.desc  Test ReadPendingTasksFromFile with <string> element having wrong name attribute
- *           (L379 C-false-a: GetProp succeeds but name != XML_KEY_PENDING_TASKS → continue).
+ * @tc.desc  Test ReadPendingTasksFromFile with a string element having a wrong name
+ *           attribute, verifying no match is found and an empty string is returned.
  */
 HWTEST_F(BackgroundDownloadTest, ReadPendingTasksFromFile_WrongAttrName_001, TestSize.Level0)
 {
