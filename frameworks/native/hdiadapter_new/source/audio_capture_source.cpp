@@ -216,7 +216,9 @@ int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
     }
 
     if (audioSrcClock_ != nullptr) {
-        audioSrcClock_->Init(attr.sampleRate, attr.format, attr.channel);
+        uint32_t channel = (attr.sourceType == SOURCE_TYPE_CAMCORDER) && (attr.channelMicIn > 0) ?
+            attr.channel + attr.channelMicIn : attr.channel;
+        audioSrcClock_->Init(attr.sampleRate, attr.format, channel);
     }
 
     int32_t routeFlag = static_cast<int32_t>(ConvertToAudioInputRouteFlag(attr.sourceType));
