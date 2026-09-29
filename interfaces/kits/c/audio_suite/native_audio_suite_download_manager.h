@@ -31,6 +31,7 @@
 #ifndef NATIVE_AUDIO_SUITE_DOWNLOAD_MANAGER_H
 #define NATIVE_AUDIO_SUITE_DOWNLOAD_MANAGER_H
 #include <stdint.h>
+#include <stdbool.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -100,11 +101,11 @@ typedef struct OH_AudioSuite_DownloadStatusInfoArray {
 } OH_AudioSuite_DownloadStatusInfoArray;
 
 /**
- * @brief Define cloud ROM version information structure.
+ * @brief Define feature version information structure.
  * @systemapi
  * @since 26.0.1
  */
-typedef struct OH_AudioSuite_CloudRomVersionInfo {
+typedef struct OH_AudioSuite_FeatureVersionInfo {
     /**
      * @brief Feature name.
      *
@@ -118,13 +119,13 @@ typedef struct OH_AudioSuite_CloudRomVersionInfo {
      */
     int32_t downloadStatus;
     /**
-     * @brief Cloud ROM version string.
+     * @brief Feature version.
      *
      * @since 26.0.1
      */
     char version[128];
     /**
-     * @brief Feature size in bytes.
+     * @brief Feature size in bytes, unit is byte.
      *
      * @since 26.0.1
      */
@@ -135,7 +136,7 @@ typedef struct OH_AudioSuite_CloudRomVersionInfo {
      * @since 26.0.1
      */
     int32_t errorCode;
-} OH_AudioSuite_CloudRomVersionInfo;
+} OH_AudioSuite_FeatureVersionInfo;
 
 /**
  * @brief Declare the audio download manager.
@@ -208,6 +209,9 @@ int32_t OH_AudioSuite_UnregisterDownloadCallback(
  *         <li>202 if a non-system application calls this system API.</li>
  *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager or featureName is nullptr.</li>
  *         <li>{@link AUDIOCOMMON_RESULT_ERROR_SYSTEM} If IPC communication fails or the operation fails.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_NETWORK_CONDITION_NOT_MET} Required network conditions not met.
+ *              The current network status is unavailable. [since 26.0.1]</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_STORAGE_NOT_ENOUGH} Insufficient storage space. [since 26.0.1]</li>
  *         </ul>
  * @since 26.0.0
  */
@@ -224,8 +228,6 @@ int32_t OH_AudioSuite_StartDownload(
  *         <li>202 if a non-system application calls this system API.</li>
  *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager or featureName is nullptr.</li>
  *         <li>{@link AUDIOCOMMON_RESULT_ERROR_SYSTEM} If IPC communication fails or the operation fails.</li>
- *         <li>{@link AUDIOCOMMON_RESULT_ERROR_NETWORK} Network requirements not met. [since 26.0.1]</li>
- *         <li>{@link AUDIOCOMMON_RESULT_ERROR_STORAGE_NOT_ENOUGH} Not enough storage space. [since 26.0.1]</li>
  *         </ul>
  * @since 26.0.0
  */
@@ -302,11 +304,11 @@ int32_t OH_AudioSuite_UninstallCloudRom(
 /**
  * @brief Get install status of features in batch.
  * @systemapi
- * @param downloadManager Download manager handle.
- * @param featureNames Array of feature names.
- * @param count Number of feature names in the input array.
- * @param installStatus Caller-allocated boolean array to receive install status.
- * @param installStatusSize Capacity of the caller-allocated output array. Must be at least {@code count}.
+ * @param downloadManager [in] Download manager handle.
+ * @param featureNames [in] Array of feature names.
+ * @param count [in] Number of feature names in the input array.
+ * @param installStatus [out] Caller-allocated boolean array to receive install status.
+ * @param installStatusSize [in] Capacity of the caller-allocated output array. Must be at least {@code count}.
  * @return <ul>
  *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
  *         <li>202 Permission verification failed. A non-system application calls a system API.</li>
@@ -323,11 +325,11 @@ int32_t OH_AudioSuite_IsFeatureInstalled(OH_AudioSuite_DownloadManager *download
 /**
  * @brief Get download status of features in batch.
  * @systemapi
- * @param downloadManager Download manager handle.
- * @param featureNames Array of feature names.
- * @param count Number of feature names in the input array.
- * @param statusInfos Caller-allocated array to receive download status.
- * @param statusInfosSize Capacity of the caller-allocated output array. Must be at least {@code count}.
+ * @param downloadManager [in] Download manager handle.
+ * @param featureNames [in] Array of feature names.
+ * @param count [in] Number of feature names in the input array.
+ * @param statusInfos [out] Caller-allocated array to receive download status.
+ * @param statusInfosSize [in] Capacity of the caller-allocated output array. Must be at least {@code count}.
  * @return <ul>
  *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
  *         <li>202 Permission verification failed. A non-system application calls a system API.</li>
@@ -345,25 +347,26 @@ int32_t OH_AudioSuite_GetFeatureStatus(
 /**
  * @brief Get new version information of features in batch.
  * @systemapi
- * @param downloadManager Download manager handle.
- * @param featureNames Array of feature names.
- * @param count Number of feature names in the input array.
- * @param versionInfos Caller-allocated array to receive version info.
- * @param versionInfosSize Capacity of the caller-allocated output array. Must be at least {@code count}.
+ * @param downloadManager [in] Download manager handle.
+ * @param featureNames [in] Array of feature names.
+ * @param count [in] Number of feature names in the input array.
+ * @param versionInfos [out] Caller-allocated array to receive version info.
+ * @param versionInfosSize [in] Capacity of the caller-allocated output array. Must be at least {@code count}.
  * @return <ul>
  *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
  *         <li>202 Permission verification failed. A non-system application calls a system API.</li>
  *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager, featureNames, versionInfos is nullptr,
  *             count is 0, or versionInfosSize is less than count.</li>
  *         <li>{@link AUDIOCOMMON_RESULT_ERROR_SERVICE_DIED} If IPC communication fails.</li>
- *         <li>{@link AUDIOCOMMON_RESULT_ERROR_NETWORK} Network requirements not met.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_NETWORK_CONDITION_NOT_MET} Required network conditions not met.
+ *             The current network status is unavailable.</li>
  *         </ul>
  * @since 26.0.1
  */
 int32_t OH_AudioSuite_GetNewVersionInfo(
     OH_AudioSuite_DownloadManager *downloadManager,
     const char **featureNames, uint32_t count,
-    OH_AudioSuite_CloudRomVersionInfo *versionInfos, uint32_t versionInfosSize);
+    OH_AudioSuite_FeatureVersionInfo *versionInfos, uint32_t versionInfosSize);
 
 #ifdef __cplusplus
 }
