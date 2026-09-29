@@ -288,8 +288,10 @@ bool AudioSession::IsOutputDeviceConfigurableByStreamUsage(const StreamUsage &st
 
 bool AudioSession::CanCurrentStreamSetDefaultOutputDevice(const AudioInterrupt &interrupt)
 {
-    return (!(IsOutputDeviceConfigurableByStreamUsage(GetStreamUsageInner())) &&
-        IsOutputDeviceConfigurableByStreamUsage(interrupt.streamUsage));
+    StreamUsage currentUsage = GetStreamUsageInner();
+    // For voice message scene, also switch default output device for streams in session
+    return ((currentUsage == STREAM_USAGE_VOICE_MESSAGE) || !IsOutputDeviceConfigurableByStreamUsage(currentUsage)) &&
+        IsOutputDeviceConfigurableByStreamUsage(interrupt.streamUsage);
 }
 
 int32_t AudioSession::EnableSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt)
