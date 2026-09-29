@@ -786,6 +786,68 @@ HWTEST_F(AudioServerUnitTest, AudioServerPermissionChecker_003, TestSize.Level1)
     EXPECT_FALSE(ret);
 }
 
+/**
+ * @tc.name  : Test CheckAndApplyActualUsingToken API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCheckAndApplyActualUsingToken_001
+ * @tc.desc  : Non-proxy path (actualUsingTokenId == INVALID): returns true and does not modify
+ *             effectivePrivacyTokenId (the entry-level default assignment owns this field).
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCheckAndApplyActualUsingToken_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config = {};
+    config.appInfo.appTokenId = 1234;
+    config.actualUsingTokenId = INVALID_ACTUAL_USING_TOKEN_ID;
+    config.effectivePrivacyTokenId = 1234u; // pre-set by CreateAudioProcessInner entry
+    bool ret = audioServer->CheckAndApplyActualUsingToken(config);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(config.effectivePrivacyTokenId, 1234u);
+    EXPECT_EQ(config.appInfo.appTokenId, 1234u);
+}
+
+/**
+ * @tc.name  : Test CheckAndApplyActualUsingToken API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCheckAndApplyActualUsingToken_002
+ * @tc.desc  : Proxy path without AUDIO_USER_MICROPHONE_INDICATOR permission: returns false and
+ *             does not modify effectivePrivacyTokenId.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCheckAndApplyActualUsingToken_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config = {};
+    config.appInfo.appTokenId = 1234;
+    config.actualUsingTokenId = 5678;
+    config.effectivePrivacyTokenId = 0;
+    bool ret = audioServer->CheckAndApplyActualUsingToken(config);
+    EXPECT_FALSE(ret);
+    // effectivePrivacyTokenId must NOT be populated on permission failure.
+    EXPECT_EQ(config.effectivePrivacyTokenId, 0u);
+    // appInfo.appTokenId must remain unchanged.
+    EXPECT_EQ(config.appInfo.appTokenId, 1234u);
+}
+
+/**
+ * @tc.name  : Test CheckAndApplyActualUsingToken API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCheckAndApplyActualUsingToken_003
+ * @tc.desc  : Proxy path with a zero tokenId is treated as non-proxy (INVALID_ACTUAL_USING_TOKEN_ID),
+ *             returns true and does not modify effectivePrivacyTokenId.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCheckAndApplyActualUsingToken_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config = {};
+    config.appInfo.appTokenId = 9999;
+    config.actualUsingTokenId = INVALID_ACTUAL_USING_TOKEN_ID;
+    config.effectivePrivacyTokenId = 9999u; // pre-set by CreateAudioProcessInner entry
+    bool ret = audioServer->CheckAndApplyActualUsingToken(config);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(config.effectivePrivacyTokenId, 9999u);
+    EXPECT_EQ(config.appInfo.appTokenId, 9999u);
+}
+
 #ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test CheckRecorderPermission API

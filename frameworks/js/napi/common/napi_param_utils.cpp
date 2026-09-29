@@ -1075,6 +1075,9 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     status = GetCapturerSubStreamOptions(env, opts, in);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerSubStreamOptions failed");
 
+    status = GetActualUsingTokenId(env, opts, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseActualUsingTokenId failed");
+
     return GetPlaybackCaptureMode(env, opts, in);
 }
 
@@ -1093,6 +1096,28 @@ napi_status NapiParamUtils::GetCapturerMicInConfig(const napi_env &env, AudioCap
     status = GetCapturerSubStreamOptions(env, opts, in);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerSubStreamOptions failed");
 
+    status = GetActualUsingTokenId(env, opts, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseActualUsingTokenId failed");
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetActualUsingTokenId(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
+{
+    bool hasActualUsingTokenId = false;
+    napi_status status = napi_has_named_property(env, in, "actualUsingTokenId", &hasActualUsingTokenId);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "has actualUsingTokenId failed");
+    if (hasActualUsingTokenId) {
+        napi_value tokenIdValue = nullptr;
+        status = napi_get_named_property(env, in, "actualUsingTokenId", &tokenIdValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get actualUsingTokenId failed");
+        int32_t signedTokenId = 0;
+        status = NapiParamUtils::GetValueInt32(env, signedTokenId, tokenIdValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "parse actualUsingTokenId failed");
+        CHECK_AND_RETURN_RET_LOG(signedTokenId >= 0, napi_invalid_arg,
+            "actualUsingTokenId must not be negative");
+        opts->actualUsingTokenId = static_cast<uint32_t>(signedTokenId);
+    }
     return napi_ok;
 }
 

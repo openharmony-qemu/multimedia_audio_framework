@@ -484,7 +484,9 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerPermissionChecker_001, TestSize.Le
     config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA; // Valid stream usage
     config.rendererInfo.playerType = PLAYER_TYPE_DEFAULT; // Valid player type
     
+    int32_t errCode = 0;
     bool result = audioServer->PermissionChecker(config);
+    (void)errCode;
     
     // The return value depends on whether the permission is granted
     // We just verify that the function can be called without crash
@@ -531,7 +533,9 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerCheckRecorderPermission_001, TestS
     config.audioMode = AUDIO_MODE_RECORD;
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC; // Valid source type
     
+    int32_t errCode = 0;
     bool result = audioServer->CheckRecorderPermission(config);
+    (void)errCode;
     
     // The return value depends on whether the permission is granted
     // We just verify that the function can be called without crash

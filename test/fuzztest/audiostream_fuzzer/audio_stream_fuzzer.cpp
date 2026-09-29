@@ -525,7 +525,9 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
     if (config.appInfo.appUid == 0) {
         config.appInfo.appUid = FUZZ_TEST_UID; // to skip root pass
     }
+    int32_t errCode = 0;
     GetServerPtr()->CheckRecorderPermission(config);
+    (void)errCode;
 }
 } // namespace AudioStandard
 } // namesapce OHOS
