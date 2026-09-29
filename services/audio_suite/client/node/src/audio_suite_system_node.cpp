@@ -238,8 +238,8 @@ void AudioSuiteSystemNode::TryConfigure()
         inputFormat_.rate, inputFormat_.encodingType, inputFormat_.format,
         inputFormat_.audioChannelInfo.numChannels, inputFormat_.audioChannelInfo.channelLayout);
     AUDIO_INFO_LOG("%{public}d %{public}d %{public}d %{public}u %{public}" PRIu64 " output set",
-        inputFormat_.rate, inputFormat_.encodingType, inputFormat_.format,
-        inputFormat_.audioChannelInfo.numChannels, inputFormat_.audioChannelInfo.channelLayout);
+        outputFormat_.rate, outputFormat_.encodingType, outputFormat_.format,
+        outputFormat_.audioChannelInfo.numChannels, outputFormat_.audioChannelInfo.channelLayout);
 
     AudioStreamInfo inInfo;
     AudioStreamInfo outInfo;
