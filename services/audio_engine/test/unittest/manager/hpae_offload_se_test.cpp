@@ -665,6 +665,33 @@ HWTEST_F(HpaeOffloadSeTest, moveAllStream_pendingSessionEffect_attachStateFollow
     EXPECT_TRUE(otherNode_->HasSessionEffectAttachState());
 }
 
+// OSE-4g: MoveAllStreamToNewSink with curNode_ already null — the loop must not dereference it.
+// RemoveNodeFromMap nulls curNode_ while other sessions stay in the map; every session then
+// takes the non-current path (RemoveNodeFromMap only) and moves out without a null deref.
+HWTEST_F(HpaeOffloadSeTest, moveAllStreamToNewSink_curNodeNull_noDeref, TestSize.Level0)
+{
+    manager_->curNode_ = nullptr;
+    std::vector<uint32_t> moveIds = { CUR_SESSION_ID, OTHER_SESSION_ID };
+
+    manager_->MoveAllStreamToNewSink("new_sink", moveIds, MOVE_SINGLE);
+
+    // Both sessions left the manager through the non-current path.
+    EXPECT_EQ(manager_->sinkInputNodeMap_.count(CUR_SESSION_ID), 0u);
+    EXPECT_EQ(manager_->sinkInputNodeMap_.count(OTHER_SESSION_ID), 0u);
+}
+
+// OSE-4h: DeleteInputSession with curNode_ null — the entry guard returns before teardown.
+HWTEST_F(HpaeOffloadSeTest, deleteInputSession_curNodeNull_earlyReturn, TestSize.Level0)
+{
+    manager_->curNode_ = nullptr;
+
+    manager_->DeleteInputSession();
+
+    // The curNode_ guard returns before RemoveNodeFromMap: nothing is torn down.
+    EXPECT_EQ(manager_->sinkInputNodeMap_.count(CUR_SESSION_ID), 1u);
+    EXPECT_EQ(manager_->sinkInputNodeMap_.count(OTHER_SESSION_ID), 1u);
+}
+
 // OSE-4f: Attach-state materialization failure rolls back previously sent enabled status
 HWTEST_F(HpaeOffloadSeTest, connectInputSession_pendingInsertFailure_rollsBackEnabled, TestSize.Level0)
 {

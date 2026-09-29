@@ -424,6 +424,10 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 
 void AudioEffectChain::UpdateBufferConfig(uint32_t &channels, uint64_t &channelLayout)
 {
+    // ioBufferConfig_.outputCfg is written under reloadMutex_ (UpdateMultichannelIoBuffer-
+    // ConfigInner); take the same lock here so the read cannot race a multichannel reload.
+    // Callers hold dynamicMutex_ only, which does not exclude the writer path.
+    std::lock_guard<std::mutex> lock(reloadMutex_);
     channels = ioBufferConfig_.outputCfg.channels;
     channelLayout = ioBufferConfig_.outputCfg.channelLayout;
     CHECK_AND_RETURN(channelLayout == 0);

@@ -889,7 +889,9 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_056, TestSize.Level0)
 {
     HpaeStreamInfo validStreamInfo;
     validStreamInfo.frameLen = 1024;
-    
+    validStreamInfo.channels = STEREO;
+    validStreamInfo.format = SAMPLE_S16LE;
+
     EXPECT_EQ(CheckStreamInfo(validStreamInfo), SUCCESS);
 }
 
@@ -917,7 +919,43 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_058, TestSize.Level0)
 {
     HpaeStreamInfo invalidStreamInfo;
     invalidStreamInfo.frameLen = 38401;
-    
+
+    EXPECT_EQ(CheckStreamInfo(invalidStreamInfo), ERROR);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_076
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_076
+ * @tc.desc: Test CheckStreamInfo channel boundaries (CHANNEL_UNKNOW rejected, CHANNEL_16 accepted)
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_076, TestSize.Level0)
+{
+    HpaeStreamInfo invalidStreamInfo;
+    invalidStreamInfo.frameLen = 1024;
+    invalidStreamInfo.channels = CHANNEL_UNKNOW;
+    invalidStreamInfo.format = SAMPLE_S16LE;
+    EXPECT_EQ(CheckStreamInfo(invalidStreamInfo), ERROR);
+
+    HpaeStreamInfo validStreamInfo;
+    validStreamInfo.frameLen = 1024;
+    validStreamInfo.channels = CHANNEL_16;
+    validStreamInfo.format = SAMPLE_S16LE;
+    EXPECT_EQ(CheckStreamInfo(validStreamInfo), SUCCESS);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_077
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_077
+ * @tc.desc: Test CheckStreamInfo with invalid format (INVALID_WIDTH)
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_077, TestSize.Level0)
+{
+    HpaeStreamInfo invalidStreamInfo;
+    invalidStreamInfo.frameLen = 1024;
+    invalidStreamInfo.channels = STEREO;
+    invalidStreamInfo.format = INVALID_WIDTH;
     EXPECT_EQ(CheckStreamInfo(invalidStreamInfo), ERROR);
 }
 

@@ -284,6 +284,9 @@ int32_t HpaeDirectRendererManager::DestroyStream(uint32_t sessionId)
 
 int32_t HpaeDirectRendererManager::RecreateSinkOutputNodeIfNeeded()
 {
+    // A failed reload/init leaves sinkOutputNode_ null while curNode_ stays
+    // alive; dereferencing it here would crash the worker thread.
+    CHECK_AND_RETURN_RET_LOG(sinkOutputNode_ != nullptr, ERROR, "sinkOutputNode_ is null, sink init/reload failed");
     bool isVoip = (sinkInfo_.deviceClass == VOIP_DIRECT_DEVICE_CLASS);
     AudioSamplingRate newSampleRate = GetDirectSampleRate(curNode_->GetSampleRate(), isVoip);
     AudioSampleFormat newFormat = GetDirectFormat(curNode_->GetBitWidth(), isVoip);

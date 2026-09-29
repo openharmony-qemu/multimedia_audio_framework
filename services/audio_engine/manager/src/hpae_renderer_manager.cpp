@@ -1938,6 +1938,10 @@ int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
     AUDIO_INFO_LOG("session %{public}u, stream %{public}d, is zero volume %{public}d",
         sessionId, nodeInfo.streamType, isZeroVolume);
     if (!isZeroVolume) {
+        // A failed reload leaves outputCluster_ null while isInit_ stays true, so a
+        // queued Start can still reach here; siblings already guard this pointer.
+        CHECK_AND_RETURN_RET_LOG(outputCluster_ != nullptr, ERR_INVALID_OPERATION,
+            "outputCluster_ is nullptr, skip PriPa power handling");
         return outputCluster_->SetPriPaPower();
     }
     return SUCCESS;

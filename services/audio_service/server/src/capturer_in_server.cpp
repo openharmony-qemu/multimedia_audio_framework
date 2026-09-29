@@ -218,9 +218,6 @@ int32_t CapturerInServer::InitBufferStatus()
         spanInfo->readStartTime = 0;
         spanInfo->readDoneTime = 0;
 
-        spanInfo->readStartTime = 0;
-        spanInfo->readDoneTime = 0;
-
         spanInfo->volumeStart = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
         spanInfo->volumeEnd = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
         spanInfo->isMute = false;
@@ -1344,6 +1341,12 @@ int32_t CapturerInServer::InitCacheBuffer(size_t targetSize)
 
     if (ringCache_ == nullptr) {
         ringCache_ = AudioRingCache::Create(cacheSizeInBytes_);
+        // Create returns nullptr when the size exceeds the ring cache limit; fail the
+        // config here, otherwise ReadData would dereference a null ringCache_.
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ringCache_ != nullptr, ERR_OPERATION_FAILED,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_CREATE_MEMORY_ALLOC_FAILED, "AudioRingCache Create failed", false),
+            "AudioRingCache Create failed for size %{public}zu", cacheSizeInBytes_);
     } else {
         OptResult result = ringCache_->ReConfig(cacheSizeInBytes_, false); // false --> clear buffer
         if (result.ret != OPERATION_SUCCESS) {

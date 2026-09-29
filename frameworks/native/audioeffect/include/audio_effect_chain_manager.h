@@ -266,6 +266,8 @@ private:
     int32_t CreateAudioEffectChainDynamicInner(const std::string &sceneType);
     int32_t CreateAudioEffectChainDynamicInner(const std::string &sceneType,
         DeviceType deviceType, uint32_t renderId);
+    // Unlocked core of LoadEffectProperties; caller must hold dynamicMutex_.
+    void LoadEffectPropertiesLocked();
     int32_t ReleaseAudioEffectChainDynamicInner(const std::string &sceneType);
     int32_t ReleaseAudioEffectChainDynamicInner(const std::string &sceneType,
         DeviceType deviceType, uint32_t renderId);
