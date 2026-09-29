@@ -2332,6 +2332,34 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
     return resetConfig;
 }
 
+// Check capturer channel validity: must be in CAPTURER_SUPPORTED_CHANNELS,
+// and 10/12/16 multichannel requires UNPROCESSED_VOICE_ASSISTANT sourceType + system app.
+static bool IsCapturerChannelAllowed(const AudioProcessConfig &config)
+{
+    AudioChannel channels = config.streamInfo.channels;
+    if (NotContain(CAPTURER_SUPPORTED_CHANNELS, channels)) {
+        return false;
+    }
+    if (IsOverTenChannels(channels)) {
+#ifdef MULTI_BUS_ENABLE
+        if (IsUnprocVoiceAsstMultiChRej(config.capturerInfo.sourceType, channels)) {
+            AUDIO_ERR_LOG("multichannel rejected, channels:%{public}d, sourceType:%{public}d",
+                config.streamInfo.channels, config.capturerInfo.sourceType);
+            return false;
+        }
+        if (!PermissionUtil::VerifyIsSystemApp()) {
+            AUDIO_ERR_LOG("multichannel requires system app, channels:%{public}d", config.streamInfo.channels);
+            return false;
+        }
+#else
+        AUDIO_ERR_LOG("multichannel not allowed without MULTI_BUS_ENABLE, channels:%{public}d",
+            config.streamInfo.channels);
+        return false;
+#endif
+    }
+    return true;
+}
+
 bool AudioServer::CheckStreamInfoFormat(const AudioProcessConfig &config)
 {
     if (NotContain(AUDIO_SUPPORTED_SAMPLING_RATES, config.streamInfo.samplingRate)) {
@@ -2365,8 +2393,9 @@ bool AudioServer::CheckStreamInfoFormat(const AudioProcessConfig &config)
         return false;
     }
 
-    if (config.audioMode == AUDIO_MODE_RECORD && NotContain(CAPTURER_SUPPORTED_CHANNELS, config.streamInfo.channels)) {
-        AUDIO_ERR_LOG("Check format failed invalid capturer channels:%{public}d", config.streamInfo.channels);
+    if (config.audioMode == AUDIO_MODE_RECORD && !IsCapturerChannelAllowed(config)) {
+        AUDIO_ERR_LOG("Check format failed invalid capturer channels:%{public}d, sourceType:%{public}d",
+            config.streamInfo.channels, config.capturerInfo.sourceType);
         return false;
     }
 

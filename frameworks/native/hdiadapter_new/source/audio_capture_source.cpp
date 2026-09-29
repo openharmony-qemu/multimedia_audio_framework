@@ -877,6 +877,15 @@ uint64_t AudioCaptureSource::GetChannelLayoutByChannelCount(uint32_t channelCoun
         case CHANNEL_8:
             channelLayout = CH_LAYOUT_7POINT1;
             break;
+        case CHANNEL_10:
+            channelLayout = CH_LAYOUT_7POINT1POINT2;
+            break;
+        case CHANNEL_12:
+            channelLayout = CH_LAYOUT_7POINT1POINT4;
+            break;
+        case CHANNEL_16:
+            channelLayout = CH_LAYOUT_9POINT1POINT6;
+            break;
         default:
             channelLayout = CH_LAYOUT_STEREO;
             break;

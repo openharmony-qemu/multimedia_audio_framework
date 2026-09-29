@@ -706,6 +706,19 @@ uint64_t HexStrToNum(const std::string &str);
 void BindBigAndMidCore();
 
 bool IsUltraFastStreamAndRoute(uint8_t ultraFastFlag);
+
+inline bool IsOverTenChannels(int32_t channels)
+{
+    return channels == CHANNEL_10 || channels == CHANNEL_12 || channels == CHANNEL_16;
+}
+
+inline bool IsUnprocVoiceAsstMultiChRej(SourceType sourceType, int32_t channels)
+{
+    if (!IsOverTenChannels(channels)) {
+        return false;
+    }
+    return sourceType != SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

@@ -246,18 +246,15 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerCheckStreamInfoFormat_001, TestSiz
 {
     EXPECT_NE(nullptr, audioServer);
     
-    // Test CheckStreamInfoFormat with valid config
     AudioProcessConfig config;
-    // Initialize config with valid data
-    config.streamInfo.samplingRate = SAMPLE_RATE_44100; // Valid sampling rate
-    config.streamInfo.format = SAMPLE_S16LE; // Valid format
-    config.streamInfo.encoding = ENCODING_PCM; // Valid encoding
-    config.streamInfo.channelLayout = CH_LAYOUT_MONO; // Valid channel layout
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.streamInfo.samplingRate = SAMPLE_RATE_44100;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.channelLayout = CH_LAYOUT_MONO;
     
     bool result = audioServer->CheckStreamInfoFormat(config);
-    
-    // Verify that the function returns true for valid config
-    EXPECT_FALSE(result);
+    EXPECT_TRUE(result);
 }
 
 /**

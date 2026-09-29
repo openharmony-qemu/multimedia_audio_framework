@@ -925,6 +925,10 @@ audio_ohos_library("audio_service") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 
+  if (audio_framework_feature_multi_bus) {
+    defines += [ "MULTI_BUS_ENABLE" ]
+  }
+
   cflags = [ "-Os" ]
   cflags_cc = cflags
 

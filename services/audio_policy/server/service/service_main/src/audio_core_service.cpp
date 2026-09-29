@@ -4302,6 +4302,12 @@ void AudioCoreService::GetTargetSourceTypeAndMatchingFlag(SourceType source,
             targetSource = SOURCE_TYPE_UNPROCESSED;
             useMatchingPropInfo = true;
             break;
+#ifdef MULTI_BUS_ENABLE
+        case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
+            targetSource = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
+            useMatchingPropInfo = true;
+            break;
+#endif
         case SOURCE_TYPE_LIVE:
             targetSource = SOURCE_TYPE_LIVE;
             break;
