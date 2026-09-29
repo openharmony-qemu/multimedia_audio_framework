@@ -22,8 +22,10 @@
 #include <atomic>
 #include <functional>
 #include <cstdint>
-#include <queue>
 #include <unordered_map>
+#include <vector>
+#include <chrono>
+#include <thread>
 #include "common_event_manager.h"
 #include "common_event_subscriber.h"
 
@@ -40,14 +42,18 @@ struct DownloadConditionConfig {
 
 class BackgroundDownload {
 public:
-    BackgroundDownload(std::function<int32_t(const std::string&)> downloadFunction);
+    explicit BackgroundDownload(std::function<int32_t(const std::string&)> downloadFunction);
     ~BackgroundDownload();
 
     int32_t Init();
     static bool AreConditionsMet(const std::string& featureName);
-    bool HasBackgroundDownloadTask();
     int32_t AddFeature(const std::string& featureName);
-    void RemoveFeature(const std::string& featureName);
+    int32_t RemoveFeature(const std::string& featureName);
+    void RestorePendingFeatures(const std::string& featureList);
+    void RestoreFromFile(std::shared_ptr<BackgroundDownload> selfPtr = nullptr,
+        bool syncProcess = true);
+    void PersistOnExit();
+    static void ClearPersistedData();
 
 private:
     class EventSubscriber : public EventFwk::CommonEventSubscriber {
@@ -64,13 +70,20 @@ private:
     static bool IsCharging();
     static bool IsBatteryLevelMet();
     static bool IsScreenLocked();
-    void HandleEvent(const EventFwk::CommonEventData& data);
+    void ProcessPendingDownloads();
     void Release();
+    void UpdateDownloadStatusPara(const std::string& featureList);
+    void PersistPendingQueueLocked();
+    std::string BuildXmlContent(const std::string& value);
+    std::string ReadPendingTasksFromFile();
+    void WritePendingTasksFile(const std::string& featureList);
+    static void DeletePendingTasksFile();
 
     std::mutex mutex_;
-    std::queue<std::string> pendingDownloadQueue_;
+    std::unordered_map<std::string, int32_t> processDownloadMap_;
     std::shared_ptr<EventSubscriber> subscriber_ = nullptr;
     std::function<int32_t(const std::string&)> downloadCallback_ = nullptr;
+    std::atomic<bool> stopped_{false};
 };
 
 } // namespace AudioSuite
