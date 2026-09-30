@@ -25,6 +25,7 @@
 #include "dfx_msg_manager.h"
 #include "audio_adapter_manager.h"
 #include "audio_anco_playback_info.h"
+#include "audio_policy_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -71,7 +72,7 @@ bool AudioInterruptUtils::GetWindowState(const AudioInterrupt &audioInterrupt)
 #ifdef HAS_WINDOW_MANAGER
     if (audioInterrupt.uid == AUDIO_ID) {
         std::vector<AncoPlaybackInfo> ancoPlaybackInfos;
-        AudioAdapterManager::GetInstance().GetAncoPlaybackInfo(ancoPlaybackInfos);
+        AudioPolicyService::GetAudioPolicyService().GetAncoPlaybackInfo(ancoPlaybackInfos);
         for (const auto &info : ancoPlaybackInfos) {
             if (!info.GetPackageName().empty() && info.GetPlaybackState() == ANCO_PLAYBACK_STATE_PLAYING &&
                 WindowUtils::CheckAncoWindowState(info.GetPackageName())) {
