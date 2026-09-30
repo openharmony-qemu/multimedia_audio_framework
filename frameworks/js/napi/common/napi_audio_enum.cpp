@@ -575,6 +575,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioSessionSceneMap = {
     {"AUDIO_SESSION_SCENE_MEDIA", static_cast<int32_t>(AudioSessionScene::MEDIA)},
     {"AUDIO_SESSION_SCENE_GAME", static_cast<int32_t>(AudioSessionScene::GAME)},
     {"AUDIO_SESSION_SCENE_VOICE_COMMUNICATION", static_cast<int32_t>(AudioSessionScene::VOICE_COMMUNICATION)},
+    {"AUDIO_SESSION_SCENE_VOICE_MESSAGE", static_cast<int32_t>(AudioSessionScene::VOICE_MESSAGE)},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioSessionStateChangeHintMap = {
@@ -2146,6 +2147,7 @@ bool NapiAudioEnum::IsLegalInputArgumentSessionScene(int32_t scene)
         case static_cast<int32_t>(AudioSessionScene::MEDIA):
         case static_cast<int32_t>(AudioSessionScene::GAME):
         case static_cast<int32_t>(AudioSessionScene::VOICE_COMMUNICATION):
+        case static_cast<int32_t>(AudioSessionScene::VOICE_MESSAGE):
             result = true;
             break;
         default:
