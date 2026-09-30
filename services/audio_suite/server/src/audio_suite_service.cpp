@@ -70,8 +70,10 @@ AudioSuiteService::~AudioSuiteService()
     }
 }
 
-void AudioSuiteService::OnStart()
+void AudioSuiteService::OnStart(const SystemAbilityOnDemandReason& startReason)
 {
+    std::string reasonName = startReason.GetName();
+    AUDIO_INFO_LOG("audio_suite_server, reasonName:%{public}s", reasonName.c_str());
     {
         std::lock_guard<std::mutex> lock(eventMutex_);
         unloadRunner_ = AppExecFwk::EventRunner::Create("AudioSuiteSaUnloadRunner");
@@ -87,12 +89,18 @@ void AudioSuiteService::OnStart()
         return;
     }
     PostDelayUnloadTask();
+
+    // Initialize background download subsystem
+    bool syncProcess = (reasonName != "load");
+    downloadManager_.InitDownloadManager(syncProcess);
+
     AUDIO_INFO_LOG("AudioSuiteService: Publish success");
 }
 
 void AudioSuiteService::OnStop()
 {
     AUDIO_INFO_LOG("AudioSuiteService::OnStop");
+    downloadManager_.DeInitDownloadManager();
 }
 
 ErrCode AudioSuiteService::RegisterDownloadStatusCallback(const sptr<IRemoteObject>& object, ErrCode& result)

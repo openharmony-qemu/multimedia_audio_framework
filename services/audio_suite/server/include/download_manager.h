@@ -23,12 +23,12 @@
 #include <thread>
 #include <vector>
 #include <sstream>
+#include <unordered_set>
 #include <condition_variable>
 #include "singleton.h"
 #include "iremote_object.h"
 #include "nocopyable.h"
 #include "audio_suite_types.h"
-#include "syspara/parameters.h"
 #include "background_download.h"
 #include "iaudio_suite_status_callback.h"
 #include "iaudio_suite_download_callback.h"
@@ -61,14 +61,16 @@ public:
     int32_t OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status);
 
     int32_t HasDownloadingTask();
+    void InitDownloadManager(bool syncProcess);
+    void DeInitDownloadManager();
 
 private:
     bool WaitForCallbackRegistration();
     bool ValidateFeatureNames(const std::vector<std::string>& featureNames);
-    bool ValidateFeatureNameSafe(const std::vector<std::string>& featureNames);
     int32_t QueuePendingFeatures(const std::vector<std::string>& pendingFeatures);
     int32_t SearchAndDownload(const std::vector<std::string>& featureNames);
-
+    bool IsFeatureReady(const std::string& featureName);
+    int32_t StartBackgroundDownloadTask(const std::string& featureName);
     class AudioSuiteClientDeathRecipient : public IRemoteObject::DeathRecipient {
     public:
         explicit AudioSuiteClientDeathRecipient(int32_t callerPid);
@@ -104,6 +106,8 @@ private:
     std::atomic<bool> isDownloadCallbackRegistered_ = false;
     std::condition_variable callbackRegisteredCond_;
     sptr<AudioServerDeathRecipient> audioServerdeathRecipient_ = nullptr;
+
+    static const std::unordered_set<std::string> ALLOWED_FEATURE_NAMES_;
 };
 
 } // namespace AudioSuite
