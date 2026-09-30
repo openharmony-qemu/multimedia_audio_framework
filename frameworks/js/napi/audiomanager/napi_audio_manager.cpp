@@ -1729,10 +1729,13 @@ napi_value NapiAudioManager::GetDebuggingManager(napi_env env, napi_callback_inf
 napi_value NapiAudioManager::GetSuiteDownloadManager(napi_env env, napi_callback_info info)
 {
 #ifndef CROSS_PLATFORM
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     size_t argCount = PARAM0;
     napi_status status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
     if (status != napi_ok || argCount != 0) {
-        NapiAudioError::ThrowError(env, "GetSuiteDownloadManager invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NapiAudioError::ThrowError(env, "GetSuiteDownloadManager invalid arguments", NAPI_ERR_INPUT_INVALID);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 

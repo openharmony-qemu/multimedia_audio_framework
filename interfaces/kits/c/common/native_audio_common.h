@@ -109,22 +109,19 @@ typedef enum {
     AUDIOCOMMON_RESULT_ERROR_SYSTEM = 6800301,
 
     /**
-     * @error System service died.
-     *
+     * @error System service process terminated.
      * @since 26.0.1
      */
     AUDIOCOMMON_RESULT_ERROR_SERVICE_DIED = 6800302,
 
     /**
-     * @error System service died.
-     *
+     * @error Required network conditions not met.
      * @since 26.0.1
      */
-    AUDIOCOMMON_RESULT_ERROR_NETWORK = 6800501,
+    AUDIOCOMMON_RESULT_ERROR_NETWORK_CONDITION_NOT_MET = 6800501,
 
     /**
-     * @error System service died.
-     *
+     * @error Insufficient storage space.
      * @since 26.0.1
      */
     AUDIOCOMMON_RESULT_ERROR_STORAGE_NOT_ENOUGH = 6800502,

@@ -312,7 +312,10 @@ enum AudioErrors {
     /**
      * Default error.
      */
-    ERROR_SYSTEM        = 6800301
+    ERROR_SYSTEM        = 6800301,
+    ERROR_SERVICE_DIED  = 6800302,
+    ERROR_NETWORK_CONDITION_NOT_MET = 6800501,
+    ERROR_STORAGE_NOT_ENOUGH = 6800502
 };
 
 // Ringer Mode

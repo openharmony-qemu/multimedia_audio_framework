@@ -47,7 +47,7 @@ public:
     int32_t GetFeatureStatus(const std::vector<std::string>& featureNames,
         OH_AudioSuite_DownloadStatusInfo *statusInfos, uint32_t statusInfosSize);
     int32_t GetNewVersionInfo(const std::vector<std::string>& featureNames,
-        OH_AudioSuite_CloudRomVersionInfo *versionInfos, uint32_t statusInfosSize);
+        OH_AudioSuite_FeatureVersionInfo *versionInfos, uint32_t statusInfosSize);
 
 private:
     OHAudioSuiteDownloadManager();

@@ -52,7 +52,7 @@ static int32_t ConvertToApiResult(int32_t errCode, int32_t defaultResult)
         return DOWNLOAD_SYSTEM_PERMISSION_DENIED;
     }
     if (errCode == DOWNLOAD_ERROR_NETWORK) {
-        return AUDIOCOMMON_RESULT_ERROR_NETWORK;
+        return AUDIOCOMMON_RESULT_ERROR_NETWORK_CONDITION_NOT_MET;
     }
     if (errCode == DOWNLOAD_ERROR_STORAGE_NOT_ENOUGH) {
         return AUDIOCOMMON_RESULT_ERROR_STORAGE_NOT_ENOUGH;
@@ -299,7 +299,7 @@ int32_t OH_AudioSuite_GetFeatureStatus(
 int32_t OH_AudioSuite_GetNewVersionInfo(
     OH_AudioSuite_DownloadManager *downloadManager,
     const char **featureNames, uint32_t count,
-    OH_AudioSuite_CloudRomVersionInfo *versionInfos, uint32_t versionInfosSize)
+    OH_AudioSuite_FeatureVersionInfo *versionInfos, uint32_t versionInfosSize)
 {
     if (downloadManager == nullptr) {
         AUDIO_WARNING_LOG("GetNewVersionInfo downloadManager is nullptr");
@@ -538,7 +538,7 @@ int32_t OHAudioSuiteDownloadManager::GetFeatureStatus(const std::vector<std::str
 }
 
 int32_t OHAudioSuiteDownloadManager::GetNewVersionInfo(const std::vector<std::string>& featureNames,
-    OH_AudioSuite_CloudRomVersionInfo *versionInfos, uint32_t versionInfosSize)
+    OH_AudioSuite_FeatureVersionInfo *versionInfos, uint32_t versionInfosSize)
 {
     std::vector<AudioSuite::AudioSuiteCloudRomVersionInfo> versionInfoVec;
     int32_t ret = AudioSuite::AudioSuiteDownloadManager::GetInstance().GetFeatureNewVersionDirect(
