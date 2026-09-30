@@ -38,10 +38,10 @@ class AudioStreamDescriptor : public Parcelable {
 public:
     AudioStreamInfo streamInfo_ = {};
     AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;
-    AudioFlag audioFlag_ = AUDIO_FLAG_NONE;
-    uint32_t routeFlag_ = AUDIO_FLAG_NONE;
-    uint32_t oldRouteFlag_ = AUDIO_FLAG_NONE;
-    uint32_t futureRouteFlag_ = AUDIO_FLAG_NONE;
+    AudioFlag audioFlag_ = AUDIO_FLAG_NONE;        // Request pipe flag: pipe type this stream wants to select
+    uint32_t routeFlag_ = AUDIO_FLAG_NONE;          // Current response pipe flag: currently assigned to this stream
+    uint32_t oldRouteFlag_ = AUDIO_FLAG_NONE;       // Previous response pipe flag: saved before concession
+    uint32_t futureRouteFlag_ = AUDIO_FLAG_NONE;    // Pending response pipe flag: to be applied in next cycle
     int64_t createTimeStamp_ = 0;
     int64_t startTimeStamp_ = 0;
     int64_t stateStartTimeStamp_ = 0;
@@ -307,6 +307,12 @@ public:
     bool IsSelectFlagHd() const
     {
         return (audioFlag_ & AUDIO_OUTPUT_FLAG_HD);
+    }
+
+    // Check if this stream requests fast output pipe (based on audioFlag_, not routeFlag_)
+    bool IsStreamRequestFastOutput() const
+    {
+        return (audioFlag_ & AUDIO_OUTPUT_FLAG_FAST) != 0;
     }
 
     void SetOriginalFlagForcedNormal()

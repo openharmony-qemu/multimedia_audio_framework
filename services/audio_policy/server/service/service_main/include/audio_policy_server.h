@@ -829,6 +829,8 @@ public:
     void CheckHibernateState(bool hibernate);
     // for S4 reboot update safevolume
     void UpdateSafeVolumeByS4();
+    // for suspend(S3) / hibernate(S4) power state transition, sync to coreService
+    void UpdateAudioPowerState(AudioPowerState state);
 
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
