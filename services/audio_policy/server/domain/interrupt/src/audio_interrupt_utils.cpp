@@ -73,8 +73,6 @@ bool AudioInterruptUtils::GetWindowState(const AudioInterrupt &audioInterrupt)
         std::vector<AncoPlaybackInfo> ancoPlaybackInfos;
         AudioAdapterManager::GetInstance().GetAncoPlaybackInfo(ancoPlaybackInfos);
         for (const auto &info : ancoPlaybackInfos) {
-            AUDIO_INFO_LOG("anco info: packageName=%{public}s, playbackState=%{public}d, usage=%{public}d",
-                info.GetPackageName().c_str(), info.GetPlaybackState(), info.GetUsage());
             if (!info.GetPackageName().empty() && info.GetPlaybackState() == ANCO_PLAYBACK_STATE_PLAYING &&
                 WindowUtils::CheckAncoWindowState(info.GetPackageName())) {
                     AUDIO_INFO_LOG("anco foreground: %{public}s", info.GetPackageName().c_str());
