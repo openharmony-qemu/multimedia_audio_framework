@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioSpatializationService"
 #endif
 
+#include <stdio.h>
 #include "audio_spatialization_service.h"
 
 #include "iservice_registry.h"
@@ -28,6 +29,7 @@
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
+#define FDSAN_TAG_PHRTF 10
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -718,8 +720,10 @@ void AudioSpatializationService::ClearDeviceSpatialEnabledFromEngine()
 
 int32_t AudioSpatializationService::DownloadPersonalizedHRTF(const int32_t fd, const int64_t length)
 {
+    uint64_t new_tag = LOG_DOMAIN << 32 | FDSAN_TAG_PHRTF;
+    fdsan_exchange_owner_tag(fd, 0, new_tag);
     int32_t ret = audioPolicyManager_.UpdatePersonalizedHRTFBin(fd, length);
-    close(fd);
+    fdsan_close_with_tag(fd, new_tag);
     return ret;
 }
 
