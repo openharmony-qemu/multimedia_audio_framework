@@ -87,6 +87,8 @@ void PowerStateListener::OnSyncSleep(bool OnForceSleep)
 {
     CHECK_AND_RETURN_LOG(OnForceSleep, "OnSyncSleep not force sleep");
 
+    CHECK_AND_RETURN_LOG(audioPolicyServer_, "audioPolicyServer_ is nullptr");
+    audioPolicyServer_->UpdateAudioPowerState(AudioPowerState::SUSPENDING);
     AUDIO_INFO_LOG("OnSyncSleep, try to control audio focus");
     ControlAudioFocus(true);
 }
@@ -95,6 +97,8 @@ void PowerStateListener::OnSyncWakeup(bool OnForceSleep)
 {
     CHECK_AND_RETURN_LOG(OnForceSleep, "OnSyncWakeup not force sleep");
 
+    CHECK_AND_RETURN_LOG(audioPolicyServer_, "audioPolicyServer_ is nullptr");
+    audioPolicyServer_->UpdateAudioPowerState(AudioPowerState::ACTIVE);
     AUDIO_INFO_LOG("OnSyncWakeup, try to release audio focus");
     ControlAudioFocus(false);
 }
@@ -178,16 +182,18 @@ SyncHibernateListener::SyncHibernateListener(const sptr<AudioPolicyServer> audio
 void SyncHibernateListener::OnSyncHibernate()
 {
     AUDIO_INFO_LOG("OnSyncHibernate in hibernate");
-    ControlAudioFocus(true);
     CHECK_AND_RETURN_LOG(audioPolicyServer_, "audioPolicyServer_ is nullptr");
+    audioPolicyServer_->UpdateAudioPowerState(AudioPowerState::HIBERNATING);
+    ControlAudioFocus(true);
     audioPolicyServer_->CheckHibernateState(true);
 }
- 
+
 void SyncHibernateListener::OnSyncWakeup(bool hibernateResult)
 {
     AUDIO_INFO_LOG("OnSyncWakeup in hibernate");
-    ControlAudioFocus(false);
     CHECK_AND_RETURN_LOG(audioPolicyServer_, "audioPolicyServer_ is nullptr");
+    audioPolicyServer_->UpdateAudioPowerState(AudioPowerState::ACTIVE);
+    ControlAudioFocus(false);
     audioPolicyServer_->CheckHibernateState(false);
     audioPolicyServer_->UpdateSafeVolumeByS4();
 }

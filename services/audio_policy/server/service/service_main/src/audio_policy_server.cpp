@@ -5545,6 +5545,12 @@ void AudioPolicyServer::UpdateSafeVolumeByS4()
     audioVolumeManager_.UpdateSafeVolumeByS4();
 }
 
+void AudioPolicyServer::UpdateAudioPowerState(AudioPowerState state)
+{
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->SetAudioPowerState(state);
+}
+
 void AudioPolicyServer::CheckConnectedDevice()
 {
     auto isUsbHeadsetConnected =

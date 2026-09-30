@@ -1675,6 +1675,26 @@ enum AudioMode {
     AUDIO_MODE_RECORD
 };
 
+/**
+ * @brief Enumerates the audio power state during suspend(S3) / hibernate(S4) transition.
+ * Different from PowerMgr::PowerState which is the settled state after transition.
+ */
+enum class AudioPowerState : int32_t {
+    ACTIVE = 0, // Normal operation, no power transition in progress
+    SUSPENDING = 1, // S3 suspend transition in progress (OnSyncSleep received, OnSyncWakeup not yet)
+    HIBERNATING = 2, // S4 hibernate transition in progress (OnSyncHibernate received, OnSyncWakeup not yet)
+};
+
+inline const char *AudioPowerStateToString(AudioPowerState state)
+{
+    switch (state) {
+        case AudioPowerState::ACTIVE: return "ACTIVE";
+        case AudioPowerState::SUSPENDING: return "SUSPENDING";
+        case AudioPowerState::HIBERNATING: return "HIBERNATING";
+        default: return "UNKNOWN";
+    }
+}
+
 enum StopAudioType {
     STOP_ALL,
     STOP_RENDER,

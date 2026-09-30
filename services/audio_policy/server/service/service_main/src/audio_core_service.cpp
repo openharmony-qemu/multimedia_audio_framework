@@ -1101,6 +1101,24 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
         return;
     }
     HandlePlaybackStreamByOriginalFlag(streamDesc, isCreateProcess);
+    UpdateAudioFlagForFastStream(streamDesc);
+}
+
+// Change fast stream to normal if needed. Must be called after HandlePlaybackStreamByOriginalFlag
+void AudioCoreService::UpdateAudioFlagForFastStream(
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    CHECK_AND_RETURN(streamDesc->IsStreamRequestFastOutput());
+    // Power transition(S3/S4): fast stream downgrade to normal to avoid S3/S4 failure
+    // Feature: need to handle this scenario when ultra-fast pipe is supported in the future
+    AudioPowerState powerState = GetAudioPowerState();
+    if (powerState == AudioPowerState::SUSPENDING || powerState == AudioPowerState::HIBERNATING) {
+        AUDIO_INFO_LOG("Change stream:%{public}u from FAST to NORMAL during power transition, powerState:[%{public}s]",
+            streamDesc->sessionId_, AudioPowerStateToString(powerState));
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        return;
+    }
 }
 
 void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -3145,6 +3163,19 @@ bool AudioCoreService::IsStreamActive(uint32_t sessionId)
 void AudioCoreService::SetFirstScreenOn()
 {
     isFirstScreenOn_.store(true);
+}
+
+void AudioCoreService::SetAudioPowerState(AudioPowerState state)
+{
+    CHECK_AND_RETURN(powerState_.load() != state);
+    AudioPowerState oldState = powerState_.exchange(state);
+    AUDIO_INFO_LOG("audio power state: %{public}s -> %{public}s",
+        AudioPowerStateToString(oldState), AudioPowerStateToString(state));
+}
+
+AudioPowerState AudioCoreService::GetAudioPowerState() const
+{
+    return powerState_.load();
 }
 
 bool AudioCoreService::IsA2dpOffloadStream(uint sessionId)
