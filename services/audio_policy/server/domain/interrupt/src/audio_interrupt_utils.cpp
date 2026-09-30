@@ -23,6 +23,8 @@
 #include "audio_utils.h"
 #include "app_mgr_client.h"
 #include "dfx_msg_manager.h"
+#include "audio_adapter_manager.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -68,7 +70,19 @@ bool AudioInterruptUtils::GetWindowState(const AudioInterrupt &audioInterrupt)
 {
 #ifdef HAS_WINDOW_MANAGER
     if (audioInterrupt.uid == AUDIO_ID) {
-        return WindowUtils::CheckAncoWindowState(audioInterrupt.ancoBundleName);
+        std::vector<AncoPlaybackInfo> ancoPlaybackInfos;
+        AudioAdapterManager::GetInstance().GetAncoPlaybackInfo(ancoPlaybackInfos);
+        for (const auto &info : ancoPlaybackInfos) {
+            AUDIO_INFO_LOG("anco info: packageName=%{public}s, playbackState=%{public}d, usage=%{public}d",
+                info.GetPackageName().c_str(), info.GetPlaybackState(), info.GetUsage());
+            if (!info.GetPackageName().empty() && info.GetPlaybackState() == ANCO_PLAYBACK_STATE_PLAYING &&
+                WindowUtils::CheckAncoWindowState(info.GetPackageName())) {
+                    AUDIO_INFO_LOG("anco foreground: %{public}s", info.GetPackageName().c_str());
+                    return true;
+            }
+        }
+        AUDIO_INFO_LOG("no anco in foreground");
+        return false;
     } else {
         return WindowUtils::CheckWindowState(audioInterrupt.pid);
     }
