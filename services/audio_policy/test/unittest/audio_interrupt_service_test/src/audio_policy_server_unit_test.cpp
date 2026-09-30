@@ -6851,6 +6851,8 @@ HWTEST(AudioPolicyUnitTest, SetDeviceActive_SpecifiedUidNoPermission, TestSize.L
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    server->coreService_ = AudioCoreService::GetCoreService();
+    server->eventEntry_ = CreateEventEntry(server->coreService_);
 
     int32_t uid = 9999;
     int32_t ret = server->SetDeviceActive(DEVICE_TYPE_SPEAKER, true, uid);
