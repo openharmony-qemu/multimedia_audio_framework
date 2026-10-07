@@ -342,6 +342,7 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
         if (ec == std::errc{} && ptr == attributeInfo.value_.data() + attributeInfo.value_.size()) {
             pipeInfo->halLatency_ = latency;
             pipeInfo->hasXmlConfiguredLatency_ = true;
+            AUDIO_INFO_LOG("hal_latency parsed: %{public}u", latency);
         }
     } else if (attributeInfo.name_ == "support_ultra_fast") {
         AUDIO_INFO_LOG("Support ultra fast and arm usb ultra fast");
@@ -614,6 +615,7 @@ void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> c
                     configInfo.value_.data() + configInfo.value_.size(), latency);
                 if (ec == std::errc{} && ptr == configInfo.value_.data() + configInfo.value_.size()) {
                     globalConfigs_.primaryEffectLatency = latency;
+                    AUDIO_INFO_LOG("primary_effect_latency parsed: %{public}u", latency);
                 }
             } else if (configInfo.name_ == "primary_warmup_latency") {
                 uint32_t latency = 0;
@@ -621,6 +623,7 @@ void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> c
                     configInfo.value_.data() + configInfo.value_.size(), latency);
                 if (ec == std::errc{} && ptr == configInfo.value_.data() + configInfo.value_.size()) {
                     globalConfigs_.primaryWarmupLatency = latency;
+                    AUDIO_INFO_LOG("primary_warmup_latency parsed: %{public}u", latency);
                 }
             }
         }
