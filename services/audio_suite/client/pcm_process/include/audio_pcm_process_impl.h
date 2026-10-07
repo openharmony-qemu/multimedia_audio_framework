@@ -22,7 +22,6 @@
 
 #include "audio_pcm_process.h"
 #include "audio_format_converter.h"
-#include "audio_suite_mixer_processor.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_base.h"
 
@@ -32,8 +31,8 @@ namespace AudioSuite {
 
 struct ConverterHandleWrapper {
     std::shared_ptr<AudioFormatConverter> converter;
-    PcmBufferFormat inputFormat;
-    PcmBufferFormat outputFormat;
+    AudioFormat inputFormat;
+    AudioFormat outputFormat;
 };
 
 struct MixerHandleWrapper {

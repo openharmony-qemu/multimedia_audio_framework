@@ -124,55 +124,47 @@ AudioFormat ConvertToAudioFormat(const AudioFormatConfig* cfg)
 
 AudioConverterHandle AudioConverterCreate(const AudioFormatConfig* inCfg, const AudioFormatConfig* outCfg)
 {
-    if (inCfg == nullptr || outCfg == nullptr) {
-        AUDIO_ERR_LOG("invalid params, inCfg or outCfg is nullptr");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(inCfg != nullptr && outCfg != nullptr, nullptr,
+        "invalid params, inCfg or outCfg is nullptr");
 
     AudioSamplingRate inputRate;
+    CHECK_AND_RETURN_RET_LOG(ValidateSampleRate(inCfg->sampleRate, inputRate),
+        nullptr, "unsupported input sample rate: %{public}d", inCfg->sampleRate);
     AudioSamplingRate outputRate;
-    if (!ValidateSampleRate(inCfg->sampleRate, inputRate)) {
-        AUDIO_ERR_LOG("unsupported input sample rate: %{public}d", inCfg->sampleRate);
-        return nullptr;
-    }
-    if (!ValidateSampleRate(outCfg->sampleRate, outputRate)) {
-        AUDIO_ERR_LOG("unsupported output sample rate: %{public}d", outCfg->sampleRate);
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(ValidateSampleRate(outCfg->sampleRate, outputRate),
+        nullptr, "unsupported output sample rate: %{public}d", outCfg->sampleRate);
 
     AudioChannelLayout inputLayout = ConvertChannelToLayout(inCfg->channel);
     AudioChannelLayout outputLayout = ConvertChannelToLayout(outCfg->channel);
-    if (inputLayout == AudioChannelLayout::CH_LAYOUT_UNKNOWN ||
-        outputLayout == AudioChannelLayout::CH_LAYOUT_UNKNOWN) {
-        AUDIO_ERR_LOG("unsupported channel layout");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(inputLayout != AudioChannelLayout::CH_LAYOUT_UNKNOWN &&
+        outputLayout != AudioChannelLayout::CH_LAYOUT_UNKNOWN, nullptr, "unsupported channel layout");
 
     AudioSampleFormat inputSampleFormat = ConvertBitDepthToSampleFormat(inCfg->bitDepth);
     AudioSampleFormat outputSampleFormat = ConvertBitDepthToSampleFormat(outCfg->bitDepth);
-    if (inputSampleFormat == AudioSampleFormat::INVALID_WIDTH ||
-        outputSampleFormat == AudioSampleFormat::INVALID_WIDTH) {
-        AUDIO_ERR_LOG("unsupported bit depth");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(inputSampleFormat != AudioSampleFormat::INVALID_WIDTH &&
+        outputSampleFormat != AudioSampleFormat::INVALID_WIDTH, nullptr, "unsupported bit depth");
 
     uint32_t inputChannelCount = static_cast<uint32_t>(inCfg->channel);
     uint32_t outputChannelCount = static_cast<uint32_t>(outCfg->channel);
 
-    PcmBufferFormat inputFormat(inputRate, inputChannelCount, inputLayout, inputSampleFormat);
-    PcmBufferFormat outputFormat(outputRate, outputChannelCount, outputLayout, outputSampleFormat);
+    AudioFormat inputFormat;
+    inputFormat.audioChannelInfo.channelLayout = inputLayout;
+    inputFormat.audioChannelInfo.numChannels = inputChannelCount;
+    inputFormat.format = inputSampleFormat;
+    inputFormat.rate = inputRate;
+    inputFormat.encodingType = ENCODING_TYPE_RAW;
+
+    AudioFormat outputFormat;
+    outputFormat.audioChannelInfo.channelLayout = outputLayout;
+    outputFormat.audioChannelInfo.numChannels = outputChannelCount;
+    outputFormat.format = outputSampleFormat;
+    outputFormat.rate = outputRate;
+    outputFormat.encodingType = ENCODING_TYPE_RAW;
 
     std::shared_ptr<AudioFormatConverter> converter = AudioFormatConverter::Create(inputFormat, outputFormat);
-    if (converter == nullptr) {
-        AUDIO_ERR_LOG("failed to create AudioFormatConverter");
-        return nullptr;
-    }
-
+    CHECK_AND_RETURN_RET_LOG(converter != nullptr, nullptr, "failed to create AudioFormatConverter");
     ConverterHandleWrapper* wrapper = new (std::nothrow) ConverterHandleWrapper();
-    if (wrapper == nullptr) {
-        AUDIO_ERR_LOG("failed to allocate wrapper");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, nullptr, "failed to allocate wrapper");
 
     wrapper->converter = converter;
     wrapper->inputFormat = inputFormat;
@@ -204,12 +196,13 @@ CAudioConvertResult AudioConverterProcess(AudioConverterHandle handle, const uin
         result.errCode = ERR_CODE_INVALID_STATE;
         return result;
     }
-    uint32_t bytesCount = static_cast<uint32_t>(inSampleCount) * wrapper->inputFormat.channelCount *
-        AudioSuiteUtil::GetSampleSize(wrapper->inputFormat.sampleFormat);
+    uint32_t bytesCount = static_cast<uint32_t>(inSampleCount) * wrapper->inputFormat.audioChannelInfo.numChannels *
+        AudioSuiteUtil::GetSampleSize(wrapper->inputFormat.format);
     AudioSuite::AudioConvertResult innerResult =
         wrapper->converter->SyncProcess(inData, bytesCount);
     int outSampleCount = static_cast<int>(innerResult.outByteCount /
-        AudioSuiteUtil::GetSampleSize(wrapper->outputFormat.sampleFormat) / wrapper->outputFormat.channelCount);
+        AudioSuiteUtil::GetSampleSize(wrapper->outputFormat.format) /
+        wrapper->outputFormat.audioChannelInfo.numChannels);
     result.outData = innerResult.outData;
     result.outSampleCount = static_cast<int>(outSampleCount);
     result.errCode = innerResult.errCode == SUCCESS ? ERR_CODE_SUCCESS : ERR_CODE_OPERATION_FAILED;

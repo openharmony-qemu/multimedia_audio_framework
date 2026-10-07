@@ -1930,5 +1930,48 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_Cached_003, TestSize.Le
     OH_AudioConverter_Destroy(converter);
 }
 
+/**
+ * @tc.name  : Test OH_AudioConverter_Destroy RemoveConverter if branch.
+ * @tc.number: OH_AudioConverter_Destroy_002
+ * @tc.desc  : Test RemoveConverter if covers 2 branches after refactor:
+ *             (1) erase>0 → true → execute delete (normal destroy)
+ *             (2) erase==0 → false → skip delete (double destroy)
+ *             Note: nullptr is guarded by CHECK_AND_RETURN_LOG before the if,
+ *             so it returns early and never reaches the erase/delete path.
+ *             Destroy_001 already covers both branches; this test documents
+ *             the branch analysis explicitly.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Destroy_002, TestSize.Level0)
+{
+    OH_AudioConverter_Format inputFormat;
+    inputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    inputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
+    inputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+    inputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE;
+ 
+    OH_AudioConverter_Format outputFormat;
+    outputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    outputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_44100;
+    outputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+    outputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE;
+ 
+    // Branch 1: erase > 0 → true → delete executed (normal destroy)
+    OH_AudioConverter* converter = nullptr;
+    OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
+    ASSERT_EQ(ret, AUDIOCONVERTER_SUCCESS);
+    ASSERT_TRUE(converter != nullptr);
+    OH_AudioConverter_Destroy(converter);
+ 
+    // Branch 2: erase == 0 → false → no delete (already removed, no double-delete)
+    OH_AudioConverter_Destroy(converter);
+ 
+    // Verify a new converter can still be created and destroyed normally
+    OH_AudioConverter* converter2 = nullptr;
+    ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter2);
+    ASSERT_EQ(ret, AUDIOCONVERTER_SUCCESS);
+    ASSERT_TRUE(converter2 != nullptr);
+    OH_AudioConverter_Destroy(converter2);
+}
+
 }
 }

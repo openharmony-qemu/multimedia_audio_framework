@@ -15,7 +15,7 @@
 
 #include "audio_stream_info.h"
 #include "audio_suite_converter_test.h"
-#include "audio_format_converter_impl.h"
+#include "audio_format_converter.h"
 #include "audio_suite_log.h"
 #include "audio_suite_unittest_tools.h"
 #include <securec.h>
@@ -30,6 +30,7 @@
 #include "securec.h"
 
 using namespace testing::ext;
+using OHOS::AudioStandard::AudioSuite::AudioFormat;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -731,36 +732,32 @@ static OHConverterTestInfo g_converterAlignTestCases[] = {
         AudioSampleFormat::SAMPLE_S16LE},
 };
 
-static AudioSuite::PcmBufferFormat SetupInputFormat(const OHConverterTestInfo& info)
+static AudioFormat SetupInputFormat(const OHConverterTestInfo& info)
 {
-    AudioSuite::PcmBufferFormat format;
-    format.sampleRate = info.inputSampleRate;
-    format.channelLayout = info.inputChannelLayout;
-    format.sampleFormat = info.inputSampleFormat;
-    // Obtain the number of channels based on the channel layout.
-    auto it = AudioSuite::LAYOUT_TO_CHANNEL.find(info.inputChannelLayout);
-    format.channelCount =
-        (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : DEFAULT_CHANNEL_COUNT;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = info.inputChannelLayout;
+    format.audioChannelInfo.numChannels = 0; // Let Create derive from channelLayout
+    format.format = info.inputSampleFormat;
+    format.rate = info.inputSampleRate;
+    format.encodingType = AudioSuite::ENCODING_TYPE_RAW;
     return format;
 }
 
-static AudioSuite::PcmBufferFormat SetupOutputFormat(const OHConverterTestInfo& info)
+static AudioFormat SetupOutputFormat(const OHConverterTestInfo& info)
 {
-    AudioSuite::PcmBufferFormat format;
-    format.sampleRate = info.outputSampleRate;
-    format.channelLayout = info.outputChannelLayout;
-    format.sampleFormat = info.outputSampleFormat;
-    // Obtain the number of channels based on the channel layout.
-    auto it = AudioSuite::LAYOUT_TO_CHANNEL.find(info.outputChannelLayout);
-    format.channelCount =
-        (it != AudioSuite::LAYOUT_TO_CHANNEL.end()) ? static_cast<uint32_t>(it->second) : DEFAULT_CHANNEL_COUNT;
+    AudioFormat format;
+    format.audioChannelInfo.channelLayout = info.outputChannelLayout;
+    format.audioChannelInfo.numChannels = 0; // Let Create derive from channelLayout
+    format.format = info.outputSampleFormat;
+    format.rate = info.outputSampleRate;
+    format.encodingType = AudioSuite::ENCODING_TYPE_RAW;
     return format;
 }
 
 static std::shared_ptr<AudioSuite::AudioFormatConverter> CreateConverter(const OHConverterTestInfo& info)
 {
-    AudioSuite::PcmBufferFormat inputFormat = SetupInputFormat(info);
-    AudioSuite::PcmBufferFormat outputFormat = SetupOutputFormat(info);
+    AudioFormat inputFormat = SetupInputFormat(info);
+    AudioFormat outputFormat = SetupOutputFormat(info);
     auto converter = AudioSuite::AudioFormatConverter::Create(inputFormat, outputFormat);
     if (converter == nullptr) {
         return nullptr;
@@ -770,8 +767,8 @@ static std::shared_ptr<AudioSuite::AudioFormatConverter> CreateConverter(const O
 
 static std::shared_ptr<AudioSuite::AudioFormatConverter> CreateConverterWithAlignment(const OHConverterTestInfo& info)
 {
-    AudioSuite::PcmBufferFormat inputFormat = SetupInputFormat(info);
-    AudioSuite::PcmBufferFormat outputFormat = SetupOutputFormat(info);
+    AudioFormat inputFormat = SetupInputFormat(info);
+    AudioFormat outputFormat = SetupOutputFormat(info);
     auto converter = AudioSuite::AudioFormatConverter::Create(inputFormat, outputFormat, 1, true);
     if (converter == nullptr) {
         return nullptr;
@@ -1176,16 +1173,19 @@ HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Process_Compare_Pcm_Small, T
  */
 HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_DonConvert_001, TestSize.Level0)
 {
-    auto converter = std::make_unique<AudioSuite::AudioFormatConverterImpl>();
-    AudioSuite::PcmBufferFormat inputFormat(
-        AudioSamplingRate::SAMPLE_RATE_44100, 2,
-        AudioChannelLayout::CH_LAYOUT_STEREO,
-        AudioSampleFormat::SAMPLE_S16LE);
-    AudioSuite::PcmBufferFormat outputFormat(
-        AudioSamplingRate::SAMPLE_RATE_48000, 2,
-        AudioChannelLayout::CH_LAYOUT_STEREO,
-        AudioSampleFormat::SAMPLE_S16LE);
-    converter->Init(inputFormat, outputFormat, 1, false);
+    AudioFormat inputFormat;
+    inputFormat.audioChannelInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    inputFormat.audioChannelInfo.numChannels = 2;
+    inputFormat.format = AudioSampleFormat::SAMPLE_S16LE;
+    inputFormat.rate = AudioSamplingRate::SAMPLE_RATE_44100;
+    inputFormat.encodingType = AudioSuite::ENCODING_TYPE_RAW;
+    AudioFormat outputFormat;
+    outputFormat.audioChannelInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    outputFormat.audioChannelInfo.numChannels = 2;
+    outputFormat.format = AudioSampleFormat::SAMPLE_S16LE;
+    outputFormat.rate = AudioSamplingRate::SAMPLE_RATE_48000;
+    outputFormat.encodingType = AudioSuite::ENCODING_TYPE_RAW;
+    auto converter = AudioSuite::AudioFormatConverter::Create(inputFormat, outputFormat);
 
     uint8_t outputBuffer[DEFAULT_BUFFER_SIZE] = {0};
     uint32_t outputSize = 0;
@@ -1193,6 +1193,7 @@ HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_DonConvert_001, TestSize.Lev
     // Calling Process directly without first calling Create should return an call back not find error.
     int32_t ret = converter->Process(outputBuffer, sizeof(outputBuffer), &outputSize);
     EXPECT_EQ(ret, ERR_CALLBACK_NOT_FOUND);
+    converter->Destroy();
 }
 
 /**
@@ -1202,14 +1203,18 @@ HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_DonConvert_001, TestSize.Lev
  */
 HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_DonConvert_002, TestSize.Level0)
 {
-    AudioSuite::PcmBufferFormat inputFormat(
-        AudioSamplingRate::SAMPLE_RATE_44100, 2,
-        AudioChannelLayout::CH_LAYOUT_STEREO,
-        AudioSampleFormat::SAMPLE_S16LE);
-    AudioSuite::PcmBufferFormat outputFormat(
-        AudioSamplingRate::SAMPLE_RATE_48000, 2,
-        AudioChannelLayout::CH_LAYOUT_STEREO,
-        AudioSampleFormat::SAMPLE_S16LE);
+    AudioFormat inputFormat;
+    inputFormat.audioChannelInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    inputFormat.audioChannelInfo.numChannels = 2;
+    inputFormat.format = AudioSampleFormat::SAMPLE_S16LE;
+    inputFormat.rate = AudioSamplingRate::SAMPLE_RATE_44100;
+    inputFormat.encodingType = AudioSuite::ENCODING_TYPE_RAW;
+    AudioFormat outputFormat;
+    outputFormat.audioChannelInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    outputFormat.audioChannelInfo.numChannels = 2;
+    outputFormat.format = AudioSampleFormat::SAMPLE_S16LE;
+    outputFormat.rate = AudioSamplingRate::SAMPLE_RATE_48000;
+    outputFormat.encodingType = AudioSuite::ENCODING_TYPE_RAW;
     auto converter = AudioSuite::AudioFormatConverter::Create(inputFormat, outputFormat);
     
     // Calling Process directly without setting a callback should return a "callback not set" error.

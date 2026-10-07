@@ -20,33 +20,135 @@
 #include "OHAudioSuiteFormatConverter.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
-#include "audio_suite_common.h"
+#include <algorithm>
 #include <memory>
 #include <mutex>
-#include <cstring>
-#include <cstdlib>
-#include <cmath>
-#include <string>
-#include <thread>
-#include "audio_utils.h"
-#include "audio_errors.h"
-#include "audio_common_log.h"
-#include "OHAudioSuiteEngine.h"
-#include "audio_suite_capabilities.h"
-#include "audio_format_converter_impl.h"
+#include <unordered_set>
+#include <vector>
 #include "audio_format_converter.h"
 
-using OHOS::AudioStandard::OHAudioSuiteEngine;
-using OHOS::AudioStandard::OHAudioSuitePipeline;
-using OHOS::AudioStandard::OHAudioNode;
-using OHOS::AudioStandard::OHAudioSuiteNodeBuilder;
 using namespace OHOS::AudioStandard;
+using namespace OHOS::AudioStandard::AudioSuite;
 
-static std::atomic<int32_t> g_globalCreateCount(0);
-static std::atomic<int32_t> g_globalDestroyCount(0);
-
-static std::unordered_set<OH_AudioConverter*> g_activeConverters;
+static inline const std::vector<OH_Audio_SampleRate> AUDIO_SUITE_SUPPORTED_SAMPLING_RATES {
+    OH_Audio_SampleRate::SAMPLE_RATE_8000,
+    OH_Audio_SampleRate::SAMPLE_RATE_11025,
+    OH_Audio_SampleRate::SAMPLE_RATE_12000,
+    OH_Audio_SampleRate::SAMPLE_RATE_16000,
+    OH_Audio_SampleRate::SAMPLE_RATE_22050,
+    OH_Audio_SampleRate::SAMPLE_RATE_24000,
+    OH_Audio_SampleRate::SAMPLE_RATE_32000,
+    OH_Audio_SampleRate::SAMPLE_RATE_44100,
+    OH_Audio_SampleRate::SAMPLE_RATE_48000,
+    OH_Audio_SampleRate::SAMPLE_RATE_64000,
+    OH_Audio_SampleRate::SAMPLE_RATE_88200,
+    OH_Audio_SampleRate::SAMPLE_RATE_96000,
+    OH_Audio_SampleRate::SAMPLE_RATE_176400,
+    OH_Audio_SampleRate::SAMPLE_RATE_192000,
+};
+ 
+static inline const std::vector<OH_Audio_SampleFormat> AUDIO_SUITE_SUPPORTED_SAMPLE_FORMAT {
+    AUDIO_SAMPLE_U8,
+    AUDIO_SAMPLE_S16LE,
+    AUDIO_SAMPLE_S24LE,
+    AUDIO_SAMPLE_S32LE,
+    AUDIO_SAMPLE_F32LE,
+};
+ 
+static inline const std::vector<OH_AudioChannelLayout> AUDIO_SUITE_SUPPORTED_CHANNEL_LAYOUTS {
+    OH_AudioChannelLayout::CH_LAYOUT_MONO,
+    OH_AudioChannelLayout::CH_LAYOUT_STEREO,
+    OH_AudioChannelLayout::CH_LAYOUT_STEREO_DOWNMIX,
+    OH_AudioChannelLayout::CH_LAYOUT_2POINT1,
+    OH_AudioChannelLayout::CH_LAYOUT_3POINT0,
+    OH_AudioChannelLayout::CH_LAYOUT_SURROUND,
+    OH_AudioChannelLayout::CH_LAYOUT_3POINT1,
+    OH_AudioChannelLayout::CH_LAYOUT_4POINT0,
+    OH_AudioChannelLayout::CH_LAYOUT_QUAD_SIDE,
+    OH_AudioChannelLayout::CH_LAYOUT_QUAD,
+    OH_AudioChannelLayout::CH_LAYOUT_2POINT0POINT2,
+    OH_AudioChannelLayout::CH_LAYOUT_4POINT1,
+    OH_AudioChannelLayout::CH_LAYOUT_5POINT0,
+    OH_AudioChannelLayout::CH_LAYOUT_5POINT0_BACK,
+    OH_AudioChannelLayout::CH_LAYOUT_2POINT1POINT2,
+    OH_AudioChannelLayout::CH_LAYOUT_3POINT0POINT2,
+    OH_AudioChannelLayout::CH_LAYOUT_5POINT1,
+    OH_AudioChannelLayout::CH_LAYOUT_5POINT1_BACK,
+    OH_AudioChannelLayout::CH_LAYOUT_6POINT0,
+    OH_AudioChannelLayout::CH_LAYOUT_3POINT1POINT2,
+    OH_AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+    OH_AudioChannelLayout::CH_LAYOUT_HEXAGONAL,
+    OH_AudioChannelLayout::CH_LAYOUT_6POINT1,
+    OH_AudioChannelLayout::CH_LAYOUT_6POINT1_BACK,
+    OH_AudioChannelLayout::CH_LAYOUT_6POINT1_FRONT,
+    OH_AudioChannelLayout::CH_LAYOUT_7POINT0,
+    OH_AudioChannelLayout::CH_LAYOUT_7POINT0_FRONT,
+    OH_AudioChannelLayout::CH_LAYOUT_7POINT1,
+    OH_AudioChannelLayout::CH_LAYOUT_OCTAGONAL,
+    OH_AudioChannelLayout::CH_LAYOUT_5POINT1POINT2,
+    OH_AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE,
+    OH_AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK,
+};
+ 
+static bool ValidateConverterFormat(const OH_AudioConverter_Format* format)
+{
+    CHECK_AND_RETURN_RET_LOG(format->encodingType == AUDIO_ENCODING_TYPE_RAW,
+        false,
+        "Validate: unsupported encoding type, encodingType=%{public}d", format->encodingType);
+ 
+    CHECK_AND_RETURN_RET_LOG(
+        std::find(AUDIO_SUITE_SUPPORTED_SAMPLING_RATES.begin(), AUDIO_SUITE_SUPPORTED_SAMPLING_RATES.end(),
+            format->samplingRate) != AUDIO_SUITE_SUPPORTED_SAMPLING_RATES.end(),
+        false,
+        "Validate: unsupported sample rate, samplingRate=%{public}d", format->samplingRate);
+ 
+    CHECK_AND_RETURN_RET_LOG(
+        std::find(AUDIO_SUITE_SUPPORTED_SAMPLE_FORMAT.begin(), AUDIO_SUITE_SUPPORTED_SAMPLE_FORMAT.end(),
+            format->sampleFormat) != AUDIO_SUITE_SUPPORTED_SAMPLE_FORMAT.end(),
+        false,
+        "Validate: unsupported sample format, sampleFormat=%{public}d", format->sampleFormat);
+ 
+    CHECK_AND_RETURN_RET_LOG(
+        std::find(AUDIO_SUITE_SUPPORTED_CHANNEL_LAYOUTS.begin(), AUDIO_SUITE_SUPPORTED_CHANNEL_LAYOUTS.end(),
+            format->channelLayout) != AUDIO_SUITE_SUPPORTED_CHANNEL_LAYOUTS.end(),
+        false,
+        "Validate: unsupported channel layout, channelLayout=%{public}llu",
+        static_cast<unsigned long long>(format->channelLayout));
+ 
+    return true;
+}
+ 
+static std::unordered_set<OHAudioConverter*> g_activeConverters;
 static std::mutex g_activeConvertersMutex;
+
+
+static std::shared_ptr<AudioFormatConverter> GetAudioSuiteConverter(OHAudioConverter* converter)
+{
+    std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
+    if (g_activeConverters.find(converter) == g_activeConverters.end()) {
+        return nullptr;
+    }
+    return converter->GetAudioFormatConverter();
+}
+ 
+static void AddConverter(OHAudioConverter* converter)
+{
+    std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
+    g_activeConverters.insert(converter);
+}
+ 
+static void RemoveConverter(OHAudioConverter* converter)
+{
+    CHECK_AND_RETURN_LOG(converter != nullptr, "RemoveConverter failed: converter is nullptr");
+    OHAudioConverter* toDelete = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
+        if (g_activeConverters.erase(converter) > 0) {
+            toDelete = converter;
+        }
+    }
+    delete toDelete;
+}
 
 // CAPI callback implementation class (adapter pattern)
 class ConverterDataCallbackImpl : public AudioSuite::FormatConverterDataCallback {
@@ -71,41 +173,6 @@ public:
 private:
     OH_AudioConverter_RequestDataCallback callback_;
     void *userData_;
-};
-
-static std::unordered_map<OH_AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHANNEL = {
-    {OH_AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
-    {OH_AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
-    {OH_AudioChannelLayout::CH_LAYOUT_STEREO_DOWNMIX, AudioChannel::STEREO},
-    {OH_AudioChannelLayout::CH_LAYOUT_2POINT1, AudioChannel::CHANNEL_3},
-    {OH_AudioChannelLayout::CH_LAYOUT_3POINT0, AudioChannel::CHANNEL_3},
-    {OH_AudioChannelLayout::CH_LAYOUT_SURROUND, AudioChannel::CHANNEL_3},
-    {OH_AudioChannelLayout::CH_LAYOUT_3POINT1, AudioChannel::CHANNEL_4},
-    {OH_AudioChannelLayout::CH_LAYOUT_4POINT0, AudioChannel::CHANNEL_4},
-    {OH_AudioChannelLayout::CH_LAYOUT_QUAD_SIDE, AudioChannel::CHANNEL_4},
-    {OH_AudioChannelLayout::CH_LAYOUT_QUAD, AudioChannel::CHANNEL_4},
-    {OH_AudioChannelLayout::CH_LAYOUT_2POINT0POINT2, AudioChannel::CHANNEL_4},
-    {OH_AudioChannelLayout::CH_LAYOUT_4POINT1, AudioChannel::CHANNEL_5},
-    {OH_AudioChannelLayout::CH_LAYOUT_5POINT0, AudioChannel::CHANNEL_5},
-    {OH_AudioChannelLayout::CH_LAYOUT_5POINT0_BACK, AudioChannel::CHANNEL_5},
-    {OH_AudioChannelLayout::CH_LAYOUT_2POINT1POINT2, AudioChannel::CHANNEL_5},
-    {OH_AudioChannelLayout::CH_LAYOUT_3POINT0POINT2, AudioChannel::CHANNEL_5},
-    {OH_AudioChannelLayout::CH_LAYOUT_5POINT1, AudioChannel::CHANNEL_6},
-    {OH_AudioChannelLayout::CH_LAYOUT_5POINT1_BACK, AudioChannel::CHANNEL_6},
-    {OH_AudioChannelLayout::CH_LAYOUT_6POINT0, AudioChannel::CHANNEL_6},
-    {OH_AudioChannelLayout::CH_LAYOUT_HEXAGONAL, AudioChannel::CHANNEL_6},
-    {OH_AudioChannelLayout::CH_LAYOUT_3POINT1POINT2, AudioChannel::CHANNEL_6},
-    {OH_AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT, AudioChannel::CHANNEL_6},
-    {OH_AudioChannelLayout::CH_LAYOUT_6POINT1, AudioChannel::CHANNEL_7},
-    {OH_AudioChannelLayout::CH_LAYOUT_6POINT1_BACK, AudioChannel::CHANNEL_7},
-    {OH_AudioChannelLayout::CH_LAYOUT_6POINT1_FRONT, AudioChannel::CHANNEL_7},
-    {OH_AudioChannelLayout::CH_LAYOUT_7POINT0, AudioChannel::CHANNEL_7},
-    {OH_AudioChannelLayout::CH_LAYOUT_7POINT0_FRONT, AudioChannel::CHANNEL_7},
-    {OH_AudioChannelLayout::CH_LAYOUT_7POINT1, AudioChannel::CHANNEL_8},
-    {OH_AudioChannelLayout::CH_LAYOUT_OCTAGONAL, AudioChannel::CHANNEL_8},
-    {OH_AudioChannelLayout::CH_LAYOUT_5POINT1POINT2, AudioChannel::CHANNEL_8},
-    {OH_AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE, AudioChannel::CHANNEL_8},
-    {OH_AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK, AudioChannel::CHANNEL_8},
 };
 
 // Unified InnerAPI error code to CAPI error code mapping function
@@ -135,40 +202,52 @@ static OH_AudioConverter_Result ConvertConverterError(int32_t err)
     }
 }
 
-static OHAudioConverter *ConvertAudioSuiteConverter(OH_AudioConverter *audioSuiteConverter)
-{
-    return reinterpret_cast<OHAudioConverter *>(audioSuiteConverter);
-}
-
 OH_AudioConverter_Result OH_AudioConverter_Create(
     const OH_AudioConverter_Format* inputFormat,
     const OH_AudioConverter_Format* outputFormat,
     OH_AudioConverter** converter)
 {
-    if (converter == nullptr) {
-        AUDIO_ERR_LOG("Converter creation failed: The passed address is nullptr.");
-        return AUDIOCONVERTER_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(converter != nullptr,
+        AUDIOCONVERTER_ERROR_INVALID_PARAM, "Converter creation failed: The passed address is nullptr.");
 
-    OHAudioConverter *suiteConverter = new OHAudioConverter();
+    CHECK_AND_RETURN_RET_LOG(inputFormat != nullptr && outputFormat != nullptr,
+        AUDIOCONVERTER_ERROR_INVALID_PARAM, "Create failed: format is nullptr");
+
+    CHECK_AND_RETURN_RET_LOG(ValidateConverterFormat(inputFormat),
+        AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT, "Create failed: input format validation failed");
+
+    CHECK_AND_RETURN_RET_LOG(ValidateConverterFormat(outputFormat),
+        AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT, "Create failed: output format validation failed");
+
+    AudioFormat inputFmt;
+    inputFmt.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(inputFormat->channelLayout);
+    inputFmt.audioChannelInfo.numChannels = 0;
+    inputFmt.format = static_cast<AudioSampleFormat>(inputFormat->sampleFormat);
+    inputFmt.rate = static_cast<AudioSamplingRate>(inputFormat->samplingRate);
+    inputFmt.encodingType = static_cast<AudioStreamEncodingType>(inputFormat->encodingType);
+
+    AudioFormat outputFmt;
+    outputFmt.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(outputFormat->channelLayout);
+    outputFmt.audioChannelInfo.numChannels = 0;
+    outputFmt.format = static_cast<AudioSampleFormat>(outputFormat->sampleFormat);
+    outputFmt.rate = static_cast<AudioSamplingRate>(outputFormat->samplingRate);
+    outputFmt.encodingType = static_cast<AudioStreamEncodingType>(outputFormat->encodingType);
+
+    AUDIO_INFO_LOG("Create: src=[%{public}u %{public}u], dst=[%{public}u %{public}u]",
+        inputFormat->samplingRate, static_cast<uint32_t>(inputFormat->channelLayout),
+        outputFormat->samplingRate, static_cast<uint32_t>(outputFormat->channelLayout));
+
+    auto impl = AudioSuite::AudioFormatConverter::Create(inputFmt, outputFmt);
+    CHECK_AND_RETURN_RET_LOG(impl != nullptr, AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT,
+        "Create failed: AudioFormatConverter::Create returned nullptr, format may be unsupported");
+
+    auto* suiteConverter = new (std::nothrow) OHAudioConverter(std::move(impl));
     CHECK_AND_RETURN_RET_LOG(suiteConverter != nullptr,
-        AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "Get suiteConverter suiteConverter is nullptr");
+        AUDIOCONVERTER_ERROR_MEMORY_ALLOC_FAILED, "Create failed: OHAudioConverter alloc failed");
 
-    OH_AudioConverter_Result ret = suiteConverter->Create(inputFormat, outputFormat);
-    if (ret != AUDIOCONVERTER_SUCCESS) {
-        AUDIO_ERR_LOG("Converter creation failed:Format validation failed.");
-        delete suiteConverter;
-        return ret;
-    }
-    *converter = (OH_AudioConverter*)suiteConverter;
+    *converter = reinterpret_cast<OH_AudioConverter*>(suiteConverter);
+    AddConverter(suiteConverter);
 
-    {
-        std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
-        g_activeConverters.insert(*converter);
-    }
-
-    g_globalCreateCount++;
-    AUDIO_DEBUG_LOG("OH_AudioConverter_Create:global create count=%{public}d", g_globalCreateCount.load());
     return AUDIOCONVERTER_SUCCESS;
 }
 
@@ -180,21 +259,18 @@ OH_AudioConverter_Result OH_AudioConverter_SetInputCallback(
     CHECK_AND_RETURN_RET_LOG(converter != nullptr,
         AUDIOCONVERTER_ERROR_INVALID_PARAM,
         "Failed to set callback function: The passed address is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
+        AUDIOCONVERTER_ERROR_CALLBACK_NOT_SET,
+        "Failed to set callback function: The callback is nullptr.");
 
-    {
-        std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
-        if (g_activeConverters.find(converter) == g_activeConverters.end()) {
-            AUDIO_ERR_LOG("Failed to set callback: Converter not active or already destroyed");
-            return AUDIOCONVERTER_ERROR_NOT_INITIALIZED;
-        }
-    }
+    auto suiteConverter = reinterpret_cast<OHAudioConverter*>(converter);
+    auto impl = GetAudioSuiteConverter(suiteConverter);
+    CHECK_AND_RETURN_RET_LOG(impl != nullptr,
+        AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "Failed to set callback: Converter not active or already destroyed");
 
-    OHAudioConverter *suiteConverter = ConvertAudioSuiteConverter(converter);
-
-    CHECK_AND_RETURN_RET_LOG(suiteConverter != nullptr,
-        AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "SetInputCallback suiteConverter is nullptr");
-
-    return suiteConverter->SetRequestDataCallback(callback, userData);
+    auto callbackImpl = std::make_shared<ConverterDataCallbackImpl>(callback, userData);
+    int32_t ret = impl->SetInputCallback(callbackImpl);
+    return ConvertConverterError(ret);
 }
 
 OH_AudioConverter_Result OH_AudioConverter_Process(
@@ -206,162 +282,37 @@ OH_AudioConverter_Result OH_AudioConverter_Process(
     CHECK_AND_RETURN_RET_LOG(converter != nullptr,
         AUDIOCONVERTER_ERROR_INVALID_PARAM,
         "Data processing failed: Converter is a null pointer");
+    CHECK_AND_RETURN_RET_LOG(audioData != nullptr && outputSize != nullptr,
+        AUDIOCONVERTER_ERROR_INVALID_PARAM, "Process failed: null parameter");
 
-    {
-        std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
-        if (g_activeConverters.find(converter) == g_activeConverters.end()) {
-            AUDIO_ERR_LOG("Process failed: Converter not active or already destroyed");
-            return AUDIOCONVERTER_ERROR_NOT_INITIALIZED;
-        }
-    }
+    auto suiteConverter = reinterpret_cast<OHAudioConverter*>(converter);
+    auto impl = GetAudioSuiteConverter(suiteConverter);
+    CHECK_AND_RETURN_RET_LOG(impl != nullptr,
+        AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "Process failed: Converter not active or already destroyed");
 
-    OHAudioConverter *suiteConverter = ConvertAudioSuiteConverter(converter);
-
-    CHECK_AND_RETURN_RET_LOG(suiteConverter != nullptr,
-        AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "Process suiteConverter is nullptr");
-
-    OH_AudioConverter_Result ret = suiteConverter->Process(
-        audioData, static_cast<uint32_t>(outputCapacity), reinterpret_cast<uint32_t *>(outputSize));
-    return ret;
+    int32_t ret = impl->Process(audioData, static_cast<uint32_t>(outputCapacity),
+        reinterpret_cast<uint32_t *>(outputSize));
+    return ConvertConverterError(ret);
 }
 
 void OH_AudioConverter_Destroy(OH_AudioConverter* converter)
 {
-    if (converter == nullptr) {
-        AUDIO_ERR_LOG("Data Destroy failed: Converter is a null pointer");
-        return;
-    }
-    {
-        std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
-        if (g_activeConverters.find(converter) == g_activeConverters.end()) {
-            AUDIO_ERR_LOG("Data Destroy: Converter not active or already destroyed");
-            return;
-        }
-    }
-    OHAudioConverter *suiteConverter = ConvertAudioSuiteConverter(converter);
-    if (suiteConverter == nullptr) {
-        AUDIO_ERR_LOG("Data Destroy failed: OHAudioConverter Converter is a null pointer");
-        return;
-    }
-    suiteConverter->Destroy();
-    delete suiteConverter;
-    {
-        std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
-        g_activeConverters.erase(converter);
-    }
-    g_globalDestroyCount++;
-    if (g_globalDestroyCount.load() != g_globalCreateCount.load()) {
-        AUDIO_ERR_LOG("OH_AudioConverter_Destroy:global destroy count=%{public}d, global create count=%{public}d",
-            g_globalDestroyCount.load(),
-            g_globalCreateCount.load());
-    }
-    return;
+    CHECK_AND_RETURN_LOG(converter != nullptr, "Data Destroy failed: Converter is a null pointer");
+
+    auto suiteConverter = reinterpret_cast<OHAudioConverter*>(converter);
+    auto impl = GetAudioSuiteConverter(suiteConverter);
+    CHECK_AND_RETURN_LOG(impl != nullptr,
+        "Data Destroy: Converter not active or already destroyed");
+    impl->Destroy();
+    RemoveConverter(suiteConverter);
 }
 
 namespace OHOS {
 namespace AudioStandard {
-using namespace OHOS::AudioStandard::AudioSuite;
-using namespace OHOS::AudioStandard;
 
-OHAudioConverter::~OHAudioConverter()
+std::shared_ptr<AudioSuite::AudioFormatConverter> OHAudioConverter::GetAudioFormatConverter() const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (impl_ != nullptr) {
-        impl_->Destroy();
-    }
-}
-
-OH_AudioConverter_Result OHAudioConverter::ConvertToPcmFormat(
-    const OH_AudioConverter_Format *inputFormat, const OH_AudioConverter_Format *outputFormat)
-{
-    inputFormat_ = PcmBufferFormat(static_cast<AudioSamplingRate>(inputFormat->samplingRate),
-        MAP_LAYOUT_TO_CHANNEL[inputFormat->channelLayout],
-        static_cast<AudioChannelLayout>(inputFormat->channelLayout),
-        static_cast<AudioSampleFormat>(inputFormat->sampleFormat));
-
-    outputFormat_ = PcmBufferFormat(static_cast<AudioSamplingRate>(outputFormat->samplingRate),
-        MAP_LAYOUT_TO_CHANNEL[outputFormat->channelLayout],
-        static_cast<AudioChannelLayout>(outputFormat->channelLayout),
-        static_cast<AudioSampleFormat>(outputFormat->sampleFormat));
-
-    return AUDIOCONVERTER_SUCCESS;
-}
-
-OH_AudioConverter_Result OHAudioConverter::Create(
-    const OH_AudioConverter_Format* inputFormat,
-    const OH_AudioConverter_Format* outputFormat)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_RET_LOG(inputFormat != nullptr && outputFormat != nullptr,
-        AUDIOCONVERTER_ERROR_INVALID_PARAM,
-        "Create failed: format is nullptr");
-
-    CHECK_AND_RETURN_RET_LOG(inputFormat->encodingType == 0 && outputFormat->encodingType == 0,
-        AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT,
-        "Create failed: unsupported audio encoding");
-
-    ConvertToPcmFormat(inputFormat, outputFormat);
-
-    AUDIO_INFO_LOG("Create: src=[%{public}u %{public}u], dst=[%{public}u %{public}u]",
-        inputFormat->samplingRate,
-        MAP_LAYOUT_TO_CHANNEL[inputFormat->channelLayout],
-        outputFormat->samplingRate,
-        MAP_LAYOUT_TO_CHANNEL[outputFormat->channelLayout]);
-
-    impl_ = AudioFormatConverter::Create(inputFormat_, outputFormat_);
-    CHECK_AND_RETURN_RET_LOG(
-        impl_ != nullptr, AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT, "Create failed: memory alloc failed");
-    
-    isInitialized_ = true;
-    return AUDIOCONVERTER_SUCCESS;
-}
-
-void OHAudioConverter::Destroy()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (!isInitialized_) {
-        AUDIO_ERR_LOG("Destroy: converter is not initialized or already destroyed");
-        return;
-    }
-    if (impl_ != nullptr) {
-        impl_->Destroy();
-    }
-    isInitialized_ = false;
-    AUDIO_DEBUG_LOG("Destroy: success");
-    return;
-}
-
-OH_AudioConverter_Result OHAudioConverter::SetRequestDataCallback(
-    OH_AudioConverter_RequestDataCallback callback,
-    void* userData)
-{
-    if (callback == nullptr) {
-        return AUDIOCONVERTER_ERROR_CALLBACK_NOT_SET;
-    }
-
-    std::lock_guard<std::mutex> lock(mutex_);
-    int32_t ret = 0;
-    CHECK_AND_RETURN_RET_LOG(
-        impl_ != nullptr, AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "The audio format converter pointer is empty.");
-    auto callbackImpl = std::make_shared<ConverterDataCallbackImpl>(callback, userData);
-    ret = impl_->SetInputCallback(callbackImpl);
-    return ConvertConverterError(ret);
-}
-
-OH_AudioConverter_Result OHAudioConverter::Process(
-    void* audioData, uint32_t outputCapacity, uint32_t* outputSize)
-{
-    if (audioData == nullptr || outputSize == nullptr) {
-        AUDIO_ERR_LOG("Process failed: null parameter");
-        return AUDIOCONVERTER_ERROR_INVALID_PARAM;
-    }
-
-    std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_RET_LOG(
-        impl_ != nullptr, AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "Process failed: impl_ is nullptr");
-
-    int32_t ret = impl_->Process(audioData, outputCapacity, outputSize);
-    return ConvertConverterError(ret);
+    return impl_;
 }
 }
 }
