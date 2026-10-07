@@ -18,13 +18,13 @@
 #endif
 
 #include "OHAudioSuiteFormatConverter.h"
-#include "audio_errors.h"
-#include "audio_suite_log.h"
 #include <algorithm>
 #include <memory>
 #include <mutex>
 #include <unordered_set>
 #include <vector>
+#include "audio_errors.h"
+#include "audio_suite_log.h"
 #include "audio_format_converter.h"
 
 using namespace OHOS::AudioStandard;
