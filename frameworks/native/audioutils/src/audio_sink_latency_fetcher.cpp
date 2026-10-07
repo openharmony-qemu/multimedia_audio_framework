@@ -27,9 +27,10 @@ SinkLatencyFetcherManager &SinkLatencyFetcherManager::GetInstance()
     return instance;
 }
 
-SinkLatencyFetcherManager::SinkLatencyFetcher::SinkLatencyFetcher(uint32_t renderId, FetchLatencyFunc provider)
+SinkLatencyFetcherManager::SinkLatencyFetcher::SinkLatencyFetcher(
+    uint32_t renderId, FetchLatencyFunc provider, std::shared_ptr<LatencyCache> cache)
     : renderId_(renderId), provider_(std::move(provider)),
-      cacheEntry_(std::make_shared<SinkLatencyCacheEntry>())
+      cacheEntry_(std::move(cache))
 {
 }
 
@@ -57,15 +58,18 @@ int32_t SinkLatencyFetcherManager::SinkLatencyFetcher::operator()(uint32_t &late
 }
 
 std::function<int32_t (uint32_t &)> SinkLatencyFetcherManager::CreateFetcher(
-    uint32_t renderId, const FetchLatencyFunc &provider)
+    uint32_t renderId, const FetchLatencyFunc &provider, std::shared_ptr<LatencyCache> &cacheOut)
 {
-    return SinkLatencyFetcher(renderId, provider);
+    cacheOut = std::make_shared<LatencyCache>();
+    return SinkLatencyFetcher(renderId, provider, cacheOut);
 }
 
 void SinkLatencyFetcherManager::RegisterProvider(uint32_t renderId, const FetchLatencyFunc &provider)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    fetcherMap_[renderId] = CreateFetcher(renderId, provider);
+    std::shared_ptr<LatencyCache> cache;
+    auto fetcher = CreateFetcher(renderId, provider, cache);
+    fetcherMap_[renderId] = FetcherEntry{std::move(fetcher), std::move(cache)};
 }
 
 std::function<int32_t (uint32_t &)> SinkLatencyFetcherManager::EnsureFetcher(uint32_t renderId)
@@ -73,13 +77,27 @@ std::function<int32_t (uint32_t &)> SinkLatencyFetcherManager::EnsureFetcher(uin
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = fetcherMap_.find(renderId);
     CHECK_AND_RETURN_RET_LOG(it != fetcherMap_.end(), nullptr, "fetcher not found for renderId %{public}u", renderId);
-    return it->second;
+    return it->second.fetcher;
 }
 
 void SinkLatencyFetcherManager::RemoveFetcherById(uint32_t renderId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     fetcherMap_.erase(renderId);
+}
+
+bool SinkLatencyFetcherManager::TryGetCachedLatency(uint32_t renderId, uint32_t &latency) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = fetcherMap_.find(renderId);
+    if (it == fetcherMap_.end()) {
+        return false;
+    }
+    if (!it->second.cache->cached.load()) {
+        return false;
+    }
+    latency = it->second.cache->value.load();
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -3646,8 +3646,13 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
         }
     }
 
-    (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?
-        RegisterSinkLatencyFetcher(renderId, PRIMARY_SINK_LATENCY_MS) : RegisterSinkLatencyFetcher(renderId);
+    if (attr.hasXmlConfiguredLatency) {
+        RegisterSinkLatencyFetcher(renderId, attr);
+    } else {
+        (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?
+            RegisterSinkLatencyFetcher(renderId, PRIMARY_SINK_LATENCY_MS) :
+            RegisterSinkLatencyFetcher(renderId);
+    }
     return SUCCESS;
 }
 
@@ -3691,7 +3696,11 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
     if (!sink->IsInited()) {
         sink->Init(attr);
     }
-    RegisterSinkLatencyFetcher(renderId);
+    if (attr.hasXmlConfiguredLatency) {
+        RegisterSinkLatencyFetcher(renderId, attr);
+    } else {
+        RegisterSinkLatencyFetcher(renderId);
+    }
     return SUCCESS;
 }
 
@@ -3801,6 +3810,25 @@ void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLat
         return SUCCESS;
     });
     return;
+}
+
+void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, const IAudioSinkAttr &attr)
+{
+    if (attr.hasXmlConfiguredLatency) {
+        uint32_t totalLatency = attr.effectLatency + attr.halLatency + attr.warmupLatency;
+        AUDIO_INFO_LOG("Register XML configured sink latency: effect=%{public}u, hal=%{public}u, "
+            "warmup=%{public}u, total=%{public}u, renderId=%{public}u",
+            attr.effectLatency, attr.halLatency, attr.warmupLatency, totalLatency, renderId);
+        RegisterSinkLatencyFetcher(renderId, totalLatency);
+        auto fetcher = SinkLatencyFetcherManager::GetInstance().EnsureFetcher(renderId);
+        CHECK_AND_RETURN_LOG(fetcher, "sinkLatencyFetcher is null, renderId %{public}u", renderId);
+        uint32_t dummyLatency = 0;
+        int32_t ret = fetcher(dummyLatency);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS,
+            "Preload XML sink latency failed, renderId %{public}u, ret %{public}d", renderId, ret);
+        return;
+    }
+    RegisterSinkLatencyFetcher(renderId);
 }
 
 void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId)

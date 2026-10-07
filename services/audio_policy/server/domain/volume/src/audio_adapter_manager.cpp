@@ -2431,6 +2431,11 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
         attr.isUltraFast = true;
     }
 
+    attr.effectLatency = audioModuleInfo.effectLatency;
+    attr.halLatency = audioModuleInfo.halLatency;
+    attr.warmupLatency = audioModuleInfo.warmupLatency;
+    attr.hasXmlConfiguredLatency = audioModuleInfo.hasXmlConfiguredLatency;
+
     return attr;
 }
 

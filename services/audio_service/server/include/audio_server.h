@@ -445,6 +445,7 @@ private:
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
     void RegisterSinkLatencyFetcher(uint32_t renderId);
     void RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency);
+    void RegisterSinkLatencyFetcher(uint32_t renderId, const IAudioSinkAttr &attr);
 
     void ResetRecordConfig(AudioProcessConfig &config,
         const AudioPlaybackCaptureConfig &filterConfig);

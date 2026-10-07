@@ -126,6 +126,8 @@ private:
     void NotifyFirstStreamData();
     void NotifyFirstFrameConsumedOnce();
     int32_t FetchSinkLatency(uint32_t &sinkLatency);
+    bool TryGetCachedSinkLatency(const std::string &deviceClass, const std::string &deviceNetId,
+        uint32_t &sinkLatency);
     void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
     uint64_t GetOffloadLatency();

@@ -357,6 +357,11 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(uint32_t &sinkLatency)
             return SUCCESS;
         }
     }
+    uint32_t cachedLatency = 0;
+    if (TryGetCachedSinkLatency(deviceClass, deviceNetId, cachedLatency)) {
+        sinkLatency = cachedLatency;
+        return SUCCESS;
+    }
     HdiIdInfoParam idParam = {.deviceClass = deviceClass, .name = deviceName, .networkId = deviceNetId,
         .macAddress = macAddress, .busAddress = busAddress};
     return GetSinkLatencyInner(idParam, sinkLatency);
@@ -1228,6 +1233,17 @@ int32_t HpaeRendererStreamImpl::FetchSinkLatency(uint32_t &sinkLatency)
     }
     CHECK_AND_RETURN_RET_LOG(fetcher, ERR_OPERATION_FAILED, "sinkLatencyFetcher is null");
     return fetcher(sinkLatency);
+}
+
+bool HpaeRendererStreamImpl::TryGetCachedSinkLatency(const std::string &deviceClass,
+    const std::string &deviceNetId, uint32_t &sinkLatency)
+{
+    uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
+        deviceClass, deviceNetId, false);
+    if (renderId == HDI_INVALID_ID) {
+        return false;
+    }
+    return SinkLatencyFetcherManager::GetInstance().TryGetCachedLatency(renderId, sinkLatency);
 }
 
 uint64_t HpaeRendererStreamImpl::GetOffloadLatency()
