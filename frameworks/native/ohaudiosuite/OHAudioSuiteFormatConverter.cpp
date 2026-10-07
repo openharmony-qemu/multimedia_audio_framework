@@ -112,7 +112,7 @@ static bool ValidateConverterFormat(const OH_AudioConverter_Format* format)
         std::find(AUDIO_SUITE_SUPPORTED_CHANNEL_LAYOUTS.begin(), AUDIO_SUITE_SUPPORTED_CHANNEL_LAYOUTS.end(),
             format->channelLayout) != AUDIO_SUITE_SUPPORTED_CHANNEL_LAYOUTS.end(),
         false,
-        "Validate: unsupported channel layout, channelLayout=%{public}llu",
+        "Validate: unsupported channel layout, channelLayout=%{public}d",
         static_cast<unsigned long long>(format->channelLayout));
  
     return true;
@@ -140,14 +140,10 @@ static void AddConverter(OHAudioConverter* converter)
 static void RemoveConverter(OHAudioConverter* converter)
 {
     CHECK_AND_RETURN_LOG(converter != nullptr, "RemoveConverter failed: converter is nullptr");
-    OHAudioConverter* toDelete = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
-        if (g_activeConverters.erase(converter) > 0) {
-            toDelete = converter;
-        }
+    std::lock_guard<std::mutex> lock(g_activeConvertersMutex);
+    if (g_activeConverters.erase(converter) > 0) {
+        delete converter;
     }
-    delete toDelete;
 }
 
 // CAPI callback implementation class (adapter pattern)
