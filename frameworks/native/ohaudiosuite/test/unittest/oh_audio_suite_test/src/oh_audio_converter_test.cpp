@@ -1963,6 +1963,10 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Destroy_002, TestSize.Level0)
     OH_AudioConverter_Destroy(converter);
  
     // Branch 2: erase == 0 → false → no delete (already removed, no double-delete)
+    // Note: converter is a dangling pointer after the first Destroy (delete'd internally).
+    // This is technically UB-border but safe in practice: GetAudioSuiteConverter and
+    // unordered_set::find/erase only compare pointer values, never dereference it.
+    // The purpose is to verify the erase==0 branch does not double-delete.
     OH_AudioConverter_Destroy(converter);
  
     // Verify a new converter can still be created and destroyed normally
