@@ -112,7 +112,7 @@ static bool ValidateConverterFormat(const OH_AudioConverter_Format* format)
         std::find(AUDIO_SUITE_SUPPORTED_CHANNEL_LAYOUTS.begin(), AUDIO_SUITE_SUPPORTED_CHANNEL_LAYOUTS.end(),
             format->channelLayout) != AUDIO_SUITE_SUPPORTED_CHANNEL_LAYOUTS.end(),
         false,
-        "Validate: unsupported channel layout, channelLayout=%{public}d",
+        "Validate: unsupported channel layout, channelLayout=%{public}llu",
         static_cast<unsigned long long>(format->channelLayout));
  
     return true;
