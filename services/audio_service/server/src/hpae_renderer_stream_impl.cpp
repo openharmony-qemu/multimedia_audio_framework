@@ -366,8 +366,8 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(uint32_t &sinkLatency)
         int32_t ret = GetSinkLatencyInner(idParam, sinkLatency);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSinkLatencyInner HDI failed");
     }
-    if (!IsSinkRunning(deviceClass, deviceNetId)) {
-        uint32_t warmup = GetSinkWarmupLatency(deviceClass, deviceNetId);
+    uint32_t warmup = GetSinkWarmupLatency(deviceClass, deviceNetId);
+    if (warmup > 0 && !IsSinkRunning(deviceClass, deviceNetId)) {
         sinkLatency += warmup;
         AUDIO_INFO_LOG("Cold start: add warmup %{public}u ms, base %{public}u ms, total %{public}u ms",
             warmup, sinkLatency - warmup, sinkLatency);
@@ -555,8 +555,8 @@ int32_t HpaeRendererStreamImpl::GetLatencyWithFlag(uint64_t &latency, LatencyFla
         uint32_t sinkLatency = 0;
         int32_t ret = FetchSinkLatency(sinkLatency);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchSinkLatency failed");
-        if (!IsSinkRunning(deviceClass, deviceNetId)) {
-            uint32_t warmup = GetSinkWarmupLatency(deviceClass, deviceNetId);
+        uint32_t warmup = GetSinkWarmupLatency(deviceClass, deviceNetId);
+        if (warmup > 0 && !IsSinkRunning(deviceClass, deviceNetId)) {
             sinkLatency += warmup;
             AUDIO_INFO_LOG("Cold start: add warmup %{public}u ms, base %{public}u ms, total %{public}u ms",
                 warmup, sinkLatency - warmup, sinkLatency);

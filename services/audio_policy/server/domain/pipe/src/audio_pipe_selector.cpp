@@ -1840,6 +1840,13 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     // so we need to set networkId after UpdateModuleInfoWithDevice;
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
+    info.moduleInfo_.halLatency = pipeInfoPtr->halLatency_;
+    info.moduleInfo_.hasXmlConfiguredLatency = pipeInfoPtr->hasXmlConfiguredLatency_;
+    PolicyGlobalConfigs globalConfigs;
+    pipeManager_->GetGlobalConfigs(globalConfigs);
+    info.moduleInfo_.effectLatency = globalConfigs.primaryEffectLatency;
+    info.moduleInfo_.warmupLatency = globalConfigs.primaryWarmupLatency;
+
     info.streamDescriptors_.push_back(streamDesc);
     info.streamDescMap_[streamDesc->sessionId_] = streamDesc;
     info.routeFlag_ = streamDesc->routeFlag_;

@@ -242,6 +242,8 @@ public:
     std::string GetHdiSourceIdInfo(const AudioModuleInfo &audioModuleInfo) const;
 
     IAudioSinkAttr GetAudioSinkAttr(const AudioModuleInfo &audioModuleInfo) const;
+    void FillSinkLatencyAttr(IAudioSinkAttr &attr, const AudioModuleInfo &audioModuleInfo) const;
+    void FillUltraFastPeriod(IAudioSinkAttr &attr, const AudioModuleInfo &audioModuleInfo) const;
 
     IAudioSourceAttr GetAudioSourceAttr(const AudioModuleInfo &audioModuleInfo) const;
 

@@ -2421,7 +2421,24 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
         attr.pin = AUDIO_PIN_OUT_DP;
     }
 
-    // Calculate period for ultra_fast to achieve 2.5ms low latency
+    FillUltraFastPeriod(attr, audioModuleInfo);
+    FillSinkLatencyAttr(attr, audioModuleInfo);
+
+    return attr;
+}
+
+void AudioAdapterManager::FillSinkLatencyAttr(IAudioSinkAttr &attr,
+    const AudioModuleInfo &audioModuleInfo) const
+{
+    attr.effectLatency = audioModuleInfo.effectLatency;
+    attr.halLatency = audioModuleInfo.halLatency;
+    attr.warmupLatency = audioModuleInfo.warmupLatency;
+    attr.hasXmlConfiguredLatency = audioModuleInfo.hasXmlConfiguredLatency;
+}
+
+void AudioAdapterManager::FillUltraFastPeriod(IAudioSinkAttr &attr,
+    const AudioModuleInfo &audioModuleInfo) const
+{
     if (audioModuleInfo.className == "ultra_fast" || audioModuleInfo.className == "usb_arm_ultra_fast") {
         uint32_t formatByteSize = GetFormatByteSize(attr.format);
         attr.period = static_cast<uint32_t>(
@@ -2430,13 +2447,6 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
         AUDIO_INFO_LOG("GetAudioSinkAttr: ultra_fast period=%{public}u (2.5ms latency)", attr.period);
         attr.isUltraFast = true;
     }
-
-    attr.effectLatency = audioModuleInfo.effectLatency;
-    attr.halLatency = audioModuleInfo.halLatency;
-    attr.warmupLatency = audioModuleInfo.warmupLatency;
-    attr.hasXmlConfiguredLatency = audioModuleInfo.hasXmlConfiguredLatency;
-
-    return attr;
 }
 
 void AudioAdapterManager::GetHdiSourceTypeToAudioSourceAttr(IAudioSourceAttr &attr, int32_t sourceType) const

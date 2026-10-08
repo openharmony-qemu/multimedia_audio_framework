@@ -336,14 +336,7 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
     } else if (attributeInfo.name_ == "need_uid_check") {
         pipeInfo->needUidCheck_ = (attributeInfo.value_ == "true");
     } else if (attributeInfo.name_ == "hal_latency") {
-        uint32_t latency = 0;
-        auto [ptr, ec] = std::from_chars(attributeInfo.value_.data(),
-            attributeInfo.value_.data() + attributeInfo.value_.size(), latency);
-        if (ec == std::errc{} && ptr == attributeInfo.value_.data() + attributeInfo.value_.size()) {
-            pipeInfo->halLatency_ = latency;
-            pipeInfo->hasXmlConfiguredLatency_ = true;
-            AUDIO_INFO_LOG("hal_latency parsed: %{public}u", latency);
-        }
+        ParseHalLatency(attributeInfo, pipeInfo);
     } else if (attributeInfo.name_ == "support_ultra_fast") {
         AUDIO_INFO_LOG("Support ultra fast and arm usb ultra fast");
         supportUltraFast_ = (attributeInfo.value_ == "true");
@@ -386,6 +379,23 @@ void AudioPolicyConfigParser::ParseFlagAttribute(AttributeInfo &attributeInfo,
     if (pipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_VOIP) {
         AUDIO_INFO_LOG("Use fast voip");
         configManager_.OnVoipConfigParsed(true);
+    }
+}
+
+bool AudioPolicyConfigParser::ParseUint32Attr(const std::string &str, uint32_t &value)
+{
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
+    return ec == std::errc{} && ptr == str.data() + str.size();
+}
+
+void AudioPolicyConfigParser::ParseHalLatency(AttributeInfo &attributeInfo,
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo)
+{
+    uint32_t latency = 0;
+    if (ParseUint32Attr(attributeInfo.value_, latency)) {
+        pipeInfo->halLatency_ = latency;
+        pipeInfo->hasXmlConfiguredLatency_ = true;
+        AUDIO_INFO_LOG("hal_latency parsed: %{public}u", latency);
     }
 }
 
@@ -611,17 +621,13 @@ void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> c
                 configManager_.OnIsSupportIndependentPipe(configInfo.value_ == "true");
             } else if (configInfo.name_ == "primary_effect_latency") {
                 uint32_t latency = 0;
-                auto [ptr, ec] = std::from_chars(configInfo.value_.data(),
-                    configInfo.value_.data() + configInfo.value_.size(), latency);
-                if (ec == std::errc{} && ptr == configInfo.value_.data() + configInfo.value_.size()) {
+                if (ParseUint32Attr(configInfo.value_, latency)) {
                     globalConfigs_.primaryEffectLatency = latency;
                     AUDIO_INFO_LOG("primary_effect_latency parsed: %{public}u", latency);
                 }
             } else if (configInfo.name_ == "primary_warmup_latency") {
                 uint32_t latency = 0;
-                auto [ptr, ec] = std::from_chars(configInfo.value_.data(),
-                    configInfo.value_.data() + configInfo.value_.size(), latency);
-                if (ec == std::errc{} && ptr == configInfo.value_.data() + configInfo.value_.size()) {
+                if (ParseUint32Attr(configInfo.value_, latency)) {
                     globalConfigs_.primaryWarmupLatency = latency;
                     AUDIO_INFO_LOG("primary_warmup_latency parsed: %{public}u", latency);
                 }
