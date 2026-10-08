@@ -63,7 +63,8 @@ int32_t AudioSession::SetAudioSessionScene(AudioSessionScene scene)
 {
     if (scene != AudioSessionScene::MEDIA &&
         scene != AudioSessionScene::GAME &&
-        scene != AudioSessionScene::VOICE_COMMUNICATION) {
+        scene != AudioSessionScene::VOICE_COMMUNICATION &&
+        scene != AudioSessionScene::VOICE_MESSAGE) {
         AUDIO_ERR_LOG("AudioSessionScene = %{public}d out of range.", static_cast<int32_t>(scene));
         return ERR_INVALID_PARAM;
     }
@@ -104,7 +105,8 @@ AudioStreamType AudioSession::GetFakeStreamType()
     static const std::unordered_map<AudioSessionScene, AudioStreamType> mapping = {
         {AudioSessionScene::MEDIA, AudioStreamType::STREAM_MUSIC},
         {AudioSessionScene::GAME, AudioStreamType::STREAM_GAME},
-        {AudioSessionScene::VOICE_COMMUNICATION, AudioStreamType::STREAM_VOICE_COMMUNICATION}
+        {AudioSessionScene::VOICE_COMMUNICATION, AudioStreamType::STREAM_VOICE_COMMUNICATION},
+        {AudioSessionScene::VOICE_MESSAGE, AudioStreamType::STREAM_VOICE_MESSAGE}
     };
 
     auto it = mapping.find(audioSessionScene_);
@@ -368,6 +370,7 @@ StreamUsage AudioSession::GetStreamUsageInner()
         {AudioSessionScene::MEDIA, StreamUsage::STREAM_USAGE_MUSIC},
         {AudioSessionScene::GAME, StreamUsage::STREAM_USAGE_GAME},
         {AudioSessionScene::VOICE_COMMUNICATION, StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION},
+        {AudioSessionScene::VOICE_MESSAGE, StreamUsage::STREAM_USAGE_VOICE_MESSAGE},
     };
 
     auto it = mapping.find(audioSessionScene_);
@@ -414,10 +417,11 @@ int32_t AudioSession::SetSessionDefaultOutputDevice(const DeviceType &deviceType
         AUDIO_INFO_LOG("The deviceType is illegal, the default device will not be changed.");
         return ERROR_INVALID_PARAM;
     }
-    CHECK_AND_RETURN_RET(defaultDeviceType_ != deviceType, SUCCESS);
+    CHECK_AND_RETURN_RET(!(defaultDeviceType_ == deviceType && deviceType == DEVICE_TYPE_DEFAULT), SUCCESS);
     if (defaultDeviceType_ != DEVICE_TYPE_INVALID && deviceType == DEVICE_TYPE_DEFAULT) {
         defaultDeviceType_ = deviceType;
         UpdateVoipStreamsDefaultOutputDevice();
+        needToFetch_ = true;
         return SUCCESS;
     } else {
         defaultDeviceType_ = deviceType;

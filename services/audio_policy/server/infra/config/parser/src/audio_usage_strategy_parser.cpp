@@ -45,11 +45,13 @@ bool AudioUsageStrategyParser::LoadConfiguration()
 
 void AudioUsageStrategyParser::Destroy()
 {
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "Destroy: curNode is nullptr");
     curNode_->FreeDoc();
 }
 
 bool AudioUsageStrategyParser::ParseInternal(std::shared_ptr<AudioXmlNode> curNode)
 {
+    CHECK_AND_RETURN_RET_LOG(curNode != nullptr, true, "ParseInternal: curNode is nullptr");
     for (; curNode->IsNodeValid(); curNode->MoveToNext()) {
         if (curNode->CompareName("adapter")) {
             std::string pValueStr;
@@ -68,6 +70,7 @@ bool AudioUsageStrategyParser::ParseInternal(std::shared_ptr<AudioXmlNode> curNo
 
 void AudioUsageStrategyParser::ParserStreamUsageList(std::shared_ptr<AudioXmlNode> curNode)
 {
+    CHECK_AND_RETURN_LOG(curNode != nullptr, "ParserStreamUsageList: curNode is nullptr");
     while (curNode->IsNodeValid()) {
         if (curNode->CompareName("strategy")) {
             std::string strategyName;
@@ -84,6 +87,7 @@ void AudioUsageStrategyParser::ParserStreamUsageList(std::shared_ptr<AudioXmlNod
 
 void AudioUsageStrategyParser::ParserSourceTypeList(std::shared_ptr<AudioXmlNode> curNode)
 {
+    CHECK_AND_RETURN_LOG(curNode != nullptr, "ParserSourceTypeList: curNode is nullptr");
     while (curNode->IsNodeValid()) {
         if (curNode->CompareName("strategy")) {
             std::string strategyName;

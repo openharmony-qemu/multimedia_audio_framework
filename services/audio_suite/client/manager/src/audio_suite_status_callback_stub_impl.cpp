@@ -53,10 +53,15 @@ void AudioSuiteStatusCallbackStubImpl::ClearCallback()
 ErrCode AudioSuiteStatusCallbackStubImpl::OnDownloadStatusChanged(
     const std::vector<AudioSuiteDownloadStatusInfo>& status)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (downloadStatusCallback_ != nullptr) {
+    std::shared_ptr<DownloadStatusCallback> callback;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        callback = downloadStatusCallback_;
+    }
+
+    if (callback != nullptr) {
         AUDIO_WARNING_LOG("OnDownloadStatusChanged, feature size:%{public}zu", status.size());
-        downloadStatusCallback_->OnDownloadStatusChanged(status);
+        callback->OnDownloadStatusChanged(status);
         return SUCCESS;
     } else {
         AUDIO_WARNING_LOG("OnDownloadStatusChanged: callback is nullptr");

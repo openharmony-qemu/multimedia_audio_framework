@@ -84,6 +84,7 @@ constexpr int32_t PARAMS_VOLUME_NUM = 5;
 constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 80;
+constexpr size_t MAX_UNMUTE_WHITELIST_SIZE = 100;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
 constexpr pid_t FIRST_SCREEN_ON_PID = 1000;
@@ -150,6 +151,7 @@ constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
 const char RINGTONE_PARAMETER_SCANNER_FIRST_KEY[] = "ringtone.scanner.first";
 const char RINGTONE_PARAMETER_SCANNER_FIRST_TRUE[] = "true";
 const int32_t RINGTONEPARA_SIZE = 64;
+static const int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024; // 10MB
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -468,6 +470,21 @@ void AudioPolicyServer::RegisterDefaultVolumeTypeListener()
         return;
     }
     interruptService_->RegisterDefaultVolumeTypeListener();
+}
+
+void AudioPolicyServer::RegisterAccessibilityDuckFactorListener()
+{
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("RegisterAccessibilityDuckFactorListener interruptService_ is nullptr!");
+        return;
+    }
+    interruptService_->RegisterAccessibilityDuckFactorListener();
+}
+
+void AudioPolicyServer::RegisterPCModeListener()
+{
+    CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
+    interruptService_->RegisterPCModeListener();
 }
 
 // Handles audioserver-related SA events, including startup trigger and post-start callbacks.
@@ -1107,6 +1124,8 @@ void AudioPolicyServer::HandleDataShareReadyEvent()
         isInitSettingsData_ = true;
     }
     RegisterDefaultVolumeTypeListener();
+    RegisterAccessibilityDuckFactorListener();
+    RegisterPCModeListener();
     SubscribeAccessibilityConfigObserver();
 }
 
@@ -1312,9 +1331,9 @@ void AudioPolicyServer::RegisterVoipMuteDeathRecipient(int32_t callerUid, const 
         AUDIO_DEBUG_LOG("voip mute death recipient already registered for callerUid:%{public}d", callerUid);
         return;
     }
-    sptr<IRemoteObject::DeathRecipient> dr = new(std::nothrow) VoipMuteDeathRecipient(
+    sptr<IRemoteObject::DeathRecipient> dr = new(std::nothrow) PolicyClientDeathRecipient(
         [this, callerUid]() { this->OnVoipMuteCallerDied(callerUid); });
-    CHECK_AND_RETURN_LOG(dr != nullptr, "create VoipMuteDeathRecipient failed");
+    CHECK_AND_RETURN_LOG(dr != nullptr, "create PolicyClientDeathRecipient failed for voip Mute");
     if (!callerObj->AddDeathRecipient(dr)) {
         AUDIO_WARNING_LOG("AddDeathRecipient failed for callerUid:%{public}d", callerUid);
         return;
@@ -1362,6 +1381,30 @@ int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUid(int32_t appUid, in
     return audioVolumeManager_.SetSystemAppVolumePercentageWithCallback(appUid, volumePercentage);
 }
 
+int32_t AudioPolicyServer::SetVolumeProtectionInfo(const VolumeProtectionConfig &config)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.SetVolumeProtectionInfo(config);
+}
+
+int32_t AudioPolicyServer::ClearVolumeProtection()
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.ClearVolumeProtection();
+}
+
+int32_t AudioPolicyServer::ConfirmVolumeLimitExceeded(int32_t volumeType, bool confirmResult)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.ConfirmVolumeLimitExceeded(static_cast<AudioVolumeType>(volumeType), confirmResult);
+}
+
 int32_t AudioPolicyServer::SetAppRingMuted(int32_t appUid, bool muted)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
@@ -1372,8 +1415,92 @@ int32_t AudioPolicyServer::SetAppRingMuted(int32_t appUid, bool muted)
     return SUCCESS;
 }
 
+
+int32_t AudioPolicyServer::SetUnmuteWhitelist(const std::vector<int32_t> &uids,
+    const sptr<IRemoteObject> &callerObj)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission for SetUnmuteWhitelist");
+    CHECK_AND_RETURN_RET_LOG(callerObj != nullptr, ERR_INVALID_PARAM,
+        "callerObj is null for SetUnmuteWhitelist");
+    CHECK_AND_RETURN_RET_LOG(uids.size() > 0 && uids.size() <= MAX_UNMUTE_WHITELIST_SIZE, ERR_INVALID_PARAM,
+        "uids size %{public}zu invalid for SetUnmuteWhitelist", uids.size());
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    int32_t ret = RegisterUnmuteWhitelistDeathRecipient(callerUid, callerObj);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.SetUnmuteWhitelist(uids);
+}
+
+int32_t AudioPolicyServer::ClearUnmuteWhitelist()
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    int32_t ret = RemoveUnmuteWhitelistDeathRecipient(callerUid);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return audioVolumeManager_.ClearUnmuteWhitelist();
+}
+
+int32_t AudioPolicyServer::RegisterUnmuteWhitelistDeathRecipient(int32_t callerUid,
+    const sptr<IRemoteObject> &callerObj)
+{
+    std::lock_guard<std::mutex> lock(unmuteWhitelistMutex_);
+    if (!unmuteWhitelistDeathRecipients_.empty()) {
+        if (unmuteWhitelistDeathRecipients_.find(callerUid) == unmuteWhitelistDeathRecipients_.end()) {
+            AUDIO_ERR_LOG("unmutelist already held by %{public}d, not available for %{public}d",
+                unmuteWhitelistDeathRecipients_.begin()->first, callerUid);
+            return ERR_ILLEGAL_STATE;
+        }
+        AUDIO_DEBUG_LOG("unmutelist death recipient already registered for uid:%{public}d",
+            callerUid);
+        return SUCCESS;
+    }
+    sptr<IRemoteObject::DeathRecipient> dr = new(std::nothrow) PolicyClientDeathRecipient(
+        [this, callerUid]() { this->OnUnmuteWhitelistCallerDied(callerUid); });
+    CHECK_AND_RETURN_RET_LOG(dr != nullptr, ERR_NO_MEMORY,
+        "create PolicyClientDeathRecipient failed for unmute whitelist");
+    if (!callerObj->AddDeathRecipient(dr)) {
+        AUDIO_WARNING_LOG("AddDeathRecipient failed for uid:%{public}d", callerUid);
+        return ERR_OPERATION_FAILED;
+    }
+    unmuteWhitelistDeathRecipients_[callerUid] = dr;
+    AUDIO_INFO_LOG("register unmute list death recipient for uid:%{public}d", callerUid);
+    return SUCCESS;
+}
+
+void AudioPolicyServer::OnUnmuteWhitelistCallerDied(int32_t callerUid)
+{
+    AUDIO_INFO_LOG("unmute list caller died, callerUid:%{public}d", callerUid);
+    sptr<IRemoteObject::DeathRecipient> dr;
+    {
+        std::lock_guard<std::mutex> lock(unmuteWhitelistMutex_);
+        auto it = unmuteWhitelistDeathRecipients_.find(callerUid);
+        if (it != unmuteWhitelistDeathRecipients_.end()) {
+            dr = std::move(it->second);
+            unmuteWhitelistDeathRecipients_.erase(it);
+        }
+    }
+    audioVolumeManager_.ClearUnmuteWhitelist();
+}
+
+int32_t AudioPolicyServer::RemoveUnmuteWhitelistDeathRecipient(int32_t callerUid)
+{
+    std::lock_guard<std::mutex> lock(unmuteWhitelistMutex_);
+    if (!unmuteWhitelistDeathRecipients_.empty() &&
+        unmuteWhitelistDeathRecipients_.find(callerUid) == unmuteWhitelistDeathRecipients_.end()) {
+        AUDIO_ERR_LOG("clear unmute list abort for callerUid:%{public}d, heldUid:%{public}d",
+            callerUid, unmuteWhitelistDeathRecipients_.begin()->first);
+        return ERR_ILLEGAL_STATE;
+    }
+    AUDIO_INFO_LOG("remove unmute list death recipient for uid:%{public}d", callerUid);
+    unmuteWhitelistDeathRecipients_.erase(callerUid);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetSystemVolumeLevel(int32_t streamTypeIn, int32_t volumeLevel, int32_t volumeFlag,
-    int32_t uid)
+    int32_t uid, int32_t zoneId)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
     if (!PermissionUtil::VerifySystemPermission()) {
@@ -1390,16 +1517,14 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(int32_t streamTypeIn, int32_t vo
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     bool flag = volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI;
-    int32_t zoneId = 0;
-#ifndef FEATURE_AUDIO_ZONE_VOLUME
-    if (uid != 0) {
-        zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid, OUTPUT_DEVICE);
-        VolumeUpdateOption info = { flag };
-        return audioVolumeManager_.SetSystemVolumeLevelWithOption(streamType, volumeLevel, zoneId, info);
-    }
-#endif
-    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
     VolumeUpdateOption info = { flag };
+    if (zoneId == INVALID_ZONEID) {
+        if (uid != 0) {
+            zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid, OUTPUT_DEVICE);
+            return audioVolumeManager_.SetSystemVolumeLevelWithOption(streamType, volumeLevel, zoneId, info);
+        }
+        zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
+    }
     return audioVolumeManager_.SetSystemVolumeLevelWithOption(streamType, volumeLevel, zoneId, info);
 }
 
@@ -1465,21 +1590,19 @@ int32_t AudioPolicyServer::GetSelfAppVolumeLevel(int32_t &volumeLevel)
     return audioPolicyManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
-int32_t AudioPolicyServer::GetSystemVolumeLevel(int32_t streamType, int32_t uid, int32_t &volumeLevel)
+int32_t AudioPolicyServer::GetSystemVolumeLevel(int32_t streamType, int32_t uid, int32_t &volumeLevel,
+    int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
-#ifdef FEATURE_AUDIO_ZONE_VOLUME
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(
-        uid != 0 ? uid : IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
-#else
-    int32_t zoneId = 0;
-    if (uid != 0) {
-        zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid, OUTPUT_DEVICE);
-    } else {
+    if (zoneId == INVALID_ZONEID) {
+        if (uid != 0) {
+            zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid, OUTPUT_DEVICE);
+            volumeLevel = audioVolumeManager_.GetSystemVolumeLevelInterface(newStreamType, zoneId);
+            return SUCCESS;
+        }
         zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
     }
-#endif
     volumeLevel = audioVolumeManager_.GetSystemVolumeLevelInterface(newStreamType, zoneId);
     return SUCCESS;
 }
@@ -1708,6 +1831,11 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
 {
     AUDIO_INFO_LOG("SetStreamMuteInternal streamType: %{public}d, mute: %{public}d, updateUi: %{public}d",
         streamType, mute, isUpdateUi);
+    if (VolumeUtils::IsNotificationFollowRingtone() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_NOTIFICATION) {
+        AUDIO_INFO_LOG("notificationFollowRingtone_ is true. Use ringtone instead of notification");
+        streamType = STREAM_RING;
+    }
 
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_NOTIFICATION &&
         audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL && !mute) {
@@ -1723,6 +1851,16 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
                 return setResult;
             }
         }
+        return SUCCESS;
+    }
+
+    if (VolumeUtils::IsNotificationFollowRingtone() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
+        // The notificationFollowRingtone is true. Keep the mute of notification and ringtone the same.
+        int32_t setResult1 = SetSingleStreamMute(STREAM_RING, mute, isUpdateUi, deviceType, zoneId);
+        CHECK_AND_RETURN_RET_LOG(setResult1 == SUCCESS, setResult1, "Failed for ringtone: %{public}d", setResult1);
+        int32_t setResult2 = SetSingleStreamMute(STREAM_NOTIFICATION, mute, isUpdateUi, deviceType, zoneId);
+        AUDIO_INFO_LOG("SetStreamMute: mute=%{public}d, notification result =%{public}d", mute, setResult2);
         return SUCCESS;
     }
 
@@ -3124,6 +3262,29 @@ int32_t AudioPolicyServer::ActivatePreemptMode()
     return ERR_UNKNOWN;
 }
 
+int32_t AudioPolicyServer::SetDuckPassthroughMode(bool enable)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "SetDuckPassthroughMode permission denied");
+    if (interruptService_ != nullptr) {
+        return interruptService_->SetDuckPassthroughMode(enable);
+    }
+    return ERR_UNKNOWN;
+}
+
+int32_t AudioPolicyServer::SetDuckFactor(int32_t duckFactor)
+{
+    const int32_t MAX_FACTOR = 100; // percentage
+    CHECK_AND_RETURN_RET_LOG(duckFactor >= 0 && duckFactor <= MAX_FACTOR, ERR_INVALID_PARAM,
+        "SetDuckFactor invalid param: %{public}d", duckFactor);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "SetDuckFactor permission denied");
+    if (interruptService_ != nullptr) {
+        return interruptService_->SetDuckFactor(duckFactor);
+    }
+    return ERR_UNKNOWN;
+}
+
 void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t sessionID)
 {
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
@@ -4180,6 +4341,13 @@ int32_t AudioPolicyServer::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
     return audioVolumeManager_.SetSleVoiceStatusFlag(isSleVoiceStatus);
 }
 
+int32_t AudioPolicyServer::DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "DisableVolumeLimitWhenVoiceCall permission denied");
+    return audioVolumeManager_.DisableVolumeLimitWhenVoiceCall(disableVolumeLimit);
+}
+
 int32_t AudioPolicyServer::GetSelectedInputDevice(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
@@ -4649,6 +4817,8 @@ int32_t AudioPolicyServer::DownloadPersonalizedHRTF(int32_t fd, int64_t length)
     if (!hasSystemPermission) {
         return ERR_PERMISSION_DENIED;
     }
+    CHECK_AND_RETURN_RET_LOG(fd >= 0, ERR_INVALID_PARAM, "invalid fd");
+    CHECK_AND_RETURN_RET_LOG(length > 0 && length <= MAX_HRTF_LENGTH, ERR_INVALID_PARAM, "invalid length");
     return audioSpatializationService_.DownloadPersonalizedHRTF(fd, length);
 }
 
@@ -4982,6 +5152,20 @@ int32_t AudioPolicyServer::ResumeAudioFocusForExtAudioZone(const std::vector<int
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "No system permission");
     return AudioZoneService::GetInstance().ResumeAudioFocusForExtAudioZone(zoneIds);
+}
+
+int32_t AudioPolicyServer::ExcludeUidForExtZone(int32_t uid)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    return AudioZoneService::GetInstance().ExcludeUidForExtZone(uid);
+}
+
+int32_t AudioPolicyServer::UnexcludeUidForExtZone(int32_t uid)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    return AudioZoneService::GetInstance().UnexcludeUidForExtZone(uid);
 }
 
 int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)
@@ -5336,6 +5520,8 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id, const int &oldId)
     audioPolicyService_.NotifyAccountsChanged(id);
     SendVolumeKeyEventToRssWhenAccountsChanged();
     RegisterDefaultVolumeTypeListener();
+    RegisterAccessibilityDuckFactorListener();
+    RegisterPCModeListener();
 }
 
 void AudioPolicyServer::NotifySubProfileChanged()
@@ -5352,6 +5538,12 @@ void AudioPolicyServer::CheckHibernateState(bool hibernate)
 void AudioPolicyServer::UpdateSafeVolumeByS4()
 {
     audioVolumeManager_.UpdateSafeVolumeByS4();
+}
+
+void AudioPolicyServer::UpdateAudioPowerState(AudioPowerState state)
+{
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->SetAudioPowerState(state);
 }
 
 void AudioPolicyServer::CheckConnectedDevice()
@@ -5955,11 +6147,6 @@ void AudioPolicyServer::NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool 
     eventEntry_->TriggerVoipPriorityReload(streamId, lowered);
 }
 
-int32_t AudioPolicyServer::SetSourceOutputStreamMute(int32_t uid, bool mute)
-{
-    return audioPolicyService_.SetSourceOutputStreamMute(uid, mute);
-}
-
 int32_t AudioPolicyServer::IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret)
 {
     ret = AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(static_cast<SourceType>(sourceType));
@@ -6273,7 +6460,7 @@ int32_t AudioPolicyServer::RestoreDistributedDeviceInfo()
 }
 
 int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t volumeDegree, int32_t volumeFlag,
-    int32_t uid)
+    int32_t uid, int32_t zoneId)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
     CHECK_AND_RETURN_RET_LOG(VerifyPermission(MANAGE_AUDIO_CONFIG), ERR_PERMISSION_DENIED,
@@ -6290,10 +6477,11 @@ int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t v
     if (!AudioVolumeUtils::GetInstance().IsVolumeTypeValid(streamType)) {
         return ERR_NOT_SUPPORTED;
     }
-
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid, OUTPUT_DEVICE);
+    if (zoneId == INVALID_ZONEID) {
+        int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();
+        zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid, OUTPUT_DEVICE);
+    }
     bool flag = volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI;
     int32_t volumeLevelMax = -1;
     GetMaxVolumeLevel(streamTypeIn, volumeLevelMax);
@@ -6303,13 +6491,15 @@ int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t v
     return ret;
 }
 
-int32_t AudioPolicyServer::GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree)
+int32_t AudioPolicyServer::GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree,
+    int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
-    int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid, OUTPUT_DEVICE);
-
+    if (zoneId == INVALID_ZONEID) {
+        int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();
+        zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid, OUTPUT_DEVICE);
+    }
     volumeDegree = audioVolumeManager_.GetSystemVolumeDegreeInterface(newStreamType, zoneId);
     return SUCCESS;
 }

@@ -1008,14 +1008,14 @@ int32_t AudioSocketThread::ReadAndScanDpState(const std::string &path, uint32_t 
 
 int32_t AudioSocketThread::ReadAndScanDpName(const std::string &path, std::string &name)
 {
-    char deviceName[AUDIO_PNP_INFO_LEN_MAX];
+    char deviceName[AUDIO_PNP_INFO_LEN_MAX] = {0};
 
     FILE *fp = fopen(path.c_str(), "r");
     if (fp == nullptr) {
         AUDIO_ERR_LOG("audio open dp name node fail, %{public}d", errno);
         return HDF_ERR_INVALID_PARAM;
     }
-    size_t ret = fread(&deviceName, STATE_PATH_ITEM_SIZE, AUDIO_PNP_INFO_LEN_MAX, fp);
+    size_t ret = fread(&deviceName, STATE_PATH_ITEM_SIZE, AUDIO_PNP_INFO_LEN_MAX - 1, fp);
     if (ret == 0) {
         fclose(fp);
         AUDIO_ERR_LOG("audio read dp name node fail, %{public}d", errno);

@@ -35,7 +35,7 @@
 namespace OHOS {
 namespace AudioStandard {
 static constexpr int32_t AUDIO_VIVID_3DA_STOP_TIMEOUT_IN_SEC = 8; // 8S
-static const std::string AV_SINK_NAME = "3DA";
+static const std::string AV_SINK_NAME = HDI_ID_INFO_3DA;
 static const char *PRIMARY_ADAPTER_TYPE = "primary";
 constexpr int32_t DELTA_TIME = 4000000; // 4ms
 constexpr int32_t PERIOD_NS_48K_1024 = 21333333; // 21.333ms
@@ -50,8 +50,9 @@ CabinPlayBackEngine::CabinPlayBackEngine()
       writeCount_(0),
       fwkSyncTime_(0),
       uChannel_(0),
-      uformat_(sizeof(int32_t)),
+      uformat_(INVALID_WIDTH),
       uSampleRate_(0),
+      uLayout_(CH_LAYOUT_UNKNOWN),
       latency_(0),
       firstSetVolume_(true),
       stream_(nullptr)
@@ -232,7 +233,7 @@ void CabinPlayBackEngine::AdjustVolume()
     uint32_t streamIndx = stream_->GetStreamIndex();
     AudioProcessConfig config = stream_->GetAudioProcessConfig();
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0u};
-    const std::string deviceClass = "audio_vivid_3da_direct";
+    const std::string deviceClass = HDI_BUS_KEYWORD_3DA;
     uint32_t renderId = IdHandler::GetInstance().GetRenderIdByDeviceClass(deviceClass, AV_SINK_NAME);
     float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, config.streamType, renderId, &volumes);
     float volumeBg = volumes.volumeHistory;
@@ -261,6 +262,14 @@ int32_t CabinPlayBackEngine::AddRenderer(const std::shared_ptr<IRendererStream> 
 {
     AUDIO_INFO_LOG("Enter add 3da direct");
     CHECK_AND_RETURN_RET_LOG(stream != nullptr, ERR_INVALID_PARAM, "stream is null");
+    if (stream_ && stream->GetStreamIndex() != stream_->GetStreamIndex()) {
+        // Single-slot engine: the new stream takes over the slot when the previous stream
+        // has not been released yet (e.g. cross-process switch ordering), instead of
+        // rejecting it with ERROR_UNSUPPORTED and blocking all later 3DA streams.
+        AUDIO_INFO_LOG("slot taken over, old stream:%{public}u", stream_->GetStreamIndex());
+        Stop();
+        stream_ = nullptr;
+    }
     if (!stream_) {
         AudioProcessConfig config = stream->GetAudioProcessConfig();
         int32_t result = InitSink(config.streamInfo);
@@ -270,10 +279,8 @@ int32_t CabinPlayBackEngine::AddRenderer(const std::shared_ptr<IRendererStream> 
             RegisterSinkLatencyFetcherToStreamIfNeeded();
         }
         return result;
-    } else if (stream->GetStreamIndex() != stream_->GetStreamIndex()) {
-        return ERROR_UNSUPPORTED;
     }
-    return SUCCESS;
+    return SUCCESS; // re-add of the current stream
 }
 
 void CabinPlayBackEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &stream)
@@ -292,14 +299,7 @@ void CabinPlayBackEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> 
 
 int32_t CabinPlayBackEngine::GetFormatByteSize(AudioSampleFormat format)
 {
-    switch (format) {
-        case AudioSampleFormat::SAMPLE_S16LE:
-            return sizeof(int16_t);
-        case AudioSampleFormat::SAMPLE_S24LE:
-            return 3u;
-        default:
-            return sizeof(int32_t);
-    }
+    return AudioStandard::GetFormatByteSize(static_cast<int32_t>(format));
 }
 
 int32_t CabinPlayBackEngine::InitSink(const AudioStreamInfo &clientStreamInfo)
@@ -310,13 +310,18 @@ int32_t CabinPlayBackEngine::InitSink(const AudioStreamInfo &clientStreamInfo)
     AudioChannelLayout channelLayout = clientStreamInfo.channelLayout;
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (isInit_ && sink) {
-        if (uChannel_ != channel || uformat_ != format || uSampleRate_ != samplingRate) {
-            if (sink && sink->IsInited()) {
-                sink->Stop();
-                sink->DeInit();
-            }
-        } else {
+        // Reuse only when all cached params (incl. layout) match AND the sink is still healthy:
+        // a failed re-init leaves a render-less sink, and a layout change needs a new HAL render.
+        bool paramsSame = uChannel_ == channel && uformat_ == format && uSampleRate_ == samplingRate
+            && uLayout_ == channelLayout;
+        if (paramsSame && sink->IsInited()) {
             return SUCCESS;
+        }
+        AUDIO_INFO_LOG("re-init 3da direct sink, paramsSame:%{public}d sinkInited:%{public}d",
+            static_cast<int32_t>(paramsSame), static_cast<int32_t>(sink->IsInited()));
+        if (sink->IsInited()) {
+            sink->Stop();
+            sink->DeInit();
         }
     }
     HdiAdapterManager::GetInstance().ReleaseId(renderId_);
@@ -342,9 +347,10 @@ int32_t CabinPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat format
     attr.format = format;
     attr.channelLayout = layout;
     attr.deviceType = device_.deviceType_;
+    attr.address = device_.deviceName_; // routed bus port name, passed down to HDI port selection
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;
-    attr.encodingType = ENCODING_AUDIOVIVID_3DA_DIRECT;
+    attr.encodingType = ENCODING_AUDIOVIVID;
     AUDIO_INFO_LOG("sinkName:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d,channel:%{public}d,"
         "encodingType: %{public}d",
         sinkName.c_str(), attr.deviceType, attr.sampleRate, attr.format, attr.channel, attr.encodingType);
@@ -359,13 +365,22 @@ int32_t CabinPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat format
     ret = sink->SetVolume(volume, volume);
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;
-    uformat_ = GetFormatByteSize(attr.format);
+    uformat_ = attr.format;
+    uLayout_ = static_cast<AudioChannelLayout>(attr.channelLayout);
 
     dumpFileName_ = "3da_playback_engine_.pcm";
     AUDIO_DEBUG_LOG("dump file name: %{public}s", dumpFileName_.c_str());
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dump3DA_);
 
     return ret;
+}
+
+// Without this override the base class always returns false, so TriggerStartIfNecessary
+// would call Start() on every client write: the pacing clock (fwkSyncTime_/writeCount_)
+// gets reset each time and an in-flight write could cancel a just-issued Pause.
+bool CabinPlayBackEngine::IsPlaybackEngineRunning() const noexcept
+{
+    return isStart_;
 }
 
 uint64_t CabinPlayBackEngine::GetLatency() noexcept

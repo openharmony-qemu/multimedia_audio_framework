@@ -40,7 +40,7 @@ class AppStateObserver : public AppExecFwk::ApplicationStateObserverStub {
 public:
     AppStateObserver() {}
     ~AppStateObserver() override = default;
-    void OnProcessDied(const AppExecFwk::ProcessData &processData) override;
+    void OnAppStopped(const AppExecFwk::AppStateData &appStateData) override;
 };
 
 }

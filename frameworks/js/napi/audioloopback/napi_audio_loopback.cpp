@@ -368,29 +368,14 @@ napi_value NapiAudioLoopback::SetVolume(napi_env env, napi_callback_info info)
 
 napi_value NapiAudioLoopback::GetVolume(napi_env env, napi_callback_info info)
 {
-    auto context = std::make_shared<AudioLoopbackAsyncContext>();
-    if (context == nullptr) {
-        AUDIO_ERR_LOG("GetVolume failed : no memory");
-        NapiAudioError::ThrowError(env, "GetVolume failed : no memory", NAPI_ERR_NO_MEMORY);
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
+    size_t argc = PARAM0;
+    NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
 
-    context->GetCbInfo(env, info);
-
-    auto executor = [context]() {
-        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioLoopback*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioLoopback = objectGuard.GetPtr();
-        CHECK_AND_RETURN_LOG(CheckAudioLoopbackStatus(napiAudioLoopback, context),
-            "context object state is error.");
-        context->volLevel = napiAudioLoopback->loopback_->GetVolume();
-    };
-
-    auto complete = [env, context](napi_value &output) {
-        NapiParamUtils::SetValueDouble(env, context->volLevel, output);
-    };
-    return NapiAsyncWork::Enqueue(env, context, "GetVolume", executor, complete);
+    double volume = static_cast<double>(napiLoopback->loopback_->GetVolume());
+    napi_value result = nullptr;
+    napi_status status = NapiParamUtils::SetValueDouble(env, volume, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "SetValueDouble failed");
+    return result;
 }
  
 napi_value NapiAudioLoopback::GetSupportedDevicePairs(napi_env env, napi_callback_info info)

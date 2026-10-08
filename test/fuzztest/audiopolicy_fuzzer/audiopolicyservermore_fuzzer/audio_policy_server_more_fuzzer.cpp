@@ -1149,14 +1149,13 @@ void FuzzCallbackStreamUsageInfo()
     server->IsCapturerFocusAvailable(capturerInfo, ret);
 }
 
-// Lines 5937-5947: NotifyVoipPriorityLoweredByMute, SetSourceOutputStreamMute
+// Lines 5937-5947: NotifyVoipPriorityLoweredByMute, SetSourceOutputStreamMuteByStreamId
 void FuzzVoipPriorityAndMute()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->NotifyVoipPriorityLoweredByMute(GetData<uint32_t>(), GetData<int32_t>() % MAXVALUE == 1);
     server->SetSourceOutputStreamMuteByStreamId(GetData<int32_t>(), GetData<int32_t>() % MAXVALUE == 1);
-    server->SetSourceOutputStreamMute(GetData<int32_t>(), GetData<int32_t>() % MAXVALUE == 1);
     bool aecRet = false;
     server->IsAcousticEchoCancelerSupported(GetData<int32_t>(), aecRet);
     bool karaokeRet = false;

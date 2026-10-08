@@ -38,6 +38,7 @@ constexpr int32_t AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT = 7;
 constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64;
 constexpr int32_t AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT = 20;
 constexpr const char* SYSTEM_LOAD_SUBKEY = "systemLoad_state";
+constexpr const char* THERMAL_LEVEL_SUBKEY = "thermal_level_state";
 
 enum HdiSetParamCommandCode {
     HDI_INIT = 0,
@@ -597,6 +598,7 @@ enum AudioEffectChainSetParamIndex {
     FRONTEND_APP_TYPE = 18,
     STEREO_ENHANCEMENT_INDEX = 19,
     PERSONALIZED_SPATIALIZATION_ENABLED = 20,
+    LOW_POWER_INDEX = 21,
     MAX_PARAM_INDEX,
     MAX_PARAM_CAPACITY = 99,
 };

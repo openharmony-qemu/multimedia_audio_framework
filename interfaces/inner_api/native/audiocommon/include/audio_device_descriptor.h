@@ -38,9 +38,20 @@ inline bool IsBtDevice(DeviceType deviceType)
         || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN;
 }
 
+inline bool IsBtInputDevice(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN
+        || deviceType == DEVICE_TYPE_BT_SPP;
+}
+
 inline bool IsNearlinkDevice(DeviceType deviceType)
 {
     return deviceType == DEVICE_TYPE_NEARLINK || deviceType == DEVICE_TYPE_NEARLINK_IN;
+}
+
+inline bool IsNearlinkInputDevice(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_NEARLINK_IN || deviceType == DEVICE_TYPE_NEARLINK_PORT;
 }
 
 class AudioDeviceDescriptor;
@@ -113,6 +124,8 @@ public:
     bool Marshalling(Parcel &parcel) const override;
 
     void UnmarshallingSelf(Parcel &parcel);
+
+    void UnmarshallingSelfExt(Parcel &parcel);
 
     static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
 
@@ -262,6 +275,7 @@ public:
     uint32_t deviceTokenId_ = 0;
     bool isSupportWearDetectionEnable_ = false;
     bool isSupportMultiZone_ = false;
+    bool isSupportReload_ = true;
     VisibleMode visibleMode_ = GLOBAL_VISIBLE;
 
     // Raw sink/HDI baseline latency. The value is in milliseconds and is usable

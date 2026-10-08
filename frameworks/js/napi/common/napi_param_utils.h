@@ -110,6 +110,9 @@ public:
 #ifndef CROSS_PLATFORM
     static napi_status SetValueAudioSuiteDownloadStatusInfo(const napi_env &env,
         const AudioSuite::AudioSuiteDownloadStatusInfo &info, napi_value &result);
+    static napi_status SetValueAudioSuiteFeatureVersionInfo(const napi_env &env,
+        const AudioSuite::AudioSuiteCloudRomVersionInfo &info, napi_value &result);
+    static napi_status GetInt32ArrayArgument(napi_env env, napi_value value, std::vector<int32_t> &result);
 #endif
     static napi_status GetArrayBuffer(const napi_env &env, void* &data, size_t &length, napi_value in);
     static napi_status CreateArrayBuffer(const napi_env &env, const std::string &fieldStr, size_t bufferLen,

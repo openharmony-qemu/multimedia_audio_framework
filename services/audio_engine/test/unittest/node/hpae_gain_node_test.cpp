@@ -24,6 +24,7 @@
 #include "audio_errors.h"
 #include "audio_volume.h"
 #include "audio_info.h"
+#include "util/id_handler.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -267,6 +268,39 @@ HWTEST_F(HpaeGainNodeTest, ResetVolume_CacheStreamAndPipeVolume_Normal, TestSize
     EXPECT_NE(hpaeGainNode->pipeVolume_, nullptr);
 
     CleanupStreamAndPipeVolume(UT_SESSION_ID);
+}
+
+HWTEST_F(HpaeGainNodeTest, ResetVolume_MacAddressPriorityForIdInfo, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = UT_SESSION_ID + 20;
+    const std::string mac = "11:22:33:44:55:66";
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = "primary_extra";
+    nodeInfo.deviceNetId = "LocalDevice";
+    nodeInfo.macAddress = mac;
+    nodeInfo.sessionId = sessionId;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    // primary_extra keys pipe volume by id info; mac must win over deviceNetId
+    uint32_t renderId = IdHandler::GetInstance().GetRenderIdByDeviceClass("primary_extra", mac);
+    auto *audioVolume = AudioVolume::GetInstance();
+    SetupStreamVolumeOnly(sessionId, UT_HALF_GAIN);
+    PipeVolume pipeVolume(renderId, STREAM_MUSIC, UT_HALF_GAIN, UT_VOLUME_LEVEL, false);
+    audioVolume->SetPipeVolume(pipeVolume);
+
+    hpaeGainNode->ResetVolume();
+
+    EXPECT_NE(hpaeGainNode->streamVolume_, nullptr);
+    EXPECT_NE(hpaeGainNode->pipeVolume_, nullptr);
+
+    audioVolume->RemoveStreamVolume(sessionId);
+    audioVolume->RemovePipeVolume(renderId);
 }
 
 HWTEST_F(HpaeGainNodeTest, DoGain_NormalUsesCachedVolume, TestSize.Level0)
@@ -878,5 +912,95 @@ HWTEST_F(HpaeGainNodeTest, ResetFadeState_PreventsSilenceOnReusedNode, TestSize.
     std::vector<HpaePcmBuffer *> inputs2 = {&inputBuf2};
     hpaeGainNode->SignalProcess(inputs2);
     EXPECT_NE(inputBuf2.GetPcmDataBuffer()[DEFAULT_FRAME_LEN * STEREO - 1], 0.0f); // not silenced
+}
+
+// --- Tests for ClearFadeState / HasPendingFade (conditional fade arming on reconnect) ---
+
+HWTEST_F(HpaeGainNodeTest, ClearFadeState_DoesNotArmFadeIn, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    // Leftover counters from a finished fade must not resurrect a fade-in either.
+    hpaeGainNode->fadeProcessedBytes_ = 100;
+    hpaeGainNode->totalFadeBytes_ = 7680;
+
+    hpaeGainNode->ClearFadeState();
+
+    // Fade-in is NOT armed: a hot re-plumb of a cleanly playing session keeps gain continuity.
+    EXPECT_EQ(hpaeGainNode->fadeInState_, false);
+    EXPECT_EQ(hpaeGainNode->fadeOutState_, FadeOutState::NO_FADEOUT);
+    EXPECT_EQ(hpaeGainNode->fadeProcessedBytes_, 0);
+    EXPECT_EQ(hpaeGainNode->totalFadeBytes_, 0);
+    EXPECT_EQ(hpaeGainNode->collFadeInState_, false);
+    EXPECT_EQ(hpaeGainNode->collFadeOutState_, FadeOutState::NO_FADEOUT);
+}
+
+HWTEST_F(HpaeGainNodeTest, ClearFadeState_ClearsStaleDoneFadeoutWithoutArming, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    // Stale DONE_FADEOUT silences every frame via SignalProcess (the reused-node mute bug).
+    hpaeGainNode->fadeOutState_ = FadeOutState::DONE_FADEOUT;
+    EXPECT_EQ(hpaeGainNode->HasPendingFade(), true);
+
+    // ClearFadeState still owns the anti-mute safety net: the gate must be cleared...
+    hpaeGainNode->ClearFadeState();
+    EXPECT_EQ(hpaeGainNode->fadeOutState_, FadeOutState::NO_FADEOUT);
+    // ...but unlike ResetFadeState it must not arm a fade-in for this state.
+    EXPECT_EQ(hpaeGainNode->fadeInState_, false);
+    EXPECT_EQ(hpaeGainNode->HasPendingFade(), false);
+}
+
+HWTEST_F(HpaeGainNodeTest, HasPendingFade_CoversAllFadeLifecycleStates, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    // A cleanly playing session: no fade axis pending -> reconnect must keep continuity.
+    EXPECT_EQ(hpaeGainNode->HasPendingFade(), false);
+
+    hpaeGainNode->fadeInState_ = true;
+    EXPECT_EQ(hpaeGainNode->HasPendingFade(), true);
+    hpaeGainNode->fadeInState_ = false;
+
+    hpaeGainNode->fadeOutState_ = FadeOutState::DO_FADEOUT;
+    EXPECT_EQ(hpaeGainNode->HasPendingFade(), true);
+    hpaeGainNode->fadeOutState_ = FadeOutState::DONE_FADEOUT;
+    EXPECT_EQ(hpaeGainNode->HasPendingFade(), true);
+    hpaeGainNode->fadeOutState_ = FadeOutState::NO_FADEOUT;
+
+    hpaeGainNode->collFadeInState_ = true;
+    EXPECT_EQ(hpaeGainNode->HasPendingFade(), true);
+    hpaeGainNode->collFadeInState_ = false;
+
+    hpaeGainNode->collFadeOutState_ = FadeOutState::DO_FADEOUT;
+    EXPECT_EQ(hpaeGainNode->HasPendingFade(), true);
+    hpaeGainNode->collFadeOutState_ = FadeOutState::DONE_FADEOUT;
+    EXPECT_EQ(hpaeGainNode->HasPendingFade(), true);
+    hpaeGainNode->collFadeOutState_ = FadeOutState::NO_FADEOUT;
+    EXPECT_EQ(hpaeGainNode->HasPendingFade(), false);
 }
 }  // namespace

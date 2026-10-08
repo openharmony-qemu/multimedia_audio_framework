@@ -137,13 +137,6 @@ void SetAndGetPreferredToneRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
     AudioStateManager::GetAudioStateManager().GetPreferredToneRenderDevice();
 }
 
-void SetAndGetPreferredRecognitionCaptureDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    shared_ptr<AudioDeviceDescriptor> desc = MakeDeviceDescriptor(fdp, INPUT_DEVICE);
-    AudioStateManager::GetAudioStateManager().SetPreferredRecognitionCaptureDevice(desc);
-    AudioStateManager::GetAudioStateManager().GetPreferredRecognitionCaptureDevice();
-}
-
 void SetAudioVKBInfoMgrCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     sptr<IStandardAudioPolicyManagerListener> callback = sptr<IStandardAudioPolicyManagerListener>();
@@ -167,7 +160,6 @@ void Test(FuzzedDataProvider& fdp)
     SetPreferredToneRenderDeviceFuzzTest,
     SetAndGetPreferredRingRenderDeviceFuzzTest,
     SetAndGetPreferredToneRenderDeviceFuzzTest,
-    SetAndGetPreferredRecognitionCaptureDeviceFuzzTest,
     SetAudioVKBInfoMgrCallbackFuzzTest,
     CheckVKBInfoFuzzTest,
     });

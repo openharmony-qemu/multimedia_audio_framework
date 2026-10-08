@@ -105,6 +105,14 @@ int32_t AudioFormatConverterImpl::Init(
         return ERR_INVALID_PARAM;
     }
 
+    // Format verification: channel count
+    CHECK_AND_RETURN_RET_LOG(inputFormat.channelCount != 0 &&
+        inputFormat.channelCount == LAYOUT_TO_CHANNEL.at(inputFormat.channelLayout),
+        ERR_INVALID_PARAM, "Create: input channelCount/layout mismatch");
+    CHECK_AND_RETURN_RET_LOG(outputFormat.channelCount != 0 &&
+        outputFormat.channelCount == LAYOUT_TO_CHANNEL.at(outputFormat.channelLayout),
+        ERR_INVALID_PARAM, "Create: output channelCount/layout mismatch");
+
     // Format validation: Sampling format
     if (SUPPORTED_SAMPLE_FORMATS.find(inputFormat.sampleFormat) == SUPPORTED_SAMPLE_FORMATS.end() ||
         SUPPORTED_SAMPLE_FORMATS.find(outputFormat.sampleFormat) == SUPPORTED_SAMPLE_FORMATS.end()) {
@@ -300,7 +308,9 @@ uint32_t AudioFormatConverterImpl::CalculatePaddedOutputFrames(uint32_t paddedIn
     uint32_t paddedInputFrames = paddedInputBytes / inSingleFrameBytes_;
     double sampleRateRatio = static_cast<double>(outputFormat_.sampleRate) /
         static_cast<double>(inputFormat_.sampleRate);
-    uint32_t paddedOutputFrames = static_cast<uint32_t>(std::floor(paddedInputFrames * sampleRateRatio)) - delayFrames_;
+    double estimatedOutput = std::floor(paddedInputFrames * sampleRateRatio);
+    uint32_t paddedOutputFrames = (estimatedOutput >= static_cast<double>(delayFrames_)) ?
+        static_cast<uint32_t>(estimatedOutput) - delayFrames_ : 0;
     AUDIO_INFO_LOG("paddedOutputFrames:%{public}u.", paddedOutputFrames);
     return paddedOutputFrames;
 }

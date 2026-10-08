@@ -48,7 +48,7 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
 private:
     void RemoveArmUsb(vector<shared_ptr<AudioDeviceDescriptor>> &descs);
-    bool IsA2dpDisable(shared_ptr<AudioDeviceDescriptor> &hfpDesc);
+    bool IsMediaOutputDisable(const AudioDeviceDescriptor &desc);
 };
 } // namespace AudioStandard
 } // namespace OHOS

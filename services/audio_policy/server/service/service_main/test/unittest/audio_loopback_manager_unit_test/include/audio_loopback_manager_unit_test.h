@@ -30,7 +30,7 @@ namespace AudioStandard {
 class MockILoopbackCallback : public LoopbackCallbackStub {
 public:
     MOCK_METHOD(int32_t, OnCommandResult, (int32_t command, bool success, int32_t errorCode), (override));
-    MOCK_METHOD(int32_t, OnStatusChange, (int32_t status, int32_t reason), (override));
+    MOCK_METHOD(int32_t, OnStatusNotify, (int32_t status, int32_t reason), (override));
 };
 
 class AudioLoopbackManagerUnitTest : public testing::Test {

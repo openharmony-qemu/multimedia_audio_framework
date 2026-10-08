@@ -735,7 +735,7 @@ void AudioSpatializationManagerImpl::UnregisterPersonalizedSpatializationEnabled
     }
 }
 
-void AudioSpatializationManagerImpl::DownloadPersonalizedHRTFSync(HRTFDescriptor hrtfDescriptor)
+void AudioSpatializationManagerImpl::DownloadPersonalizedHRTFSync(AudioHRTFAnonymousDescriptor hrtfDescriptor)
 {
     AUDIO_INFO_LOG("DownloadPersonalizedHRTF");
     if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
@@ -756,7 +756,7 @@ void AudioSpatializationManagerImpl::DownloadPersonalizedHRTFSync(HRTFDescriptor
     int32_t ret = TaiheParamUtils::GetAudioHRTFDescriptor(&fd, &length, hrtfDescriptor);
     if (ret != AUDIO_OK) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
-            "parameter verification failed: The param of hrtfDescriptor must be interface HRTFDescriptor");
+            "parameter verification failed: The param hrtfDescriptor must be interface AudioHRTFAnonymousDescriptor");
         return;
     }
     ret = audioSpatializationMngr_->DownloadPersonalizedHRTF(fd, length);

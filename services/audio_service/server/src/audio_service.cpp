@@ -90,6 +90,18 @@ AudioService::~AudioService()
     AUDIO_INFO_LOG("~AudioService()");
 }
 
+int32_t AudioService::ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(wakeupEventCallback_ != nullptr, ERR_OPERATION_FAILED,
+        "Wakeup event callback is not registered");
+    return wakeupEventCallback_(audioWakeupTrackInfo);
+}
+
+void AudioService::RegisterWakeupEventCallback(WakeupEventCallback callback)
+{
+    wakeupEventCallback_ = std::move(callback);
+}
+
 #ifdef SUPPORT_LOW_LATENCY
 void AudioService::SetEndpointMuteForSwitchDevice(const std::string &deviceClass, bool mute)
 {

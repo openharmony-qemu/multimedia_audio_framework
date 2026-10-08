@@ -6,3 +6,4 @@ src:*foundation/multimedia/audio_framework/services/audio_service/test/unittest/
 src:*foundation/multimedia/audio_framework/services/audio_policy/server/infra/state_monitor/test/unittest/*:*
 src:*foundation/multimedia/audio_framework/services/audio_engine/test/unittest/*:*
 src:*foundation/multimedia/audio_framework/frameworks/native/audioeffect/test/unittest/*:*
+src:*foundation/multimedia/audio_framework/services/audio_policy/server/service/service_main/test/unittest/*:*

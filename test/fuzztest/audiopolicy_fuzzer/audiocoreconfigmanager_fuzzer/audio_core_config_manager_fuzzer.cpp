@@ -15,6 +15,7 @@
 
 #include "audio_core_config_manager.h"
 #include "iaudio_policy_client.h"
+#include "audio_device_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
@@ -355,7 +356,9 @@ void GetStreamPropInfoForMultiChannelFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(info != nullptr);
     if (fdp.ConsumeBool()) {
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-        streamPropInfo->channelLayout_ = ConsumeEnum<AudioChannelLayout>(fdp);
+        AudioChannelLayout channelLayoutTemp = ConsumeEnum<AudioChannelLayout>(fdp);
+        streamPropInfo->channelLayout_ = (channelLayoutTemp == CH_LAYOUT_UNKNOWN ? CH_LAYOUT_MONO : channelLayoutTemp);
+        streamPropInfo->channels_ = ConvertLayoutToAudioChannel(streamPropInfo->channelLayout_);
         info->streamPropInfos_.push_back(streamPropInfo);
     }
     AudioChannelLayout channelLayout = ConsumeEnum<AudioChannelLayout>(fdp);

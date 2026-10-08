@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "audio_suite_process_node.h"
-#include "audio_suite_manager.h"
+#include "audio_suite_pipeline.h"
 #include "audio_suite_unittest_tools.h"
 
 using namespace OHOS;

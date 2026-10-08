@@ -3121,15 +3121,15 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetGeneralVoiceChangeType_0
  */
 HWTEST_F(OHAudioSuiteEngineTest, OHAudioSuiteEngine_RemovePipeline_001, TestSize.Level0)
 {
-    OHAudioSuiteEngine* engine = OHAudioSuiteEngine::GetInstance();
-    OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(123);
-    engine->AddPipeline(pipeline);
-    EXPECT_TRUE(engine->IsPipelineExists(pipeline));
-    engine->RemovePipeline(pipeline);
-    EXPECT_FALSE(engine->IsPipelineExists(pipeline));
+    auto& engine = OHAudioSuiteEngine::GetInstance();
+    OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(nullptr);
+    engine.AddPipeline(pipeline);
+    EXPECT_TRUE(engine.pipelines_.find(pipeline) != engine.pipelines_.end());
+    engine.RemovePipeline(pipeline);
+    EXPECT_FALSE(engine.pipelines_.find(pipeline) != engine.pipelines_.end());
 
-    engine->RemovePipeline(nullptr);
-    EXPECT_FALSE(engine->IsPipelineExists(pipeline));
+    engine.RemovePipeline(nullptr);
+    EXPECT_FALSE(engine.pipelines_.find(pipeline) != engine.pipelines_.end());
 }
 
 /**
@@ -3139,12 +3139,14 @@ HWTEST_F(OHAudioSuiteEngineTest, OHAudioSuiteEngine_RemovePipeline_001, TestSize
  */
 HWTEST_F(OHAudioSuiteEngineTest, OHAudioSuitePipeline_RemoveNode_001, TestSize.Level0)
 {
-    OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(123);
-    OHAudioNode* eqNode = new OHAudioNode(456, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER);
-    OHAudioNode* noiseNode = new OHAudioNode(111, AudioSuite::AudioNodeType::NODE_TYPE_NOISE_REDUCTION);
-    OHAudioNode* soundNode = new OHAudioNode(222, AudioSuite::AudioNodeType::NODE_TYPE_SOUND_FIELD);
-    OHAudioNode* aissNode = new OHAudioNode(333, AudioSuite::AudioNodeType::NODE_TYPE_AUDIO_SEPARATION);
-    OHAudioNode* beautifierNode = new OHAudioNode(444, AudioSuite::AudioNodeType::NODE_TYPE_VOICE_BEAUTIFIER);
+    OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(nullptr);
+    std::shared_ptr<AudioSuite::AudioSuitePipeline> nullPipeline;
+    OHAudioNode* eqNode = new OHAudioNode(456, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER, nullPipeline);
+    OHAudioNode* noiseNode = new OHAudioNode(111, AudioSuite::AudioNodeType::NODE_TYPE_NOISE_REDUCTION, nullPipeline);
+    OHAudioNode* soundNode = new OHAudioNode(222, AudioSuite::AudioNodeType::NODE_TYPE_SOUND_FIELD, nullPipeline);
+    OHAudioNode* aissNode = new OHAudioNode(333, AudioSuite::AudioNodeType::NODE_TYPE_AUDIO_SEPARATION, nullPipeline);
+    OHAudioNode* beautifierNode = new OHAudioNode(
+        444, AudioSuite::AudioNodeType::NODE_TYPE_VOICE_BEAUTIFIER, nullPipeline);
     pipeline->AddNode(eqNode);
     pipeline->AddNode(noiseNode);
     pipeline->AddNode(soundNode);
@@ -3169,6 +3171,11 @@ HWTEST_F(OHAudioSuiteEngineTest, OHAudioSuitePipeline_RemoveNode_001, TestSize.L
 
     pipeline->RemoveNode(nullptr);
     EXPECT_FALSE(pipeline->IsNodeExists(eqNode));
+    delete eqNode;
+    delete noiseNode;
+    delete soundNode;
+    delete aissNode;
+    delete beautifierNode;
     delete pipeline;
 }
 
@@ -3179,42 +3186,33 @@ HWTEST_F(OHAudioSuiteEngineTest, OHAudioSuitePipeline_RemoveNode_001, TestSize.L
  */
 HWTEST_F(OHAudioSuiteEngineTest, OHAudioSuiteEngine_IsNodeExists_001, TestSize.Level0)
 {
-    OHAudioSuiteEngine* engine = OHAudioSuiteEngine::GetInstance();
-    OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(123);
-    engine->AddPipeline(pipeline);
+    auto& engine = OHAudioSuiteEngine::GetInstance();
+    OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(nullptr);
+    engine.AddPipeline(pipeline);
 
-    OHAudioNode* node = new OHAudioNode(456, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER);
+    std::shared_ptr<AudioSuite::AudioSuitePipeline> nullPipeline;
+    OHAudioNode* node = new OHAudioNode(456, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER, nullPipeline);
     pipeline->AddNode(node);
-    // Conditions 1: pipeline is not nullptr, node is not nullptr, IsNodeExists is true
+    engine.AddNode(node);
+    // Conditions 1: node is in engine nodes_
     {
-        bool result = engine->IsNodeExists(node);
+        bool result = engine.nodes_.find(node) != engine.nodes_.end();
         EXPECT_TRUE(result);
     }
-    // Conditions 2: pipeline is not nullptr, node is not nullptr, IsNodeExists is false
+    // Conditions 2: node is not in engine nodes_
     {
-        OHAudioNode* otherNode = new OHAudioNode(789, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER);
-        bool result = engine->IsNodeExists(otherNode);
+        OHAudioNode* otherNode = new OHAudioNode(789, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER, nullPipeline);
+        bool result = engine.nodes_.find(otherNode) != engine.nodes_.end();
         EXPECT_FALSE(result);
         delete otherNode;
     }
-    // Conditions 3: pipeline is not nullptr, node is nullptr
+    // Conditions 3: node is nullptr
     {
-        bool result = engine->IsNodeExists(nullptr);
+        bool result = engine.nodes_.find(nullptr) != engine.nodes_.end();
         EXPECT_FALSE(result);
     }
-    // Conditions 4: pipeline is nullptr, node is not nullptr
-    {
-        OHAudioNode* otherNode = new OHAudioNode(789, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER);
-        bool result = engine->IsNodeExists(otherNode);
-        EXPECT_FALSE(result);
-        delete otherNode;
-    }
-    // Conditions 5: pipeline is nullptr, node is nullptr
-    {
-        bool result = engine->IsNodeExists(nullptr);
-        EXPECT_FALSE(result);
-    }
-    engine->RemovePipeline(pipeline);
+    engine.RemoveNode(node);
+    engine.RemovePipeline(pipeline);
 }
 
 /**
@@ -3224,41 +3222,31 @@ HWTEST_F(OHAudioSuiteEngineTest, OHAudioSuiteEngine_IsNodeExists_001, TestSize.L
  */
 HWTEST_F(OHAudioSuiteEngineTest, OHAudioSuiteEngine_RemoveNode_001, TestSize.Level0)
 {
-    OHAudioSuiteEngine* engine = OHAudioSuiteEngine::GetInstance();
-    OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(123);
-    engine->AddPipeline(pipeline);
-    OHAudioNode* node = new OHAudioNode(456, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER);
+    auto& engine = OHAudioSuiteEngine::GetInstance();
+    OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(nullptr);
+    engine.AddPipeline(pipeline);
+    std::shared_ptr<AudioSuite::AudioSuitePipeline> nullPipeline;
+    OHAudioNode* node = new OHAudioNode(456, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER, nullPipeline);
     pipeline->AddNode(node);
+    engine.AddNode(node);
 
-    // Conditions 1: pipeline is not nullptr, node is not nullptr, IsNodeExists is true
+    // Conditions 1: node exists in engine, RemoveNode erases from engine, deletes node
     {
-        engine->RemoveNode(node);
-        EXPECT_FALSE(pipeline->IsNodeExists(node));
+        engine.RemoveNode(node);
+        EXPECT_TRUE(engine.nodes_.find(node) == engine.nodes_.end());
     }
-    // Conditions 2: pipeline is not nullptr, node is not nullptr, IsNodeExists is false
+    // Conditions 2: node not in engine, RemoveNode is safe no-op (node not deleted)
     {
-        OHAudioNode* otherNode = new OHAudioNode(789, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER);
-        engine->RemoveNode(otherNode);
-        EXPECT_FALSE(pipeline->IsNodeExists(otherNode));
-    }
-    // Conditions 3: pipeline is not nullptr, node is nullptr
-    {
-        engine->RemoveNode(nullptr);
-        EXPECT_FALSE(pipeline->IsNodeExists(node));
-    }
-    // Conditions 4: pipeline is nullptr, node is not nullptr
-    {
-        OHAudioNode* otherNode = new OHAudioNode(888, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER);
-        engine->RemovePipeline(pipeline);
-        engine->RemoveNode(otherNode);
-        EXPECT_FALSE(engine->IsNodeExists(otherNode));
+        OHAudioNode* otherNode = new OHAudioNode(789, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER, nullPipeline);
+        engine.RemoveNode(otherNode);
+        EXPECT_TRUE(engine.nodes_.find(otherNode) == engine.nodes_.end());
         delete otherNode;
     }
-    // Conditions 5: pipeline is nullptr, node is nullptr
+    // Conditions 3: node is nullptr
     {
-        engine->RemoveNode(nullptr);
-        EXPECT_FALSE(engine->IsNodeExists(node));
+        engine.RemoveNode(nullptr);
     }
+    engine.RemovePipeline(pipeline);
 }
 
 /**

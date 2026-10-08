@@ -59,7 +59,7 @@ struct AlgoCache {
 
 struct AudioEnhanceParamAdapter {
     uint32_t muteInfo { 0 };
-    uint32_t volumeInfo { 0 };
+    uint32_t volumeInfo { 100 }; // 100 for default volume
     uint32_t foldState { FOLD_STATE_MIDDLE };
     uint32_t powerState { 0 };
     uint32_t appsMuteState { 0 };
@@ -109,7 +109,7 @@ private:
     int32_t ProcessApplyEnhanceChain(void);
     int32_t ProcessReleaseAllEnhanceModule(void);
     int32_t ProcessSetAppsMuteState(uint32_t appsMuteState);
-    int32_t WriteChainOutputData(void *buf, size_t bufSize);
+    int32_t WriteChainOutputData(const void *buf, size_t bufSize);
     int32_t CacheChainInputData(const EnhanceTransBuffer &transBuf);
     int32_t InitSingleEnhanceModule(AudioEffectHandle enhanceHandle, const std::string &enhanceProp);
     void ScheduleAudioTask(const ThreadHandler::Task &task);

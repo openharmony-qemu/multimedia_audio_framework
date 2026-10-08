@@ -162,6 +162,7 @@ public:
     void UpdateDefaultAudioEffect();
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
     void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value);
+    void SetPowerState(bool isScreenOn);
     void InitHdiState();
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
     void SetPersonalizedSpatializationStateResultCallback(std::function<void(int32_t result)> callback);
@@ -231,6 +232,7 @@ private:
     int32_t UpdateCurrSceneTypeAndStreamUsageForDsp();
     void SendAudioParamToHDI(HdiSetParamCommandCode code, const std::string &value, DeviceType device);
     void SendAudioParamToARM(HdiSetParamCommandCode code, const std::string &value);
+    void SendLowPowerParam();
     std::string GetDeviceTypeName();
     std::string GetDeviceTypeName(DeviceType deviceType);
     std::string GenerateEffectChainKey(const std::string &sceneType, DeviceType deviceType, uint32_t renderId);
@@ -264,6 +266,8 @@ private:
     int32_t CreateAudioEffectChainDynamicInner(const std::string &sceneType);
     int32_t CreateAudioEffectChainDynamicInner(const std::string &sceneType,
         DeviceType deviceType, uint32_t renderId);
+    // Unlocked core of LoadEffectProperties; caller must hold dynamicMutex_.
+    void LoadEffectPropertiesLocked();
     int32_t ReleaseAudioEffectChainDynamicInner(const std::string &sceneType);
     int32_t ReleaseAudioEffectChainDynamicInner(const std::string &sceneType,
         DeviceType deviceType, uint32_t renderId);
@@ -320,7 +324,14 @@ private:
     std::string extraSceneType_ = "0";
     std::string foldState_ = "0";
     std::string lidState_ = "0";
+    uint32_t powerState_ = 1;
     std::string systemLoadState_ = "0";
+    uint32_t thermalLevelState_ = 0;
+    uint32_t lowPowerParam_ = 0;
+    std::mutex lowPowerMutex_;
+    uint32_t pendingLowPowerParam_ = 0;
+    uint64_t lastLowPowerEventSeq_ = 0;
+    static constexpr int32_t LOW_POWER_DEBOUNCE_MS = 5000;
     std::string maxSessionIDToSceneType_ = "";
     std::string maxDefaultSessionIDToSceneType_ = "";
     std::string outdoorMode_ = "0";

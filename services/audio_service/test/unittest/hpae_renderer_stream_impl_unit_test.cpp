@@ -368,6 +368,22 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetSpeed on a session outside the offload engine chain.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_SetSpeed_NoHdiCapability_001
+ * @tc.desc  : Sessions without offload-engine HDI speed capability must be rejected so the
+ *             client falls back to local sonic speed (e.g. HiCar MCH speed silent-drop fix).
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_SetSpeed_NoHdiCapability_001, TestSize.Level1)
+{
+    auto rendererStreamImpl = CreateHpaeRendererStreamImpl();
+    ASSERT_NE(rendererStreamImpl, nullptr);
+    // The session is not registered in HpaeManager, so the capability query returns false
+    // and SetSpeed must reject instead of storing the value silently.
+    EXPECT_EQ(rendererStreamImpl->SetSpeed(2.0f), ERR_NOT_SUPPORTED);
+}
+
+/**
  * @tc.name  : Test GetLatencyWithFlag with no hardware/engine flag.
  * @tc.type  : FUNC
  * @tc.number: HpaeRenderer_GetLatencyWithFlag_001
@@ -507,6 +523,25 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_006, TestSize.Level1)
     RemoveStreamVolume();
     unit->streamIndex_ = originStreamIndex;
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test OnStreamData macAddress refresh.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_044
+ * @tc.desc  : Test OnStreamData refreshes macAddress from callback info.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_044, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    AudioCallBackStreamInfo info;
+    info.deviceClass = "primary";
+    info.deviceNetId = "local";
+    info.macAddress = "11:22:33:44:55:66";
+    info.needData = false;
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS);
+    EXPECT_EQ(unit->macAddress_, "11:22:33:44:55:66");
 }
 
 /**

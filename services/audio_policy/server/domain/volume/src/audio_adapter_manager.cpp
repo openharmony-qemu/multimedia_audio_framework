@@ -51,22 +51,6 @@ constexpr const int32_t CLONE_STATE_CLONING = 1;
 constexpr const int32_t CLONE_STATE_NOT_CLONED = 2;
 mutex g_deviceVolumeBehaviorListenerMutex;
 
-static std::string GetEncryptAddr(const std::string &addr)
-{
-    const int32_t START_POS = 6;
-    const int32_t END_POS = 13;
-    const int32_t ADDRESS_STR_LEN = 17;
-    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
-        return std::string("");
-    }
-    std::string tmp = "**:**:**:**:**:**";
-    std::string out = addr;
-    for (int i = START_POS; i <= END_POS; i++) {
-        out[i] = tmp[i];
-    }
-    return out;
-}
-
 static const std::vector<DeviceType> VOLUME_GROUP_TYPE_LIST = {
     DEVICE_TYPE_EARPIECE,
     DEVICE_TYPE_SPEAKER,
@@ -157,6 +141,11 @@ bool AudioAdapterManager::Init()
     isVolumeUnadjustable_ = system::GetBoolParameter("const.multimedia.audio.fixedvolume", false);
     AUDIO_INFO_LOG("Get fixdvolume parameter success %{public}d", isVolumeUnadjustable_);
 
+    bool notificationFollowRingtone =
+        system::GetBoolParameter("const.multimedia.audio.notification_follow_ringtone", false);
+    AUDIO_INFO_LOG("Get notification_follow_ringtone parameter success %{public}d", notificationFollowRingtone);
+    VolumeUtils::SetNotificationFollowRingtone(notificationFollowRingtone);
+
     char mdmMuteStatus[6] = {0};
     ret = GetParameter("persist.edm.unmute_device_disallowed", "false", mdmMuteStatus, sizeof(mdmMuteStatus));
     if (ret > 0) {
@@ -176,6 +165,9 @@ void AudioAdapterManager::InitBootAnimationVolume()
 {
     char currentVolumeValue[3] = {0};
     AudioVolumeType typeForBootAnimation = VolumeUtils::IsPCVolumeEnable() ? STREAM_SYSTEM : STREAM_NOTIFICATION;
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+    typeForBootAnimation = STREAM_MUSIC;
+#endif
     auto desc = audioActiveDevice_.GetDeviceForVolume(typeForBootAnimation);
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
     int32_t bootAnimationVolume = GetStreamVolumeInternal(desc, typeForBootAnimation);
@@ -328,7 +320,11 @@ void AudioAdapterManager::LoadVolumeValueMapFromDb()
 #endif
     }
     auto desc = audioConnectedDevice_.GetOutputDeviceByDeviceType(DEVICE_TYPE_SPEAKER);
-    SaveNotificationVolumeToLocal(desc, STREAM_NOTIFICATION);
+    AudioVolumeType bootAnimationVolumeType = STREAM_NOTIFICATION;
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+    bootAnimationVolumeType = STREAM_MUSIC;
+#endif
+    SaveBootAnimationVolumeToLocal(desc, bootAnimationVolumeType);
 }
 
 int32_t AudioAdapterManager::ReInitKVStore()
@@ -401,25 +397,38 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType, Devic
     return AudioVolumeUtils::GetInstance().GetMinVolumeLevel(deviceType, volumeType, zoneId);
 }
 
-void AudioAdapterManager::SaveNotificationVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
+void AudioAdapterManager::SaveBootAnimationVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
     AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     AudioVolumeType audioVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
     // Only use the volume of speaker as the Boot Animation Volume.
     // use STREAM_NOTIFICATION on phone and use STREAM_SYSTEM on PC.
-    bool isRightVolumeType = VolumeUtils::IsPCVolumeEnable() ?
-        (audioVolumeMap == STREAM_SYSTEM) : (audioVolumeMap == STREAM_NOTIFICATION);
-    if (isRightVolumeType && (!VolumeUtils::IsPCVolumeEnable() || device->deviceType_ == DEVICE_TYPE_SPEAKER)) {
-        int32_t volumeLevel =
-            GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
-        // To keep the startup volume consistent between the new and old versions, still use "ringtonevolume".
-        int32_t ret = SetParameter("persist.multimedia.audio.ringtonevolume", std::to_string(volumeLevel).c_str());
-        if (ret == 0) {
-            AUDIO_INFO_LOG("Save notification volume for boot success %{public}d", volumeLevel);
-        } else {
-            AUDIO_ERR_LOG("Save notification volume for boot failed, result %{public}d", ret);
-        }
+    // use STREAM_MUSIC on HiCar
+    AudioVolumeType volumeTarget = STREAM_NOTIFICATION;
+    bool forceSpeaker = false;
+    if (VolumeUtils::IsPCVolumeEnable()) {
+        volumeTarget = STREAM_SYSTEM;
+        forceSpeaker = true;
+    }
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+    volumeTarget = STREAM_MUSIC;
+    forceSpeaker = true;
+#endif
+    if (volumeType != volumeTarget) {
+        return;
+    }
+    if (forceSpeaker && device->deviceType_ != DEVICE_TYPE_SPEAKER) {
+        return;
+    }
+    int32_t volumeLevel =
+        GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
+    // To keep the startup volume consistent between the new and old versions, still use "ringtonevolume".
+    int32_t ret = SetParameter("persist.multimedia.audio.ringtonevolume", std::to_string(volumeLevel).c_str());
+    if (ret == 0) {
+        AUDIO_INFO_LOG("Save notification volume for boot success %{public}d", volumeLevel);
+    } else {
+        AUDIO_ERR_LOG("Save notification volume for boot failed, result %{public}d", ret);
     }
 }
 
@@ -610,6 +619,20 @@ int32_t AudioAdapterManager::ClearVoipMuteByStreamId(int64_t streamId)
     clearFn(voipRendererMuteMap_, streamId);
     clearFn(voipCapturerMuteMap_, streamId);
 
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::SetUnmuteWhitelist(const std::vector<int32_t> &uids)
+{
+    AudioMuteFactorManager::GetInstance().SetUnmuteWhitelist(uids);
+    SendOffloadVolume();
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::ClearUnmuteWhitelist()
+{
+    AudioMuteFactorManager::GetInstance().ClearUnmuteWhitelist();
+    SendOffloadVolume();
     return SUCCESS;
 }
 
@@ -828,6 +851,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, co
     if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(zoneId, desc->deviceType_)) {
         AUDIO_INFO_LOG("Set system volume for proxy device, zoneId: %{public}d, device: %{public}s",
             zoneId, desc->GetName().c_str());
+        SaveBootAnimationVolumeToLocal(desc, streamType);
         AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId, desc->deviceType_, streamType, buffedVolume);
         return SUCCESS;
     }
@@ -855,7 +879,8 @@ void AudioAdapterManager::SaveSpecifiedDeviceVolumeInner(AudioStreamType streamT
         AUDIO_INFO_LOG("SaveSpecifiedDeviceVolumeInner: streamType: %{public}d, volumeLevel: %{public}d, "
             "deviceType: %{public}d", streamType, volumeLevel, deviceType);
         auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
-        volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volumeLevel);
+        VolumeScale volume = {volumeLevel, -1, GetMaxVolumeLevel(streamType, deviceType)};
+        volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volume);
         auto descs = audioConnectedDevice_.GetCopy();
         for (auto &temp : descs) {
             CHECK_AND_CONTINUE(temp != nullptr);
@@ -1202,6 +1227,7 @@ int32_t AudioAdapterManager::SetStreamMute(std::shared_ptr<AudioDeviceDescriptor
             GetSystemVolumeDegree(device, streamType, zoneId));
         AUDIO_INFO_LOG("Set system volume for proxy device, zoneId: %{public}d, device: %{public}s",
             zoneId, device->GetName().c_str());
+        SaveBootAnimationVolumeToLocal(device, streamType);
         AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId, device->deviceType_, streamType,
             volume);
         return SUCCESS;
@@ -1307,6 +1333,12 @@ void AudioAdapterManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
     SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);
 }
 
+void AudioAdapterManager::DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit)
+{
+    disableVolumeLimit_.store(disableVolumeLimit);
+    AUDIO_INFO_LOG("DisableVolumeLimitWhenVoiceCall: %{public}d", disableVolumeLimit);
+}
+
 void AudioAdapterManager::RedirectVolumeType(std::shared_ptr<AudioStreamDescriptor> streamDescriptor,
     AudioVolumeType &volumeType)
 {
@@ -1383,9 +1415,10 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
     AudioStreamType streamType, std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
+    CHECK_AND_RETURN_LOG(!disableVolumeLimit_.load(), "DepressVolume skipped due to volumeLimitWhenVoiceCall");
+
     DeviceType deviceType = device->deviceType_;
-    if (streamType == STREAM_VOICE_CALL_ASSISTANT ||
-        streamType == STREAM_ULTRASONIC) {
+    if (streamType == STREAM_VOICE_CALL_ASSISTANT || streamType == STREAM_ULTRASONIC) {
         return;
     }
     auto volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
@@ -1543,6 +1576,28 @@ bool AudioAdapterManager::IsDirectRoute(uint32_t routeFlag) const
     return (routeFlag & AUDIO_OUTPUT_FLAG_DIRECT);
 }
 
+// The 3da direct bus port is identified by the "3da" keyword in module name / bus
+// address so any bus number matches: boot opens the port with the xml module name
+// (bus10_3da_out), while play-time new pipes carry busAddress.
+bool AudioAdapterManager::Is3daDirectBusPort(const AudioModuleInfo &audioModuleInfo)
+{
+    return audioModuleInfo.name.find(HDI_BUS_KEYWORD_3DA) != std::string::npos ||
+        audioModuleInfo.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos;
+}
+
+// Converge the port onto the shared cabin sink: deviceClass takes the bus address
+// (module name fallback) and idInfo "3DA", so GetId(RENDER, AUDIO_VIVID_3DA_DIRECT,
+// "3DA") resolves every 3da bus variant to the same renderId/sink created at boot
+// (converge with CabinPlayBackEngine AV_SINK_NAME, share one renderId/sink).
+void AudioAdapterManager::ConvergeTo3daSink(const AudioModuleInfo &audioModuleInfo, std::string &deviceClass,
+    std::string &idInfo)
+{
+    deviceClass = audioModuleInfo.busAddress.empty() ? audioModuleInfo.name : audioModuleInfo.busAddress;
+    idInfo = HDI_ID_INFO_3DA;
+    AUDIO_INFO_LOG("3da bus -> 3da direct, deviceClass:%{public}s idInfo:%{public}s",
+        deviceClass.c_str(), idInfo.c_str());
+}
+
 int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeInfo, AudioIOHandle & ioHandle)
 {
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -1573,8 +1628,18 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
             }
             audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, idType, idInfo, attr, ioHandle);
         } else {
+            std::string deviceClass = pipeInfo->moduleInfo_.className;
             idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
-            result = audioServerProxy_->CreateHdiSinkPort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
+            // 3DA direct pipe: converge to the cabin sink (renderId from GetId(RENDER,
+            // AUDIO_VIVID_3DA_DIRECT, "3DA")). Without this, a primary-profile sink is
+            // created and HAL rejects the vivid channel mask ("CheckRenderCaptureParams
+            // failed"). busAddress is matched by the 3da keyword (any bus number) because
+            // the play-time new pipe may not carry the 3DA route flag yet at port-open time.
+            if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_3DA_DIRECT) ||
+                pipeInfo->moduleInfo_.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
+                ConvergeTo3daSink(pipeInfo->moduleInfo_, deviceClass, idInfo);
+            }
+            result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, ioHandle);
         }
     } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
         std::string idInfo = GetHdiSourceIdInfo(pipeInfo->moduleInfo_);
@@ -1603,6 +1668,18 @@ AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo
     CHECK_AND_RETURN_RET_LOG(audioServerProxy_ != nullptr, ioHandle, "audioServerProxy_ null");
     int32_t result = CreateHdiPort(pipeInfo, ioHandle);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ioHandle, "Call audioServer open port failed:%{public}d", result);
+    // 3DA does not go through HPAE (same as the boot path in OpenAudioPort(AudioModuleInfo)):
+    // the cabin sink already exists (ioHandle == cabin renderId since boot). A loadmodule here
+    // builds a conflicting primary sink chain whose HDI render HAL rejects for vivid channel
+    // masks. Register the port with the cabin renderId as paIndex.
+    if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_3DA_DIRECT) ||
+        (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT &&
+        pipeInfo->moduleInfo_.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos)) {
+        paIndex = static_cast<uint32_t>(ioHandle);
+        AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port (3da direct, skip hpae), paIndex: %{public}u end",
+            ioHandle, paIndex);
+        return ioHandle;
+    }
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         int32_t ret = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, pipeInfo->moduleInfo_);
@@ -1672,6 +1749,16 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
     if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_HWDECODING) {
         idType = HDI_ID_TYPE_HWDECODE;
         idInfo = HDI_ID_INFO_DP;
+    }
+
+    // 3DA direct: play-time new-pipe creation opens the port through OpenNotPaAudioPort/
+    // CreateHdiPort. Without this branch the (base, type, info) triple stays (RENDER,
+    // PRIMARY, DEFAULT) and a normal primary sink is created instead of the cabin sink.
+    // IdHandler GetId(RENDER, AUDIO_VIVID_3DA_DIRECT, "3DA") converges to the same
+    // renderId (970) created at boot, so the existing cabin sink is reused.
+    if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
+        idType = HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT;
+        idInfo = HDI_ID_INFO_3DA;
     }
 
     if (pipeInfo->adapterName_ == "primary") {
@@ -1838,9 +1925,13 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
         result = audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, idInfo, attr, ioHandle);
     } else {
         if (audioModuleInfo.role == HDI_AUDIO_PORT_SINK_ROLE) {
+            std::string deviceClass = audioModuleInfo.className;
             std::string idInfo = GetHdiSinkIdInfo(audioModuleInfo);
+            if (Is3daDirectBusPort(audioModuleInfo)) {
+                ConvergeTo3daSink(audioModuleInfo, deviceClass, idInfo);
+            }
             IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
-            result = audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr, ioHandle);
+            result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, ioHandle);
         } else if (audioModuleInfo.role == HDI_AUDIO_PORT_SOURCE_ROLE) {
             std::string idInfo = GetHdiSourceIdInfo(audioModuleInfo);
             IAudioSourceAttr attr = GetAudioSourceAttr(audioModuleInfo);
@@ -1849,6 +1940,17 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     }
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ioHandle, "Call audioServer open port failed:%{public}d", result);
+
+    // 3DA does not go through HPAE. The CabinAudioRenderSink was already created by CreateHdiSinkPort
+    // above (renderId == ioHandle). Skip the HPAE loadmodule, which would otherwise build a conflicting
+    // primary sink chain that opens a second HDI render on the same bus port ("ports busy" -> open fail).
+    // Register the port using the cabin renderId as paIndex so OpenPortAndInsertIOHandle succeeds.
+    if (Is3daDirectBusPort(audioModuleInfo)) {
+        paIndex = static_cast<uint32_t>(ioHandle);
+        AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port (3da direct, skip hpae), paIndex: %{public}u end",
+            ioHandle, paIndex);
+        return ioHandle;
+    }
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
@@ -2686,7 +2788,7 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
     ringerMode_.store(ringerMode);
     auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_NOTIFICATION);
     // Save volume in local prop for bootanimation
-    SaveNotificationVolumeToLocal(desc, STREAM_NOTIFICATION);
+    SaveBootAnimationVolumeToLocal(desc, STREAM_NOTIFICATION);
 }
 
 void AudioAdapterManager::CloneVolumeMap(void)
@@ -3476,7 +3578,7 @@ int32_t AudioAdapterManager::SetNearlinkDeviceVolume(AudioVolumeType volumeType,
 void AudioAdapterManager::SetAbsVolumeScene(const std::string &macAddress, bool isAbsVolumeScene, int32_t volume)
 {
     AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: mac:[%{public}s], scene:[%{public}d], volume:[%{public}d]",
-        GetEncryptAddr(macAddress).c_str(), isAbsVolumeScene, volume);
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(macAddress).c_str(), isAbsVolumeScene, volume);
     {
         // Abs volume scene is keyed by the device mac address.
         std::lock_guard<std::mutex> lock(absVolumeStateMutex_);
@@ -3518,7 +3620,7 @@ bool AudioAdapterManager::IsAbsVolumeScene(const std::string &macAddress) const
 void AudioAdapterManager::SetAbsVolumeMute(const std::string &macAddress, bool mute)
 {
     AUDIO_INFO_LOG("SetAbsVolumeMute: mac:[%{public}s], mute:[%{public}d]",
-        GetEncryptAddr(macAddress).c_str(), mute);
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(macAddress).c_str(), mute);
     {
         std::lock_guard<std::mutex> lock(absVolumeStateMutex_);
         absVolumeMuteMap_[macAddress] = mute;
@@ -4445,7 +4547,7 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERROR, "desc is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    SaveNotificationVolumeToLocal(desc, volumeType);
+    SaveBootAnimationVolumeToLocal(desc, volumeType);
     if (desc->deviceType_ == DEVICE_TYPE_HEARING_AID) {
         AudioIOHandle ioHandle;
         std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_HEARING_AID);
@@ -4490,9 +4592,6 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
 {
     std::lock_guard<std::mutex> lock1(activeDeviceMutex_);
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
-    auto desc = audioActiveDevice_.GetDeviceForVolume();
-    CHECK_AND_RETURN_LOG(desc != nullptr, "active device desc is null");
-    AudioVolume::GetInstance()->SetCurrentActiveDevice(desc->deviceType_);
     if (device->volumeBehavior_.controlMode == PASS_THROUGH_MODE ||
         device->volumeBehavior_.controlMode == HILINK_MODE) {
         VolumeValue volumeValue{GetMaxVolumeLevel(volumeType, device->deviceType_), MAX_VOLUME_DEGREE, false};

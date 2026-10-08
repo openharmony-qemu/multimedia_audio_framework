@@ -238,8 +238,8 @@ void AudioSuiteSystemNode::TryConfigure()
         inputFormat_.rate, inputFormat_.encodingType, inputFormat_.format,
         inputFormat_.audioChannelInfo.numChannels, inputFormat_.audioChannelInfo.channelLayout);
     AUDIO_INFO_LOG("%{public}d %{public}d %{public}d %{public}u %{public}" PRIu64 " output set",
-        inputFormat_.rate, inputFormat_.encodingType, inputFormat_.format,
-        inputFormat_.audioChannelInfo.numChannels, inputFormat_.audioChannelInfo.channelLayout);
+        outputFormat_.rate, outputFormat_.encodingType, outputFormat_.format,
+        outputFormat_.audioChannelInfo.numChannels, outputFormat_.audioChannelInfo.channelLayout);
 
     AudioStreamInfo inInfo;
     AudioStreamInfo outInfo;
@@ -316,12 +316,14 @@ std::vector<AudioSuitePcmBuffer*> AudioSuiteSystemNode::SignalProcess(
 int32_t AudioSuiteSystemNode::DoProcess(AudioMetaFrame &metaFrame,
     int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag)
 {
+    CHECK_AND_RETURN_RET_LOG(responseAudioSize != nullptr && responseMetaSize != nullptr && finishedFlag != nullptr,
+        ERR_INVALID_PARAM, "invalid DoProcess param.");
     CHECK_AND_RETURN_RET_LOG(!GetAudioNodeDataFinishedFlag(), ERR_NOT_SUPPORTED, "meta data output completed.");
     CHECK_AND_RETURN_RET_LOG(effectChain_ != nullptr, ERR_NOT_SUPPORTED, "effectChain_ is nullptr.");
     CHECK_AND_RETURN_RET_LOG(!preNodes_.empty(), ERR_NOT_SUPPORTED, "current system node not connect pre node.");
     auto preNode = preNodes_[0].lock();
     CHECK_AND_RETURN_RET_LOG(preNode != nullptr, ERR_NOT_SUPPORTED, "current system node connect pre node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(metaFrame.audioData != nullptr && metaFrame.audioData != nullptr,
+    CHECK_AND_RETURN_RET_LOG(metaFrame.audioData != nullptr && metaFrame.metaData != nullptr,
         ERR_INVALID_PARAM, "invalid audio data");
 
     int32_t responseInAudioSize = 0;

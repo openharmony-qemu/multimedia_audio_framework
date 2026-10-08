@@ -48,6 +48,7 @@ constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 static const int32_t INTERRUPT_SERVICE_TIMEOUT = 10; // 10s
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
+const std::string ACCESSIBILITY_DUCK_FACTOR_KEY = "accessibility_audio_duck_ratio";
 constexpr int32_t RETRY_TIME_S = 5;
 constexpr int64_t SLEEP_TIME_S = 1;
 constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
@@ -338,6 +339,22 @@ void AudioInterruptService::RecordSilentWithPauseStrategyEvent(const AudioInterr
         interruptDfx_ != nullptr)  {
             interruptDfx_->RecordSilentWithPauseStrategyEvent(incomingInterrupt, activeInterrupt, focusEntry);
         }
+}
+
+void AudioInterruptService::RecordNavWithPauseStrategyEvent(const AudioInterrupt &audioInterrupt)
+{
+    if (audioInterrupt.audioFocusType.streamType != STREAM_NAVIGATION || interruptDfx_ == nullptr) {
+        return;
+    }
+    AudioConcurrencyMode mode = audioInterrupt.sessionStrategy.concurrencyMode;
+    if (IsIndependentStrategyValid(audioInterrupt)) {
+        mode = audioInterrupt.independentStrategy.concurrencyMode;
+    } else if (sessionService_.IsAudioSessionActivated(audioInterrupt.pid)) {
+        mode = sessionService_.GetSessionStrategy(audioInterrupt.pid);
+    }
+    if (mode == AudioConcurrencyMode::PAUSE_OTHERS) {
+        interruptDfx_->RecordNavWithPauseStrategyEvent(audioInterrupt);
+    }
 }
 
 void AudioInterruptService::AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
@@ -1304,7 +1321,7 @@ AudioInterruptResult AudioInterruptService::ActivateAudioInterrupt(
             AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
-    mediaInterruptedByRec_ = false;
+    activateNeedDelay_ = false;
     AudioInterruptResult result;
     CHECK_AND_RETURN_RET_LOG(verifySystemStreamPermission(audioInterrupt, result), result,
         "verifySystemStreamPermission fail");
@@ -1327,15 +1344,14 @@ AudioInterruptResult AudioInterruptService::ActivateAudioInterrupt(
     result.targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     result.ownerUid = ownerUid_;
     result.ownerPid = ownerPid_;
+    lock.unlock();
+    if (activateNeedDelay_) {
+        AUDIO_INFO_LOG("ActivateInterrupt needs to delay %{public}d ms to allow media callback delivery",
+            ACTIVATE_DELAY_MS);
+        std::this_thread::sleep_for(std::chrono::milliseconds(ACTIVATE_DELAY_MS));
+    }
     result.needSetAudioScene =
         UpdateAudioSceneFromInterrupt(result.targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, ZONEID_DEFAULT, false);
-    bool needDelay = isRecord && mediaInterruptedByRec_;
-    lock.unlock();
-    if (needDelay) {
-        AUDIO_INFO_LOG("Recording focus activated while media was interrupted, "
-            "delay %{public}d ms to allow media callback delivery", RECORDING_ACTIVATION_DELAY_MS);
-        std::this_thread::sleep_for(std::chrono::milliseconds(RECORDING_ACTIVATION_DELAY_MS));
-    }
     return result;
 }
 
@@ -1391,6 +1407,10 @@ int32_t AudioInterruptService::ActivateAudioInterruptCoreProcedure(
                 "VOICE_TRANSCRIPTION failed: no system permission", false));
     }
 
+    if (interruptDfx_ != nullptr) {
+        interruptDfx_->GetBehaviorUsageEvent(audioInterrupt);
+    }
+
     return ActivateAudioInterruptInternal(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
 }
 
@@ -1408,6 +1428,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         " zoneId: %{public}d usage: %{public}d source: %{public}d isCheckMuteStream: %{public}d deviceTag: %{public}s",
         incomingStreamId, currAudioInterrupt.pid, streamType, zoneId, currAudioInterrupt.streamUsage,
         incomingSourceType, currAudioInterrupt.isCheckMuteStream, incommingDeviceTag.c_str());
+    UpdateAudioFocusCheckMuteFlag(zoneId, currAudioInterrupt);
 
     if (AudioInterruptIsStandbyInFocusList(zoneId, incomingStreamId, incommingDeviceTag) ||
         (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId, incommingDeviceTag) && !isUpdatedAudioStrategy)) {
@@ -1415,6 +1436,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
             " active audio interrupt.");
         return SUCCESS;
     }
+    RecordNavWithPauseStrategyEvent(currAudioInterrupt);
     GameRecogSetParam(GetClientTypeByStreamId(incomingStreamId), incomingSourceType, true);
     ResetNonInterruptControl(currAudioInterrupt);
     bool shouldReturnSuccess = false;
@@ -1706,7 +1728,7 @@ void AudioInterruptService::UpdateContextForAudioZone(const int32_t zoneId,
     zoneManager_.UpdateContextForAudioZone(zoneId, context);
 }
 
-int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
+int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal)
 {
     std::unique_lock<std::mutex> lock(mutex_);
     int32_t ret = zoneManager_.MigrateAudioInterruptZone(zoneId, func);
@@ -1715,7 +1737,7 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, ZONEID_DEFAULT, true, isInternal);
     return SUCCESS;
 }
 
@@ -2142,11 +2164,18 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
                 AUDIO_INFO_LOG("Update hint type for system app anyway, pid: %{public}d, strategy: %{public}d",
                     incomingInterrupt.pid, static_cast<int32_t>(concurrencyMode));
                 focusEntry.hintType = modeToHint->second;
+                ApplyDuckPassthroughMode(focusEntry);
                 return;
             }
         }
     }
+    UpdateHintTypeByConcurrencyMode(concurrencyMode, focusEntry);
+    ApplyDuckPassthroughMode(focusEntry);
+}
 
+void AudioInterruptService::UpdateHintTypeByConcurrencyMode(AudioConcurrencyMode concurrencyMode,
+    AudioFocusEntry &focusEntry)
+{
     switch (concurrencyMode) {
         case AudioConcurrencyMode::DUCK_OTHERS:
             if (focusEntry.hintType == INTERRUPT_HINT_DUCK ||
@@ -2167,6 +2196,15 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
             AUDIO_INFO_LOG("The concurrency mode is %{public}d. No need to update hint type",
                 static_cast<int32_t>(concurrencyMode));
             break;
+    }
+}
+
+void AudioInterruptService::ApplyDuckPassthroughMode(AudioFocusEntry &focusEntry)
+{
+    if (duckPassthroughMode_ && focusEntry.hintType == INTERRUPT_HINT_DUCK) {
+        AUDIO_INFO_LOG("change duck to mix for enable duckPassthroughMode");
+        focusEntry.hintType = INTERRUPT_HINT_NONE;
+        focusEntry.actionOn = INCOMING;
     }
 }
 
@@ -2216,7 +2254,7 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
         case INTERRUPT_HINT_DUCK:
             if (iterActive->second == ACTIVE) {
                 iterActive->second = DUCK;
-                interruptEvent.duckVolume = DUCK_FACTOR;
+                interruptEvent.duckVolume = GetDuckFactorForStreams(iterActive->first, incomingInterrupt);
                 interruptEvent.hintType = focusEntry.hintType;
             }
             break;
@@ -2404,6 +2442,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         uint32_t activeStreamId = (iterActive->first).streamId;
         bool removeFocusInfo = false;
         ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt, removeFocusInfo, interruptEvent);
+        StartPausedStreamMonitor(zoneId, interruptEvent, incomingInterrupt, iterActive->first);
         AudioInterrupt currentInterrupt = iterActive->first;
         if (removeFocusInfo) {
             RemoveFocusInfo(iterActive, tmpFocusInfoList, targetZoneIt->second, removeFocusInfoPidList);
@@ -2490,10 +2529,12 @@ void AudioInterruptService::SendActiveInterruptEvent(const uint32_t activeStream
 {
     if (interruptEvent.hintType != INTERRUPT_HINT_NONE) {
         if (AudioInterruptUtils::IsMediaStream(activeInterrupt.audioFocusType.streamType) &&
-            incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
+            (incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID ||
+            incomingInterrupt.audioFocusType.streamType == STREAM_RING ||
+            incomingInterrupt.audioFocusType.streamType == STREAM_VOICE_RING) &&
             (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP ||
             interruptEvent.hintType == INTERRUPT_HINT_MUTE)) {
-            mediaInterruptedByRec_ = true;
+            activateNeedDelay_ = true;
         }
         if (interruptDfx_ != nullptr) {
             interruptDfx_->RecordInterruptEvent(interruptEvent, activeInterrupt, incomingInterrupt);
@@ -2625,6 +2666,7 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     if (interruptCustom_ != nullptr) {
         interruptCustom_->UpdateCustomFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     }
+    ApplyDuckPassthroughMode(focusEntry);
 }
 
 bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
@@ -2856,6 +2898,11 @@ bool AudioInterruptService::ShouldBypassAudioSessionFocus(const int32_t zoneId, 
     }
 
     if (sessionService_.ShouldBypassFocusForStream(incomingInterrupt)) {
+        StreamUsage sessionUsage = sessionService_.GetAudioSessionStreamUsage(incomingInterrupt.pid);
+        if (sessionUsage == STREAM_USAGE_VOICE_COMMUNICATION &&
+            incomingInterrupt.audioFocusType.streamType == STREAM_RING) {
+            activateNeedDelay_ = true;
+        }
         return true;
     }
 
@@ -2892,7 +2939,8 @@ bool AudioInterruptService::TryHandleStreamCallbackInSession(
     }
 
     if (iter->second == AudioFocuState::DUCK) {
-        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK, DUCK_FACTOR};
+        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK,
+            GetDuckFactorForStreams(incomingInterrupt, incomingInterrupt)}; // to do.
         handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, incomingInterrupt.streamId);
     }
 
@@ -2977,7 +3025,7 @@ void AudioInterruptService::HandleIncomingState(const int32_t &zoneId, const Aud
             interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
         } else if (incomingState == DUCK) {
             interruptEvent.hintType = INTERRUPT_HINT_DUCK;
-            interruptEvent.duckVolume = DUCK_FACTOR;
+            interruptEvent.duckVolume = GetDuckFactorForStreams(incomingInterrupt, incomingInterrupt); // to do.
         } else if (incomingState == MUTED) {
             interruptEvent.hintType = INTERRUPT_HINT_MUTE;
         }
@@ -3154,7 +3202,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
     RemoveSuggestionRecord(audioInterrupt);
     DeactivateAudioInterruptInternalContinue(zoneId, isSessionTimeout);
     RemoveMuteCheckRecord(audioInterrupt);
-    return;
+    StopPausedStreamMonitor(audioInterrupt.streamId);
 }
 
 bool AudioInterruptService::CheckNeedPlaceHolder(const AudioInterrupt &audioInterrupt,
@@ -3319,6 +3367,16 @@ bool AudioInterruptService::UpdateFocusStateByHintType(const AudioFocusEntry &fo
     return true;
 }
 
+float AudioInterruptService::GetDuckFactorForStreams(const AudioInterrupt &first,
+    const AudioInterrupt &second) const
+{
+    if (first.audioFocusType.streamType == STREAM_ACCESSIBILITY ||
+        second.audioFocusType.streamType == STREAM_ACCESSIBILITY) {
+        return accessibilityDuckFactor_.load();
+    }
+    return duckFactor_.load();
+}
+
 void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
     std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive, bool &removeFocusInfo)
 {
@@ -3334,7 +3392,8 @@ void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFoc
     // RESUME event should be INTERRUPT_SHARE. But mark it as INTERRUPT_FORCE here for state checking.
     // The force type will be changed to INTERRUPT_SHARE in client.
     InterruptEventInternal forceUnduck {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNDUCK, 1.0f};
-    InterruptEventInternal forceDuck {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK, DUCK_FACTOR};
+    InterruptEventInternal forceDuck {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK,
+        GetDuckFactorForStreams(audioInterrupt, audioInterrupt)}; // to do
     InterruptEventInternal forcePause {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
     InterruptEventInternal forceUnmute {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE, 1.0f};
     switch (newState) {
@@ -3376,6 +3435,10 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
 
     if (interruptEvent.hintType == INTERRUPT_HINT_STOP) {
         muteAudioFocus_.erase(streamId);
+    }
+
+    if (interruptEvent.hintType == INTERRUPT_HINT_STOP || interruptEvent.hintType == INTERRUPT_HINT_RESUME) {
+        StopPausedStreamMonitor(streamId);
     }
 
     if ((interruptEvent.hintType == INTERRUPT_HINT_MUTE || interruptEvent.hintType == INTERRUPT_HINT_UNMUTE)) {
@@ -4014,6 +4077,35 @@ void AudioInterruptService::RegisterDefaultVolumeTypeListener()
     }
     updateFuncMono(DEFAULT_VOLUME_KEY);
     AUDIO_INFO_LOG("DefaultVolumeTypeListener mono successfully, defaultVolumeType:%{public}d", defaultVolumeType_);
+}
+
+void AudioInterruptService::RegisterAccessibilityDuckFactorListener()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncDuckFactor = [this, &settingProvider](const std::string &key) {
+        int32_t currentDuckFactor = -1;
+        ErrCode ret = settingProvider.GetIntValue(ACCESSIBILITY_DUCK_FACTOR_KEY, currentDuckFactor, "system");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "ACCESSIBILITY_DUCK_FACTOR_KEY get value failed");
+        const int32_t MAX_DUCK_FACTOR = 100; // percentage
+        if (currentDuckFactor >= 0 && currentDuckFactor <= MAX_DUCK_FACTOR) {
+            accessibilityDuckFactor_ = currentDuckFactor / 100.0f;
+            AUDIO_INFO_LOG("Get accessibilityDuckFactor: %{public}f", accessibilityDuckFactor_.load());
+        }
+    };
+    sptr observer = settingProvider.CreateObserver(ACCESSIBILITY_DUCK_FACTOR_KEY, updateFuncDuckFactor);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "system");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterAccessibilityDuckFactorListener failed");
+    }
+    updateFuncDuckFactor(ACCESSIBILITY_DUCK_FACTOR_KEY);
+    AUDIO_INFO_LOG("AccessibilityDuckFactorListener successfully, accessibilityDuckFactor:%{public}f",
+        accessibilityDuckFactor_.load());
+}
+
+void AudioInterruptService::RegisterPCModeListener()
+{
+    CHECK_AND_RETURN_LOG(interruptStrategy_ != nullptr, "interruptStrategy_ is nullptr!");
+    interruptStrategy_->RegisterPCModeListener();
 }
 
 void AudioInterruptService::PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId)

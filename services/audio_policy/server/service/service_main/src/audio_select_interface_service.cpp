@@ -31,6 +31,7 @@
 #include "sle_audio_device_manager.h"
 #include "audio_stream_collector.h"
 #include "audio_router_map.h"
+#include "audio_rollback_manager.h"
 #include "bluetooth_device_manager.h"
 #include "audio_bluetooth_manager.h"
 #include "audio_scene_manager.h"
@@ -59,6 +60,9 @@ int32_t AudioSelectInterfaceService::SetDeviceActive(DeviceType deviceType, bool
     int32_t ownerUid = AudioSceneManager::GetInstance().GetAudioSceneOwnerUid();
     int32_t callerUid = GetPreferredUid(uid);
     if (!active) {
+        std::shared_ptr<AudioDeviceDescriptor> preferredDesc =
+            AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(callerUid, INVALID_STREAM_ID);
+        CHECK_AND_RETURN_RET(preferredDesc->deviceType_ == deviceType, SUCCESS);
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), uid, "SetDeviceActive");
 #ifdef BLUETOOTH_ENABLE
@@ -274,6 +278,9 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && !selectedDesc.empty() && selectedDesc[0] != nullptr,
         ERROR, "ptr exception");
     SelectOutputDeviceLog(audioRendererFilter, selectedDesc, audioDeviceSelectMode);
+    if (audioRendererFilter->blockFirstOverrode) {
+        SetBlockFirstOverrode(true);
+    }
     CHECK_AND_RETURN_RET_LOG(selectedDesc.size() == 1 && selectedDesc[0] &&
         selectedDesc[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE, ERR_INVALID_OPERATION, "DeviceCheck no success");
 
@@ -285,7 +292,7 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
         CHECK_AND_CALL_FUNC_RETURN_RET(audioRendererFilter->uid > 0, ERR_INVALID_OPERATION,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
                 ERR_PLAY_DEVICE_SWITCH_INVALID_PARAM, "SelectOutputDevice: invalid uid", false));
-        AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(audioRendererFilter->uid,
+        AudioRollbackManager::GetInstance().SetMediaOutputDevice(audioRendererFilter->uid,
             audioRendererFilter->streamId, selectedDesc[0]);
     } else if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
         return SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
@@ -315,6 +322,16 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     coreService->OnPreferredOutputDeviceUpdated(AudioRouterSelectStrategy::GetInstance()
         .Get1stCurrentOutputDevice(audioRendererFilter->uid), AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
+}
+
+void AudioSelectInterfaceService::SetBlockFirstOverrode(bool blockFirstOverrode)
+{
+    blockFirstOverrodePending_.store(blockFirstOverrode);
+}
+
+bool AudioSelectInterfaceService::GetBlockFirstOverrode()
+{
+    return blockFirstOverrodePending_.load();
 }
 
 int32_t AudioSelectInterfaceService::SelectOutputDevicePrepare(
@@ -466,7 +483,7 @@ int32_t AudioSelectInterfaceService::SetMediaOutputDeviceByUid(DeviceType device
 {
     int32_t callerUid = GetPreferredUid(uid);
     if (deviceType == DEVICE_TYPE_DEFAULT) {
-        AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(
+        AudioRollbackManager::GetInstance().SetMediaOutputDevice(
             callerUid, INVALID_STREAM_ID, std::make_shared<AudioDeviceDescriptor>());
         return SUCCESS;
     }
@@ -480,7 +497,7 @@ int32_t AudioSelectInterfaceService::SetMediaOutputDeviceByUid(DeviceType device
     auto itr = std::find_if(mediaDevices.begin(), mediaDevices.end(), isPresent);
     CHECK_AND_RETURN_RET_LOG(itr != mediaDevices.end(), SUCCESS,
         "Requested device not available %{public}d", deviceType);
-    AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(callerUid, INVALID_STREAM_ID, *itr);
+    AudioRollbackManager::GetInstance().SetMediaOutputDevice(callerUid, INVALID_STREAM_ID, *itr);
     return SUCCESS;
 }
 
@@ -499,9 +516,9 @@ int32_t AudioSelectInterfaceService::SelectInputDeviceInner(sptr<AudioCapturerFi
     if (audioCapturerFilter->capturerInfo.capturerFlags == STREAM_FLAG_FAST) {
         if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
             srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-            AudioRouterSelectStrategy::GetInstance().SetCallInputDevice(selectUid, selectStreamId, selectedDesc);
+            AudioRollbackManager::GetInstance().SetCallInputDevice(selectUid, selectStreamId, selectedDesc);
         } else {
-            AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(selectUid, selectStreamId, selectedDesc);
+            AudioRollbackManager::GetInstance().SetMediaInputDevice(selectUid, selectStreamId, selectedDesc);
         }
         int32_t result = AudioRouteMap::GetInstance().AddFastRouteMapInfo(audioCapturerFilter->uid,
             selectedDesc->networkId_, INPUT_DEVICE);
@@ -520,11 +537,14 @@ int32_t AudioSelectInterfaceService::SelectInputDeviceInner(sptr<AudioCapturerFi
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret, StreamDfxManager::GetInstance().SendAudioErrorEvent(
         IPCSkeleton::GetCallingUid(), ERR_RECORD_DEVICE_SWITCH_OPERATION_FAILED, "RefreshVirtualDevice failed", false));
 
+    int32_t bluetoothUid = 1002;
     if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
         srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        AudioRouterSelectStrategy::GetInstance().SetCallInputDevice(selectUid, selectStreamId, selectedDesc);
+        AudioRollbackManager::GetInstance().SetCallInputDevice(selectUid, selectStreamId, selectedDesc);
+    } else if (audioCapturerFilter->uid == bluetoothUid && srcType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        AudioRouterSelectStrategy::GetInstance().SetRecognitionInputDevice(selectedDesc);
     } else {
-        AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(selectUid, selectStreamId, selectedDesc);
+        AudioRollbackManager::GetInstance().SetMediaInputDevice(selectUid, selectStreamId, selectedDesc);
     }
 
     NotifyBtForInputDeviceSelection(selectedDesc, srcType);
@@ -542,7 +562,7 @@ int32_t AudioSelectInterfaceService::SelectInputDevice(sptr<AudioCapturerFilter>
     CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr && !selectedDesc.empty() && selectedDesc[0] != nullptr,
         ERROR, "ptr exception");
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_NONE) {
-        AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(audioCapturerFilter->uid,
+        AudioRollbackManager::GetInstance().SetMediaInputDevice(audioCapturerFilter->uid,
             static_cast<uint32_t>(audioCapturerFilter->streamId), selectedDesc[0]);
         auto coreService = AudioCoreService::GetCoreService();
         CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
@@ -590,7 +610,7 @@ int32_t AudioSelectInterfaceService::SelectInputDeviceByUid(const std::shared_pt
         deviceDesc : AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(deviceDesc->deviceId_));
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, SUCCESS, "not connected device");
     SetDeviceEnableAndUsage(desc, desc->deviceUsage_);
-    AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(uid, INVALID_STREAM_ID, desc);
+    AudioRollbackManager::GetInstance().SetMediaInputDevice(uid, INVALID_STREAM_ID, desc);
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
     coreService->FetchInputDeviceAndRoute("SelectInputDeviceByUid");
@@ -746,7 +766,22 @@ int32_t AudioSelectInterfaceService::UnexcludeOutputDevices(AudioDeviceUsage aud
 int32_t AudioSelectInterfaceService::UnexcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
-    CHECK_AND_RETURN_RET_LOG(deviceDescs.size() > 0, ERR_INVALID_PARAM, "No device to exclude");
+    CHECK_AND_RETURN_RET_LOG(deviceDescs.size() > 0, ERR_INVALID_PARAM, "No device to unexclude");
+    const auto &front = deviceDescs.front();
+    if (Util::IsEnhancedRoutingSupported() &&
+        front != nullptr && !front->macAddress_.empty()) {
+        auto allDevices = AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> unexcludeDescs;
+        auto isSameMacOutput = [&front](const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc) {
+            return deviceDesc != nullptr &&
+                deviceDesc->macAddress_ == front->macAddress_ &&
+                deviceDesc->deviceRole_ == OUTPUT_DEVICE;
+        };
+        std::copy_if(allDevices.begin(), allDevices.end(),
+            std::back_inserter(unexcludeDescs), isSameMacOutput);
+        AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludeDescs, D_ALL_DEVICES);
+        return SUCCESS;
+    }
     AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(deviceDescs, audioDevUsage);
     return SUCCESS;
 }
@@ -780,16 +815,6 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
     for (auto &desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr && desc->sessionId_ == sessionID);
         clientUid = desc->GetRealUid();
-        if (desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-            desc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
-            desc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
-            CHECK_AND_CONTINUE(!skipForce);
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), desc->GetRealUid(), "SetDefaultOutputDevice");
-            forceFetch = true;
-        }
     }
     if (clientUid == INVALID_UID) {
         return SUCCESS;
@@ -819,7 +844,7 @@ int32_t AudioSelectInterfaceService::SetInputDevice(
         }
     }
 
-    AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(uid, sessionID, target);
+    AudioRollbackManager::GetInstance().SetMediaInputDevice(uid, sessionID, target);
 
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
@@ -833,7 +858,7 @@ void AudioSelectInterfaceService::SetPreferredInputDeviceIfValid(std::shared_ptr
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     AudioDeviceDescriptor preferredDevice = streamDesc->preferredInputDevice;
     CHECK_AND_RETURN_LOG(preferredDevice.deviceType_ > DEVICE_TYPE_INVALID, "invalid deviceType");
-    AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(streamDesc->appInfo_.appUid,
+    AudioRollbackManager::GetInstance().SetMediaInputDevice(streamDesc->appInfo_.appUid,
         streamDesc->sessionId_, std::make_shared<AudioDeviceDescriptor>(preferredDevice));
 
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
@@ -867,7 +892,7 @@ void AudioSelectInterfaceService::OnPrivacyDeviceSelected(DeviceType devType, co
     const std::string &caller)
 {
     AUDIO_INFO_LOG("Entry");
-    AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID,
+    AudioRollbackManager::GetInstance().SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID,
         std::make_shared<AudioDeviceDescriptor>(), caller);
 
     bool hasUsablePrivateCallDevice {false};

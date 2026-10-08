@@ -168,91 +168,138 @@ int32_t AudioSuiteClientPolicy::UnregisterDownloadStatusCallback()
     return SUCCESS;
 }
 
-int32_t AudioSuiteClientPolicy::StartDownload(const std::string& featureName, bool allowedCellularNet)
+int32_t AudioSuiteClientPolicy::GetInstallStatus(
+    const std::vector<std::string>& featureNames, std::vector<bool>& installStatus)
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::StartDownload, featureName=%{public}s, allowedCellularNet=%{public}d",
-        featureName.c_str(), allowedCellularNet);
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::GetInstallStatus, featureNames size=%{public}zu",
+        featureNames.size());
 
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
 
     int32_t result = SUCCESS;
-    ErrCode ret = proxy_->StartDownload(featureName, allowedCellularNet, result);
+    ErrCode ret = proxy_->GetInstallStatus(featureNames, installStatus, result);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetInstallStatus IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "GetInstallStatus result: %{public}d", result);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteClientPolicy::StartDownload(const std::vector<std::string>& featureNames, bool allowedCellularNet)
+{
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::StartDownload, featureNames size=%{public}zu, "
+        "allowedCellularNet=%{public}d", featureNames.size(), allowedCellularNet);
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
+
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->StartDownload(featureNames, allowedCellularNet, result);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartDownload IPC ret: %{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "StartDownload result: %{public}d", result);
     return SUCCESS;
 }
 
-int32_t AudioSuiteClientPolicy::PauseDownload(const std::string& featureName)
+int32_t AudioSuiteClientPolicy::PauseDownload(const std::vector<std::string>& featureNames)
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::PauseDownload, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::PauseDownload, featureNames size=%{public}zu", featureNames.size());
 
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
 
     int32_t result = SUCCESS;
-    ErrCode ret = proxy_->PauseDownload(featureName, result);
+    ErrCode ret = proxy_->PauseDownload(featureNames, result);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "PauseDownload IPC ret: %{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "PauseDownload result: %{public}d", result);
     return SUCCESS;
 }
 
-int32_t AudioSuiteClientPolicy::CancelDownload(const std::string& featureName)
+int32_t AudioSuiteClientPolicy::CancelDownload(const std::vector<std::string>& featureNames)
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::CancelDownload, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::CancelDownload, featureNames size=%{public}zu", featureNames.size());
 
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
 
     int32_t result = SUCCESS;
-    ErrCode ret = proxy_->CancelDownload(featureName, result);
+    ErrCode ret = proxy_->CancelDownload(featureNames, result);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CancelDownload IPC ret: %{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CancelDownload result: %{public}d", result);
     return SUCCESS;
 }
 
-int32_t AudioSuiteClientPolicy::StartBackgroundDownload(const std::string& featureName)
+int32_t AudioSuiteClientPolicy::StartBackgroundDownload(const std::vector<std::string>& featureNames)
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::StartBackgroundDownload, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::StartBackgroundDownload, featureNames size=%{public}zu",
+        featureNames.size());
 
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
 
     int32_t result = SUCCESS;
-    ErrCode ret = proxy_->StartBackgroundDownload(featureName, result);
+    ErrCode ret = proxy_->StartBackgroundDownload(featureNames, result);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartBackgroundDownload IPC ret: %{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "StartBackgroundDownload result: %{public}d", result);
     return SUCCESS;
 }
 
-int32_t AudioSuiteClientPolicy::GetDownloadStatus(const std::string& featureName, AudioSuiteDownloadStatusInfo& status)
+int32_t AudioSuiteClientPolicy::GetDownloadStatus(
+    const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo>& status)
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::GetDownloadStatus, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::GetDownloadStatus, featureNames size=%{public}zu", featureNames.size());
 
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
 
     int32_t result = SUCCESS;
-    ErrCode ret = proxy_->GetDownloadStatus(featureName, status, result);
+    ErrCode ret = proxy_->GetDownloadStatus(featureNames, status, result);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetDownloadStatus IPC ret: %{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "GetDownloadStatus result: %{public}d", result);
     return SUCCESS;
 }
 
-int32_t AudioSuiteClientPolicy::UninstallCloudRom(const std::string& featureName)
+int32_t AudioSuiteClientPolicy::GetFeatureStatus(
+    const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo>& status)
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::UninstallCloudRom, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::GetFeatureStatus, featureNames size=%{public}zu", featureNames.size());
 
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
 
     int32_t result = SUCCESS;
-    ErrCode ret = proxy_->UninstallCloudRom(featureName, result);
+    ErrCode ret = proxy_->GetFeatureStatus(featureNames, status, result);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureStatus IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "GetFeatureStatus result: %{public}d", result);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteClientPolicy::GetFeatureNewVersion(
+    const std::vector<std::string>& featureNames, std::vector<AudioSuiteCloudRomVersionInfo>& versionInfos)
+{
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::GetFeatureNewVersion, featureNames size=%{public}zu", featureNames.size());
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
+
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->GetFeatureNewVersion(featureNames, versionInfos, result);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureNewVersion IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "GetFeatureNewVersion result: %{public}d", result);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteClientPolicy::UninstallCloudRom(const std::vector<std::string>& featureNames)
+{
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::UninstallCloudRom, featureNames size=%{public}zu", featureNames.size());
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
+
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->UninstallCloudRom(featureNames, result);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UninstallCloudRom IPC ret: %{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "UninstallCloudRom result: %{public}d", result);
     return SUCCESS;
 }
-
 int32_t AudioSuiteClientPolicy::RegisterDownloadInterfaceCallback(
     const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback)
 {

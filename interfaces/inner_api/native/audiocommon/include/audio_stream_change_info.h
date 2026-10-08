@@ -55,20 +55,34 @@ public:
     bool Marshalling(Parcel &parcel) const override
     {
         int32_t clientUIDTemp = clientUID;
+        int32_t createrUIDTemp = createrUID;
+        int32_t callerPidTemp = callerPid;
+        int32_t clientPidTemp = clientPid;
+        int32_t tokenIdTemp = tokenId;
+        int32_t channelCountTemp = channelCount;
+        bool backMuteTemp = backMute;
+        int32_t appVolumeTemp = appVolume;
         RendererState rendererStateTemp = rendererState;
         if (clientInfo_) {
             clientUIDTemp = clientInfo_.value().hasSystemPermission_ ? clientUID : EMPTY_UID;
+            createrUIDTemp = clientInfo_.value().hasSystemPermission_ ? createrUID : EMPTY_UID;
+            callerPidTemp = clientInfo_.value().hasSystemPermission_ ? callerPid : EMPTY_DATA;
+            clientPidTemp = clientInfo_.value().hasSystemPermission_ ? clientPid : EMPTY_DATA;
+            tokenIdTemp = clientInfo_.value().hasSystemPermission_ ? tokenId : EMPTY_DATA;
+            channelCountTemp = clientInfo_.value().hasSystemPermission_ ? channelCount : EMPTY_DATA;
+            backMuteTemp = clientInfo_.value().hasSystemPermission_ ? backMute : false;
+            appVolumeTemp = clientInfo_.value().hasSystemPermission_ ? appVolume : EMPTY_DATA;
             rendererStateTemp = clientInfo_.value().hasSystemPermission_ ? rendererState : RENDERER_INVALID;
             clientInfo_ = std::nullopt;
         }
-        return parcel.WriteInt32(createrUID)
+        return parcel.WriteInt32(createrUIDTemp)
             && parcel.WriteInt32(clientUIDTemp)
             && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && parcel.WriteInt32(tokenId)
-            && parcel.WriteInt32(channelCount)
-            && parcel.WriteBool(backMute)
+            && parcel.WriteInt32(callerPidTemp)
+            && parcel.WriteInt32(clientPidTemp)
+            && parcel.WriteInt32(tokenIdTemp)
+            && parcel.WriteInt32(channelCountTemp)
+            && parcel.WriteBool(backMuteTemp)
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
             && parcel.WriteInt32(rendererInfo.rendererFlags)
@@ -78,7 +92,7 @@ public:
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(rendererStateTemp))
             && outputDeviceInfo.Marshalling(parcel)
-            && parcel.WriteInt32(appVolume)
+            && parcel.WriteInt32(appVolumeTemp)
             && streamInfo.Marshalling(parcel);
     }
 
@@ -141,21 +155,29 @@ public:
     {
         int32_t clientUIDTemp = clientUID;
         CapturerState capturerStateTemp = capturerState;
+        int32_t createrUIDTemp = createrUID;
+        int32_t callerPidTemp = callerPid;
+        int32_t clientPidTemp = clientPid;
+        uint32_t appTokenIdTemp = appTokenId;
         if (clientInfo_) {
             clientUIDTemp = clientInfo_.value().hasSystemPermission_ ? clientUID : EMPTY_UID;
             capturerStateTemp = clientInfo_.value().hasSystemPermission_ ? capturerState : CAPTURER_INVALID;
+            createrUIDTemp = clientInfo_.value().hasSystemPermission_ ? createrUID : EMPTY_UID;
+            callerPidTemp = clientInfo_.value().hasSystemPermission_ ? callerPid : EMPTY_DATA;
+            clientPidTemp = clientInfo_.value().hasSystemPermission_ ? clientPid : EMPTY_DATA;
+            appTokenIdTemp = clientInfo_.value().hasSystemPermission_ ? appTokenId : EMPTY_DATA;
             clientInfo_ = std::nullopt;
         }
-        return parcel.WriteInt32(createrUID)
+        return parcel.WriteInt32(createrUIDTemp)
             && parcel.WriteInt32(clientUIDTemp)
             && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
+            && parcel.WriteInt32(callerPidTemp)
+            && parcel.WriteInt32(clientPidTemp)
             && capturerInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(capturerStateTemp))
             && inputDeviceInfo.Marshalling(parcel)
             && parcel.WriteBool(muted)
-            && parcel.WriteUint32(appTokenId);
+            && parcel.WriteUint32(appTokenIdTemp);
     }
 
     void UnmarshallingSelf(Parcel &parcel)

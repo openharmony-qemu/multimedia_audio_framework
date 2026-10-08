@@ -41,6 +41,9 @@ public:
     int32_t AddVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
     int32_t RemoveVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
     size_t GetVolumeDegreeCallbackSize() const;
+    int32_t AddVolumeLimitExceededCallback(const std::shared_ptr<VolumeLimitExceededCallback> &cb);
+    int32_t RemoveVolumeLimitExceededCallback(const std::shared_ptr<VolumeLimitExceededCallback> &cb);
+    size_t GetVolumeLimitExceededCallbackSize() const;
     int32_t AddSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb);
     int32_t RemoveSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb);
     size_t GetSystemVolumeChangeCallbackSize() const;
@@ -201,6 +204,7 @@ public:
         const AudioStreamDeviceChangeReasonExt &reason) override;
     int32_t OnVolumeKeyEvent(const VolumeEvent &volumeEvent) override;
     int32_t OnVolumeDegreeEvent(const VolumeEvent &volumeEvent) override;
+    int32_t OnVolumeLimitExceeded(const VolumeLimitExceedEvent &event) override;
     int32_t OnAudioFocusInfoChange(const std::vector<std::map<AudioInterrupt, int32_t>> &focusInfoList) override;
     int32_t OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
     int32_t OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
@@ -260,6 +264,7 @@ private:
 
     std::vector<std::weak_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
     std::vector<std::weak_ptr<VolumeKeyEventCallback>> volumeDegreeCallbackList_;
+    std::vector<std::weak_ptr<VolumeLimitExceededCallback>> volumeLimitExceededCallbackList_;
     std::vector<std::pair<std::set<StreamUsage>,
         std::weak_ptr<StreamVolumeChangeCallback>>> streamVolumeChangeCallbackList_;
     std::vector<std::weak_ptr<SystemVolumeChangeCallback>> systemVolumeChangeCallbackList_;
@@ -323,6 +328,7 @@ private:
     mutable std::mutex pInputDeviceChangeMutex_;
     mutable std::mutex volumeKeyEventMutex_;
     mutable std::mutex volumeDegreeEventMutex_;
+    mutable std::mutex volumeLimitExceededMutex_;
     mutable std::mutex deviceChangeMutex_;
     mutable std::mutex deviceInfoUpdateMutex_;
     mutable std::mutex ringerModeMutex_;

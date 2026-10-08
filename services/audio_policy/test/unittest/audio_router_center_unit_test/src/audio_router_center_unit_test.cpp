@@ -1960,7 +1960,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchOutputDevicesInner_BlockedDeviceFallback_
     auto result = audioRouterCenter.FetchOutputDevicesInner(info);
     EXPECT_EQ(result.size(), 1);
     ASSERT_NE(result[0], nullptr);
-    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_NE(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
 
     audioPipeManager->modemCommunicationIdMap_.clear();
     audioPipeManager->transferCallOrRingtoneCount_.store(0);

@@ -491,7 +491,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetSinkLatencyProxy_001, TestSize.Lev
     uint32_t sinkLatency = 123;
     const int32_t ret = AudioServerProxy::GetInstance().GetSinkLatencyProxy(1, sinkLatency);
 
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
     EXPECT_EQ(sinkLatency, 0U);
 }
 
@@ -2181,25 +2181,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_004, TestSize.Level1)
     propertyArray.property.push_back({"voip_up", "AINR"});
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, true);
-}
-
-/**
-* @tc.name  : Test ClearActiveHfpDevice.
-* @tc.number: ClearActiveHfpDevice_001.
-* @tc.desc  : Test ClearActiveHfpDevice interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ClearActiveHfpDevice_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    int32_t ret = server->audioPolicyService_.audioRecoveryDevice_.ClearActiveHfpDevice(desc);
-    EXPECT_EQ(ret, SUCCESS);
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    ret = server->audioPolicyService_.audioRecoveryDevice_.ClearActiveHfpDevice(desc);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

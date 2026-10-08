@@ -33,6 +33,15 @@ IdHandler &IdHandler::GetInstance(void)
     return instance;
 }
 
+const std::string &IdHandler::SelectIdInfo(const std::string &macAddress, const std::string &deviceNetId)
+{
+    static const std::string defaultInfo = HDI_ID_INFO_DEFAULT;
+    if (!macAddress.empty()) {
+        return macAddress;
+    }
+    return !deviceNetId.empty() ? deviceNetId : defaultInfo;
+}
+
 uint32_t IdHandler::GetId(HdiIdBase base, HdiIdType type, const std::string &info)
 {
     CHECK_AND_RETURN_RET_LOG(base < HDI_ID_BASE_NUM, HDI_INVALID_ID, "invalid id base %{public}u", base);
@@ -121,6 +130,8 @@ uint32_t IdHandler::GetRenderIdByDeviceClassSub(const std::string &deviceClass, 
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_VIRTUAL_INJECTOR, HDI_ID_INFO_DEFAULT);
     } else if (deviceClass == "RemoteCastInnerCapturer") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
+    } else if (deviceClass.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT, info);
     }
     AUDIO_ERR_LOG("invalid param, deviceClass: %{public}s, info: %{private}s", deviceClass.c_str(), info.c_str());
     return HDI_INVALID_ID;

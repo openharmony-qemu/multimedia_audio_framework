@@ -287,6 +287,7 @@ ohos_unittest("audio_ring_cache_unit_test") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/server/include",
+    "../../../../test/unittest/common/include",
   ]
 
   cflags = [
@@ -294,7 +295,10 @@ ohos_unittest("audio_ring_cache_unit_test") {
     "-fno-access-control",
   ]
 
-  sources = [ "audio_ring_cache_unit_test.cpp" ]
+  sources = [
+    "audio_ring_cache_unit_test.cpp",
+    "./common/audio_ring_cache_aiut.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
 
@@ -456,10 +460,8 @@ ohos_unittest("audio_service_unit_test") {
     "./client/audio_wakeup_manager_unit_test.cpp",
     "./client/audio_workgroup_manager_unit_test.cpp",
     "./client/audio_session_manager_unit_test.cpp",
-    "./common/audio_address_secure_hash_unit_test.cpp",
     "./common/audio_common_converter_unit_test.cpp",
     "./common/audio_down_mix_stereo_unit_test.cpp",
-    "./common/audio_spatialization_state_unit_test.cpp",
     "./common/audio_static_buffer_provider_unit_test.cpp",
     "./common/futex_tool_unit_test.cpp",
     "./common/limiter_unit_test/audio_limiter_adapter_unit_test.cpp",
@@ -919,6 +921,70 @@ ohos_unittest("capturer_in_client_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+  ]
+}
+
+ohos_unittest("renderer_in_client_hoa_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+  use_exceptions = true # GTEST_SKIP needs exceptions; without it the skip only logs
+
+  configs = [ ":module_private_config" ]
+
+  include_dirs = [
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/server/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../frameworks/native/audioinnercall/include",
+    "../../../../frameworks/native/audiopolicy/include",
+  ]
+
+  sources = [ "renderer_in_client_hoa_unit_test.cpp" ]
+
+  deps = [
+    "../../../../frameworks/native/audiodefinitions:audio_definitions",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/audioschedule:audio_schedule",
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_policy:audio_policy_client",
+    "../../../../services/audio_policy:audio_policy_service",
+    "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
+    "../../../../services/audio_service:audio_common",
+    "../../../../services/audio_service:audio_process_service",
+    "../../../../services/audio_service:audio_service",
+  ]
+
+  cflags = [ "-fno-access-control" ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
     "ffrt:libffrt",
   ]
 }
@@ -1146,7 +1212,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "ability_runtime:extension_manager",
     "init:libbegetutil",
     "cJSON:cjson",
-    "ffrt:libffrt",
   ]
 
   defines = []
@@ -2984,6 +3049,44 @@ ohos_unittest("renderer_in_server_fifth_unit_test") {
 
 
 
+ohos_unittest("linear_pos_time_model_aiut") {
+  testonly = true
+  module_out_path = "audio_framework/audio_framework_route/linear_pos_time_model"
+
+  include_dirs = [
+    "../../../../frameworks/native/audioutils/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/server/include",
+    "../../../../test/unittest/common/include",
+  ]
+
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
+  sources = [ "./common/linear_pos_time_model_aiut.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
+    "../../../../services/audio_service:audio_common",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "samgr:samgr_proxy",
+  ]
+}
+
 group("audio_service_unittest") {
   testonly = true
   deps = [
@@ -3005,6 +3108,7 @@ group("audio_service_unittest") {
     ":audio_manager_stub_unit_test",
     ":renderer_in_server_fourth_unit_test",
     ":renderer_in_server_fifth_unit_test",
+    ":linear_pos_time_model_aiut",
     "renderer_in_server_unit_test:renderer_in_server_unit_test",
     "renderer_in_server_unit_test:renderer_in_server_second_unit_test",
     "renderer_in_server_unit_test:renderer_in_server_third_unit_test",

@@ -141,6 +141,18 @@ int32_t AudioInterruptClientManager::SetAppConcurrencyMode(const int32_t appUid,
     return AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
 }
 
+int32_t AudioInterruptClientManager::SetDuckPassthroughMode(bool enable)
+{
+    AUDIO_DEBUG_LOG("SetDuckPassthroughMode: %{public}d", enable);
+    return AudioPolicyManager::GetInstance().SetDuckPassthroughMode(enable);
+}
+
+int32_t AudioInterruptClientManager::SetDuckFactor(int32_t duckFactor)
+{
+    AUDIO_DEBUG_LOG("SetDuckFactor: %{public}d", duckFactor);
+    return AudioPolicyManager::GetInstance().SetDuckFactor(duckFactor);
+}
+
 int32_t AudioInterruptClientManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
 {
     AUDIO_DEBUG_LOG("stub implementation");

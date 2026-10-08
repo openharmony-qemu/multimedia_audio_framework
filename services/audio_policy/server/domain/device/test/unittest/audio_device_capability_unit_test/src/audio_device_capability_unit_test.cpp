@@ -98,5 +98,65 @@ HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString_HdPlaybackMode_002, TestS
     capability.FromJsonString(json);
     EXPECT_EQ(capability.hdPlaybackMode_, 2);
 }
+
+/**
+ * @tc.name  : FromJsonString_SupportDynamicPipes_001
+ * @tc.number: FromJsonString_SupportDynamicPipes_001
+ * @tc.desc  : Test FromJsonString when support_dynamic_pipes is not a number type.
+ */
+HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString_SupportDynamicPipes_001, TestSize.Level1)
+{
+    RemoteDeviceCapability capability;
+    std::string json = R"({
+        "support_dynamic_pipes": "invalid_string"
+    })";
+    capability.FromJsonString(json);
+    EXPECT_EQ(capability.supportDynamicPipes_, AUDIO_FLAG_NONE);
+}
+
+/**
+ * @tc.name  : FromJsonString_SupportDynamicPipes_002
+ * @tc.number: FromJsonString_SupportDynamicPipes_002
+ * @tc.desc  : Test FromJsonString when support_dynamic_pipes is a valid number.
+ */
+HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString_SupportDynamicPipes_002, TestSize.Level1)
+{
+    RemoteDeviceCapability capability;
+    std::string json = R"({
+        "support_dynamic_pipes": 8
+    })";
+    capability.FromJsonString(json);
+    EXPECT_EQ(capability.supportDynamicPipes_, AUDIO_OUTPUT_FLAG_MULTICHANNEL);
+}
+
+/**
+ * @tc.name  : FromJsonString_IsSupportReload_001
+ * @tc.number: FromJsonString_IsSupportReload_001
+ * @tc.desc  : Test FromJsonString when is_support_reload is not a bool type (default true).
+ */
+HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString_IsSupportReload_001, TestSize.Level1)
+{
+    RemoteDeviceCapability capability;
+    std::string json = R"({
+        "is_support_reload": "invalid_string"
+    })";
+    capability.FromJsonString(json);
+    EXPECT_EQ(capability.isSupportReload_, true);
+}
+
+/**
+ * @tc.name  : FromJsonString_IsSupportReload_002
+ * @tc.number: FromJsonString_IsSupportReload_002
+ * @tc.desc  : Test FromJsonString when is_support_reload is false.
+ */
+HWTEST_F(AudioDeviceCapabilityUnitTest, FromJsonString_IsSupportReload_002, TestSize.Level1)
+{
+    RemoteDeviceCapability capability;
+    std::string json = R"({
+        "is_support_reload": false
+    })";
+    capability.FromJsonString(json);
+    EXPECT_EQ(capability.isSupportReload_, false);
+}
 }
 }

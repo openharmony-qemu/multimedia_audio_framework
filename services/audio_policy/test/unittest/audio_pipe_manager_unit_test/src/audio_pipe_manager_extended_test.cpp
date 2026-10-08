@@ -544,5 +544,50 @@ HWTEST_F(AudioPipeManagerUnitTest, IsStreamUseUltraFastRoute_007, TestSize.Level
     bool result = pipeManager.IsStreamUseUltraFastRoute(sessionId);
     EXPECT_EQ(false, result);
 }
+
+/**
+ * @tc.name: AudioPipeManager_Get3daDirectBusAddress_001
+ * @tc.desc: Test Get3daDirectBusAddress matches the 3da keyword in busAddress.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AudioPipeManager_Get3daDirectBusAddress_001, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.name = "primary"; // no keyword in name
+    pipeInfo->moduleInfo_.busAddress = "bus10_3da_out";
+    pipeManager.curPipeList_.push_back(pipeInfo);
+    EXPECT_EQ(pipeManager.Get3daDirectBusAddress(), "bus10_3da_out");
+}
+
+/**
+ * @tc.name: AudioPipeManager_Get3daDirectBusAddress_002
+ * @tc.desc: Test Get3daDirectBusAddress falls back to the module name when busAddress is empty.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AudioPipeManager_Get3daDirectBusAddress_002, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.name = "mixport_bus11_3da_out";
+    pipeInfo->moduleInfo_.busAddress = "";
+    pipeManager.curPipeList_.push_back(pipeInfo);
+    EXPECT_EQ(pipeManager.Get3daDirectBusAddress(), "mixport_bus11_3da_out");
+}
+
+/**
+ * @tc.name: AudioPipeManager_Get3daDirectBusAddress_003
+ * @tc.desc: Test Get3daDirectBusAddress returns empty when no 3da pipe exists.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AudioPipeManager_Get3daDirectBusAddress_003, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.name = "primary";
+    pipeInfo->moduleInfo_.busAddress = "bus1_out";
+    pipeManager.curPipeList_.push_back(pipeInfo);
+    EXPECT_TRUE(pipeManager.Get3daDirectBusAddress().empty());
+}
 } // namespace AudioStandard
 } // namespace OHOS

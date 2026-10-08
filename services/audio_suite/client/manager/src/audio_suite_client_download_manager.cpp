@@ -67,48 +67,56 @@ int32_t AudioSuiteDownloadManagerImpl::UnregisterDownloadStatusCallback()
                            "UnregisterDownloadStatusCallback");
 }
 
-int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& featureName, bool allowedCellularNet)
+int32_t AudioSuiteDownloadManagerImpl::GetInstallStatus(
+    const std::vector<std::string>& featureNames, std::vector<bool>& installStatus)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartDownload, featureName=%{public}s, "
-        "allowedCellularNet=%{public}d", featureName.c_str(), allowedCellularNet);
+    return AudioSuiteClientPolicy::GetInstance().GetInstallStatus(featureNames, installStatus);
+}
+
+int32_t AudioSuiteDownloadManagerImpl::StartDownload(
+    const std::vector<std::string>& featureNames, bool allowedCellularNet)
+{
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartDownload, featureNames size=%{public}zu, "
+        "allowedCellularNet=%{public}d", featureNames.size(), allowedCellularNet);
     return CallWithTimeout(
-        [featureName, allowedCellularNet]() {
-            return AudioSuiteClientPolicy::GetInstance().StartDownload(featureName, allowedCellularNet);
+        [featureNames, allowedCellularNet]() {
+            return AudioSuiteClientPolicy::GetInstance().StartDownload(featureNames, allowedCellularNet);
         }, "StartDownload");
 }
 
-int32_t AudioSuiteDownloadManagerImpl::PauseDownload(const std::string& featureName)
+int32_t AudioSuiteDownloadManagerImpl::PauseDownload(const std::vector<std::string>& featureNames)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::PauseDownload, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::PauseDownload, featureNames size=%{public}zu", featureNames.size());
     return CallWithTimeout(
-        [featureName]() { return AudioSuiteClientPolicy::GetInstance().PauseDownload(featureName); }, "PauseDownload");
+        [featureNames]() { return AudioSuiteClientPolicy::GetInstance().PauseDownload(featureNames); },
+        "PauseDownload");
 }
 
-int32_t AudioSuiteDownloadManagerImpl::CancelDownload(const std::string& featureName)
+int32_t AudioSuiteDownloadManagerImpl::CancelDownload(const std::vector<std::string>& featureNames)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::CancelDownload, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::CancelDownload, featureNames size=%{public}zu", featureNames.size());
     return CallWithTimeout(
-        [featureName]() { return AudioSuiteClientPolicy::GetInstance().CancelDownload(featureName); },
+        [featureNames]() { return AudioSuiteClientPolicy::GetInstance().CancelDownload(featureNames); },
         "CancelDownload");
 }
 
-int32_t AudioSuiteDownloadManagerImpl::StartBackgroundDownload(const std::string& featureName)
+int32_t AudioSuiteDownloadManagerImpl::StartBackgroundDownload(const std::vector<std::string>& featureNames)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartBackgroundDownload, featureName=%{public}s",
-        featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartBackgroundDownload, featureNames size=%{public}zu",
+        featureNames.size());
     return CallWithTimeout(
-        [featureName]() { return AudioSuiteClientPolicy::GetInstance().StartBackgroundDownload(featureName); },
+        [featureNames]() { return AudioSuiteClientPolicy::GetInstance().StartBackgroundDownload(featureNames); },
         "StartBackgroundDownload");
 }
 
 int32_t AudioSuiteDownloadManagerImpl::GetDownloadStatus(
-    const std::string& featureName, AudioSuiteDownloadStatusInfo& status)
+    const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo>& status)
 {
     AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::GetDownloadStatus");
-    auto statusPtr = std::make_shared<AudioSuiteDownloadStatusInfo>();
+    auto statusPtr = std::make_shared<std::vector<AudioSuiteDownloadStatusInfo>>();
     int32_t ret = CallWithTimeout(
-        [featureName, statusPtr]() {
-            return AudioSuiteClientPolicy::GetInstance().GetDownloadStatus(featureName, *statusPtr);
+        [featureNames, statusPtr]() {
+            return AudioSuiteClientPolicy::GetInstance().GetDownloadStatus(featureNames, *statusPtr);
         },
         "GetDownloadStatus");
     if (ret == SUCCESS) {
@@ -117,43 +125,67 @@ int32_t AudioSuiteDownloadManagerImpl::GetDownloadStatus(
     return ret;
 }
 
-int32_t AudioSuiteDownloadManagerImpl::UninstallCloudRom(const std::string& featureName)
+int32_t AudioSuiteDownloadManagerImpl::GetFeatureNewVersion(
+    const std::vector<std::string>& featureNames, std::vector<AudioSuiteCloudRomVersionInfo>& versionInfos)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::UninstallCloudRom, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::GetFeatureNewVersion");
+    auto versionInfosPtr = std::make_shared<std::vector<AudioSuiteCloudRomVersionInfo>>();
+    int32_t ret = CallWithTimeout(
+        [featureNames, versionInfosPtr]() {
+            return AudioSuiteClientPolicy::GetInstance().GetFeatureNewVersion(featureNames, *versionInfosPtr);
+        },
+        "GetFeatureNewVersion");
+    if (ret == SUCCESS) {
+        versionInfos = *versionInfosPtr;
+    }
+    return ret;
+}
+
+int32_t AudioSuiteDownloadManagerImpl::UninstallCloudRom(const std::vector<std::string>& featureNames)
+{
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::UninstallCloudRom, featureNames size=%{public}zu",
+        featureNames.size());
     return CallWithTimeout(
-        [featureName]() { return AudioSuiteClientPolicy::GetInstance().UninstallCloudRom(featureName); },
+        [featureNames]() { return AudioSuiteClientPolicy::GetInstance().UninstallCloudRom(featureNames); },
         "UninstallCloudRom");
 }
 
-int32_t AudioSuiteDownloadManagerImpl::StartDownloadDirect(const std::string& featureName, bool allowedCellularNet)
+int32_t AudioSuiteDownloadManagerImpl::StartDownloadDirect(
+    const std::vector<std::string>& featureNames, bool allowedCellularNet)
 {
-    return AudioSuiteClientPolicy::GetInstance().StartDownload(featureName, allowedCellularNet);
+    return AudioSuiteClientPolicy::GetInstance().StartDownload(featureNames, allowedCellularNet);
 }
 
-int32_t AudioSuiteDownloadManagerImpl::PauseDownloadDirect(const std::string& featureName)
+int32_t AudioSuiteDownloadManagerImpl::PauseDownloadDirect(const std::vector<std::string>& featureNames)
 {
-    return AudioSuiteClientPolicy::GetInstance().PauseDownload(featureName);
+    return AudioSuiteClientPolicy::GetInstance().PauseDownload(featureNames);
 }
 
-int32_t AudioSuiteDownloadManagerImpl::CancelDownloadDirect(const std::string& featureName)
+int32_t AudioSuiteDownloadManagerImpl::CancelDownloadDirect(const std::vector<std::string>& featureNames)
 {
-    return AudioSuiteClientPolicy::GetInstance().CancelDownload(featureName);
+    return AudioSuiteClientPolicy::GetInstance().CancelDownload(featureNames);
 }
 
-int32_t AudioSuiteDownloadManagerImpl::StartBackgroundDownloadDirect(const std::string& featureName)
+int32_t AudioSuiteDownloadManagerImpl::StartBackgroundDownloadDirect(const std::vector<std::string>& featureNames)
 {
-    return AudioSuiteClientPolicy::GetInstance().StartBackgroundDownload(featureName);
+    return AudioSuiteClientPolicy::GetInstance().StartBackgroundDownload(featureNames);
 }
 
 int32_t AudioSuiteDownloadManagerImpl::GetDownloadStatusDirect(
-    const std::string& featureName, AudioSuiteDownloadStatusInfo& status)
+    const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo>& status)
 {
-    return AudioSuiteClientPolicy::GetInstance().GetDownloadStatus(featureName, status);
+    return AudioSuiteClientPolicy::GetInstance().GetFeatureStatus(featureNames, status);
 }
 
-int32_t AudioSuiteDownloadManagerImpl::UninstallCloudRomDirect(const std::string& featureName)
+int32_t AudioSuiteDownloadManagerImpl::GetFeatureNewVersionDirect(
+    const std::vector<std::string>& featureNames, std::vector<AudioSuiteCloudRomVersionInfo>& versionInfos)
 {
-    return AudioSuiteClientPolicy::GetInstance().UninstallCloudRom(featureName);
+    return AudioSuiteClientPolicy::GetInstance().GetFeatureNewVersion(featureNames, versionInfos);
+}
+
+int32_t AudioSuiteDownloadManagerImpl::UninstallCloudRomDirect(const std::vector<std::string>& featureNames)
+{
+    return AudioSuiteClientPolicy::GetInstance().UninstallCloudRom(featureNames);
 }
 
 int32_t AudioSuiteDownloadManagerImpl::RegisterDownloadInterfaceCallback(

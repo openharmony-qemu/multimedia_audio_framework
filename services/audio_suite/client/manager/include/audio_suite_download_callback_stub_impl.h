@@ -29,15 +29,15 @@ public:
     int32_t SetAudioSuiteRomDownloadCallback(const std::weak_ptr<AudioSuiteRomDownloadCallback> &callback);
     void ClearCallback();
 
-    int32_t GetFeatureNewVersion(const std::string &featureInfos,
-        AudioSuiteCloudRomVersionInfo &newVersionInfos, int32_t &funcResult) override;
-    int32_t GetFeatureStatus(
-        const std::string &featureInfos, AudioSuiteDownloadStatusInfo &statusInfos, int32_t &funcResult) override;
-    int32_t PauseCloudRom(const std::string &featureInfos, int32_t &funcResult) override;
-    int32_t CancelCloudRom(const std::string &featureInfos, int32_t &funcResult) override;
+    int32_t GetFeatureNewVersion(const std::vector<std::string> &featureNames,
+        std::vector<AudioSuiteCloudRomVersionInfo> &newVersionInfos, int32_t &funcResult) override;
+    int32_t GetFeatureStatus(const std::vector<std::string> &featureNames,
+        std::vector<AudioSuiteDownloadStatusInfo> &statusInfos, int32_t &funcResult) override;
+    int32_t PauseCloudRom(const std::vector<std::string> &featureNames, int32_t &funcResult) override;
+    int32_t CancelCloudRom(const std::vector<std::string> &featureNames, int32_t &funcResult) override;
     int32_t DownloadAndInstall(
-        const bool downloadCondition, const std::string &featureInfos, int32_t &funcResult) override;
-    int32_t UninstallCloudRom(const std::string &featureInfos, int32_t &funcResult) override;
+        const bool allowedCellularNet, const std::vector<std::string> &featureNames, int32_t &funcResult) override;
+    int32_t UninstallCloudRom(const std::vector<std::string> &featureNames, int32_t &funcResult) override;
     int32_t RegisterDownloadStatusCallback(int32_t &funcResult) override;
     int32_t UnregisterDownloadStatusCallback(int32_t &funcResult) override;
 

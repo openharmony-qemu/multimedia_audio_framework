@@ -70,8 +70,10 @@ AudioSuiteService::~AudioSuiteService()
     }
 }
 
-void AudioSuiteService::OnStart()
+void AudioSuiteService::OnStart(const SystemAbilityOnDemandReason& startReason)
 {
+    std::string reasonName = startReason.GetName();
+    AUDIO_INFO_LOG("audio_suite_server, reasonName:%{public}s", reasonName.c_str());
     {
         std::lock_guard<std::mutex> lock(eventMutex_);
         unloadRunner_ = AppExecFwk::EventRunner::Create("AudioSuiteSaUnloadRunner");
@@ -87,12 +89,18 @@ void AudioSuiteService::OnStart()
         return;
     }
     PostDelayUnloadTask();
+
+    // Initialize background download subsystem
+    bool syncProcess = (reasonName != "load");
+    downloadManager_.InitDownloadManager(syncProcess);
+
     AUDIO_INFO_LOG("AudioSuiteService: Publish success");
 }
 
 void AudioSuiteService::OnStop()
 {
     AUDIO_INFO_LOG("AudioSuiteService::OnStop");
+    downloadManager_.DeInitDownloadManager();
 }
 
 ErrCode AudioSuiteService::RegisterDownloadStatusCallback(const sptr<IRemoteObject>& object, ErrCode& result)
@@ -155,10 +163,31 @@ ErrCode AudioSuiteService::UnregisterDownloadInterfaceCallback(ErrCode& result)
     return SUCCESS;
 }
 
-ErrCode AudioSuiteService::StartDownload(const std::string& featureName, bool allowedCellularNet, ErrCode& result)
+ErrCode AudioSuiteService::GetInstallStatus(
+    const std::vector<std::string> &featureNames, std::vector<bool> &installStatus, ErrCode &result)
 {
-    AUDIO_INFO_LOG("AudioSuiteService::StartDownload, featureName=%{public}s, allowedCellularNet=%{public}d",
-        featureName.c_str(), allowedCellularNet);
+    AUDIO_INFO_LOG("AudioSuiteService::GetInstallStatus, featureNames size=%{public}zu",
+        featureNames.size());
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::GetInstallStatus", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] GetInstallStatus timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
+    PostDelayUnloadTask();
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "GetInstallStatus: not permission");
+
+    result = downloadManager_.GetInstallStatus(featureNames, installStatus);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS,
+        "GetInstallStatus failed, result:%{public}d", result);
+    return SUCCESS;
+}
+
+ErrCode AudioSuiteService::StartDownload(
+    const std::vector<std::string>& featureNames, bool allowedCellularNet, ErrCode& result)
+{
+    AUDIO_INFO_LOG("AudioSuiteService::StartDownload, featureNames size=%{public}zu, allowedCellularNet=%{public}d",
+        featureNames.size(), allowedCellularNet);
 #ifndef AUDIOSUITE_SA_UT
     AudioXCollie audioXCollie("AudioSuiteService::StartDownload", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
@@ -168,14 +197,14 @@ ErrCode AudioSuiteService::StartDownload(const std::string& featureName, bool al
     PostDelayUnloadTask();
     CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "StartDownload: not permission");
 
-    result = downloadManager_.StartDownload(featureName, allowedCellularNet);
+    result = downloadManager_.StartDownload(featureNames, allowedCellularNet);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "StartDownload failed, result:%{public}d", result);
     return SUCCESS;
 }
 
-ErrCode AudioSuiteService::PauseDownload(const std::string& featureName, ErrCode& result)
+ErrCode AudioSuiteService::PauseDownload(const std::vector<std::string>& featureNames, ErrCode& result)
 {
-    AUDIO_INFO_LOG("AudioSuiteService::PauseDownload, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteService::PauseDownload, featureNames size=%{public}zu", featureNames.size());
 #ifndef AUDIOSUITE_SA_UT
     AudioXCollie audioXCollie("AudioSuiteService::PauseDownload", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
@@ -185,14 +214,14 @@ ErrCode AudioSuiteService::PauseDownload(const std::string& featureName, ErrCode
     PostDelayUnloadTask();
     CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "PauseDownload: not permission");
 
-    result = downloadManager_.PauseDownload(featureName);
+    result = downloadManager_.PauseDownload(featureNames);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "PauseDownload failed, result:%{public}d", result);
     return SUCCESS;
 }
 
-ErrCode AudioSuiteService::CancelDownload(const std::string& featureName, ErrCode& result)
+ErrCode AudioSuiteService::CancelDownload(const std::vector<std::string>& featureNames, ErrCode& result)
 {
-    AUDIO_INFO_LOG("AudioSuiteService::CancelDownload, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteService::CancelDownload, featureNames size=%{public}zu", featureNames.size());
 #ifndef AUDIOSUITE_SA_UT
     AudioXCollie audioXCollie("AudioSuiteService::CancelDownload", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
@@ -202,14 +231,14 @@ ErrCode AudioSuiteService::CancelDownload(const std::string& featureName, ErrCod
     PostDelayUnloadTask();
     CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "CancelDownload: not permission");
 
-    result = downloadManager_.CancelDownload(featureName);
+    result = downloadManager_.CancelDownload(featureNames);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "CancelDownload failed, result:%{public}d", result);
     return SUCCESS;
 }
 
-ErrCode AudioSuiteService::StartBackgroundDownload(const std::string& featureName, ErrCode& result)
+ErrCode AudioSuiteService::StartBackgroundDownload(const std::vector<std::string>& featureNames, ErrCode& result)
 {
-    AUDIO_INFO_LOG("AudioSuiteService::StartBackgroundDownload, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteService::StartBackgroundDownload, featureNames size=%{public}zu", featureNames.size());
 #ifndef AUDIOSUITE_SA_UT
     AudioXCollie audioXCollie("AudioSuiteService::StartBackgroundDownload", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
@@ -219,14 +248,14 @@ ErrCode AudioSuiteService::StartBackgroundDownload(const std::string& featureNam
     PostDelayUnloadTask();
     CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "StartBackgroundDownload: not permission");
 
-    result = downloadManager_.StartBackgroundDownload(featureName);
+    result = downloadManager_.StartBackgroundDownload(featureNames);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "StartBackgroundDownload failed, result:%{public}d", result);
     return SUCCESS;
 }
 
-ErrCode AudioSuiteService::UninstallCloudRom(const std::string &featureName, ErrCode &result)
+ErrCode AudioSuiteService::UninstallCloudRom(const std::vector<std::string> &featureNames, ErrCode &result)
 {
-    AUDIO_INFO_LOG("AudioSuiteService::UninstallCloudRom");
+    AUDIO_INFO_LOG("AudioSuiteService::UninstallCloudRom, featureNames size=%{public}zu", featureNames.size());
 #ifndef AUDIOSUITE_SA_UT
     AudioXCollie audioXCollie("AudioSuiteService::UninstallCloudRom", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
@@ -235,16 +264,16 @@ ErrCode AudioSuiteService::UninstallCloudRom(const std::string &featureName, Err
 #endif
     PostDelayUnloadTask();
     CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "UninstallCloudRom: not permission");
- 
-    result = downloadManager_.UninstallCloudRom(featureName);
+
+    result = downloadManager_.UninstallCloudRom(featureNames);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "UninstallCloudRom failed, result:%{public}d", result);
     return SUCCESS;
 }
 
 ErrCode AudioSuiteService::GetDownloadStatus(
-    const std::string &featureName, AudioSuiteDownloadStatusInfo &status, ErrCode &result)
+    const std::vector<std::string> &featureNames, std::vector<AudioSuiteDownloadStatusInfo> &status, ErrCode &result)
 {
-    AUDIO_INFO_LOG("AudioSuiteService::GetDownloadStatus");
+    AUDIO_INFO_LOG("AudioSuiteService::GetDownloadStatus, featureNames size=%{public}zu", featureNames.size());
 #ifndef AUDIOSUITE_SA_UT
     AudioXCollie audioXCollie("AudioSuiteService::GetDownloadStatus", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
@@ -254,8 +283,45 @@ ErrCode AudioSuiteService::GetDownloadStatus(
     PostDelayUnloadTask();
     CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "GetDownloadStatus: not permission");
 
-    result = downloadManager_.GetDownloadStatus(featureName, status);
+    result = downloadManager_.GetDownloadStatus(featureNames, status);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "GetDownloadStatus failed, result:%{public}d", result);
+    return SUCCESS;
+}
+
+ErrCode AudioSuiteService::GetFeatureStatus(
+    const std::vector<std::string> &featureNames, std::vector<AudioSuiteDownloadStatusInfo> &status, ErrCode &result)
+{
+    AUDIO_INFO_LOG("AudioSuiteService::GetFeatureStatus, featureNames size=%{public}zu", featureNames.size());
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::GetFeatureStatus", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] GetFeatureStatus timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
+    PostDelayUnloadTask();
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "GetFeatureStatus: not permission");
+
+    result = downloadManager_.GetFeatureStatus(featureNames, status);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "GetFeatureStatus failed, result:%{public}d", result);
+    return SUCCESS;
+}
+
+ErrCode AudioSuiteService::GetFeatureNewVersion(
+    const std::vector<std::string> &featureNames, std::vector<AudioSuiteCloudRomVersionInfo> &newVersion,
+    ErrCode &result)
+{
+    AUDIO_INFO_LOG("AudioSuiteService::GetFeatureNewVersion, featureNames size=%{public}zu", featureNames.size());
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::GetFeatureNewVersion", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] GetFeatureNewVersion timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
+    PostDelayUnloadTask();
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "GetFeatureNewVersion: not permission");
+
+    result = downloadManager_.GetFeatureNewVersion(featureNames, newVersion);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "GetFeatureNewVersion failed, result:%{public}d", result);
     return SUCCESS;
 }
 

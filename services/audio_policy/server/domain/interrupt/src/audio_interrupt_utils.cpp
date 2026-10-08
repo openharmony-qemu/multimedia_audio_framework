@@ -23,9 +23,6 @@
 #include "audio_utils.h"
 #include "app_mgr_client.h"
 #include "dfx_msg_manager.h"
-#include "audio_setting_provider.h"
-#include "system_ability_definition.h"
-#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -78,20 +75,6 @@ bool AudioInterruptUtils::GetWindowState(const AudioInterrupt &audioInterrupt)
 #else
     return false;
 #endif
-}
-
-bool AudioInterruptUtils::GetPCModeState()
-{
-    bool isPCMode = false;
-    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), false, "os account not ready");
-    const std::string settingKey = "settings.sceneboard.ispcmode";
-    ErrCode ret = settingProvider.GetBoolValue(settingKey, isPCMode, "system", AudioSettingProvider::MAIN_USER_ID);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Failed to get pc mode: %{public}d to setting db! Err: %{public}d", isPCMode, ret);
-        return false;
-    }
-    return isPCMode;
 }
 } // namespace AudioStandard
 } // namespace OHOS

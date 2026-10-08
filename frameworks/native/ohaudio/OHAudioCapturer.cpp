@@ -314,7 +314,10 @@ OH_AudioStream_Result OH_AudioCapturer_GetSamplingRate(OH_AudioCapturer* capture
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "convert capturer failed", true),
         "convert capturer failed");
-
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(rate != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "rate is nullptr", true),
+        "rate is nullptr");
     *rate = audioCapturer->GetSamplingRate();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -327,6 +330,10 @@ OH_AudioStream_Result OH_AudioCapturer_GetSampleFormat(OH_AudioCapturer* capture
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "convert capturer failed", true),
         "convert capturer failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sampleFormat != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "sampleFormat is nullptr", true),
+        "sampleFormat is nullptr");
     *sampleFormat = (OH_AudioStream_SampleFormat)audioCapturer->GetSampleFormat();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -339,6 +346,10 @@ OH_AudioStream_Result OH_AudioCapturer_GetEncodingType(OH_AudioCapturer* capture
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "convert capturer failed", true),
         "convert capturer failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(encodingType != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "encodingType is nullptr", true),
+        "encodingType is nullptr");
     *encodingType = (OH_AudioStream_EncodingType)audioCapturer->GetEncodingType();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -403,6 +414,7 @@ OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer,
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "convert capturer failed", true),
         "convert capturer failed");
+    CHECK_AND_RETURN_RET_LOG(frames != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "frames is nullptr");
 
     *frames = audioCapturer->GetFramesRead();
     return AUDIOSTREAM_SUCCESS;
@@ -458,6 +470,7 @@ OH_AudioStream_Result OH_AudioCapturer_GetOverflowCount(OH_AudioCapturer* captur
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "convert capturer failed", true),
         "convert capturer failed");
+    CHECK_AND_RETURN_RET_LOG(count != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "count is nullptr");
 
     *count = audioCapturer->GetOverflowCount();
     return AUDIOSTREAM_SUCCESS;

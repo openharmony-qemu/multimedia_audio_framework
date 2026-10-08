@@ -16,6 +16,7 @@
 #ifndef HPAE_FAST_SINK_OUTPUT_NODE_H
 #define HPAE_FAST_SINK_OUTPUT_NODE_H
 
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <sched.h>
@@ -190,7 +191,7 @@ private:
     std::atomic<bool> stopUpdateThread_ = false;
     bool isCheckingSuspend_ = false;
     bool needReSyncPosition_ = true;
-    bool isStarted_ = false;
+    std::atomic<bool> isStarted_ = false;
     bool needCheckZeroVolume_ = true;
     bool isUltraFast_ = false;
     int64_t zeroVolumeStartTime_ = INT64_MAX;

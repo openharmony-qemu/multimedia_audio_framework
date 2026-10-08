@@ -251,6 +251,7 @@ struct AudioRendererFilter {
   uid: Optional<i32>;
   rendererInfo: Optional<AudioRendererInfo>;
   rendererId: Optional<i32>;
+  blockFirstOverrode: Optional<bool>;
 }
 
 struct AudioCapturerFilter {
@@ -879,6 +880,7 @@ enum AudioSessionScene: i32 {
   AUDIO_SESSION_SCENE_MEDIA = 0,
   AUDIO_SESSION_SCENE_GAME = 1,
   AUDIO_SESSION_SCENE_VOICE_COMMUNICATION = 2,
+  AUDIO_SESSION_SCENE_VOICE_MESSAGE = 3,
 }
 
 enum AudioSessionStateChangeHint: i32 {
@@ -1021,6 +1023,7 @@ enum SourceType: i32 {
   SOURCE_TYPE_CAMCORDER = 13,
   SOURCE_TYPE_UNPROCESSED = 14,
   SOURCE_TYPE_LIVE = 17,
+  SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT = 19,
 }
 
 struct AudioCapturerInfo {
@@ -1039,8 +1042,20 @@ struct AudioCapturerOptions {
   streamInfo: AudioStreamInfo;
   capturerInfo: AudioCapturerInfo;
   preferredInputDevice: Optional<AudioDeviceDescriptor>;
+  @optional processedStreamInfo: Optional<AudioStreamInfo>;
+  @optional micInStreamInfo: Optional<AudioStreamInfo>;
+  @optional ecStreamInfo: Optional<AudioStreamInfo>;
   @optional playbackCaptureMode: Optional<AudioPlaybackCaptureMode>;
   @optional playbackCaptureUid: Optional<i32>;
+}
+
+struct AudioCapturerMicInOptions {
+  @optional streamInfo: Optional<AudioStreamInfo>;
+  capturerInfo: AudioCapturerInfo;
+  preferredInputDevice: Optional<AudioDeviceDescriptor>;
+  @optional processedStreamInfo: Optional<AudioStreamInfo>;
+  @optional micInStreamInfo: Optional<AudioStreamInfo>;
+  @optional ecStreamInfo: Optional<AudioStreamInfo>;
 }
 
 enum PlaybackCaptureStartState: i32 {
@@ -1419,6 +1434,10 @@ union AudioCapturerOrNull {
 @gen_promise("createAudioCapturer")
 function CreateAudioCapturerSync(options: AudioCapturerOptions): AudioCapturerOrNull;
 
+@gen_async("createMicInAudioCapturer")
+@gen_promise("createMicInAudioCapturer")
+function CreateMicInAudioCapturerSync(options: AudioCapturerMicInOptions): AudioCapturerOrNull;
+
 union AudioRendererOrNull {
   type_audioRenderer: AudioRenderer;
   type_null: @null unit;
@@ -1440,7 +1459,7 @@ struct AudioSpatialEnabledStateForDevice {
   enabled: bool;
 }
 
-struct HRTFDescriptor {
+struct AudioHRTFAnonymousDescriptor {
   fd: i32;
   length: i64;
 }
@@ -1471,7 +1490,7 @@ interface AudioSpatializationManager {
   IsPersonalizedSpatializationEnabled(deviceDescriptor: AudioDeviceDescriptor): bool;
 
   @gen_promise("downloadPersonalizedHRTF")
-  DownloadPersonalizedHRTFSync(hrtfDescriptor: HRTFDescriptor): void;
+  DownloadPersonalizedHRTFSync(hrtfDescriptor: AudioHRTFAnonymousDescriptor): void;
 
   UpdateSpatialDeviceState(spatialDeviceState: AudioSpatialDeviceState): void;
 

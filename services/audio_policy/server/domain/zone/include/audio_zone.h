@@ -48,6 +48,7 @@ public:
 
     int32_t GetUid() const;
     uint32_t GetStreamId() const;
+    StreamUsage GetUsage() const;
     const std::string GetString() const;
     bool IsContain(const AudioZoneBindKey &other) const;
     const static std::vector<AudioZoneBindKey> GetSupportKeys(int32_t uid, const std::string &deviceTag,

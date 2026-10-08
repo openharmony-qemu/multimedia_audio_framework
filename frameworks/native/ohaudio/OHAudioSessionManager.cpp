@@ -244,7 +244,8 @@ OH_AudioCommon_Result OH_AudioSessionManager_SetScene(
         "ohAudioSessionManager is nullptr");
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(((scene == AUDIO_SESSION_SCENE_MEDIA) ||
         (scene == AUDIO_SESSION_SCENE_GAME) ||
-        (scene == AUDIO_SESSION_SCENE_VOICE_COMMUNICATION)),
+        (scene == AUDIO_SESSION_SCENE_VOICE_COMMUNICATION) ||
+        (scene == AUDIO_SESSION_SCENE_VOICE_MESSAGE)),
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             OHOS::AudioStandard::SESSION_CONFIG_INVALID_PARAM, "scene is invalid", true),
@@ -1020,6 +1021,7 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionBehavior(const uint3
 
 void OHAudioSessionCallback::OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent)
 {
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the function is nullptr");
     OH_AudioSession_DeactivatedEvent event = {};
     event.reason = static_cast<OH_AudioSession_DeactivatedReason>(deactiveEvent.deactiveReason);
     callback_(event);

@@ -39,15 +39,15 @@ void AudioInterphoneTest::TearDown(void) {}
 namespace {
 const InterphoneParam INTERPHONE_VOLUME_PARAMS[] = {
     {
-        .volume = 0.0f,
+        .volume = 1,
         .streamUsage = STREAM_USAGE_INTERPHONE
     },
     {
-        .volume = 0.5f,
+        .volume = 8,
         .streamUsage = STREAM_USAGE_INTERPHONE
     },
     {
-        .volume = 1.0f,
+        .volume = 15,
         .streamUsage = STREAM_USAGE_INTERPHONE
     }
 };
@@ -63,26 +63,6 @@ const InterphoneParam INTERPHONE_MUTE_PARAMS[] = {
     }
 };
 
-const InterphoneParam INTERPHONE_ROUTE_FLAG_PARAMS[] = {
-    {
-        .outputRouteFlag = AUDIO_OUTPUT_FLAG_INTERPHONE,
-        .inputRouteFlag = AUDIO_INPUT_FLAG_INTERPHONE
-    }
-};
-
-const InterphoneParam INTERPHONE_STREAM_TYPE_PARAMS[] = {
-    {
-        .streamUsage = STREAM_USAGE_INTERPHONE,
-        .expectedStreamType = STREAM_VOICE_COMMUNICATION
-    }
-};
-
-const InterphoneParam INTERPHONE_SOURCE_TYPE_PARAMS[] = {
-    {
-        .sourceType = SOURCE_TYPE_INTERPHONE,
-        .expectedPipeType = PIPE_TYPE_IN_INTERPHONE
-    }
-};
 } // namespace
 
 /*
@@ -97,7 +77,7 @@ HWTEST_P(AudioInterphoneSetVolumeTest, SetInterphoneVolume, TestSize.Level1)
     MockNative::Mock();
     InterphoneParam params = GetParam();
 
-    AudioVolumeType volumeType = VOLUME_TYPE_CALL;
+    AudioVolumeType volumeType = STREAM_VOICE_CALL;
     float volume = params.volume;
 
     EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetVolume(volumeType, volume));
@@ -121,7 +101,7 @@ HWTEST_P(AudioInterphoneGetVolumeTest, GetInterphoneVolume, TestSize.Level1)
     MockNative::Mock();
     InterphoneParam params = GetParam();
 
-    AudioVolumeType volumeType = VOLUME_TYPE_CALL;
+    AudioVolumeType volumeType = STREAM_VOICE_CALL;
     float volume = params.volume;
 
     EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetVolume(volumeType, volume));
@@ -146,82 +126,17 @@ HWTEST_P(AudioInterphoneSetMuteTest, SetInterphoneMute, TestSize.Level1)
     MockNative::Mock();
     InterphoneParam params = GetParam();
 
-    AudioVolumeType volumeType = VOLUME_TYPE_CALL;
+    AudioVolumeType volumeType = STREAM_VOICE_CALL;
     bool mute = params.mute;
 
     EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetMute(volumeType, mute));
+    MockNative::Resume();
 }
 
 INSTANTIATE_TEST_SUITE_P(
     SetInterphoneMute,
     AudioInterphoneSetMuteTest,
     ValuesIn(INTERPHONE_MUTE_PARAMS));
-
-/*
- * Test Interphone Route Flag
- *
- */
-class AudioInterphoneRouteFlagTest : public AudioInterphoneTest {};
-
-HWTEST_P(AudioInterphoneRouteFlagTest, TestInterphoneRouteFlag, TestSize.Level1)
-{
-    MockNative::GenerateNativeTokenID("multimodalinput");
-    MockNative::Mock();
-    InterphoneParam params = GetParam();
-
-    EXPECT_TRUE(params.outputRouteFlag & AUDIO_OUTPUT_FLAG_INTERPHONE);
-    EXPECT_TRUE(params.inputRouteFlag & AUDIO_INPUT_FLAG_INTERPHONE);
-    MockNative::Resume();
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    TestInterphoneRouteFlag,
-    AudioInterphoneRouteFlagTest,
-    ValuesIn(INTERPHONE_ROUTE_FLAG_PARAMS));
-
-/*
- * Test Interphone Stream Type Mapping
- *
- */
-class AudioInterphoneStreamTypeTest : public AudioInterphoneTest {};
-
-HWTEST_P(AudioInterphoneStreamTypeTest, TestInterphoneStreamType, TestSize.Level1)
-{
-    MockNative::GenerateNativeTokenID("multimodalinput");
-    MockNative::Mock();
-    InterphoneParam params = GetParam();
-
-    EXPECT_EQ(STREAM_USAGE_INTERPHONE, params.streamUsage);
-    EXPECT_EQ(STREAM_VOICE_COMMUNICATION, params.expectedStreamType);
-    MockNative::Resume();
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    TestInterphoneStreamType,
-    AudioInterphoneStreamTypeTest,
-    ValuesIn(INTERPHONE_STREAM_TYPE_PARAMS));
-
-/*
- * Test Interphone Source Type
- *
- */
-class AudioInterphoneSourceTypeTest : public AudioInterphoneTest {};
-
-HWTEST_P(AudioInterphoneSourceTypeTest, TestInterphoneSourceType, TestSize.Level1)
-{
-    MockNative::GenerateNativeTokenID("multimodalinput");
-    MockNative::Mock();
-    InterphoneParam params = GetParam();
-
-    EXPECT_EQ(SOURCE_TYPE_INTERPHONE, params.sourceType);
-    EXPECT_EQ(PIPE_TYPE_IN_INTERPHONE, params.expectedPipeType);
-    MockNative::Resume();
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    TestInterphoneSourceType,
-    AudioInterphoneSourceTypeTest,
-    ValuesIn(INTERPHONE_SOURCE_TYPE_PARAMS));
 
 /*
  * Test Interphone Stream Usage Value
@@ -284,8 +199,8 @@ HWTEST_F(AudioInterphoneTest, TestInterphonePipeTypeValue, TestSize.Level1)
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
 
-    EXPECT_EQ(22, PIPE_TYPE_OUT_INTERPHONE);
-    EXPECT_EQ(23, PIPE_TYPE_IN_INTERPHONE);
+    EXPECT_EQ(19, PIPE_TYPE_OUT_INTERPHONE);
+    EXPECT_EQ(20, PIPE_TYPE_IN_INTERPHONE);
     MockNative::Resume();
 }
 

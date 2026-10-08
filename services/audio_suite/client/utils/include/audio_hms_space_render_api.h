@@ -54,7 +54,7 @@ typedef struct {
     uint32_t inFormat;
     uint32_t outSampleRate;
     uint32_t outChannels;
-    uint32_t outFormat;;
+    uint32_t outFormat;
 } SpaceRenderSpeces;
 
 typedef enum {

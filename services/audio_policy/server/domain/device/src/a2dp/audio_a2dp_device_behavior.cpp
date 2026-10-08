@@ -87,7 +87,7 @@ int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDev
     // previously active devices are kept as-is.
     auto isActivated = Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDesc->macAddress_ &&
         Bluetooth::AudioA2dpManager::GetActiveA2dpDeviceLocal() == deviceDesc->macAddress_;
-#ifdef FEATURE_AUDIO_ZONE_VOLUME 
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     isActivated = true;
 #endif
     if (isActivated) {

@@ -65,7 +65,7 @@ public:
     int32_t EnableAudioZoneChangeReport(pid_t clientPid, int32_t zoneId, bool enable);
 
     int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid);
-    int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid);
+    int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid, bool isInternal = false);
     int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
     int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
     int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream);
@@ -112,6 +112,8 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
     int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
+    int32_t ExcludeUidForExtZone(int32_t uid);
+    int32_t UnexcludeUidForExtZone(int32_t uid);
     
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(int32_t zoneId,
         StreamUsage streamUsage, int32_t clientUid, RouterType bypassType);
@@ -159,12 +161,15 @@ private:
     std::unordered_map<int32_t, std::shared_ptr<AudioZone>> zoneMaps_;
     std::set<pid_t> zoneReportClientList_;
     std::mutex zoneMutex_;
+    std::set<int32_t> excludedUids_;
+    std::mutex excludedMutex_;
     bool zoneDeviceVisible_ = true;
 
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);
     int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,
         uint32_t streamId, const StreamUsage &usage);
-    int32_t RemoveKeysFromAudioZone(int32_t zoneId, const std::vector<AudioZoneBindKey> &bindKeys);
+    int32_t RemoveKeysFromAudioZone(int32_t zoneId, const std::vector<AudioZoneBindKey> &bindKeys,
+        bool isInternal = false);
     int32_t FindAudioZoneByKey(int32_t uid, const std::string &deviceTag, uint32_t streamId,
         const StreamUsage &usage, DeviceRole deviceRole);
     bool CheckIsZoneValid(int32_t zoneId);
@@ -181,6 +186,9 @@ private:
 #endif
     std::vector<uint32_t> GetLocalSessionIds(const std::shared_ptr<AudioInterruptService> &interruptService,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
+    void WriteZoneDeviceChange(int32_t zoneId, bool isBind,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
+    void WriteZoneKeyChange(int32_t zoneId, bool isBind, const AudioZoneBindKey &key);
 };
 } // namespace AudioStandard
 } // namespace OHOS

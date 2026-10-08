@@ -33,13 +33,15 @@ enum class FadeOutState {
 };
 class HpaeGainNode : public HpaePluginNode {
 public:
-    HpaeGainNode(HpaeNodeInfo &nodeInfo);
+    HpaeGainNode(HpaeNodeInfo &nodeInfo, bool isFast = false);
     virtual ~HpaeGainNode();
     bool SetClientVolume(float gain);
     float GetClientVolume();
     void SetFadeState(IOperation operation);
     void ResetVolume();
     void ResetFadeState();
+    void ClearFadeState();
+    bool HasPendingFade() const;
     uint64_t GetLatency(uint32_t sessionId = 0) override;
     void SetCollFadeState(IOperation operation);
     void DoCollFading(HpaePcmBuffer *input);
@@ -79,6 +81,7 @@ private:
     FadeOutState collFadeOutState_ = FadeOutState::NO_FADEOUT;
     std::shared_ptr<StreamVolume> streamVolume_;
     std::shared_ptr<PipeVolume> pipeVolume_;
+    bool isFast_ = false;
 };
 
 }  // namespace HPAE

@@ -380,6 +380,7 @@ public:
     // ICoreServiceProvider from EventEntry
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     std::string GetModuleNameBySessionId(uint32_t sessionId);
+    std::string Get3daDirectBusAddress();
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
         AudioStreamInfo &streamInfo, bool &isUltraFast);
     int32_t GetAudioDebugInfoBySessionId(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
@@ -512,6 +513,9 @@ public:
     int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute);
     void ReEvaluateVoipBypassByAppMuteHint();
     void SetFirstScreenOn();
+    // Sync suspend(S3) / hibernate(S4) power state from power listener.
+    void SetAudioPowerState(AudioPowerState state);
+    AudioPowerState GetAudioPowerState() const;
     bool IsDupDeviceChange(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void FetchOutputDupDevice(std::string caller, uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
@@ -531,6 +535,7 @@ public:
     void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
     void NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDeviceDescriptor> desc);
     void NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool lowered);
+    bool NeedSkipReloadForRemotePipe(const std::shared_ptr<AudioStreamDescriptor> &streamDesc) const;
     int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
     void TriggerVoipPriorityReload(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool lowered);
     int32_t ReloadCaptureSessionSoftLink();
@@ -580,6 +585,7 @@ private:
 
     bool IsHigherPrioritySourceType(SourceType newSource, SourceType currentSource);
     void HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+    void UpdateAudioFlagForFastStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t GetPipeBaseDebugInfo(const std::shared_ptr<AudioPipeInfo> &pipe, AudioDebugInfo &debugInfo);
     int32_t GetStreamDebugInfo(uint32_t sessionId, const std::shared_ptr<AudioPipeInfo> &pipe,
@@ -718,6 +724,7 @@ private:
     void DeleteSessionId(const uint32_t sessionId);
     void ClearMuteVoipState(const std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t sessionId);
     void UnmuteDualStreamAfterAlarm(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void ClearRingerFlags(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
     int32_t HandleFetchOutputWhenNoRunningStream(const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleFetchInputWhenNoRunningStream();
@@ -809,6 +816,7 @@ private:
     void UpdateFastState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void UpdateReleaseStreamState(std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t sessionId);
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     void FetchDevicesForDescs(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &outStreamDescs,
@@ -1023,6 +1031,7 @@ private:
         .type = CAST_TYPE_NULL
     };
     std::atomic<bool> isFirstScreenOn_ = false;
+    std::atomic<AudioPowerState> powerState_ {AudioPowerState::ACTIVE};
     bool isCreateProcess_ = false;
     std::unordered_map<uint32_t, uint32_t> sessionWithInputPipeRouteFlag_;
     std::unordered_map<uint32_t, SourceType> sessionSourceTypeMap_;

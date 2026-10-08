@@ -3166,5 +3166,36 @@ HWTEST(AudioPolicyClientStubImplTest, AudioDeviceDescriptor_GetKey_002, TestSize
     EXPECT_NE(key.find("remote_network"), std::string::npos);
 }
 
+/**
+* @tc.name  : Test volume-limit-exceeded callback registration and delivery.
+* @tc.number: AudioPolicyClientStubImpl_153
+* @tc.desc  : Test add, callback delivery, specific removal, and remove all.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_153, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto callback = std::make_shared<ConcreteVolumeLimitExceededCallback>();
+    ASSERT_EQ(audioPolicyClient->AddVolumeLimitExceededCallback(callback), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetVolumeLimitExceededCallbackSize(), 1);
+
+    VolumeLimitExceedEvent event;
+    event.volumeType = STREAM_MUSIC;
+    event.currentVolume = 75;
+    event.volumeThreshold = 60;
+    event.uid = TEST_UID;
+    EXPECT_EQ(audioPolicyClient->OnVolumeLimitExceeded(event), SUCCESS);
+    EXPECT_TRUE(callback->called_);
+    EXPECT_EQ(callback->event_.volumeType, event.volumeType);
+    EXPECT_EQ(callback->event_.currentVolume, event.currentVolume);
+    EXPECT_EQ(callback->event_.volumeThreshold, event.volumeThreshold);
+    EXPECT_EQ(callback->event_.uid, event.uid);
+
+    EXPECT_EQ(audioPolicyClient->RemoveVolumeLimitExceededCallback(callback), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetVolumeLimitExceededCallbackSize(), 0);
+    ASSERT_EQ(audioPolicyClient->AddVolumeLimitExceededCallback(callback), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->RemoveVolumeLimitExceededCallback(nullptr), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetVolumeLimitExceededCallbackSize(), 0);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

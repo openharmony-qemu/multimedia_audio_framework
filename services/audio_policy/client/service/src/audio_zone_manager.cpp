@@ -83,6 +83,10 @@ public:
 
     int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
+    int32_t ExcludeUidForExtZone(int32_t uid) override;
+
+    int32_t UnexcludeUidForExtZone(int32_t uid) override;
+
     void SetZoneDeviceVisible(bool visible) override;
 
     int32_t RegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType,
@@ -411,6 +415,24 @@ int32_t AudioZoneManagerInner::ResumeAudioFocusForExtAudioZone(const std::vector
     int32_t result = AudioPolicyManager::GetInstance().ResumeAudioFocusForExtAudioZone(zoneIds);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
         "ResumeAudioFocusForExtAudioZone result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::ExcludeUidForExtZone(int32_t uid)
+{
+    AUDIO_INFO_LOG("in");
+    int32_t result = AudioPolicyManager::GetInstance().ExcludeUidForExtZone(uid);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "ExcludeUidForExtZone result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::UnexcludeUidForExtZone(int32_t uid)
+{
+    AUDIO_INFO_LOG("in");
+    int32_t result = AudioPolicyManager::GetInstance().UnexcludeUidForExtZone(uid);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "UnexcludeUidForExtZone result:%{public}d", result);
     return result;
 }
 

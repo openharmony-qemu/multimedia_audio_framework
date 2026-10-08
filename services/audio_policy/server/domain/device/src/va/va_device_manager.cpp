@@ -148,6 +148,7 @@ void VADeviceManager::OnDevicesDisconnected(const std::shared_ptr<VADevice> &vaD
         vaDevice->configuration_.name_.c_str(),
         vaDevice->configuration_.type_);
     std::shared_ptr<AudioDeviceDescriptor> descriptor = ConvertVADeviceToDescriptor(vaDevice);
+    bool needUnregisterAdapter = false;
     {
         std::lock_guard<std::mutex> lock(statusMutex_);
         auto it = connectedVADeviceMap_.find(vaDevice->configuration_.address_);
@@ -157,11 +158,12 @@ void VADeviceManager::OnDevicesDisconnected(const std::shared_ptr<VADevice> &vaD
             return;
         }
         connectedVADeviceMap_.erase(it);
-        if (connectedVADeviceMap_.empty()) {
-            config_.UnregisterAdapter(AudioAdapterType::TYPE_VA);
-        }
+        needUnregisterAdapter = connectedVADeviceMap_.empty();
     }
     AudioCoreService::GetCoreService()->GetEventEntry()->OnDeviceStatusUpdated(*descriptor, false);
+    if (needUnregisterAdapter) {
+        config_.UnregisterAdapter(AudioAdapterType::TYPE_VA);
+    }
 }
 
 void VADeviceManager::GetDeviceController(const std::string macAddr, sptr<IRemoteObject> &controller)

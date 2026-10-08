@@ -23,10 +23,14 @@ ohos_unittest("audio_engine_client_manager_unit_test") {
 
   cflags = [ "-fno-access-control" ]
 
-  sources = [ "audio_engine_client_manager_unit_test.cpp" ]
+  sources = [
+    "audio_engine_client_manager_unit_test.cpp",
+    "audio_engine_client_manager_aiut.cpp",
+  ]
 
   include_dirs = [
     "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../test/unittest/common/include",
   ]
 
   deps = [

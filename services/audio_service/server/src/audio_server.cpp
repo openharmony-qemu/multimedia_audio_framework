@@ -78,6 +78,9 @@
 #include "audio_injector_service.h"
 #include "audio_sink_latency_fetcher.h"
 #include "audio_system_load_listener.h"
+#ifdef FEATURE_THERMAL_MANAGER
+#include "audio_thermal_listener.h"
+#endif
 #include "cJSON.h"
 #include "concurrent_task_client.h"
 #ifdef FEATURE_CALL_MANAGER
@@ -964,6 +967,8 @@ void AudioServer::OnStart()
     }
     InitMaxRendererStreamCntPerUid();
     AudioInnerCall::GetInstance()->RegisterAudioServer(this);
+    AudioService::GetInstance()->RegisterWakeupEventCallback(
+        [this](const AudioWakeupTrackInfo &info) { return ReportWakeupEvent(info); });
     asyncHandler_ = std::make_shared<AsyncActionHandler>("OS_ASAsyncHandler");
 
     // After publish, other process can call audioserver functions through ipc
@@ -988,6 +993,7 @@ void AudioServer::OnStart()
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
     AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
     AddSystemAbilityListener(CONCURRENT_TASK_SERVICE_ID);
+    AddSystemAbilityListener(POWER_MANAGER_THERMAL_SERVICE_ID);
     InitAudioEngine();
     OnStartExpansion();
     DlopenUtils::DeInit();
@@ -1063,6 +1069,12 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
             AuthQosForAudio();
             break;
         }
+        case POWER_MANAGER_THERMAL_SERVICE_ID:
+#ifdef FEATURE_THERMAL_MANAGER
+            AUDIO_INFO_LOG("power manager thermal service start");
+            RegisterAudioThermalLevelListener();
+#endif
+            break;
         default:
             AUDIO_ERR_LOG("unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
@@ -3170,10 +3182,6 @@ int32_t AudioServer::NotifyStreamVolumeChanged(int32_t streamType, float volume)
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("NotifyStreamVolumeChanged failed");
     }
-    ret = SetVolumeInfoForEnhanceChain(streamTypeTmp);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("SetVolumeInfoForEnhanceChain failed");
-    }
     return SUCCESS;
 }
 
@@ -3407,6 +3415,15 @@ int32_t AudioServer::UnsetOffloadMode(uint32_t sessionId)
 }
 // LCOV_EXCL_STOP
 
+int32_t AudioServer::SetPowerStateNotify(int32_t state)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
+        callingUid);
+    SetPowerState(state);
+    return SUCCESS;
+}
+
 void AudioServer::OnRenderSinkStateChange(uint32_t sinkId, bool started)
 {
     AudioService::GetInstance()->UpdateAudioSinkState(sinkId, started);
@@ -3463,7 +3480,8 @@ int32_t AudioServer::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64
 int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
 {
     int32_t uid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(GENERATE_SESSIONID_UID_SET.count(uid) == 1, ERROR, "uid is %{public}d, not mcu uid", uid);
+    CHECK_AND_RETURN_RET_LOG(GENERATE_SESSIONID_UID_SET.count(uid) == 1 || PermissionUtil::VerifySystemPermission(),
+        ERROR, "Refused for %{public}d", uid);
     sessionId = CoreServiceHandler::GetInstance().GenerateSessionId();
     return SUCCESS;
 }

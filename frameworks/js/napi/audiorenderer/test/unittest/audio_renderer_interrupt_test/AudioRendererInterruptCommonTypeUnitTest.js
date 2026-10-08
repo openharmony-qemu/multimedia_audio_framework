@@ -965,7 +965,7 @@ describe("AudioRendererInterruptUnitTest", function() {
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
             console.log("57.eventAction=" + JSON.stringify(eventAction))
-            interruptPauseType(eventAction);
+            interruptType(eventAction);
         })
         await start(render1, done)
 
@@ -1078,6 +1078,10 @@ describe("AudioRendererInterruptUnitTest", function() {
 
         let render2 = await createAudioRenderer(renderInfo['RINGTONE'], streamInfo['48000'])
         await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
+        render2.on("audioInterrupt", async(eventAction) => {
+            console.log("63_2.eventAction=" + JSON.stringify(eventAction))
+            interruptType(eventAction);
+        })
         await start(render2, done)
         await sleep(500)
         await release(render1, done)

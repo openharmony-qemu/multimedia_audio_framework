@@ -206,6 +206,14 @@ public:
     int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus);
 
     /**
+     * @brief Disable volume limit when voice call flag
+     *
+     * @param disableVolumeLimit True to skip volume depression, false to restore.
+     * @return Returns success or not
+     */
+    int32_t DisableVolumeLimitWhenVoiceCall(bool disableVolumeLimit);
+
+    /**
      * @brief Registers the availbale deviceChange callback listener.
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code

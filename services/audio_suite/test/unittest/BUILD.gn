@@ -158,7 +158,6 @@ if (audio_framework_feature_audiosuite_support) {
     sources = [
       "tool/audio_suite_unittest_tools.cpp",
       "utils/audio_suite_pcm_buffer_test.cpp",
-      "utils/audio_suite_manager_thread_test.cpp",
       "utils/audio_suite_common_test.cpp",
       "utils/audio_suite_serializer_test.cpp",
       "utils/audio_suite_env_algo_interface_test.cpp",
@@ -235,6 +234,8 @@ if (audio_framework_feature_audiosuite_support) {
     module_out_path = module_output_path
     sources = [
       "service/audio_suite_service_test.cpp",
+      "service/background_download_test.cpp",
+      "service/download_manager_test.cpp",
       "../../server/src/download_manager.cpp",
       "../../server/src/audio_suite_service.cpp",
       "../../server/src/background_download.cpp",
@@ -256,6 +257,8 @@ if (audio_framework_feature_audiosuite_support) {
 
     deps = [
       "../../:audio_suite",
+      "../../../../frameworks/native/audioutils:audio_utils",
+      "../../../../frameworks/native/audioutils:audio_xml_utils",
     ]
 
     external_deps = [
@@ -274,6 +277,7 @@ if (audio_framework_feature_audiosuite_support) {
       "bounds_checking_function:libsec_shared",
       "netmanager_base:net_conn_manager_if",
       "common_event_service:cesfwk_innerkits",
+      "libxml2:libxml2",
     ]
   }
 

@@ -277,7 +277,7 @@ void FetchOutputDevicesFuzzTest(FuzzedDataProvider& fdp)
     RouterType bypassType = RouterTypeVec[routerTypeCount];
     uint32_t privacyTypeCount = GetData<uint32_t>() % PrivacyTypeVec.size();
     AudioPrivacyType privacyType = PrivacyTypeVec[privacyTypeCount];
-    
+
     FetchDeviceInfo fetchDeviceInfo;
     fetchDeviceInfo.streamUsage = streamUsage;
     fetchDeviceInfo.clientUID = clientUID;
@@ -297,7 +297,7 @@ void FetchDupDevicesFuzzTest(FuzzedDataProvider& fdp)
     fetchDeviceInfo.audioPipeType = GetData<AudioPipeType>();
     fetchDeviceInfo.privacyType = PrivacyTypeVec[GetData<uint32_t>() % PrivacyTypeVec.size()];
     fetchDeviceInfo.caller = "fuzzer_test";
-    
+
     AudioRouterCenter::GetAudioRouterCenter().FetchDupDevices(fetchDeviceInfo);
 }
 
@@ -307,7 +307,7 @@ void FetchInputDeviceFuzzTest(FuzzedDataProvider& fdp)
     SourceType sourceType = SourceTypeVec[sourceTypeCount];
     int32_t clientUID = GetData<int32_t>();
     uint32_t sessionID = GetData<uint32_t>();
-    
+
     FetchDeviceInfo info;
     info.sourceType = sourceType;
     info.clientUID = clientUID;
@@ -330,8 +330,8 @@ void IsCallRenderRouterFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t streamUsageCount = GetData<uint32_t>() % StreamUsageVec.size();
     StreamUsage streamUsage = StreamUsageVec[streamUsageCount];
-    
-    AudioRouterCenter::GetAudioRouterCenter().isCallRenderRouter(streamUsage);
+
+    AudioRouterCenter::GetAudioRouterCenter().IsCallRenderRouter(streamUsage);
 }
 
 void GetSplitInfoFuzzTest(FuzzedDataProvider& fdp)
@@ -350,7 +350,7 @@ void IsConfigRouterStrategyFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t sourceTypeCount = GetData<uint32_t>() % SourceTypeVec.size();
     SourceType sourceType = SourceTypeVec[sourceTypeCount];
-    
+
     AudioRouterCenter::GetAudioRouterCenter().IsConfigRouterStrategy(sourceType);
 }
 

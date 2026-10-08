@@ -434,6 +434,46 @@ HWTEST_F(UtilUnitTest, KvPairUnitTest_001, TestSize.Level1)
 
 /**
  * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_016
+ * @tc.desc   : Test IdHandler GetRenderIdByDeviceClass with 3da bus keyword (3DA direct)
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_016, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t id = idHandler.GetRenderIdByDeviceClass("bus10_3da_out", HDI_ID_INFO_3DA);
+    EXPECT_NE(id, HDI_INVALID_ID);
+
+    uint32_t base = idHandler.ParseBase(id);
+    EXPECT_EQ(base, HDI_ID_BASE_RENDER);
+
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT);
+
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, HDI_ID_INFO_3DA);
+
+    // keyword match: any bus number / mixport_ prefix converges to the same 3DA direct id
+    uint32_t futureBusId = idHandler.GetRenderIdByDeviceClass("mixport_bus11_3da_out", HDI_ID_INFO_3DA);
+    EXPECT_EQ(futureBusId, id);
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_017
+ * @tc.desc   : Test SelectIdInfo priority: macAddress > deviceNetId > default
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_017, TestSize.Level1)
+{
+    const std::string mac = "11:22:33:44:55:66";
+    const std::string netId = "LocalDevice";
+
+    EXPECT_EQ(IdHandler::SelectIdInfo(mac, netId), mac);
+    EXPECT_EQ(IdHandler::SelectIdInfo("", netId), netId);
+    EXPECT_EQ(IdHandler::SelectIdInfo("", ""), HDI_ID_INFO_DEFAULT);
+}
+
+/**
+ * @tc.name   : Test IdHandler API
  * @tc.number : IdHandlerUnitTest_010
  * @tc.desc   : Test primary_mmap_voip capture id selection for VOIP low latency path
  */

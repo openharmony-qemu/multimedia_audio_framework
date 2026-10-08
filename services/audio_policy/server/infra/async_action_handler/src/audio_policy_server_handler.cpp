@@ -257,6 +257,12 @@ bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &vol
     if (volumeEvent.volumeType == AudioStreamType::STREAM_VOICE_CALL_ASSISTANT) {
         return false;
     }
+    if (volumeEvent.volumeType == AudioStreamType::STREAM_NOTIFICATION &&
+        VolumeUtils::IsNotificationFollowRingtone()) {
+        AUDIO_INFO_LOG("NotificationFollowRingtone is true. No need send notification event.");
+        return false;
+    }
+
     eventContextObj->volumeEvent = volumeEvent;
     eventContextObj->zoneId = zoneId;
     lock_guard<mutex> runnerlock(runnerMutex_);
@@ -272,10 +278,28 @@ bool AudioPolicyServerHandler::SendVolumeDegreeEventCallback(const VolumeEvent &
     if (volumeEvent.volumeType == AudioStreamType::STREAM_VOICE_CALL_ASSISTANT) {
         return false;
     }
+    if (volumeEvent.volumeType == AudioStreamType::STREAM_NOTIFICATION &&
+        VolumeUtils::IsNotificationFollowRingtone()) {
+        AUDIO_INFO_LOG("NotificationFollowRingtone is true. No need send notification event.");
+        return false;
+    }
+
     eventContextObj->volumeEvent = volumeEvent;
     eventContextObj->zoneId = zoneId;
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::VOLUME_DEGREE_EVENT, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "send event failed");
+    return ret;
+}
+
+bool AudioPolicyServerHandler::SendVolumeLimitExceededCallback(const VolumeLimitExceedEvent &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->volumeLimitExceedEvent = event;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
+        EventAudioServerCmd::VOLUME_LIMIT_EXCEEDED_EVENT, eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "send event failed");
     return ret;
 }
@@ -1225,6 +1249,22 @@ void AudioPolicyServerHandler::HandleVolumeDegreeEvent(const AppExecFwk::InnerEv
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_DEGREE_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_DEGREE_CHANGE]) {
             volumeChangeCb->OnVolumeDegreeEvent(eventContextObj->volumeEvent);
+        }
+    }
+}
+
+void AudioPolicyServerHandler::HandleVolumeLimitExceeded(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (const auto &item : audioPolicyClientProxyAPSCbsMap_) {
+        const std::shared_ptr<AudioPolicyClientHolder> &callback = item.second;
+        CHECK_AND_CONTINUE(callback != nullptr && callback->hasSystemPermission_);
+        if (clientCallbacksMap_.count(item.first) > 0 &&
+            clientCallbacksMap_[item.first].count(CALLBACK_VOLUME_LIMIT_EXCEEDED) > 0 &&
+            clientCallbacksMap_[item.first][CALLBACK_VOLUME_LIMIT_EXCEEDED]) {
+            callback->OnVolumeLimitExceeded(eventContextObj->volumeLimitExceedEvent);
         }
     }
 }
@@ -2340,6 +2380,9 @@ void AudioPolicyServerHandler::HandleOtherServiceSecondEvent(const uint32_t &eve
             break;
         case EventAudioServerCmd::VOLUME_DEGREE_EVENT:
             HandleVolumeDegreeEvent(event);
+            break;
+        case EventAudioServerCmd::VOLUME_LIMIT_EXCEEDED_EVENT:
+            HandleVolumeLimitExceeded(event);
             break;
         case EventAudioServerCmd::PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE:
             HandlePersonalizedSpatializationEnabledChangeForAnyDeviceEvent(event);

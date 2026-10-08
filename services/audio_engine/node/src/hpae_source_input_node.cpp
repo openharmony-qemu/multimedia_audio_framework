@@ -86,6 +86,11 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
 void HpaeSourceInputNode::UpdateSourceInputMapCancatMicEc()
 {
     CHECK_AND_RETURN(concatMicEcFlag_);
+    // Defensive gate: concat total must not exceed engine multichannel limit.
+    uint32_t concatTotalChannels = static_cast<uint32_t>(nodeInfoMap_[HPAE_SOURCE_BUFFER_TYPE_MIC].channels) +
+        static_cast<uint32_t>(nodeInfoMap_[HPAE_SOURCE_BUFFER_TYPE_EC].channels);
+    CHECK_AND_RETURN_LOG(concatTotalChannels <= static_cast<uint32_t>(CHANNEL_16),
+        "concat total channels[%{public}u] exceed max 16", concatTotalChannels);
     HpaeSourceBufferType micType = HPAE_SOURCE_BUFFER_TYPE_MIC;
     HpaeSourceBufferType ecType = HPAE_SOURCE_BUFFER_TYPE_EC;
     HpaeNodeInfo micInfo = nodeInfoMap_[micType];
@@ -281,7 +286,7 @@ void HpaeSourceInputNode::ConCatMicEcAndPushData(const uint64_t &replyBytes, con
     for (uint32_t i = 0; i < framelen; i++) {
         size_t frameStart = static_cast<size_t>(i) * totalChannel * micFormatSize;
         size_t micFrameStart = static_cast<size_t>(i) * micChannel * micFormatSize;
-        size_t ecFrameStart = static_cast<size_t>(i) * ecChannel * micFormatSize;
+        size_t ecFrameStart = static_cast<size_t>(i) * ecChannel * ecFormatSize;
 
         for (uint32_t j = 0; j < micChannel; j++) {
             size_t destOffset = frameStart + j * micFormatSize;
@@ -433,6 +438,13 @@ HpaeSourceBufferType HpaeSourceInputNode::GetOutputPortBufferType(HpaeNodeInfo &
 int32_t HpaeSourceInputNode::GetCapturerSourceAdapter(
     const std::string &deviceClass, const SourceType &sourceType, const std::string &info)
 {
+    // A repeated call without CapturerSourceDeInit would overwrite a valid captureId_
+    // and leak the HdiAdapterManager reference count; release the previous id first.
+    if (captureId_ != HDI_INVALID_ID) {
+        AUDIO_WARNING_LOG("GetCapturerSourceAdapter called again with valid captureId_ %{public}u,"
+            " releasing stale id (missing CapturerSourceDeInit?)", captureId_);
+        HdiAdapterManager::GetInstance().ReleaseId(captureId_);
+    }
     captureId_ = HDI_INVALID_ID;
     if (info.empty()) {
         captureId_ = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(

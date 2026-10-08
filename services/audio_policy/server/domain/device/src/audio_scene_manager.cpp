@@ -29,6 +29,7 @@
 #include "audio_pipe_manager.h"
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
+#include "audio_select_interface_service.h"
 #include "audio_utils.h"
 
 #ifdef BLUETOOTH_ENABLE
@@ -60,6 +61,7 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t ui
         newScene = audioScene;
     }
     if (oldScene != AUDIO_SCENE_DEFAULT && newScene == AUDIO_SCENE_DEFAULT) {
+        AudioSelectInterfaceService::GetInstance().SetBlockFirstOverrode(false);
         if (!Util::IsEnhancedRoutingSupported() &&
             (oldScene != AUDIO_SCENE_RINGING || !VolumeUtils::IsPCVolumeEnable())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
@@ -153,6 +155,13 @@ bool AudioSceneManager::IsInPhoneCallScene()
 {
     std::lock_guard<std::mutex> lock(sceneMutex_);
     return audioScene_ == AUDIO_SCENE_PHONE_CALL;
+}
+
+bool AudioSceneManager::IsRingScene()
+{
+    std::lock_guard<std::mutex> lock(sceneMutex_);
+    return audioScene_ == AUDIO_SCENE_RINGING ||
+        audioScene_ == AUDIO_SCENE_VOICE_RINGING;
 }
 
 bool AudioSceneManager::IsHangUpScene()

@@ -26,7 +26,6 @@
 #define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
-static const int32_t MEDIA_SERVICE_UID = 1013;
 bool AudioUsrSelectManager::SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
     int32_t uid)
 {
@@ -53,88 +52,6 @@ bool AudioUsrSelectManager::SelectInputDeviceByUid(const std::shared_ptr<AudioDe
     int index = GetIdFromRecordDeviceInfoList(uid);
     UpdateRecordDeviceInfoForSelectInner(index, info);
     return !isVirtualDevice;
-}
-
-std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetSelectedInputDeviceByUid(int32_t uid)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto invalidDesc = std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::DEVICE_INFO);
-    int32_t index = GetIdFromRecordDeviceInfoList(uid);
-    CHECK_AND_RETURN_RET(index > -1, invalidDesc);
-    return recordDeviceInfoList_[index].selectedDevice_->deviceType_ != DEVICE_TYPE_NONE ?
-        recordDeviceInfoList_[index].selectedDevice_ : invalidDesc;
-}
-
-BluetoothAndNearlinkPreferredRecordCategory AudioUsrSelectManager::GetPreferBluetoothAndNearlinkRecordByUid(
-    int32_t uid)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    int index = GetIdFromRecordDeviceInfoList(uid);
-    CHECK_AND_RETURN_RET(index >= 0, BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
-    return recordDeviceInfoList_[index].appPreferredCategory_;
-}
-
-std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetCapturerDevice(int32_t uid, SourceType sourceType)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    int index = GetIdFromRecordDeviceInfoList(uid);
-    if (index < 0 && mcSelectedFlag_ && IsSourceTypeSupportedByMC(sourceType)) {
-        return JudgeFinalSelectDevice(mcInputPreferred_, sourceType, PREFERRED_NONE);
-    }
-
-    std::shared_ptr<AudioDeviceDescriptor> capturerDevice = std::make_shared<AudioDeviceDescriptor>();
-#ifdef INPUT_FEATURE_INDEPENDENT_MODE
-    CHECK_AND_RETURN_RET(!recordDeviceInfoList_.empty() && index >= 0, capturerDevice);
-#else
-    CHECK_AND_RETURN_RET(!recordDeviceInfoList_.empty(), capturerDevice);
-    index = (index < 0 || (recordDeviceInfoList_[index].sourceType_ == SourceType::SOURCE_TYPE_INVALID &&
-        recordDeviceInfoList_[0].sourceType_ != SourceType::SOURCE_TYPE_INVALID)) ? 0 : index;
-#endif
-    std::shared_ptr<AudioDeviceDescriptor> appPreferredDevice = GetPreferDevice(index);
-    capturerDevice = recordDeviceInfoList_[index].activeSelectedDevice_->deviceType_ == DEVICE_TYPE_NONE ?
-        appPreferredDevice : recordDeviceInfoList_[index].activeSelectedDevice_;
-    sourceType = recordDeviceInfoList_[0].sourceType_;
-    return JudgeFinalSelectDevice(capturerDevice, sourceType, recordDeviceInfoList_[index].appPreferredCategory_);
-}
-
-std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDevice(
-    const std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType,
-    BluetoothAndNearlinkPreferredRecordCategory category)
-{
-    // 判断设备是不是存在且处于连接状态
-    bool isConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(desc);
-
-    if (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO || category == PREFERRED_LOW_LATENCY) {
-        return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
-    }
-
-    if (IsSourceTypeSupportedByMC(sourceType) || category == PREFERRED_HIGH_QUALITY) {
-        auto a2dpin = std::make_shared<AudioDeviceDescriptor>(desc);
-        a2dpin->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
-        bool isA2dpinConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(a2dpin);
-        CHECK_AND_RETURN_RET(!isA2dpinConnected, AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(a2dpin));
-    }
-
-    return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
-}
-
-std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetPreferDevice(int32_t index)
-{
-    CHECK_AND_RETURN_RET(recordDeviceInfoList_[index].appPreferredCategory_ !=
-        BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE, std::make_shared<AudioDeviceDescriptor>());
-    std::vector<DeviceType> types = {
-        DEVICE_TYPE_NEARLINK,
-        DEVICE_TYPE_BLUETOOTH_SCO,
-    };
-    auto audioDeviceDescriptors =
-        AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevicesByTypesAndRole(types, INPUT_DEVICE);
-    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() > 0,
-        std::make_shared<AudioDeviceDescriptor>(), "no bluetooth or nearlink devices");
-    std::sort(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(), [](const auto &desc1, const auto desc2) {
-        return desc1->connectTimeStamp_ < desc2->connectTimeStamp_;
-    });
-    return audioDeviceDescriptors.back();
 }
 
 int32_t AudioUsrSelectManager::GetIdFromRecordDeviceInfoList(int32_t uid)
@@ -195,7 +112,7 @@ bool AudioUsrSelectManager::IsSourceTypeSupportedByMC(SourceType type)
             return false;
     }
 }
- 
+
 bool AudioUsrSelectManager::HasMCSourceTypeStreamRunning()
 {
     for (auto &recordDeviceInfo : recordDeviceInfoList_) {

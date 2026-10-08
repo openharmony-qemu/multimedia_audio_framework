@@ -124,6 +124,8 @@ public:
         (const std::shared_ptr<AudioDeviceDescriptor>& deviceDescriptor, bool enabled), (override));
     MOCK_METHOD(ErrCode, OnRecordControllerEnabledChange,
         (const SystemRecordControllerChangeInfo& changeInfo), (override));
+    MOCK_METHOD(ErrCode, OnVolumeLimitExceeded,
+        (const VolumeLimitExceedEvent& event), (override));
 };
 
 } // namespace AudioStandard

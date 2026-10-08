@@ -53,6 +53,7 @@
     *StreamVolumeUpdate*;
     *SetStreamVolumeInfo*;
     *UpdateParamExtra*;
+    *SetPowerState*;
     *InitAudioEffectChainManager*;
     *InitAudioEnhanceChainManager*;
     *UpdateSpatializationState*;
@@ -80,6 +81,8 @@
     *CheckAndAddSessionID*;
     *UpdateSceneTypeList*;
     *CreateAudioEffectChainDynamic*;
+    *CreateAudioEffectChain*;
+    *GenerateEffectChainKey*;
     *SessionInfoMapAdd*;
     *SessionInfoMapDelete*;
     *UpdateMultichannelConfig*;

@@ -367,7 +367,7 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.fixedLatency = static_cast<uint32_t>(StringToNum(audioModuleInfo.fixedLatency));
     sinkInfo.deviceName = audioModuleInfo.name;
     sinkInfo.routeFlag = audioModuleInfo.routeFlag;
-    sinkInfo.isUltraFast = (audioModuleInfo.className == "ultra_fast");
+    sinkInfo.isUltraFast = (sinkInfo.deviceClass.find("ultra_fast") != std::string::npos) ? true : false;
     if (audioModuleInfo.needEmptyChunk) {
         sinkInfo.needEmptyChunk = audioModuleInfo.needEmptyChunk.value();
     }
@@ -546,6 +546,19 @@ int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo)
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }
+    // Geometry guard: nodes allocate per-frame buffers as frameLen * channels *
+    // GetSizeFromFormat(format), so an out-of-range enum (e.g. the default
+    // CHANNEL_UNKNOW / INVALID_WIDTH) yields a zero-size buffer and a null
+    // conversion target in HpaeSinkInputNode::DoProcess. Policy-level support
+    // sets (RENDERER/CAPTURER_SUPPORTED_CHANNELS) are checked upstream.
+    if (streamInfo.channels == CHANNEL_UNKNOW || streamInfo.channels > CHANNEL_16) {
+        AUDIO_ERR_LOG("Invalid channels %{public}u", static_cast<uint32_t>(streamInfo.channels));
+        return ERROR;
+    }
+    if (GetSizeFromFormat(streamInfo.format) == 0) {
+        AUDIO_ERR_LOG("Invalid format %{public}u", static_cast<uint32_t>(streamInfo.format));
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -600,6 +613,7 @@ void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<I
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
     nodeInfo.deviceNetId = sinkInfo.deviceNetId;
     nodeInfo.deviceClass = sinkInfo.deviceClass;
+    nodeInfo.macAddress = sinkInfo.macAddress;
     nodeInfo.statusCallback = statusCallback;
 }
 

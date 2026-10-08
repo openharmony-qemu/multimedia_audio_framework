@@ -228,6 +228,10 @@ void HpaeOffloadRendererManager::DeleteInputSession(SessionEffectMoveMode moveMo
         curNode_->ClearSessionEffectAttachState();
     }
 
+    // Guard the direct dereferences below: curNode_ can be null here (previous session
+    // removed via RemoveNodeFromMap while another entry stays in the map, see :107).
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ not exist");
+
     if (curNode_->GetState() == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
         sinkOutputNode_->StopStream();
     }
@@ -589,7 +593,9 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
         }
     }
     for (auto node: sinkInputs) {
-        if (node->GetSessionId() == curNode_->GetSessionId()) {
+        // curNode_ can be null: DeleteInputSession nulls it via RemoveNodeFromMap
+        // after the first match, and move-in paths can arrive at an empty manager.
+        if (curNode_ && node->GetSessionId() == curNode_->GetSessionId()) {
             DeleteInputSession(SessionEffectMoveMode::KEEP_ATTACH_STATE_FOR_MOVE);
         } else {
             // Attach state follows the stream to the new sink — do NOT clear it or emit DISABLED.
@@ -931,7 +937,7 @@ void HpaeOffloadRendererManager::NotifyStreamChangeToSink(
     CHECK_AND_RETURN(sinkOutputNode_ != nullptr);
     StreamUsage usage = STREAM_USAGE_UNKNOWN;
     if (sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end()) {
-        usage = AudioTypeUtils::GetStreamUsageByStreamType(sinkInputNodeMap_[sessionId]->GetStreamType());
+        usage = sinkInputNodeMap_[sessionId]->GetEffectStreamUsage();
     }
     sinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
 }

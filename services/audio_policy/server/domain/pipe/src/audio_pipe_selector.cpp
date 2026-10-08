@@ -17,13 +17,17 @@
 #endif
 
 #include "audio_pipe_selector.h"
-#include "audio_stream_collector.h"
-#include "audio_stream_info.h"
-#include "audio_definition_adapter_info.h"
-#include "audio_policy_utils.h"
+
 #include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
+
+#include "audio_stream_collector.h"
+#include "audio_stream_info.h"
+#include "audio_definition_adapter_info.h"
+#include "audio_core_config_manager.h"
+#include "audio_policy_utils.h"
 #include "audio_errors.h"
 #include "audio_policy_interface.h"
 #include "audio_service_enum.h"
@@ -796,6 +800,8 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
             MatchSpecialRemotePipe(streamPropInfo, *newPipeIter, streamDesc);
             MatchCollaborativePipe(streamPropInfo, *newPipeIter, streamDesc);
             MatchUltraFastPipe(*newPipeIter, streamDesc);
+            MatchFastArmusbPipe(*newPipeIter, streamDesc);
+            MatchArmusbInputPipe(*newPipeIter, streamDesc);
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
             continue;
@@ -959,6 +965,7 @@ bool AudioPipeSelector::IsNeedReloadForInputPipe(const std::shared_ptr<AudioPipe
     const std::shared_ptr<AudioPipeInfo> &oldPipe, const std::shared_ptr<AudioStreamDescriptor> &highestStream,
     const std::shared_ptr<AudioStreamDescriptor> &oldHighestStream) const
 {
+    CHECK_AND_RETURN_RET_LOG(!IsPipeNotSupportReload(newPipe), false, "remote pipe not support reload");
     if (newPipe->audioStreamInfo_.samplingRate != oldPipe->audioStreamInfo_.samplingRate) {
         return true;
     }
@@ -1043,7 +1050,7 @@ void AudioPipeSelector::HandleEmptyInputPipeReload(std::vector<std::shared_ptr<A
         ClearMicInModuleInfo(newPipe->moduleInfo_);
         ClearMicRefModuleInfo(newPipe->moduleInfo_);
         if (newPipe->pipeAction_ != PIPE_ACTION_NEW) {
-            newPipe->pipeAction_ = PIPE_ACTION_RELOAD;
+            newPipe->pipeAction_ = IsPipeNotSupportReload(newPipe) ? newPipe->pipeAction_ : PIPE_ACTION_RELOAD;
         }
     }
 }
@@ -1229,7 +1236,7 @@ bool AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
         }
     }
     SortStreamByStatus(streams);
-    
+
     for (auto &[streamDescInPipe, pipeInfo] : streams) {
         bool isUpdate = ProcessConcurrency(streamDescInPipe, streamDesc, streamsMoveToNormal);
         JUDGE_AND_INFO_LOG(isUpdate == true, "isUpdate: %{public}d, action: %{public}d", isUpdate,
@@ -1438,6 +1445,28 @@ void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamD
     }
 }
 
+void AudioPipeSelector::HandleSpecialStreamLimitOnMultiDevice(
+    const std::shared_ptr<AudioStreamDescriptor> &existingStream,
+    const std::shared_ptr<AudioStreamDescriptor> &cmpStream)
+{
+    CHECK_AND_RETURN(Util::IsEnhancedRoutingSupported());
+    CHECK_AND_RETURN_LOG(cmpStream != nullptr && existingStream != nullptr, "stream is nullptr");
+    CHECK_AND_RETURN(cmpStream->IsEnhancedOutputRoute() && existingStream->GetRoute() == cmpStream->GetRoute());
+
+    DeviceType existingDeviceType = existingStream->GetMainNewDeviceType();
+    DeviceType cmpDeviceType = cmpStream->GetMainNewDeviceType();
+    CHECK_AND_RETURN(existingDeviceType != cmpDeviceType &&
+        AudioCoreConfigManager::GetInstance().IsSupportedDeviceTypeByAdapterType(
+            AudioAdapterType::TYPE_PRIMARY, existingDeviceType) &&
+        AudioCoreConfigManager::GetInstance().IsSupportedDeviceTypeByAdapterType(
+            AudioAdapterType::TYPE_PRIMARY, cmpDeviceType));
+    AUDIO_INFO_LOG("stream %{public}u routeFlag 0x%{public}x fallback to normal, existing %{public}u "
+        "deviceType %{public}d, cmp deviceType %{public}d",
+        cmpStream->GetSessionId(), cmpStream->GetRoute(), existingStream->GetSessionId(),
+        static_cast<int32_t>(existingDeviceType), static_cast<int32_t>(cmpDeviceType));
+    cmpStream->ResetToNormalRoute(false);
+}
+
 bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
     std::shared_ptr<AudioStreamDescriptor> incomingStream,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove)
@@ -1470,6 +1499,7 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         default:
             break;
     }
+    HandleSpecialStreamLimitOnMultiDevice(existingStream, incomingStream);
     return isUpdate;
 }
 
@@ -1527,6 +1557,15 @@ void AudioPipeSelector::GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioSt
 #ifdef MULTI_BUS_ENABLE
     std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(desc);
     pipeManager_->GetStreamPropInfo(desc, info, busAddresses);
+    // The xml pipe flag (e.g. AUDIO_OUTPUT_FLAG_3DA_DIRECT of bus10_3da_out) must be visible on
+    // the stream, otherwise the 3DA direct path is never selected for clients that do not send
+    // the flag themselves. OR only the 3DA bit into routeFlag_: supportFlags_ is the pipe
+    // capability set and must neither replace flags already computed by the route decision
+    // (ApplyRouteSelectDecision) nor inject flags the stream never requested.
+    std::shared_ptr<AdapterPipeInfo> matchedPipeInfo = info->pipeInfo_.lock();
+    if (matchedPipeInfo != nullptr && (matchedPipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_3DA_DIRECT)) {
+        desc->routeFlag_ = static_cast<AudioFlag>(desc->routeFlag_ | AUDIO_OUTPUT_FLAG_3DA_DIRECT);
+    }
 #else
     pipeManager_->GetStreamPropInfo(desc, info);
 #endif
@@ -1705,7 +1744,7 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
     }
 }
 
-void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
+void AudioPipeSelector::UpdateModuleInfoWithDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
     AudioModuleInfo &moduleInfo)
 {
     CHECK_AND_RETURN_LOG(deviceDesc, "streamDesc is nullptr");
@@ -1758,6 +1797,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
     info.moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
     info.moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(streamPropInfo->channelLayout_));
+    info.moduleInfo_.channelLayout = std::to_string(streamPropInfo->channelLayout_);
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
 
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
@@ -1787,7 +1827,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.renderInIdleState = pipeInfoPtr->paProp_.renderInIdleState_;
 
     if (!streamDesc->newDeviceDescs_.empty()) {
-        UpdateMouleInfoWitchDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
+        UpdateModuleInfoWithDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
 
     if (streamDesc->IsUltraFastRequested() &&
@@ -1797,7 +1837,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     }
 
     // engine uses networkId to distinguish different renders,
-    // so we need to set networkId after UpdateMouleInfoWitchDevice;
+    // so we need to set networkId after UpdateModuleInfoWithDevice;
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
     info.streamDescriptors_.push_back(streamDesc);
@@ -1948,6 +1988,8 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
         MatchCollaborativePipe(streamPropInfo, pipeInfo, streamDesc);
 
         MatchUltraFastPipe(pipeInfo, streamDesc);
+        MatchFastArmusbPipe(pipeInfo, streamDesc);
+        MatchArmusbInputPipe(pipeInfo, streamDesc);
 
         pipeManager_->AddStreamToPipe(pipeInfo, streamDesc, PIPE_ACTION_UPDATE);
         HILOG_COMM_INFO("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
@@ -1986,6 +2028,34 @@ void AudioPipeSelector::MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> 
     streamDesc->SetUltraFastImplemented(pipeInfo->GetUltraFastFlag());
 }
 
+void AudioPipeSelector::MatchFastArmusbPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN(streamDesc && !streamDesc->newDeviceDescs_.empty() &&
+        pipeInfo && pipeInfo->name_ == "fast_usb_arm_output");
+    auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN(deviceDesc && deviceDesc->macAddress_ != pipeInfo->moduleInfo_.macAddress);
+
+    AUDIO_INFO_LOG("FastArmUsb pipe device changed, update moduleInfo with new device info");
+    UpdateModuleInfoWithDevice(deviceDesc, pipeInfo->moduleInfo_);
+    pipeInfo->InitAudioStreamInfo();
+    pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
+}
+
+void AudioPipeSelector::MatchArmusbInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN(streamDesc && !streamDesc->newDeviceDescs_.empty() &&
+        pipeInfo && pipeInfo->name_ == USB_MIC_PIPENAME);
+    auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN(!pipeInfo->IsSameUsbDevice(deviceDesc));
+
+    AUDIO_INFO_LOG("ArmUsb input pipe device changed, update moduleInfo with new device info");
+    UpdateModuleInfoWithDevice(deviceDesc, pipeInfo->moduleInfo_);
+    pipeInfo->InitAudioStreamInfo();
+    pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
+}
+
 bool AudioPipeSelector::IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
     std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
@@ -2012,7 +2082,7 @@ void AudioPipeSelector::UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStream
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
     info.isCollaborationEnable_ = streamPropInfo->isCollaborationEnable_;
     if (!streamDesc->newDeviceDescs_.empty()) {
-        UpdateMouleInfoWitchDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
+        UpdateModuleInfoWithDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
 
     AUDIO_INFO_LOG("Pipe name: %{public}s, channels: %{public}s, channelLayout: %{public}s",
@@ -2093,6 +2163,14 @@ bool AudioPipeSelector::IsUpdateActionForDeviceLevelHdPlay(
     CHECK_AND_RETURN_RET_LOG(existingHdPlayMode != HdPlaybackMode::DEVICE_LEVEL ||
         incomingHdPlayMode != HdPlaybackMode::DEVICE_LEVEL, false, "device level, not update action");
     return true;
+}
+
+bool AudioPipeSelector::IsPipeNotSupportReload(const std::shared_ptr<AudioPipeInfo> &pipe) const
+{
+    CHECK_AND_RETURN_RET(pipe != nullptr && pipe->IsSameAdapter(ADAPTER_TYPE_REMOTE) &&
+        pipe->pipeRole_ == PIPE_ROLE_INPUT && !pipe->streamDescriptors_.empty(), false);
+    auto mainDevice = pipe->streamDescriptors_.front()->GetMainNewDeviceDesc();
+    return mainDevice != nullptr && mainDevice->IsRemoteDevice() && !mainDevice->isSupportReload_;
 }
 
 void AudioPipeSelector::MatchCollaborativePipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,

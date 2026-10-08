@@ -1818,11 +1818,11 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsBothFastArmUsbNeedRecreate_003, TestSize.L
 }
 
 /**
- * @tc.name: UpdateMouleInfoWitchDevice_001
- * @tc.desc: Test UpdateMouleInfoWitchDevice
+ * @tc.name: UpdateModuleInfoWithDevice_001
+ * @tc.desc: Test UpdateModuleInfoWithDevice
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_001, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateModuleInfoWithDevice_001, TestSize.Level1)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
 
@@ -1834,16 +1834,16 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_001, TestSize.Lev
     moduleInfo.rate = "8000";
 
     deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
+    audioPipeSelector->UpdateModuleInfoWithDevice(deviceDesc, moduleInfo);
     EXPECT_EQ(moduleInfo.rate, "96000");
 }
 
 /**
- * @tc.name: UpdateMouleInfoWitchDevice_002
- * @tc.desc: Test UpdateMouleInfoWitchDevice
+ * @tc.name: UpdateModuleInfoWithDevice_002
+ * @tc.desc: Test UpdateModuleInfoWithDevice
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateModuleInfoWithDevice_002, TestSize.Level1)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
 
@@ -1855,8 +1855,78 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Lev
     moduleInfo.rate = "8000";
 
     deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
+    audioPipeSelector->UpdateModuleInfoWithDevice(deviceDesc, moduleInfo);
     EXPECT_EQ(moduleInfo.rate, "8000");
+}
+
+/**
+ * @tc.name: MatchFastArmusbPipe_001
+ * @tc.desc: Test MatchFastArmusbPipe with non-matching pipe name does not update moduleInfo.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MatchFastArmusbPipe_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "new_addr";
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    auto pipeInfo = MakeTestPipe(PIPE_ROLE_OUTPUT, "primary", AUDIO_OUTPUT_FLAG_FAST);
+    pipeInfo->name_ = "primary_output";
+    pipeInfo->moduleInfo_.macAddress = "old_addr";
+    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamDesc);
+    EXPECT_EQ(pipeInfo->moduleInfo_.macAddress, "old_addr");
+}
+
+/**
+ * @tc.name: MatchFastArmusbPipe_002
+ * @tc.desc: Test MatchFastArmusbPipe with same macAddress does not update moduleInfo.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MatchFastArmusbPipe_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    auto pipeInfo = MakeTestPipe(PIPE_ROLE_OUTPUT, "usb", AUDIO_OUTPUT_FLAG_FAST);
+    pipeInfo->name_ = "fast_usb_arm_output";
+    pipeInfo->moduleInfo_.macAddress = "same_addr";
+    pipeInfo->moduleInfo_.rate = "8000";
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "same_addr";
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamDesc);
+    EXPECT_EQ(pipeInfo->moduleInfo_.macAddress, "same_addr");
+    EXPECT_EQ(pipeInfo->moduleInfo_.rate, "8000");
+}
+
+/**
+ * @tc.name: MatchFastArmusbPipe_003
+ * @tc.desc: Test MatchFastArmusbPipe with different macAddress updates moduleInfo.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MatchFastArmusbPipe_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    auto pipeInfo = MakeTestPipe(PIPE_ROLE_OUTPUT, "usb", AUDIO_OUTPUT_FLAG_FAST);
+    pipeInfo->name_ = "fast_usb_arm_output";
+    pipeInfo->moduleInfo_.macAddress = "old_addr";
+    pipeInfo->moduleInfo_.rate = "8000";
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "new_addr";
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    DeviceStreamInfo deviceStreamInfo;
+    deviceStreamInfo.samplingRate.insert(SAMPLE_RATE_96000);
+    deviceDesc->audioStreamInfo_.push_back(deviceStreamInfo);
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamDesc);
+    EXPECT_EQ(pipeInfo->moduleInfo_.macAddress, "new_addr");
+    EXPECT_EQ(pipeInfo->moduleInfo_.rate, "96000");
 }
 
 #ifdef MULTI_BUS_ENABLE
@@ -2711,11 +2781,107 @@ HWTEST_F(AudioPipeSelectorUnitTest, DISABLED_ProcessNewPipeList_RemoteCast_001, 
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
     
     audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescToOldPipeInfo, streamDescs);
-    
+
     EXPECT_EQ(newPipeInfoList.size(), 2);
     EXPECT_EQ(newPipeInfoList[0]->streamDescriptors_.size(), 1);
     EXPECT_EQ(newPipeInfoList[0]->adapterName_, REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
     EXPECT_EQ(newPipeInfoList[0]->streamDescMap_.count(100001), 1);
+}
+
+/**
+ * @tc.name  : ConvertStreamDescToPipeInfo_ChannelLayout_001
+ * @tc.desc  : Test ConvertStreamDescToPipeInfo fills moduleInfo_.channelLayout from the stream
+ *             layout instead of leaving it empty; the 64-bit HOA bitfield (mode bit 44) must
+ *             survive the decimal serialization.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_ChannelLayout_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = 1;
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 48000;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_HOA_ORDER3_ACN_N3D;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_FALSE(info.moduleInfo_.channelLayout.empty());
+    EXPECT_EQ(info.moduleInfo_.channelLayout,
+        std::to_string(static_cast<uint64_t>(AudioChannelLayout::CH_LAYOUT_HOA_ORDER3_ACN_N3D)));
+}
+
+/**
+ * @tc.name  : IsPipeFormatMatch_ChannelLayout_001
+ * @tc.desc  : Test IsPipeFormatMatch against a pipe built by ConvertStreamDescToPipeInfo: the
+ *             same layout matches (pipe reuse instead of special-remote reload), a different
+ *             layout does not match, and a pipe with an empty layout string keeps the old
+ *             never-match behaviour so real mismatches still reload.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, IsPipeFormatMatch_ChannelLayout_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = 1;
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 48000;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, *pipeInfo);
+
+    // same format and layout: the pipe is reused, no special-remote reload needed
+    EXPECT_TRUE(audioPipeSelector->IsPipeFormatMatch(streamPropInfo, pipeInfo));
+
+    // same format but different layout: must not match, so the reload path stays reachable
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_5POINT1;
+    EXPECT_FALSE(audioPipeSelector->IsPipeFormatMatch(streamPropInfo, pipeInfo));
+
+    // pipe with an empty layout string (predates the fill) never matches on this field
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    std::string savedLayout = pipeInfo->moduleInfo_.channelLayout;
+    pipeInfo->moduleInfo_.channelLayout = "";
+    EXPECT_FALSE(audioPipeSelector->IsPipeFormatMatch(streamPropInfo, pipeInfo));
+    pipeInfo->moduleInfo_.channelLayout = savedLayout;
 }
 } // namespace AudioStandard
 } // namespace OHOS

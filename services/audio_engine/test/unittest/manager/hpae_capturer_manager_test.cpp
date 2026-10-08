@@ -593,6 +593,85 @@ HWTEST_F(HpaeCapturerManagerTest, CreateStream_001, TestSize.Level0)
 /*
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
+ * tc.number : CreateStream_UnprocessedVaOverLimit_001
+ * tc.desc   : Test CreateStream rejects unprocessed VA stream whose concat total channels exceed max.
+ */
+HWTEST_F(HpaeCapturerManagerTest, CreateStream_UnprocessedVaOverLimit_001, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
+    // 18: concat total over max 16 (CHANNEL_16 + 2), must fail synchronously.
+    streamInfo.channels = static_cast<AudioChannel>(static_cast<uint32_t>(CHANNEL_16) + 2);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), ERROR);
+    // Synchronous rejection: no output node may be created for the rejected session.
+    EXPECT_EQ(capturerManager->sourceOutputNodeMap_.count(streamInfo.sessionId), static_cast<size_t>(0));
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CreateOutputSession_004
+ * tc.desc   : Test CreateOutputSession defense gate rejects over-limit unprocessed VA without node insert.
+ */
+HWTEST_F(HpaeCapturerManagerTest, CreateOutputSession_004, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
+    // 18: concat total over max 16 (CHANNEL_16 + 2).
+    streamInfo.channels = static_cast<AudioChannel>(static_cast<uint32_t>(CHANNEL_16) + 2);
+
+    EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), ERROR);
+    // A null map entry here is exactly the async lambda null-deref source; gate must insert nothing.
+    EXPECT_EQ(capturerManager->sourceOutputNodeMap_.count(streamInfo.sessionId), static_cast<size_t>(0));
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CreateOutputSession_005
+ * tc.desc   : Test CreateOutputSession allows unprocessed VA with concat total channels exactly at max.
+ */
+HWTEST_F(HpaeCapturerManagerTest, CreateOutputSession_005, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
+    // 16: concat total exactly at CHANNEL_16, allowed.
+    streamInfo.channels = CHANNEL_16;
+
+    EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
+    EXPECT_NE(capturerManager->sourceOutputNodeMap_[streamInfo.sessionId], nullptr);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test DestroyStream_001
  */

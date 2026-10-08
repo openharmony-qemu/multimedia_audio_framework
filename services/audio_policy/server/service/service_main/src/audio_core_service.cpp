@@ -56,7 +56,7 @@ namespace {
 const size_t SELECT_DEVICE_HISTORY_LIMIT = 10;
 const uint32_t FIRST_SESSIONID = 100000;
 static const char *CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
-const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
+const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02 * SOURCE_PERIOD_SIZE;
 const uint32_t PC_MIC_CHANNEL_NUM = 4;
 const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 
@@ -145,6 +145,7 @@ static const std::map<DeviceType, AudioAdapterType> DEVICE_HAL_MAP = {
     { DEVICE_TYPE_NEARLINK, AudioAdapterType::TYPE_PRIMARY },
     { DEVICE_TYPE_USB_ARM_HEADSET, AudioAdapterType::TYPE_USB },
     { DEVICE_TYPE_DP, AudioAdapterType::TYPE_DP },
+    { DEVICE_TYPE_HDMI, AudioAdapterType::TYPE_PRIMARY },
     { DEVICE_TYPE_ACCESSORY, AudioAdapterType::TYPE_ACCESSORY },
     { DEVICE_TYPE_LINE_DIGITAL, AudioAdapterType::TYPE_PRIMARY },
     { DEVICE_TYPE_WIRED_MICIN, AudioAdapterType::TYPE_PRIMARY },
@@ -767,6 +768,23 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
 
+    // xml bus flag (AUDIO_OUTPUT_FLAG_3DA_DIRECT) obtained by pipe routing must be passed
+    // down to the client as audioFlag, otherwise DecideStreamClass sees 0 -> normal path.
+    // audioFlag_ only carries 0x800 when the app sent it up; the xml-derived flag lands in
+    // routeFlag_ (set by the encoding-based bus selection inside FetchRendererPipeAndExecute),
+    // so routeFlag_ must be honored too, otherwise a client that does not send the flag
+    // never reaches the 3DA direct path.
+    if ((streamDesc->audioFlag_ | streamDesc->routeFlag_) & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
+        flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_3DA_DIRECT;
+        streamDesc->audioFlag_ = static_cast<AudioFlag>(streamDesc->audioFlag_ | AUDIO_OUTPUT_FLAG_3DA_DIRECT);
+        // Keep the server-side streamDesc in sync too: the client sent this desc before
+        // DecideStreamClass updated its local rendererInfo, so rendererFlags/pipeType stored
+        // here are stale (NORMAL). Without this, re-routing at Start overwrites the
+        // collector's pipeType back from PIPE_TYPE_OUT_3DA_DIRECT to NORMAL.
+        streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+        streamDesc->rendererInfo_.pipeType = PIPE_TYPE_OUT_3DA_DIRECT;
+    }
+
     pipeManager_->RemoveSwitchStream(sessionId);
     streamDesc->SetFutureRoute(AUDIO_FLAG_NONE);
 
@@ -822,7 +840,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
 
     SetPreferredInputDeviceIfValid(streamDesc);
-    streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+    pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
     std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc = GetCaptureClientDevice(streamDesc, sessionId);
     CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
     pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
@@ -1041,8 +1059,7 @@ AudioFlag AudioCoreService::SelectRemoteAudioFlag(std::shared_ptr<AudioStreamDes
             NeedRemoteMultichannel(streamDesc), AUDIO_OUTPUT_FLAG_NORMAL,
             "movie use normal for remote device or remotecast");
         AUDIO_INFO_LOG("remote multichannel active, movie use multichannel");
-        // depend on vehicle service modification, AUDIO_OUTPUT_FLAG_MULTICHANNEL is disabled temporarily.
-        return AUDIO_OUTPUT_FLAG_NORMAL;
+        return AUDIO_OUTPUT_FLAG_MULTICHANNEL;
     }
 
     AUDIO_INFO_LOG("Use normal for remote device or remotecast");
@@ -1084,6 +1101,24 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
         return;
     }
     HandlePlaybackStreamByOriginalFlag(streamDesc, isCreateProcess);
+    UpdateAudioFlagForFastStream(streamDesc);
+}
+
+// Change fast stream to normal if needed. Must be called after HandlePlaybackStreamByOriginalFlag
+void AudioCoreService::UpdateAudioFlagForFastStream(
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    CHECK_AND_RETURN(streamDesc->IsStreamRequestFastOutput());
+    // Power transition(S3/S4): fast stream downgrade to normal to avoid S3/S4 failure
+    // Feature: need to handle this scenario when ultra-fast pipe is supported in the future
+    AudioPowerState powerState = GetAudioPowerState();
+    if (powerState == AudioPowerState::SUSPENDING || powerState == AudioPowerState::HIBERNATING) {
+        AUDIO_INFO_LOG("Change stream:%{public}u from FAST to NORMAL during power transition, powerState:[%{public}s]",
+            streamDesc->sessionId_, AudioPowerStateToString(powerState));
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        return;
+    }
 }
 
 void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -1277,7 +1312,7 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
     if (!forceUpdate) {
         CHECK_AND_RETURN(!audioSceneManager_.IsVoiceCallRelatedScene());
     }
-    if (audioDeviceManager_.HasScoDevicesConnected()) {
+    if (audioDeviceManager_.HasScoDevicesRealConnected()) {
         auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModemCopy();
         auto inputStreamDescs = pipeManager_->GetAllInputStreamDescsCopy();
         FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
@@ -1298,7 +1333,7 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
         auto sourceType = streamDesc->capturerInfo_.sourceType;
         auto sessionId = streamDesc->sessionId_;
         if (Util::IsScoSupportSource(sourceType)) {
-            audioStateManager_.SetPreferredRecognitionCaptureDevice(make_shared<AudioDeviceDescriptor>());
+            audioRouterSelectStrategy_.SetRecognitionInputDevice(make_shared<AudioDeviceDescriptor>());
         }
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionId);
     }
@@ -1808,14 +1843,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     }
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
-        AudioRouterInfra::GetInstance().UpdateInputStreamState(GetRealUid(streamDesc), sessionId,
-            streamDesc->capturerInfo_.sourceType, CapturerState::CAPTURER_RELEASED);
-    }
-    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-        AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
-            streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_RELEASED);
-    }
+    UpdateReleaseStreamState(streamDesc, sessionId);
     ForceRemoveSleStreamType(streamDesc);
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.UnsetOffloadStatus(sessionId);
@@ -1831,6 +1859,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     }
     DeleteSessionId(sessionId);
     ClearMuteVoipState(streamDesc, sessionId);
+    ClearRingerFlags(streamDesc);
     UnmuteDualStreamAfterAlarm(streamDesc);
 
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
@@ -1851,6 +1880,19 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         isFirstScreenOn_.store(true);
     }
     return SUCCESS;
+}
+
+void AudioCoreService::UpdateReleaseStreamState(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    uint32_t sessionId)
+{
+    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
+        AudioRouterInfra::GetInstance().UpdateInputStreamState(GetRealUid(streamDesc), sessionId,
+            streamDesc->capturerInfo_.sourceType, CapturerState::CAPTURER_RELEASED);
+    }
+    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
+            streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_RELEASED);
+    }
 }
 
 int32_t AudioCoreService::GetPhoneCallSceneType(AudioScene audioScene, AudioScene lastAudioScene)
@@ -2085,30 +2127,7 @@ int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid,
     vector<uint32_t> sessionIDList = pipeManager_->GetStreamIdsByPid(callerPid);
     CHECK_AND_RETURN_RET_LOG(pipeManager_->GetHasEarpiece(), ERR_NOT_SUPPORTED,
         "the device has no earpiece");
-    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    bool forceFetch = false;
-    for (auto &changeInfo : audioRendererChangeInfos) {
-        bool currentSessionID = false;
-        uint32_t sessionIDListSize = sessionIDList.size();
-        for (uint32_t i = 0; i < sessionIDListSize; i++) {
-            if (changeInfo->sessionId == static_cast<int32_t>(sessionIDList[i])) {
-                currentSessionID = true;
-                break;
-            }
-        }
-        if (currentSessionID &&
-            (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_INTERPHONE)) {
-            CHECK_AND_CONTINUE(!skipForce);
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
-            forceFetch = true;
-        }
-    }
-    return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType, forceFetch, callerUid);
+    return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType, false, callerUid);
 }
 
 bool AudioCoreService::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos)
@@ -2914,7 +2933,7 @@ void AudioCoreService::PrepareInputFetchInfos(
     for (const auto &streamDesc : inputStreamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
 
-        streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+        pipeManager_->UpdateOldDeviceDesc(streamDesc, streamDesc->GetNewDeviceDescs());
 
         FetchDeviceInfo info;
         info.sourceType = streamDesc->capturerInfo_.sourceType;
@@ -3144,6 +3163,19 @@ bool AudioCoreService::IsStreamActive(uint32_t sessionId)
 void AudioCoreService::SetFirstScreenOn()
 {
     isFirstScreenOn_.store(true);
+}
+
+void AudioCoreService::SetAudioPowerState(AudioPowerState state)
+{
+    CHECK_AND_RETURN(powerState_.load() != state);
+    AudioPowerState oldState = powerState_.exchange(state);
+    AUDIO_INFO_LOG("audio power state: %{public}s -> %{public}s",
+        AudioPowerStateToString(oldState), AudioPowerStateToString(state));
+}
+
+AudioPowerState AudioCoreService::GetAudioPowerState() const
+{
+    return powerState_.load();
 }
 
 bool AudioCoreService::IsA2dpOffloadStream(uint sessionId)
@@ -4051,6 +4083,12 @@ int32_t AudioCoreService::ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &
     return SUCCESS;
 }
 
+bool AudioCoreService::NeedSkipReloadForRemotePipe(const std::shared_ptr<AudioStreamDescriptor> &streamDesc) const
+{
+    auto mainDevice = streamDesc != nullptr ? streamDesc->GetMainNewDeviceDesc() : nullptr;
+    return mainDevice != nullptr && mainDevice->IsRemoteDevice() && !mainDevice->isSupportReload_;
+}
+
 int32_t AudioCoreService::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
 {
     std::string adapterName = GetAdapterNameBySessionId(sessionId);
@@ -4059,11 +4097,12 @@ int32_t AudioCoreService::ReloadCaptureSession(uint32_t sessionId, SessionOperat
     CHECK_AND_RETURN_RET_LOG(!hearingAidReloadFlag_, SUCCESS, "no need to reload session for hearingAid");
     CHECK_AND_RETURN_RET_LOG(
         adapterName.empty() || adapterName == ADAPTER_TYPE_PRIMARY, SUCCESS, "Skip reload for non-primary adapter.");
+    std::shared_ptr<AudioStreamDescriptor> newStreamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN_RET_LOG(!NeedSkipReloadForRemotePipe(newStreamDesc), SUCCESS, "skip reload for remote device");
     if (sessionWithInputPipeRouteFlag_.count(sessionId) != 0) {
         return ReloadCapturerSessionForInputPipe(sessionId, operation);
     }
     uint32_t targetSessionId = sessionId;
-    std::shared_ptr<AudioStreamDescriptor> newStreamDesc = pipeManager_->GetStreamDescById(sessionId);
     if (newStreamDesc == nullptr || specialSourceTypeSet_.count(newStreamDesc->capturerInfo_.sourceType) != 0 ||
         (newStreamDesc->routeFlag_ & AUDIO_INPUT_FLAG_FAST)) {
         AUDIO_ERR_LOG("The session of %{public}u is special or no stream, no need reload.", sessionId);
@@ -4122,6 +4161,8 @@ bool AudioCoreService::ReloadCheckForStart(
 void AudioCoreService::ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
     const AudioDeviceDescriptor &outputDevice, const std::string &caller)
 {
+    CHECK_AND_RETURN_LOG(!(inputDevice.IsRemoteDevice() && !inputDevice.isSupportReload_),
+        "skip reload for remote device not support reload");
     AUDIO_DEBUG_LOG("form caller: %{public}s, inDevice: %{public}d, outDevice: %{public}d", caller.c_str(),
         inputDevice.deviceType_, outputDevice.deviceType_);
     if (!isEcFeatureEnable_) {
@@ -4215,6 +4256,7 @@ void AudioCoreService::ReloadSourceForEffect(const AudioEffectPropertyArray &old
             if (streamDesc == nullptr) {
                 return;
             }
+            CHECK_AND_RETURN_LOG(!NeedSkipReloadForRemotePipe(streamDesc), "skip reload for remote device");
             SessionInfo targetSession = ConstructSessionByStream(streamDesc);
             ReloadSourceForSession(targetSession, targetSessionInfo.second);
             SetOpenedNormalSourceSessionId(targetSessionInfo.second);

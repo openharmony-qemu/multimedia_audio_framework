@@ -586,7 +586,8 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, SourceTypeCombination_001, TestSize.L
         auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
         EXPECT_NE(node, nullptr);
 
-        bool expectedSupport = (isPc && sourceType == SOURCE_TYPE_ULTRASONIC && PC_ENABLE_STATE != 0);
+        bool expectedSupport = (isPc && sourceType == SOURCE_TYPE_ULTRASONIC
+            && HpaeSourceOutputNode::GetPcEnableState() != 0);
         EXPECT_EQ(node->isSupportHighpassFilter_, expectedSupport);
 
         if (expectedSupport) {

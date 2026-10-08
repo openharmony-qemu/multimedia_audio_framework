@@ -88,13 +88,13 @@ protected:
     HpaePcmBuffer* SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:
     void ReconfigOutputBuffer(uint32_t outChannels, uint64_t outChannelLayout);
-    int32_t CreateAudioEffectChain(HpaeNodeInfo &nodeInfo);
-    int32_t ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo);
+    int32_t CreateAudioEffectChain(HpaeNodeInfo &nodeInfo, bool isPcmOffload = false);
+    int32_t ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo, bool isPcmOffload = false);
     void ModifyAudioEffectChainInfo(HpaeNodeInfo &nodeInfo, ModifyAudioEffectChainInfoReason reason);
     void UpdateAudioEffectChainInfo(HpaeNodeInfo &nodeInfo);
     bool IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer);
     int32_t SplitCollaborativeData();
-    bool OffloadRendererCheckNotifyEffect(const HpaeSinkInfo &sinkInfo);
+    bool OffloadRendererCheckNotifyEffect(const HpaeSinkInfo &sinkInfo, bool isPcmOffload);
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer effectOutput_;
     std::unique_ptr<HpaePcmBuffer> directOutput_ = nullptr;

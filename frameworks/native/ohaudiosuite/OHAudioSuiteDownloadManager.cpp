@@ -19,6 +19,7 @@
 
 #include <cinttypes>
 #include <string>
+#include <vector>
 #include <thread>
 #include "audio_utils.h"
 #include "audio_errors.h"
@@ -31,31 +32,33 @@
 using OHOS::AudioStandard::OHAudioSuiteDownloadManager;
 
 namespace {
-static constexpr size_t DOWNLOAD_FEATURE_NAME_MAX_LEN = 1024;
-static constexpr size_t DOWNLOAD_SYSTEM_PERMISSION_DENIED = 202;
+static constexpr size_t DOWNLOAD_FEATURE_NAME_MAX_LEN = 256;
+static constexpr int32_t DOWNLOAD_SYSTEM_PERMISSION_DENIED = 202;
+static constexpr int32_t DOWNLOAD_ERROR_NETWORK = 503;
+static constexpr int32_t DOWNLOAD_ERROR_STORAGE_NOT_ENOUGH = 402;
 }
 
-static int32_t ConvertToSaResult(int32_t internalError)
+static int32_t ConvertToApiResult(int32_t errCode, int32_t defaultResult)
 {
     using namespace OHOS::AudioStandard;
 
-    if (internalError == SUCCESS) {
+    if (errCode == SUCCESS) {
         return AUDIOCOMMON_RESULT_SUCCESS;
     }
-    if (internalError == ERR_INVALID_PARAM) {
+    if (errCode == ERR_INVALID_PARAM) {
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
-    if (internalError == ERR_SYSTEM_PERMISSION_DENIED) {
+    if (errCode == ERR_SYSTEM_PERMISSION_DENIED) {
         return DOWNLOAD_SYSTEM_PERMISSION_DENIED;
     }
-    if (internalError == ERR_ILLEGAL_STATE || internalError == ERR_NOT_STARTED) {
-        return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
+    if (errCode == DOWNLOAD_ERROR_NETWORK) {
+        return AUDIOCOMMON_RESULT_ERROR_NETWORK_CONDITION_NOT_MET;
     }
-    if (internalError == ERR_OPERATION_FAILED || internalError == ERR_IPC) {
-        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+    if (errCode == DOWNLOAD_ERROR_STORAGE_NOT_ENOUGH) {
+        return AUDIOCOMMON_RESULT_ERROR_STORAGE_NOT_ENOUGH;
     }
 
-    return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+    return defaultResult;
 }
 
 int32_t OH_AudioSuite_GetDownloadManager(OH_AudioSuite_DownloadManager **downloadManager)
@@ -82,7 +85,7 @@ int32_t OH_AudioSuite_RegisterDownloadCallback(
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "RegisterDownloadStatusCallback callback function is nullptr");
 
     int32_t ret = OHAudioSuiteDownloadManager::GetInstance().RegisterDownloadStatusCallback(*callback);
-    return ConvertToSaResult(ret);
+    return ConvertToApiResult(ret, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
 }
 
 int32_t OH_AudioSuite_UnregisterDownloadCallback(
@@ -99,7 +102,7 @@ int32_t OH_AudioSuite_UnregisterDownloadCallback(
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "RegisterDownloadStatusCallback callback function is nullptr");
 
     int32_t ret = OHAudioSuiteDownloadManager::GetInstance().UnregisterDownloadStatusCallback(*callback);
-    return ConvertToSaResult(ret);
+    return ConvertToApiResult(ret, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
 }
 
 int32_t OH_AudioSuite_StartDownload(
@@ -116,7 +119,7 @@ int32_t OH_AudioSuite_StartDownload(
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "StartDownload featureName exceeds the maximum character length");
 
     int32_t ret = OHAudioSuiteDownloadManager::GetInstance().StartDownload(featureName);
-    return ConvertToSaResult(ret);
+    return ConvertToApiResult(ret, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
 }
 
 int32_t OH_AudioSuite_PauseDownload(OH_AudioSuite_DownloadManager *downloadManager, const char *featureName)
@@ -132,7 +135,7 @@ int32_t OH_AudioSuite_PauseDownload(OH_AudioSuite_DownloadManager *downloadManag
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "PauseDownload featureName exceeds the maximum character length");
 
     int32_t ret = OHAudioSuiteDownloadManager::GetInstance().PauseDownload(featureName);
-    return ConvertToSaResult(ret);
+    return ConvertToApiResult(ret, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
 }
 
 int32_t OH_AudioSuite_CancelDownload(OH_AudioSuite_DownloadManager *downloadManager, const char *featureName)
@@ -148,7 +151,7 @@ int32_t OH_AudioSuite_CancelDownload(OH_AudioSuite_DownloadManager *downloadMana
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "CancelDownload featureName exceeds the maximum character length");
 
     int32_t ret = OHAudioSuiteDownloadManager::GetInstance().CancelDownload(featureName);
-    return ConvertToSaResult(ret);
+    return ConvertToApiResult(ret, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
 }
 
 int32_t OH_AudioSuite_StartBackgroundDownload(
@@ -166,7 +169,7 @@ int32_t OH_AudioSuite_StartBackgroundDownload(
         "StartBackgroundDownload featureName exceeds the maximum character length");
 
     int32_t ret = OHAudioSuiteDownloadManager::GetInstance().StartBackgroundDownload(featureName);
-    return ConvertToSaResult(ret);
+    return ConvertToApiResult(ret, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
 }
 
 int32_t OH_AudioSuite_GetDownloadStatus(
@@ -185,7 +188,7 @@ int32_t OH_AudioSuite_GetDownloadStatus(
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "GetDownloadStatus status is nullptr");
 
     int32_t ret = OHAudioSuiteDownloadManager::GetInstance().GetDownloadStatus(featureName, status);
-    return ConvertToSaResult(ret);
+    return ConvertToApiResult(ret, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
 }
 
 int32_t OH_AudioSuite_UninstallCloudRom(OH_AudioSuite_DownloadManager *downloadManager, const char *featureName)
@@ -201,9 +204,128 @@ int32_t OH_AudioSuite_UninstallCloudRom(OH_AudioSuite_DownloadManager *downloadM
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "UninstallCloudRom featureName exceeds the maximum character length");
 
     int32_t ret = OHAudioSuiteDownloadManager::GetInstance().UninstallCloudRom(featureName);
-    return ConvertToSaResult(ret);
+    return ConvertToApiResult(ret, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
 }
 
+static constexpr uint32_t DOWNLOAD_FEATURE_NAMES_MAX_COUNT = 5;
+
+static bool ConvertFeatureNameArray(const char **featureNames, uint32_t count,
+    std::vector<std::string>& feature)
+{
+    if (featureNames == nullptr) {
+        AUDIO_WARNING_LOG("featureNames is nullptr");
+        return false;
+    }
+    if (count == 0 || count > DOWNLOAD_FEATURE_NAMES_MAX_COUNT) {
+        AUDIO_WARNING_LOG("featureNames count is %{public}u", count);
+        return false;
+    }
+    for (uint32_t i = 0; i < count; i++) {
+        if (featureNames[i] == nullptr) {
+            AUDIO_WARNING_LOG("featureNames[%{public}u] is nullptr", i);
+            return false;
+        }
+        if (strnlen(featureNames[i], DOWNLOAD_FEATURE_NAME_MAX_LEN) >= DOWNLOAD_FEATURE_NAME_MAX_LEN) {
+            AUDIO_WARNING_LOG("featureNames[%{public}u] exceeds the maximum character length", i);
+            return false;
+        }
+        feature.emplace_back(featureNames[i]);
+    }
+    return true;
+}
+
+int32_t OH_AudioSuite_IsFeatureInstalled(
+    OH_AudioSuite_DownloadManager *downloadManager,
+    const char **featureNames, uint32_t count,
+    bool *installStatus, uint32_t installStatusSize)
+{
+    if (downloadManager == nullptr) {
+        AUDIO_WARNING_LOG("IsFeatureInstalled downloadManager is nullptr");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    if (reinterpret_cast<OHAudioSuiteDownloadManager *>(downloadManager) !=
+        &OHAudioSuiteDownloadManager::GetInstance()) {
+        AUDIO_WARNING_LOG("IsFeatureInstalled downloadManager is invalid");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    if (installStatus == nullptr) {
+        AUDIO_WARNING_LOG("IsFeatureInstalled installStatus is nullptr");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    if (installStatusSize < count) {
+        AUDIO_WARNING_LOG("IsFeatureInstalled installStatusSize is less than count");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    std::vector<std::string> names;
+    if (!ConvertFeatureNameArray(featureNames, count, names)) {
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    int32_t ret = OHAudioSuiteDownloadManager::GetInstance().IsFeatureInstalled(
+        names, installStatus, installStatusSize);
+    return ConvertToApiResult(ret, AUDIOCOMMON_RESULT_ERROR_SERVICE_DIED);
+}
+
+int32_t OH_AudioSuite_GetFeatureStatus(
+    OH_AudioSuite_DownloadManager *downloadManager,
+    const char **featureNames, uint32_t count,
+    OH_AudioSuite_DownloadStatusInfo *statusInfos, uint32_t statusInfosSize)
+{
+    if (downloadManager == nullptr) {
+        AUDIO_WARNING_LOG("GetFeatureStatus downloadManager is nullptr");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    if (reinterpret_cast<OHAudioSuiteDownloadManager *>(downloadManager) !=
+        &OHAudioSuiteDownloadManager::GetInstance()) {
+        AUDIO_WARNING_LOG("GetFeatureStatus downloadManager is invalid");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    if (statusInfos == nullptr) {
+        AUDIO_WARNING_LOG("GetFeatureStatus statusInfos is nullptr");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    if (statusInfosSize < count) {
+        AUDIO_WARNING_LOG("GetFeatureStatus statusInfosSize is less than count");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    std::vector<std::string> names;
+    if (!ConvertFeatureNameArray(featureNames, count, names)) {
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    int32_t ret = OHAudioSuiteDownloadManager::GetInstance().GetFeatureStatus(
+        names, statusInfos, statusInfosSize);
+    return ConvertToApiResult(ret, AUDIOCOMMON_RESULT_ERROR_SERVICE_DIED);
+}
+
+int32_t OH_AudioSuite_GetNewVersionInfo(
+    OH_AudioSuite_DownloadManager *downloadManager,
+    const char **featureNames, uint32_t count,
+    OH_AudioSuite_FeatureVersionInfo *versionInfos, uint32_t versionInfosSize)
+{
+    if (downloadManager == nullptr) {
+        AUDIO_WARNING_LOG("GetNewVersionInfo downloadManager is nullptr");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    if (reinterpret_cast<OHAudioSuiteDownloadManager *>(downloadManager) !=
+        &OHAudioSuiteDownloadManager::GetInstance()) {
+        AUDIO_WARNING_LOG("GetNewVersionInfo downloadManager is invalid");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    if (versionInfos == nullptr) {
+        AUDIO_WARNING_LOG("GetNewVersionInfo versionInfos is nullptr");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    if (versionInfosSize < count) {
+        AUDIO_WARNING_LOG("GetNewVersionInfo versionInfosSize is less than count");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    std::vector<std::string> names;
+    if (!ConvertFeatureNameArray(featureNames, count, names)) {
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    int32_t ret = OHAudioSuiteDownloadManager::GetInstance().GetNewVersionInfo(
+        names, versionInfos, versionInfosSize);
+    return ConvertToApiResult(ret, AUDIOCOMMON_RESULT_ERROR_SERVICE_DIED);
+}
 namespace OHOS {
 namespace AudioStandard {
 
@@ -319,36 +441,43 @@ int32_t OHAudioSuiteDownloadManager::UnregisterDownloadStatusCallback(const OH_A
 
 int32_t OHAudioSuiteDownloadManager::StartDownload(const char *featureName)
 {
-    return AudioSuite::AudioSuiteDownloadManager::GetInstance().StartDownload(std::string(featureName));
+    std::vector<std::string> featureNames = {std::string(featureName)};
+    return AudioSuite::AudioSuiteDownloadManager::GetInstance().StartDownload(featureNames, true);
 }
 
 int32_t OHAudioSuiteDownloadManager::PauseDownload(const char *featureName)
 {
-    return AudioSuite::AudioSuiteDownloadManager::GetInstance().PauseDownload(std::string(featureName));
+    std::vector<std::string> featureNames = {std::string(featureName)};
+    return AudioSuite::AudioSuiteDownloadManager::GetInstance().PauseDownload(featureNames);
 }
 
 int32_t OHAudioSuiteDownloadManager::CancelDownload(const char *featureName)
 {
-    return AudioSuite::AudioSuiteDownloadManager::GetInstance().CancelDownload(std::string(featureName));
+    std::vector<std::string> featureNames = {std::string(featureName)};
+    return AudioSuite::AudioSuiteDownloadManager::GetInstance().CancelDownload(featureNames);
 }
 
 int32_t OHAudioSuiteDownloadManager::StartBackgroundDownload(const char *featureName)
 {
-    return AudioSuite::AudioSuiteDownloadManager::GetInstance().StartBackgroundDownload(std::string(featureName));
+    std::vector<std::string> featureNames = {std::string(featureName)};
+    return AudioSuite::AudioSuiteDownloadManager::GetInstance().StartBackgroundDownload(featureNames);
 }
 
 int32_t OHAudioSuiteDownloadManager::UninstallCloudRom(const char *featureName)
 {
-    return AudioSuite::AudioSuiteDownloadManager::GetInstance().UninstallCloudRom(std::string(featureName));
+    std::vector<std::string> featureNames = {std::string(featureName)};
+    return AudioSuite::AudioSuiteDownloadManager::GetInstance().UninstallCloudRom(featureNames);
 }
 
 int32_t OHAudioSuiteDownloadManager::GetDownloadStatus(const char *featureName,
                                                        OH_AudioSuite_DownloadStatusInfo *status)
 {
-    AudioSuite::AudioSuiteDownloadStatusInfo audioSuiteStatus;
-    int32_t ret = AudioSuite::AudioSuiteDownloadManager::GetInstance().GetDownloadStatus(std::string(featureName),
-                                                                                         audioSuiteStatus);
+    std::vector<std::string> featureNames = {std::string(featureName)};
+    std::vector<AudioSuite::AudioSuiteDownloadStatusInfo> statusInfos;
+    int32_t ret = AudioSuite::AudioSuiteDownloadManager::GetInstance().GetDownloadStatus(featureNames, statusInfos);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetDownloadStatus failed, ret = %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(!statusInfos.empty(), ERROR, "GetDownloadStatus returned empty status");
+    const auto& audioSuiteStatus = statusInfos[0];
 
     auto res = strncpy_s(status->featureName,
                          sizeof(status->featureName),
@@ -364,6 +493,71 @@ int32_t OHAudioSuiteDownloadManager::GetDownloadStatus(const char *featureName,
     status->size = audioSuiteStatus.size;
     status->progress = audioSuiteStatus.progress;
     status->errorCode = audioSuiteStatus.errorCode;
+    return SUCCESS;
+}
+
+int32_t OHAudioSuiteDownloadManager::IsFeatureInstalled(
+    const std::vector<std::string>& featureNames, bool *installStatus, uint32_t installStatusSize)
+{
+    std::vector<bool> installStatusVec;
+    int32_t ret = AudioSuite::AudioSuiteDownloadManager::GetInstance().GetInstallStatus(
+        featureNames, installStatusVec);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "IsFeatureInstalled failed, ret = %{public}d", ret);
+
+    uint32_t writeCount = static_cast<uint32_t>(installStatusVec.size()) > installStatusSize ?
+        installStatusSize : static_cast<uint32_t>(installStatusVec.size());
+    for (uint32_t i = 0; i < writeCount; i++) {
+        installStatus[i] = installStatusVec[i];
+    }
+    return SUCCESS;
+}
+
+int32_t OHAudioSuiteDownloadManager::GetFeatureStatus(const std::vector<std::string>& featureNames,
+    OH_AudioSuite_DownloadStatusInfo *statusInfos, uint32_t statusInfosSize)
+{
+    std::vector<AudioSuite::AudioSuiteDownloadStatusInfo> statusInfoVec;
+    int32_t ret = AudioSuite::AudioSuiteDownloadManager::GetInstance().GetDownloadStatusDirect(
+        featureNames, statusInfoVec);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureStatus failed, ret = %{public}d", ret);
+
+    uint32_t writeCount = static_cast<uint32_t>(statusInfoVec.size() > statusInfosSize) ?
+        statusInfosSize : static_cast<uint32_t>(statusInfoVec.size());
+    for (uint32_t i = 0; i < writeCount; i++) {
+        auto res = strncpy_s(statusInfos[i].featureName, sizeof(statusInfos[i].featureName),
+            statusInfoVec[i].featureName.c_str(), statusInfoVec[i].featureName.length());
+        CHECK_AND_RETURN_RET_LOG(res == EOK, ERROR, "strncpy_s featureName failed, err = %{public}d", res);
+        res = strncpy_s(statusInfos[i].installPath, sizeof(statusInfos[i].installPath),
+            statusInfoVec[i].romPath.c_str(), statusInfoVec[i].romPath.length());
+        CHECK_AND_RETURN_RET_LOG(res == EOK, ERROR, "strncpy_s installPath failed, err = %{public}d", res);
+        statusInfos[i].downloadStatus = static_cast<int32_t>(statusInfoVec[i].state);
+        statusInfos[i].size = 0;
+        statusInfos[i].progress = statusInfoVec[i].progress;
+        statusInfos[i].errorCode = statusInfoVec[i].errorCode;
+    }
+    return SUCCESS;
+}
+
+int32_t OHAudioSuiteDownloadManager::GetNewVersionInfo(const std::vector<std::string>& featureNames,
+    OH_AudioSuite_FeatureVersionInfo *versionInfos, uint32_t versionInfosSize)
+{
+    std::vector<AudioSuite::AudioSuiteCloudRomVersionInfo> versionInfoVec;
+    int32_t ret = AudioSuite::AudioSuiteDownloadManager::GetInstance().GetFeatureNewVersionDirect(
+        featureNames, versionInfoVec);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetNewVersionInfo failed, ret = %{public}d", ret);
+
+    uint32_t writeCount = static_cast<uint32_t>(versionInfoVec.size()) > versionInfosSize ?
+        versionInfosSize : static_cast<uint32_t>(versionInfoVec.size());
+    for (uint32_t i = 0; i < writeCount; i++) {
+        auto res = strncpy_s(versionInfos[i].featureName, sizeof(versionInfos[i].featureName),
+            versionInfoVec[i].featureName.c_str(), versionInfoVec[i].featureName.length());
+        CHECK_AND_RETURN_RET_LOG(res == EOK, ERROR, "strncpy_s featureName failed, err = %{public}d", res);
+        res = strncpy_s(versionInfos[i].version, sizeof(versionInfos[i].version),
+            versionInfoVec[i].version.c_str(), versionInfoVec[i].version.length());
+        CHECK_AND_RETURN_RET_LOG(res == EOK, ERROR, "strncpy_s version failed, err = %{public}d", res);
+        versionInfos[i].downloadStatus = versionInfoVec[i].status;
+        versionInfos[i].size = versionInfoVec[i].size;
+        versionInfos[i].errorCode = versionInfoVec[i].errorCode;
+    }
     return SUCCESS;
 }
 

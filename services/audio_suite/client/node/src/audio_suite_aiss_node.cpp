@@ -38,6 +38,8 @@ AudioSuiteAissNode::~AudioSuiteAissNode()
 
 int32_t AudioSuiteAissNode::Init()
 {
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.outSampleRate != 0, ERROR, "Invalid output SampleRate");
     if (isInit_ == true) {
         AUDIO_DEBUG_LOG("AudioSuiteAissNode has inited");
         return SUCCESS;
@@ -52,8 +54,9 @@ int32_t AudioSuiteAissNode::Init()
     }
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create Aiss algoInterface");
 
-    if (algoInterface_->Init() != SUCCESS) {
-        AUDIO_ERR_LOG("InitAlgorithm failed");
+    int32_t ret = algoInterface_->Init();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("InitAlgorithm failed, ret=%{public}d", ret);
         return ERROR;
     }
     resultNumber_ = AISS_OUTPUT_NUM;
@@ -64,7 +67,6 @@ int32_t AudioSuiteAissNode::Init()
         static_cast<AudioSampleFormat>(nodeParameter_.outFormat),
         static_cast<AudioSamplingRate>(nodeParameter_.outSampleRate)});
     
-    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     nodeNeedDataDuration_ =
         static_cast<uint64_t>(nodeParameter_.frameLen) * MILLISECONDS_TO_MICROSECONDS / nodeParameter_.inSampleRate;
     isInit_ = true;

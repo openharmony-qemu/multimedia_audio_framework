@@ -42,7 +42,8 @@ static constexpr float FADE_HIGH = 1.0f;
 static constexpr float SHORT_FADE_PERIOD = 0.005f; // 5ms fade for 10ms < playback duration <= 40ms
 static constexpr float EPSILON = 1e-6f;
 
-HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
+HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo, bool isFast)
+    : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo), isFast_(isFast)
 {
     isInnerCapturerOrInjector_ = !GetDeviceClass().compare(0, strlen(INNER_CAPTURER_SINK), INNER_CAPTURER_SINK) ||
         GetDeviceClass() == VIRTUAL_INJECTOR;
@@ -129,7 +130,8 @@ void HpaeGainNode::ResetVolume()
 {
     auto audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;
-    uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
+    uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(),
+        IdHandler::SelectIdInfo(GetMacAddress(), GetDeviceNetId()));
     audioVolume->GetStreamAndPipeVolume(GetSessionId(), GetStreamType(), rendererId,
         streamVolume_, pipeVolume_);
     if (!isInnerCapturerOrInjector_ && streamVolume_ && pipeVolume_) {
@@ -144,19 +146,16 @@ void HpaeGainNode::ResetVolume()
     AUDIO_INFO_LOG("curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
 }
 
-void HpaeGainNode::ResetFadeState()
+void HpaeGainNode::ClearFadeState()
 {
     // A reused/reconnected GainNode may carry stale fade state from its previous lifecycle
     // (e.g. DONE_FADEOUT left by a Pause). DONE_FADEOUT makes SignalProcess silence every frame,
     // so it must be cleared; otherwise the reused node stays muted permanently.
     fadeOutState_ = FadeOutState::NO_FADEOUT;
-    // fadeInState_=true but collFadeInState_=false is intentional:
-    //  - fadeOutState_==DONE_FADEOUT is a per-frame SilenceData gate in SignalProcess, so a
-    //    reused node was muted; fade-in avoids the silence->full-volume pop on reconnect.
-    //  - collFadeOutState_==DONE_FADEOUT is NOT a silence gate (DoCollFading only acts on
-    //    DO_FADEOUT), so clearing it needs no fade-in; coll fade-in is driven by collaboration
-    //    logic (SetCollFadeState), not by reconnect.
-    fadeInState_ = true; // fade-in on reconnect to avoid pop
+    // fadeInState_ is intentionally NOT armed here: a hot re-plumb of a cleanly playing session
+    // (scene refresh / effect-mode switch / move / manager reload) must keep gain continuity;
+    // re-arming the fade-in there is an audible 20 ms duck mid-speech. Arming is reserved for
+    // lifecycle transitions, see ResetFadeState().
     fadeProcessedBytes_ = 0;
     totalFadeBytes_ = 0;
     collFadeOutState_ = FadeOutState::NO_FADEOUT;
@@ -164,6 +163,25 @@ void HpaeGainNode::ResetFadeState()
     collFadeProcessedBytes_ = 0;
     collTotalFadeBytes_ = 0;
     operation_ = OPERATION_INVALID; // clear stale op; harmless (SetFadeState reassigns before use)
+    AUDIO_INFO_LOG("ClearFadeState, session:%{public}u, no fade armed", GetSessionId());
+}
+
+bool HpaeGainNode::HasPendingFade() const
+{
+    // True when the node is in an in-flight fade lifecycle: fade-in not finished, fade-out
+    // pending or terminal (DONE_FADEOUT is a per-frame SilenceData gate), or collab fade
+    // pending. Such a node needs the arm path on reconnect, otherwise resuming straight to
+    // full volume after a muted/partial state pops. collFadeOutState_==DONE_FADEOUT is NOT a
+    // silence gate (DoCollFading only acts on DO_FADEOUT), but it is included so a collab
+    // stream mid-fade keeps the compensated fade-in instead of an uncompensated step.
+    return fadeInState_ || fadeOutState_ != FadeOutState::NO_FADEOUT ||
+        collFadeInState_ || collFadeOutState_ != FadeOutState::NO_FADEOUT;
+}
+
+void HpaeGainNode::ResetFadeState()
+{
+    ClearFadeState();
+    fadeInState_ = true; // fade-in on reconnect to avoid pop
     AUDIO_INFO_LOG("ResetFadeState, session:%{public}u", GetSessionId());
 }
 
@@ -227,6 +245,10 @@ void HpaeGainNode::ApplyFadeOut(HpaePcmBuffer *input, FadeOutState &fadeOutState
     uint32_t byteLength = 0;
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
     GetFadeLength(byteLength, input);
+    // SHORT_FADE derives byteLength from sample rate (5ms of data) without knowing the
+    // real buffer geometry; clamp to actual data size to avoid out-of-bounds access on
+    // spans shorter than 5ms (e.g. ultra-fast sinks).
+    byteLength = std::min(byteLength, static_cast<uint32_t>(input->DataSize()));
     int32_t bufferAvg = GetSimpleBufferAvg(data, byteLength);
     auto ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
     AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
@@ -248,7 +270,7 @@ void HpaeGainNode::ApplyFadeOut(HpaePcmBuffer *input, FadeOutState &fadeOutState
 void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
     uint32_t &processedBytes, uint32_t &totalFadeBytes)
 {
-    if (!input->IsValid() || IsSilentData(input)) {
+    if (!input->IsValid() || (IsSilentData(input) && !isFast_)) {
         if (processedBytes > 0) {
             AUDIO_DEBUG_LOG("[%{public}d]: silent or invalid data no need to do fade in", GetSessionId());
             fadeInState = false;
@@ -269,6 +291,9 @@ void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
         rawFormat.channels = GetChannelCount();
         uint32_t byteLen = static_cast<float>(GetSampleRate()) * SHORT_FADE_PERIOD *
             rawFormat.channels * sizeof(float);
+        // Clamp to actual data size: 5ms-derived length may exceed the buffer on
+        // spans shorter than 5ms (e.g. ultra-fast sinks). See ApplyFadeOut.
+        byteLen = std::min(byteLen, static_cast<uint32_t>(input->DataSize()));
         auto ret = ProcessVol(data, byteLen, rawFormat, FADE_LOW, FADE_HIGH);
         fadeInState = false;
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
@@ -308,7 +333,7 @@ void HpaeGainNode::ProcessDefaultFadeIn(HpaePcmBuffer *input, uint8_t *data,
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
         processedBytes += avail;
     }
-    if (processedBytes >= totalFadeBytes) {
+    if (processedBytes >= totalFadeBytes || isFast_) {
         fadeInState = false;
         processedBytes = 0;
     }
@@ -345,7 +370,8 @@ void HpaeGainNode::EnsureVolumeAvailable()
 {
     if (!streamVolume_ || (!isInnerCapturerOrInjector_ && !pipeVolume_)) {
         AudioVolume *audioVolume = AudioVolume::GetInstance();
-        uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
+        uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(),
+            IdHandler::SelectIdInfo(GetMacAddress(), GetDeviceNetId()));
         audioVolume->GetStreamAndPipeVolume(GetSessionId(), GetStreamType(), rendererId,
             streamVolume_, pipeVolume_);
     }

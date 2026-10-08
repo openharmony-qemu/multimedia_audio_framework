@@ -14,7 +14,7 @@
  */
 
 #ifndef LOG_TAG
-#define LOG_TAG "AudioSuitePorcessNode"
+#define LOG_TAG "AudioSuiteProcessNode"
 #endif
 
 #include <vector>
@@ -78,6 +78,8 @@ int32_t AudioSuiteProcessNode::InitCacheLength(uint32_t needDataLength)
     algoOutPcmBuffer_.resize(resultNumber_);
     downStreamData_.resize(resultNumber_);
     cachedBuffer_.resize(resultNumber_);
+    algoOutput_.clear();
+    intermediateResult_.clear();
     // The buffer size is twice the maximum length of the data in the current node and the next node.
     uint32_t doubleLength = 2;
 
@@ -132,6 +134,8 @@ int32_t AudioSuiteProcessNode::ObtainProcessedData()
 
         Trace trace("AudioSuiteProcessNode::SignalProcess Start");
         algoProcessedResult_ = SignalProcess(preOutputs);
+        CHECK_AND_RETURN_RET_LOG(!algoProcessedResult_.empty() && algoProcessedResult_[0] != nullptr, ERROR,
+            "node %{public}d SignalProcess returned error result", GetNodeType());
         trace.End();
 
         // for dfx

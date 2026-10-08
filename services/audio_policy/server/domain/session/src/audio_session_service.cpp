@@ -372,7 +372,6 @@ AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid
     fakeAudioInterrupt.pid = callerPid;
     fakeAudioInterrupt.uid = IPCSkeleton::GetCallingUid();
     fakeAudioInterrupt.isAudioSessionInterrupt = true;
-    fakeAudioInterrupt.isCheckMuteStream = true;
     auto session = sessionMap_.find(callerPid);
     if (session != sessionMap_.end()) {
         fakeAudioInterrupt.streamId = session->second->GetFakeStreamId();

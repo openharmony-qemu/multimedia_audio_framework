@@ -1959,7 +1959,7 @@ HWTEST_F(AudioCoreServicePrivateTest, GetVoiceCallMuteDuration_001, TestSize.Lev
     uint32_t targetMuteDuration = 100000;
 
     uint32_t muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc1);
-    EXPECT_EQ(muteDuration, targetMuteDuration);
+    EXPECT_EQ(muteDuration, 0);
 
     muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc2);
     EXPECT_EQ(muteDuration, targetMuteDuration);
@@ -5651,6 +5651,117 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchOutputDeviceAndRoute_HasTransferCallO
 
     auto ret = audioCoreService->FetchOutputDeviceAndRoute(caller, reason);
     EXPECT_NE(ret, ERR_UNKNOWN);
+}
+
+/**
+ * @tc.name  : ClearRingerFlags_001
+ * @tc.number: ClearRingerFlags_001
+ * @tc.desc  : Test ClearRingerFlags early return: nullptr and non-ringer/alarm streamUsage.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ClearRingerFlags_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+
+    audioCoreService->ClearRingerFlags(nullptr);
+    EXPECT_TRUE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    audioCoreService->ClearRingerFlags(streamDesc);
+    EXPECT_TRUE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+}
+
+/**
+ * @tc.name  : ClearRingerFlags_002
+ * @tc.number: ClearRingerFlags_002
+ * @tc.desc  : Test ClearRingerFlags clears flag when no other ringer/alarm stream running, for all usages.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ClearRingerFlags_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::vector<StreamUsage> ringerOrAlarmUsages = {
+        STREAM_USAGE_ALARM, STREAM_USAGE_RINGTONE,
+        STREAM_USAGE_VOICE_RINGTONE, STREAM_USAGE_VOICE_TRANSFER_RINGTONE,
+    };
+    for (StreamUsage usage : ringerOrAlarmUsages) {
+        audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+        auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+        streamDesc->rendererInfo_.streamUsage = usage;
+        audioCoreService->ClearRingerFlags(streamDesc);
+        EXPECT_FALSE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+    }
+}
+
+/**
+ * @tc.name  : ClearRingerFlags_003
+ * @tc.number: ClearRingerFlags_003
+ * @tc.desc  : Test ClearRingerFlags keeps flag when other ringer/alarm stream running, clears when stopped.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ClearRingerFlags_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    audioCoreService->pipeManager_->AddAudioPipeInfo(pipeInfo);
+
+    // Other ringer stream STARTED → flag not cleared
+    auto runningStream = std::make_shared<AudioStreamDescriptor>();
+    runningStream->audioMode_ = AUDIO_MODE_PLAYBACK;
+    runningStream->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+    runningStream->streamStatus_ = STREAM_STATUS_STARTED;
+    pipeInfo->AddStream(runningStream);
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
+    audioCoreService->ClearRingerFlags(streamDesc);
+    EXPECT_TRUE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+
+    // Other ringer stream STOPPED → flag cleared
+    runningStream->streamStatus_ = STREAM_STATUS_STOPPED;
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+    audioCoreService->ClearRingerFlags(streamDesc);
+    EXPECT_FALSE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+
+    audioCoreService->pipeManager_->RemoveAudioPipeInfo(pipeInfo);
+}
+
+/**
+ * @tc.name  : HasRingerOrAlarmStreamRunning_001
+ * @tc.number: HasRingerOrAlarmStreamRunning_001
+ * @tc.desc  : Test HasRingerOrAlarmStreamRunning: true for started ringer, false for media or no stream.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HasRingerOrAlarmStreamRunning_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    EXPECT_FALSE(audioCoreService->pipeManager_->HasRingerOrAlarmStreamRunning());
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    audioCoreService->pipeManager_->AddAudioPipeInfo(pipeInfo);
+
+    auto mediaStream = std::make_shared<AudioStreamDescriptor>();
+    mediaStream->audioMode_ = AUDIO_MODE_PLAYBACK;
+    mediaStream->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    mediaStream->streamStatus_ = STREAM_STATUS_STARTED;
+    pipeInfo->AddStream(mediaStream);
+    EXPECT_FALSE(audioCoreService->pipeManager_->HasRingerOrAlarmStreamRunning());
+
+    auto ringStream = std::make_shared<AudioStreamDescriptor>();
+    ringStream->audioMode_ = AUDIO_MODE_PLAYBACK;
+    ringStream->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+    ringStream->streamStatus_ = STREAM_STATUS_STARTED;
+    pipeInfo->AddStream(ringStream);
+    EXPECT_TRUE(audioCoreService->pipeManager_->HasRingerOrAlarmStreamRunning());
+
+    audioCoreService->pipeManager_->RemoveAudioPipeInfo(pipeInfo);
 }
 
 } // namespace AudioStandard

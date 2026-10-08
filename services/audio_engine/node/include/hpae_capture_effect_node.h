@@ -54,18 +54,11 @@ protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:
     void GetCaptureEffectMicChannelLayout(uint32_t channels, AudioChannelLayout &channelLayout);
-    void SetCapturerEffectConfig(AudioBufferConfig micConfig, AudioBufferConfig ecConfig,
-        AudioBufferConfig micrefConfig);
+    void SetCapturerEffectConfig(const AudioBufferConfig micConfig, const AudioBufferConfig ecConfig,
+        const AudioBufferConfig micrefConfig);
 
     uint64_t sceneKeyCode_ = 0;
     std::string sceneType_ = "";
-    uint32_t micBufferLength_ = 0;
-    uint32_t ecBufferLength_ = 0;
-    uint32_t micrefBufferLength_ = 0;
-    std::vector<uint8_t> ecCache_;
-    std::vector<uint8_t> micCache_;
-    std::vector<uint8_t> micRefCache_;
-    std::vector<uint8_t> cacheDataOut_;
     std::unique_ptr<HpaePcmBuffer> outPcmBuffer_ { nullptr };
     std::unordered_map<HpaeSourceBufferType, HpaeNodeInfo> capturerEffectConfigMap_;
 };

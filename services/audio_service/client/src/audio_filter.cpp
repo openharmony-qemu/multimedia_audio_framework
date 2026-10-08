@@ -32,7 +32,8 @@ bool AudioRendererFilter::Marshalling(Parcel &parcel) const
         parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage)) &&
         parcel.WriteInt32(static_cast<int32_t>(streamType)) &&
         parcel.WriteInt32(rendererInfo.rendererFlags) &&
-        parcel.WriteInt32(streamId);
+        parcel.WriteInt32(streamId) &&
+        parcel.WriteBool(blockFirstOverrode);
 }
 
 AudioRendererFilter *AudioRendererFilter::Unmarshalling(Parcel &parcel)
@@ -47,6 +48,7 @@ AudioRendererFilter *AudioRendererFilter::Unmarshalling(Parcel &parcel)
     info->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
     info->rendererInfo.rendererFlags = parcel.ReadInt32();
     info->streamId = parcel.ReadInt32();
+    info->blockFirstOverrode = parcel.ReadBool();
     return info;
 }
 

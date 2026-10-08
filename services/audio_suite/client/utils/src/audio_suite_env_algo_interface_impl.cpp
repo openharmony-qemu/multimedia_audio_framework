@@ -138,7 +138,7 @@ int32_t StringToEnvMode(const std::string &modStr, iMedia_Env_PARA &para)
 int32_t AudioSuiteEnvAlgoInterfaceImpl::SetParameter(const std::string &paramType, const std::string &paramValue)
 {
     int32_t ret = StringToEnvMode(paramValue, para_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Set EnvMOde Failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Set EnvMode Failed, ret=%{public}d", ret);
     ret = algoApi_.initAlgo(runBuf_.data(), scratchBuf_.data(), stSize_.iScracthSize, para_);
     if (IMEDIA_SWS_EOK != ret) {
         AUDIO_ERR_LOG("iMedia_Env_Init ERROR: %{public}d", ret);

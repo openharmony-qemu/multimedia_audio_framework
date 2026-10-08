@@ -75,6 +75,7 @@ constexpr float MIN_STREAM_PITCH_LEVEL = 0.25f;
 constexpr float MAX_STREAM_PITCH_LEVEL = 4.0f;
 constexpr float PITCH_DEFAULT = 1.0f;
 constexpr int32_t EMPTY_UID = 0;
+constexpr int32_t EMPTY_DATA = 0;
 constexpr int32_t UID_COCKPIT_SA = 8850;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
@@ -311,7 +312,10 @@ enum AudioErrors {
     /**
      * Default error.
      */
-    ERROR_SYSTEM        = 6800301
+    ERROR_SYSTEM        = 6800301,
+    ERROR_SERVICE_DIED  = 6800302,
+    ERROR_NETWORK_CONDITION_NOT_MET = 6800501,
+    ERROR_STORAGE_NOT_ENOUGH = 6800502
 };
 
 // Ringer Mode
@@ -390,6 +394,7 @@ enum CallbackChange : int32_t {
     CALLBACK_ROUTE_SELECTOR,
     CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE,
     CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE,
+    CALLBACK_VOLUME_LIMIT_EXCEEDED,
     CALLBACK_MAX,
 };
 
@@ -477,10 +482,91 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_ROUTE_SELECTOR,
     CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE,
     CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE,
+    CALLBACK_VOLUME_LIMIT_EXCEEDED,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
     "check CALLBACK_ENUMS");
+
+constexpr uint32_t MAX_VOLUME_PROTECTION_RULES = 1000;
+
+class VolumeLimitExceedEvent : public Parcelable {
+public:
+    AudioVolumeType volumeType = STREAM_DEFAULT;
+    int32_t currentVolume = 0;
+    int32_t volumeThreshold = 0;
+    int32_t uid = -1;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(volumeType)) &&
+            parcel.WriteInt32(currentVolume) &&
+            parcel.WriteInt32(volumeThreshold) &&
+            parcel.WriteInt32(uid);
+    }
+
+    static VolumeLimitExceedEvent *Unmarshalling(Parcel &parcel)
+    {
+        auto event = new (std::nothrow) VolumeLimitExceedEvent();
+        if (event == nullptr) {
+            return nullptr;
+        }
+        event->volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
+        event->currentVolume = parcel.ReadInt32();
+        event->volumeThreshold = parcel.ReadInt32();
+        event->uid = parcel.ReadInt32();
+        return event;
+    }
+};
+
+class VolumeProtectionConfig : public Parcelable {
+public:
+    std::unordered_map<AudioVolumeType, int32_t> rules;
+    // Protection duration in seconds. For example, 24 hours is 86400 seconds.
+    int32_t timeDuration = 0;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        if (rules.size() > MAX_VOLUME_PROTECTION_RULES) {
+            return false;
+        }
+
+        if (!parcel.WriteUint32(static_cast<uint32_t>(rules.size()))) {
+            return false;
+        }
+        for (const auto &entry : rules) {
+            if (!parcel.WriteInt32(static_cast<int32_t>(entry.first)) || !parcel.WriteInt32(entry.second)) {
+                return false;
+            }
+        }
+        return parcel.WriteInt32(timeDuration);
+    }
+
+    static VolumeProtectionConfig *Unmarshalling(Parcel &parcel)
+    {
+        auto config = new (std::nothrow) VolumeProtectionConfig();
+        if (config == nullptr) {
+            return nullptr;
+        }
+
+        uint32_t ruleCount = parcel.ReadUint32();
+        if (ruleCount > MAX_VOLUME_PROTECTION_RULES) {
+            delete config;
+            return nullptr;
+        }
+        config->rules.reserve(ruleCount);
+        for (uint32_t i = 0; i < ruleCount; ++i) {
+            AudioVolumeType volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
+            int32_t volumeThreshold = parcel.ReadInt32();
+            if (!config->rules.emplace(volumeType, volumeThreshold).second) {
+                delete config;
+                return nullptr;
+            }
+        }
+        config->timeDuration = parcel.ReadInt32();
+        return config;
+    }
+};
 
 struct VolumeEvent : public Parcelable {
     AudioVolumeType volumeType;
@@ -683,6 +769,7 @@ enum LoopbackCommand {
     LOOPBACK_CMD_ENABLE = 1,
     /** Disable command.*/
     LOOPBACK_CMD_DISABLE = 2,
+    LOOPBACK_CMD_GETSTATUS = 3,
 };
 
 enum LoopBackError : int32_t {
@@ -1590,6 +1677,26 @@ enum AudioMode {
     AUDIO_MODE_PLAYBACK,
     AUDIO_MODE_RECORD
 };
+
+/**
+ * @brief Enumerates the audio power state during suspend(S3) / hibernate(S4) transition.
+ * Different from PowerMgr::PowerState which is the settled state after transition.
+ */
+enum class AudioPowerState : int32_t {
+    ACTIVE = 0, // Normal operation, no power transition in progress
+    SUSPENDING = 1, // S3 suspend transition in progress (OnSyncSleep received, OnSyncWakeup not yet)
+    HIBERNATING = 2, // S4 hibernate transition in progress (OnSyncHibernate received, OnSyncWakeup not yet)
+};
+
+inline const char *AudioPowerStateToString(AudioPowerState state)
+{
+    switch (state) {
+        case AudioPowerState::ACTIVE: return "ACTIVE";
+        case AudioPowerState::SUSPENDING: return "SUSPENDING";
+        case AudioPowerState::HIBERNATING: return "HIBERNATING";
+        default: return "UNKNOWN";
+    }
+}
 
 enum StopAudioType {
     STOP_ALL,

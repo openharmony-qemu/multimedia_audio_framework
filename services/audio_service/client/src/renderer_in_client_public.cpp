@@ -28,6 +28,7 @@
 #include "hisysevent.h"
 
 #include "audio_errors.h"
+#include "audio_device_utils.h"
 #include "audio_policy_manager.h"
 #include "audio_renderer_log.h"
 #include "audio_ring_cache.h"
@@ -72,6 +73,27 @@ constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
 const std::vector<int32_t> STOP_FLUSH_UIDS = {1013}; // MEDIA_SERVICE_UID
 static const int64_t DUCK_UNDUCK_DURATION_MS = 500; // 500ms
 static const int64_t MIN_INTERVAL_IN_NS = 150000000;
+
+// The channel layout bitfield carries a mode tag in bits 44-47 and has two shapes:
+// mode 0 (plain bitmask): every low bit flags one channel, channels = popcount;
+// mode 1 (ambisonic/HOA): the low bits are HOA parameters (order / component
+// ordering / normalization) and the channel count = (order + 1) * (order + 1).
+static uint64_t GetLayoutMode(uint64_t channelLayout)
+{
+    return (channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET;
+}
+
+static bool IsHoaChannelLayout(uint64_t channelLayout)
+{
+    return GetLayoutMode(channelLayout) == static_cast<uint64_t>(CHANNEL_MDOE_AMBISONIC);
+}
+
+static bool IsHoaChannelCountMatched(uint64_t channelLayout, uint8_t channels)
+{
+    return IsHoaChannelLayout(channelLayout) &&
+        (ConvertLayoutToAudioChannel(static_cast<AudioChannelLayout>(channelLayout)) ==
+        static_cast<AudioChannel>(channels));
+}
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -246,6 +268,47 @@ void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInf
     return;
 }
 
+// Layout-channel consistency check for 3DA direct (no AudioVivid exemption):
+// popcount for positional layouts, (order + 1) * (order + 1) for HOA layouts.
+static bool Is3DAChannelLayoutMatched(uint8_t channels, uint64_t channelLayout)
+{
+    CHECK_AND_RETURN_RET(channelLayout != CH_LAYOUT_UNKNOWN, false);
+    if (((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) == 0) {
+        return __builtin_popcountll(channelLayout) == static_cast<int32_t>(channels);
+    }
+    uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
+    return ((order + 1) * (order + 1)) == static_cast<uint64_t>(channels);
+}
+
+// 3DA direct bypasses MCR conversion, so layout must match stream geometry: adopt the
+// first layout consistent with channels (channelLayout, then remoteChannelLayout), else
+// the default layout map; reject when none matches. Writes the adopted layout back to
+// both param copies so GetAudioStreamInfo readback stays consistent.
+static int32_t Adopt3DAChannelLayout(AudioStreamParams &curStreamParams,
+    AudioStreamParams &streamParams, const AudioStreamParams &info)
+{
+    uint8_t channels3DA = curStreamParams.channels;
+    uint64_t layout3DA = curStreamParams.channelLayout;
+    const char *layoutSource = "adopted";
+    if (!Is3DAChannelLayoutMatched(channels3DA, layout3DA)) {
+        layout3DA = info.remoteChannelLayout;
+        layoutSource = "remote";
+    }
+    if (!Is3DAChannelLayoutMatched(channels3DA, layout3DA)) {
+        layout3DA = IAudioStream::ConvertChannelsToDefaultChannelLayout(
+            static_cast<AudioChannel>(channels3DA), CH_LAYOUT_UNKNOWN);
+        layoutSource = "defaulted";
+    }
+    CHECK_AND_RETURN_RET_LOG(Is3DAChannelLayoutMatched(channels3DA, layout3DA),
+        ERR_NOT_SUPPORTED, "3DA direct layout mismatch, channels:%{public}u layout:%{public}" PRIx64,
+        channels3DA, layout3DA);
+    curStreamParams.channelLayout = layout3DA;
+    streamParams.channelLayout = layout3DA;
+    AUDIO_INFO_LOG("3DA direct layout %{public}s, channels:%{public}u layout:%{public}" PRIx64,
+        layoutSource, channels3DA, layout3DA);
+    return SUCCESS;
+}
+
 int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj,
     const AudioPlaybackCaptureConfig &config)
@@ -264,6 +327,13 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     streamParams_ = curStreamParams_ = info; // keep it for later use
     isHWDecodingType_ = IsHWDecodingType(static_cast<AudioEncodingType>(streamParams_.encoding));
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+        if (IsHoaChannelLayout(curStreamParams_.channelLayout) &&
+            !IsHoaChannelCountMatched(curStreamParams_.channelLayout, curStreamParams_.channels)) {
+            AUDIO_ERR_LOG("AudioStream: HOA layout %{public}llx does not match channels %{public}d",
+                static_cast<unsigned long long>(curStreamParams_.channelLayout),
+                static_cast<int32_t>(curStreamParams_.channels));
+            return ERR_INVALID_PARAM;
+        }
         ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
         if (info.isRemoteSpatialChannel) {
             cfg.outChannelLayout = info.remoteChannelLayout;
@@ -275,12 +345,20 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
             AUDIO_ERR_LOG("AudioStream: converter construct error");
             return ERR_NOT_SUPPORTED;
         }
+        if (!converter_->IsAlgoLoaded()) {
+            // HOA pcm must be rendered by MCR before downstream, passthrough keeps wrong channel semantics
+            if (IsHoaChannelLayout(curStreamParams_.channelLayout)) {
+                AUDIO_ERR_LOG("AudioStream: MCR algo unavailable, HOA stream is not supported");
+                converter_ = nullptr;
+                return ERR_NOT_SUPPORTED;
+            }
+            AUDIO_WARNING_LOG("AudioStream: MCR algo unavailable, degrade to passthrough");
+        }
 
         AUDIO_INFO_LOG("rendererInfo rendererFlags: %{public}u", rendererInfo_.rendererFlags);
         if (rendererInfo_.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
-            curStreamParams_.channelLayout = (std::find(cfg.supportOutChannelLayout.begin(),
-            cfg.supportOutChannelLayout.end(), cfg.outChannelLayout) != cfg.supportOutChannelLayout.end()) ?\
-            cfg.outChannelLayout : CH_LAYOUT_5POINT1POINT2;
+            CHECK_AND_RETURN_RET(Adopt3DAChannelLayout(curStreamParams_, streamParams_, info)
+                == SUCCESS, ERR_NOT_SUPPORTED);
         } else {
             converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
         }
@@ -792,7 +870,10 @@ bool RendererInClientInner::DoHdiSetSpeed(float speed, bool force)
     AUDIO_INFO_LOG("set speed to hdi, sessionId: %{public}d, speed: %{public}f", sessionId_, speed);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, true, "ipcStream is not inited!");
     CHECK_AND_RETURN_RET_LOG(force || !isEqual(speed, hdiSpeed_), true, "forbid duplicate set speed");
-    ipcStream_->SetSpeed(speed);
+    int32_t ret = ipcStream_->SetSpeed(speed);
+    // False makes the caller fall back to local sonic speed: the server rejects SetSpeed
+    // when the engine chain (e.g. MCH on the normal renderer manager) has no HDI speed.
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "hdi set speed fail: %{public}d", ret);
     hdiSpeed_ = speed;
     return true;
 }
@@ -821,7 +902,8 @@ void RendererInClientInner::NotifyRouteUpdate(const StreamFlagInfo &flagInfo, co
     isHdiSpeed_.store(curIsHdiSpeed);
     if (curIsHdiSpeed) {
         if (realSpeed_.has_value()) {
-            DoHdiSetSpeed(realSpeed_.value(), true);
+            // On HDI rejection keep the already-active client-side speed untouched.
+            CHECK_AND_RETURN_LOG(DoHdiSetSpeed(realSpeed_.value(), true), "keep client-side speed");
             SetSpeedInner(1.0);
         }
     } else {
@@ -846,8 +928,13 @@ int32_t RendererInClientInner::SetSpeed(float speed)
     std::lock_guard lock(speedMutex_);
     realSpeed_ = speed;
     if (isHdiSpeed_.load()) {
-        DoHdiSetSpeed(speed, false);
-        SetSpeedInner(1.0);
+        if (!DoHdiSetSpeed(speed, false)) {
+            AUDIO_INFO_LOG("hdi speed unsupported, sessionId: %{public}d, fallback to client-side speed",
+                sessionId_);
+            SetSpeedInner(speed);
+        } else {
+            SetSpeedInner(1.0);
+        }
     } else {
         SetSpeedInner(speed);
     }

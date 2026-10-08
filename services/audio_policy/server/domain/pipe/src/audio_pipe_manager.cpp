@@ -22,6 +22,7 @@
 
 #include "audio_injector_policy.h"
 #include "audio_definition_adapter_info.h"
+#include "common/hdi_adapter_info.h"
 #include "audio_definition_policy_utils.h"
 #include "audio_policy_utils.h"
 #include "audio_utils.h"
@@ -346,6 +347,7 @@ void AudioPipeManager::UpdateAudioPipeInfo(std::shared_ptr<AudioPipeInfo> newPip
 
 bool AudioPipeManager::IsSamePipe(std::shared_ptr<AudioPipeInfo> info, std::shared_ptr<AudioPipeInfo> cmpInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(info && cmpInfo, false, "info or cmpInfo is nullptr");
     if (info->name_ == cmpInfo->name_ || info->id_ == cmpInfo->id_) {
         return true;
     }
@@ -534,7 +536,8 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_OUTPUT_FLAG_INTERPHONE) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT) ||
         (routeFlag & AUDIO_INPUT_FLAG_CAMCORDER) ||
-        (routeFlag & AUDIO_INPUT_FLAG_VOICE_MESSAGE)) {
+        (routeFlag & AUDIO_INPUT_FLAG_VOICE_MESSAGE) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_HD)) {
         AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
         return true;
     }
@@ -678,6 +681,20 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPipeManager::GetProcessDeviceInfoByS
     }
     AUDIO_ERR_LOG("Cannot find session: %{public}u", sessionId);
     return nullptr;
+}
+
+std::string AudioPipeManager::Get3daDirectBusAddress()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        const AudioModuleInfo &moduleInfo = pipeInfo->moduleInfo_;
+        if (moduleInfo.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos ||
+            moduleInfo.name.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
+            return moduleInfo.busAddress.empty() ? moduleInfo.name : moduleInfo.busAddress;
+        }
+    }
+    return "";
 }
 
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutputStreamDescs()
@@ -1330,6 +1347,23 @@ bool AudioPipeManager::IsStreamUsageActive(const StreamUsage &usage)
     return false;
 }
 
+bool AudioPipeManager::HasRingerOrAlarmStreamRunning()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        CHECK_AND_CONTINUE(pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT);
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (Util::IsRingerOrAlarmerStreamUsage(desc->rendererInfo_.streamUsage) &&
+                desc->streamStatus_ == STREAM_STATUS_STARTED) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 int32_t AudioPipeManager::IsCaptureVoipCall()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
@@ -1531,6 +1565,14 @@ void AudioPipeManager::UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamD
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     streamDesc->UpdateNewDevice(newDeviceDesc);
+}
+
+void AudioPipeManager::UpdateOldDeviceDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDesc)
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    streamDesc->UpdateOldDevice(oldDeviceDesc);
 }
 
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByStreamUsage(StreamUsage streamUsage)

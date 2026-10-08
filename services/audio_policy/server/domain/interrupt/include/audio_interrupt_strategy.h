@@ -16,6 +16,7 @@
 #ifndef ST_AUDIO_INTERRUPT_STRATEGY_H
 #define ST_AUDIO_INTERRUPT_STRATEGY_H
 
+#include <atomic>
 #include "audio_errors.h"
 #include "audio_interrupt_info.h"
 #include "audio_interrupt_utils.h"
@@ -34,9 +35,13 @@ public:
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     void OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &params, bool& ret);
+    void RegisterPCModeListener();
+    int32_t OnQueryPausedTime();
 
 private:
+    static constexpr int32_t DEFAULT_PAUSE_TIMEOUT_S = 5;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
+    std::atomic_bool isPCMode_ = false;
 
     void UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
@@ -58,7 +63,7 @@ private:
     void UpdateMapFocusStrategy(const std::string &bundleName,
         AudioFocusEntry &focusEntry, bool isExistMediaStream, SourceType incomingSourceType);
     void UpdateFocusStrategy(const std::string& bundleName,
-        AudioFocusEntry& focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
+        AudioFocusEntry& focusEntry, bool isExistMediaStream, bool isIncomingMediaStream, bool isCheckMuteStream);
     bool IsMicSource(SourceType sourceType);
     void UpdateMediaWithMixStrategy(const AudioInterrupt &activeInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);

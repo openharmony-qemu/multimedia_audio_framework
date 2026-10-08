@@ -70,6 +70,15 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
     }
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init rendererStream");
+#ifdef SUPPORT_3DA
+    // The 3DA direct engine is single-slot: a previous stream paused but never released by
+    // the app would occupy the slot and later be rejected (ERROR_UNSUPPORTED), and its late
+    // Release would stop the engine now serving the new stream. Force-release it up front
+    // so the late Release becomes a no-op instead.
+    if (managerType_ == AUDIO_VIVID_3DA_DIRECT_PLAYBACK) {
+        ForceReleaseUnreleasedStreams();
+    }
+#endif
     int32_t ret = CreatePlayBackEngine(rendererStream);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Create play back engine failed. ret:%{public}d", ret);
@@ -167,6 +176,21 @@ int32_t ProAudioStreamManager::ReleaseRender(uint32_t streamIndex)
         AUDIO_INFO_LOG("Release the last stream");
     }
     return SUCCESS;
+}
+
+void ProAudioStreamManager::ForceReleaseUnreleasedStreams()
+{
+    std::vector<int32_t> staleStreamIds;
+    {
+        std::lock_guard<std::mutex> lock(streamMapMutex_);
+        for (const auto &entry : rendererStreamMap_) {
+            staleStreamIds.push_back(entry.first);
+        }
+    }
+    for (int32_t streamId : staleStreamIds) {
+        AUDIO_INFO_LOG("force release unreleased stream %{public}d before new 3DA direct stream", streamId);
+        ReleaseRender(static_cast<uint32_t>(streamId));
+    }
 }
 
 int32_t ProAudioStreamManager::TriggerStartIfNecessary()

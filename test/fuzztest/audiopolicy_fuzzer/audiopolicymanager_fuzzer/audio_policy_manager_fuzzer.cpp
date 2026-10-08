@@ -146,7 +146,6 @@ void AudioPolicyManagerOneFuzzTest(FuzzedDataProvider& fdp)
     bool isMute = GetData<bool>();
     int32_t zoneId = GetData<int32_t>();
     uid = GetData<int32_t>();
-    bool isLegacy = GetData<bool>();
     DeviceType deviceType = GetData<DeviceType>();
     AudioRingerMode ringMode = GetData<AudioRingerMode>();
     AudioScene scene = GetData<AudioScene>();
@@ -165,7 +164,7 @@ void AudioPolicyManagerOneFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
     AudioPolicyManager::GetInstance().IsAppVolumeMute(appUid, muted, isMute);
     AudioPolicyManager::GetInstance().SetAdjustVolumeForZone(zoneId);
-    AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, isLegacy, volumeFlag, uid);
+    AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag, uid, zoneId);
     AudioPolicyManager::GetInstance().SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType, volumeFlag);
     AudioPolicyManager::GetInstance().SetRingerModeLegacy(ringMode);
     AudioPolicyManager::GetInstance().SetRingerMode(ringMode);

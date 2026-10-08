@@ -696,5 +696,72 @@ HWTEST_F(AudioActiveDeviceUnitTest, GetActiveOutputDevices_001, TestSize.Level1)
     audioActiveDevice.activeOutputDevices_.clear();
 }
 
+/**
+ * @tc.name  : UpdateSystemPreferredVolumeDevice_EmptyStreamDescs
+ * @tc.number: UpdateSystemPreferredVolumeDevice_001
+ * @tc.desc  : Test UpdateSystemPreferredVolumeDevice with empty streamDescs
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, UpdateSystemPreferredVolumeDevice_EmptyStreamDescs, TestSize.Level1)
+{
+    AudioActiveDevice &audioActiveDevice = AudioActiveDevice::GetInstance();
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    EXPECT_NO_THROW(audioActiveDevice.UpdateSystemPreferredVolumeDevice(streamDescs));
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+}
+
+/**
+ * @tc.name  : UpdateSystemPreferredVolumeDevice_WithStreamDescs
+ * @tc.number: UpdateSystemPreferredVolumeDevice_002
+ * @tc.desc  : Test UpdateSystemPreferredVolumeDevice with non-empty streamDescs
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, UpdateSystemPreferredVolumeDevice_WithStreamDescs, TestSize.Level1)
+{
+    AudioActiveDevice &audioActiveDevice = AudioActiveDevice::GetInstance();
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(desc);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = {streamDesc};
+    EXPECT_NO_THROW(audioActiveDevice.UpdateSystemPreferredVolumeDevice(streamDescs));
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+}
+
+/**
+ * @tc.name  : UpdateAppPreferredVolumeDevice_EmptyStreamDescs
+ * @tc.number: UpdateAppPreferredVolumeDevice_001
+ * @tc.desc  : Test UpdateAppPreferredVolumeDevice with empty streamDescs
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, UpdateAppPreferredVolumeDevice_EmptyStreamDescs, TestSize.Level1)
+{
+    AudioActiveDevice &audioActiveDevice = AudioActiveDevice::GetInstance();
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    EXPECT_NO_THROW(audioActiveDevice.UpdateAppPreferredVolumeDevice(streamDescs));
+    EXPECT_TRUE(audioActiveDevice.uidVolumeDeviceMap_.empty());
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+}
+
+/**
+ * @tc.name  : UpdateAppPreferredVolumeDevice_WithNewDeviceDescs
+ * @tc.number: UpdateAppPreferredVolumeDevice_002
+ * @tc.desc  : Test UpdateAppPreferredVolumeDevice with streamDescs containing newDeviceDescs
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, UpdateAppPreferredVolumeDevice_WithNewDeviceDescs, TestSize.Level1)
+{
+    AudioActiveDevice &audioActiveDevice = AudioActiveDevice::GetInstance();
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(desc);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = {streamDesc};
+    EXPECT_NO_THROW(audioActiveDevice.UpdateAppPreferredVolumeDevice(streamDescs));
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2502,6 +2502,54 @@ HWTEST_F(HpaeRendererManagerTest, ConnectInputCluster_001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: Test ConnectInputCluster conditional fade arming
+ * @tc.type: FUNC
+ * @tc.number: ConnectInputCluster_002
+ * @tc.desc: A cleanly playing session keeps gain continuity on reconnect (fade-in NOT armed);
+ *           a node resuming from a fade lifecycle (stale DONE_FADEOUT) keeps the arm path.
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectInputCluster_002, TestSize.Level0)
+{
+    uint32_t sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+    auto gainNode = hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->GetGainNodeById(sessionId);
+    ASSERT_NE(gainNode, nullptr);
+
+    // Cleanly playing session: hot re-plumb (scene refresh / effect-mode switch / reload)
+    // keeps gain continuity, fade-in must NOT be armed.
+    gainNode->fadeInState_ = false;
+    gainNode->fadeOutState_ = FadeOutState::NO_FADEOUT;
+    hpaeRendererManager->ConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
+    EXPECT_EQ(gainNode->fadeInState_, false);
+
+    // Session resuming from a fade lifecycle (stale DONE_FADEOUT left by a Pause):
+    // reconnect keeps the legacy behavior (clear + arm fade-in).
+    gainNode->fadeOutState_ = FadeOutState::DONE_FADEOUT;
+    hpaeRendererManager->ConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
+    EXPECT_EQ(gainNode->fadeInState_, true);
+
+    EXPECT_EQ(hpaeRendererManager->DeleteProcessCluster(sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
  * @tc.name: DisConnectInputCluster
  * @tc.type: FUNC
  * @tc.number: DisConnectInputCluster_001
@@ -5060,6 +5108,19 @@ HWTEST_F(HpaeRendererManagerTest, IsRemoteDeviceClass_Values_001, TestSize.Level
     EXPECT_EQ(IsRemoteDeviceClass("primary"), false);
     EXPECT_EQ(IsRemoteDeviceClass("a2dp"), false);
     EXPECT_EQ(IsRemoteDeviceClass(""), false);
+}
+
+/**
+ * @tc.name  : IsHdiSpeedSupported_NormalManager_001
+ * @tc.type  : FUNC
+ * @tc.number: IsHdiSpeedSupported_NormalManager_001
+ * @tc.desc  : Normal renderer manager has no HDI speed capability (client keeps sonic speed).
+ */
+HWTEST_F(HpaeRendererManagerTest, IsHdiSpeedSupported_NormalManager_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->IsHdiSpeedSupported(), false);
 }
 
 HWTEST_F(HpaeRendererManagerTest, IsRemoteDevice_RemoteClass_001, TestSize.Level1)

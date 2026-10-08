@@ -306,6 +306,7 @@ AudioMixResult AudioMixerProcess(AudioMixHandle handle, const CAudioMixStream* s
 {
     AudioMixResult result = {nullptr, 0, ERR_CODE_INVALID_PARAM};
     CHECK_AND_RETURN_RET_LOG(ParamCheck(handle, streams, streamCount), result, "Param check failed");
+    CHECK_AND_RETURN_RET_LOG(streams[0].sampleCount > 0, result, "sampleCount check failed");
     uint32_t firstCount = static_cast<uint32_t>(streams[0].sampleCount);
     for (int i = 0; i < streamCount; ++i) {
         CHECK_AND_RETURN_RET_LOG((streams[i].data != nullptr && static_cast<uint32_t>(streams[i].sampleCount) ==

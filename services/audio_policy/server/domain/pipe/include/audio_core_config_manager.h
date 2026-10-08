@@ -17,6 +17,8 @@
 
 #include <string>
 #include <vector>
+#include <set>
+#include <unordered_map>
 #include "singleton.h"
 #include "audio_group_handle.h"
 #include "audio_info.h"
@@ -97,6 +99,7 @@ public:
     bool GetUpdateRouteSupport();
     bool GetAdapterInfoFlag();
     bool GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info);
+    bool IsSupportedDeviceTypeByAdapterType(AudioAdapterType adapterType, DeviceType deviceType);
     bool GetHasEarpiece();
     bool GetUltraFastFlag();
     bool GetArmUsbUltraFastFlag();
@@ -202,6 +205,7 @@ private:
 
     std::optional<float> isSupportInnerCaptureOffload_ = std::nullopt;
     std::vector<RequiredPipeInfo> requiredPipes_;
+    std::unordered_map<AudioAdapterType, std::set<DeviceType>> supportedDeviceTypeCache_;
 };
 
 } // namespace AudioStandard

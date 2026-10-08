@@ -138,17 +138,6 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_006, TestSize.Leve
     EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredToneRenderDevice(), nullptr);
 }
 
-/**
-* @tc.name  : Test AudioStateManager.
-* @tc.number: AudioStateManagerUnitTest_011
-* @tc.desc  : Test SetPreferredRecognitionCaptureDevice interface.
-*/
-HWTEST_F(AudioStateManagerUnitTest, SetPreferredRecognitionCaptureDevice_1, TestSize.Level1)
-{
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    AudioStateManager::GetAudioStateManager().SetPreferredRecognitionCaptureDevice(desc);
-    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredRecognitionCaptureDevice(), nullptr);
-}
 } // namespace AudioStandard
 } // namespace OHOS
  

@@ -27,6 +27,13 @@
 #include "audio_device_type.h"
 #include "audio_effect_map.h"
 #include "audio_effect_hdi_param.h"
+#include <thread>
+#include <chrono>
+
+#include <cstdio>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -127,10 +134,6 @@ AudioEffectChainManager *AudioEffectChainManager::GetInstance()
 int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::string &sinkName)
 {
     Trace trace("AudioEffectChainManager::UpdateDeviceInfo");
-    if (Util::IsEnhancedRoutingSupported()) {
-        AUDIO_INFO_LOG("Enhanced routing is supported, no need update device info");
-        return SUCCESS;
-    }
     if (!isInitialized_) {
         deviceType_ = (DeviceType)device;
         deviceSink_ = sinkName;
@@ -193,6 +196,11 @@ void AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::str
     Trace trace("AudioEffectChainManager::SetOutputDeviceSink device: " + std::to_string(device) +
         " sinkName: " + sinkName);
     std::lock_guard<std::mutex> lock(dynamicMutex_);
+    if (Util::IsEnhancedRoutingSupported()) {
+        AUDIO_INFO_LOG("Enhanced routing is supported, no need update device info");
+        return;
+    }
+
     if (UpdateDeviceInfo(device, sinkName) != SUCCESS) {
         return;
     }
@@ -377,7 +385,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
     bool exists = std::find(AUDIO_PERSISTENCE_SCENE.begin(), AUDIO_PERSISTENCE_SCENE.end(), sceneType) !=
         AUDIO_PERSISTENCE_SCENE.end();
     if (exists && !hasLoadedEffectProperties_) {
-        LoadEffectProperties();
+        LoadEffectPropertiesLocked();
     }
     std::string tSceneType = (sceneType == DEFAULT_SCENE_TYPE ? DEFAULT_PRESET_SCENE : sceneType);
     for (std::string effect: effectChainToEffectsMap_[effectChain]) {
@@ -426,7 +434,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
     bool exists = std::find(AUDIO_PERSISTENCE_SCENE.begin(), AUDIO_PERSISTENCE_SCENE.end(), sceneType) !=
         AUDIO_PERSISTENCE_SCENE.end();
     if (exists && !hasLoadedEffectProperties_) {
-        LoadEffectProperties();
+        LoadEffectPropertiesLocked();
     }
     std::string tSceneType = (sceneType == DEFAULT_SCENE_TYPE ? DEFAULT_PRESET_SCENE : sceneType);
     for (std::string effect: effectChainToEffectsMap_[effectChain]) {
@@ -1430,6 +1438,9 @@ void AudioEffectChainManager::UpdateParamExtra(
         updateParam(frontendAppType_, HDI_FRONTEND_APP_TYPE);
     } else if (mainkey == "audio_effect" && subkey == "tablet_premium") {
         updateParam(stereoEnhancementMode_, HDI_STEREO_ENHANCEMENT);
+    } else if (mainkey == "audio_effect" && subkey == THERMAL_LEVEL_SUBKEY) {
+        CHECK_AND_RETURN(StringConverter(value, thermalLevelState_));
+        SendLowPowerParam();
     } else {
         AUDIO_INFO_LOG("UpdateParamExtra failed, mainkey is %{public}s, subkey is %{public}s, "
             "value is %{public}s", mainkey.c_str(), subkey.c_str(), value.c_str());
@@ -1437,6 +1448,63 @@ void AudioEffectChainManager::UpdateParamExtra(
     }
 }
 // LCOV_EXCL_STOP
+
+void AudioEffectChainManager::SetPowerState(bool isScreenOn)
+{
+    AUDIO_INFO_LOG("isScreenOn: %{public}d", isScreenOn);
+    powerState_ = isScreenOn ? 1 : 0;
+    SendLowPowerParam();
+}
+
+void AudioEffectChainManager::SendLowPowerParam()
+{
+    constexpr uint32_t LOW_POWER_THERMAL_LEVEL = 2;
+    uint32_t lowPower = 0;
+    if (powerState_ == 0 && thermalLevelState_ >= LOW_POWER_THERMAL_LEVEL) {
+        lowPower = 1;
+    }
+
+    uint64_t eventSeq = 0;
+    {
+        std::lock_guard<std::mutex> lock(lowPowerMutex_);
+        pendingLowPowerParam_ = lowPower;
+        eventSeq = ++lastLowPowerEventSeq_;
+    }
+    AUDIO_INFO_LOG("SendLowPowerParam event, target: %{public}u, powerState: %{public}u, "
+        "thermalLevel: %{public}u", lowPower, powerState_, thermalLevelState_);
+
+    std::thread([this, eventSeq]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(LOW_POWER_DEBOUNCE_MS));
+        uint32_t toSend = 0;
+        bool needSend = false;
+        {
+            std::lock_guard<std::mutex> lock(lowPowerMutex_);
+            if (eventSeq != lastLowPowerEventSeq_) {
+                return;
+            }
+            if (pendingLowPowerParam_ == lowPowerParam_) {
+                return;
+            }
+            toSend = pendingLowPowerParam_;
+            lowPowerParam_ = toSend;
+            needSend = true;
+        }
+        CHECK_AND_RETURN(needSend);
+
+        std::string value = std::to_string(toSend);
+        std::lock_guard<std::mutex> lock(dynamicMutex_);
+        AUDIO_INFO_LOG("SendLowPowerParam to arm, lowPower: %{public}s", value.c_str());
+        for (auto &[scene, audioEffectChain] : sceneTypeToEffectChainMap_) {
+            if (audioEffectChain == nullptr) {
+                continue;
+            }
+            audioEffectChain->SetLowPowerParam(value);
+            if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
+                AUDIO_WARNING_LOG("Update low power param to effect chain failed");
+            }
+        }
+    }).detach();
+}
 
 // LCOV_EXCL_START
 void AudioEffectChainManager::SetSpatializationSceneTypeToChains()
@@ -1461,7 +1529,13 @@ bool AudioEffectChainManager::HasRunningSessionForEffectChain(std::shared_ptr<Au
     for (const auto& [sessionId, effectInfo] : sessionIDToEffectInfoMap_) {
         CHECK_AND_CONTINUE(effectInfo.sceneMode != "EFFECT_NONE");
         std::string sceneTypeTemp = effectInfo.sceneType;
-        std::string sceneTypeAndDeviceKeyTemp = sceneTypeTemp + "_&_" + GetDeviceTypeName();
+        std::string sceneTypeAndDeviceKeyTemp = "";
+        if (Util::IsEnhancedRoutingSupported()) {
+            sceneTypeAndDeviceKeyTemp = GetDeviceTypeName(effectInfo.deviceType) + "_&_" +
+                sceneTypeTemp + "_&_" + std::to_string(effectInfo.renderId);
+        } else {
+            sceneTypeAndDeviceKeyTemp = sceneTypeTemp + "_&_" + GetDeviceTypeName();
+        }
         CHECK_AND_CONTINUE_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKeyTemp) > 0 &&
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp] != nullptr, "null audioEffectChain");
         auto audioEffectChainTemp = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp];
@@ -1482,10 +1556,10 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
             continue;
         }
         if (HasRunningSessionForEffectChain(audioEffectChain)) {
-            AUDIO_INFO_LOG("HasRunningSessionForEffectChain enabled %{public}d", enabled);
+            AUDIO_INFO_LOG("key: %{public}s, HasRunningSession enabled %{public}d", key.c_str(), enabled);
             audioEffectChain->SetSpatializationEnabledForFading(enabled);
         } else {
-            AUDIO_INFO_LOG("chains enabled %{public}d", enabled);
+            AUDIO_INFO_LOG("key: %{public}s, chains enabled %{public}d", key.c_str(), enabled);
             audioEffectChain->SetSpatializationEnabled(enabled);
         }
     }
@@ -1853,6 +1927,7 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
     if (sceneTypeToSpecialEffectSet_.erase(sceneType) > 0) {
         if (isNeedInitEffectBuffer_) {
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->InitEffectChain();
+            AUDIO_INFO_LOG("init effect buffer");
         }
         isNeedInitEffectBuffer_ = true;
     }
@@ -1869,6 +1944,7 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
             HILOG_COMM_INFO("[CheckAndReleaseCommonEffectChain]default effect chain will be released");
             if (isNeedInitEffectBuffer_) {
                 sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]->InitEffectChain();
+                AUDIO_INFO_LOG("init effect buffer");
             }
             isNeedInitEffectBuffer_ = true;
             return SUCCESS;
@@ -2026,6 +2102,17 @@ int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropert
 
 // LCOV_EXCL_START
 void AudioEffectChainManager::LoadEffectProperties()
+{
+    // External entries (hpae_manager / audio_server_effect) reach here without
+    // dynamicMutex_ while readers of effectPropertyMap_ hold it; take the lock here.
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    LoadEffectPropertiesLocked();
+}
+
+// Caller must hold dynamicMutex_: the internal reentry points (tails of the two
+// SetAudioEffectChainDynamic overloads) already run under it via the locked
+// CreateAudioEffectChainDynamic entries, so locking again here would deadlock.
+void AudioEffectChainManager::LoadEffectPropertiesLocked()
 {
     hasLoadedEffectProperties_ = false;
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
@@ -3016,8 +3103,11 @@ bool AudioEffectChainManager::IsChannelLayoutSupportedForDspEffect(AudioChannelL
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     effectHdiInput_[0] = HDI_QUERY_CHANNELLAYOUT;
-    uint64_t* tempChannelLayout = reinterpret_cast<uint64_t *>(effectHdiInput_ + 1);
-    *tempChannelLayout = channelLayout;
+    // effectHdiInput_ + 1 is not 8-byte aligned: reinterpret_cast + dereference is
+    // UB (alignment + strict aliasing). memcpy matches the HDI_VOLUME pattern above.
+    int32_t ret = memcpy_s(effectHdiInput_ + 1, SEND_HDI_COMMAND_LEN - sizeof(int8_t),
+        &channelLayout, sizeof(channelLayout));
+    CHECK_AND_RETURN_RET_LOG(ret == 0, false, "memcpy channelLayout failed");
     CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, false, "audioEffectHdiParam_ is nullptr");
     DeviceType deviceTypeTemp = deviceType_ == DEVICE_TYPE_NEARLINK ? DEVICE_TYPE_BLUETOOTH_A2DP : deviceType_;
     CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, deviceTypeTemp) == SUCCESS, false,
@@ -3083,18 +3173,14 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBin(const int32_t &fd, co
     return ret;
 }
 
-int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &fd, const long &length)
+static int32_t CreateDirRecursively(const char *outPath)
 {
-    if (fd < 0 || length <= 0 || length > MAX_HRTF_LENGTH) {
-        AUDIO_INFO_LOG("fd < 0 or length invalid, UpdatePersonalizedHRTFBinToArm failed");
-        return ERR_SAVE_HRTF_FAIL;
-    }
-
-    const char *outPath = PERSONALIZED_HRTF_BIN_PATH.c_str();
     char *dirCopy = strdup(outPath);
     CHECK_AND_RETURN_RET_LOG(dirCopy != nullptr, ERR_SAVE_HRTF_FAIL, "dirCopy is nullptr");
     char *p = dirCopy;
-    if (*p == '/') p++;
+    if (*p == '/') {
+        p++;
+    }
     while (*p) {
         if (*p == '/') {
             *p = '\0';
@@ -3104,9 +3190,11 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
         p++;
     }
     free(dirCopy);
+    return SUCCESS;
+}
 
-    int32_t outFd = open(outPath, O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_OPEN_MODE);
-    CHECK_AND_RETURN_RET_LOG(outFd >= 0, ERR_SAVE_HRTF_FAIL, "outFd < 0");
+static int32_t CopyFdToFile(const int32_t &fd, const long &length, const char *outPath, FILE *outFile)
+{
     ssize_t remaining = length;
     std::vector<char> buffer(length);
     ssize_t n;
@@ -3116,18 +3204,21 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
             static_cast<size_t>(remaining) : sizeof(buffer);
         n = read(fd, buffer.data(), toRead);
         if (n <= 0) {
-            close(outFd);
-            unlink(outPath);
-            if (n == 0) {
-                errno = EIO;
+            int32_t readErrno = (n == 0) ? EIO : errno;
+            if (fclose(outFile) != 0) {
+                AUDIO_WARNING_LOG("fclose outFile failed, errno: %{public}d", errno);
             }
-            AUDIO_INFO_LOG("failed to open file for writing, errno: %{public}d, %{public}s", errno, strerror(errno));
+            unlink(outPath);
+            AUDIO_ERR_LOG("failed to open file for writing, errno: %{public}d, %{public}s",
+                readErrno, strerror(readErrno));
             return ERR_SAVE_HRTF_FAIL;
         }
 
-        ssize_t written = write(outFd, buffer.data(), n);
-        if (written != n) {
-            close(outFd);
+        size_t written = fwrite(buffer.data(), 1, n, outFile);
+        if (written != static_cast<size_t>(n)) {
+            if (fclose(outFile) != 0) {
+                AUDIO_WARNING_LOG("fclose outFile failed, errno: %{public}d", errno);
+            }
             unlink(outPath);
             AUDIO_INFO_LOG("outPath write failed");
             return ERR_SAVE_HRTF_FAIL;
@@ -3135,8 +3226,37 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
 
         remaining -= n;
     }
+    return SUCCESS;
+}
 
-    close(outFd);
+int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &fd, const long &length)
+{
+    if (fd < 0 || length <= 0 || length > MAX_HRTF_LENGTH) {
+        AUDIO_INFO_LOG("fd < 0 or length invalid, UpdatePersonalizedHRTFBinToArm failed");
+        return ERR_SAVE_HRTF_FAIL;
+    }
+
+    const char *outPath = PERSONALIZED_HRTF_BIN_PATH.c_str();
+    CHECK_AND_RETURN_RET_LOG(CreateDirRecursively(outPath) == SUCCESS, ERR_SAVE_HRTF_FAIL,
+        "create dir recursively failed");
+
+    FILE *outFile = fopen(outPath, "wb");
+    CHECK_AND_RETURN_RET_LOG(outFile != nullptr, ERR_SAVE_HRTF_FAIL, "outFile is nullptr, errno: %{public}d",
+        errno);
+    int32_t chmodRet = fchmod(fileno(outFile), DEFAULT_OPEN_MODE);
+
+    int32_t ret = CopyFdToFile(fd, length, outPath, outFile);
+    if (ret != SUCCESS) {
+        return ret;
+    }
+    if (fclose(outFile) != 0) {
+        unlink(outPath);
+        AUDIO_ERR_LOG("fclose outFile failed, errno: %{public}d", errno);
+        return ERR_SAVE_HRTF_FAIL;
+    }
+    if (chmodRet != 0) {
+        AUDIO_WARNING_LOG("fchmod outPath failed, errno: %{public}d", errno);
+    }
     AUDIO_INFO_LOG("personHrtf finish write in arm");
     return SUCCESS;
 }
