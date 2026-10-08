@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -2432,19 +2432,17 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
     }
 
     CHECK_AND_RETURN_LOG(napiRenderer->rendererOptions_.has_value(), "rendererOptions_ has no value");
+#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
+    // Allocate once for the fixed request size reported by the platform renderer.
+    size_t bufferSize = 0;
+    int32_t sizeRet = napiRenderer->audioRenderer_->GetBufferSize(bufferSize);
+    CHECK_AND_RETURN_LOG(sizeRet == SUCCESS && bufferSize > 0, "GetBufferSize failed");
+#else
     const auto &streamInfo = napiRenderer->rendererOptions_->streamInfo;
     uint32_t sampleRate = streamInfo.GetEffectiveSampleRate();
     uint32_t bytesPerSample = (streamInfo.channels * Util::GetSamplePerFrame(streamInfo.format));
     size_t bufferSize = Util::CalculatePcmSizeFromDurationCeiling(
         std::chrono::microseconds(MAX_CBBUF_IN_USEC), sampleRate, bytesPerSample);
-#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
-    // The platform write callback can request more than 100 ms of PCM data.
-    size_t platformBufferSize = 0;
-    int32_t sizeRet = napiRenderer->audioRenderer_->GetBufferSize(platformBufferSize);
-    CHECK_AND_RETURN_LOG(sizeRet == SUCCESS && platformBufferSize > 0, "GetBufferSize failed");
-    if (platformBufferSize > bufferSize) {
-        bufferSize = platformBufferSize;
-    }
 #endif
     napiRenderer->rendererWriteDataCallbackNapi_ = std::make_shared<NapiRendererWriteDataCallback>(
         env, napiRenderer, bufferSize);
