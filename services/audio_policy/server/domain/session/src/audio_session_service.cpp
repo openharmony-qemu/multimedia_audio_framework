@@ -441,6 +441,17 @@ void AudioSessionService::SetFakeFocusInterruptEvent(int32_t callerPid, const In
     }
 }
 
+InterruptEventInternal AudioSessionService::GetFakeFocusInterruptEvent(const int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session == sessionMap_.end()) {
+        AUDIO_ERR_LOG("This failure should not have occurred, possibly due to calling the function incorrectly!");
+        return {};
+    }
+    return session->second->GetFakeFocusInterruptEvent();
+}
+
 void AudioSessionService::AddStreamInfo(const std::pair<AudioInterrupt, AudioFocuState> &interruptPair)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);

@@ -288,6 +288,8 @@ private:
         const std::vector<SourceType> &incomingConcurrentSources);
     void UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         AudioFocusEntry &focusEntry);
+    void StopExistingPeelingForIncomingRecording(AudioFocusEntry &focusEntry,
+        const AudioInterrupt &activeInterrupt, const AudioInterrupt &incomingInterrupt);
     bool FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
         AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt);
     int32_t ProcessFocusEntry(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
@@ -485,6 +487,8 @@ private:
         const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt);
     void StopPausedStreamMonitor(uint32_t streamId);
     float GetDuckFactorForStreams(const AudioInterrupt &first, const AudioInterrupt &second) const;
+    void HandleAccessibilityDuckFactor(const int32_t zoneId, InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &sendInterrupt, const AudioStreamType incomingStreamType = STREAM_DEFAULT);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
