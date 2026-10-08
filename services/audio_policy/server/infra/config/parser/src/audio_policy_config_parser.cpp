@@ -618,9 +618,10 @@ void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> c
             } else if (configInfo.name_ == "ttsOutSupport") {
                 AUDIO_INFO_LOG("independent pipe support: %{public}s", configInfo.value_.c_str());
                 configManager_.OnIsSupportIndependentPipe(configInfo.value_ == "true");
-            } else if (configInfo.name_ == "primary_effect_latency" ||
-                configInfo.name_ == "primary_warmup_latency") {
-                HandleLatencyConfigParsed(configInfo.name_, configInfo.value_);
+            } else if (configInfo.name_ == "primary_effect_latency") {
+                HandleEffectLatencyParsed(configInfo.value_);
+            } else if (configInfo.name_ == "primary_warmup_latency") {
+                HandleWarmupLatencyParsed(configInfo.value_);
             }
             }
         }
@@ -658,16 +659,19 @@ void AudioPolicyConfigParser::HandleEncodingEac3SupportParsed(std::shared_ptr<Ad
     }
 }
 
-void AudioPolicyConfigParser::HandleLatencyConfigParsed(const std::string &name, const std::string &value)
+void AudioPolicyConfigParser::HandleEffectLatencyParsed(const std::string &value)
 {
     uint32_t latency = 0;
-    if (!ParseUint32Attr(value, latency)) {
-        return;
-    }
-    if (name == "primary_effect_latency") {
+    if (ParseUint32Attr(value, latency)) {
         globalConfigs_.primaryEffectLatency = latency;
         AUDIO_INFO_LOG("primary_effect_latency parsed: %{public}u", latency);
-    } else if (name == "primary_warmup_latency") {
+    }
+}
+
+void AudioPolicyConfigParser::HandleWarmupLatencyParsed(const std::string &value)
+{
+    uint32_t latency = 0;
+    if (ParseUint32Attr(value, latency)) {
         globalConfigs_.primaryWarmupLatency = latency;
         AUDIO_INFO_LOG("primary_warmup_latency parsed: %{public}u", latency);
     }

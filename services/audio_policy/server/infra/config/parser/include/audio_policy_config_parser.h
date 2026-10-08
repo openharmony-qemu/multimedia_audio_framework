@@ -82,6 +82,8 @@ private:
     void HandleUpdateAnahsSupportParsed(std::string &value);
     void HandleEncodingEac3SupportParsed(std::shared_ptr<AdapterPipeInfo> pipeInfo, const std::string &value);
     void HandleLatencyConfigParsed(const std::string &name, const std::string &value);
+    void HandleEffectLatencyParsed(const std::string &value);
+    void HandleWarmupLatencyParsed(const std::string &value);
     
     void ConvertAdapterInfoToGroupInfo(std::unordered_map<std::string, std::string> &volumeGroupMap,
         std::unordered_map<std::string, std::string> &interruptGroupMap);
