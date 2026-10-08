@@ -17,13 +17,17 @@
 #endif
 
 #include "audio_pipe_selector.h"
-#include "audio_stream_collector.h"
-#include "audio_stream_info.h"
-#include "audio_definition_adapter_info.h"
-#include "audio_policy_utils.h"
+
 #include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
+
+#include "audio_stream_collector.h"
+#include "audio_stream_info.h"
+#include "audio_definition_adapter_info.h"
+#include "audio_core_config_manager.h"
+#include "audio_policy_utils.h"
 #include "audio_errors.h"
 #include "audio_policy_interface.h"
 #include "audio_service_enum.h"
@@ -1232,7 +1236,7 @@ bool AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
         }
     }
     SortStreamByStatus(streams);
-    
+
     for (auto &[streamDescInPipe, pipeInfo] : streams) {
         bool isUpdate = ProcessConcurrency(streamDescInPipe, streamDesc, streamsMoveToNormal);
         JUDGE_AND_INFO_LOG(isUpdate == true, "isUpdate: %{public}d, action: %{public}d", isUpdate,
@@ -1441,6 +1445,28 @@ void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamD
     }
 }
 
+void AudioPipeSelector::HandleSpecialStreamLimitOnMultiDevice(
+    const std::shared_ptr<AudioStreamDescriptor> &existingStream,
+    const std::shared_ptr<AudioStreamDescriptor> &cmpStream)
+{
+    CHECK_AND_RETURN(Util::IsEnhancedRoutingSupported());
+    CHECK_AND_RETURN_LOG(cmpStream != nullptr && existingStream != nullptr, "stream is nullptr");
+    CHECK_AND_RETURN(cmpStream->IsEnhancedOutputRoute() && existingStream->GetRoute() == cmpStream->GetRoute());
+
+    DeviceType existingDeviceType = existingStream->GetMainNewDeviceType();
+    DeviceType cmpDeviceType = cmpStream->GetMainNewDeviceType();
+    CHECK_AND_RETURN(existingDeviceType != cmpDeviceType &&
+        AudioCoreConfigManager::GetInstance().IsSupportedDeviceTypeByAdapterType(
+            AudioAdapterType::TYPE_PRIMARY, existingDeviceType) &&
+        AudioCoreConfigManager::GetInstance().IsSupportedDeviceTypeByAdapterType(
+            AudioAdapterType::TYPE_PRIMARY, cmpDeviceType));
+    AUDIO_INFO_LOG("stream %{public}u routeFlag 0x%{public}x fallback to normal, existing %{public}u "
+        "deviceType %{public}d, cmp deviceType %{public}d",
+        cmpStream->GetSessionId(), cmpStream->GetRoute(), existingStream->GetSessionId(),
+        static_cast<int32_t>(existingDeviceType), static_cast<int32_t>(cmpDeviceType));
+    cmpStream->ResetToNormalRoute(false);
+}
+
 bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
     std::shared_ptr<AudioStreamDescriptor> incomingStream,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove)
@@ -1473,6 +1499,7 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         default:
             break;
     }
+    HandleSpecialStreamLimitOnMultiDevice(existingStream, incomingStream);
     return isUpdate;
 }
 

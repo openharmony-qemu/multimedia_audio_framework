@@ -462,6 +462,24 @@ bool AudioCoreConfigManager::GetAdapterInfoByType(AudioAdapterType type, std::sh
     return true;
 }
 
+bool AudioCoreConfigManager::IsSupportedDeviceTypeByAdapterType(AudioAdapterType adapterType, DeviceType deviceType)
+{
+    auto it = supportedDeviceTypeCache_.find(adapterType);
+    if (it != supportedDeviceTypeCache_.end()) {
+        return it->second.count(deviceType) > 0;
+    }
+    std::set<DeviceType> devices;
+    std::shared_ptr<PolicyAdapterInfo> info = audioPolicyConfig_.GetAdapterInfo(adapterType);
+    CHECK_AND_RETURN_RET(info != nullptr, false);
+    for (const auto &dev : info->deviceInfos) {
+        if (dev != nullptr) {
+            devices.insert(dev->type_);
+        }
+    }
+    supportedDeviceTypeCache_[adapterType] = devices;
+    return devices.count(deviceType) > 0;
+}
+
 bool AudioCoreConfigManager::GetHasEarpiece()
 {
     return hasEarpiece_;
