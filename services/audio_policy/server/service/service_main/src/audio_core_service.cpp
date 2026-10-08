@@ -1101,6 +1101,24 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
         return;
     }
     HandlePlaybackStreamByOriginalFlag(streamDesc, isCreateProcess);
+    UpdateAudioFlagForFastStream(streamDesc);
+}
+
+// Change fast stream to normal if needed. Must be called after HandlePlaybackStreamByOriginalFlag
+void AudioCoreService::UpdateAudioFlagForFastStream(
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    CHECK_AND_RETURN(streamDesc->IsStreamRequestFastOutput());
+    // Power transition(S3/S4): fast stream downgrade to normal to avoid S3/S4 failure
+    // Feature: need to handle this scenario when ultra-fast pipe is supported in the future
+    AudioPowerState powerState = GetAudioPowerState();
+    if (powerState == AudioPowerState::SUSPENDING || powerState == AudioPowerState::HIBERNATING) {
+        AUDIO_INFO_LOG("Change stream:%{public}u from FAST to NORMAL during power transition, powerState:[%{public}s]",
+            streamDesc->sessionId_, AudioPowerStateToString(powerState));
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        return;
+    }
 }
 
 void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -3147,6 +3165,19 @@ void AudioCoreService::SetFirstScreenOn()
     isFirstScreenOn_.store(true);
 }
 
+void AudioCoreService::SetAudioPowerState(AudioPowerState state)
+{
+    CHECK_AND_RETURN(powerState_.load() != state);
+    AudioPowerState oldState = powerState_.exchange(state);
+    AUDIO_INFO_LOG("audio power state: %{public}s -> %{public}s",
+        AudioPowerStateToString(oldState), AudioPowerStateToString(state));
+}
+
+AudioPowerState AudioCoreService::GetAudioPowerState() const
+{
+    return powerState_.load();
+}
+
 bool AudioCoreService::IsA2dpOffloadStream(uint sessionId)
 {
     auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
@@ -4052,6 +4083,12 @@ int32_t AudioCoreService::ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &
     return SUCCESS;
 }
 
+bool AudioCoreService::NeedSkipReloadForRemotePipe(const std::shared_ptr<AudioStreamDescriptor> &streamDesc) const
+{
+    auto mainDevice = streamDesc != nullptr ? streamDesc->GetMainNewDeviceDesc() : nullptr;
+    return mainDevice != nullptr && mainDevice->IsRemoteDevice() && !mainDevice->isSupportReload_;
+}
+
 int32_t AudioCoreService::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
 {
     std::string adapterName = GetAdapterNameBySessionId(sessionId);
@@ -4060,11 +4097,12 @@ int32_t AudioCoreService::ReloadCaptureSession(uint32_t sessionId, SessionOperat
     CHECK_AND_RETURN_RET_LOG(!hearingAidReloadFlag_, SUCCESS, "no need to reload session for hearingAid");
     CHECK_AND_RETURN_RET_LOG(
         adapterName.empty() || adapterName == ADAPTER_TYPE_PRIMARY, SUCCESS, "Skip reload for non-primary adapter.");
+    std::shared_ptr<AudioStreamDescriptor> newStreamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN_RET_LOG(!NeedSkipReloadForRemotePipe(newStreamDesc), SUCCESS, "skip reload for remote device");
     if (sessionWithInputPipeRouteFlag_.count(sessionId) != 0) {
         return ReloadCapturerSessionForInputPipe(sessionId, operation);
     }
     uint32_t targetSessionId = sessionId;
-    std::shared_ptr<AudioStreamDescriptor> newStreamDesc = pipeManager_->GetStreamDescById(sessionId);
     if (newStreamDesc == nullptr || specialSourceTypeSet_.count(newStreamDesc->capturerInfo_.sourceType) != 0 ||
         (newStreamDesc->routeFlag_ & AUDIO_INPUT_FLAG_FAST)) {
         AUDIO_ERR_LOG("The session of %{public}u is special or no stream, no need reload.", sessionId);
@@ -4123,6 +4161,8 @@ bool AudioCoreService::ReloadCheckForStart(
 void AudioCoreService::ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
     const AudioDeviceDescriptor &outputDevice, const std::string &caller)
 {
+    CHECK_AND_RETURN_LOG(!(inputDevice.IsRemoteDevice() && !inputDevice.isSupportReload_),
+        "skip reload for remote device not support reload");
     AUDIO_DEBUG_LOG("form caller: %{public}s, inDevice: %{public}d, outDevice: %{public}d", caller.c_str(),
         inputDevice.deviceType_, outputDevice.deviceType_);
     if (!isEcFeatureEnable_) {
@@ -4216,6 +4256,7 @@ void AudioCoreService::ReloadSourceForEffect(const AudioEffectPropertyArray &old
             if (streamDesc == nullptr) {
                 return;
             }
+            CHECK_AND_RETURN_LOG(!NeedSkipReloadForRemotePipe(streamDesc), "skip reload for remote device");
             SessionInfo targetSession = ConstructSessionByStream(streamDesc);
             ReloadSourceForSession(targetSession, targetSessionInfo.second);
             SetOpenedNormalSourceSessionId(targetSessionInfo.second);

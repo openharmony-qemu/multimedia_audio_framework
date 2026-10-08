@@ -308,7 +308,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioErrorsMap = {
     {"ERROR_UNSUPPORTED", ERROR_UNSUPPORTED},
     {"ERROR_TIMEOUT", ERROR_TIMEOUT},
     {"ERROR_STREAM_LIMIT", ERROR_STREAM_LIMIT},
-    {"ERROR_SYSTEM", ERROR_SYSTEM}
+    {"ERROR_SYSTEM", ERROR_SYSTEM},
+    {"ERROR_SERVICE_DIED", ERROR_SERVICE_DIED},
+    {"ERROR_NETWORK_CONDITION_NOT_MET", ERROR_NETWORK_CONDITION_NOT_MET},
+    {"ERROR_STORAGE_NOT_ENOUGH", ERROR_STORAGE_NOT_ENOUGH},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::communicationDeviceTypeMap = {
@@ -575,6 +578,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioSessionSceneMap = {
     {"AUDIO_SESSION_SCENE_MEDIA", static_cast<int32_t>(AudioSessionScene::MEDIA)},
     {"AUDIO_SESSION_SCENE_GAME", static_cast<int32_t>(AudioSessionScene::GAME)},
     {"AUDIO_SESSION_SCENE_VOICE_COMMUNICATION", static_cast<int32_t>(AudioSessionScene::VOICE_COMMUNICATION)},
+    {"AUDIO_SESSION_SCENE_VOICE_MESSAGE", static_cast<int32_t>(AudioSessionScene::VOICE_MESSAGE)},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioSessionStateChangeHintMap = {
@@ -634,6 +638,34 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioSessionBehaviorFlagsMap
 const std::map<std::string, int32_t> NapiAudioEnum::audioSuiteNetworkType = {
     {"WIFI", NETWORK_TYPE_WIFI},
     {"CELLULAR_AND_WIFI", NETWORK_TYPE_CELLULAR_AND_WIFI}
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::audioSuiteFeatureTypeMap = {
+    {"AUDIO_DIALOG_ENHANCEMENT", AUDIO_DIALOG_ENHANCEMENT},
+    {"AUDIO_CENTER_VOICE_ENHANCEMENT", AUDIO_CENTER_VOICE_ENHANCEMENT},
+    {"AUDIO_VOICE_ENHANCEMENT", AUDIO_VOICE_ENHANCEMENT},
+    {"AUDIO_MUSIC_ENHANCEMENT", AUDIO_MUSIC_ENHANCEMENT},
+    {"AUDIO_SOURCE_SEPARATION", AUDIO_SOURCE_SEPARATION},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::audioSuiteFeatureStatusMap = {
+    {"INVALID", INVALID},
+    {"INITIALIZED", INITIALIZED},
+    {"VERSION_CHECKING", VERSION_CHECKING},
+    {"VERSION_CHECK_FAILED", VERSION_CHECK_FAILED},
+    {"VERSION_CHECK_SUCCEEDED", VERSION_CHECK_SUCCEEDED},
+    {"DOWNLOADING", DOWNLOADING},
+    {"DOWNLOAD_PAUSED", DOWNLOAD_PAUSED},
+    {"DOWNLOAD_FAILED", DOWNLOAD_FAILED},
+    {"DOWNLOAD_SUCCEEDED", DOWNLOAD_SUCCEEDED},
+    {"INSTALLING", INSTALLING},
+    {"WAITING_FOR_INSTALLATION", WAITING_FOR_INSTALLATION},
+    {"INSTALLATION_FAILED", INSTALLATION_FAILED},
+    {"INSTALLATION_SUCCEEDED", INSTALLATION_SUCCEEDED},
+    {"UNINSTALLING", UNINSTALLING},
+    {"WAITING_FOR_UNINSTALLATION", WAITING_FOR_UNINSTALLATION},
+    {"UNINSTALLATION_FAILED", UNINSTALLATION_FAILED},
+    {"UNINSTALLATION_SUCCEEDED", UNINSTALLATION_SUCCEEDED},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioSeparationVolumeTypeMap = {
@@ -821,6 +853,8 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioSessionBehaviorFlags",
             CreateEnumObject(env, audioSessionBehaviorFlagsMap)),
         DECLARE_NAPI_PROPERTY("NetworkType", CreateEnumObject(env, audioSuiteNetworkType)),
+        DECLARE_NAPI_PROPERTY("AudioSuiteFeatureType", CreateEnumObject(env, audioSuiteFeatureTypeMap)),
+        DECLARE_NAPI_PROPERTY("AudioSuiteFeatureStatus", CreateEnumObject(env, audioSuiteFeatureStatusMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -2146,6 +2180,7 @@ bool NapiAudioEnum::IsLegalInputArgumentSessionScene(int32_t scene)
         case static_cast<int32_t>(AudioSessionScene::MEDIA):
         case static_cast<int32_t>(AudioSessionScene::GAME):
         case static_cast<int32_t>(AudioSessionScene::VOICE_COMMUNICATION):
+        case static_cast<int32_t>(AudioSessionScene::VOICE_MESSAGE):
             result = true;
             break;
         default:

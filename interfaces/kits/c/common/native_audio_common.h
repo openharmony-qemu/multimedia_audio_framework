@@ -107,6 +107,24 @@ typedef enum {
      * @error A system error has occurred.
      */
     AUDIOCOMMON_RESULT_ERROR_SYSTEM = 6800301,
+
+    /**
+     * @error System service process terminated.
+     * @since 26.0.1
+     */
+    AUDIOCOMMON_RESULT_ERROR_SERVICE_DIED = 6800302,
+
+    /**
+     * @error Required network conditions not met.
+     * @since 26.0.1
+     */
+    AUDIOCOMMON_RESULT_ERROR_NETWORK_CONDITION_NOT_MET = 6800501,
+
+    /**
+     * @error Insufficient storage space.
+     * @since 26.0.1
+     */
+    AUDIOCOMMON_RESULT_ERROR_STORAGE_NOT_ENOUGH = 6800502,
 } OH_AudioCommon_Result;
 
 /**

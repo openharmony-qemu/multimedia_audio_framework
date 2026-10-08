@@ -459,6 +459,21 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_016, TestSize.Level1)
 
 /**
  * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_017
+ * @tc.desc   : Test SelectIdInfo priority: macAddress > deviceNetId > default
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_017, TestSize.Level1)
+{
+    const std::string mac = "11:22:33:44:55:66";
+    const std::string netId = "LocalDevice";
+
+    EXPECT_EQ(IdHandler::SelectIdInfo(mac, netId), mac);
+    EXPECT_EQ(IdHandler::SelectIdInfo("", netId), netId);
+    EXPECT_EQ(IdHandler::SelectIdInfo("", ""), HDI_ID_INFO_DEFAULT);
+}
+
+/**
+ * @tc.name   : Test IdHandler API
  * @tc.number : IdHandlerUnitTest_010
  * @tc.desc   : Test primary_mmap_voip capture id selection for VOIP low latency path
  */

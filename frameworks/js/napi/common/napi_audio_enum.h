@@ -151,6 +151,34 @@ public:
         NETWORK_TYPE_CELLULAR_AND_WIFI = 7
     };
 
+    enum AudioSuiteFeatureType {
+        AUDIO_DIALOG_ENHANCEMENT = 0,
+        AUDIO_CENTER_VOICE_ENHANCEMENT = 1,
+        AUDIO_VOICE_ENHANCEMENT = 2,
+        AUDIO_MUSIC_ENHANCEMENT = 3,
+        AUDIO_SOURCE_SEPARATION = 4,
+    };
+
+    enum AudioSuiteFeatureStatus {
+        INVALID = -1,
+        INITIALIZED = 0,
+        VERSION_CHECKING = 10,
+        VERSION_CHECK_FAILED = 11,
+        VERSION_CHECK_SUCCEEDED = 12,
+        DOWNLOADING = 20,
+        DOWNLOAD_PAUSED = 21,
+        DOWNLOAD_FAILED = 22,
+        DOWNLOAD_SUCCEEDED = 23,
+        INSTALLING = 30,
+        WAITING_FOR_INSTALLATION = 31,
+        INSTALLATION_FAILED = 35,
+        INSTALLATION_SUCCEEDED = 36,
+        UNINSTALLING = 40,
+        WAITING_FOR_UNINSTALLATION = 41,
+        UNINSTALLATION_FAILED = 42,
+        UNINSTALLATION_SUCCEEDED = 43,
+    };
+
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
@@ -348,6 +376,8 @@ private:
     static const std::map<std::string, int32_t> BluetoothAndNearlinkPreferredRecordCategoryMap;
     static const std::map<std::string, int32_t> audioSessionBehaviorFlagsMap;
     static const std::map<std::string, int32_t> audioSuiteNetworkType;
+    static const std::map<std::string, int32_t> audioSuiteFeatureTypeMap;
+    static const std::map<std::string, int32_t> audioSuiteFeatureStatusMap;
     static const std::map<std::string, int32_t> audioSeparationVolumeTypeMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 

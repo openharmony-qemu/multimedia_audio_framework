@@ -70,8 +70,10 @@ AudioSuiteService::~AudioSuiteService()
     }
 }
 
-void AudioSuiteService::OnStart()
+void AudioSuiteService::OnStart(const SystemAbilityOnDemandReason& startReason)
 {
+    std::string reasonName = startReason.GetName();
+    AUDIO_INFO_LOG("audio_suite_server, reasonName:%{public}s", reasonName.c_str());
     {
         std::lock_guard<std::mutex> lock(eventMutex_);
         unloadRunner_ = AppExecFwk::EventRunner::Create("AudioSuiteSaUnloadRunner");
@@ -87,12 +89,18 @@ void AudioSuiteService::OnStart()
         return;
     }
     PostDelayUnloadTask();
+
+    // Initialize background download subsystem
+    bool syncProcess = (reasonName != "load");
+    downloadManager_.InitDownloadManager(syncProcess);
+
     AUDIO_INFO_LOG("AudioSuiteService: Publish success");
 }
 
 void AudioSuiteService::OnStop()
 {
     AUDIO_INFO_LOG("AudioSuiteService::OnStop");
+    downloadManager_.DeInitDownloadManager();
 }
 
 ErrCode AudioSuiteService::RegisterDownloadStatusCallback(const sptr<IRemoteObject>& object, ErrCode& result)
@@ -277,6 +285,24 @@ ErrCode AudioSuiteService::GetDownloadStatus(
 
     result = downloadManager_.GetDownloadStatus(featureNames, status);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "GetDownloadStatus failed, result:%{public}d", result);
+    return SUCCESS;
+}
+
+ErrCode AudioSuiteService::GetFeatureStatus(
+    const std::vector<std::string> &featureNames, std::vector<AudioSuiteDownloadStatusInfo> &status, ErrCode &result)
+{
+    AUDIO_INFO_LOG("AudioSuiteService::GetFeatureStatus, featureNames size=%{public}zu", featureNames.size());
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::GetFeatureStatus", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] GetFeatureStatus timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
+    PostDelayUnloadTask();
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "GetFeatureStatus: not permission");
+
+    result = downloadManager_.GetFeatureStatus(featureNames, status);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "GetFeatureStatus failed, result:%{public}d", result);
     return SUCCESS;
 }
 

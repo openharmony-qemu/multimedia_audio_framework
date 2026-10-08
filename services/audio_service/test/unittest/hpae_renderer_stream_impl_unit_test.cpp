@@ -526,6 +526,25 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_006, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test OnStreamData macAddress refresh.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_044
+ * @tc.desc  : Test OnStreamData refreshes macAddress from callback info.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_044, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    AudioCallBackStreamInfo info;
+    info.deviceClass = "primary";
+    info.deviceNetId = "local";
+    info.macAddress = "11:22:33:44:55:66";
+    info.needData = false;
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS);
+    EXPECT_EQ(unit->macAddress_, "11:22:33:44:55:66");
+}
+
+/**
  * @tc.name  : Test UpdateSpatializationState.
  * @tc.type  : FUNC
  * @tc.number: HpaeRenderer_007

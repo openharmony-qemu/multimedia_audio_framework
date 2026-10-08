@@ -21,10 +21,10 @@
 #include "audio_errors.h"
 #include "parameter.h"
 #include "audio_suite_log.h"
-#include <cctype>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <cinttypes>
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,6 +39,67 @@ static constexpr size_t DOWNLOAD_FEATURE_NAMES_MAX_SIZE = 128;
 static constexpr size_t DOWNLOAD_FEATURE_NAME_MAX_LEN = 256;
 static const std::string CLOUD_ROM_BASE_PATH = "/data/service/el1/public/update/cloudRom/";
 static const std::string PRODUCT_BASE_VERSION_KEY = "const.comp.hl.product_base_version.real";
+// CloudRomStatus state values for background download decision
+static constexpr int32_t CLOUD_ROM_CHECK_VERSION_SUCCESS = 12;
+static constexpr int32_t CLOUD_ROM_DOWNLOAD_SUCCESS = 23;
+static constexpr int32_t CLOUD_ROM_DOWNLOADING = 20;
+static constexpr int32_t CLOUD_ROM_INSTALLING = 30;
+static constexpr int32_t CLOUD_ROM_WAIT_REBOOT_THEN_INSTALL = 31;
+static constexpr int32_t CLOUD_ROM_WAIT_UPGRADE_THEN_INSTALL = 32;
+
+static const std::string DOWNLOAD_STATUS_PARA_KEY = "persist.multimedia.audiosuite.download";
+static const std::string DOWNLOAD_STATUS_PARA_KEY_WIFI = "persist.multimedia.audiosuite.download.wifi";
+
+const std::unordered_set<std::string> DownloadManager::ALLOWED_FEATURE_NAMES_ = {
+    "AudioSourceSeparationAlgoRes",
+    "RecordDefinition",
+    "RecordDialogAlgoRes",
+    "RecordPicAlgoRes",
+    "MusicMasterAlgoRes",
+};
+
+static bool IsCloudRomInProgress(int32_t state)
+{
+    return state == CLOUD_ROM_DOWNLOADING || state == CLOUD_ROM_INSTALLING || state == CLOUD_ROM_DOWNLOAD_SUCCESS ||
+           state == CLOUD_ROM_WAIT_REBOOT_THEN_INSTALL || state == CLOUD_ROM_WAIT_UPGRADE_THEN_INSTALL;
+}
+
+static constexpr int32_t DOWNLOAD_ERROR_NETWORK = 503;
+static constexpr int32_t DOWNLOAD_ERROR_STORAGE_NOT_ENOUGH = 402;
+static constexpr int32_t RESULT_ERROR_SERVICE_DIED = 6800302;
+static constexpr int32_t ERROR_NETWORK = 6800501;
+static constexpr int32_t ERROR_STORAGE_NOT_ENOUGH = 6800502;
+
+static constexpr int32_t WAIT_REBOOT_THEN_INSTALL = 31;
+static constexpr int32_t WAIT_UPGRADE_THEN_INSTALL = 32;
+static constexpr int32_t RESTARTED_WAIT_FOR_INSTALL = 33;
+static constexpr int32_t UPGRADED_WAIT_FOR_INSTALL = 34;
+
+static int32_t ConvertToApiErrCode(int32_t errCode)
+{
+    if (errCode == SUCCESS) {
+        return 0;
+    }
+    if (errCode == DOWNLOAD_ERROR_NETWORK) {
+        return ERROR_NETWORK;
+    }
+    if (errCode == DOWNLOAD_ERROR_STORAGE_NOT_ENOUGH) {
+        return ERROR_STORAGE_NOT_ENOUGH;
+    }
+    AUDIO_WARNING_LOG("Error codes:%{public}d not intended for external use", errCode);
+    return RESULT_ERROR_SERVICE_DIED;
+}
+
+static int32_t ConvertToApiState(int32_t state)
+{
+    if (state == WAIT_UPGRADE_THEN_INSTALL ||
+        state == RESTARTED_WAIT_FOR_INSTALL ||
+        state == UPGRADED_WAIT_FOR_INSTALL) {
+        AUDIO_WARNING_LOG("state:%{public}d not intended for external use", state);
+        return WAIT_REBOOT_THEN_INSTALL;
+    }
+    return state;
+}
 
 DownloadManager::DownloadManager()
 {
@@ -71,6 +132,8 @@ bool DownloadManager::ValidateFeatureNames(const std::vector<std::string>& featu
     for (const auto& featureName : featureNames) {
         CHECK_AND_RETURN_RET_LOG(!featureName.empty() && featureName.length() < DOWNLOAD_FEATURE_NAME_MAX_LEN, false,
             "ValidateFeatureNames failed: featureName length %{public}zu is invalid", featureName.length());
+        CHECK_AND_RETURN_RET_LOG(ALLOWED_FEATURE_NAMES_.find(featureName) != ALLOWED_FEATURE_NAMES_.end(), false,
+            "ValidateFeatureNames failed: featureName %{public}s is not in whitelist", featureName.c_str());
     }
     std::string logMsg = "ValidateFeatureNames: ";
     for (size_t i = 0; i < featureNames.size(); i++) {
@@ -83,17 +146,6 @@ bool DownloadManager::ValidateFeatureNames(const std::vector<std::string>& featu
     return true;
 }
 
-bool DownloadManager::ValidateFeatureNameSafe(const std::vector<std::string>& featureNames)
-{
-    for (const auto& featureName : featureNames) {
-        for (char c : featureName) {
-            CHECK_AND_RETURN_RET_LOG(std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-',
-                false, "ValidateFeatureNameSafe: featureName contains invalid character");
-        }
-    }
-    return true;
-}
-
 int32_t DownloadManager::GetInstallStatus(
     const std::vector<std::string>& featureNames, std::vector<bool>& installStatus)
 {
@@ -102,8 +154,6 @@ int32_t DownloadManager::GetInstallStatus(
 
     CHECK_AND_RETURN_RET_LOG(ValidateFeatureNames(featureNames), ERR_INVALID_PARAM,
         "GetInstallStatus featureNames validation failed");
-    CHECK_AND_RETURN_RET_LOG(ValidateFeatureNameSafe(featureNames), ERR_INVALID_PARAM,
-        "GetInstallStatus featureName safe validation failed");
     installStatus.clear();
 
     char versionBuf[DOWNLOAD_FEATURE_NAME_MAX_LEN] = {0};
@@ -130,27 +180,25 @@ int32_t DownloadManager::StartDownload(const std::vector<std::string>& featureNa
 
     CHECK_AND_RETURN_RET_LOG(ValidateFeatureNames(featureNames), ERR_INVALID_PARAM,
         "StartDownload featureNames validation failed");
-    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "donwload callback not reg");
+    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "download callback not reg");
 
-    std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
-    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "donwload callback is null");
+    {
+        std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
+        CHECK_AND_RETURN_RET_LOG(
+            downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "download callback is null");
 
-    int32_t funcResult = SUCCESS;
-    std::vector<AudioSuiteCloudRomVersionInfo> newVersionInfos;
-    int32_t ret = downloadCallback_->GetFeatureNewVersion(featureNames, newVersionInfos, funcResult);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureNewVersion IPC failed, ret=%{public}d", ret);
-    CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
-        "GetFeatureNewVersion failed, funcResult=%{public}d", funcResult);
-    for (const auto& info : newVersionInfos) {
-        CHECK_AND_RETURN_RET_LOG(info.errorCode == 0, info.errorCode,
-            "GetFeatureNewVersion failed, errorCode=%{public}d", info.errorCode);
+        int32_t funcResult = SUCCESS;
+        AUDIO_INFO_LOG("DownloadAndInstall: featureNames size=%{public}zu", featureNames.size());
+        int32_t ret = downloadCallback_->DownloadAndInstall(allowedCellularNet, featureNames, funcResult);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DownloadAndInstall IPC failed, ret=%{public}d", ret);
+        CHECK_AND_RETURN_RET_LOG(
+            funcResult == SUCCESS, funcResult, "DownloadAndInstall failed, funcResult=%{public}d", funcResult);
     }
-
-    AUDIO_INFO_LOG("DownloadAndInstall: featureNames size=%{public}zu", featureNames.size());
-    ret = downloadCallback_->DownloadAndInstall(allowedCellularNet, featureNames, funcResult);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DownloadAndInstall IPC failed, ret=%{public}d", ret);
-    CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
-        "DownloadAndInstall failed, funcResult=%{public}d", funcResult);
+    if (backgroundDownload_ != nullptr) {
+        for (const auto &featureName : featureNames) {
+            backgroundDownload_->RemoveFeature(featureName);
+        }
+    }
     AUDIO_INFO_LOG("StartDownload success");
     return SUCCESS;
 }
@@ -162,10 +210,10 @@ int32_t DownloadManager::PauseDownload(const std::vector<std::string>& featureNa
 
     CHECK_AND_RETURN_RET_LOG(ValidateFeatureNames(featureNames), ERR_INVALID_PARAM,
         "PauseDownload featureNames validation failed");
-    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "donwload callback not reg");
+    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "download callback not reg");
 
     std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
-    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "donwload callback is null");
+    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "download callback is null");
 
     int32_t funcResult = SUCCESS;
     int32_t ret = downloadCallback_->PauseCloudRom(featureNames, funcResult);
@@ -183,22 +231,26 @@ int32_t DownloadManager::CancelDownload(const std::vector<std::string>& featureN
 
     CHECK_AND_RETURN_RET_LOG(ValidateFeatureNames(featureNames), ERR_INVALID_PARAM,
         "CancelDownload featureNames validation failed");
-    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "donwload callback not reg");
+    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "download callback not reg");
 
-    std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
-    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "donwload callback is null");
+    {
+        std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
+        CHECK_AND_RETURN_RET_LOG(
+            downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "donwload callback is null");
+
+        int32_t funcResult = SUCCESS;
+        int32_t ret = downloadCallback_->CancelCloudRom(featureNames, funcResult);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CancelCloudRom IPC failed, ret=%{public}d", ret);
+        CHECK_AND_RETURN_RET_LOG(
+            funcResult == SUCCESS, funcResult, "CancelCloudRom failed, funcResult=%{public}d", funcResult);
+        AUDIO_INFO_LOG("CancelDownload success");
+    }
+
     if (backgroundDownload_ != nullptr) {
         for (const auto& featureName : featureNames) {
             backgroundDownload_->RemoveFeature(featureName);
         }
     }
-
-    int32_t funcResult = SUCCESS;
-    int32_t ret = downloadCallback_->CancelCloudRom(featureNames, funcResult);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CancelCloudRom IPC failed, ret=%{public}d", ret);
-    CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
-        "CancelCloudRom failed, funcResult=%{public}d", funcResult);
-    AUDIO_INFO_LOG("CancelDownload success");
     return SUCCESS;
 }
 
@@ -208,11 +260,14 @@ int32_t DownloadManager::StartBackgroundDownload(const std::vector<std::string>&
     AUDIO_INFO_LOG("StartBackgroundDownload: featureNames size=%{public}zu", featureNames.size());
     CHECK_AND_RETURN_RET_LOG(ValidateFeatureNames(featureNames), ERR_INVALID_PARAM,
         "StartBackgroundDownload featureNames validation failed");
-    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "donwload callback not reg");
+    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "download callback not reg");
 
     std::vector<std::string> readyFeatures;
     std::vector<std::string> pendingFeatures;
     for (const auto& featureName : featureNames) {
+        if (IsFeatureReady(featureName)) {
+            continue;
+        }
         if (BackgroundDownload::AreConditionsMet(featureName)) {
             readyFeatures.push_back(featureName);
             if (backgroundDownload_ != nullptr) {
@@ -241,13 +296,12 @@ int32_t DownloadManager::QueuePendingFeatures(const std::vector<std::string>& pe
 {
     if (backgroundDownload_ == nullptr) {
         AUDIO_INFO_LOG("BackgroundDownload start init backgroundDownload.");
-        auto boundFunc = [this](const std::string& featureName) {
-            return StartDownload(std::vector<std::string>{featureName}, false);
-        };
+        auto boundFunc = std::bind(&DownloadManager::StartBackgroundDownloadTask, this, std::placeholders::_1);
         backgroundDownload_ = std::make_shared<BackgroundDownload>(boundFunc);
-        if (backgroundDownload_->Init() != 0) {
+        int32_t bgInitRet = backgroundDownload_->Init();
+        if (bgInitRet != 0) {
             backgroundDownload_ = nullptr;
-            AUDIO_ERR_LOG("backgroundDownload_ init failed");
+            AUDIO_ERR_LOG("backgroundDownload_ init failed, ret=%{public}d", bgInitRet);
             return ERROR;
         }
     }
@@ -265,7 +319,7 @@ int32_t DownloadManager::SearchAndDownload(const std::vector<std::string>& featu
     int32_t funcResult = SUCCESS;
     std::vector<AudioSuiteCloudRomVersionInfo> newVersionInfos;
     std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
-    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "donwload callback is null");
+    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "download callback is null");
     int32_t ret = downloadCallback_->GetFeatureNewVersion(featureNames, newVersionInfos, funcResult);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureNewVersion IPC failed, ret=%{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
@@ -291,10 +345,10 @@ int32_t DownloadManager::GetDownloadStatus(
 
     CHECK_AND_RETURN_RET_LOG(ValidateFeatureNames(featureNames), ERR_INVALID_PARAM,
         "GetDownloadStatus featureNames validation failed");
-    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "donwload callback not reg");
+    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "download callback not reg");
 
     std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
-    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "donwload callback is null");
+    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "download callback is null");
 
     int32_t funcResult = SUCCESS;
     int32_t ret = downloadCallback_->GetFeatureStatus(featureNames, status, funcResult);
@@ -334,6 +388,35 @@ int32_t DownloadManager::GetDownloadStatus(
     return SUCCESS;
 }
 
+int32_t DownloadManager::GetFeatureStatus(
+    const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo>& status)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_INFO_LOG("GetFeatureStatus: featureNames size=%{public}zu", featureNames.size());
+
+    CHECK_AND_RETURN_RET_LOG(ValidateFeatureNames(featureNames), ERR_INVALID_PARAM,
+        "GetFeatureStatus featureNames validation failed");
+    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "donwload callback not reg");
+
+    std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
+    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "donwload callback is null");
+
+    int32_t funcResult = SUCCESS;
+    int32_t ret = downloadCallback_->GetFeatureStatus(featureNames, status, funcResult);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureStatus IPC failed, ret=%{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
+        "GetFeatureStatus failed, funcResult=%{public}d", funcResult);
+
+    for (auto& s : status) {
+        s.size = 0;
+        s.errorCode = ConvertToApiErrCode(s.errorCode);
+        s.state = ConvertToApiState(s.state);
+        AUDIO_INFO_LOG("%{public}s GetFeatureStatus status:%{public}d, errorCode:%{public}d",
+            s.featureName.c_str(), s.state, s.errorCode);
+    }
+    return SUCCESS;
+}
+
 int32_t DownloadManager::GetFeatureNewVersion(
     const std::vector<std::string>& featureNames, std::vector<AudioSuiteCloudRomVersionInfo>& versionInfos)
 {
@@ -354,6 +437,10 @@ int32_t DownloadManager::GetFeatureNewVersion(
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureNewVersion IPC failed, ret=%{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
         "GetFeatureNewVersion failed, funcResult=%{public}d", funcResult);
+    for (auto& versionInfo : versionInfos) {
+        versionInfo.errorCode = ConvertToApiErrCode(versionInfo.errorCode);
+        versionInfo.status = ConvertToApiState(versionInfo.status);
+    }
     AUDIO_INFO_LOG("GetFeatureNewVersion success, versionInfos count=%{public}zu", versionInfos.size());
     return SUCCESS;
 }
@@ -365,10 +452,10 @@ int32_t DownloadManager::UninstallCloudRom(const std::vector<std::string>& featu
 
     CHECK_AND_RETURN_RET_LOG(ValidateFeatureNames(featureNames), ERR_INVALID_PARAM,
         "UninstallCloudRom featureNames validation failed");
-    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "donwload callback not reg");
+    CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "download callback not reg");
 
     std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
-    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "donwload callback is null");
+    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "download callback is null");
 
     int32_t funcResult = SUCCESS;
     int32_t ret = downloadCallback_->UninstallCloudRom(featureNames, funcResult);
@@ -438,7 +525,8 @@ int32_t DownloadManager::UnregisterDownloadStatusCallback(int32_t callerPid)
         int32_t funcResult = 0;
         int32_t ret = downloadCallback_->UnregisterDownloadStatusCallback(funcResult);
         if (ret != 0 || funcResult != 0) {
-            AUDIO_ERR_LOG("UnRegisterCloudRomDownloadCallback failed, ret=%{public}d", ret);
+            AUDIO_ERR_LOG("UnRegisterCloudRomDownloadCallback failed, ret=%{public}d, funcResult=%{public}d",
+                ret, funcResult);
             return ERROR;
         }
         registerStatusCallback_ = false;
@@ -476,10 +564,16 @@ int32_t DownloadManager::SetUpdateEngineCallback(const sptr<IRemoteObject> objec
 
 int32_t DownloadManager::OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status)
 {
+    std::vector<AudioSuiteDownloadStatusInfo> convertedStatus(status);
+    for (auto& statu : convertedStatus) {
+        statu.errorCode = ConvertToApiErrCode(statu.errorCode);
+        statu.state = ConvertToApiState(statu.state);
+    }
+
     std::unique_lock<std::mutex> statusCallbacksLock(statusCallbacksMutex_);
     for (const auto& pair : statusCallbacks_) {
         if (pair.second) {
-            pair.second->OnDownloadStatusChanged(status);
+            pair.second->OnDownloadStatusChanged(convertedStatus);
         }
     }
     return SUCCESS;
@@ -508,19 +602,10 @@ bool DownloadManager::WaitForCallbackRegistration()
 
 int32_t DownloadManager::HasDownloadingTask()
 {
-    std::unique_lock<std::mutex> lock(mutex_);
-    bool hasBackgroundDownloadTask = false;
-    if (backgroundDownload_ != nullptr) {
-        hasBackgroundDownloadTask = backgroundDownload_->HasBackgroundDownloadTask();
-    }
-
-    bool hasRegTask = false;
-    {
-        std::unique_lock<std::mutex> statusCallbacksLock(statusCallbacksMutex_);
-        hasRegTask = !statusCallbacks_.empty();
-    }
-    AUDIO_INFO_LOG("backgroundDownloadTask:%{public}d, hasRegTask:%{public}d", hasBackgroundDownloadTask, hasRegTask);
-    return  hasBackgroundDownloadTask || hasRegTask;
+    std::unique_lock<std::mutex> statusCallbacksLock(statusCallbacksMutex_);
+    bool hasRegTask = !statusCallbacks_.empty();
+    AUDIO_INFO_LOG("hasRegTask:%{public}d", hasRegTask);
+    return hasRegTask;
 }
 
 DownloadManager::AudioSuiteClientDeathRecipient::AudioSuiteClientDeathRecipient(int32_t callerPid)
@@ -538,6 +623,125 @@ void DownloadManager::AudioServerDeathRecipient::OnRemoteDied(const wptr<IRemote
 {
     OHOS::Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
     AUDIO_INFO_LOG("AudioServerDeathRecipient::OnRemoteDied.");
+}
+
+void DownloadManager::InitDownloadManager(bool syncProcess)
+{
+    int32_t paraFull = 0;
+    int32_t paraWifi = 0;
+    bool retFull = GetSysPara(DOWNLOAD_STATUS_PARA_KEY.c_str(), paraFull);
+    bool retWifi = GetSysPara(DOWNLOAD_STATUS_PARA_KEY_WIFI.c_str(), paraWifi);
+    if (!retFull || !retWifi) {
+        AUDIO_ERR_LOG("GetSysPara API call failed, cleaning persisted data.");
+        BackgroundDownload::ClearPersistedData();
+        return;
+    }
+    AUDIO_INFO_LOG(
+        "InitDownloadManager: syspara full=%{public}d, wifi=%{public}d, retFull=%{public}d, retWifi=%{public}d",
+        paraFull, paraWifi, retFull, retWifi);
+    CHECK_AND_RETURN_LOG(paraFull == 1 || paraWifi == 1,
+                         "No pending background download tasks (syspara=0), skip init.");
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (backgroundDownload_ == nullptr) {
+            auto boundFunc = std::bind(&DownloadManager::StartBackgroundDownloadTask, this, std::placeholders::_1);
+            backgroundDownload_ = std::make_shared<BackgroundDownload>(boundFunc);
+            if (backgroundDownload_->Init() != 0) {
+                AUDIO_ERR_LOG("BackgroundDownload init failed during restore");
+                backgroundDownload_ = nullptr;
+                BackgroundDownload::ClearPersistedData();
+                return;
+            }
+        }
+        backgroundDownload_->RestoreFromFile(backgroundDownload_, syncProcess);
+    }
+    AUDIO_INFO_LOG("background download tasks RestoreFromFile done, syncProcess=%{public}d", syncProcess);
+}
+
+bool DownloadManager::IsFeatureReady(const std::string& featureName)
+{
+    std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
+    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, false, "downloadCallback_ is null");
+
+    std::vector<AudioSuiteDownloadStatusInfo> status;
+    int32_t funcResult = SUCCESS;
+    int32_t ret = downloadCallback_->GetFeatureStatus(std::vector<std::string>{featureName}, status, funcResult);
+    if (ret == SUCCESS && funcResult == SUCCESS && !status.empty() && status.at(0).errorCode == 0) {
+        if (status.at(0).state == FEATURE_INSTALL_SUCCESS || IsCloudRomInProgress(status.at(0).state)) {
+            AUDIO_INFO_LOG(
+                "Feature %{public}s state=%{public}d, already ready", featureName.c_str(), status.at(0).state);
+            return true;
+        }
+    }
+    return false;
+}
+
+int32_t DownloadManager::StartBackgroundDownloadTask(const std::string& featureName)
+{
+    CHECK_AND_RETURN_RET_LOG(ValidateFeatureNames(std::vector<std::string>{featureName}), ERR_INVALID_PARAM,
+        "StartBackgroundDownloadTask: featureName %{public}s validation failed", featureName.c_str());
+    std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
+    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "download callback is null");
+
+    std::vector<AudioSuiteDownloadStatusInfo> status;
+    int32_t funcResult = SUCCESS;
+    int32_t ret = downloadCallback_->GetFeatureStatus(std::vector<std::string>{featureName}, status, funcResult);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureStatus IPC failed for %{public}s, ret=%{public}d",
+        featureName.c_str(), ret);
+    CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
+        "GetFeatureStatus failed for %{public}s, funcResult=%{public}d", featureName.c_str(), funcResult);
+    CHECK_AND_RETURN_RET_LOG(!status.empty(), ERROR,
+        "GetFeatureStatus returned empty status for %{public}s", featureName.c_str());
+    CHECK_AND_RETURN_RET_LOG(status.at(0).errorCode == 0, status.at(0).errorCode,
+        "GetFeatureStatus failed for %{public}s, errorCode=%{public}d", featureName.c_str(), status.at(0).errorCode);
+
+    // Feature already installed or download/install in progress — skip.
+    if (status.at(0).state == FEATURE_INSTALL_SUCCESS || IsCloudRomInProgress(status.at(0).state)) {
+        AUDIO_INFO_LOG("Feature %{public}s state=%{public}d, skip download",
+            featureName.c_str(), status.at(0).state);
+        return SUCCESS;
+    }
+    // Version check completed previously — skip version query, download directly.
+    if (status.at(0).state == CLOUD_ROM_CHECK_VERSION_SUCCESS) {
+        AUDIO_INFO_LOG("Feature %{public}s state=%{public}d, skip search.", featureName.c_str(), status.at(0).state);
+        ret = downloadCallback_->DownloadAndInstall(false, std::vector<std::string>{featureName}, funcResult);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DownloadAndInstall failed, ret=%{public}d", ret);
+        CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
+            "DownloadAndInstall failed, funcResult=%{public}d", funcResult);
+        return SUCCESS;
+    }
+    // Feature not ready — query cloud version and download.
+    AUDIO_INFO_LOG("Feature %{public}s state=%{public}d, proceed with full download flow",
+        featureName.c_str(), status.at(0).state);
+    
+    std::vector<AudioSuiteCloudRomVersionInfo> newVersionInfo;
+    ret = downloadCallback_->GetFeatureNewVersion(std::vector<std::string>{featureName}, newVersionInfo, funcResult);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureNewVersion failed, ret=%{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
+        "GetFeatureNewVersion failed, funcResult=%{public}d", funcResult);
+    CHECK_AND_RETURN_RET_LOG(!newVersionInfo.empty(), ERROR,
+        "GetFeatureNewVersion returned empty result for %{public}s", featureName.c_str());
+    CHECK_AND_RETURN_RET_LOG(newVersionInfo.at(0).errorCode == 0, newVersionInfo.at(0).errorCode,
+        "GetFeatureNewVersion failed, errorCode=%{public}d", newVersionInfo.at(0).errorCode);
+    CHECK_AND_RETURN_RET_LOG(newVersionInfo.at(0).featureName == featureName,
+                             ERR_INVALID_PARAM, "GetFeatureNewVersion: failed, newVersionInfo.featureName:%{public}s",
+                             newVersionInfo.at(0).featureName.c_str());
+
+    AUDIO_INFO_LOG("StartBackgroundDownloadTask: featureName=%{public}s", featureName.c_str());
+    ret = downloadCallback_->DownloadAndInstall(false, std::vector<std::string>{featureName}, funcResult);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DownloadAndInstall failed, ret=%{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
+        "DownloadAndInstall failed, funcResult=%{public}d", funcResult);
+    return SUCCESS;
+}
+
+void DownloadManager::DeInitDownloadManager()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (backgroundDownload_ != nullptr) {
+        backgroundDownload_->PersistOnExit();
+    }
 }
 
 } // namespace AudioSuite

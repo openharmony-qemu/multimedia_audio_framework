@@ -44,6 +44,9 @@ public:
     uint32_t GetCaptureIdByDeviceClassExt(const std::string &deviceClass, const SourceType sourceType,
         const std::string &info = HDI_ID_INFO_DEFAULT, uint32_t routeFlag = 0);
 
+    // Select id info by priority: non-empty macAddress, then non-empty deviceNetId, then default
+    static const std::string &SelectIdInfo(const std::string &macAddress, const std::string &deviceNetId);
+
     void IncInfoIdUseCount(uint32_t id);
     void DecInfoIdUseCount(uint32_t id);
 

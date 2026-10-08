@@ -55,6 +55,8 @@ public:
     int32_t StartBackgroundDownload(const std::vector<std::string>& featureNames);
     int32_t GetDownloadStatus(const std::vector<std::string>& featureNames,
         std::vector<AudioSuiteDownloadStatusInfo>& status);
+    int32_t GetFeatureStatus(const std::vector<std::string>& featureNames,
+        std::vector<AudioSuiteDownloadStatusInfo>& status);
     int32_t GetFeatureNewVersion(const std::vector<std::string>& featureNames,
         std::vector<AudioSuiteCloudRomVersionInfo>& versionInfos);
     int32_t UninstallCloudRom(const std::vector<std::string>& featureNames);

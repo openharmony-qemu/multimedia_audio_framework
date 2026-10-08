@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,10 @@ namespace AudioStandard {
 
 class AudioPipeSelectorAiut : public testing::Test {
 public:
-    // GTest fixture methods (SetUpTestCase/TearDownTestCase/SetUp/TearDown)
-    // are inherited from testing::Test; derived classes override as needed.
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp(void);
+    void TearDown(void);
 };
 
 } // namespace AudioStandard

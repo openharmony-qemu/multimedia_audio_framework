@@ -51,7 +51,7 @@ public:
     explicit AudioSuiteService(int32_t systemAbilityId, bool runOnCreate = false);
     virtual ~AudioSuiteService();
 
-    void OnStart() override;
+    void OnStart(const SystemAbilityOnDemandReason& startReason) override;
     void OnStop() override;
 
     ErrCode RegisterDownloadStatusCallback(const sptr<IRemoteObject> &object, ErrCode &result) override;
@@ -64,6 +64,9 @@ public:
     ErrCode CancelDownload(const std::vector<std::string> &featureNames, ErrCode &result) override;
     ErrCode StartBackgroundDownload(const std::vector<std::string> &featureNames, ErrCode &result) override;
     ErrCode GetDownloadStatus(
+        const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo> &status,
+        ErrCode &result) override;
+    ErrCode GetFeatureStatus(
         const std::vector<std::string>& featureNames, std::vector<AudioSuiteDownloadStatusInfo> &status,
         ErrCode &result) override;
     ErrCode GetFeatureNewVersion(

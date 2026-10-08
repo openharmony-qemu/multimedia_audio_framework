@@ -1479,7 +1479,7 @@ void AudioDeviceStatus::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
         CHECK_AND_RETURN(preferredDeviceList[0] != nullptr);
         if (preferredDeviceList[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::AudioHfpManager::SetActiveHfpDevice(preferredDeviceList[0]->macAddress_);
-        } else {
+        } else if (preferredDeviceList[0]->deviceType_ == DEVICE_TYPE_NEARLINK) {
             Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
         }
     }
@@ -1903,6 +1903,9 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         device.deviceTokenId_ = capability.deviceTokenId_;
         AUDIO_INFO_LOG("Update tokenId: %{public}u", device.deviceTokenId_);
     }
+
+    device.isSupportReload_ = capability.isSupportReload_;
+    AUDIO_INFO_LOG("Update isSupportReload: %{public}d", device.isSupportReload_);
 }
 
 bool AudioDeviceStatus::CheckIsIndexValidAndHandleErr(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,

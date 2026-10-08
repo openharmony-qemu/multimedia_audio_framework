@@ -75,6 +75,7 @@ constexpr float MIN_STREAM_PITCH_LEVEL = 0.25f;
 constexpr float MAX_STREAM_PITCH_LEVEL = 4.0f;
 constexpr float PITCH_DEFAULT = 1.0f;
 constexpr int32_t EMPTY_UID = 0;
+constexpr int32_t EMPTY_DATA = 0;
 constexpr int32_t UID_COCKPIT_SA = 8850;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
@@ -311,7 +312,10 @@ enum AudioErrors {
     /**
      * Default error.
      */
-    ERROR_SYSTEM        = 6800301
+    ERROR_SYSTEM        = 6800301,
+    ERROR_SERVICE_DIED  = 6800302,
+    ERROR_NETWORK_CONDITION_NOT_MET = 6800501,
+    ERROR_STORAGE_NOT_ENOUGH = 6800502
 };
 
 // Ringer Mode
@@ -1673,6 +1677,26 @@ enum AudioMode {
     AUDIO_MODE_PLAYBACK,
     AUDIO_MODE_RECORD
 };
+
+/**
+ * @brief Enumerates the audio power state during suspend(S3) / hibernate(S4) transition.
+ * Different from PowerMgr::PowerState which is the settled state after transition.
+ */
+enum class AudioPowerState : int32_t {
+    ACTIVE = 0, // Normal operation, no power transition in progress
+    SUSPENDING = 1, // S3 suspend transition in progress (OnSyncSleep received, OnSyncWakeup not yet)
+    HIBERNATING = 2, // S4 hibernate transition in progress (OnSyncHibernate received, OnSyncWakeup not yet)
+};
+
+inline const char *AudioPowerStateToString(AudioPowerState state)
+{
+    switch (state) {
+        case AudioPowerState::ACTIVE: return "ACTIVE";
+        case AudioPowerState::SUSPENDING: return "SUSPENDING";
+        case AudioPowerState::HIBERNATING: return "HIBERNATING";
+        default: return "UNKNOWN";
+    }
+}
 
 enum StopAudioType {
     STOP_ALL,

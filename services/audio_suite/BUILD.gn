@@ -27,6 +27,8 @@ group("audio_suite_packages") {
         ":audio_suite_service",
         "../../sa_profile:audio_suite_sa_profile",
         ":audio_suite_init",
+        ":audio_suite_config.para",
+        ":audio_suite_config.para.dac",
       ]
   }
 }
@@ -329,6 +331,7 @@ if (audio_framework_feature_audiosuite_support) {
     deps = [
       ":audio_suite",
       "../../frameworks/native/audioutils:audio_utils",
+      "../../frameworks/native/audioutils:audio_xml_utils",
       "../audio_service:audio_common",
       "idl:audio_suite_server_idl",
       "idl:audio_suite_idl_headers",
@@ -346,6 +349,7 @@ if (audio_framework_feature_audiosuite_support) {
       "init:libbegetutil",
       "bounds_checking_function:libsec_shared",
       "common_event_service:cesfwk_innerkits",
+      "libxml2:libxml2",
     ]
 
     if (defined(global_parts_info) && defined(global_parts_info.communication_netmanager_base)) {
@@ -380,4 +384,18 @@ ohos_prebuilt_etc("audio_suite_init") {
   relative_install_dir = "init"
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_suite_config.para") {
+  source = "etc/audio_suite_config.para"
+  part_name = "audio_framework"
+  module_install_dir = "etc/param"
+  subsystem_name = "multimedia"
+}
+
+ohos_prebuilt_etc("audio_suite_config.para.dac") {
+  source = "etc/audio_suite_config.para.dac"
+  part_name = "audio_framework"
+  module_install_dir = "etc/param"
+  subsystem_name = "multimedia"
 }

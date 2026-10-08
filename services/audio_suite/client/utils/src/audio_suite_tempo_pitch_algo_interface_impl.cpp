@@ -75,14 +75,14 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::PitchInit(std::string soName)
         .effectName = "audio_pitch_change"
     };
     int32_t ret = pitchLibHandle_->createEffect(descriptor, &pitchAlgoHandle_);
-    CHECK_AND_RETURN_RET_LOG(ret == 0 && pitchAlgoHandle_, ERROR, "load pitch algo handle fail");
+    CHECK_AND_RETURN_RET_LOG(ret == 0 && pitchAlgoHandle_, ERROR, "load pitch algo handle fail, ret=%{public}d", ret);
 
     uint32_t replyData = 0;
     uint32_t sampleRate = nodeParameter_.inSampleRate;
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     AudioEffectTransInfo cmdInfo = {sizeof(int32_t), &sampleRate};
     ret = (*pitchAlgoHandle_)->command(pitchAlgoHandle_, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "config sample rate fail");
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "config sample rate fail, ret=%{public}d", ret);
     return SUCCESS;
 }
 
@@ -98,13 +98,13 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Init()
         "Init error, parse so name fail");
 
     if (TempoInit(tempoSoName) != SUCCESS) {
-        AUDIO_ERR_LOG("Tempo init error");
+        AUDIO_ERR_LOG("Tempo init error, tempoSoName: %{private}s", tempoSoName.c_str());
         Deinit();
         return ERROR;
     }
 
     if (PitchInit(pitchSoName) != SUCCESS) {
-        AUDIO_ERR_LOG("Pitch init error");
+        AUDIO_ERR_LOG("Pitch init error, pitchSoName: %{private}s", pitchSoName.c_str());
         Deinit();
         return ERROR;
     }

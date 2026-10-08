@@ -1321,7 +1321,7 @@ AudioInterruptResult AudioInterruptService::ActivateAudioInterrupt(
             AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
-    mediaInterruptedByRec_ = false;
+    activateNeedDelay_ = false;
     AudioInterruptResult result;
     CHECK_AND_RETURN_RET_LOG(verifySystemStreamPermission(audioInterrupt, result), result,
         "verifySystemStreamPermission fail");
@@ -1344,15 +1344,14 @@ AudioInterruptResult AudioInterruptService::ActivateAudioInterrupt(
     result.targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     result.ownerUid = ownerUid_;
     result.ownerPid = ownerPid_;
+    lock.unlock();
+    if (activateNeedDelay_) {
+        AUDIO_INFO_LOG("ActivateInterrupt needs to delay %{public}d ms to allow media callback delivery",
+            ACTIVATE_DELAY_MS);
+        std::this_thread::sleep_for(std::chrono::milliseconds(ACTIVATE_DELAY_MS));
+    }
     result.needSetAudioScene =
         UpdateAudioSceneFromInterrupt(result.targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, ZONEID_DEFAULT, false);
-    bool needDelay = isRecord && mediaInterruptedByRec_;
-    lock.unlock();
-    if (needDelay) {
-        AUDIO_INFO_LOG("Recording focus activated while media was interrupted, "
-            "delay %{public}d ms to allow media callback delivery", RECORDING_ACTIVATION_DELAY_MS);
-        std::this_thread::sleep_for(std::chrono::milliseconds(RECORDING_ACTIVATION_DELAY_MS));
-    }
     return result;
 }
 
@@ -2530,10 +2529,12 @@ void AudioInterruptService::SendActiveInterruptEvent(const uint32_t activeStream
 {
     if (interruptEvent.hintType != INTERRUPT_HINT_NONE) {
         if (AudioInterruptUtils::IsMediaStream(activeInterrupt.audioFocusType.streamType) &&
-            incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
+            (incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID ||
+            incomingInterrupt.audioFocusType.streamType == STREAM_RING ||
+            incomingInterrupt.audioFocusType.streamType == STREAM_VOICE_RING) &&
             (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP ||
             interruptEvent.hintType == INTERRUPT_HINT_MUTE)) {
-            mediaInterruptedByRec_ = true;
+            activateNeedDelay_ = true;
         }
         if (interruptDfx_ != nullptr) {
             interruptDfx_->RecordInterruptEvent(interruptEvent, activeInterrupt, incomingInterrupt);
@@ -2897,6 +2898,11 @@ bool AudioInterruptService::ShouldBypassAudioSessionFocus(const int32_t zoneId, 
     }
 
     if (sessionService_.ShouldBypassFocusForStream(incomingInterrupt)) {
+        StreamUsage sessionUsage = sessionService_.GetAudioSessionStreamUsage(incomingInterrupt.pid);
+        if (sessionUsage == STREAM_USAGE_VOICE_COMMUNICATION &&
+            incomingInterrupt.audioFocusType.streamType == STREAM_RING) {
+            activateNeedDelay_ = true;
+        }
         return true;
     }
 

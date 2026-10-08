@@ -30,8 +30,24 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-static constexpr int32_t NETWORK_TYPE_CELLULAR = 1;
-static constexpr int32_t NETWORK_TYPE_CELLULAR_AND_WIFI = 7;
+static constexpr int32_t DOWNLOAD_MEMEORY_NOT_ENOUGH = 402;
+static constexpr int32_t DOWNLOAD_NET_ERROR = 503;
+
+static std::string FeatureTypeToName(int32_t featureType)
+{
+    static const std::map<NapiAudioEnum::AudioSuiteFeatureType, std::string> featureTypeToNameMap = {
+        {NapiAudioEnum::AUDIO_DIALOG_ENHANCEMENT, "RecordDialogAlgoRes"},
+        {NapiAudioEnum::AUDIO_CENTER_VOICE_ENHANCEMENT, "RecordPicAlgoRes"},
+        {NapiAudioEnum::AUDIO_VOICE_ENHANCEMENT, "RecordDefinition"},
+        {NapiAudioEnum::AUDIO_MUSIC_ENHANCEMENT, "MusicMasterAlgoRes"},
+        {NapiAudioEnum::AUDIO_SOURCE_SEPARATION, "AudioSourceSeparationAlgoRes"},
+    };
+    auto it = featureTypeToNameMap.find(static_cast<NapiAudioEnum::AudioSuiteFeatureType>(featureType));
+    if (it != featureTypeToNameMap.end()) {
+        return it->second;
+    }
+    return "";
+}
 
 static __thread napi_ref g_suiteDownloadMgrConstructor = nullptr;
 
@@ -95,12 +111,14 @@ napi_value NapiAudioSuiteDownloadManager::Init(napi_env env, napi_value exports)
     napi_property_descriptor audio_suite_download_mgr_properties[] = {
         DECLARE_NAPI_FUNCTION("onDownloadStatusChange", OnDownloadStatusChange),
         DECLARE_NAPI_FUNCTION("offDownloadStatusChange", OffDownloadStatusChange),
+        DECLARE_NAPI_FUNCTION("isFeatureInstalled", IsFeatureInstalled),
         DECLARE_NAPI_FUNCTION("startDownload", StartDownload),
         DECLARE_NAPI_FUNCTION("pauseDownload", PauseDownload),
         DECLARE_NAPI_FUNCTION("cancelDownload", CancelDownload),
         DECLARE_NAPI_FUNCTION("startBackgroundDownload", StartBackgroundDownload),
-        DECLARE_NAPI_FUNCTION("getDownloadStatus", GetDownloadStatus),
-        DECLARE_NAPI_FUNCTION("uninstallCloudRom", UninstallCloudRom),
+        DECLARE_NAPI_FUNCTION("getFeatureStatus", GetFeatureStatus),
+        DECLARE_NAPI_FUNCTION("getNewVersionInfo", GetNewVersionInfo),
+        DECLARE_NAPI_FUNCTION("uninstallFeature", UninstallFeature),
     };
 
     status = napi_define_class(env, NAPI_AUDIO_SUITE_DOWNLOAD_MGR_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH,
@@ -168,13 +186,17 @@ int32_t NapiAudioSuiteDownloadManager::ConvertNativeErrorToNapi(int32_t nativeEr
     if (nativeError == ERR_INVALID_PARAM) {
         return NAPI_ERR_INVALID_PARAM;
     }
-    if (nativeError == ERR_ILLEGAL_STATE || nativeError == ERR_NOT_STARTED) {
-        return NAPI_ERR_ILLEGAL_STATE;
-    }
     if (nativeError == ERR_SYSTEM_PERMISSION_DENIED) {
         return NAPI_ERR_PERMISSION_DENIED;
     }
-    return NAPI_ERR_SYSTEM;
+    if (nativeError == DOWNLOAD_MEMEORY_NOT_ENOUGH) {
+        return NAPI_ERR_STORAGE_NOT_ENOUGH;
+    }
+    if (nativeError == DOWNLOAD_NET_ERROR) {
+        return NAPI_ERR_NETWORK;
+    }
+
+    return NAPI_ERR_SERVICE_DIED;
 }
 
 napi_value NapiAudioSuiteDownloadManager::StartDownload(napi_env env, napi_callback_info info)
@@ -187,18 +209,19 @@ napi_value NapiAudioSuiteDownloadManager::StartDownload(napi_env env, napi_callb
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments",
-            NAPI_ERR_INPUT_INVALID);
-        context->featureName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureName.empty(),
-            "featureName is empty", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetInt32ArrayArgument(env, argv[PARAM0], context->featureTypes);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "get featureTypes failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureTypes.empty(),
+            "featureTypes is empty", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->networkType, argv[PARAM1]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
             "get networkType failed", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
-    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+    if (context->status != napi_ok) {
         NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
@@ -208,17 +231,20 @@ napi_value NapiAudioSuiteDownloadManager::StartDownload(napi_env env, napi_callb
         auto obj = reinterpret_cast<NapiAudioSuiteDownloadManager *>(context->native);
         ObjectRefMap<NapiAudioSuiteDownloadManager> objectGuard(obj);
         auto *napi = objectGuard.GetPtr();
-        if (!CheckSuiteDownloadManagerStatus(napi, context)) {
-            return;
+        CHECK_AND_RETURN(CheckSuiteDownloadManagerStatus(napi, context));
+        std::vector<std::string> featureNames;
+        for (auto type : context->featureTypes) {
+            auto name = FeatureTypeToName(type);
+            CHECK_AND_CALL_FUNC_RETURN(!name.empty(), context->SignError(NAPI_ERR_INVALID_PARAM, "Invalid type"));
+            featureNames.push_back(name);
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->StartDownloadDirect(
-            std::vector<std::string>{context->featureName},
-            context->networkType == NETWORK_TYPE_CELLULAR ||
-            context->networkType == NETWORK_TYPE_CELLULAR_AND_WIFI);
-        if (ret != SUCCESS) {
-            int32_t errCode = ConvertNativeErrorToNapi(ret);
-            context->SignError(errCode, "StartDownload failed");
-        }
+        CHECK_AND_CALL_FUNC_RETURN(context->networkType == NapiAudioEnum::NETWORK_TYPE_WIFI ||
+            context->networkType == NapiAudioEnum::NETWORK_TYPE_CELLULAR_AND_WIFI,
+            context->SignError(NAPI_ERR_INVALID_PARAM, "Invalid networkType"));
+        int32_t ret = napi->audioSuiteDownloadMgr_->StartDownloadDirect(featureNames,
+            context->networkType == NapiAudioEnum::NETWORK_TYPE_CELLULAR_AND_WIFI);
+        CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
+            context->SignError(ConvertNativeErrorToNapi(ret), "StartDownload failed"));
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -237,15 +263,16 @@ napi_value NapiAudioSuiteDownloadManager::PauseDownload(napi_env env, napi_callb
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
-            NAPI_ERR_INPUT_INVALID);
-        context->featureName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureName.empty(),
-            "featureName is empty", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetInt32ArrayArgument(env, argv[PARAM0], context->featureTypes);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "get featureTypes failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureTypes.empty(),
+            "featureTypes is empty", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
-    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+    if (context->status != napi_ok) {
         NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
@@ -258,12 +285,15 @@ napi_value NapiAudioSuiteDownloadManager::PauseDownload(napi_env env, napi_callb
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->PauseDownloadDirect(
-            std::vector<std::string>{context->featureName});
-        if (ret != SUCCESS) {
-            int32_t errCode = ConvertNativeErrorToNapi(ret);
-            context->SignError(errCode, "PauseDownload failed");
+        std::vector<std::string> featureNames;
+        for (auto type : context->featureTypes) {
+            auto name = FeatureTypeToName(type);
+            CHECK_AND_CALL_FUNC_RETURN(!name.empty(), context->SignError(NAPI_ERR_INVALID_PARAM, "Invalid type"));
+            featureNames.push_back(name);
         }
+        int32_t ret = napi->audioSuiteDownloadMgr_->PauseDownloadDirect(featureNames);
+        CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
+            context->SignError(ConvertNativeErrorToNapi(ret), "PauseDownload failed"));
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -282,15 +312,16 @@ napi_value NapiAudioSuiteDownloadManager::CancelDownload(napi_env env, napi_call
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
-            NAPI_ERR_INPUT_INVALID);
-        context->featureName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureName.empty(),
-            "featureName is empty", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetInt32ArrayArgument(env, argv[PARAM0], context->featureTypes);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "get featureTypes failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureTypes.empty(),
+            "featureTypes is empty", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
-    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+    if (context->status != napi_ok) {
         NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
@@ -303,12 +334,15 @@ napi_value NapiAudioSuiteDownloadManager::CancelDownload(napi_env env, napi_call
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->CancelDownloadDirect(
-            std::vector<std::string>{context->featureName});
-        if (ret != SUCCESS) {
-            int32_t errCode = ConvertNativeErrorToNapi(ret);
-            context->SignError(errCode, "CancelDownload failed");
+        std::vector<std::string> featureNames;
+        for (auto type : context->featureTypes) {
+            auto name = FeatureTypeToName(type);
+            CHECK_AND_CALL_FUNC_RETURN(!name.empty(), context->SignError(NAPI_ERR_INVALID_PARAM, "Invalid type"));
+            featureNames.push_back(name);
         }
+        int32_t ret = napi->audioSuiteDownloadMgr_->CancelDownloadDirect(featureNames);
+        CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
+            context->SignError(ConvertNativeErrorToNapi(ret), "CancelDownload failed"));
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -327,15 +361,16 @@ napi_value NapiAudioSuiteDownloadManager::StartBackgroundDownload(napi_env env, 
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
-            NAPI_ERR_INPUT_INVALID);
-        context->featureName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureName.empty(),
-            "featureName is empty", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetInt32ArrayArgument(env, argv[PARAM0], context->featureTypes);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "get featureTypes failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureTypes.empty(),
+            "featureTypes is empty", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
-    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+    if (context->status != napi_ok) {
         NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
@@ -348,12 +383,15 @@ napi_value NapiAudioSuiteDownloadManager::StartBackgroundDownload(napi_env env, 
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->StartBackgroundDownloadDirect(
-            std::vector<std::string>{context->featureName});
-        if (ret != SUCCESS) {
-            int32_t errCode = ConvertNativeErrorToNapi(ret);
-            context->SignError(errCode, "StartBackgroundDownload failed");
+        std::vector<std::string> featureNames;
+        for (auto type : context->featureTypes) {
+            auto name = FeatureTypeToName(type);
+            CHECK_AND_CALL_FUNC_RETURN(!name.empty(), context->SignError(NAPI_ERR_INVALID_PARAM, "Invalid type"));
+            featureNames.push_back(name);
         }
+        int32_t ret = napi->audioSuiteDownloadMgr_->StartBackgroundDownloadDirect(featureNames);
+        CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
+            context->SignError(ConvertNativeErrorToNapi(ret), "StartBackgroundDownload failed"));
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -362,25 +400,26 @@ napi_value NapiAudioSuiteDownloadManager::StartBackgroundDownload(napi_env env, 
     return NapiAsyncWork::Enqueue(env, context, "OHAudioSuite_StartBackgroundDownload", executor, complete);
 }
 
-napi_value NapiAudioSuiteDownloadManager::GetDownloadStatus(napi_env env, napi_callback_info info)
+napi_value NapiAudioSuiteDownloadManager::GetFeatureStatus(napi_env env, napi_callback_info info)
 {
     auto context = std::make_shared<AudioSuiteDownloadMgrAsyncContext>();
     if (context == nullptr) {
-        AUDIO_ERR_LOG("GetDownloadStatus failed: no memory");
-        NapiAudioError::ThrowError(env, "GetDownloadStatus failed: no memory", NAPI_ERR_NO_MEMORY);
+        AUDIO_ERR_LOG("GetFeatureStatus failed: no memory");
+        NapiAudioError::ThrowError(env, "GetFeatureStatus failed: no memory", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
-            NAPI_ERR_INPUT_INVALID);
-        context->featureName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureName.empty(),
-            "featureName is empty", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetInt32ArrayArgument(env, argv[PARAM0], context->featureTypes);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "get featureTypes failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureTypes.empty(),
+            "featureTypes is empty", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
-    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+    if (context->status != napi_ok) {
         NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
@@ -390,53 +429,52 @@ napi_value NapiAudioSuiteDownloadManager::GetDownloadStatus(napi_env env, napi_c
         auto obj = reinterpret_cast<NapiAudioSuiteDownloadManager *>(context->native);
         ObjectRefMap<NapiAudioSuiteDownloadManager> objectGuard(obj);
         auto *napi = objectGuard.GetPtr();
-        if (!CheckSuiteDownloadManagerStatus(napi, context)) {
-            return;
+        CHECK_AND_RETURN(CheckSuiteDownloadManagerStatus(napi, context));
+        std::vector<std::string> featureNames;
+        for (auto type : context->featureTypes) {
+            auto name = FeatureTypeToName(type);
+            CHECK_AND_CALL_FUNC_RETURN(!name.empty(), context->SignError(NAPI_ERR_INVALID_PARAM, "Invalid type"));
+            featureNames.push_back(name);
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->GetDownloadStatusDirect(
-            std::vector<std::string>{context->featureName}, context->statusInfos);
-        if (ret == SUCCESS && !context->statusInfos.empty()) {
-            context->statusInfo = context->statusInfos[0];
-        }
-        if (ret != SUCCESS) {
-            int32_t errCode = ConvertNativeErrorToNapi(ret);
-            context->SignError(errCode, "GetDownloadStatus failed");
-        }
+        int32_t ret = napi->audioSuiteDownloadMgr_->GetDownloadStatusDirect(featureNames, context->statusInfos);
+        CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
+            context->SignError(ConvertNativeErrorToNapi(ret), "GetFeatureStatus failed"));
     };
 
     auto complete = [env, context](napi_value &output) {
-        napi_value statusObj = nullptr;
-        napi_status nstatus = NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(env, context->statusInfo, statusObj);
-        if (nstatus != napi_ok || statusObj == nullptr) {
-            AUDIO_ERR_LOG("GetDownloadStatus: SetValueAudioSuiteDownloadStatusInfo failed");
-            napi_get_undefined(env, &output);
-            return;
-        }
         napi_create_array(env, &output);
-        napi_set_element(env, output, PARAM0, statusObj);
+        for (size_t i = 0; i < context->statusInfos.size(); i++) {
+            napi_value statusObj = nullptr;
+            napi_status nstatus = NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(
+                env, context->statusInfos[i], statusObj);
+            CHECK_AND_CONTINUE_LOG(nstatus == napi_ok && statusObj != nullptr,
+                "SetValueAudioSuiteDownloadStatusInfo failed at index %{public}zu", i);
+            napi_set_element(env, output, static_cast<uint32_t>(i), statusObj);
+        }
     };
-    return NapiAsyncWork::Enqueue(env, context, "OHAudioSuite_GetDownloadStatus", executor, complete);
+    return NapiAsyncWork::Enqueue(env, context, "OHAudioSuite_GetFeatureStatus", executor, complete);
 }
 
-napi_value NapiAudioSuiteDownloadManager::UninstallCloudRom(napi_env env, napi_callback_info info)
+napi_value NapiAudioSuiteDownloadManager::UninstallFeature(napi_env env, napi_callback_info info)
 {
     auto context = std::make_shared<AudioSuiteDownloadMgrAsyncContext>();
     if (context == nullptr) {
-        AUDIO_ERR_LOG("UninstallCloudRom failed: no memory");
-        NapiAudioError::ThrowError(env, "UninstallCloudRom failed: no memory", NAPI_ERR_NO_MEMORY);
+        AUDIO_ERR_LOG("UninstallFeature failed: no memory");
+        NapiAudioError::ThrowError(env, "UninstallFeature failed: no memory", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
-            NAPI_ERR_INPUT_INVALID);
-        context->featureName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureName.empty(),
-            "featureName is empty", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetInt32ArrayArgument(env, argv[PARAM0], context->featureTypes);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "get featureTypes failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureTypes.empty(),
+            "featureTypes is empty", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
-    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+    if (context->status != napi_ok) {
         NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
@@ -449,18 +487,126 @@ napi_value NapiAudioSuiteDownloadManager::UninstallCloudRom(napi_env env, napi_c
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->UninstallCloudRomDirect(
-            std::vector<std::string>{context->featureName});
-        if (ret != SUCCESS) {
-            int32_t errCode = ConvertNativeErrorToNapi(ret);
-            context->SignError(errCode, "UninstallCloudRom failed");
+        std::vector<std::string> featureNames;
+        for (auto type : context->featureTypes) {
+            auto name = FeatureTypeToName(type);
+            CHECK_AND_CALL_FUNC_RETURN(!name.empty(), context->SignError(NAPI_ERR_INVALID_PARAM, "Invalid type"));
+            featureNames.push_back(name);
         }
+        int32_t ret = napi->audioSuiteDownloadMgr_->UninstallCloudRomDirect(featureNames);
+        CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
+            context->SignError(ConvertNativeErrorToNapi(ret), "UninstallFeature failed"));
     };
 
     auto complete = [env, context](napi_value &output) {
         napi_get_undefined(env, &output);
     };
     return NapiAsyncWork::Enqueue(env, context, "OHAudioSuite_UninstallCloudRom", executor, complete);
+}
+
+napi_value NapiAudioSuiteDownloadManager::IsFeatureInstalled(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioSuiteDownloadMgrAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("IsFeatureInstalled failed: no memory");
+        NapiAudioError::ThrowError(env, "IsFeatureInstalled failed: no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetInt32ArrayArgument(env, argv[PARAM0], context->featureTypes);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "get featureTypes failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureTypes.empty(),
+            "featureTypes is empty", NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    if (context->status != napi_ok) {
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioSuiteDownloadManager *>(context->native);
+        ObjectRefMap<NapiAudioSuiteDownloadManager> objectGuard(obj);
+        auto *napi = objectGuard.GetPtr();
+        CHECK_AND_RETURN(CheckSuiteDownloadManagerStatus(napi, context));
+        std::vector<std::string> featureNames;
+        for (auto type : context->featureTypes) {
+            auto name = FeatureTypeToName(type);
+            CHECK_AND_CALL_FUNC_RETURN(!name.empty(), context->SignError(NAPI_ERR_INVALID_PARAM, "Invalid type"));
+            featureNames.push_back(name);
+        }
+        int32_t ret = napi->audioSuiteDownloadMgr_->GetInstallStatus(featureNames, context->installStatus);
+        CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
+            context->SignError(ConvertNativeErrorToNapi(ret), "IsFeatureInstalled failed"));
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        napi_create_array(env, &output);
+        for (size_t i = 0; i < context->installStatus.size(); i++) {
+            napi_value boolVal = nullptr;
+            napi_get_boolean(env, context->installStatus[i], &boolVal);
+            napi_set_element(env, output, static_cast<uint32_t>(i), boolVal);
+        }
+    };
+    return NapiAsyncWork::Enqueue(env, context, "OHAudioSuite_IsFeatureInstalled", executor, complete);
+}
+
+napi_value NapiAudioSuiteDownloadManager::GetNewVersionInfo(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioSuiteDownloadMgrAsyncContext>();
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(context != nullptr, NapiParamUtils::GetUndefinedValue(env),
+        NapiAudioError::ThrowError(env, "GetNewVersionInfo failed: no memory", NAPI_ERR_NO_MEMORY),
+        "GetNewVersionInfo failed: no memory");
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetInt32ArrayArgument(env, argv[PARAM0], context->featureTypes);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "get featureTypes failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->featureTypes.empty(),
+            "featureTypes is empty", NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    if (context->status != napi_ok) {
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioSuiteDownloadManager *>(context->native);
+        ObjectRefMap<NapiAudioSuiteDownloadManager> objectGuard(obj);
+        auto *napi = objectGuard.GetPtr();
+        CHECK_AND_RETURN(CheckSuiteDownloadManagerStatus(napi, context));
+        std::vector<std::string> featureNames;
+        for (auto type : context->featureTypes) {
+            auto name = FeatureTypeToName(type);
+            CHECK_AND_CALL_FUNC_RETURN(!name.empty(), context->SignError(NAPI_ERR_INVALID_PARAM, "Invalid type"));
+            featureNames.push_back(name);
+        }
+        int32_t ret = napi->audioSuiteDownloadMgr_->GetFeatureNewVersionDirect(featureNames, context->versionInfos);
+        CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
+            context->SignError(ConvertNativeErrorToNapi(ret), "GetNewVersionInfo failed"));
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        napi_create_array(env, &output);
+        for (size_t i = 0; i < context->versionInfos.size(); i++) {
+            napi_value versionObj = nullptr;
+            napi_status nstatus = NapiParamUtils::SetValueAudioSuiteFeatureVersionInfo(
+                env, context->versionInfos[i], versionObj);
+            CHECK_AND_CONTINUE_LOG(nstatus == napi_ok && versionObj != nullptr,
+                "SetValueAudioSuiteFeatureVersionInfo failed at index %{public}zu", i);
+            napi_set_element(env, output, static_cast<uint32_t>(i), versionObj);
+        }
+    };
+    return NapiAsyncWork::Enqueue(env, context, "OHAudioSuite_GetNewVersionInfo", executor, complete);
 }
 
 void NapiAudioSuiteDownloadManager::RegisterDownloadStatusCallback(napi_env env, napi_value *args,
@@ -534,8 +680,7 @@ napi_value NapiAudioSuiteDownloadManager::OnDownloadStatusChange(napi_env env, n
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && jsThis != nullptr, nullptr,
         "OnDownloadStatusChange: napi_get_cb_info failed");
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, nullptr,
-        "OnDownloadStatusChange: invalid argument count");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, nullptr, "OnDownloadStatusChange: invalid argument count");
 
     NapiAudioSuiteDownloadManager *napi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napi));

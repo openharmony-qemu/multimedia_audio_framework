@@ -149,7 +149,7 @@ HWTEST_F(AudioSuiteServiceTest, StartDownloadTest, TestSize.Level0)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 
-    ret = service->StartDownload(std::vector<std::string>{"v1"}, true, result);
+    ret = service->StartDownload(std::vector<std::string>{"RecordDefinition"}, true, result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_CALLBACK_NOT_REGISTERED);
 }
@@ -161,7 +161,7 @@ HWTEST_F(AudioSuiteServiceTest, CancelDownloadTest, TestSize.Level0)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 
-    ret = service->CancelDownload(std::vector<std::string>{"v1"}, result);
+    ret = service->CancelDownload(std::vector<std::string>{"RecordDefinition"}, result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_CALLBACK_NOT_REGISTERED);
 }
@@ -173,7 +173,7 @@ HWTEST_F(AudioSuiteServiceTest, PauseDownloadTest, TestSize.Level0)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 
-    ret = service->PauseDownload(std::vector<std::string>{"v1"}, result);
+    ret = service->PauseDownload(std::vector<std::string>{"RecordDefinition"}, result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_CALLBACK_NOT_REGISTERED);
 }
@@ -186,7 +186,7 @@ HWTEST_F(AudioSuiteServiceTest, GetDownloadStatusTest, TestSize.Level0)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 
-    ret = service->GetDownloadStatus(std::vector<std::string>{"v1"}, status, result);
+    ret = service->GetDownloadStatus(std::vector<std::string>{"RecordDefinition"}, status, result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_CALLBACK_NOT_REGISTERED);
 }
@@ -198,7 +198,7 @@ HWTEST_F(AudioSuiteServiceTest, UninstallCloudRomTest, TestSize.Level0)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 
-    ret = service->UninstallCloudRom(std::vector<std::string>{"v1"}, result);
+    ret = service->UninstallCloudRom(std::vector<std::string>{"RecordDefinition"}, result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_CALLBACK_NOT_REGISTERED);
 }
@@ -211,7 +211,7 @@ HWTEST_F(AudioSuiteServiceTest, GetFeatureNewVersionTest, TestSize.Level0)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 
-    ret = service->GetFeatureNewVersion(std::vector<std::string>{"v1"}, newVersion, result);
+    ret = service->GetFeatureNewVersion(std::vector<std::string>{"RecordDefinition"}, newVersion, result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_CALLBACK_NOT_REGISTERED);
 }
@@ -241,7 +241,7 @@ HWTEST_F(AudioSuiteServiceTest, GetDownloadStatus_InstallSuccess_001, TestSize.L
 
     std::vector<AudioSuiteDownloadStatusInfo> status;
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetDownloadStatus(
-        std::vector<std::string>{"feat1"}, status), SUCCESS);
+        std::vector<std::string>{"RecordDefinition"}, status), SUCCESS);
     EXPECT_EQ(status[0].size, 0);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
@@ -282,7 +282,7 @@ HWTEST_F(AudioSuiteServiceTest, GetDownloadStatus_NewVersionSuccess_001, TestSiz
 
     std::vector<AudioSuiteDownloadStatusInfo> status;
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetDownloadStatus(
-        std::vector<std::string>{"feat1"}, status), SUCCESS);
+        std::vector<std::string>{"RecordDefinition"}, status), SUCCESS);
     EXPECT_EQ(status[0].size, 1024);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
@@ -319,15 +319,15 @@ HWTEST_F(AudioSuiteServiceTest, GetDownloadStatus_NewVersionFail_001, TestSize.L
     EXPECT_CALL(*mockStub, GetFeatureNewVersion(_, _, _))
         .WillOnce(Invoke([&fillVersion](const std::vector<std::string>&,
             std::vector<AudioSuiteCloudRomVersionInfo>& infos, int32_t& funcResult) {
-            fillVersion("feat1", 0, infos); funcResult = SUCCESS; return ERROR; // ret != SUCCESS
+            fillVersion("RecordDefinition", 0, infos); funcResult = SUCCESS; return ERROR; // ret != SUCCESS
         }))
         .WillOnce(Invoke([&fillVersion](const std::vector<std::string>&,
             std::vector<AudioSuiteCloudRomVersionInfo>& infos, int32_t& funcResult) {
-            fillVersion("feat1", 0, infos); funcResult = ERROR; return SUCCESS; // funcResult != SUCCESS
+            fillVersion("RecordDefinition", 0, infos); funcResult = ERROR; return SUCCESS; // funcResult != SUCCESS
         }))
         .WillOnce(Invoke([&fillVersion](const std::vector<std::string>&,
             std::vector<AudioSuiteCloudRomVersionInfo>& infos, int32_t& funcResult) {
-            fillVersion("feat1", -1, infos); funcResult = SUCCESS; return SUCCESS; // errorCode != 0
+            fillVersion("RecordDefinition", -1, infos); funcResult = SUCCESS; return SUCCESS; // errorCode != 0
         }))
         .WillOnce(Invoke([&fillVersion](const std::vector<std::string>&,
             std::vector<AudioSuiteCloudRomVersionInfo>& infos, int32_t& funcResult) {
@@ -337,7 +337,7 @@ HWTEST_F(AudioSuiteServiceTest, GetDownloadStatus_NewVersionFail_001, TestSize.L
     auto& dm = Singleton<DownloadManager>::GetInstance();
     std::vector<AudioSuiteDownloadStatusInfo> status;
     for (int i = 0; i < 4; i++) {
-        EXPECT_EQ(dm.GetDownloadStatus(std::vector<std::string>{"feat1"}, status), SUCCESS);
+        EXPECT_EQ(dm.GetDownloadStatus(std::vector<std::string>{"RecordDefinition"}, status), SUCCESS);
         EXPECT_EQ(status[0].size, 0);
         status.clear();
     }
@@ -368,9 +368,9 @@ HWTEST_F(AudioSuiteServiceTest, GetFeatureNewVersion_Success_001, TestSize.Level
 
     std::vector<AudioSuiteCloudRomVersionInfo> versionInfos;
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetFeatureNewVersion(
-        std::vector<std::string>{"feat1"}, versionInfos), SUCCESS);
+        std::vector<std::string>{"RecordDefinition"}, versionInfos), SUCCESS);
     EXPECT_EQ(versionInfos.size(), 1u);
-    EXPECT_EQ(versionInfos[0].featureName, "feat1");
+    EXPECT_EQ(versionInfos[0].featureName, "RecordDefinition");
     EXPECT_EQ(versionInfos[0].version, "1.0.0");
     EXPECT_EQ(versionInfos[0].size, 2048);
 
@@ -409,7 +409,7 @@ HWTEST_F(AudioSuiteServiceTest, SetUpdateEngineCallback_ReplaceCallback_001, Tes
         }));
 
     std::vector<AudioSuiteDownloadStatusInfo> status;
-    EXPECT_EQ(dm.GetDownloadStatus(std::vector<std::string>{"feat1"}, status), SUCCESS);
+    EXPECT_EQ(dm.GetDownloadStatus(std::vector<std::string>{"RecordDefinition"}, status), SUCCESS);
 
     // Cleanup
     dm.SetUpdateEngineCallback(nullptr);
@@ -432,7 +432,7 @@ HWTEST_F(AudioSuiteServiceTest, GetInstallStatus_001, TestSize.Level0)
     EXPECT_EQ(dm.GetInstallStatus(std::vector<std::string>{"feat/../1"}, installStatus), ERR_INVALID_PARAM);
 
     // Valid featureNames, GetParameter <= 0 → installStatus all false
-    std::vector<std::string> featureNames = {"feat1", "feat2"};
+    std::vector<std::string> featureNames = {"RecordDefinition", "AudioSourceSeparationAlgoRes"};
     EXPECT_EQ(dm.GetInstallStatus(featureNames, installStatus), SUCCESS);
     EXPECT_EQ(installStatus.size(), featureNames.size());
     for (bool val : installStatus) {
@@ -443,107 +443,36 @@ HWTEST_F(AudioSuiteServiceTest, GetInstallStatus_001, TestSize.Level0)
 /**
  * @tc.name  StartDownload_Success_001
  * @tc.desc  Test StartDownload full success path: GetFeatureNewVersion succeeds,
- *           DownloadAndInstall succeeds.
+ *           DownloadAndInstall succeeds. Also covers the
+ *           "if (backgroundDownload_ != nullptr) RemoveFeature" branch (L171-175).
  */
 HWTEST_F(AudioSuiteServiceTest, StartDownload_Success_001, TestSize.Level0)
 {
-    auto mockStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
-    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(mockStub);
+    auto& dm = Singleton<DownloadManager>::GetInstance();
 
-    EXPECT_CALL(*mockStub, GetFeatureNewVersion(_, _, _))
-        .WillOnce(Invoke([](const std::vector<std::string>& names,
-                            std::vector<AudioSuiteCloudRomVersionInfo>& infos, int32_t& funcResult) {
-            AudioSuiteCloudRomVersionInfo info;
-            info.featureName = names[0];
-            info.errorCode = 0;
-            info.size = 1024;
-            infos.push_back(info);
-            funcResult = SUCCESS;
-            return SUCCESS;
-        }));
+    // Set up backgroundDownload_ to cover the RemoveFeature branch after IPC success
+    auto bg = std::make_shared<BackgroundDownload>(
+        [](const std::string&) -> int32_t { return SUCCESS; });
+    bg->AddFeature("RecordDefinition");
+    {
+        std::lock_guard<std::mutex> lock(dm.mutex_);
+        dm.backgroundDownload_ = bg;
+    }
+
+    auto mockStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
+    dm.SetUpdateEngineCallback(mockStub);
     EXPECT_CALL(*mockStub, DownloadAndInstall(_, _, _))
         .WillOnce(Invoke([](bool, const std::vector<std::string>&, int32_t& funcResult) {
             funcResult = SUCCESS;
             return SUCCESS;
         }));
 
-    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().StartDownload(
-        std::vector<std::string>{"feat1"}, true), SUCCESS);
+    EXPECT_EQ(dm.StartDownload(std::vector<std::string>{"RecordDefinition"}, true), SUCCESS);
 
-    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
-}
+    // Verify: RemoveFeature was called, feature removed from map, persisted file deleted
+    EXPECT_TRUE(bg->ReadPendingTasksFromFile().empty());
 
-/**
- * @tc.name  StartDownload_GetVersionFail_001
- * @tc.desc  Test StartDownload when GetFeatureNewVersion IPC fails (ret != SUCCESS).
- */
-HWTEST_F(AudioSuiteServiceTest, StartDownload_GetVersionFail_001, TestSize.Level0)
-{
-    auto mockStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
-    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(mockStub);
-
-    EXPECT_CALL(*mockStub, GetFeatureNewVersion(_, _, _))
-        .WillOnce(Invoke([](const std::vector<std::string>&,
-                            std::vector<AudioSuiteCloudRomVersionInfo>& infos, int32_t& funcResult) {
-            funcResult = SUCCESS;
-            return ERROR;
-        }));
-    EXPECT_CALL(*mockStub, DownloadAndInstall(_, _, _)).Times(0);
-
-    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().StartDownload(
-        std::vector<std::string>{"feat1"}, true), ERROR);
-
-    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
-}
-
-/**
- * @tc.name  StartDownload_GetVersionFail_002
- * @tc.desc  Test StartDownload when GetFeatureNewVersion funcResult fails.
- */
-HWTEST_F(AudioSuiteServiceTest, StartDownload_GetVersionFail_002, TestSize.Level0)
-{
-    auto mockStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
-    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(mockStub);
-
-    EXPECT_CALL(*mockStub, GetFeatureNewVersion(_, _, _))
-        .WillOnce(Invoke([](const std::vector<std::string>&,
-                            std::vector<AudioSuiteCloudRomVersionInfo>& infos, int32_t& funcResult) {
-            funcResult = ERROR;
-            return SUCCESS;
-        }));
-    EXPECT_CALL(*mockStub, DownloadAndInstall(_, _, _)).Times(0);
-
-    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().StartDownload(
-        std::vector<std::string>{"feat1"}, true), ERROR);
-
-    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
-}
-
-/**
- * @tc.name  StartDownload_ErrorCode_001
- * @tc.desc  Test StartDownload when GetFeatureNewVersion returns info.errorCode != 0.
- */
-HWTEST_F(AudioSuiteServiceTest, StartDownload_ErrorCode_001, TestSize.Level0)
-{
-    auto mockStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
-    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(mockStub);
-
-    EXPECT_CALL(*mockStub, GetFeatureNewVersion(_, _, _))
-        .WillOnce(Invoke([](const std::vector<std::string>& names,
-                            std::vector<AudioSuiteCloudRomVersionInfo>& infos, int32_t& funcResult) {
-            AudioSuiteCloudRomVersionInfo info;
-            info.featureName = names[0];
-            info.errorCode = -1;
-            infos.push_back(info);
-            funcResult = SUCCESS;
-            return SUCCESS;
-        }));
-    EXPECT_CALL(*mockStub, DownloadAndInstall(_, _, _)).Times(0);
-
-    EXPECT_NE(Singleton<DownloadManager>::GetInstance().StartDownload(
-        std::vector<std::string>{"feat1"}, true), SUCCESS);
-
-    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
+    dm.SetUpdateEngineCallback(nullptr);
 }
 
 /**
@@ -555,16 +484,6 @@ HWTEST_F(AudioSuiteServiceTest, StartDownload_DownloadFail_001, TestSize.Level0)
     auto mockStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(mockStub);
 
-    EXPECT_CALL(*mockStub, GetFeatureNewVersion(_, _, _))
-        .WillOnce(Invoke([](const std::vector<std::string>& names,
-                            std::vector<AudioSuiteCloudRomVersionInfo>& infos, int32_t& funcResult) {
-            AudioSuiteCloudRomVersionInfo info;
-            info.featureName = names[0];
-            info.errorCode = 0;
-            infos.push_back(info);
-            funcResult = SUCCESS;
-            return SUCCESS;
-        }));
     EXPECT_CALL(*mockStub, DownloadAndInstall(_, _, _))
         .WillOnce(Invoke([](bool, const std::vector<std::string>&, int32_t& funcResult) {
             funcResult = SUCCESS;
@@ -572,7 +491,7 @@ HWTEST_F(AudioSuiteServiceTest, StartDownload_DownloadFail_001, TestSize.Level0)
         }));
 
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().StartDownload(
-        std::vector<std::string>{"feat1"}, true), ERROR);
+        std::vector<std::string>{"RecordDefinition"}, true), ERROR);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -586,16 +505,6 @@ HWTEST_F(AudioSuiteServiceTest, StartDownload_DownloadFail_002, TestSize.Level0)
     auto mockStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(mockStub);
 
-    EXPECT_CALL(*mockStub, GetFeatureNewVersion(_, _, _))
-        .WillOnce(Invoke([](const std::vector<std::string>& names,
-                            std::vector<AudioSuiteCloudRomVersionInfo>& infos, int32_t& funcResult) {
-            AudioSuiteCloudRomVersionInfo info;
-            info.featureName = names[0];
-            info.errorCode = 0;
-            infos.push_back(info);
-            funcResult = SUCCESS;
-            return SUCCESS;
-        }));
     EXPECT_CALL(*mockStub, DownloadAndInstall(_, _, _))
         .WillOnce(Invoke([](bool, const std::vector<std::string>&, int32_t& funcResult) {
             funcResult = ERROR;
@@ -603,7 +512,7 @@ HWTEST_F(AudioSuiteServiceTest, StartDownload_DownloadFail_002, TestSize.Level0)
         }));
 
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().StartDownload(
-        std::vector<std::string>{"feat1"}, true), ERROR);
+        std::vector<std::string>{"RecordDefinition"}, true), ERROR);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -624,7 +533,7 @@ HWTEST_F(AudioSuiteServiceTest, PauseDownload_Success_001, TestSize.Level0)
         }));
 
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().PauseDownload(
-        std::vector<std::string>{"feat1"}), SUCCESS);
+        std::vector<std::string>{"RecordDefinition"}), SUCCESS);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -645,7 +554,7 @@ HWTEST_F(AudioSuiteServiceTest, PauseDownload_Fail_001, TestSize.Level0)
         }));
 
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().PauseDownload(
-        std::vector<std::string>{"feat1"}), ERROR);
+        std::vector<std::string>{"RecordDefinition"}), ERROR);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -666,7 +575,7 @@ HWTEST_F(AudioSuiteServiceTest, PauseDownload_Fail_002, TestSize.Level0)
         }));
 
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().PauseDownload(
-        std::vector<std::string>{"feat1"}), ERROR);
+        std::vector<std::string>{"RecordDefinition"}), ERROR);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -687,7 +596,7 @@ HWTEST_F(AudioSuiteServiceTest, CancelDownload_Success_001, TestSize.Level0)
         }));
 
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().CancelDownload(
-        std::vector<std::string>{"feat1"}), SUCCESS);
+        std::vector<std::string>{"RecordDefinition"}), SUCCESS);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -708,7 +617,7 @@ HWTEST_F(AudioSuiteServiceTest, CancelDownload_Fail_001, TestSize.Level0)
         }));
 
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().CancelDownload(
-        std::vector<std::string>{"feat1"}), ERROR);
+        std::vector<std::string>{"RecordDefinition"}), ERROR);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -729,7 +638,7 @@ HWTEST_F(AudioSuiteServiceTest, CancelDownload_Fail_002, TestSize.Level0)
         }));
 
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().CancelDownload(
-        std::vector<std::string>{"feat1"}), ERROR);
+        std::vector<std::string>{"RecordDefinition"}), ERROR);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -750,7 +659,7 @@ HWTEST_F(AudioSuiteServiceTest, UninstallCloudRom_Success_001, TestSize.Level0)
         }));
 
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().UninstallCloudRom(
-        std::vector<std::string>{"feat1"}), SUCCESS);
+        std::vector<std::string>{"RecordDefinition"}), SUCCESS);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -771,7 +680,7 @@ HWTEST_F(AudioSuiteServiceTest, UninstallCloudRom_Fail_001, TestSize.Level0)
         }));
 
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().UninstallCloudRom(
-        std::vector<std::string>{"feat1"}), ERROR);
+        std::vector<std::string>{"RecordDefinition"}), ERROR);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -792,7 +701,7 @@ HWTEST_F(AudioSuiteServiceTest, UninstallCloudRom_Fail_002, TestSize.Level0)
         }));
 
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().UninstallCloudRom(
-        std::vector<std::string>{"feat1"}), ERROR);
+        std::vector<std::string>{"RecordDefinition"}), ERROR);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -815,7 +724,7 @@ HWTEST_F(AudioSuiteServiceTest, GetFeatureNewVersion_Fail_001, TestSize.Level0)
 
     std::vector<AudioSuiteCloudRomVersionInfo> versionInfos;
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetFeatureNewVersion(
-        std::vector<std::string>{"feat1"}, versionInfos), ERROR);
+        std::vector<std::string>{"RecordDefinition"}, versionInfos), ERROR);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -838,7 +747,7 @@ HWTEST_F(AudioSuiteServiceTest, GetFeatureNewVersion_Fail_002, TestSize.Level0)
 
     std::vector<AudioSuiteCloudRomVersionInfo> versionInfos;
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetFeatureNewVersion(
-        std::vector<std::string>{"feat1"}, versionInfos), ERROR);
+        std::vector<std::string>{"RecordDefinition"}, versionInfos), ERROR);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -861,7 +770,7 @@ HWTEST_F(AudioSuiteServiceTest, GetDownloadStatus_Fail_001, TestSize.Level0)
 
     std::vector<AudioSuiteDownloadStatusInfo> status;
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetDownloadStatus(
-        std::vector<std::string>{"feat1"}, status), ERROR);
+        std::vector<std::string>{"RecordDefinition"}, status), ERROR);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -884,7 +793,7 @@ HWTEST_F(AudioSuiteServiceTest, GetDownloadStatus_Fail_002, TestSize.Level0)
 
     std::vector<AudioSuiteDownloadStatusInfo> status;
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetDownloadStatus(
-        std::vector<std::string>{"feat1"}, status), ERROR);
+        std::vector<std::string>{"RecordDefinition"}, status), ERROR);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
@@ -920,7 +829,7 @@ HWTEST_F(AudioSuiteServiceTest, GetDownloadStatus_Fail_003, TestSize.Level0)
 
     std::vector<AudioSuiteDownloadStatusInfo> status;
     EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetDownloadStatus(
-        std::vector<std::string>{"feat1"}, status), SUCCESS);
+        std::vector<std::string>{"RecordDefinition"}, status), SUCCESS);
     EXPECT_EQ(status[0].size, 0);
 
     Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
@@ -939,12 +848,12 @@ HWTEST_F(AudioSuiteServiceTest, StartBackgroundDownload_001, TestSize.Level0)
     EXPECT_EQ(dm.StartBackgroundDownload(std::vector<std::string>{}), ERR_INVALID_PARAM);
 
     // Valid featureNames but no callback registered
-    EXPECT_EQ(dm.StartBackgroundDownload(std::vector<std::string>{"feat1"}), ERR_CALLBACK_NOT_REGISTERED);
+    EXPECT_EQ(dm.StartBackgroundDownload(std::vector<std::string>{"RecordDefinition"}), ERR_CALLBACK_NOT_REGISTERED);
 
     // Callback registered, conditions check path
     auto mockStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
     dm.SetUpdateEngineCallback(mockStub);
-    int32_t ret = dm.StartBackgroundDownload(std::vector<std::string>{"feat_test"});
+    int32_t ret = dm.StartBackgroundDownload(std::vector<std::string>{"RecordDefinition"});
     EXPECT_TRUE(ret == SUCCESS || ret == ERROR || ret == ERR_CALLBACK_NOT_REGISTERED);
     dm.SetUpdateEngineCallback(nullptr);
 }
@@ -965,7 +874,7 @@ HWTEST_F(AudioSuiteServiceTest, GetInstallStatus_Service_001, TestSize.Level0)
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 
     // Valid featureNames → success
-    ret = service->GetInstallStatus(std::vector<std::string>{"feat1"}, installStatus, result);
+    ret = service->GetInstallStatus(std::vector<std::string>{"RecordDefinition"}, installStatus, result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(installStatus.size(), 1u);
@@ -992,6 +901,36 @@ HWTEST_F(AudioSuiteServiceTest, StartBackgroundDownload_Service_001, TestSize.Le
     status.push_back(info);
     ret = service->OnDownloadStatusChanged(status);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  OnDownloadStatusChanged_ConvertErrCode_001
+ * @tc.desc  Test ConvertToApiErrCode branches: errCode=0, 503, 402, 999.
+ */
+HWTEST_F(AudioSuiteServiceTest, OnDownloadStatusChanged_ConvertErrCode_001, TestSize.Level0)
+{
+    std::vector<AudioSuiteDownloadStatusInfo> status;
+    AudioSuiteDownloadStatusInfo info1 = {0, 0, "feat1", "", 0, "", 0};
+    AudioSuiteDownloadStatusInfo info2 = {0, 0, "feat2", "", 0, "", 503};
+    AudioSuiteDownloadStatusInfo info3 = {0, 0, "feat3", "", 0, "", 402};
+    AudioSuiteDownloadStatusInfo info4 = {0, 0, "feat4", "", 0, "", 999};
+    status = {info1, info2, info3, info4};
+    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().OnDownloadStatusChanged(status), SUCCESS);
+}
+
+/**
+ * @tc.name  OnDownloadStatusChanged_ConvertState_001
+ * @tc.desc  Test ConvertToApiState branches: state=32, 33, 34, 0.
+ */
+HWTEST_F(AudioSuiteServiceTest, OnDownloadStatusChanged_ConvertState_001, TestSize.Level0)
+{
+    std::vector<AudioSuiteDownloadStatusInfo> status;
+    AudioSuiteDownloadStatusInfo info1 = {32, 0, "feat1", "", 0, "", 0};
+    AudioSuiteDownloadStatusInfo info2 = {33, 0, "feat2", "", 0, "", 0};
+    AudioSuiteDownloadStatusInfo info3 = {34, 0, "feat3", "", 0, "", 0};
+    AudioSuiteDownloadStatusInfo info4 = {0, 0, "feat4", "", 0, "", 0};
+    status = {info1, info2, info3, info4};
+    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().OnDownloadStatusChanged(status), SUCCESS);
 }
 
 } // namespace AudioSuite

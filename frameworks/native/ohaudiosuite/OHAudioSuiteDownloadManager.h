@@ -42,6 +42,13 @@ public:
     int32_t GetDownloadStatus(const char *featureName, OH_AudioSuite_DownloadStatusInfo *status);
     int32_t UninstallCloudRom(const char *featureName);
 
+    int32_t IsFeatureInstalled(const std::vector<std::string>& featureNames,
+        bool *installStatus, uint32_t statusInfosSize);
+    int32_t GetFeatureStatus(const std::vector<std::string>& featureNames,
+        OH_AudioSuite_DownloadStatusInfo *statusInfos, uint32_t statusInfosSize);
+    int32_t GetNewVersionInfo(const std::vector<std::string>& featureNames,
+        OH_AudioSuite_FeatureVersionInfo *versionInfos, uint32_t statusInfosSize);
+
 private:
     OHAudioSuiteDownloadManager();
 

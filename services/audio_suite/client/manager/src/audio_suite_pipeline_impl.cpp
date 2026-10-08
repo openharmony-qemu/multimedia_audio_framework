@@ -154,7 +154,7 @@ uint32_t AudioSuitePipelineImpl::AllocatePipeLineId()
         allocateId_ = 0;
     }
 
-    AUDIO_INFO_LOG("AllocatePipeLineId sucess. id_ = %{public}u", id);
+    AUDIO_INFO_LOG("AllocatePipeLineId success. id_ = %{public}u", id);
     return id;
 }
 

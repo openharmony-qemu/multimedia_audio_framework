@@ -82,6 +82,9 @@ public:
     MOCK_METHOD(ErrCode, GetDownloadStatus,
         (const std::vector<std::string>& featureNames,
          std::vector<AudioSuiteDownloadStatusInfo>& status, int32_t& funcResult), (override));
+    MOCK_METHOD(ErrCode, GetFeatureStatus,
+        (const std::vector<std::string>& featureNames,
+         std::vector<AudioSuiteDownloadStatusInfo>& status, int32_t& funcResult), (override));
     MOCK_METHOD(ErrCode, GetFeatureNewVersion,
         (const std::vector<std::string>& featureNames,
          std::vector<AudioSuiteCloudRomVersionInfo>& newVersion, int32_t& funcResult), (override));

@@ -37,6 +37,9 @@ constexpr int32_t NAPI_ERR_TIMEOUT = 6800105;
 constexpr int32_t NAPI_ERR_STREAM_LIMIT = 6800201;
 constexpr int32_t NAPI_ERR_SYSTEM = 6800301;
 constexpr int32_t NAPI_ERR_UNAVAILABLE_ON_DEVICE = 801;
+constexpr int32_t NAPI_ERR_SERVICE_DIED = 6800302;
+constexpr int32_t NAPI_ERR_NETWORK = 6800501;
+constexpr int32_t NAPI_ERR_STORAGE_NOT_ENOUGH = 6800502;
 
 class NapiAudioError {
 public:

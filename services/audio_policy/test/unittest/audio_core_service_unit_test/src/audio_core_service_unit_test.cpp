@@ -8440,5 +8440,126 @@ HWTEST_F(AudioCoreServiceUnitTest, RegisteredTrackerClientDied_003, TestSize.Lev
     EXPECT_EQ(pipeManager->GetStreamDescById(sessionId), nullptr);
     pipeManager->curPipeList_.clear();
 }
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : AudioPowerStateToString_001
+ * @tc.desc   : Test AudioPowerStateToString with all valid values.
+ * @tc.owner  : audio_route_renderer
+ */
+HWTEST_F(AudioCoreServiceUnitTest, AudioPowerStateToString_001, TestSize.Level1)
+{
+    EXPECT_STREQ(AudioPowerStateToString(AudioPowerState::ACTIVE), "ACTIVE");
+    EXPECT_STREQ(AudioPowerStateToString(AudioPowerState::SUSPENDING), "SUSPENDING");
+    EXPECT_STREQ(AudioPowerStateToString(AudioPowerState::HIBERNATING), "HIBERNATING");
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : AudioPowerStateToString_002
+ * @tc.desc   : Test AudioPowerStateToString with invalid enum value.
+ * @tc.owner  : audio_route_renderer
+ */
+HWTEST_F(AudioCoreServiceUnitTest, AudioPowerStateToString_002, TestSize.Level1)
+{
+    EXPECT_STREQ(AudioPowerStateToString(static_cast<AudioPowerState>(-1)), "UNKNOWN");
+    EXPECT_STREQ(AudioPowerStateToString(static_cast<AudioPowerState>(99)), "UNKNOWN");
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : SetAudioPowerState_001
+ * @tc.desc   : Test SetAudioPowerState and GetAudioPowerState.
+ * @tc.owner  : audio_route_renderer
+ */
+HWTEST_F(AudioCoreServiceUnitTest, SetAudioPowerState_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    auto* coreService = GetServerPtr()->coreService_.get();
+    ASSERT_NE(nullptr, coreService);
+    coreService->SetAudioPowerState(AudioPowerState::ACTIVE);
+    coreService->SetAudioPowerState(AudioPowerState::SUSPENDING);
+    EXPECT_EQ(coreService->GetAudioPowerState(), AudioPowerState::SUSPENDING);
+    coreService->SetAudioPowerState(AudioPowerState::HIBERNATING);
+    EXPECT_EQ(coreService->GetAudioPowerState(), AudioPowerState::HIBERNATING);
+    coreService->SetAudioPowerState(AudioPowerState::ACTIVE);
+    EXPECT_EQ(coreService->GetAudioPowerState(), AudioPowerState::ACTIVE);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : SetAudioPowerState_002
+ * @tc.desc   : Test SetAudioPowerState dedup (same state should not crash).
+ * @tc.owner  : audio_route_renderer
+ */
+HWTEST_F(AudioCoreServiceUnitTest, SetAudioPowerState_002, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    auto* coreService = GetServerPtr()->coreService_.get();
+    ASSERT_NE(nullptr, coreService);
+    coreService->SetAudioPowerState(AudioPowerState::ACTIVE);
+    coreService->SetAudioPowerState(AudioPowerState::SUSPENDING);
+    EXPECT_EQ(coreService->GetAudioPowerState(), AudioPowerState::SUSPENDING);
+    coreService->SetAudioPowerState(AudioPowerState::SUSPENDING);
+    EXPECT_EQ(coreService->GetAudioPowerState(), AudioPowerState::SUSPENDING);
+    coreService->SetAudioPowerState(AudioPowerState::ACTIVE);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : UpdateAudioFlagForFastStream_001
+ * @tc.desc   : Test FAST stream downgrade to NORMAL during SUSPENDING.
+ * @tc.owner  : audio_route_renderer
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdateAudioFlagForFastStream_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    auto* coreService = GetServerPtr()->coreService_.get();
+    ASSERT_NE(nullptr, coreService);
+    coreService->SetAudioPowerState(AudioPowerState::ACTIVE);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    coreService->SetAudioPowerState(AudioPowerState::SUSPENDING);
+    coreService->UpdateAudioFlagForFastStream(streamDesc);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    coreService->SetAudioPowerState(AudioPowerState::ACTIVE);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : UpdateAudioFlagForFastStream_002
+ * @tc.desc   : Test FAST stream not downgraded when power state is ACTIVE.
+ * @tc.owner  : audio_route_renderer
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdateAudioFlagForFastStream_002, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    auto* coreService = GetServerPtr()->coreService_.get();
+    ASSERT_NE(nullptr, coreService);
+    coreService->SetAudioPowerState(AudioPowerState::ACTIVE);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    coreService->UpdateAudioFlagForFastStream(streamDesc);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_FAST);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : UpdateAudioFlagForFastStream_003
+ * @tc.desc   : Test non-FAST stream not affected by power transition.
+ * @tc.owner  : audio_route_renderer
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdateAudioFlagForFastStream_003, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    auto* coreService = GetServerPtr()->coreService_.get();
+    ASSERT_NE(nullptr, coreService);
+    coreService->SetAudioPowerState(AudioPowerState::SUSPENDING);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    coreService->UpdateAudioFlagForFastStream(streamDesc);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    coreService->SetAudioPowerState(AudioPowerState::ACTIVE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

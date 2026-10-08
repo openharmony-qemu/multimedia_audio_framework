@@ -41,14 +41,15 @@ bool AudioInterruptStrategy::IsMicSource(SourceType sourceType)
 }
 
 void AudioInterruptStrategy::UpdateFocusStrategy(const std::string &bundleName,
-    AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream)
+    AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream, bool isCheckMuteStream)
 {
     bool ret = false;
     if (queryBundleNameListCallback_ != nullptr) {
         queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, "audio_param", ret);
     }
     if (isExistMediaStream && isIncomingMediaStream && ret &&
-        focusEntry.hintType == INTERRUPT_HINT_STOP) {
+        focusEntry.hintType == INTERRUPT_HINT_STOP &&
+        !isCheckMuteStream) {
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
         AUDIO_INFO_LOG("%{public}s update audio focus strategy", bundleName.c_str());
     }
@@ -182,9 +183,6 @@ void AudioInterruptStrategy::UpdateMuteAudioFocusStrategy(const AudioInterrupt &
         !(incomingInterrupt.behaviorFlags_.muteWhenInterruptFlag && focusEntry.actionOn == INCOMING)) {
         return;
     }
-    int32_t intpausedTimeMs = OnQueryPausedTime();
-    CHECK_AND_RETURN_LOG(intpausedTimeMs > 0,
-        "The set pause duration is 0s, no need to update PAUSE with PAUSE_WHEN_INTERRUPTED flag.");
 
     if ((focusEntry.hintType != INTERRUPT_HINT_STOP &&
         focusEntry.hintType != INTERRUPT_HINT_PAUSE) ||
@@ -211,6 +209,15 @@ void AudioInterruptStrategy::UpdatePauseAudioFocusStrategy(const AudioInterrupt 
     const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
 {
     if (focusEntry.actionOn != CURRENT || !currentInterrupt.behaviorFlags_.pauseWhenInterruptFlag) {
+        return;
+    }
+    int32_t intpausedTimeMs = OnQueryPausedTime();
+    CHECK_AND_RETURN_LOG(intpausedTimeMs > 0,
+        "The set pause duration is 0s, no need to update PAUSE with PAUSE_WHEN_INTERRUPTED flag.");
+
+    if (AudioInterruptUtils::IsMediaStream(currentInterrupt.audioFocusType.streamType) &&
+        AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType) &&
+        incomingInterrupt.isCheckMuteStream) {
         return;
     }
 
@@ -266,7 +273,7 @@ void AudioInterruptStrategy::UpdateAudioFocusStrategy(const AudioInterrupt &curr
     SourceType existSourceType = existAudioFocusType.sourceType;
     SourceType incomingSourceType = incomingAudioFocusType.sourceType;
     UpdateFocusStrategy(bundleName, focusEntry, AudioInterruptUtils::IsMediaStream(existStreamType),
-        AudioInterruptUtils::IsMediaStream(incomingStreamType));
+        AudioInterruptUtils::IsMediaStream(incomingStreamType), incomingInterrupt.isCheckMuteStream);
     UpdateMapFocusStrategy(bundleName, focusEntry, AudioInterruptUtils::IsMediaStream(existStreamType),
         incomingSourceType);
     UpdateMediaWithMixStrategy(currentInterrupt, incomingInterrupt, focusEntry);
