@@ -589,5 +589,25 @@ HWTEST_F(AudioPipeManagerUnitTest, AudioPipeManager_Get3daDirectBusAddress_003, 
     pipeManager.curPipeList_.push_back(pipeInfo);
     EXPECT_TRUE(pipeManager.Get3daDirectBusAddress().empty());
 }
+
+/**
+ * @tc.name: AudioPipeManager_Get3daDirectBusAddress_004
+ * @tc.desc: Test Get3daDirectBusAddress skips a remote pipe whose hex networkId name contains "3da".
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AudioPipeManager_Get3daDirectBusAddress_004, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+    auto remotePipeInfo = std::make_shared<AudioPipeInfo>();
+    // remote module name: 64-char hex networkId containing "3da" + "_out"
+    remotePipeInfo->moduleInfo_.name = "0123456789ab3daf0123456789abcdef0123456789abcdef0123456789abcdef_out";
+    remotePipeInfo->moduleInfo_.busAddress = "";
+    pipeManager.curPipeList_.push_back(remotePipeInfo);
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.name = "primary";
+    pipeInfo->moduleInfo_.busAddress = "bus10_3da_out";
+    pipeManager.curPipeList_.push_back(pipeInfo);
+    EXPECT_EQ(pipeManager.Get3daDirectBusAddress(), "bus10_3da_out");
+}
 } // namespace AudioStandard
 } // namespace OHOS

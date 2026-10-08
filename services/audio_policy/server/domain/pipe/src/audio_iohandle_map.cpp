@@ -20,6 +20,7 @@
 #include "parameter.h"
 #include "parameters.h"
 #include "audio_policy_manager_factory.h"
+#include "audio_adapter_manager.h"
 
 #include "audio_server_proxy.h"
 #include "audio_pipe_manager.h"
@@ -219,10 +220,10 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
     if (moduleInfo.role == "sink") {
         pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
         // A 3DA bus port may be opened at boot (xml module name) or at play-time new-pipe
-        // creation (paProp moduleName with mixport_ prefix). Match the 3da keyword in
-        // name/busAddress so any bus number (bus10/bus11/...) is covered.
-        if (moduleInfo.name.find(HDI_BUS_KEYWORD_3DA) != std::string::npos ||
-            moduleInfo.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
+        // creation (paProp moduleName with mixport_ prefix). Match the exact 3da token in
+        // name/busAddress (shared AudioAdapterManager predicate) so any bus number
+        // (bus10/bus11/...) is covered while remote hex networkId names never hit.
+        if (AudioAdapterManager::Is3daDirectBusPort(moduleInfo)) {
             pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_3DA_DIRECT;
         } else {
             pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;

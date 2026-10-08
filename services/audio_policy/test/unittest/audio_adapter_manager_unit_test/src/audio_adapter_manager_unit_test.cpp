@@ -2047,6 +2047,36 @@ HWTEST_F(AudioAdapterManagerUnitTest, Is3daDirectBusPort_003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: Is3daDirectBusPort_004
+ * @tc.desc: Test Is3daDirectBusPort rejects hex networkId names containing the "3da" substring.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, Is3daDirectBusPort_004, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    // remote module name: 64-char hex networkId containing "3da" + "_out"
+    info.name = "0123456789ab3daf0123456789abcdef0123456789abcdef0123456789abcdef_out";
+    info.busAddress = "";
+    EXPECT_FALSE(AudioAdapterManager::Is3daDirectBusPort(info));
+
+    // hex networkId carried in the bus address must not hit either
+    info.name = "primary";
+    info.busAddress = "0123456789ab3daf0123456789abcdef0123456789abcdef0123456789abcdef_out";
+    EXPECT_FALSE(AudioAdapterManager::Is3daDirectBusPort(info));
+
+    // "3da" embedded inside another token is not a 3da bus port
+    info.busAddress = "";
+    info.name = "bus3dax_out";
+    EXPECT_FALSE(AudioAdapterManager::Is3daDirectBusPort(info));
+
+    // exact "3da" token forms are legal 3da bus ports
+    info.name = "bus10_3da_out";
+    EXPECT_TRUE(AudioAdapterManager::Is3daDirectBusPort(info));
+    info.name = "3da";
+    EXPECT_TRUE(AudioAdapterManager::Is3daDirectBusPort(info));
+}
+
+/**
  * @tc.name: ConvergeTo3daSink_001
  * @tc.desc: Test ConvergeTo3daSink takes the bus address as deviceClass with the fixed 3DA idInfo.
  * @tc.type: FUNC

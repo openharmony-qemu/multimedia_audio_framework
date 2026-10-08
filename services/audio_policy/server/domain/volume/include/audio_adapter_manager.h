@@ -87,6 +87,10 @@ public:
 
     virtual ~AudioAdapterManager() {}
 
+    // Shared 3da-direct bus-port predicate: public so pipe-domain code
+    // (AudioIOHandleMap / AudioPipeManager) reuses the single implementation.
+    static bool Is3daDirectBusPort(const AudioModuleInfo &audioModuleInfo);
+
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, const VolumeScale &volume,
         std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0);
 
@@ -505,7 +509,7 @@ private:
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
-    static bool Is3daDirectBusPort(const AudioModuleInfo &audioModuleInfo);
+    static bool Match3daBusToken(const std::string &portName);
     static void ConvergeTo3daSink(const AudioModuleInfo &audioModuleInfo, std::string &deviceClass,
         std::string &idInfo);
     void UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceDescriptor> device, AudioVolumeType volumeType);
