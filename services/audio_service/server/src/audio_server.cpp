@@ -3646,10 +3646,14 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
         }
     }
 
-    (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?
-        RegisterSinkLatencyFetcher(renderId, attr.hasXmlConfiguredLatency ?
-            attr.effectLatency + attr.halLatency + attr.warmupLatency : PRIMARY_SINK_LATENCY_MS) :
-        RegisterSinkLatencyFetcher(renderId);
+    if (attr.hasXmlConfiguredLatency) {
+        RegisterSinkLatencyFetcher(renderId,
+            attr.effectLatency + attr.halLatency, attr.warmupLatency);
+    } else {
+        (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?
+            RegisterSinkLatencyFetcher(renderId, PRIMARY_SINK_LATENCY_MS) :
+            RegisterSinkLatencyFetcher(renderId);
+    }
     return SUCCESS;
 }
 
@@ -3695,7 +3699,7 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
     }
     if (attr.hasXmlConfiguredLatency) {
         RegisterSinkLatencyFetcher(renderId,
-            attr.effectLatency + attr.halLatency + attr.warmupLatency);
+            attr.effectLatency + attr.halLatency, attr.warmupLatency);
     } else {
         RegisterSinkLatencyFetcher(renderId);
     }
@@ -3800,14 +3804,15 @@ int32_t AudioServer::DestroyHdiPort(uint32_t id)
     return SUCCESS;
 }
 
-void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency)
+void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency, uint32_t warmupLatency)
 {
-    AUDIO_INFO_LOG("Register fixed sink latency: %{public}u ms, renderId %{public}u", sinkLatency, renderId);
+    AUDIO_INFO_LOG("Register fixed sink latency: %{public}u ms, warmup %{public}u ms, renderId %{public}u",
+        sinkLatency, warmupLatency, renderId);
     SinkLatencyFetcherManager::GetInstance().RegisterProvider(renderId,
         [sinkLatency] (uint32_t renderId, uint32_t &latency) -> int32_t {
         latency = sinkLatency;
         return SUCCESS;
-    });
+    }, warmupLatency);
     return;
 }
 

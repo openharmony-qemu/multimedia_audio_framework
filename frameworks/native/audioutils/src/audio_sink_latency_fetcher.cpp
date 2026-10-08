@@ -64,12 +64,13 @@ std::function<int32_t (uint32_t &)> SinkLatencyFetcherManager::CreateFetcher(
     return SinkLatencyFetcher(renderId, provider, cacheOut);
 }
 
-void SinkLatencyFetcherManager::RegisterProvider(uint32_t renderId, const FetchLatencyFunc &provider)
+void SinkLatencyFetcherManager::RegisterProvider(uint32_t renderId, const FetchLatencyFunc &provider,
+    uint32_t warmupLatency)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     std::shared_ptr<LatencyCache> cache;
     auto fetcher = CreateFetcher(renderId, provider, cache);
-    fetcherMap_[renderId] = FetcherEntry{std::move(fetcher), std::move(cache)};
+    fetcherMap_[renderId] = FetcherEntry{std::move(fetcher), std::move(cache), warmupLatency};
 }
 
 std::function<int32_t (uint32_t &)> SinkLatencyFetcherManager::EnsureFetcher(uint32_t renderId)
@@ -98,6 +99,16 @@ bool SinkLatencyFetcherManager::TryGetCachedLatency(uint32_t renderId, uint32_t 
     }
     latency = it->second.cache->value.load();
     return true;
+}
+
+uint32_t SinkLatencyFetcherManager::GetWarmupLatency(uint32_t renderId) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = fetcherMap_.find(renderId);
+    if (it == fetcherMap_.end()) {
+        return 0;
+    }
+    return it->second.warmupLatency;
 }
 } // namespace AudioStandard
 } // namespace OHOS
