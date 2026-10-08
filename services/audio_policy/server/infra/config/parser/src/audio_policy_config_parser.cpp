@@ -618,18 +618,10 @@ void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> c
             } else if (configInfo.name_ == "ttsOutSupport") {
                 AUDIO_INFO_LOG("independent pipe support: %{public}s", configInfo.value_.c_str());
                 configManager_.OnIsSupportIndependentPipe(configInfo.value_ == "true");
-            } else if (configInfo.name_ == "primary_effect_latency") {
-                uint32_t latency = 0;
-                if (ParseUint32Attr(configInfo.value_, latency)) {
-                    globalConfigs_.primaryEffectLatency = latency;
-                    AUDIO_INFO_LOG("primary_effect_latency parsed: %{public}u", latency);
-                }
-            } else if (configInfo.name_ == "primary_warmup_latency") {
-                uint32_t latency = 0;
-                if (ParseUint32Attr(configInfo.value_, latency)) {
-                    globalConfigs_.primaryWarmupLatency = latency;
-                    AUDIO_INFO_LOG("primary_warmup_latency parsed: %{public}u", latency);
-                }
+            } else if (configInfo.name_ == "primary_effect_latency" ||
+                configInfo.name_ == "primary_warmup_latency") {
+                HandleLatencyConfigParsed(configInfo.name_, configInfo.value_);
+            }
             }
         }
         curNode->MoveToNext();
@@ -663,6 +655,21 @@ void AudioPolicyConfigParser::HandleEncodingEac3SupportParsed(std::shared_ptr<Ad
     if (value == ENCODING_EAC3_NAME) {
         pipeInfo->supportEncodingEac3_ = true;
         configManager_.OnUpdateEac3Support(true);
+    }
+}
+
+void AudioPolicyConfigParser::HandleLatencyConfigParsed(const std::string &name, const std::string &value)
+{
+    uint32_t latency = 0;
+    if (!ParseUint32Attr(value, latency)) {
+        return;
+    }
+    if (name == "primary_effect_latency") {
+        globalConfigs_.primaryEffectLatency = latency;
+        AUDIO_INFO_LOG("primary_effect_latency parsed: %{public}u", latency);
+    } else if (name == "primary_warmup_latency") {
+        globalConfigs_.primaryWarmupLatency = latency;
+        AUDIO_INFO_LOG("primary_warmup_latency parsed: %{public}u", latency);
     }
 }
 
