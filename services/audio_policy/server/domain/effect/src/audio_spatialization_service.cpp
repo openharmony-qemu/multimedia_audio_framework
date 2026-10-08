@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioSpatializationService"
 #endif
 
-#include <stdio.h>
+#include <cstdio>
 #include "audio_spatialization_service.h"
 
 #include "iservice_registry.h"
