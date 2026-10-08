@@ -886,6 +886,11 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume()
     AudioStreamType streamType = processConfig_.streamType;
     uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
         IdHandler::SelectIdInfo(macAddress, deviceNetId));
+    // Lock from volume read to sink write so each push is one atomic read-then-write
+    // section: concurrent pushes (sync entries and async NotifySilentStateAction) land
+    // in execution order, and the last sink write always carries the latest volume
+    // state instead of a stale pre-restore value.
+    std::lock_guard<std::mutex> lock(offloadVolumeMutex_);
     float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, streamType, renderId, &volumes);
     AUDIO_INFO_LOG("sessionID %{public}u, renderId %{public}d, volume: %{public}f, durationMs: %{public}u",
         streamIndex_, renderId, volume, volumes.durationMs);

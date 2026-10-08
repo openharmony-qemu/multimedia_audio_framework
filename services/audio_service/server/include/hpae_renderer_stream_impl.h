@@ -155,6 +155,7 @@ private:
     // offload
     std::atomic<bool> offloadEnable_ = false;
     std::atomic<int32_t> offloadStatePolicy_ = OFFLOAD_DEFAULT;
+    std::mutex offloadVolumeMutex_; // serialize volume read + sink write in OffloadSetVolume
     // offload end
     float clientVolume_ = 1.0f;
 
