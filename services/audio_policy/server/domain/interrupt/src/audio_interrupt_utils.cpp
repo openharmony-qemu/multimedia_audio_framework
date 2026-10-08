@@ -76,7 +76,7 @@ bool AudioInterruptUtils::GetWindowState(const AudioInterrupt &audioInterrupt)
         for (const auto &info : ancoPlaybackInfos) {
             if (!info.GetPackageName().empty() && info.GetPlaybackState() == ANCO_PLAYBACK_STATE_PLAYING &&
                 WindowUtils::CheckAncoWindowState(info.GetPackageName())) {
-                    AUDIO_INFO_LOG("anco foreground: %{public}s", info.GetPackageName().c_str());
+                    AUDIO_INFO_LOG("anco foreground: %{private}s", info.GetPackageName().c_str());
                     return true;
             }
         }
