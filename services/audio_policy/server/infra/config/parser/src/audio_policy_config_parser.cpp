@@ -393,8 +393,7 @@ void AudioPolicyConfigParser::ParseHalLatency(AttributeInfo &attributeInfo,
 {
     uint32_t latency = 0;
     if (ParseUint32Attr(attributeInfo.value_, latency)) {
-        pipeInfo->halLatency_ = latency;
-        pipeInfo->hasXmlConfiguredLatency_ = true;
+        pipeInfo->halLatency_ = static_cast<int32_t>(latency);
         AUDIO_INFO_LOG("hal_latency parsed: %{public}u", latency);
     }
 }
@@ -846,7 +845,6 @@ void AudioPolicyConfigParser::GetCommontAudioModuleInfo(std::shared_ptr<AdapterP
     audioModuleInfo.allUsbDeviceDisable_ = pipeInfo->allUsbDeviceDisable_;
     audioModuleInfo.disableUsbDeviceSet_ = pipeInfo->disableUsbDeviceSet_;
     audioModuleInfo.halLatency = pipeInfo->halLatency_;
-    audioModuleInfo.hasXmlConfiguredLatency = pipeInfo->hasXmlConfiguredLatency_;
 }
 
 std::string AudioPolicyConfigParser::GetAudioModuleInfoName(std::string &pipeInfoName,

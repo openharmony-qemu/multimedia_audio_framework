@@ -1289,11 +1289,7 @@ bool HpaeRendererStreamImpl::IsSinkRunning(const std::string &deviceClass,
     if (sink == nullptr) {
         return false;
     }
-    auto pipeInfo = sink->GetOutputPipeInfo();
-    if (pipeInfo == nullptr) {
-        return false;
-    }
-    return pipeInfo->GetStatus() == PIPE_STATUS_RUNNING;
+    return sink->IsFrameRendering();
 }
 
 uint64_t HpaeRendererStreamImpl::GetOffloadLatency()

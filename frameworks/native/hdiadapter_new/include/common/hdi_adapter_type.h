@@ -49,9 +49,8 @@ typedef struct IAudioSinkAttr : public Parcelable {
     bool isUltraFast = false;
     std::string busName = "";
     uint32_t effectLatency = 0;
-    uint32_t halLatency = 0;
+    int32_t halLatency = -1;
     uint32_t warmupLatency = 0;
-    bool hasXmlConfiguredLatency = false;
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -77,9 +76,8 @@ typedef struct IAudioSinkAttr : public Parcelable {
             parcel.WriteBool(isUltraFast) &&
             parcel.WriteString(busName) &&
             parcel.WriteUint32(effectLatency) &&
-            parcel.WriteUint32(halLatency) &&
-            parcel.WriteUint32(warmupLatency) &&
-            parcel.WriteBool(hasXmlConfiguredLatency);
+            parcel.WriteInt32(halLatency) &&
+            parcel.WriteUint32(warmupLatency);
     }
 
     static IAudioSinkAttr *Unmarshalling(Parcel &parcel)
@@ -111,9 +109,8 @@ typedef struct IAudioSinkAttr : public Parcelable {
         attr->isUltraFast = parcel.ReadBool();
         attr->busName = parcel.ReadString();
         attr->effectLatency = parcel.ReadUint32();
-        attr->halLatency = parcel.ReadUint32();
+        attr->halLatency = parcel.ReadInt32();
         attr->warmupLatency = parcel.ReadUint32();
-        attr->hasXmlConfiguredLatency = parcel.ReadBool();
         return attr;
     }
 } IAudioSinkAttr;

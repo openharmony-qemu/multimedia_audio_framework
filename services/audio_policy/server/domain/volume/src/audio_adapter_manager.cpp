@@ -2433,7 +2433,6 @@ void AudioAdapterManager::FillSinkLatencyAttr(IAudioSinkAttr &attr,
     attr.effectLatency = audioModuleInfo.effectLatency;
     attr.halLatency = audioModuleInfo.halLatency;
     attr.warmupLatency = audioModuleInfo.warmupLatency;
-    attr.hasXmlConfiguredLatency = audioModuleInfo.hasXmlConfiguredLatency;
 }
 
 void AudioAdapterManager::FillUltraFastPeriod(IAudioSinkAttr &attr,

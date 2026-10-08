@@ -192,9 +192,8 @@ struct AudioModuleInfo {
     bool allUsbDeviceDisable_ = false;
     std::set<std::pair<int32_t, int32_t>> disableUsbDeviceSet_ {};
     uint32_t effectLatency = 0;
-    uint32_t halLatency = 0;
+    int32_t halLatency = -1;
     uint32_t warmupLatency = 0;
-    bool hasXmlConfiguredLatency = false;
 
     std::list<AudioModuleInfo> ports;
     std::string extra;

@@ -192,6 +192,7 @@ int32_t AudioRenderSink::Start(void)
     ChangePipeStatus(PIPE_STATUS_RUNNING);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     started_ = true;
+    firstFrameRendered_.store(false);
 #ifdef MULTI_BUS_ENABLE
     playingAppManager_.Start();
 #endif
@@ -241,6 +242,7 @@ int32_t AudioRenderSink::Stop(void)
     int32_t ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
     ChangePipeStatus(PIPE_STATUS_STANDBY);
+    firstFrameRendered_.store(false);
     if (Util::IsEnhancedRoutingSupported()) {
         std::vector<DeviceType> noneDevices = {DEVICE_TYPE_NONE};
         DoSetOutputRoute(noneDevices);
@@ -347,6 +349,7 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
     Trace traceRenderFrameAfter("AudioRenderSink::RenderFrameAfter");
     CheckJank();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
+    firstFrameRendered_.store(true);
     if (stamp >= RENDER_FRAME_LIMIT) {
         HILOG_COMM_WARN("[AudioRenderSink::RenderFrame]len: [%{public}" PRIu64 "], cost: [%{public}" PRId64 "]ms",
             len, stamp);

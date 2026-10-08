@@ -1841,10 +1841,13 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
     info.moduleInfo_.halLatency = pipeInfoPtr->halLatency_;
-    info.moduleInfo_.hasXmlConfiguredLatency = pipeInfoPtr->hasXmlConfiguredLatency_;
     PolicyGlobalConfigs globalConfigs;
     pipeManager_->GetGlobalConfigs(globalConfigs);
-    info.moduleInfo_.effectLatency = globalConfigs.primaryEffectLatency;
+    if (pipeInfoPtr->name_ == "direct_output" || pipeInfoPtr->name_ == "voip_direct_output") {
+        info.moduleInfo_.effectLatency = 0;
+    } else {
+        info.moduleInfo_.effectLatency = globalConfigs.primaryEffectLatency;
+    }
     info.moduleInfo_.warmupLatency = globalConfigs.primaryWarmupLatency;
 
     info.streamDescriptors_.push_back(streamDesc);

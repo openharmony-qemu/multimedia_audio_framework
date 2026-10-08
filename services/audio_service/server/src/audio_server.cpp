@@ -3646,9 +3646,9 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
         }
     }
 
-    if (attr.hasXmlConfiguredLatency) {
+    if (attr.halLatency >= 0) {
         RegisterSinkLatencyFetcher(renderId,
-            attr.effectLatency + attr.halLatency, attr.warmupLatency);
+            attr.effectLatency, attr.halLatency, attr.warmupLatency);
     } else {
         (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?
             RegisterSinkLatencyFetcher(renderId, PRIMARY_SINK_LATENCY_MS) :
@@ -3697,9 +3697,9 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
     if (!sink->IsInited()) {
         sink->Init(attr);
     }
-    if (attr.hasXmlConfiguredLatency) {
+    if (attr.halLatency >= 0) {
         RegisterSinkLatencyFetcher(renderId,
-            attr.effectLatency + attr.halLatency, attr.warmupLatency);
+            attr.effectLatency, attr.halLatency, attr.warmupLatency);
     } else {
         RegisterSinkLatencyFetcher(renderId);
     }
@@ -3814,6 +3814,13 @@ void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLat
         return SUCCESS;
     }, warmupLatency);
     return;
+}
+
+void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t effectLatency,
+    int32_t halLatency, uint32_t warmupLatency)
+{
+    uint32_t baseLatency = effectLatency + static_cast<uint32_t>(halLatency);
+    RegisterSinkLatencyFetcher(renderId, baseLatency, warmupLatency);
 }
 
 void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId)
