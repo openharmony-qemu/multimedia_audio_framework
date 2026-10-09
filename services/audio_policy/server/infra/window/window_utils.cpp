@@ -26,6 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 const uint64_t VIRTUAL_DISPLAY_ID = 1000;
+const int32_t MAIN_WINDOW_INFOS_MAX_COUNT = 15;
 
 static int32_t CheckVirtualDisplay(const int32_t pid, bool &isVirtualDisplay)
 {
@@ -72,8 +73,8 @@ bool WindowUtils::CheckAncoWindowState(const std::string &bundleName)
         return false;
     }
     std::vector<OHOS::Rosen::MainWindowInfo> mainWindowInfo;
-    if (sceneSessionManager->GetAllMainWindowInfos(mainWindowInfo) != Rosen::WMError::WM_OK) {
-        AUDIO_ERR_LOG("GetAllMainWindowInfos failed");
+    if (sceneSessionManager->GetMainWindowInfos(MAIN_WINDOW_INFOS_MAX_COUNT, mainWindowInfo) != Rosen::WMError::WM_OK) {
+        AUDIO_ERR_LOG("GetMainWindowInfos failed");
         return false;
     }
     for (auto &windowInfo : mainWindowInfo) {
