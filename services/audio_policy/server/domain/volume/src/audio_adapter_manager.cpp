@@ -1576,13 +1576,31 @@ bool AudioAdapterManager::IsDirectRoute(uint32_t routeFlag) const
     return (routeFlag & AUDIO_OUTPUT_FLAG_DIRECT);
 }
 
-// The 3da direct bus port is identified by the "3da" keyword in module name / bus
-// address so any bus number matches: boot opens the port with the xml module name
-// (bus10_3da_out), while play-time new pipes carry busAddress.
+// Match an exact "3da" token inside the '_'-separated port name / bus address.
+// Token matching (instead of a bare substring search) keeps the any-bus-number
+// wildcard (bus10/bus11/...) while structurally excluding remote module names
+// ("<64-char hex networkId>_out"), whose hex alphabet also covers "3da" and would
+// otherwise converge the remote sink onto the cabin 3DA sink.
+bool AudioAdapterManager::Match3daBusToken(const std::string &portName)
+{
+    size_t pos = 0;
+    size_t end = portName.find('_', pos);
+    while (end != std::string::npos) {
+        if (portName.compare(pos, end - pos, HDI_BUS_KEYWORD_3DA) == 0) {
+            return true;
+        }
+        pos = end + 1;
+        end = portName.find('_', pos);
+    }
+    return portName.compare(pos, std::string::npos, HDI_BUS_KEYWORD_3DA) == 0;
+}
+
+// The 3da direct bus port is identified by an exact "3da" token in the '_'-separated
+// module name / bus address so any bus number matches: boot opens the port with the
+// xml module name (bus10_3da_out), while play-time new pipes carry busAddress.
 bool AudioAdapterManager::Is3daDirectBusPort(const AudioModuleInfo &audioModuleInfo)
 {
-    return audioModuleInfo.name.find(HDI_BUS_KEYWORD_3DA) != std::string::npos ||
-        audioModuleInfo.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos;
+    return Match3daBusToken(audioModuleInfo.name) || Match3daBusToken(audioModuleInfo.busAddress);
 }
 
 // Converge the port onto the shared cabin sink: deviceClass takes the bus address
@@ -1633,10 +1651,11 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
             // 3DA direct pipe: converge to the cabin sink (renderId from GetId(RENDER,
             // AUDIO_VIVID_3DA_DIRECT, "3DA")). Without this, a primary-profile sink is
             // created and HAL rejects the vivid channel mask ("CheckRenderCaptureParams
-            // failed"). busAddress is matched by the 3da keyword (any bus number) because
-            // the play-time new pipe may not carry the 3DA route flag yet at port-open time.
+            // failed"). busAddress is matched by the exact 3da token (any bus number)
+            // because the play-time new pipe may not carry the 3DA route flag yet at
+            // port-open time.
             if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_3DA_DIRECT) ||
-                pipeInfo->moduleInfo_.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
+                Match3daBusToken(pipeInfo->moduleInfo_.busAddress)) {
                 ConvergeTo3daSink(pipeInfo->moduleInfo_, deviceClass, idInfo);
             }
             result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, ioHandle);
@@ -1674,7 +1693,7 @@ AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo
     // masks. Register the port with the cabin renderId as paIndex.
     if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_3DA_DIRECT) ||
         (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT &&
-        pipeInfo->moduleInfo_.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos)) {
+        Match3daBusToken(pipeInfo->moduleInfo_.busAddress))) {
         paIndex = static_cast<uint32_t>(ioHandle);
         AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port (3da direct, skip hpae), paIndex: %{public}u end",
             ioHandle, paIndex);
