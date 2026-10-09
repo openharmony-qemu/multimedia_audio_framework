@@ -234,7 +234,8 @@ public:
 
     std::string GetVersion();
     std::shared_ptr<AdapterDeviceInfo> GetAdapterDeviceInfo(DeviceType type_, DeviceRole role_,
-        const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag = 0, std::string macAddress = "");
+        const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag = 0,
+        std::string macAddress = "", bool isUnidirectional = false);
 
     void UpdateDynamicStreamProps(const std::string adapterName, const std::string &pipeName,
         const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps, const std::string &networkId);

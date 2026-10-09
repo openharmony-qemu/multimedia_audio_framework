@@ -22,6 +22,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static const std::string VA_DEVICE_INFO_NAME_SPP = "Virtual Audio Spp";
+static const std::string VA_DEVICE_INFO_NAME_UNIDIRECTIONAL_SPP = "Virtual Audio Unidirectional Spp";
+
 AudioPolicyConfigData& AudioPolicyConfigData::GetInstance()
 {
     static AudioPolicyConfigData instance;
@@ -126,7 +129,8 @@ std::string AudioPolicyConfigData::GetVersion()
 }
 
 std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(DeviceType type_, DeviceRole role_,
-    const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag, std::string macAddress)
+    const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag, std::string macAddress,
+    bool isUnidirectional)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
     // use primary to select device when in remote cast;
@@ -160,13 +164,15 @@ std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(D
 
     for (auto &deviceInfo : deviceSetIt->second) {
         std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = deviceInfo->adapterInfo_.lock();
-        if (adapterInfoPtr == nullptr) {
-            AUDIO_ERR_LOG("AdapterInfo is nullptr!");
-            continue;
-        }
-        bool condition = (adapterInfoPtr->adapterName == targetAdapterName);
+        CHECK_AND_CONTINUE_LOG(adapterInfoPtr != nullptr, "AdapterInfo is nullptr!");
+        const std::string &expectedVaName = isUnidirectional ?
+            VA_DEVICE_INFO_NAME_UNIDIRECTIONAL_SPP : VA_DEVICE_INFO_NAME_SPP;
+        bool condition = (type_ == DEVICE_TYPE_BT_SPP)
+            ? (deviceInfo->name_ == expectedVaName)
+            : (adapterInfoPtr->adapterName == targetAdapterName);
 #ifdef MULTI_BUS_ENABLE
-        condition = condition && (deviceInfo->address_ == macAddress);
+        condition = (type_ == DEVICE_TYPE_BT_SPP) ? condition
+            : (condition && deviceInfo->address_ == macAddress);
 #endif
         if (condition) {
             return deviceInfo;

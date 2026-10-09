@@ -1251,6 +1251,24 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetHdiSourceIdInfo_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: Test GetHdiSourceIdInfo
+ * @tc.number: GetHdiSourceIdInfo_VA_001
+ * @tc.type: FUNC
+ * @tc.desc: va class should use module name or default HDI_ID_INFO_VA
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetHdiSourceIdInfo_VA_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.className = "va";
+    audioModuleInfo.name = VA_INPUT_SPP;
+    EXPECT_EQ(audioAdapterManager->GetHdiSourceIdInfo(audioModuleInfo), VA_INPUT_SPP);
+
+    audioModuleInfo.name = "";
+    EXPECT_EQ(audioAdapterManager->GetHdiSourceIdInfo(audioModuleInfo), HDI_ID_INFO_VA);
+}
+
+/**
  * @tc.name: Test UpdateAudioPipeVolume_001
  * @tc.desc: Test UpdateAudioPipeVolume with empty vector
  * @tc.type: FUNC

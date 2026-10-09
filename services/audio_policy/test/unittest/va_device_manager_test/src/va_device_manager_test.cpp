@@ -188,5 +188,93 @@ HWTEST_F(VADeviceManagerTest, VADeviceManagerTest_006, TestSize.Level1)
     auto ret = vADeviceManager->CalculateBufferSize(vaStreamProperty);
     EXPECT_EQ(ret, 0);
 }
+
+/**
+ * @tc.name  : Test VADeviceManager.
+ * @tc.number: GetVAPipeAndDeviceName_001
+ * @tc.desc  : Test GetVAPipeAndDeviceName for spp / unidirectional / nearlink
+ */
+HWTEST_F(VADeviceManagerTest, GetVAPipeAndDeviceName_001, TestSize.Level1)
+{
+    auto vaDeviceManager = std::make_shared<VADeviceManager>();
+    ASSERT_NE(vaDeviceManager, nullptr);
+
+    VADeviceConfiguration config;
+    std::string pipeName;
+    std::string deviceName;
+    DeviceType deviceType = DEVICE_TYPE_NONE;
+
+    config.isUnidirectional_ = false;
+    config.type_ = VA_DEVICE_TYPE_BT_SPP;
+    vaDeviceManager->GetVAPipeAndDeviceName(config, pipeName, deviceName, deviceType);
+    EXPECT_EQ(pipeName, VA_INPUT_SPP);
+    EXPECT_EQ(deviceType, DEVICE_TYPE_BT_SPP);
+
+    config.isUnidirectional_ = true;
+    vaDeviceManager->GetVAPipeAndDeviceName(config, pipeName, deviceName, deviceType);
+    EXPECT_EQ(pipeName, VA_INPUT_UNIDIRECTIONAL_SPP);
+    EXPECT_EQ(deviceType, DEVICE_TYPE_BT_SPP);
+
+    config.isUnidirectional_ = false;
+    config.type_ = VA_DEVICE_TYPE_NEARLINK_PORT;
+    vaDeviceManager->GetVAPipeAndDeviceName(config, pipeName, deviceName, deviceType);
+    EXPECT_EQ(pipeName, VA_INPUT_NEARLINK);
+    EXPECT_EQ(deviceType, DEVICE_TYPE_NEARLINK_PORT);
+}
+
+/**
+ * @tc.name  : Test VADeviceManager.
+ * @tc.number: ConvertVADeviceToDescriptor_Nearlink_001
+ * @tc.desc  : Test ConvertVADeviceToDescriptor for NEARLINK_PORT
+ */
+HWTEST_F(VADeviceManagerTest, ConvertVADeviceToDescriptor_Nearlink_001, TestSize.Level1)
+{
+    auto vaDeviceManager = std::make_shared<VADeviceManager>();
+    ASSERT_NE(vaDeviceManager, nullptr);
+
+    auto vaDevice = std::make_shared<VADevice>();
+    vaDevice->configuration_.name_ = "NearlinkVa";
+    vaDevice->configuration_.type_ = VA_DEVICE_TYPE_NEARLINK_PORT;
+    vaDevice->configuration_.role_ = VA_DEVICE_ROLE_IN;
+    vaDevice->configuration_.address_ = "11:22:33:44:55:66";
+
+    auto desc = vaDeviceManager->ConvertVADeviceToDescriptor(vaDevice);
+    ASSERT_NE(desc, nullptr);
+    EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_NEARLINK_PORT);
+    EXPECT_EQ(desc->deviceRole_, INPUT_DEVICE);
+}
+
+/**
+ * @tc.name  : Test VADeviceManager.
+ * @tc.number: AddVADeviceToAdapter_001
+ * @tc.desc  : Test AddVADeviceToAdapter creates distinct pipes and skips duplicates
+ */
+HWTEST_F(VADeviceManagerTest, AddVADeviceToAdapter_001, TestSize.Level1)
+{
+    auto vaDeviceManager = std::make_shared<VADeviceManager>();
+    ASSERT_NE(vaDeviceManager, nullptr);
+    auto &config = AudioPolicyConfigData::GetInstance();
+    config.UnregisterAdapter(AudioAdapterType::TYPE_VA);
+
+    auto sppDevice = std::make_shared<VADevice>();
+    sppDevice->configuration_.type_ = VA_DEVICE_TYPE_BT_SPP;
+    sppDevice->configuration_.isUnidirectional_ = false;
+    sppDevice->configuration_.address_ = "aa:bb:cc:dd:ee:01";
+    vaDeviceManager->AddVADeviceToAdapter(sppDevice);
+
+    auto uniDevice = std::make_shared<VADevice>();
+    uniDevice->configuration_.type_ = VA_DEVICE_TYPE_BT_SPP;
+    uniDevice->configuration_.isUnidirectional_ = true;
+    uniDevice->configuration_.address_ = "aa:bb:cc:dd:ee:02";
+    vaDeviceManager->AddVADeviceToAdapter(uniDevice);
+
+    auto adapter = config.GetAdapterInfo(AudioAdapterType::TYPE_VA);
+    ASSERT_NE(adapter, nullptr);
+    EXPECT_EQ(adapter->pipeInfos.size(), 2u);
+
+    vaDeviceManager->AddVADeviceToAdapter(sppDevice);
+    EXPECT_EQ(adapter->pipeInfos.size(), 2u);
+    config.UnregisterAdapter(AudioAdapterType::TYPE_VA);
+}
 } // namespace AudioStandard
 } // namespace OHOS

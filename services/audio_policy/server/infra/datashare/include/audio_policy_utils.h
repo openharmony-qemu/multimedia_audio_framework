@@ -71,7 +71,8 @@ public:
     uint32_t PcmFormatToBytes(AudioSampleFormat format);
     bool IsVoiceStreamType(StreamUsage streamUsage);
     bool IsVoiceSourceType(SourceType sourceType);
-    std::string GetSourcePortName(DeviceType deviceType, uint32_t routeFlag = AUDIO_FLAG_NONE);
+    std::string GetSourcePortName(DeviceType deviceType, uint32_t routeFlag = AUDIO_FLAG_NONE,
+        bool isUnidirectional = false);
     void UpdateDisplayName(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     void UpdateDisplayNameForRemote(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
