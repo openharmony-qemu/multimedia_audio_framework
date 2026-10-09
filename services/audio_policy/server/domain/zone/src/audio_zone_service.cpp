@@ -559,10 +559,6 @@ int32_t AudioZoneService::FindAudioZoneByKey(int32_t uid, const std::string &dev
     }
 #ifdef MULTI_USER_ZONE
     CHECK_AND_RETURN_RET(uid >= 0, 0);
-    {
-        std::lock_guard<std::mutex> lock(excludedMutex_);
-        CHECK_AND_RETURN_RET_LOG(excludedUids_.count(uid) <= 0, 0, "exclude uid %{public}d", uid);
-    }
     int32_t userId = -1;
     ErrCode errCode = AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId);
     CHECK_AND_RETURN_RET_LOG(errCode == ERR_OK, 0, "get userId failed for uid %{public}d", uid);
@@ -933,45 +929,6 @@ int32_t AudioZoneService::ResumeAudioFocusForExtAudioZone(const std::vector<int3
 {
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
     return interruptService_->ResumeAudioFocusForExtAudioZone(zoneIds);
-}
-
-int32_t AudioZoneService::ExcludeUidForExtZone(int32_t uid)
-{
-    int32_t srcZoneId = ZONEID_DEFAULT;
-    std::shared_ptr<AudioInterruptService> tmp = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(zoneMutex_);
-        srcZoneId = FindAudioZoneByKey(uid, "", INVALID_STREAM_ID, StreamUsage::STREAM_USAGE_INVALID,
-            DEVICE_ROLE_NONE);
-        std::lock_guard<std::mutex> exLock(excludedMutex_);
-        excludedUids_.insert(uid);
-        tmp = interruptService_;
-    }
-    CHECK_AND_RETURN_RET_LOG(tmp != nullptr, ERROR, "interruptService_ is nullptr");
-    tmp->MigrateAudioInterruptZone(srcZoneId,
-        [this](int32_t uid, const std::string &deviceTag, uint32_t streamId,
-            const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
-            return this->FindAudioZoneByKey(uid, deviceTag, streamId, usage, deviceRole);
-    });
-    return SUCCESS;
-}
-
-int32_t AudioZoneService::UnexcludeUidForExtZone(int32_t uid)
-{
-    std::shared_ptr<AudioInterruptService> tmp = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(zoneMutex_);
-        std::lock_guard<std::mutex> exLock(excludedMutex_);
-        excludedUids_.erase(uid);
-        tmp = interruptService_;
-    }
-    CHECK_AND_RETURN_RET_LOG(tmp != nullptr, ERROR, "interruptService_ is nullptr");
-    tmp->MigrateAudioInterruptZone(ZONEID_DEFAULT,
-        [this](int32_t uid, const std::string &deviceTag, uint32_t streamId,
-            const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
-            return this->FindAudioZoneByKey(uid, deviceTag, streamId, usage, deviceRole);
-    });
-    return SUCCESS;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZoneService::FetchOutputDevices(int32_t zoneId,

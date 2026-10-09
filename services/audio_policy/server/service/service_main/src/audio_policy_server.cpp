@@ -5051,14 +5051,22 @@ int32_t AudioPolicyServer::EnableAudioZoneChangeReport(int32_t zoneId, bool enab
 
 int32_t AudioPolicyServer::AddUidToAudioZone(int32_t zoneId, int32_t uid)
 {
+#ifdef MULTI_USER_ZONE
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+#else
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+#endif
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, uid);
 }
 
 int32_t AudioPolicyServer::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
 {
+#ifdef MULTI_USER_ZONE
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+#else
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+#endif
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     int32_t ret = AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId, uid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RemoveUidFromAudioZone failed");
@@ -5157,20 +5165,6 @@ int32_t AudioPolicyServer::ResumeAudioFocusForExtAudioZone(const std::vector<int
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "No system permission");
     return AudioZoneService::GetInstance().ResumeAudioFocusForExtAudioZone(zoneIds);
-}
-
-int32_t AudioPolicyServer::ExcludeUidForExtZone(int32_t uid)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "No system permission");
-    return AudioZoneService::GetInstance().ExcludeUidForExtZone(uid);
-}
-
-int32_t AudioPolicyServer::UnexcludeUidForExtZone(int32_t uid)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "No system permission");
-    return AudioZoneService::GetInstance().UnexcludeUidForExtZone(uid);
 }
 
 int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)

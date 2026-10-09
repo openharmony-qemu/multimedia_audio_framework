@@ -617,10 +617,6 @@ public:
 
     int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
-    int32_t ExcludeUidForExtZone(int32_t uid) override;
-
-    int32_t UnexcludeUidForExtZone(int32_t uid) override;
-
     int32_t SetZoneDeviceVisible(bool visible) override;
 
     int32_t GetAudioInterruptForZone(int32_t zoneId,

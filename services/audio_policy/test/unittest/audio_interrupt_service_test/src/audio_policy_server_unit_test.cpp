@@ -4693,7 +4693,11 @@ HWTEST(AudioPolicyUnitTest, AddUidToAudioZone_001, TestSize.Level1)
 
     // Test zoneId = 0
     int32_t ret = server->AddUidToAudioZone(0, uid);
+#ifdef MULTI_USER_ZONE
+    EXPECT_EQ(ret, SUCCESS);
+#else
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
+#endif
 
     // Test zoneId < 0
     ret = server->AddUidToAudioZone(-1, uid);
@@ -4755,7 +4759,11 @@ HWTEST(AudioPolicyUnitTest, RemoveUidFromAudioZone_001, TestSize.Level1)
 
     // Test zoneId = 0
     int32_t ret = server->RemoveUidFromAudioZone(0, uid);
+#ifdef MULTI_USER_ZONE
+    EXPECT_EQ(ret, ERROR);
+#else
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
+#endif
 
     // Test zoneId < 0
     ret = server->RemoveUidFromAudioZone(-1, uid);
