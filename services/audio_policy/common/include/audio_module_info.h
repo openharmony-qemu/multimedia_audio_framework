@@ -191,9 +191,9 @@ struct AudioModuleInfo {
     uint32_t suspendIdleTimeout = DEFAULT_SUSPEND_TIME_IN_MS;
     bool allUsbDeviceDisable_ = false;
     std::set<std::pair<int32_t, int32_t>> disableUsbDeviceSet_ {};
-    uint32_t effectLatency = 0;
-    int32_t halLatency = -1;
-    uint32_t warmupLatency = 0;
+    int32_t effectLatency = LATENCY_UNCONFIG;
+    int32_t halLatency = LATENCY_UNCONFIG;
+    int32_t warmupLatency = LATENCY_UNCONFIG;
 
     std::list<AudioModuleInfo> ports;
     std::string extra;

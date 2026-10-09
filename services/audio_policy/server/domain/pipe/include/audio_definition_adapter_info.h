@@ -157,7 +157,7 @@ public:
     bool principal_ = false;
     bool allUsbDeviceDisable_ = false;
     std::set<std::pair<int32_t, int32_t>> disableUsbDeviceSet_ {};
-    int32_t halLatency_ = -1;
+    int32_t halLatency_ = LATENCY_UNCONFIG;
 
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos_ {};
@@ -222,8 +222,8 @@ struct PolicyGlobalConfigs {
     std::list<PolicyConfigInfo> commonConfigs_ {};
     bool updateRouteSupport_ = false;
     PolicyGlobalPaConfigs globalPaConfigs_;
-    uint32_t primaryEffectLatency = 0;
-    uint32_t primaryWarmupLatency = 0;
+    int32_t primaryEffectLatency = LATENCY_UNCONFIG;
+    int32_t primaryWarmupLatency = LATENCY_UNCONFIG;
 };
 
 class AudioPolicyConfigData {

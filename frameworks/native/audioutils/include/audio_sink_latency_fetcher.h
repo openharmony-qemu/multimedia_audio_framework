@@ -33,7 +33,9 @@ public:
 
     static SinkLatencyFetcherManager &GetInstance();
 
-    void RegisterProvider(uint32_t renderId, const FetchLatencyFunc &provider, uint32_t warmupLatency = 0);
+    void RegisterProvider(uint32_t renderId, const FetchLatencyFunc &provider,
+        int32_t halLatency = LATENCY_UNCONFIG, int32_t effectLatency = LATENCY_UNCONFIG,
+        int32_t warmupLatency = LATENCY_UNCONFIG);
 
     // Called when route switches; stream retrieves or reuses the latency fetcher for given renderId through this
     // interface.
@@ -45,7 +47,9 @@ public:
     bool TryGetCachedLatency(uint32_t renderId, uint32_t &latency) const;
 
     // Returns the warmup latency registered for the given renderId (0 if not set).
-    uint32_t GetWarmupLatency(uint32_t renderId) const;
+    int32_t GetWarmupLatency(uint32_t renderId) const;
+    int32_t GetHalLatency(uint32_t renderId) const;
+    int32_t GetEffectLatency(uint32_t renderId) const;
 
 private:
     struct LatencyCache {
@@ -69,7 +73,9 @@ private:
     struct FetcherEntry {
         std::function<int32_t (uint32_t &)> fetcher;
         std::shared_ptr<LatencyCache> cache;
-        uint32_t warmupLatency {0};
+        int32_t halLatency {LATENCY_UNCONFIG};
+        int32_t effectLatency {LATENCY_UNCONFIG};
+        int32_t warmupLatency {LATENCY_UNCONFIG};
     };
 
     SinkLatencyFetcherManager() = default;

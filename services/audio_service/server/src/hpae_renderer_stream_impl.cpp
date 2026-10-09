@@ -366,11 +366,15 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(uint32_t &sinkLatency)
         int32_t ret = GetSinkLatencyInner(idParam, sinkLatency);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSinkLatencyInner HDI failed");
     }
-    uint32_t warmup = GetSinkWarmupLatency(deviceClass, deviceNetId);
-    if (warmup > 0 && !IsSinkRunning(deviceClass, deviceNetId)) {
-        sinkLatency += warmup;
-        AUDIO_INFO_LOG("Cold start: add warmup %{public}u ms, base %{public}u ms, total %{public}u ms",
-            warmup, sinkLatency - warmup, sinkLatency);
+    int32_t effect = GetSinkEffectLatency(deviceClass, deviceNetId);
+    if (effect != LATENCY_UNCONFIG && !IsDirectPipe(deviceClass)) {
+        sinkLatency += static_cast<uint32_t>(effect);
+    }
+    int32_t warmup = GetSinkWarmupLatency(deviceClass, deviceNetId);
+    if (warmup != LATENCY_UNCONFIG && !IsSinkRunning(deviceClass, deviceNetId)) {
+        sinkLatency += static_cast<uint32_t>(warmup);
+        AUDIO_INFO_LOG("Cold start: add warmup %{public}d ms, total %{public}u ms",
+            warmup, sinkLatency);
     }
     return SUCCESS;
 }
@@ -555,11 +559,15 @@ int32_t HpaeRendererStreamImpl::GetLatencyWithFlag(uint64_t &latency, LatencyFla
         uint32_t sinkLatency = 0;
         int32_t ret = FetchSinkLatency(sinkLatency);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchSinkLatency failed");
-        uint32_t warmup = GetSinkWarmupLatency(deviceClass, deviceNetId);
-        if (warmup > 0 && !IsSinkRunning(deviceClass, deviceNetId)) {
-            sinkLatency += warmup;
-            AUDIO_INFO_LOG("Cold start: add warmup %{public}u ms, base %{public}u ms, total %{public}u ms",
-                warmup, sinkLatency - warmup, sinkLatency);
+        int32_t effect = GetSinkEffectLatency(deviceClass, deviceNetId);
+        if (effect != LATENCY_UNCONFIG && !IsDirectPipe(deviceClass)) {
+            sinkLatency += static_cast<uint32_t>(effect);
+        }
+        int32_t warmup = GetSinkWarmupLatency(deviceClass, deviceNetId);
+        if (warmup != LATENCY_UNCONFIG && !IsSinkRunning(deviceClass, deviceNetId)) {
+            sinkLatency += static_cast<uint32_t>(warmup);
+            AUDIO_INFO_LOG("Cold start: add warmup %{public}d ms, total %{public}u ms",
+                warmup, sinkLatency);
         }
         uint32_t nearlinkLatency = GetNearlinkLatency();
         retLatency = static_cast<uint64_t>(sinkLatency) * AUDIO_US_PER_MS;
@@ -1266,15 +1274,26 @@ bool HpaeRendererStreamImpl::TryGetCachedSinkLatency(const std::string &deviceCl
     return SinkLatencyFetcherManager::GetInstance().TryGetCachedLatency(renderId, sinkLatency);
 }
 
-uint32_t HpaeRendererStreamImpl::GetSinkWarmupLatency(const std::string &deviceClass,
+int32_t HpaeRendererStreamImpl::GetSinkWarmupLatency(const std::string &deviceClass,
     const std::string &deviceNetId)
 {
     uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
         deviceClass, deviceNetId, false);
     if (renderId == HDI_INVALID_ID) {
-        return 0;
+        return LATENCY_UNCONFIG;
     }
     return SinkLatencyFetcherManager::GetInstance().GetWarmupLatency(renderId);
+}
+
+int32_t HpaeRendererStreamImpl::GetSinkEffectLatency(const std::string &deviceClass,
+    const std::string &deviceNetId)
+{
+    uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
+        deviceClass, deviceNetId, false);
+    if (renderId == HDI_INVALID_ID) {
+        return LATENCY_UNCONFIG;
+    }
+    return SinkLatencyFetcherManager::GetInstance().GetEffectLatency(renderId);
 }
 
 bool HpaeRendererStreamImpl::IsSinkRunning(const std::string &deviceClass,
@@ -1290,6 +1309,11 @@ bool HpaeRendererStreamImpl::IsSinkRunning(const std::string &deviceClass,
         return false;
     }
     return sink->IsFrameRendering();
+}
+
+bool HpaeRendererStreamImpl::IsDirectPipe(const std::string &deviceClass)
+{
+    return deviceClass.find("direct") != std::string::npos;
 }
 
 uint64_t HpaeRendererStreamImpl::GetOffloadLatency()

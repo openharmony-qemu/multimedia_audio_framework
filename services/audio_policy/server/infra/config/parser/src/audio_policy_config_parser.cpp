@@ -663,7 +663,7 @@ void AudioPolicyConfigParser::HandleEffectLatencyParsed(const std::string &value
 {
     uint32_t latency = 0;
     if (ParseUint32Attr(value, latency)) {
-        globalConfigs_.primaryEffectLatency = latency;
+        globalConfigs_.primaryEffectLatency = static_cast<int32_t>(latency);
         AUDIO_INFO_LOG("primary_effect_latency parsed: %{public}u", latency);
     }
 }
@@ -672,7 +672,7 @@ void AudioPolicyConfigParser::HandleWarmupLatencyParsed(const std::string &value
 {
     uint32_t latency = 0;
     if (ParseUint32Attr(value, latency)) {
-        globalConfigs_.primaryWarmupLatency = latency;
+        globalConfigs_.primaryWarmupLatency = static_cast<int32_t>(latency);
         AUDIO_INFO_LOG("primary_warmup_latency parsed: %{public}u", latency);
     }
 }

@@ -128,8 +128,10 @@ private:
     int32_t FetchSinkLatency(uint32_t &sinkLatency);
     bool TryGetCachedSinkLatency(const std::string &deviceClass, const std::string &deviceNetId,
         uint32_t &sinkLatency);
-    uint32_t GetSinkWarmupLatency(const std::string &deviceClass, const std::string &deviceNetId);
+    int32_t GetSinkEffectLatency(const std::string &deviceClass, const std::string &deviceNetId);
+    int32_t GetSinkWarmupLatency(const std::string &deviceClass, const std::string &deviceNetId);
     bool IsSinkRunning(const std::string &deviceClass, const std::string &deviceNetId);
+    bool IsDirectPipe(const std::string &deviceClass);
     void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
     uint64_t GetOffloadLatency();
