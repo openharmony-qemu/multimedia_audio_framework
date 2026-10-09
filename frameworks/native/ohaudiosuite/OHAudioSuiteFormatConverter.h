@@ -16,17 +16,8 @@
 #ifndef OH_AUDIO_SUITE_FORMAT_CONVERTER_H
 #define OH_AUDIO_SUITE_FORMAT_CONVERTER_H
 
-#include <cstdint>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
-#include <numeric>
-#include "native_audio_suite_engine.h"
-#include "OHAudioSuiteNodeBuilder.h"
-#include "audio_suite_format_conversion.h"
-#include "audio_suite_pcm_buffer.h"
+#include <memory>
 #include "native_audio_converter.h"
-#include "audio_format_converter_impl.h"
 #include "audio_format_converter.h"
 
 namespace OHOS {
@@ -34,32 +25,15 @@ namespace AudioStandard {
 
 class OHAudioConverter {
 public:
-    OHAudioConverter() = default;
-    ~OHAudioConverter();
+    explicit OHAudioConverter(std::shared_ptr<AudioSuite::AudioFormatConverter> impl)
+        : impl_(std::move(impl)) {};
+    ~OHAudioConverter() = default;
 
-    OH_AudioConverter_Result Create(const OH_AudioConverter_Format* inputFormat,
-                                        const OH_AudioConverter_Format* outputFormat);
-    void Destroy();
-
-    OH_AudioConverter_Result SetRequestDataCallback(
-        OH_AudioConverter_RequestDataCallback callback, void* userData);
-
-    OH_AudioConverter_Result Process(
-        void* audioData, uint32_t outputCapacity,
-        uint32_t* outputSize);
+    std::shared_ptr<AudioSuite::AudioFormatConverter> GetAudioFormatConverter() const;
 
 private:
-    OH_AudioConverter_Result ConvertToPcmFormat(
-        const OH_AudioConverter_Format *inputFormat, const OH_AudioConverter_Format *outputFormat);
-
     // InnerAPI 实例
     std::shared_ptr<AudioSuite::AudioFormatConverter> impl_;
-
-    AudioSuite::PcmBufferFormat inputFormat_;
-    AudioSuite::PcmBufferFormat outputFormat_;
-
-    std::mutex mutex_;
-    bool isInitialized_ = false;
 };
 
 } // namespace AudioStandard
