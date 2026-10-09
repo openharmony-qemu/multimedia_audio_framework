@@ -358,7 +358,8 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(uint32_t &sinkLatency)
         }
     }
     uint32_t cachedLatency = 0;
-    if (TryGetCachedSinkLatency(deviceClass, deviceNetId, cachedLatency)) {
+    bool cacheHit = TryGetCachedSinkLatency(deviceClass, deviceNetId, cachedLatency);
+    if (cacheHit) {
         sinkLatency = cachedLatency;
     } else {
         HdiIdInfoParam idParam = {.deviceClass = deviceClass, .name = deviceName, .networkId = deviceNetId,
@@ -366,15 +367,17 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(uint32_t &sinkLatency)
         int32_t ret = GetSinkLatencyInner(idParam, sinkLatency);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSinkLatencyInner HDI failed");
     }
-    int32_t effect = GetSinkEffectLatency(deviceClass, deviceNetId);
-    if (effect != LATENCY_UNCONFIG && !IsDirectPipe(deviceClass)) {
-        sinkLatency += static_cast<uint32_t>(effect);
-    }
-    int32_t warmup = GetSinkWarmupLatency(deviceClass, deviceNetId);
-    if (warmup != LATENCY_UNCONFIG && !IsSinkRunning(deviceClass, deviceNetId)) {
-        sinkLatency += static_cast<uint32_t>(warmup);
-        AUDIO_INFO_LOG("Cold start: add warmup %{public}d ms, total %{public}u ms",
-            warmup, sinkLatency);
+    if (cacheHit) {
+        int32_t effect = GetSinkEffectLatency(deviceClass, deviceNetId);
+        if (effect != LATENCY_UNCONFIG && !IsDirectPipe(deviceClass)) {
+            sinkLatency += static_cast<uint32_t>(effect);
+        }
+        int32_t warmup = GetSinkWarmupLatency(deviceClass, deviceNetId);
+        if (warmup != LATENCY_UNCONFIG && !IsSinkRunning(deviceClass, deviceNetId)) {
+            sinkLatency += static_cast<uint32_t>(warmup);
+            AUDIO_INFO_LOG("Cold start: add warmup %{public}d ms, total %{public}u ms",
+                warmup, sinkLatency);
+        }
     }
     return SUCCESS;
 }
