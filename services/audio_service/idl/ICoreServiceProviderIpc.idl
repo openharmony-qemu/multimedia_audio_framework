@@ -75,5 +75,4 @@ interface ICoreServiceProviderIpc {
     [oneway] void NotifyDeviceStateChange([in] String networkId, [in] int role, [in] boolean isAvailable);
     // Notify silent state change
     void NotifySilentStateChange([in] unsigned int sessionId, [in] boolean isSilent);
-    void QueryPipeIdBySessionId([in] unsigned int sessionID, [out] unsigned int pipeId);
 }

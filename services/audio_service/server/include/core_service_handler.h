@@ -45,7 +45,6 @@ public:
         bool skipForce = false);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     std::string GetModuleNameBySessionId(uint32_t sessionId);
-    uint32_t QueryPipeIdBySessionId(uint32_t sessionId);
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
         AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess);
     uint32_t GenerateSessionId();

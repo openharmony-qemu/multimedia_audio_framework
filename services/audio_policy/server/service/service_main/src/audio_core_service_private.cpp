@@ -1311,13 +1311,6 @@ std::string AudioCoreService::GetModuleNameBySessionId(uint32_t sessionId)
     return pipeManager_->GetModuleNameBySessionId(sessionId);
 }
 
-uint32_t AudioCoreService::QueryPipeIdBySessionId(uint32_t sessionId)
-{
-    AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
-    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is null");
-    return pipeManager_->QueryPipeIdBySessionId(sessionId);
-}
-
 std::string AudioCoreService::Get3daDirectBusAddress()
 {
     return pipeManager_->Get3daDirectBusAddress();

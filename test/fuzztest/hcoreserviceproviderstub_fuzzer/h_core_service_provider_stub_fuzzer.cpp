@@ -67,16 +67,6 @@ void GetAdapterNameBySessionId(FuzzedDataProvider &provider)
     coreServiceProviderWrapper.GetAdapterNameBySessionId(sessionId, name);
 }
 
-void QueryPipeIdBySessionId(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = CreateEventEntry(audioCoreService);
-    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
-    uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
-    uint32_t pipeId = 0;
-    coreServiceProviderWrapper.QueryPipeIdBySessionId(sessionId, pipeId);
-}
-
 void GetProcessDeviceInfoBySessionId(FuzzedDataProvider &provider)
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
@@ -204,7 +194,6 @@ void FuzzTest(FuzzedDataProvider &provider)
         UpdateSessionOperation,
         ReloadCaptureSession,
         GetAdapterNameBySessionId,
-        QueryPipeIdBySessionId,
         GetProcessDeviceInfoBySessionId,
         GenerateSessionId,
         SetWakeUpAudioCapturerFromAudioServer,

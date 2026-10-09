@@ -276,44 +276,6 @@ HWTEST_F(CoreServiceProviderStubUnitTest, CoreServiceProviderWrapper_GetModuleNa
 /**
  * @tc.name   : Test CoreServiceProviderWrapper API
  * @tc.type  : FUNC
- * @tc.number: CoreServiceProviderWrapper_QueryPipeIdBySessionId_001
- * @tc.desc  : Test QueryPipeIdBySessionId with null coreServiceWorker.
- */
-HWTEST_F(CoreServiceProviderStubUnitTest, CoreServiceProviderWrapper_QueryPipeIdBySessionId_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("CSPWrapper_QueryPipeIdBySessionId_001 start");
-    CoreServiceProviderWrapper wrapper(nullptr);
-    uint32_t pipeId = 0;
-    int32_t result = wrapper.QueryPipeIdBySessionId(0, pipeId);
-    AUDIO_INFO_LOG("CSPWrapper_QueryPipeIdBySessionId_001 result:%{public}d", result);
-    EXPECT_EQ(result, AUDIO_INIT_FAIL);
-}
-
-/**
- * @tc.name   : Test CoreServiceProviderWrapper API
- * @tc.type  : FUNC
- * @tc.number: CoreServiceProviderWrapper_QueryPipeIdBySessionId_002
- * @tc.desc  : Test QueryPipeIdBySessionId with valid coreServiceWorker.
- */
-HWTEST_F(CoreServiceProviderStubUnitTest, CoreServiceProviderWrapper_QueryPipeIdBySessionId_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("CSPWrapper_QueryPipeIdBySessionId_002 start");
-    MockCoreServiceProvider mockProvider;
-    CoreServiceProviderWrapper wrapper(&mockProvider);
-
-    EXPECT_CALL(mockProvider, QueryPipeIdBySessionId(1))
-        .WillOnce(Return(static_cast<uint32_t>(8)));
-
-    uint32_t pipeId = 0;
-    int32_t result = wrapper.QueryPipeIdBySessionId(1, pipeId);
-    AUDIO_INFO_LOG("CSPWrapper_QueryPipeIdBySessionId_002 pipeId:%{public}u", pipeId);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(pipeId, static_cast<uint32_t>(8));
-}
-
-/**
- * @tc.name   : Test CoreServiceProviderWrapper API
- * @tc.type  : FUNC
  * @tc.number: CoreServiceProviderWrapper_GetProcessDeviceInfoBySessionId_001
  * @tc.desc  : Test GetProcessDeviceInfoBySessionId with null coreServiceWorker.
  */

@@ -33,7 +33,6 @@ public:
         bool isRunning, bool skipForce = false) override;
     int32_t GetAdapterNameBySessionId(uint32_t sessionId, std::string& name) override;
     int32_t GetModuleNameBySessionId(uint32_t sessionId, std::string& name) override;
-    int32_t QueryPipeIdBySessionId(uint32_t sessionId, uint32_t &pipeId) override;
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor& deviceInfo,
         AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;

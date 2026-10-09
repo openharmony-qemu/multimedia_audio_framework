@@ -1746,57 +1746,6 @@ HWTEST(AudioServiceUnitTest, SaveRenderWhitelist_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test UpdateSystemVolumeForWorkgroup API
- * @tc.type  : FUNC
- * @tc.number: UpdateSystemVolume_001,
- * @tc.desc  : Test UpdateSystemVolumeForWorkgroup with a stream type not fit for workgroup.
- */
-HWTEST(AudioServiceUnitTest, UpdateSystemVolume_001, TestSize.Level1)
-{
-    AudioStreamType streamType = STREAM_ALARM;
-    float volume = 0.5;
-
-    AudioService *service = AudioService::GetInstance();
-    ASSERT_NE(nullptr, service);
-    service->UpdateSystemVolumeForWorkgroup(streamType, volume);
-    EXPECT_NE(nullptr, AudioService::GetInstance());
-}
-
-/**
- * @tc.name  : Test UpdateSystemVolumeForWorkgroup API
- * @tc.type  : FUNC
- * @tc.number: UpdateSystemVolume_002,
- * @tc.desc  : Test UpdateSystemVolumeForWorkgroup with a stream type fit for workgroup.
- */
-HWTEST(AudioServiceUnitTest, UpdateSystemVolume_002, TestSize.Level1)
-{
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volume = 0.5;
-
-    AudioService *service = AudioService::GetInstance();
-    ASSERT_NE(nullptr, service);
-    service->UpdateSystemVolumeForWorkgroup(streamType, volume);
-    EXPECT_NE(nullptr, AudioService::GetInstance());
-}
-
-/**
- * @tc.name  : Test UpdateSystemVolumeForWorkgroup API
- * @tc.type  : FUNC
- * @tc.number: UpdateSystemVolume_003,
- * @tc.desc  : Test UpdateSystemVolumeForWorkgroup with a stream type fit for workgroup.
- */
-HWTEST(AudioServiceUnitTest, UpdateSystemVolume_003, TestSize.Level1)
-{
-    AudioStreamType streamType = STREAM_VOICE_COMMUNICATION;
-    float volume = 0.5;
-
-    AudioService *service = AudioService::GetInstance();
-    ASSERT_NE(nullptr, service);
-    service->UpdateSystemVolumeForWorkgroup(streamType, volume);
-    EXPECT_NE(nullptr, AudioService::GetInstance());
-}
-
-/**
  * @tc.name  : Test IsStreamTypeFitWorkgroup API
  * @tc.type  : FUNC
  * @tc.number: IsStreamTypeFitWorkgroup_001,

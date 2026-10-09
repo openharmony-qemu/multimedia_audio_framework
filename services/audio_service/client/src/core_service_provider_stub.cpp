@@ -73,13 +73,6 @@ int32_t CoreServiceProviderWrapper::GetModuleNameBySessionId(uint32_t sessionID,
     return SUCCESS;
 }
 
-int32_t CoreServiceProviderWrapper::QueryPipeIdBySessionId(uint32_t sessionId, uint32_t &pipeId)
-{
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    pipeId = coreServiceWorker_->QueryPipeIdBySessionId(sessionId);
-    return SUCCESS;
-}
-
 int32_t CoreServiceProviderWrapper::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
     AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess)
 {

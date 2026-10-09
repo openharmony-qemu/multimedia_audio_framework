@@ -32,7 +32,6 @@ public:
         const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning, bool skipForce), (override));
     MOCK_METHOD(std::string, GetAdapterNameBySessionId, (uint32_t sessionID), (override));
     MOCK_METHOD(std::string, GetModuleNameBySessionId, (uint32_t sessionID), (override));
-    MOCK_METHOD(uint32_t, QueryPipeIdBySessionId, (uint32_t sessionID), (override));
     MOCK_METHOD(int32_t, GetProcessDeviceInfoBySessionId, (uint32_t sessionID, AudioDeviceDescriptor& deviceInfo,
         AudioStreamInfo& streamInfo, bool& isUltraFast, bool isReloadProcess), (override));
     MOCK_METHOD(uint32_t, GenerateSessionId, (), (override));

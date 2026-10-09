@@ -20,7 +20,6 @@
 
 #include "audio_errors.h"
 #include "audio_common_log.h"
-#include "audio_pipe_info.h"
 #include "boot_animation_state_info.h"
 
 namespace OHOS {
@@ -99,14 +98,6 @@ std::string CoreServiceHandler::GetModuleNameBySessionId(uint32_t sessionId)
     std::string ret{};
     iCoreServiceProvider_->GetModuleNameBySessionId(sessionId, ret);
     return ret;
-}
-
-uint32_t CoreServiceHandler::QueryPipeIdBySessionId(uint32_t sessionId)
-{
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, HDI_INVALID_ID, "iCoreServiceProvider_ is nullptr!");
-    uint32_t pipeId = HDI_INVALID_ID;
-    iCoreServiceProvider_->QueryPipeIdBySessionId(sessionId, pipeId);
-    return pipeId;
 }
 
 int32_t CoreServiceHandler::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,

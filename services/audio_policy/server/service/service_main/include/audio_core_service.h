@@ -139,7 +139,6 @@ public:
         int32_t SetOffloadAllowedForUid(uint32_t uid, bool allowed);
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
         std::string GetModuleNameBySessionId(uint32_t sessionId) override;
-        uint32_t QueryPipeIdBySessionId(uint32_t sessionId) override;
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
             AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess = false) override;
         int32_t GetAudioDebugInfoBySessionId(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
@@ -381,7 +380,6 @@ public:
     // ICoreServiceProvider from EventEntry
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     std::string GetModuleNameBySessionId(uint32_t sessionId);
-    uint32_t QueryPipeIdBySessionId(uint32_t sessionId);
     std::string Get3daDirectBusAddress();
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
         AudioStreamInfo &streamInfo, bool &isUltraFast);

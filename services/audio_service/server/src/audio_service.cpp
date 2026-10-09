@@ -1260,9 +1260,7 @@ bool AudioService::IsStreamTypeFitWorkgroup(AudioStreamType streamType)
 void AudioService::UpdateSystemVolumeForWorkgroup(AudioStreamType streamType, float volume)
 {
     AUDIO_INFO_LOG("[WorkgroupInServer] streamType:%{public}d, systemvolume:%{public}f", streamType, volume);
-    if (!IsStreamTypeFitWorkgroup(streamType)) {
-        return;
-    }
+    CHECK_AND_RETURN(IsStreamTypeFitWorkgroup(streamType));
     std::vector<int32_t> pids = AudioResourceService::GetInstance()->GetProcessesOfAudioWorkgroup();
     for (int32_t pid : pids) {
         RenderersCheckForAudioWorkgroup(pid);
