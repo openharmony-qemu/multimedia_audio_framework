@@ -29,6 +29,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const int32_t ANCO_USAGE_MEDIA = 1;
 
 std::string AudioInterruptUtils::GetAudioInterruptBundleName(const AudioInterrupt &audioInterrupt)
 {
@@ -75,7 +76,7 @@ bool AudioInterruptUtils::GetWindowState(const AudioInterrupt &audioInterrupt)
         AudioPolicyService::GetAudioPolicyService().GetAncoPlaybackInfo(ancoPlaybackInfos);
         for (const auto &info : ancoPlaybackInfos) {
             if (!info.GetPackageName().empty() && info.GetPlaybackState() == ANCO_PLAYBACK_STATE_PLAYING &&
-                WindowUtils::CheckAncoWindowState(info.GetPackageName())) {
+                info.GetUsage() == ANCO_USAGE_MEDIA && WindowUtils::CheckAncoWindowState(info.GetPackageName())) {
                     AUDIO_INFO_LOG("anco foreground: %{private}s", info.GetPackageName().c_str());
                     return true;
             }
