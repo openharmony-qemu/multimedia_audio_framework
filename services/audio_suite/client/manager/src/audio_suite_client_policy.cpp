@@ -300,6 +300,7 @@ int32_t AudioSuiteClientPolicy::UninstallCloudRom(const std::vector<std::string>
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "UninstallCloudRom result: %{public}d", result);
     return SUCCESS;
 }
+
 int32_t AudioSuiteClientPolicy::RegisterDownloadInterfaceCallback(
     const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback)
 {
@@ -317,12 +318,7 @@ int32_t AudioSuiteClientPolicy::RegisterDownloadInterfaceCallback(
     downloadCallbackStub_ = new(std::nothrow) AudioSuiteDownloadCallbackStubImpl();
     CHECK_AND_RETURN_RET_LOG(downloadCallbackStub_ != nullptr, ERROR, "downloadCallbackStub_ is nullptr");
 
-    int32_t callbackRet = downloadCallbackStub_->SetAudioSuiteRomDownloadCallback(callback);
-    if (callbackRet != SUCCESS) {
-        AUDIO_ERR_LOG("SetAudioSuiteRomDownloadCallback failed: %{public}d", callbackRet);
-        downloadCallbackStub_ = nullptr;
-        return callbackRet;
-    }
+    downloadCallbackStub_->SetAudioSuiteRomDownloadCallback(callback);
     int32_t result = SUCCESS;
     ErrCode ret = proxy_->RegisterDownloadInterfaceCallback(downloadCallbackStub_->AsObject(), result);
     if (ret != SUCCESS || result != SUCCESS) {
