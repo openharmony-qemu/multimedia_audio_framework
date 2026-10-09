@@ -167,7 +167,7 @@ public:
     int32_t GetSystemVolumeDegreeInterface(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, const VolumeUpdateOption &option);
     int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel,
-        bool isUpdateUi, DeviceType deviceType);
+        bool isUpdateUi, DeviceType deviceType, std::string macAddress = "");
     int32_t GetSystemVolumeLevelInterface(AudioStreamType streamType, int32_t zoneId = 0);
     void UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool& isUpdateUi = false,
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
@@ -212,7 +212,8 @@ public:
     void GetSystemVolumeLevelInfo(std::vector<AdjustVolumeInfo> &systemVolumeLevelInfo);
     std::vector<std::shared_ptr<AllDeviceVolumeInfo>> GetAllDeviceVolumeInfo();
     void GetVolumeKeyRegistrationInfo(std::vector<VolumeKeyEventRegistration> &keyRegistrationInfo);
-    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType,
+        int32_t zoneId = 0);
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
     void OnTimerExpired();
     bool IsNeedForceControlVolumeType();

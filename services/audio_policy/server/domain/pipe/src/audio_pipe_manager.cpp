@@ -1921,6 +1921,14 @@ std::vector<PipeDeviceVolumeGroup> AudioPipeManager::GetPipeDeviceVolumeInfoForD
             auto firstDevice = streamDesc->newDeviceDescs_.front();
             CHECK_AND_CONTINUE(firstDevice != nullptr);
 
+#ifdef MULTI_USER_ZONE
+            if (deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+                deviceDesc->GetMacAddress() != firstDevice->GetMacAddress()) {
+                AUDIO_INFO_LOG("a2dp macAddress not same.");
+                continue;
+            }
+#endif
+
             if (firstDevice->GetName() == deviceDesc->GetName()) {
                 ProcessPipeForVolumeInfo(pipeDeviceVolumeGroups, pipeInfo);
                 break;

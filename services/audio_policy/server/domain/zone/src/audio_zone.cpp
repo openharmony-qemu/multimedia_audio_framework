@@ -649,6 +649,17 @@ bool AudioZone::CheckDeviceInZone(AudioDeviceDescriptor device)
     return false;
 }
 
+bool AudioZone::CheckDeviceInZone(const std::string &macAddress)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (const auto &it : devices_) {
+        if (it.second && it.first != nullptr && it.first->macAddress_ == macAddress) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool AudioZone::HasVolumeControllableDeviceInZone()
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
