@@ -109,10 +109,7 @@ int32_t BackgroundDownload::Init()
 
 void BackgroundDownload::ProcessPendingDownloads()
 {
-    if (stopped_.load()) {
-        AUDIO_INFO_LOG("BackgroundDownload stopped, skip ProcessPendingDownloads");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(!stopped_.load(), "BackgroundDownload stopped, skip ProcessPendingDownloads");
     std::vector<std::pair<std::string, int32_t>> toProcess;
     {
         std::lock_guard<std::mutex> lock(mutex_);
