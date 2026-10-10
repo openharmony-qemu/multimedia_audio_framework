@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_stream_enum.h"
+#include <cstdlib>
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B8B
@@ -58,6 +59,10 @@ uint32_t IdHandler::GetId(HdiIdBase base, HdiIdType type, const std::string &inf
     uint32_t infoId = CreateInfoId();
     infoIdMap_[infoId].info_ = info;
     id |= infoId;
+    if (infoId >= HDI_ID_INFO_MAX && IsRemoteType(type)) {
+        AUDIO_ERR_LOG("infoId reached maximum value");
+        _Exit(0);
+    }
     return id;
 }
 
