@@ -37,6 +37,7 @@ constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr int32_t TEST_SLEEP_TIME_160 = 160;
+constexpr uint64_t TEST_FAKE_SINK_LATENCY_US = 50000;
 
 static HpaeSinkInfo GetDirectSinkInfo(const std::string &deviceClass = "primary_direct")
 {
@@ -2940,7 +2941,7 @@ HWTEST_F(HpaeDirectRendererManagerTest, priv_onRequestLatency_001, TestSize.Leve
  * @tc.name  : onRequestLatency_002
  * @tc.type  : FUNC
  * @tc.number: HpaeDirectRendererManagerTest_132
- * @tc.desc  : Test OnRequestLatency with no process nodes (only sinkOutputNode_)
+ * @tc.desc  : Test OnRequestLatency with no stream created; latency is kept unchanged
  */
 HWTEST_F(HpaeDirectRendererManagerTest, priv_onRequestLatency_002, TestSize.Level1)
 {
@@ -2949,7 +2950,33 @@ HWTEST_F(HpaeDirectRendererManagerTest, priv_onRequestLatency_002, TestSize.Leve
 
     uint64_t latency = 100;
     directManager_->OnRequestLatency(TEST_STREAM_SESSION_ID, latency);
-    EXPECT_GE(latency, 100u);
+    EXPECT_EQ(latency, 100u);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : onRequestLatency_excludeSinkLatency_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_159
+ * @tc.desc  : Anti-regression: OnRequestLatency must not accumulate sink latency;
+ *             sink/device latency is fetched on the explicit query path in HpaeRendererStreamImpl
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, onRequestLatency_excludeSinkLatency_001, TestSize.Level1)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // Seed the sink node latency cache. GetLatency() returns the cached value first,
+    // so if OnRequestLatency ever accumulates sinkOutputNode_->GetLatency() again,
+    // this fake value leaks into the result and the assertion below fails.
+    directManager_->sinkOutputNode_->latency_ = TEST_FAKE_SINK_LATENCY_US;
+    uint64_t latency = 0;
+    directManager_->OnRequestLatency(TEST_STREAM_SESSION_ID, latency);
+    EXPECT_EQ(latency, 0u);
 
     EXPECT_EQ(directManager_->DeInit(), SUCCESS);
 }
