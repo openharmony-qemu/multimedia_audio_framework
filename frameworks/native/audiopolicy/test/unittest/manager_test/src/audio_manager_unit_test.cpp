@@ -83,7 +83,7 @@ void GetPermission()
             .perms = perms,
             .acls = nullptr,
             .processName = "audio_manager_unit_test",
-            .aplStr = "system_basic",
+            .aplStr = "system_core",
         };
         tokenId = GetAccessTokenId(&infoInstance);
         SetSelfTokenID(tokenId);
