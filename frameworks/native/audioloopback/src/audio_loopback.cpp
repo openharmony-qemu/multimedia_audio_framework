@@ -624,8 +624,17 @@ bool AudioLoopbackPrivate::IsAudioLoopbackSupported()
 AudioLoopbackErrorType AudioLoopbackPrivate::CheckDeviceSupport()
 {
     // hifi  usb // enable
-    activeOutputDevice_ = AudioPolicyManager::GetInstance().GetActiveOutputDevice();
-    activeInputDevice_ = AudioPolicyManager::GetInstance().GetActiveInputDevice();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices =
+        AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererOptions_.rendererInfo);
+    CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices[0] != nullptr,
+        ERROR_DEVICE_NOT_SUPPORT, "Get preferred output device failed");
+    activeOutputDevice_ = outputDevices[0]->deviceType_;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDevices =
+        AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerOptions_.capturerInfo);
+    CHECK_AND_RETURN_RET_LOG(!inputDevices.empty() && inputDevices[0] != nullptr,
+        ERROR_DEVICE_NOT_SUPPORT, "Get preferred input device failed");
+    activeInputDevice_ = inputDevices[0]->deviceType_;
     AUDIO_INFO_LOG("activeOutputDevice is %{public}d, activeInputDevice is %{public}d", activeOutputDevice_,
         activeInputDevice_);
     if (activeOutputDevice_ == DEVICE_TYPE_NEARLINK) {
