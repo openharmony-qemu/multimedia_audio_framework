@@ -32,10 +32,6 @@ static const std::string VA_DEVICE_INFO_NAME_SPP = "Virtual Audio Spp";
 static const std::string VA_DEVICE_INFO_NAME_NEARLINK = "Virtual Audio Nearlink";
 static const std::string VA_DEVICE_INFO_NAME_UNIDIRECTIONAL_SPP = "Virtual Audio Unidirectional Spp";
 
-static const std::string VA_INPUT_PIPE_INFO_NAME_SPP = VA_INPUT_SPP;
-static const std::string VA_INPUT_PIPE_INFO_NAME_NEARLINK = VA_INPUT_NEARLINK;
-static const std::string VA_INPUT_PIPE_INFO_NAME_UNIDIRECTIONAL_SPP = VA_INPUT_UNIDIRECTIONAL_SPP;
-
 namespace {
 constexpr uint32_t CYCLES_PER_SECOND = 50;
 
@@ -200,8 +196,8 @@ void VADeviceManager::GetVAPipeAndDeviceName(const VADeviceConfiguration &config
 {
     const bool isNearlink = !config.isUnidirectional_ &&
         config.type_ == VA_DEVICE_TYPE_NEARLINK_PORT;
-    pipeName = config.isUnidirectional_ ? VA_INPUT_PIPE_INFO_NAME_UNIDIRECTIONAL_SPP
-        : (isNearlink ? VA_INPUT_PIPE_INFO_NAME_NEARLINK : VA_INPUT_PIPE_INFO_NAME_SPP);
+    pipeName = config.isUnidirectional_ ? VA_INPUT_UNIDIRECTIONAL_SPP
+        : (isNearlink ? VA_INPUT_NEARLINK : VA_INPUT_SPP);
     deviceName = config.isUnidirectional_ ? VA_DEVICE_INFO_NAME_UNIDIRECTIONAL_SPP
         : (isNearlink ? VA_DEVICE_INFO_NAME_NEARLINK : VA_DEVICE_INFO_NAME_SPP);
     deviceType = isNearlink ? DEVICE_TYPE_NEARLINK_PORT : DEVICE_TYPE_BT_SPP;
