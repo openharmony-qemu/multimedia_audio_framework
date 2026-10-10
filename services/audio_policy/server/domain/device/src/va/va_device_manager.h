@@ -86,9 +86,6 @@ private:
 
     void AddVADeviceToAdapter(const std::shared_ptr<VADevice> &vaDevice);
 
-    void CreateVAPipeAndDevice(const std::shared_ptr<PolicyAdapterInfo> &adapterInfoPtr,
-        const std::string &pipeName, const std::string &deviceName, DeviceType deviceType);
-
     void GetVAPipeAndDeviceName(const VADeviceConfiguration &config,
         std::string &pipeName, std::string &deviceName, DeviceType &deviceType);
 
