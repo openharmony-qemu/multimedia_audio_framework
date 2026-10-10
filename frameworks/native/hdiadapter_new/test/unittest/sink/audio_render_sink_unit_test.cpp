@@ -1236,16 +1236,32 @@ HWTEST_F(AudioRenderSinkUnitTest, IdHandler_RemoteCastInnerCapturer_001, TestSiz
 /**
  * @tc.name   : Test GetCurrentOutputDevice API
  * @tc.number : GetCurrentOutputDevice_005
- * @tc.desc   : Test GetCurrentOutputDevice for direct sink
+ * @tc.desc   : Test GetCurrentOutputDevice returns currentActiveDevice_ (default NONE) for direct sink
  */
 HWTEST_F(AudioRenderSinkUnitTest, GetCurrentOutputDevice_005, TestSize.Level1)
 {
     InitDirectSink();
     EXPECT_TRUE(directSink_ && directSink_->IsInited());
-    
+
+    DeInitDirectSink();
+}
+
+/**
+ * @tc.name   : Test GetCurrentOutputDevice API
+ * @tc.number : GetCurrentOutputDevice_006
+ * @tc.desc   : Test GetCurrentOutputDevice returns currentActiveDevice_ after UpdateActiveDevice
+ */
+HWTEST_F(AudioRenderSinkUnitTest, GetCurrentOutputDevice_006, TestSize.Level1)
+{
+    InitDirectSink();
+    EXPECT_TRUE(directSink_ && directSink_->IsInited());
+
+    // After UpdateActiveDevice, currentActiveDevice_ is set
+    std::vector<DeviceType> devices = { DEVICE_TYPE_WIRED_HEADSET };
+    directSink_->UpdateActiveDevice(devices);
     DeviceType deviceType = directSink_->GetCurrentOutputDevice();
     EXPECT_EQ(deviceType, DEVICE_TYPE_WIRED_HEADSET);
-    
+
     DeInitDirectSink();
 }
 

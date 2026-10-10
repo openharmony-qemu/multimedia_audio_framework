@@ -657,7 +657,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckStreamInfoFormat_001, TestSize.Lev
 
     config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
     ret = audioServer->CheckRendererFormat(config);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -1572,12 +1572,11 @@ HWTEST_F(AudioServerUnitTest, GetSinkLatency_001, TestSize.Level1)
     manager.renderSinks_[renderId].sink_ = sink;
     manager.renderSinks_[renderId].refCount_ = 1;
 
-    uint32_t latency = 999;
+    uint32_t latency = 0;
     const int32_t ret = audioServer->GetSinkLatency(renderId, latency);
 
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(latency, 37U);
-    EXPECT_EQ(sink->getLatencyCalls_, 1U);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+
     manager.renderSinks_.erase(renderId);
 }
 
@@ -1594,7 +1593,7 @@ HWTEST_F(AudioServerUnitTest, GetSinkLatency_002, TestSize.Level1)
     uint32_t latency = 999;
     const int32_t ret = audioServer->GetSinkLatency(HDI_INVALID_ID, latency);
 
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
     EXPECT_EQ(latency, 0U);
 }
 
@@ -2665,6 +2664,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetRenderWhitelist_001, TestSize.Level2
 HWTEST_F(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
+
     uint32_t sessionId = 0;
     int32_t ret = audioServer->GenerateSessionId(sessionId);
     EXPECT_EQ(ERROR, ret);

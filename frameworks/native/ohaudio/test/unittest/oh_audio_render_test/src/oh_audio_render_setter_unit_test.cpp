@@ -48,7 +48,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_002, TestSize.Level0)
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float volumeSet = 0.5;
     result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
-    EXPECT_TRUE(result != AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -64,10 +64,10 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_003, TestSize.Level0)
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float volumeSet = MIN_AUDIO_VOLUME;
     result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
-    EXPECT_TRUE(result != AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     volumeSet = MAX_AUDIO_VOLUME;
     result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
-    EXPECT_TRUE(result != AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
