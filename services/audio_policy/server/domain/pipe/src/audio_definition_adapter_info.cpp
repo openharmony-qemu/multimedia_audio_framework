@@ -306,6 +306,7 @@ void AudioPolicyConfigData::CreateNormalInputPipeAndDevice(
     adapterInfoPtr->pipeInfos.push_back(pipeInfo);
     adapterInfoPtr->deviceInfos.push_back(make_shared<AdapterDeviceInfo>(deviceInfo));
 }
+
 bool AudioPolicyConfigData::EnsureAdapterInputPipe(AudioAdapterType adapterType, const std::string &pipeName,
     const std::string &deviceName, DeviceType deviceType)
 {
