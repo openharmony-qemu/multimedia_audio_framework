@@ -175,6 +175,16 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamTypeIn, uint32_t 
     return volumes->volume;
 }
 
+float AudioVolume::GetMonitorVolumeBySessionId(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
+    auto it = streamVolume_.find(sessionId);
+    if (it != streamVolume_.end()) {
+        return it->second->GetMonitorVolume();
+    }
+    return 0.0f;
+}
+
 void AudioVolume::UpdateVkbVolume(VkbMode mode, bool isMuted, float &sysVolume)
 {
     if (mode == VKB_ONLY_RING) {

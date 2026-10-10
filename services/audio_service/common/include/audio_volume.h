@@ -47,6 +47,7 @@ public:
 
     float GetVolume(uint32_t sessionId, int32_t streamType, uint32_t pipeId,
         VolumeValues *volumes); // all volume
+    float GetMonitorVolumeBySessionId(uint32_t sessionId);
     float GetStreamVolume(uint32_t sessionId); // only stream volume factor
     float GetAppVolume(int32_t appUid, AudioVolumeMode mode);
     uint32_t GetDurationMs(uint32_t sessionId);

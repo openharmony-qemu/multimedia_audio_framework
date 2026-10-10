@@ -788,15 +788,6 @@ void AudioServiceIsExceedingMaxStreamCntPerUidFuzzTest()
     audioService->IsExceedingMaxStreamCntPerUid(callingUid, appUid, maxStreamCntPerUid);
 }
 
-void AudioServiceGetSystemVolumeForWorkgroupFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioService == nullptr) {
-        return;
-    }
-    audioService->GetSystemVolumeForWorkgroup();
-}
-
 void AudioServiceRenderersCheckForAudioWorkgroupFuzzTest()
 {
     shared_ptr<AudioService> audioService = make_shared<AudioService>();
@@ -854,7 +845,6 @@ TestPtr g_testPtrs[] = {
     AudioServiceSetDecMaxLoopbackStreamCntFuzzTest,
     AudioServiceGetCurrentRendererStreamCntFuzzTest,
     AudioServiceIsExceedingMaxStreamCntPerUidFuzzTest,
-    AudioServiceGetSystemVolumeForWorkgroupFuzzTest,
     AudioServiceRenderersCheckForAudioWorkgroupFuzzTest,
 };
 

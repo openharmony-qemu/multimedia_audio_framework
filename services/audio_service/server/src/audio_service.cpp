@@ -1251,12 +1251,6 @@ int32_t AudioService::ForceStopAudioStream(StopAudioType audioType)
     return SUCCESS;
 }
 
-float AudioService::GetSystemVolumeForWorkgroup()
-{
-    std::unique_lock<std::mutex> lock(audioWorkGroupSystemVolumeMutex_);
-    return audioWorkGroupSystemVolume_;
-}
-
 bool AudioService::IsStreamTypeFitWorkgroup(AudioStreamType streamType)
 {
     return (workgroupSupportStreamTypeSet_.find(streamType) !=
@@ -1266,13 +1260,7 @@ bool AudioService::IsStreamTypeFitWorkgroup(AudioStreamType streamType)
 void AudioService::UpdateSystemVolumeForWorkgroup(AudioStreamType streamType, float volume)
 {
     AUDIO_INFO_LOG("[WorkgroupInServer] streamType:%{public}d, systemvolume:%{public}f", streamType, volume);
-    if (!IsStreamTypeFitWorkgroup(streamType)) {
-        return;
-    }
-    {
-        std::unique_lock<std::mutex> lock(audioWorkGroupSystemVolumeMutex_);
-        audioWorkGroupSystemVolume_ = volume;
-    }
+    CHECK_AND_RETURN(IsStreamTypeFitWorkgroup(streamType));
     std::vector<int32_t> pids = AudioResourceService::GetInstance()->GetProcessesOfAudioWorkgroup();
     for (int32_t pid : pids) {
         RenderersCheckForAudioWorkgroup(pid);
@@ -1303,7 +1291,7 @@ void AudioService::RenderersCheckForAudioWorkgroup(int32_t pid)
                 continue;
             }
             allRenderPerProcessMap[pid][renderer->processConfig_.originalSessionId]
-                = renderer->CollectInfosForWorkgroup(GetSystemVolumeForWorkgroup());
+                = renderer->CollectInfosForWorkgroup();
         }
     }
     // all processes in workgroup
