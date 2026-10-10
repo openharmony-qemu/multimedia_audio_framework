@@ -745,10 +745,9 @@ void AudioLoopbackPrivate::CapturerCallbackImpl::OnStateChange(const CapturerSta
 void AudioLoopbackPrivate::CapturerCallbackImpl::OnStateChange(const AudioDeviceDescriptor &deviceInfo)
 {
     AUDIO_INFO_LOG("CapturerCallback device change to %{public}d", deviceInfo.deviceType_);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDevices =
-        AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerOptions_.capturerInfo);
-    parent_.isCapturerUsb_ = (!inputDevices.empty() && inputDevices[0] != nullptr) &&
-        parent_.activeInputDevice_ == inputDevices[0]->deviceType_;
+    AudioDevicePair devicePair = AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair();
+    parent_.isCapturerUsb_ = (devicePair.first != nullptr && devicePair.second != nullptr) &&
+        parent_.activeInputDevice_ == devicePair.first->deviceType_;
     parent_.UpdateStatus();
 }
 
