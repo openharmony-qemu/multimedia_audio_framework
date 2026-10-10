@@ -252,6 +252,10 @@ public:
     void RegisterStreamProperty(
         AudioAdapterType adapterType, std::string pipeName, std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps);
     AudioPin DecideAudioPin(DeviceType type, DeviceRole role);
+    void CreateNormalInputPipeAndDevice(const std::shared_ptr<PolicyAdapterInfo> &adapterInfoPtr,
+        const std::string &pipeName, const std::string &deviceName, DeviceType deviceType);
+    bool EnsureAdapterInputPipe(AudioAdapterType adapterType, const std::string &pipeName,
+        const std::string &deviceName, DeviceType deviceType);
 
     std::weak_ptr<AdapterPipeInfo> pipeInfo_;
     std::list<std::string> supportDevices_ {};
