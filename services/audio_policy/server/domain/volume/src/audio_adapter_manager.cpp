@@ -36,6 +36,7 @@
 #include "audio_format_utils.h"
 #include "audio_bundle_manager.h"
 #include "os_account_subprofile_client.h"
+#include "util/id_handler.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -2304,22 +2305,10 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
 
 std::string AudioAdapterManager::GetHdiSinkIdInfo(const AudioModuleInfo &audioModuleInfo) const
 {
-    if (!audioModuleInfo.busAddress.empty()) {
-        return audioModuleInfo.busAddress;
-    }
-    if (audioModuleInfo.className == "remote" || audioModuleInfo.className == "remote_offload" ||
-        audioModuleInfo.className == "remote_multichannel") {
-        return audioModuleInfo.networkId;
-    }
-    if (audioModuleInfo.className == PRIMARY_EXTRA_CLASS) {
-        return audioModuleInfo.name;
-    }
-#ifdef MULTI_USER_ZONE
-    if (audioModuleInfo.className == A2DP_CLASS) {
-        return audioModuleInfo.macAddress;
-    }
-#endif
-    return HDI_ID_INFO_DEFAULT;
+    // Delegate to the single priority source shared with the engine side
+    HdiIdInfoParam param = {audioModuleInfo.className, audioModuleInfo.name, audioModuleInfo.networkId,
+        audioModuleInfo.macAddress, audioModuleInfo.busAddress};
+    return IdHandler::SelectIdInfo(param);
 }
 
 std::string AudioAdapterManager::GetHdiSourceIdInfo(const AudioModuleInfo &audioModuleInfo) const
