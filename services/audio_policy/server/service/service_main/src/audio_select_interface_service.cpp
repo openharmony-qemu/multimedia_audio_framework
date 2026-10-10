@@ -278,15 +278,18 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && !selectedDesc.empty() && selectedDesc[0] != nullptr,
         ERROR, "ptr exception");
     SelectOutputDeviceLog(audioRendererFilter, selectedDesc, audioDeviceSelectMode);
-    if (audioRendererFilter->blockFirstOverrode) {
-        SetBlockFirstOverrode(true);
-    }
     CHECK_AND_RETURN_RET_LOG(selectedDesc.size() == 1 && selectedDesc[0] &&
         selectedDesc[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE, ERR_INVALID_OPERATION, "DeviceCheck no success");
 
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
     int32_t prepareRes = SelectOutputDevicePrepare(selectedDesc, strUsage);
     CHECK_AND_RETURN_RET_LOG(prepareRes == SUCCESS, prepareRes, "SelectOutputDevicePrepare fail");
+
+    if (audioRendererFilter->blockFirstOverrode) {
+        SetBlockFirstOverrode(true);
+    } else {
+        SetBlockFirstOverrode(false);
+    }
 
     if (audioDeviceSelectMode == SELECT_STRATEGY_STREAM || audioDeviceSelectMode == SELECT_STRATEGY_INDEPENDENT) {
         CHECK_AND_CALL_FUNC_RETURN_RET(audioRendererFilter->uid > 0, ERR_INVALID_OPERATION,
