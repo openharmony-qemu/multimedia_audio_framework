@@ -34,10 +34,9 @@ AudioSuiteDownloadCallbackStubImpl::~AudioSuiteDownloadCallbackStubImpl()
 {}
 
 int32_t AudioSuiteDownloadCallbackStubImpl::SetAudioSuiteRomDownloadCallback(
-    const std::weak_ptr<AudioSuiteRomDownloadCallback> &callback)
+    const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback)
 {
-    std::shared_ptr<AudioSuiteRomDownloadCallback> callbackPtr = callback.lock();
-    CHECK_AND_RETURN_RET_LOG(callbackPtr != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     std::lock_guard<std::mutex> lock(downloadCallback);
     downloadCallback_ = callback;
     return SUCCESS;
