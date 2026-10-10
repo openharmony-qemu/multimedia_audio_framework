@@ -51,9 +51,7 @@ namespace AudioStandard {
 static constexpr int32_t MIN_BUFFER_SIZE = 2;
 static constexpr float FRAME_LEN_2_5MS_IN_MS = 2.5f;
 static constexpr uint64_t FRAME_LEN_5MS = 5;
-static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
-static constexpr uint64_t FRAME_LEN_40MS = 40;
 static constexpr uint64_t FIXED_LATENCY_IN_MS = 40;
 static constexpr uint64_t PRINT_TIMESTAMP_INTERVAL_NS = 1000000000;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
@@ -61,7 +59,8 @@ static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static const std::string DEVICE_CLASS_A2DP = "a2dp";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId,
     std::string macAddress);
-static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
+// external linkage (not static) so that the mapping can be unit tested directly
+FadeType ConvertFadeStrategyToFadeType(FadeStrategy strategy);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble,
     const std::string &deviceName, bool isCallbackMode, size_t preBufSizeInBytes)
     : preBufSizeInBytes_(preBufSizeInBytes)
@@ -94,13 +93,6 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
-    if (byteSizePerFrame_ == 0 || usedSampleRate_ == 0) {
-        expectedPlaybackDurationMs_ = 0;
-    } else {
-        expectedPlaybackDurationMs_ =
-            (processConfig.rendererInfo.expectedPlaybackDurationBytes * AUDIO_MS_PER_S / byteSizePerFrame_) /
-                usedSampleRate_;
-    }
     isCallbackMode_ = isCallbackMode;
     isMoveAble_ = isMoveAble;
     if (!isCallbackMode_) {
@@ -131,7 +123,8 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.frameLen = spanSizeInFrame_;
     streamInfo.sessionId = processConfig_.originalSessionId;
     streamInfo.streamType = processConfig_.streamType;
-    streamInfo.fadeType = GetFadeType(expectedPlaybackDurationMs_);
+    streamInfo.fadeType = ConvertFadeStrategyToFadeType(GetFadeStrategy(
+        processConfig_.rendererInfo.expectedPlaybackDurationBytes, byteSizePerFrame_, usedSampleRate_));
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.uid = processConfig_.appInfo.appUid;
     streamInfo.pid = processConfig_.appInfo.appPid;
@@ -1192,20 +1185,18 @@ static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string devic
     return HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
 }
 
-static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs)
+FadeType ConvertFadeStrategyToFadeType(FadeStrategy strategy)
 {
-    // duration <= 10 ms no fade
-    if (expectedPlaybackDurationMs <= FRAME_LEN_10MS && expectedPlaybackDurationMs > 0) {
-        return NONE_FADE;
+    // FadeType and FadeStrategy have different enum orders, map explicitly instead of casting
+    switch (strategy) {
+        case FADE_STRATEGY_NONE:
+            return NONE_FADE;
+        case FADE_STRATEGY_SHORTER:
+            return SHORT_FADE;
+        case FADE_STRATEGY_DEFAULT:
+        default:
+            return DEFAULT_FADE;
     }
-
-    // duration > 10ms && duration <= 40ms do 5ms fade
-    if (expectedPlaybackDurationMs <= FRAME_LEN_40MS && expectedPlaybackDurationMs > FRAME_LEN_10MS) {
-        return SHORT_FADE;
-    }
-
-    // 0 is default; duration > 40ms do default fade
-    return DEFAULT_FADE;
 }
 
 int32_t HpaeRendererStreamImpl::FetchSinkLatency(uint32_t &sinkLatency)
