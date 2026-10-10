@@ -43,7 +43,7 @@
 | 修改 DDL、线程调度、ROM/RAM 或 reclaim | [音频性能和内存.md](docs/knowledge/common/performance_memory/音频性能和内存.md)、`frameworks/native/audioschedule/`、`services/audio_engine/` |
 | 修改 IPC、系统能力、IDL、代理或 Stub | [架构与构建说明.md](docs/knowledge/架构与构建说明.md)、[安全与隐私.md](docs/knowledge/common/security_privacy/安全与隐私.md)、对应 `services/*/idl/`、`client/`、`server/` |
 | 修改构建、功能开关、配置或系统能力注册 | [架构与构建说明.md](docs/knowledge/架构与构建说明.md)、`bundle.json`、`config.gni`、`sa_profile/`、相关 `BUILD.gn` |
-| 修改测试或验证策略 | [测试与故障诊断.md](docs/knowledge/common/testing_dfx/测试与故障诊断.md)、`test/`、对应模块 `test/` |
+| 修改测试或验证策略 | 本指南的“验证要求”、相关主题文档、`test/`、对应模块 `test/` |
 | 修改 DFX 公共机制、打点、日志或转储 | [DFX.md](docs/knowledge/common/dfx/DFX.md)、`hisysevent.yaml`、各模块 DFX 入口 |
 
 当任务涉及播放、录制、pipe、并发、会话、设备、路由、音量、音频引擎、音频编创、多音区、DFX、性能或内存时，先阅读对应主题文档，再定位实现。
