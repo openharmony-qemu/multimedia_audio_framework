@@ -67,7 +67,7 @@ int32_t OH_AudioSuite_GetDownloadManager(OH_AudioSuite_DownloadManager **downloa
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "GetDownloadManager downloadManager is nullptr");
 
 #ifndef AUDIOSUITE_SA_UT
-    CHECK_AND_RETURN_RET_LOG(OHOS::AudioStandard::PermissionUtil::VerifySystemPermission(),
+    CHECK_AND_RETURN_RET_LOG(OHOS::AudioStandard::PermissionUtil::VerifySelfPermission(),
         DOWNLOAD_SYSTEM_PERMISSION_DENIED, "GetDownloadManager permission denied, not system app");
 #endif
 

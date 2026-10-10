@@ -41,7 +41,7 @@ static constexpr const char* TASK_ID = "AudioSuiteSaUnloadTask";
 static constexpr int32_t AUDIO_SUITE_SA_ID = 3015;
 static constexpr int32_t DELAY_TIME = 300000; // 5 minutes in milliseconds
 static constexpr int32_t AUDIO_SUITE_SERVICE_IMPL_TIMEOUT = 10; // 10s
-static constexpr uid_t UID_AUDIO = 1041;
+static constexpr int32_t AUDIO_SERVER_UID = 1041;
 #endif
 
 #ifndef AUDIOSUITE_SA_UT
@@ -146,7 +146,7 @@ ErrCode AudioSuiteService::RegisterDownloadInterfaceCallback(const sptr<IRemoteO
 {
     AUDIO_INFO_LOG("AudioSuiteService::RegisterDownloadInterfaceCallback");
 #ifndef AUDIOSUITE_SA_UT
-    CHECK_AND_RETURN_RET_LOG(IPCSkeleton::GetCallingUid() == UID_AUDIO, ERR_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(IPCSkeleton::GetCallingUid() == AUDIO_SERVER_UID, ERR_PERMISSION_DENIED,
         "RegisterDownloadInterfaceCallback callerUid:%{public}d is not allowed", IPCSkeleton::GetCallingUid());
 #endif
     PostDelayUnloadTask();
@@ -161,7 +161,7 @@ ErrCode AudioSuiteService::UnregisterDownloadInterfaceCallback(ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::UnregisterDownloadInterfaceCallback");
 #ifndef AUDIOSUITE_SA_UT
-    CHECK_AND_RETURN_RET_LOG(IPCSkeleton::GetCallingUid() == UID_AUDIO, ERR_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(IPCSkeleton::GetCallingUid() == AUDIO_SERVER_UID, ERR_PERMISSION_DENIED,
         "UnregisterDownloadInterfaceCallback callerUid:%{public}d is not allowed", IPCSkeleton::GetCallingUid());
 #endif
     PostDelayUnloadTask();
@@ -339,7 +339,7 @@ ErrCode AudioSuiteService::OnDownloadStatusChanged(const std::vector<AudioSuiteD
 {
     AUDIO_INFO_LOG("AudioSuiteService::OnDownloadStatusChanged");
 #ifndef AUDIOSUITE_SA_UT
-    CHECK_AND_RETURN_RET_LOG(IPCSkeleton::GetCallingUid() == UID_AUDIO, ERR_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(IPCSkeleton::GetCallingUid() == AUDIO_SERVER_UID, ERR_PERMISSION_DENIED,
         "OnDownloadStatusChanged callerUid:%{public}d is not allowed", IPCSkeleton::GetCallingUid());
 #endif
     PostDelayUnloadTask();
