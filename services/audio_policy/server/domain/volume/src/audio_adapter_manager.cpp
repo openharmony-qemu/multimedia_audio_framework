@@ -3594,23 +3594,34 @@ int32_t AudioAdapterManager::SetNearlinkDeviceVolume(AudioVolumeType volumeType,
     return SUCCESS;
 }
 
-void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume)
+void AudioAdapterManager::SetAbsVolumeScene(const std::string &macAddress, bool isAbsVolumeScene, int32_t volume)
 {
-    AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: %{public}d, volume: %{public}d", isAbsVolumeScene, volume);
-    isAbsVolumeScene_ = isAbsVolumeScene;
+    AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: mac:[%{public}s], scene:[%{public}d], volume:[%{public}d]",
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(macAddress).c_str(), isAbsVolumeScene, volume);
+    {
+        // Abs volume scene is keyed by the device mac address.
+        std::lock_guard<std::mutex> lock(absVolumeStateMutex_);
+        absVolumeSceneMap_[macAddress] = isAbsVolumeScene;
+        if (isAbsVolumeScene) {
+            absVolumeMuteMap_[macAddress] = (volume == 0) ? true : false;
+        }
+    }
+    // The global projection (effect state and shared scene) only follows the active devices.
+    if (!audioActiveDevice_.IsActiveBtDevice(macAddress)) {
+        AUDIO_INFO_LOG("non-active device, skip global abs volume scene projection");
+        return;
+    }
     CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "SetAbsVolumeScene audio adapter null");
     audioServiceAdapter_->SetAbsVolumeStateToEffect(isAbsVolumeScene);
-    AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(isAbsVolumeScene_);
-    auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
-
-    if (isAbsVolumeScene) {
-        bool mute = volume == 0;
-        isAbsVolumeMute_ = mute;
+    AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(isAbsVolumeScene);
+    auto desc = audioConnectedDevice_.GetConnectedDeviceByType(LOCAL_NETWORK_ID, DEVICE_TYPE_BLUETOOTH_A2DP,
+        macAddress);
+    if (desc == nullptr) {
+        desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
     }
-
     SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);
 
-    if (IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
+    if (isAbsVolumeScene && !VolumeUtils::IsPCVolumeEnable()) {
         SaveVolumeData(desc, STREAM_VOICE_ASSISTANT,
             GetMaxVolumeLevel(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP), false, true);
         SetStreamMute(desc, STREAM_VOICE_ASSISTANT, false);
@@ -3618,22 +3629,34 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
     }
 }
 
-bool AudioAdapterManager::IsAbsVolumeScene() const
+bool AudioAdapterManager::IsAbsVolumeScene(const std::string &macAddress) const
 {
-    return isAbsVolumeScene_;
+    std::lock_guard<std::mutex> lock(absVolumeStateMutex_);
+    auto pos = absVolumeSceneMap_.find(macAddress);
+    return pos != absVolumeSceneMap_.end() && pos->second;
 }
 
-void AudioAdapterManager::SetAbsVolumeMute(bool mute)
+void AudioAdapterManager::SetAbsVolumeMute(const std::string &macAddress, bool mute)
 {
-    AUDIO_INFO_LOG("SetAbsVolumeMute: %{public}d", mute);
-    isAbsVolumeMute_ = mute;
-    auto descA2DP = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
+    AUDIO_INFO_LOG("SetAbsVolumeMute: mac:[%{public}s], mute:[%{public}d]",
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(macAddress).c_str(), mute);
+    {
+        std::lock_guard<std::mutex> lock(absVolumeStateMutex_);
+        absVolumeMuteMap_[macAddress] = mute;
+    }
+    auto descA2DP = audioConnectedDevice_.GetConnectedDeviceByType(LOCAL_NETWORK_ID, DEVICE_TYPE_BLUETOOTH_A2DP,
+        macAddress);
+    if (descA2DP == nullptr) {
+        descA2DP = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
+    }
     SetVolumeDbForDeviceInPipe(descA2DP, STREAM_MUSIC);
 }
 
-bool AudioAdapterManager::IsAbsVolumeMute() const
+bool AudioAdapterManager::IsAbsVolumeMute(const std::string &macAddress) const
 {
-    return isAbsVolumeMute_;
+    std::lock_guard<std::mutex> lock(absVolumeStateMutex_);
+    auto pos = absVolumeMuteMap_.find(macAddress);
+    return pos != absVolumeMuteMap_.end() && pos->second;
 }
 
 void AudioAdapterManager::SetAbsVolumeMuteNearlink(bool mute)
@@ -3816,8 +3839,8 @@ void AudioAdapterManager::UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceD
     // update volumes for low latency streams when loading volumes from the database.
     Volume vol = {false, 1.0f, 0};
     if (volumeType == STREAM_MUSIC && device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP
-        && IsAbsVolumeScene()) {
-        vol.isMute = isAbsVolumeMute_;
+        && IsAbsVolumeScene(device->macAddress_)) {
+        vol.isMute = IsAbsVolumeMute(device->macAddress_);
     } else if (volumeType == STREAM_MUSIC && device->deviceType_ == DEVICE_TYPE_NEARLINK) {
         vol.isMute = isAbsVolumeMuteNearlink_.load();
     } else {
@@ -4094,7 +4117,7 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     volumeDataMaintainer_.InitDeviceMuteMap(desc);
     UpdateRingerMuteByRingerMode(desc);
-    if (IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
+    if (IsAbsVolumeScene(desc->macAddress_) && !VolumeUtils::IsPCVolumeEnable()) {
         SaveVolumeData(desc, STREAM_VOICE_ASSISTANT,
             GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT, DEVICE_TYPE_BLUETOOTH_A2DP), false, true);
         SetStreamMute(desc, STREAM_VOICE_ASSISTANT, false);
@@ -4624,8 +4647,9 @@ void AudioAdapterManager::AdjustVolumeForSpecialDevice(std::shared_ptr<AudioDevi
     AudioVolumeType volumeType, bool &isMuted, int32_t &volumeLevel, float &volumeDb)
 {
     isMuted = VolumeUtils::IsVolumeFixEnable() ? false : isMuted;
-    if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && volumeType == STREAM_MUSIC) {
-        isMuted = IsAbsVolumeMute();
+    if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene(device->macAddress_)
+        && volumeType == STREAM_MUSIC) {
+        isMuted = IsAbsVolumeMute(device->macAddress_);
         volumeLevel = isMuted ? 0 : volumeLevel;
         volumeDb = isMuted ? 0.0f : 0.63957f; // 0.63957 = -4dB
         return;

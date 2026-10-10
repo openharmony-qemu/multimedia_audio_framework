@@ -152,10 +152,11 @@ void OnStop()
 
 void GetActiveA2dpDeviceStreamInfoFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioStreamInfo streamInfo;
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    audioActiveDevice->GetActiveA2dpDeviceStreamInfo(deviceType, streamInfo);
+    AudioStreamInfo streamInfoA2dp;
+    std::string macAddress = GetData<std::string>();
+    audioActiveDevice->GetActiveA2dpDeviceStreamInfo(macAddress, streamInfoA2dp);
+    AudioStreamInfo streamInfoA2dpIn;
+    audioActiveDevice->GetActiveA2dpInDeviceStreamInfo(streamInfoA2dpIn);
     OnStop();
 }
 

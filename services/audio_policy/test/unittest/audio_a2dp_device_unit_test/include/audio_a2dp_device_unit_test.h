@@ -31,7 +31,7 @@ public:
     void TearDown(void);
 
     AudioA2dpDeviceBehavior a2dpDeviceBehavior_;
-    std::string savedActiveBtMac_;
+    std::set<std::string> savedActiveBtMac_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

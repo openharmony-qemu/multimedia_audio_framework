@@ -82,10 +82,14 @@ int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDev
 
     int32_t result = ERROR;
 #ifdef BLUETOOTH_ENABLE
-    std::string lastActiveA2dpDevice = AudioActiveDevice::GetInstance().GetActiveBtDeviceMac();
-    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac(deviceDesc->macAddress_);
+    // With dual bluetooth devices, the active device is a mac address set. A device joins the
+    // set only after it is actually activated, so a failed activation never changes the set and
+    // previously active devices are kept as-is.
     auto isActivated = Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDesc->macAddress_ &&
         Bluetooth::AudioA2dpManager::GetActiveA2dpDeviceLocal() == deviceDesc->macAddress_;
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+    isActivated = true;
+#endif
     if (isActivated) {
         AUDIO_INFO_LOG("[%{public}s] [%{public}s] already active",
             AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceDesc->macAddress_).c_str(),
@@ -101,20 +105,18 @@ int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDev
 
         result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDesc->macAddress_);
         if (result != SUCCESS) {
-            AudioActiveDevice::GetInstance().SetActiveBtDeviceMac(lastActiveA2dpDevice);
-            AUDIO_ERR_LOG("Active [%{public}s] failed, using original [%{public}s] device",
-                AudioPolicyUtils::GetInstance().GetEncryptAddr(
-                    AudioActiveDevice::GetInstance().GetActiveBtDeviceMac()).c_str(),
-                AudioPolicyUtils::GetInstance().GetEncryptAddr(lastActiveA2dpDevice).c_str());
+            AUDIO_ERR_LOG("Active [%{public}s] failed, active devices unchanged",
+                AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceDesc->macAddress_).c_str());
             return result;
         }
     }
+    AudioActiveDevice::GetInstance().AddActiveBtDevice(deviceDesc->macAddress_);
 
     if (isActivated && AudioIOHandleMap::GetInstance().CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
         return SUCCESS;
     }
     AudioStreamInfo audioStreamInfo = {};
-    AudioActiveDevice::GetInstance().GetActiveA2dpDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo);
+    AudioActiveDevice::GetInstance().GetActiveA2dpDeviceStreamInfo(deviceDesc->macAddress_, audioStreamInfo);
     std::string networkId  = AudioActiveDevice::GetInstance().GetCurrentOutputDeviceNetworkId();
     std::string sinkName   = AudioPolicyUtils::GetInstance().GetSinkPortName(
         AudioActiveDevice::GetInstance().GetCurrentOutputDeviceType());

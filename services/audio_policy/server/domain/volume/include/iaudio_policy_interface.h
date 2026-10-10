@@ -198,17 +198,17 @@ public:
 
     virtual int32_t SetNearlinkDeviceVolume(AudioVolumeType volumeType, int32_t volume) = 0;
 
-    virtual void SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume) = 0;
+    virtual void SetAbsVolumeScene(const std::string &macAddress, bool isAbsVolumeScene, int32_t volume) = 0;
 
-    virtual bool IsAbsVolumeScene() const = 0;
+    virtual bool IsAbsVolumeScene(const std::string &macAddress) const = 0;
 
-    virtual void SetAbsVolumeMute(bool mute) = 0;
+    virtual void SetAbsVolumeMute(const std::string &macAddress, bool mute) = 0;
 
     virtual void SetAbsVolumeMuteNearlink(bool mute) = 0;
 
     virtual void SetDataShareReady(std::atomic<bool> isDataShareReady) = 0;
 
-    virtual bool IsAbsVolumeMute() const = 0;
+    virtual bool IsAbsVolumeMute(const std::string &macAddress) const = 0;
 
     virtual float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) = 0;
 

@@ -157,7 +157,6 @@ interface IAudioPolicy {
     void GetAudioCapturerMicrophoneDescriptors([in] int sessionId, [out] List<sptr<MicrophoneDescriptor>> retMicList);
     void GetAvailableMicrophones([out] List<sptr<MicrophoneDescriptor>> retMicList);
     void SetDeviceAbsVolumeSupported([in] String macAddress, [in] boolean support, [in] int volume);
-    void IsAbsVolumeScene([out] boolean retVolume);
     void SetA2dpDeviceVolume([in] String macAddress, [in] int volume, [in] boolean updateUi);
     void SetNearlinkDeviceVolume([in] String macAddress, [in] int volumeType, [in] int volume, [in] boolean updateUi);
     void GetAvailableDevices([in] int usage, [out] List<sharedptr<AudioDeviceDescriptor>> retDeviceList);

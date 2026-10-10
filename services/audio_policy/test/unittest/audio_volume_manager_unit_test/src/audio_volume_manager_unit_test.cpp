@@ -316,9 +316,9 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_013, TestSize.Level1)
     bool support = true;
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
-    audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
+    audioVolumeManager.audioActiveDevice_.AddActiveBtDevice(macAddress);
     audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support, 0);
-    EXPECT_EQ(audioVolumeManager.audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
+    EXPECT_TRUE(audioVolumeManager.audioActiveDevice_.IsActiveBtDevice(macAddress));
 }
 
 /**
@@ -518,7 +518,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_016, TestSize.Level1)
     bool support = true;
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
-    audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
+    audioVolumeManager.audioActiveDevice_.AddActiveBtDevice(macAddress);
     auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_NE(ret, 0);
 }
@@ -870,8 +870,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_035, TestSize.Level1)
     nearLinkDevice->deviceType_ = DEVICE_TYPE_NEARLINK;
     nearLinkDevice->networkId_ = LOCAL_NETWORK_ID;
     AudioConnectedDevice::GetInstance().AddConnectedDevice(nearLinkDevice);
+    // Zone 10 does not exist: the flow falls back to GetDeviceForVolume instead of failing
+    // with the zone device error.
     auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
 
     zoneId = 0;
     audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
@@ -1291,12 +1293,12 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_057, TestSize.Level1)
 
     bool support = true;
     std::string macAddress = "11:22:33:44:55:66";
-    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = "test";
+    audioVolumeManager->audioActiveDevice_.AddActiveBtDevice("test");
     audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
 
-    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = macAddress;
+    audioVolumeManager->audioActiveDevice_.AddActiveBtDevice(macAddress);
     audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
-    EXPECT_EQ(audioVolumeManager->audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
+    EXPECT_TRUE(audioVolumeManager->audioActiveDevice_.IsActiveBtDevice(macAddress));
 }
 
 /**
@@ -1346,8 +1348,9 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_060, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_MUSIC;
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
     int32_t zoneId = 10;
+    // Zone id 10 does not exist: the flow falls back to the default device instead of failing.
     auto ret = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1361,8 +1364,82 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_061, TestSize.Level1)
 
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t zoneId = 10;
+    // Restore the mute state so that the assertion checks the fallback read only.
+    audioVolumeManager.SetStreamMute(streamType, false, STREAM_USAGE_MUSIC, DEVICE_TYPE_SPEAKER, 0);
     auto ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
     EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test SetStreamMute zone fallback.
+* @tc.number: AudioVolumeManagerZoneFallback_001
+* @tc.desc  : zoneId > 0 but the zone does not exist: the device fetch falls back to the
+*             default device and the mute is applied instead of failing with a zone error.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerZoneFallback_001, TestSize.Level4)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioStreamType streamType = STREAM_MUSIC;
+    bool mute = true;
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+    int32_t zoneId = 10; // zone id that does not exist
+    auto ret = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test GetStreamMute zone fallback.
+* @tc.number: AudioVolumeManagerZoneFallback_002
+* @tc.desc  : zoneId > 0 but the zone does not exist: GetStreamMute falls back to the
+*             default device and reads the mute state applied to it.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerZoneFallback_002, TestSize.Level4)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioStreamType streamType = STREAM_MUSIC;
+    // The zone does not exist, so the mute is applied to the default device.
+    auto ret = audioVolumeManager.SetStreamMute(streamType, true, STREAM_USAGE_MUSIC, DEVICE_TYPE_SPEAKER, 10);
+    EXPECT_EQ(ret, SUCCESS);
+    bool isMuted = audioVolumeManager.GetStreamMute(streamType, 0);
+    EXPECT_TRUE(isMuted);
+    audioVolumeManager.SetStreamMute(streamType, false, STREAM_USAGE_MUSIC, DEVICE_TYPE_SPEAKER, 0);
+}
+
+/**
+* @tc.name  : Test A2DP absolute volume is keyed by the target device mac address.
+* @tc.number: AudioVolumeManagerA2dpAbsVolume_001
+* @tc.desc  : GetSystemVolumeLevel reads the absolute volume of the fetched A2DP device by
+*             its mac address instead of the single active bluetooth device.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerA2dpAbsVolume_001, TestSize.Level4)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    std::string macAddress = "11:22:33:44:55:66";
+    auto a2dpDevice = std::make_shared<AudioDeviceDescriptor>();
+    a2dpDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    a2dpDevice->macAddress_ = macAddress;
+    a2dpDevice->networkId_ = LOCAL_NETWORK_ID;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(a2dpDevice);
+    A2dpDeviceConfigInfo info;
+    info.absVolumeSupport = true;
+    info.volumeLevel = 5;
+    info.mute = false;
+    audioVolumeManager->audioA2dpDevice_.AddA2dpDevice(macAddress, info);
+    AudioVolumeManager::GetInstance().audioActiveDevice_.volumeTypeDeviceMap_[STREAM_MUSIC] = {a2dpDevice};
+
+    int32_t volumeLevel = audioVolumeManager->GetSystemVolumeLevel(STREAM_MUSIC);
+    EXPECT_EQ(volumeLevel, 5);
+
+    info.mute = true;
+    audioVolumeManager->audioA2dpDevice_.AddA2dpDevice(macAddress, info);
+    volumeLevel = audioVolumeManager->GetSystemVolumeLevel(STREAM_MUSIC);
+    EXPECT_EQ(volumeLevel, 0);
+
+    AudioVolumeManager::GetInstance().audioActiveDevice_.volumeTypeDeviceMap_.erase(STREAM_MUSIC);
+    AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_BLUETOOTH_A2DP);
 }
 
 /**
@@ -1439,12 +1516,13 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_002, TestSize.Leve
     int32_t volumeLevel = 7;
     VolumeScale volume{volumeLevel, volumeDegree};
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+    // Zone 1 does not exist: the flow falls back to the default device instead of failing.
     int32_t ret = audioVolumeManager.SetSystemVolumeLevel(streamType, volume,
         deviceDesc, invalidZone);
-    EXPECT_NE(ret, SUCCESS);
-
+    EXPECT_EQ(ret, SUCCESS);
+    // The degree read also falls back to the default device and returns the set degree.
     ret = audioVolumeManager.GetSystemVolumeDegree(streamType, invalidZone);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, volumeDegree);
 }
 
 /**
@@ -1456,14 +1534,13 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_003, TestSize.Leve
 {
     AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
     std::string macAddress = "11:22:33:44:55:77";
-    std::string oldActiveBtDevice = audioVolumeManager.audioActiveDevice_.activeBTDevice_;
     int32_t expectedVolumeDegree = 66;
     auto btA2dpDevice = std::make_shared<AudioDeviceDescriptor>();
     btA2dpDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     btA2dpDevice->networkId_ = LOCAL_NETWORK_ID;
     btA2dpDevice->macAddress_ = macAddress;
     AudioConnectedDevice::GetInstance().AddConnectedDevice(btA2dpDevice);
-    audioVolumeManager.audioActiveDevice_.activeBTDevice_ = macAddress;
+    audioVolumeManager.audioActiveDevice_.AddActiveBtDevice(macAddress);
 
     A2dpDeviceConfigInfo a2dpDeviceConfigInfo;
     a2dpDeviceConfigInfo.absVolumeSupport = true;
@@ -1475,7 +1552,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_003, TestSize.Leve
     EXPECT_EQ(ret, expectedVolumeDegree);
 
     audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_.erase(macAddress);
-    audioVolumeManager.audioActiveDevice_.activeBTDevice_ = oldActiveBtDevice;
+    audioVolumeManager.audioActiveDevice_.RemoveActiveBtDevice(macAddress);
     AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_BLUETOOTH_A2DP);
 }
 
@@ -1794,12 +1871,12 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_076, TestSize.Level1)
 
     bool support = false;
     std::string macAddress = "11:22:33:44:55:66";
-    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = "test";
+    audioVolumeManager->audioActiveDevice_.AddActiveBtDevice("test");
     audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
 
-    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = macAddress;
+    audioVolumeManager->audioActiveDevice_.AddActiveBtDevice(macAddress);
     audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
-    EXPECT_EQ(audioVolumeManager->audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
+    EXPECT_TRUE(audioVolumeManager->audioActiveDevice_.IsActiveBtDevice(macAddress));
 }
 
 /**

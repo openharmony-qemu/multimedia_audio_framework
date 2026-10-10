@@ -2491,8 +2491,7 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
             streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
             shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_[0];
             audioActiveDevice_.SetActiveBtInDeviceMac(desc->macAddress_);
-            bool ret = audioActiveDevice_.GetActiveA2dpDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP_IN,
-                streamDesc->streamInfo_);
+            bool ret = audioActiveDevice_.GetActiveA2dpInDeviceStreamInfo(streamDesc->streamInfo_);
             CHECK_AND_RETURN_RET_LOG(ret, OPEN_PORT_FAILURE, "invalid streamDesc");
             SourceType sourceType = streamDesc->capturerInfo_.sourceType;
             audioA2dpDevice_.GetA2dpModuleInfo(pipeInfo->moduleInfo_, streamDesc->streamInfo_);

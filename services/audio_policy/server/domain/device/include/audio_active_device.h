@@ -18,6 +18,7 @@
 #include <bitset>
 #include <list>
 #include <map>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -85,10 +86,17 @@ public:
 
     bool IsDeviceActive(DeviceType deviceType);
     float GetMaxAmplitude(const int32_t deviceId, const AudioInterrupt audioInterrupt);
-    std::string GetActiveBtDeviceMac();
-    void SetActiveBtDeviceMac(const std::string macAddress);
+    std::set<std::string> GetActiveBtDeviceMac() const;
+    // Active bluetooth devices form a mac address set to support dual bluetooth connections.
+    void AddActiveBtDevice(const std::string &macAddress);
+    void RemoveActiveBtDevice(const std::string &macAddress);
+    bool IsActiveBtDevice(const std::string &macAddress) const;
     void SetActiveBtInDeviceMac(const std::string macAddress);
-    bool GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo);
+    // Stream info queries are split by bluetooth direction: the A2DP output query keys on the
+    // target mac address and fails when no mac is provided; the A2DP_IN query follows the single
+    // active input device.
+    bool GetActiveA2dpDeviceStreamInfo(const std::string &macAddress, AudioStreamInfo &streamInfo);
+    bool GetActiveA2dpInDeviceStreamInfo(AudioStreamInfo &streamInfo);
     DeviceType GetCurrentInputDeviceType(const int32_t uid = SYSTEM_UID);
     std::string GetCurrentInputDeviceMacAddr(const int32_t uid = SYSTEM_UID);
     DeviceType GetCurrentOutputDeviceType(const int32_t uid = SYSTEM_UID);
@@ -146,7 +154,8 @@ private:
     int32_t volumeAdjustZoneId_ = 0;
     std::mutex deviceForVolumeMutex_;
 
-    std::string activeBTDevice_;
+    std::set<std::string> activeBTDevices_;
+    mutable std::mutex activeBtDevicesMutex_;
     std::string activeBTInDevice_;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> activeOutputDevices_;
     std::unordered_map<AudioVolumeType, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> volumeTypeDeviceMap_;

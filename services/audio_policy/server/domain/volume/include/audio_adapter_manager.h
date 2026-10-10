@@ -219,19 +219,19 @@ public:
 
     bool IsUseNonlinearAlgo() { return useNonlinearAlgo_; }
 
-    void SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume);
+    void SetAbsVolumeScene(const std::string &macAddress, bool isAbsVolumeScene, int32_t volume);
 
     int32_t SetNearlinkDeviceVolume(AudioVolumeType volumeType, int32_t volume);
 
-    bool IsAbsVolumeScene() const;
+    bool IsAbsVolumeScene(const std::string &macAddress) const;
 
-    void SetAbsVolumeMute(bool mute);
+    void SetAbsVolumeMute(const std::string &macAddress, bool mute);
 
     void SetAbsVolumeMuteNearlink(bool mute);
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
 
-    bool IsAbsVolumeMute() const;
+    bool IsAbsVolumeMute(const std::string &macAddress) const;
 
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
 
@@ -627,11 +627,13 @@ private:
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
     std::atomic<bool> isSleVoiceStatus_ {false};
+    // Abs volume scene/mute states of A2DP devices are keyed by the device mac address.
+    mutable std::mutex absVolumeStateMutex_;
+    std::unordered_map<std::string, bool> absVolumeSceneMap_;
+    std::unordered_map<std::string, bool> absVolumeMuteMap_;
     std::atomic<bool> disableVolumeLimit_{false};
     std::atomic<bool> isAbsVolumeMuteNearlink_ {false};
     bool useNonlinearAlgo_ = false;
-    bool isAbsVolumeScene_ = false;
-    bool isAbsVolumeMute_ = false;
     bool isNeedCopyVolumeData_ = false;
     bool isNeedCopyMuteData_ = false;
     bool isNeedCopyRingerModeData_ = false;

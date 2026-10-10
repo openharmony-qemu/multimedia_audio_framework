@@ -498,10 +498,11 @@ void AudioDeviceStatus::UpdateActiveA2dpDeviceWhenDisconnecting(const std::strin
 {
     AUDIO_INFO_LOG("In");
     audioA2dpDevice_.DelA2dpDevice(macAddress);
+    // Reset the abs volume scene of the disconnected device (keyed by mac address).
+    audioPolicyManager_.SetAbsVolumeScene(macAddress, false, 0);
+    audioActiveDevice_.RemoveActiveBtDevice(macAddress);
     if (!audioDeviceManager_.HasConnectedA2dp()) {
-        audioActiveDevice_.SetActiveBtDeviceMac("");
         audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
-        audioPolicyManager_.SetAbsVolumeScene(false, 0);
         audioVolumeManager_.SetSharedAbsVolumeScene(false);
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
@@ -793,17 +794,19 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
 void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, const std::string &macAddress,
     const std::string &deviceName, const AudioStreamInfo &streamInfo)
 {
-    std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
+    auto activeBtDevices = audioActiveDevice_.GetActiveBtDeviceMac();
+    bool isActiveBtDevice = audioActiveDevice_.IsActiveBtDevice(macAddress);
     AUDIO_INFO_LOG("[ADeviceEvent] device[%{public}d] currentOutputDevice[%{public}d] "
-        "macAddress:[%{public}s], activeBTDevice:[%{public}s]",
+        "macAddress:[%{public}s], activeBTDeviceCount:[%{public}d]",
         deviceType, audioActiveDevice_.GetCurrentOutputDeviceType(),
-        GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(btDevice).c_str());
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(macAddress).c_str(),
+        static_cast<int32_t>(activeBtDevices.size()));
 
     // Bt configuration changed cases:
     // 1) To another stream info: Reload pipe by new stream info.
     // 2) To another bt device: Reload pipe by new stream info.
     // 3) To SBC/L2HC codec: Re-fetch pipes for all streams, may change from a2dp to a2dp offload.
-    if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)) {
+    if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && isActiveBtDevice) {
         AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("BtConfigurationChanged");
         AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("BtConfigurationChanged");
         uint32_t activeSessionsSize = 0;
@@ -814,7 +817,7 @@ void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, cons
         }
         AUDIO_DEBUG_LOG("sampleRate: %{public}d, a2dpOffloadFlag: %{public}d, activeSessionsSize %{public}d",
             streamInfo.samplingRate, state, activeSessionsSize);
-        if (!IsConfigurationUpdated(deviceType, streamInfo)) {
+        if (!IsConfigurationUpdated(deviceType, macAddress, streamInfo)) {
             AUDIO_DEBUG_LOG("Audio configuration same");
             return;
         }
@@ -828,11 +831,12 @@ void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, cons
     }
 }
 
-bool AudioDeviceStatus::IsConfigurationUpdated(DeviceType deviceType, const AudioStreamInfo &streamInfo)
+bool AudioDeviceStatus::IsConfigurationUpdated(DeviceType deviceType, const std::string &macAddress,
+    const AudioStreamInfo &streamInfo)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         AudioStreamInfo audioStreamInfo = {};
-        if (audioActiveDevice_.GetActiveA2dpDeviceStreamInfo(deviceType, audioStreamInfo)) {
+        if (audioActiveDevice_.GetActiveA2dpDeviceStreamInfo(macAddress, audioStreamInfo)) {
             AUDIO_DEBUG_LOG("Device configurations current rate: %{public}d, format: %{public}d, channel: %{public}d",
                 audioStreamInfo.samplingRate, audioStreamInfo.format, audioStreamInfo.channels);
             AUDIO_DEBUG_LOG("Device configurations updated rate: %{public}d, format: %{public}d, channel: %{public}d",

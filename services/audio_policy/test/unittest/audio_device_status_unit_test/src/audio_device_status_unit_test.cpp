@@ -1417,7 +1417,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_055, TestSize.Level1)
 
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
-    result = audioDeviceStatus.IsConfigurationUpdated(deviceType, streamInfo);
+    result = audioDeviceStatus.IsConfigurationUpdated(deviceType, "", streamInfo);
     EXPECT_EQ(result, false);
 }
 
@@ -1439,9 +1439,9 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_056, TestSize.Level1)
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     audioDeviceStatus.audioA2dpDevice_.AddA2dpInDevice(device, config);
-    audioDeviceStatus.audioActiveDevice_.SetActiveBtDeviceMac(device);
+    audioDeviceStatus.audioActiveDevice_.AddActiveBtDevice(device);
 
-    result = audioDeviceStatus.IsConfigurationUpdated(deviceType, streamInfo);
+    result = audioDeviceStatus.IsConfigurationUpdated(deviceType, device, streamInfo);
     EXPECT_EQ(result, false);
 }
 
@@ -1463,9 +1463,9 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_057, TestSize.Level1)
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     audioDeviceStatus.audioA2dpDevice_.AddA2dpInDevice(device, config);
-    audioDeviceStatus.audioActiveDevice_.SetActiveBtDeviceMac(device);
+    audioDeviceStatus.audioActiveDevice_.AddActiveBtDevice(device);
 
-    result = audioDeviceStatus.IsConfigurationUpdated(deviceType, streamInfo);
+    result = audioDeviceStatus.IsConfigurationUpdated(deviceType, device, streamInfo);
     EXPECT_EQ(result, false);
 }
 
@@ -1487,9 +1487,9 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_058, TestSize.Level1)
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     audioDeviceStatus.audioA2dpDevice_.AddA2dpInDevice(device, config);
-    audioDeviceStatus.audioActiveDevice_.SetActiveBtDeviceMac(device);
+    audioDeviceStatus.audioActiveDevice_.AddActiveBtDevice(device);
 
-    result = audioDeviceStatus.IsConfigurationUpdated(deviceType, streamInfo);
+    result = audioDeviceStatus.IsConfigurationUpdated(deviceType, device, streamInfo);
     EXPECT_EQ(result, false);
 }
 

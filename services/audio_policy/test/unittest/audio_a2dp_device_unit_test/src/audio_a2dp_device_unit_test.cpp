@@ -28,7 +28,17 @@ void AudioA2dpDeviceUnitTest::SetUp(void)
 }
 void AudioA2dpDeviceUnitTest::TearDown(void)
 {
-    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac(savedActiveBtMac_);
+    std::set<std::string> current = AudioActiveDevice::GetInstance().GetActiveBtDeviceMac();
+    for (const auto &mac : current) {
+        if (savedActiveBtMac_.find(mac) == savedActiveBtMac_.end()) {
+            AudioActiveDevice::GetInstance().RemoveActiveBtDevice(mac);
+        }
+    }
+    for (const auto &mac : savedActiveBtMac_) {
+        if (current.find(mac) == current.end()) {
+            AudioActiveDevice::GetInstance().AddActiveBtDevice(mac);
+        }
+    }
     AudioIOHandleMap::GetInstance().DelIOHandleInfo(BLUETOOTH_SPEAKER);
 }
 
@@ -465,7 +475,6 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_003, TestSize.Level1)
     deviceDesc->deviceName_ = "test_bt_device";
     deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
-    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac("");
     AudioIOHandleMap::GetInstance().AddIOHandleInfo(BLUETOOTH_SPEAKER, 1);
 
     int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
@@ -478,7 +487,7 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_003, TestSize.Level1)
 /**
  * @tc.name: SwitchActiveA2dpDevice_004
  * @tc.desc: Test SwitchActiveA2dpDevice when device is NOT already active (else branch),
- *           and SetActiveA2dpDevice fails, should rollback macAddress and return error.
+ *           and SetActiveA2dpDevice fails, should keep active devices unchanged and return error.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
@@ -494,14 +503,13 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_004, TestSize.Level1)
     deviceDesc->deviceName_ = "test_bt_device2";
     deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
-    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac(originalMac);
+    AudioActiveDevice::GetInstance().AddActiveBtDevice(originalMac);
     AudioIOHandleMap::GetInstance().DelIOHandleInfo(BLUETOOTH_SPEAKER);
 
     int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
     EXPECT_NE(result, SUCCESS);
-
-    std::string restoredMac = AudioActiveDevice::GetInstance().GetActiveBtDeviceMac();
-    EXPECT_EQ(restoredMac, originalMac);
+    EXPECT_TRUE(AudioActiveDevice::GetInstance().IsActiveBtDevice(originalMac));
+    EXPECT_FALSE(AudioActiveDevice::GetInstance().IsActiveBtDevice(testMac));
 
     AudioA2dpDevice::GetInstance().DelA2dpDevice(testMac);
 }
@@ -525,7 +533,6 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_005, TestSize.Level1)
     deviceDesc->deviceName_ = "test_bt_device3";
     deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
-    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac("");
     AudioIOHandleMap::GetInstance().AddIOHandleInfo(BLUETOOTH_SPEAKER, 2);
 
     int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
@@ -554,7 +561,6 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_006, TestSize.Level1)
     deviceDesc->deviceName_ = "test_bt_device4";
     deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
-    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac("");
     AudioIOHandleMap::GetInstance().DelIOHandleInfo(BLUETOOTH_SPEAKER);
 
     int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
@@ -582,7 +588,6 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_007, TestSize.Level1)
     deviceDesc->deviceName_ = "test_bt_device5";
     deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
-    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac("");
     AudioIOHandleMap::GetInstance().DelIOHandleInfo(BLUETOOTH_SPEAKER);
 
     int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
@@ -779,7 +784,6 @@ HWTEST_F(AudioA2dpDeviceUnitTest, DeactivateDevice_002, TestSize.Level1)
  */
 HWTEST_F(AudioA2dpDeviceUnitTest, DeactivateDevice_003, TestSize.Level1)
 {
-    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac("");
     int32_t result = a2dpDeviceBehavior_.DeactivateDevice();
     EXPECT_EQ(result, SUCCESS);
 }
