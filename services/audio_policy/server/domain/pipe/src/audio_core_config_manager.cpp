@@ -817,9 +817,8 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
     std::unordered_map<std::string, std::shared_ptr<AdapterPipeInfo>> pipeInfoMap;
     for (const auto &pipeName : deviceInfo->supportPipes_) {
         std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfoPtr->GetPipeInfoByName(pipeName);
-        if (pipeInfo != nullptr) {
-            pipeInfoMap[pipeInfo->paProp_.busAddress_] = pipeInfo;
-        }
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+        pipeInfoMap[pipeInfo->paProp_.busAddress_] = pipeInfo;
     }
 
     auto findPipe = [&pipeInfoMap](const std::string &busAddress) -> std::shared_ptr<AdapterPipeInfo> {
