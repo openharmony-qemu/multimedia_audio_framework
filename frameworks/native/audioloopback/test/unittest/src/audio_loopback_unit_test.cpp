@@ -388,26 +388,29 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CheckDeviceSupport_001, TestSize.
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->validDevice.clear();
     int32_t ret = audioLoopback->CheckDeviceSupport();
-    if (audioLoopback->activeOutputDevice_ == audioLoopback->activeInputDevice_) {
+    if (ret == DEFAULT_OK) {
+        EXPECT_EQ(audioLoopback->isRendererUsb_, true);
+        EXPECT_EQ(audioLoopback->isCapturerUsb_, true);
+        EXPECT_NE(audioLoopback->activeOutputDevice_, DEVICE_TYPE_NONE);
+        EXPECT_NE(audioLoopback->activeInputDevice_, DEVICE_TYPE_NONE);
+    } else {
         EXPECT_EQ(ret, ERROR_DEVICE_NOT_SUPPORT);
         EXPECT_EQ(audioLoopback->isRendererUsb_, false);
         EXPECT_EQ(audioLoopback->isCapturerUsb_, false);
-    } else {
-        EXPECT_EQ(ret, ERROR_DEVICE_MISMATCH);
     }
 }
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CheckDeviceSupport_002, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->CheckDeviceSupport();
-    audioLoopback->validDevice.insert(audioLoopback->activeOutputDevice_);
-    audioLoopback->validDevice.insert(audioLoopback->activeInputDevice_);
     int32_t ret = audioLoopback->CheckDeviceSupport();
-    EXPECT_EQ(ret == DEFAULT_OK, audioLoopback->activeOutputDevice_ == audioLoopback->activeInputDevice_);
-    if (ret == DEFAULT_OK) {
-        EXPECT_EQ(audioLoopback->isRendererUsb_, true);
-        EXPECT_EQ(audioLoopback->isCapturerUsb_, true);
+    AudioDevicePair preferred = audioLoopback->GetPreferredDevicePair();
+    if (preferred.first != nullptr && preferred.second != nullptr) {
+        EXPECT_EQ(ret, DEFAULT_OK);
+        EXPECT_EQ(audioLoopback->activeInputDevice_, preferred.first->deviceType_);
+        EXPECT_EQ(audioLoopback->activeOutputDevice_, preferred.second->deviceType_);
+    } else {
+        EXPECT_EQ(ret, ERROR_DEVICE_NOT_SUPPORT);
     }
 }
 
