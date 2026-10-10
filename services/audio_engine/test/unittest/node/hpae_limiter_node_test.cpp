@@ -169,7 +169,7 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_WithLimiterInit, TestSize.Level1)
 
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
 
     int32_t testValue = 100;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb =
@@ -214,7 +214,7 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_MultipleInputs, TestSize.Level1)
 
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
 
     int32_t testValue0 = 100;
     int32_t testValue1 = 200;
@@ -288,7 +288,7 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_MonoChannel, TestSize.Level1)
 
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
 
     int32_t testValue = 50;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb =
@@ -346,7 +346,7 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_WithSilence, TestSize.Level1)
 
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
 
     int32_t testValue = 0;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb =
@@ -427,7 +427,7 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_WithoutLimiterInit, TestSize.Level1)
 
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
 
     int32_t testValue = 100;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb =
@@ -475,7 +475,7 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_WithLargeSignal, TestSize.Level1)
 
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
 
     // Use a very large value to test limiter's clipping behavior
     int32_t testValue = 99999;

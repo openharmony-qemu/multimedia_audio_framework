@@ -32,6 +32,7 @@
 #include "hpae_mocks.h"
 #include "audio_utils.h"
 #include "audio_pipe_types.h"
+#include "util/id_handler.h"
 #include "mock_effect_instance.h"
 #include <thread>
 #include <chrono>
@@ -97,9 +98,11 @@ static HpaeSinkInfo GetSinkInfo()
 
 static uint32_t InjectMockRenderSink(const HpaeSinkInfo &sinkInfo)
 {
-    std::string info = sinkInfo.deviceNetId == "LocalDevice" ? HDI_ID_INFO_DEFAULT : sinkInfo.deviceNetId;
+    // Mirror production info selection (IdHandler::SelectIdInfo, class-dispatched by deviceClass).
+    HdiIdInfoParam param = {.deviceClass = sinkInfo.deviceClass, .networkId = sinkInfo.deviceNetId,
+        .macAddress = sinkInfo.macAddress, .busAddress = sinkInfo.busAddress};
     uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
-        sinkInfo.deviceClass, info, true);
+        sinkInfo.deviceClass, IdHandler::SelectIdInfo(param), true);
     EXPECT_NE(renderId, HDI_INVALID_ID);
 
     auto mockRenderSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
