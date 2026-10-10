@@ -225,23 +225,22 @@ void HpaeSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
 #endif
 }
 
-int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId,
-    const std::string &macAddress)
+int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const HdiIdInfoParam &param)
 {
-    // macAddress has highest priority for device selection, then deviceNetId, then default
-    const std::string &info = IdHandler::SelectIdInfo(macAddress, deviceNetId);
-    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info, true,
-        true, GetNodeInfo().routeFlag);
+    // Single priority source shared with policy port creation (IdHandler::SelectIdInfo)
+    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(param.deviceClass,
+        IdHandler::SelectIdInfo(param), true, true, GetNodeInfo().routeFlag);
 
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
-        // Do not print macAddress (sensitive); indicate the actual selection source instead.
-        AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, selectByMac: %{public}d, netIdLen: %{public}zu, "
-            "renderId_: %{public}u", deviceClass.c_str(), !macAddress.empty(), deviceNetId.size(), renderId_);
+        // Do not print macAddress (sensitive); indicate the selection sources instead.
+        AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, busLen: %{public}zu, macLen: %{public}zu, "
+            "netIdLen: %{public}zu, renderId_: %{public}u", param.deviceClass.c_str(), param.busAddress.size(),
+            param.macAddress.size(), param.networkId.size(), renderId_);
         HdiAdapterManager::GetInstance().ReleaseId(renderId_);
         return ERROR;
     }
-    GetAuxiliarySink(deviceClass);
+    GetAuxiliarySink(param.deviceClass);
     return SUCCESS;
 }
 

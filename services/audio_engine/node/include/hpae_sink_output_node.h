@@ -40,8 +40,7 @@ public:
     void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback);
-    int32_t GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId,
-        const std::string &macAddress = "");
+    int32_t GetRenderSinkInstance(const HdiIdInfoParam &param);
     int32_t RenderSinkInit(IAudioSinkAttr &attr);
     int32_t RenderSinkDeInit();
     int32_t RenderSinkFlush(void);
