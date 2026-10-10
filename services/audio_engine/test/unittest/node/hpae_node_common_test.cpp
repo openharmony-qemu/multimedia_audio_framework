@@ -1605,6 +1605,31 @@ HWTEST_F(HpaeNodeCommonTest, TransModuleInfoToHpaeSinkInfo_EmptyMacAddress, Test
 }
 
 /**
+ * @tc.name: TransModuleInfoToHpaeSinkInfo_BusAddress
+ * @tc.type: FUNC
+ * @tc.number: TransModuleInfoToHpaeSinkInfo_BusAddress
+ * @tc.desc: Test TransModuleInfoToHpaeSinkInfo copies busAddress (multi-bus id info source)
+ */
+HWTEST_F(HpaeNodeCommonTest, TransModuleInfoToHpaeSinkInfo_BusAddress, TestSize.Level0)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "s16le";
+    moduleInfo.bufferSize = "3840";
+    moduleInfo.networkId = "local";
+    moduleInfo.className = "primary";
+    moduleInfo.channelLayout = "3";
+    moduleInfo.deviceType = "1";
+    moduleInfo.busAddress = "bus10_out";
+
+    HpaeSinkInfo sinkInfo;
+    int32_t ret = TransModuleInfoToHpaeSinkInfo(moduleInfo, sinkInfo);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(sinkInfo.busAddress, "bus10_out");
+}
+
+/**
  * @tc.name: EncryptMacAddress_Empty_001
  * @tc.type: FUNC
  * @tc.number: EncryptMacAddress_Empty_001

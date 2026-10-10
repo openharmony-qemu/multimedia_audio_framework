@@ -127,6 +127,7 @@ struct HpaeSinkInfo {
     std::string filePath;
     std::string deviceName;
     std::string macAddress;
+    std::string busAddress;
     size_t frameLen = 0;
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     AudioSampleFormat format = INVALID_WIDTH;

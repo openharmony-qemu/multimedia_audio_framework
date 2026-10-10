@@ -80,6 +80,30 @@ HWTEST_F(HpaeSinkOutputNodeTest, constructHpaeSinkOutputNode, TestSize.Level0)
     EXPECT_EQ(retNi.sessionId, nodeInfo.sessionId);
 }
 
+/**
+ * @tc.name: BuildIdInfoParam_FieldMapping
+ * @tc.type: FUNC
+ * @tc.number: BuildIdInfoParam_FieldMapping
+ * @tc.desc: Test BuildIdInfoParam maps nodeInfo identity fields in HdiIdInfoParam order
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, BuildIdInfoParam_FieldMapping, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.deviceClass = "primary_extra";
+    nodeInfo.deviceName = "Typec_Speaker";
+    nodeInfo.deviceNetId = "LocalDevice";
+    nodeInfo.macAddress = "11:22:33:44:55:66";
+    nodeInfo.busAddress = "bus10_out";
+    auto node = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    HdiIdInfoParam param = node->BuildIdInfoParam();
+    EXPECT_EQ(param.deviceClass, "primary_extra");
+    EXPECT_EQ(param.name, "Typec_Speaker");
+    EXPECT_EQ(param.networkId, "LocalDevice");
+    EXPECT_EQ(param.macAddress, "11:22:33:44:55:66");
+    EXPECT_EQ(param.busAddress, "bus10_out");
+}
+
 static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
     for (int32_t i = 0; i < len / SAMPLE_F32LE; i++) {
