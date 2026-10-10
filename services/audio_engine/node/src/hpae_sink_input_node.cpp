@@ -415,6 +415,8 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
         .deviceClass = GetDeviceClass(),
         .deviceNetId = GetDeviceNetId(),
         .macAddress = GetMacAddress(),
+        .deviceName = GetDeviceName(),
+        .busAddress = GetBusAddress(),
         .needData = needData,
         .forceData = forceData,
         .writePos_ = callbackData.writePos_,

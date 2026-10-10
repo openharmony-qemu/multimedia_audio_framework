@@ -57,8 +57,7 @@ static constexpr uint64_t PRINT_TIMESTAMP_INTERVAL_NS = 1000000000;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static const std::string DEVICE_CLASS_A2DP = "a2dp";
-static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId,
-    std::string macAddress);
+static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(const HdiIdInfoParam &param);
 // external linkage (not static) so that the mapping can be unit tested directly
 FadeType ConvertFadeStrategyToFadeType(FadeStrategy strategy);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble,
@@ -287,13 +286,19 @@ uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
     std::string deviceClass;
     std::string deviceNetId;
     std::string macAddress;
+    std::string deviceName;
+    std::string busAddress;
     {
         std::shared_lock<std::shared_mutex> lock(latencyMutex_);
         deviceClass = deviceClass_;
         deviceNetId = deviceNetId_;
         macAddress = macAddress_;
+        deviceName = deviceName_;
+        busAddress = busAddress_;
     }
-    std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass, deviceNetId, macAddress);
+    HdiIdInfoParam idParam = {.deviceClass = deviceClass, .name = deviceName, .networkId = deviceNetId,
+        .macAddress = macAddress, .busAddress = busAddress};
+    std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(idParam);
     CHECK_AND_RETURN_RET(audioRendererSink != nullptr && audioRendererSink->IsInA2dpOffload(), 0);
 
     Trace trace("HpaeRendererStreamImpl::GetA2dpOffloadLatency");
@@ -337,30 +342,35 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(uint32_t &sinkLatency)
     std::string deviceClass;
     std::string deviceNetId;
     std::string macAddress;
+    std::string deviceName;
+    std::string busAddress;
     {
         std::shared_lock<std::shared_mutex> lock(latencyMutex_);
         deviceClass = deviceClass_;
         deviceNetId = deviceNetId_;
         macAddress = macAddress_;
+        deviceName = deviceName_;
+        busAddress = busAddress_;
         // Upper layer cannot estimate position at playback start, so query the underlying latency interface.
         if (offloadEnable_ && hdiPos_.first != 0) {
             sinkLatency = GetOffloadLatency();
             return SUCCESS;
         }
     }
-    return GetSinkLatencyInner(deviceClass, deviceNetId, macAddress, sinkLatency);
+    HdiIdInfoParam idParam = {.deviceClass = deviceClass, .name = deviceName, .networkId = deviceNetId,
+        .macAddress = macAddress, .busAddress = busAddress};
+    return GetSinkLatencyInner(idParam, sinkLatency);
 }
 
-int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(const std::string &deviceClass,
-    const std::string &deviceNetId, const std::string &macAddress, uint32_t &sinkLatency)
+int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(const HdiIdInfoParam &param, uint32_t &sinkLatency)
 {
     sinkLatency = 0;
-    std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass, deviceNetId, macAddress);
+    std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(param);
     CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_OPERATION,
-        "audioRendererSink is null, deviceClass %{public}s", deviceClass.c_str());
+        "audioRendererSink is null, deviceClass %{public}s", param.deviceClass.c_str());
     int32_t ret = audioRendererSink->GetLatency(sinkLatency);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "audioRendererSink GetLatency failed");
-    auto compensation = (deviceClass == DEVICE_CLASS_A2DP) * FIXED_LATENCY_IN_MS;
+    auto compensation = (param.deviceClass == DEVICE_CLASS_A2DP) * FIXED_LATENCY_IN_MS;
     sinkLatency = sinkLatency >= compensation ? sinkLatency - compensation :sinkLatency;
     return SUCCESS;
 }
@@ -372,7 +382,9 @@ int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePos
     // latencyMutex_ begin
     CHECK_AND_RETURN_RET(deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_NOT_SUPPORTED);
 
-    std::shared_ptr<IAudioRenderSink> sink = GetRenderSinkInstance(deviceClass_, deviceNetId_, macAddress_);
+    HdiIdInfoParam idParam = {.deviceClass = deviceClass_, .name = deviceName_, .networkId = deviceNetId_,
+        .macAddress = macAddress_, .busAddress = busAddress_};
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSinkInstance(idParam);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_OPERATION, "audioRendererSink is null");
     uint64_t framesUS;
     int64_t timeSec;
@@ -692,10 +704,11 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
 
 void HpaeRendererStreamImpl::ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo)
 {
-    const std::string &idInfo = IdHandler::SelectIdInfo(
-        callBackStreamInfo.macAddress, callBackStreamInfo.deviceNetId);
+    HdiIdInfoParam param = {.deviceClass = callBackStreamInfo.deviceClass, .name = callBackStreamInfo.deviceName,
+        .networkId = callBackStreamInfo.deviceNetId, .macAddress = callBackStreamInfo.macAddress,
+        .busAddress = callBackStreamInfo.busAddress};
     uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
-        callBackStreamInfo.deviceClass, idInfo, false);
+        callBackStreamInfo.deviceClass, IdHandler::SelectIdInfo(param), false);
     auto fetcher = SinkLatencyFetcherManager::GetInstance().EnsureFetcher(renderId);
     CHECK_AND_RETURN_LOG(fetcher, "sinkLatencyFetcher is null, renderId %{public}u", renderId);
     std::lock_guard<std::mutex> lock(sinkLatencyFetcherMutex_);
@@ -714,10 +727,13 @@ bool HpaeRendererStreamImpl::InitLatencyInfo(const AudioCallBackStreamInfo &call
         framesWritten_ = callBackStreamInfo.framesWritten;
         needResetSinkLatencyFetcher |=
             (deviceClass_ != callBackStreamInfo.deviceClass || deviceNetId_ != callBackStreamInfo.deviceNetId ||
-            macAddress_ != callBackStreamInfo.macAddress);
+            macAddress_ != callBackStreamInfo.macAddress || deviceName_ != callBackStreamInfo.deviceName ||
+            busAddress_ != callBackStreamInfo.busAddress);
         deviceClass_ = callBackStreamInfo.deviceClass;
         deviceNetId_ = callBackStreamInfo.deviceNetId;
         macAddress_ = callBackStreamInfo.macAddress;
+        deviceName_ = callBackStreamInfo.deviceName;
+        busAddress_ = callBackStreamInfo.busAddress;
         writePos_ = callBackStreamInfo.writePos_;
     }
     return needResetSinkLatencyFetcher;
@@ -868,17 +884,23 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume()
     std::string deviceClass;
     std::string deviceNetId;
     std::string macAddress;
+    std::string deviceName;
+    std::string busAddress;
     {
         std::unique_lock<std::shared_mutex> lock(latencyMutex_);
         deviceClass = deviceClass_;
         deviceNetId = deviceNetId_;
         macAddress = macAddress_;
+        deviceName = deviceName_;
+        busAddress = busAddress_;
     }
     CHECK_AND_RETURN_RET_LOG((deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD || deviceClass == DEVICE_CLASS_OFFLOAD),
         SUCCESS, "not offload sink, skip");
     AudioStreamType streamType = processConfig_.streamType;
+    HdiIdInfoParam idParam = {.deviceClass = deviceClass, .name = deviceName, .networkId = deviceNetId,
+        .macAddress = macAddress, .busAddress = busAddress};
     uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
-        IdHandler::SelectIdInfo(macAddress, deviceNetId));
+        IdHandler::SelectIdInfo(idParam));
     // Lock from volume read to sink write so each push is one atomic read-then-write
     // section: concurrent pushes (sync entries and async NotifySilentStateAction) land
     // in execution order, and the last sink write always carries the latest volume
@@ -889,8 +911,7 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume()
         streamIndex_, renderId, volume, volumes.durationMs);
     AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
     AudioVolume::GetInstance()->Monitor(streamIndex_, true);
-    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass, deviceNetId,
-        macAddress);
+    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(idParam);
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
@@ -1176,12 +1197,11 @@ bool HpaeRendererStreamImpl::OnQueryUnderrun()
     return false;
 }
 
-static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId,
-    std::string macAddress)
+static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(const HdiIdInfoParam &param)
 {
     uint32_t renderId = HDI_INVALID_ID;
-    renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
-        IdHandler::SelectIdInfo(macAddress, deviceNetId), false, false);
+    renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(param.deviceClass,
+        IdHandler::SelectIdInfo(param), false, false);
     return HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
 }
 
