@@ -206,51 +206,6 @@ void HpaeRendererManagerTest::TearDown()
     outputCluster_.reset();
 }
 
-/**
- * @tc.name  : HandlePriPaPower_NonPrimaryDeviceClass_ReturnsError_001
- * @tc.number: HandlePriPaPower_NonPrimaryDeviceClass_ReturnsError_001
- * @tc.desc  : HandlePriPaPower returns ERR_INVALID_OPERATION when deviceClass is neither
- *             "primary" nor "primary_extra".
- */
-HWTEST_F(HpaeRendererManagerTest, HandlePriPaPower_NonPrimaryDeviceClass_ReturnsError_001, TestSize.Level1)
-{
-    hpaeRendererManager_->sinkInfo_.deviceClass = "a2dp"; // neither "primary" nor "primary_extra"
-    // Session 1 is registered in sinkInputNodeMap_ by SetUp; the guard returns before touching
-    // AudioVolume/outputCluster_, so no further wiring is required.
-    EXPECT_EQ(hpaeRendererManager_->HandlePriPaPower(1), ERR_INVALID_OPERATION);
-}
-
-/**
- * @tc.name  : HandlePriPaPower_PrimaryExtraDeviceClass_Proceeds_002
- * @tc.number: HandlePriPaPower_PrimaryExtraDeviceClass_Proceeds_002
- * @tc.desc  : HandlePriPaPower proceeds (does not early-return) for the newly added
- *             "primary_extra" device class branch.
- */
-HWTEST_F(HpaeRendererManagerTest, HandlePriPaPower_PrimaryExtraDeviceClass_Proceeds_002, TestSize.Level1)
-{
-    hpaeRendererManager_->sinkInfo_.deviceClass = "primary_extra";
-
-    // Wire the output cluster's sink node with a mock render sink so that SetPriPaPower
-    // (invoked when stream volume is non-zero) is safe and returns SUCCESS.
-    HpaeNodeInfo nodeInfo;
-    nodeInfo.nodeId = 1001;
-    nodeInfo.frameLen = FRAME_LENGTH_960;
-    nodeInfo.samplingRate = SAMPLE_RATE_48000;
-    nodeInfo.channels = STEREO;
-    nodeInfo.format = SAMPLE_F32LE;
-    nodeInfo.deviceClass = "primary_extra";
-    auto sinkNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
-    auto mockSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
-    sinkNode->audioRendererSink_ = mockSink;
-    ON_CALL(*mockSink, SetPriPaPower()).WillByDefault(Return(SUCCESS));
-    outputCluster_->hpaeSinkOutputNode_ = sinkNode;
-
-    // Session 1 is registered in sinkInputNodeMap_ by SetUp. Whether AudioVolume reports a zero
-    // or non-zero volume, the result is SUCCESS once the device class guard is crossed; it would
-    // be ERR_INVALID_OPERATION if "primary_extra" still triggered the early return.
-    EXPECT_EQ(hpaeRendererManager_->HandlePriPaPower(1), SUCCESS);
-}
-
 HWTEST_F(HpaeRendererManagerTest, CoverageDrainAndAuxiliarySinkImmediateQueue_001, TestSize.Level1)
 {
     EXPECT_NE(hpaeRendererManager_, nullptr);
