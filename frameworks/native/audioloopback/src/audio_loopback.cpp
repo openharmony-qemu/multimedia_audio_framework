@@ -623,38 +623,18 @@ bool AudioLoopbackPrivate::IsAudioLoopbackSupported()
 
 AudioLoopbackErrorType AudioLoopbackPrivate::CheckDeviceSupport()
 {
-    // hifi  usb // enable
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices =
-        AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererOptions_.rendererInfo);
-    CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices[0] != nullptr,
-        ERROR_DEVICE_NOT_SUPPORT, "Get preferred output device failed");
-    activeOutputDevice_ = outputDevices[0]->deviceType_;
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDevices =
-        AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerOptions_.capturerInfo);
-    CHECK_AND_RETURN_RET_LOG(!inputDevices.empty() && inputDevices[0] != nullptr,
-        ERROR_DEVICE_NOT_SUPPORT, "Get preferred input device failed");
-    activeInputDevice_ = inputDevices[0]->deviceType_;
+    // Delegate to the server encapsulation: it validates each device against HDI
+    // in real time and matches the pair against the supported-pair whitelist.
+    AudioDevicePair devicePair = AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair();
+    CHECK_AND_RETURN_RET_LOG(devicePair.first != nullptr && devicePair.second != nullptr,
+        ERROR_DEVICE_NOT_SUPPORT, "No supported loopback device pair");
+    activeInputDevice_ = devicePair.first->deviceType_;
+    activeOutputDevice_ = devicePair.second->deviceType_;
     AUDIO_INFO_LOG("activeOutputDevice is %{public}d, activeInputDevice is %{public}d", activeOutputDevice_,
         activeInputDevice_);
-    if (activeOutputDevice_ == DEVICE_TYPE_NEARLINK) {
-        bool ret = AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode_, activeOutputDevice_);
-        CHECK_AND_RETURN_RET_LOG(ret, ERROR_DEVICE_NOT_SUPPORT, "Not supported nearlink device!");
-        CHECK_AND_RETURN_RET_LOG(activeInputDevice_ == DEVICE_TYPE_MIC || validDevice.count(activeInputDevice_),
-            ERROR_DEVICE_NOT_SUPPORT, "Not supported input device with nearlink!");
-        isRendererUsb_ = true;
-        isCapturerUsb_ = true;
-        AUDIO_INFO_LOG("nearlink case!");
-        return DEFAULT_OK;
-    }
-    CHECK_AND_RETURN_RET_LOG(activeOutputDevice_ == activeInputDevice_, ERROR_DEVICE_MISMATCH,
-        "outputdevice dismatch inputdevice, output = %{public}u, input = %{public}u",
-        activeOutputDevice_, activeInputDevice_);
-    isRendererUsb_ = validDevice.find(activeOutputDevice_) != validDevice.end();
-    isCapturerUsb_ = validDevice.find(activeInputDevice_) != validDevice.end();
-    CHECK_AND_RETURN_RET_LOG(isRendererUsb_ && isCapturerUsb_, ERROR_DEVICE_NOT_SUPPORT,
-        "device not support, output = %{public}u, input = %{public}u",
-        activeOutputDevice_, activeInputDevice_);
+    // The server already validated both legs of the pair, so mark them valid for UpdateStatus.
+    isRendererUsb_ = true;
+    isCapturerUsb_ = true;
     return DEFAULT_OK;
 }
 
@@ -765,7 +745,10 @@ void AudioLoopbackPrivate::CapturerCallbackImpl::OnStateChange(const CapturerSta
 void AudioLoopbackPrivate::CapturerCallbackImpl::OnStateChange(const AudioDeviceDescriptor &deviceInfo)
 {
     AUDIO_INFO_LOG("CapturerCallback device change to %{public}d", deviceInfo.deviceType_);
-    parent_.isCapturerUsb_ = parent_.activeInputDevice_ == AudioPolicyManager::GetInstance().GetActiveInputDevice();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDevices =
+        AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerOptions_.capturerInfo);
+    parent_.isCapturerUsb_ = (!inputDevices.empty() && inputDevices[0] != nullptr) &&
+        parent_.activeInputDevice_ == inputDevices[0]->deviceType_;
     parent_.UpdateStatus();
 }
 
