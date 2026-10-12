@@ -997,9 +997,9 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerSetAuxiliarySinkEnable_001, TestS
 HWTEST_F(AudioServerSecondUnitTest, AudioServerReportPlaybackCaptureUserChoice_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    
+
     int32_t ret = audioServer->ReportPlaybackCaptureUserChoice(0, true);
-    EXPECT_EQ(SUCCESS, ret); // Should fail without valid session
+    EXPECT_EQ(ERR_SYSTEM_PERMISSION_DENIED, ret);
 }
 
 /**

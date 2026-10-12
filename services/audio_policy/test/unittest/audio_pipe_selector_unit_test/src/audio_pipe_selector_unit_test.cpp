@@ -1800,6 +1800,9 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsBothFastArmUsbNeedRecreate_003, TestSize.L
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     auto newDevice = std::make_shared<AudioDeviceDescriptor>();
     auto oldDevice = std::make_shared<AudioDeviceDescriptor>();
+    // IsBothFastArmUsbNeedRecreate checks USB ARM headset device type; set deviceType_ accordingly.
+    newDevice->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    oldDevice->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     streamDesc->newDeviceDescs_.push_back(newDevice);
     streamDesc->oldDeviceDescs_.push_back(oldDevice);
     newPipe->streamDescriptors_.push_back(streamDesc);
@@ -1807,7 +1810,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsBothFastArmUsbNeedRecreate_003, TestSize.L
     oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
     oldPipe->moduleInfo_.className = "usb";
     newPipe->moduleInfo_.className = "usb";
-    
+
     oldDevice->deviceId_ = 1;
     newDevice->deviceId_ = 1;
     EXPECT_EQ(audioPipeSelector->IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), false);
