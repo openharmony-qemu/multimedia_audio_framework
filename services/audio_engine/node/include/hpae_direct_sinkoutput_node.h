@@ -53,6 +53,7 @@ public:
     StreamManagerState GetSinkState(void);
     int32_t SetSinkState(StreamManagerState sinkState);
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
+    void UpdateBusStatus(bool isActive);
     const char *GetRenderFrameData(void);
     uint64_t GetLatency();
     void NotifyStreamChangeToSink(StreamChangeType change,

@@ -89,6 +89,8 @@ public:
     MOCK_METHOD(int32_t, UpdateAppsUid, (const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size), (override));
     MOCK_METHOD(int32_t, UpdateAppsUid, (const std::vector<int32_t> &appsUid), (override));
 
+    MOCK_METHOD(void, UpdateBusStatus, (bool isActive), (override));
+
     MOCK_METHOD(int32_t, SetRenderEmpty, (int32_t durationUs), (override));
     MOCK_METHOD(void, SetAddress, (const std::string &address), (override));
     MOCK_METHOD(void, SetInvalidState, (), (override));

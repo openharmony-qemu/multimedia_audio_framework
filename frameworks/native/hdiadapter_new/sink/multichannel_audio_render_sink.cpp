@@ -35,6 +35,10 @@ const std::string DEFAULT_NAME = "multichannel";
 }
 namespace OHOS {
 namespace AudioStandard {
+
+#ifdef MULTI_BUS_ENABLE
+static const std::string AUDIO_BUS_STATUS_KEY = "audio.automotive.vah.bus.status";
+#endif
 MultichannelAudioRenderSink::MultichannelAudioRenderSink(const std::string &halName)
 #ifdef MULTI_BUS_ENABLE
     : halName_(halName == HDI_ID_INFO_DEFAULT ? DEFAULT_NAME : halName),
@@ -78,6 +82,9 @@ void MultichannelAudioRenderSink::DeInit(void)
     std::lock_guard<std::mutex> lock(sinkMutex_);
     sinkInited_ = false;
     started_ = false;
+#ifdef MULTI_BUS_ENABLE
+    busIsActive_ = false;
+#endif
 
     AUDIO_INFO_LOG("destroy render, hdiRenderId: %{public}u", hdiRenderId_);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
@@ -272,6 +279,15 @@ int32_t MultichannelAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
     return SUCCESS;
 }
 
+void MultichannelAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
+    const std::string &value)
+{
+    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
+    CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
+    int32_t ret = audioRender_->SetExtraParams(audioRender_, value.c_str());
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set parameter fail, error code: %{public}d", ret);
+}
+
 std::string MultichannelAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     if (condition == "get_usb_info") {
@@ -438,11 +454,13 @@ void MultichannelAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType devi
     }
 }
 
-int32_t MultichannelAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
+int32_t MultichannelAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
+    const size_t size)
 {
 #ifdef MULTI_BUS_ENABLE
     playingAppManager_.UpdateAppsUid(appsUid, appsUid + size);
     playingAppManager_.UpdatePlayingAppNameToHdi();
+    UpdateBusStatus(size > 0);
 #endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
@@ -456,6 +474,7 @@ int32_t MultichannelAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &a
 #ifdef MULTI_BUS_ENABLE
     playingAppManager_.UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
     playingAppManager_.UpdatePlayingAppNameToHdi();
+    UpdateBusStatus(!appsUid.empty());
 #endif
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
@@ -463,6 +482,16 @@ int32_t MultichannelAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &a
     runningLock_->UpdateAppsUidToPowerMgr();
 #endif
     return SUCCESS;
+}
+
+void MultichannelAudioRenderSink::UpdateBusStatus(bool isActive)
+{
+#ifdef MULTI_BUS_ENABLE
+    CHECK_AND_RETURN(isActive != busIsActive_);
+    busIsActive_ = isActive;
+    SetAudioParameter(AudioParamKey::PARAM_KEY_STATE, "",
+        AUDIO_BUS_STATUS_KEY + "=" + attr_.busName + " " + (isActive ? "1" : "0"));
+#endif
 }
 
 void MultichannelAudioRenderSink::DumpInfo(std::string &dumpString)

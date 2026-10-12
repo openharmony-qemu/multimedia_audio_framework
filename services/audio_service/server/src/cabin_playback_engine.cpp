@@ -112,6 +112,7 @@ int32_t CabinPlayBackEngine::Start()
         playbackThread_->RegisterJob([this] { this->PollAndWrite(); });
     }
     if (!isStart_) {
+        sink->UpdateAppsUid({stream_->GetAudioProcessConfig().appInfo.appUid});
         ret = sink->Start();
         isStart_ = true;
     }
@@ -190,6 +191,7 @@ int32_t CabinPlayBackEngine::StopAudioSink()
     int32_t ret = SUCCESS;
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
     if (sink && sink->IsInited()) {
+        sink->UpdateAppsUid({});
         ret = sink->Stop();
     } else {
         AUDIO_ERR_LOG("sink is null or not init.");

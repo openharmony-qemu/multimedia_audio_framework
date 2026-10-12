@@ -88,6 +88,8 @@ public:
     virtual int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) = 0;
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
 
+    virtual void UpdateBusStatus(bool isActive) {}
+
     virtual int32_t SetRenderEmpty(int32_t durationUs) SUCCESS_RET
     virtual void SetAddress(const std::string &address) {}
     virtual void SetInvalidState(void) {}

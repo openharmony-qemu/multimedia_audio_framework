@@ -56,6 +56,7 @@ public:
     virtual uint32_t GetRenderId() const { return HDI_INVALID_ID; }
     virtual DeviceType GetCurrentOutputDevice() const { return DEVICE_TYPE_NONE; }
     virtual void SetDeviceChangeCallback(std::function<void()> callback) {}
+    virtual void UpdateBusStatus(bool isActive) {}
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

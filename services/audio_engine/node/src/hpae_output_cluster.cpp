@@ -248,6 +248,12 @@ int32_t HpaeOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
     return hpaeSinkOutputNode_->UpdateAppsUid(appsUid);
 }
 
+void HpaeOutputCluster::UpdateBusStatus(bool isActive)
+{
+    CHECK_AND_RETURN_LOG(hpaeSinkOutputNode_ != nullptr, "sinkOutputNode is null");
+    hpaeSinkOutputNode_->UpdateBusStatus(isActive);
+}
+
 void HpaeOutputCluster::NotifyStreamChangeToSink(StreamChangeType change,
     uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
 {

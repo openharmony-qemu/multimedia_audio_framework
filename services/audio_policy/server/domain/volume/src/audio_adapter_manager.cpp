@@ -2384,6 +2384,7 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
 {
     IAudioSinkAttr attr;
     attr.adapterName = audioModuleInfo.adapterName.c_str();
+    attr.busName = audioModuleInfo.name;
     if (!audioModuleInfo.busAddress.empty()) {
         attr.address = audioModuleInfo.busAddress;
     }
