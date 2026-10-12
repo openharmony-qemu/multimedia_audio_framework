@@ -34,12 +34,11 @@ AudioSuiteDownloadCallbackStubImpl::~AudioSuiteDownloadCallbackStubImpl()
 {}
 
 int32_t AudioSuiteDownloadCallbackStubImpl::SetAudioSuiteRomDownloadCallback(
-    const std::weak_ptr<AudioSuiteRomDownloadCallback> &callback)
+    const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback)
 {
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     std::lock_guard<std::mutex> lock(downloadCallback);
     downloadCallback_ = callback;
-    std::shared_ptr<AudioSuiteRomDownloadCallback> downloadCallback = downloadCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(downloadCallback != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
     return SUCCESS;
 }
 
@@ -54,10 +53,10 @@ int32_t AudioSuiteDownloadCallbackStubImpl::GetFeatureNewVersion(
     int32_t &funcResult)
 {
     std::unique_lock lock(downloadCallback);
-    std::shared_ptr<AudioSuiteRomDownloadCallback> downloadCallback = downloadCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(downloadCallback != nullptr, ERROR, "downloadCallback_ is nullptr");
+    std::shared_ptr<AudioSuiteRomDownloadCallback> callbackPtr = downloadCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(callbackPtr != nullptr, ERROR, "downloadCallback_ is nullptr");
 
-    funcResult = downloadCallback->GetFeatureNewVersion(featureNames, newVersionInfos);
+    funcResult = callbackPtr->GetFeatureNewVersion(featureNames, newVersionInfos);
     return SUCCESS;
 }
 
@@ -66,10 +65,10 @@ int32_t AudioSuiteDownloadCallbackStubImpl::GetFeatureStatus(const std::vector<s
                                                              int32_t &funcResult)
 {
     std::unique_lock lock(downloadCallback);
-    std::shared_ptr<AudioSuiteRomDownloadCallback> downloadCallback = downloadCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(downloadCallback != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
+    std::shared_ptr<AudioSuiteRomDownloadCallback> callbackPtr = downloadCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(callbackPtr != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
 
-    funcResult = downloadCallback->GetFeatureStatus(featureNames, statusInfos);
+    funcResult = callbackPtr->GetFeatureStatus(featureNames, statusInfos);
     return SUCCESS;
 }
 
@@ -77,10 +76,10 @@ int32_t AudioSuiteDownloadCallbackStubImpl::DownloadAndInstall(const bool allowe
     const std::vector<std::string> &featureNames, int32_t &funcResult)
 {
     std::unique_lock lock(downloadCallback);
-    std::shared_ptr<AudioSuiteRomDownloadCallback> downloadCallback = downloadCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(downloadCallback != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
+    std::shared_ptr<AudioSuiteRomDownloadCallback> callbackPtr = downloadCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(callbackPtr != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
 
-    funcResult = downloadCallback->DownloadAndInstall(allowedCellularNet, featureNames);
+    funcResult = callbackPtr->DownloadAndInstall(allowedCellularNet, featureNames);
     return SUCCESS;
 }
 
@@ -88,10 +87,10 @@ int32_t AudioSuiteDownloadCallbackStubImpl::PauseCloudRom(
     const std::vector<std::string> &featureNames, int32_t &funcResult)
 {
     std::unique_lock lock(downloadCallback);
-    std::shared_ptr<AudioSuiteRomDownloadCallback> downloadCallback = downloadCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(downloadCallback != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
+    std::shared_ptr<AudioSuiteRomDownloadCallback> callbackPtr = downloadCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(callbackPtr != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
 
-    funcResult = downloadCallback->PauseCloudRom(featureNames);
+    funcResult = callbackPtr->PauseCloudRom(featureNames);
     return SUCCESS;
 }
 
@@ -99,10 +98,10 @@ int32_t AudioSuiteDownloadCallbackStubImpl::CancelCloudRom(
     const std::vector<std::string> &featureNames, int32_t &funcResult)
 {
     std::unique_lock lock(downloadCallback);
-    std::shared_ptr<AudioSuiteRomDownloadCallback> downloadCallback = downloadCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(downloadCallback != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
+    std::shared_ptr<AudioSuiteRomDownloadCallback> callbackPtr = downloadCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(callbackPtr != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
 
-    funcResult = downloadCallback->CancelCloudRom(featureNames);
+    funcResult = callbackPtr->CancelCloudRom(featureNames);
     return SUCCESS;
 }
 
@@ -110,32 +109,32 @@ int32_t AudioSuiteDownloadCallbackStubImpl::UninstallCloudRom(
     const std::vector<std::string> &featureNames, int32_t &funcResult)
 {
     std::unique_lock lock(downloadCallback);
-    std::shared_ptr<AudioSuiteRomDownloadCallback> downloadCallback =
+    std::shared_ptr<AudioSuiteRomDownloadCallback> callbackPtr =
         downloadCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(downloadCallback != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(callbackPtr != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
 
-    funcResult = downloadCallback->UninstallCloudRom(featureNames);
+    funcResult = callbackPtr->UninstallCloudRom(featureNames);
     return SUCCESS;
 }
 
 int32_t AudioSuiteDownloadCallbackStubImpl::RegisterDownloadStatusCallback(int32_t &funcResult)
 {
     std::unique_lock lock(downloadCallback);
-    std::shared_ptr<AudioSuiteRomDownloadCallback> downloadCallback =
+    std::shared_ptr<AudioSuiteRomDownloadCallback> callbackPtr =
         downloadCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(downloadCallback != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(callbackPtr != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
 
-    funcResult = downloadCallback->RegisterDownloadStatusCallback();
+    funcResult = callbackPtr->RegisterDownloadStatusCallback();
     return SUCCESS;
 }
 
 int32_t AudioSuiteDownloadCallbackStubImpl::UnregisterDownloadStatusCallback(int32_t &funcResult)
 {
     std::unique_lock lock(downloadCallback);
-    std::shared_ptr<AudioSuiteRomDownloadCallback> downloadCallback = downloadCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(downloadCallback != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
+    std::shared_ptr<AudioSuiteRomDownloadCallback> callbackPtr = downloadCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(callbackPtr != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
 
-    funcResult = downloadCallback->UnregisterDownloadStatusCallback();
+    funcResult = callbackPtr->UnregisterDownloadStatusCallback();
     return SUCCESS;
 }
 }
