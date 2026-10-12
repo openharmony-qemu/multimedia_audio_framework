@@ -639,7 +639,8 @@ public:
 
     int32_t GetActiveBluetoothDevice(std::shared_ptr<AudioDeviceDescriptor> &descs) override;
 
-    int32_t SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes) override;
+    int32_t SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes,
+        const sptr<IRemoteObject> &object = nullptr) override;
 
     int32_t GetConverterConfig(ConverterConfig &cfg) override;
 
@@ -948,7 +949,6 @@ private:
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
     void RegisterBluetoothListener();
-    void RegisterFusionConnectivityListener();
     void SubscribeAccessibilityConfigObserver();
     void RegisterDataObserver();
     void RegisterPowerStateListener();

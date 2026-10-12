@@ -3385,7 +3385,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_161, TestSize.Level1)
 
     int32_t systemAbilityId = APP_MGR_SERVICE_ID;
     std::string deviceId = "test";
-    server->HandleAudioServerRelatedSystemAbility(FUSION_CONNECTIVITY_SA_ID, deviceId);
     server->HandleAudioServerRelatedSystemAbility(systemAbilityId, deviceId);
 
     systemAbilityId = -1;
