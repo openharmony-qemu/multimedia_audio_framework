@@ -34,9 +34,11 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+static const uint32_t FDSAN_TAG_SHIFT = 32;
+
 static uint64_t MakeFdsanTag(uint64_t subId)
 {
-    return (static_cast<uint64_t>(LOG_DOMAIN & 0xFFFF) << 32) | subId;
+    return (static_cast<uint64_t>(LOG_DOMAIN & 0xFFFF) << FDSAN_TAG_SHIFT) | subId;
 }
 
 static const int32_t SPATIALIZATION_SERVICE_OK = 0;
