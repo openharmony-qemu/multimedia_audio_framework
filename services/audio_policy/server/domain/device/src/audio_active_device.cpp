@@ -85,12 +85,14 @@ std::set<std::string> AudioActiveDevice::GetActiveBtDeviceMac() const
 void AudioActiveDevice::AddActiveBtDevice(const std::string &macAddress)
 {
     std::lock_guard<std::mutex> lock(activeBtDevicesMutex_);
+    AUDIO_INFO_LOG("bt: %{public}s added", AudioPolicyUtils::GetInstance().GetEncryptAddr(macAddress).c_str());
     activeBTDevices_.insert(macAddress);
 }
 
 void AudioActiveDevice::RemoveActiveBtDevice(const std::string &macAddress)
 {
     std::lock_guard<std::mutex> lock(activeBtDevicesMutex_);
+    AUDIO_INFO_LOG("bt: %{public}s removed", AudioPolicyUtils::GetInstance().GetEncryptAddr(macAddress).c_str());
     activeBTDevices_.erase(macAddress);
 }
 

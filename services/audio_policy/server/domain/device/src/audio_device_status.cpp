@@ -794,13 +794,12 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
 void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, const std::string &macAddress,
     const std::string &deviceName, const AudioStreamInfo &streamInfo)
 {
-    auto activeBtDevices = audioActiveDevice_.GetActiveBtDeviceMac();
     bool isActiveBtDevice = audioActiveDevice_.IsActiveBtDevice(macAddress);
     AUDIO_INFO_LOG("[ADeviceEvent] device[%{public}d] currentOutputDevice[%{public}d] "
-        "macAddress:[%{public}s], activeBTDeviceCount:[%{public}d]",
+        "macAddress:[%{public}s], isActiveBtDevice:[%{public}d]",
         deviceType, audioActiveDevice_.GetCurrentOutputDeviceType(),
         AudioPolicyUtils::GetInstance().GetEncryptAddr(macAddress).c_str(),
-        static_cast<int32_t>(activeBtDevices.size()));
+        isActiveBtDevice);
 
     // Bt configuration changed cases:
     // 1) To another stream info: Reload pipe by new stream info.

@@ -3607,11 +3607,6 @@ void AudioAdapterManager::SetAbsVolumeScene(const std::string &macAddress, bool 
             absVolumeMuteMap_[macAddress] = (volume == 0) ? true : false;
         }
     }
-    // The global projection (effect state and shared scene) only follows the active devices.
-    if (!audioActiveDevice_.IsActiveBtDevice(macAddress)) {
-        AUDIO_INFO_LOG("non-active device, skip global abs volume scene projection");
-        return;
-    }
     CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "SetAbsVolumeScene audio adapter null");
     audioServiceAdapter_->SetAbsVolumeStateToEffect(isAbsVolumeScene);
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(isAbsVolumeScene);
