@@ -39,6 +39,7 @@
 #include "audio_router_select_strategy.h"
 #include "audio_pipe_manager.h"
 #include "audio_rollback_manager.h"
+#include "audio_select_interface_service.h"
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
 
@@ -1453,6 +1454,9 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
 #endif
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+        if (updatedDesc.deviceCategory_ == BT_WATCH) {
+            AudioSelectInterfaceService::GetInstance().SetBlockFirstOverrode(false);
+        }
         CheckForA2dpSuspend(updatedDesc);
         // fix pop, fetch device before unload module
         if (IsOutputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {

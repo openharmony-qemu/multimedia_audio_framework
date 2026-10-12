@@ -62,7 +62,7 @@ int32_t AudioSelectInterfaceService::SetDeviceActive(DeviceType deviceType, bool
     if (!active) {
         std::shared_ptr<AudioDeviceDescriptor> preferredDesc =
             AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(callerUid, INVALID_STREAM_ID);
-        CHECK_AND_RETURN_RET(preferredDesc->deviceType_ == deviceType, SUCCESS);
+        CHECK_AND_RETURN_RET(!blockFirstOverrodePending_.load() || preferredDesc->deviceType_ == deviceType, SUCCESS);
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), uid, "SetDeviceActive");
 #ifdef BLUETOOTH_ENABLE
