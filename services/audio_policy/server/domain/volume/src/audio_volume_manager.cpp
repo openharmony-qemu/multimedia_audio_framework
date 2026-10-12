@@ -300,7 +300,7 @@ int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLev
     return appVolumeManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioVolumeManager::GetDeviceForVolumeWithZone(int32_t &zoneId,
+std::shared_ptr<AudioDeviceDescriptor> AudioVolumeManager::GetDeviceForVolumeWithZone(int32_t zoneId,
     AudioVolumeType volumeType, StreamUsage streamUsage, DeviceType fallbackDeviceType) const
 {
     if (zoneId > 0) {
@@ -314,7 +314,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioVolumeManager::GetDeviceForVolumeWit
         }
         // Zone device not available, fall back to the original device fetch and global volume.
         AUDIO_WARNING_LOG("fetch device from zone %{public}d failed, fallback to GetDeviceForVolume", zoneId);
-        zoneId = 0;
     }
     return fallbackDeviceType == DEVICE_TYPE_NONE ?
         audioActiveDevice_.GetDeviceForVolume(volumeType) :

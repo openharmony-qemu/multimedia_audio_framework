@@ -52,6 +52,8 @@ private:
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, const A2dpReloadContext &context);
     AudioIOHandle ReloadOrOpenAudioPort(int32_t engineFlag, AudioModuleInfo &moduleInfo,
         uint32_t &paIndex);
+    std::string GetActivatedBtDeviceMac();
+    bool IsBtDeviceActive(std::shared_ptr<AudioDeviceDescriptor> deviceDesc);
 };
 } // namespace AudioStandard
 } // namespace OHOS
