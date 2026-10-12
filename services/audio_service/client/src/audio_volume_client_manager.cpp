@@ -99,7 +99,7 @@ int32_t AudioVolumeClientManager::SetVolume(AudioVolumeType volumeType, int32_t 
 }
 
 int32_t AudioVolumeClientManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
-    DeviceType deviceType)
+    DeviceType deviceType, std::string macAddress)
 {
     AUDIO_INFO_LOG("%{public}s: volumeType[%{public}d], volumeLevel[%{public}d], deviceType[%{public}d]",
         __func__, volumeType, volumeLevel, deviceType);
@@ -138,7 +138,8 @@ int32_t AudioVolumeClientManager::SetVolumeWithDevice(AudioVolumeType volumeType
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType,
+        0, macAddress);
 }
 
 int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t uid, int32_t zoneId) const

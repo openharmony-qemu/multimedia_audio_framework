@@ -1529,7 +1529,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(int32_t streamTypeIn, int32_t vo
 }
 
 int32_t AudioPolicyServer::SetSystemVolumeLevelWithDevice(int32_t streamTypeIn, int32_t volumeLevel,
-    int32_t deviceTypeIn, int32_t volumeFlag)
+    int32_t deviceTypeIn, int32_t volumeFlag, const std::string &macAddress)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
     DeviceType deviceType = static_cast<DeviceType>(deviceTypeIn);
@@ -1547,7 +1547,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDevice(int32_t streamTypeIn, 
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetSystemVolumeLevelWithDeviceInternal(streamType, volumeLevel,
-        volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, deviceType);
+        volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, deviceType, macAddress);
 }
 
 int32_t AudioPolicyServer::GetSystemActiveVolumeType(int32_t clientUid, int32_t &streamType)
@@ -1944,7 +1944,7 @@ int32_t AudioPolicyServer::IsAppVolumeMute(int32_t appUid, bool owned, bool &isM
 // LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
-    bool isUpdateUi, DeviceType deviceType)
+    bool isUpdateUi, DeviceType deviceType, std::string macAddress)
 {
     AUDIO_INFO_LOG("%{public}s streamType: %{public}d, volumeLevel: %{public}d, "
         "updateUi: %{public}d, deviceType: %{public}d", __func__, streamType, volumeLevel, isUpdateUi, deviceType);
@@ -1954,7 +1954,8 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal(AudioStreamTyp
         AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
         return ERR_OPERATION_FAILED;
     }
-    return audioVolumeManager_.SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
+    return audioVolumeManager_.SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType,
+        macAddress);
 }
 
 int32_t AudioPolicyServer::GetStreamMute(int32_t streamTypeIn, bool &mute)

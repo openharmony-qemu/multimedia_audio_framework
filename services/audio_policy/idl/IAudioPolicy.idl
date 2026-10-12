@@ -73,7 +73,7 @@ interface IAudioPolicy {
     void SetAdjustVolumeForZone([in] int zoneId);
     void IsAppVolumeMute([in] int appUid, [in] boolean muted, [out] boolean isMute);
     void SetSelfAppVolumeLevel([in] int volumeLevel, [in] int volumeFlag); /*volumeFlag default 0*/
-    void SetSystemVolumeLevelWithDevice([in] int volumeType, [in] int volumeLevel, [in] int deviceType, [in] int volumeFlag); /*volumeFlag default 0, DeviceType deviceType*/
+    void SetSystemVolumeLevelWithDevice([in] int volumeType, [in] int volumeLevel, [in] int deviceType, [in] int volumeFlag, [in] String macAddress); /*volumeFlag default 0, DeviceType deviceType*/
     void GetSystemVolumeLevel(
         [in] int volumeType, /* volumeType type is AudioVolumeType */
         [in] int uid,

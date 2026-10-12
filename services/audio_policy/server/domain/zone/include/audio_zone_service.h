@@ -85,6 +85,7 @@ public:
         const StreamUsage &usage, DeviceRole deviceRole);
 #ifdef MULTI_USER_ZONE
     std::vector<int32_t> FindAudioZoneByDeviceForExtZone(const std::shared_ptr<AudioDeviceDescriptor> &device);
+    std::vector<int32_t> FindAudioZoneByMacAddress(const std::string &macAddress);
     void RemoveDeviceToGlobalFromZones(const std::shared_ptr<AudioDeviceDescriptor> &device);
 #endif
 

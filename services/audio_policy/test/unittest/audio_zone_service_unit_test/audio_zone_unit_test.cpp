@@ -690,5 +690,79 @@ HWTEST_F(AudioZoneUnitTest, GetSupportKeys_002, TestSize.Level1)
     }
     EXPECT_FALSE(found);
 }
+
+/**
+ * @tc.name  : Test CheckDeviceInZone.
+ * @tc.number: CheckDeviceInZoneByMacAddress_001
+ * @tc.desc  : Test CheckDeviceInZone
+ */
+HWTEST_F(AudioZoneUnitTest, CheckDeviceInZoneByMacAddress_001, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc->macAddress_ = "aa:bb:cc:dd:ee:ff";
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, true));
+    auto ret = zone->CheckDeviceInZone("aa:bb:cc:dd:ee:ff");
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckDeviceInZone.
+ * @tc.number: CheckDeviceInZoneByMacAddress_002
+ * @tc.desc  : Test CheckDeviceInZone
+ */
+HWTEST_F(AudioZoneUnitTest, CheckDeviceInZoneByMacAddress_002, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc->macAddress_ = "aa:bb:cc:dd:ee:ff";
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, true));
+    auto ret = zone->CheckDeviceInZone("11:22:33:44:55:66");
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckDeviceInZone.
+ * @tc.number: CheckDeviceInZoneByMacAddress_003
+ * @tc.desc  : Test CheckDeviceInZone
+ */
+HWTEST_F(AudioZoneUnitTest, CheckDeviceInZoneByMacAddress_003, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc->macAddress_ = "aa:bb:cc:dd:ee:ff";
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, false));
+    auto ret = zone->CheckDeviceInZone("aa:bb:cc:dd:ee:ff");
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckDeviceInZone.
+ * @tc.number: CheckDeviceInZoneByMacAddress_004
+ * @tc.desc  : Test CheckDeviceInZone
+ */
+HWTEST_F(AudioZoneUnitTest, CheckDeviceInZoneByMacAddress_004, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    zone->devices_.clear();
+    auto ret = zone->CheckDeviceInZone("aa:bb:cc:dd:ee:ff");
+    EXPECT_FALSE(ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

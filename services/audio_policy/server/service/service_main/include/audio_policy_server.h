@@ -110,7 +110,7 @@ public:
         int32_t uid, int32_t zoneId = INVALID_ZONEID) override;
 
     int32_t SetSystemVolumeLevelWithDevice(int32_t volumeType, int32_t volumeLevel, int32_t deviceType,
-        int32_t volumeFlag = 0) override;
+        int32_t volumeFlag = 0, const std::string &macAddress = "") override;
 
     int32_t SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage) override;
 
@@ -905,7 +905,7 @@ private:
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedRingtoneVolume = false);
     int32_t SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
-        bool isUpdateUi, DeviceType deviceType);
+        bool isUpdateUi, DeviceType deviceType, std::string macAddress = "");
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);

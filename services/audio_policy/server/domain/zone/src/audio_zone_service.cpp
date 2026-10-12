@@ -246,6 +246,9 @@ int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
             "support multi zone, no need move from global");
 
 #ifdef MULTI_USER_ZONE
+        if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            audioVolumeManager_.InitAudioZoneVolume(zoneId, device);
+        }
         auto visibleDesc = std::make_shared<AudioDeviceDescriptor>(*device);
         visibleDesc->visibleMode_ = ZONE_VISIBLE;
         AudioDeviceManager::GetAudioDeviceManager().UpdateDeviceVisibleMode(visibleDesc);
@@ -511,6 +514,19 @@ std::vector<int32_t> AudioZoneService::FindAudioZoneByDeviceForExtZone(
     for (const auto &it : zoneMaps_) {
         CHECK_AND_CONTINUE(it.second != nullptr);
         CHECK_AND_CONTINUE(it.second->CheckDeviceInZone(*device));
+        CHECK_AND_CONTINUE(it.first != 0);
+        zoneIds.push_back(it.first);
+    }
+    return zoneIds;
+}
+
+std::vector<int32_t> AudioZoneService::FindAudioZoneByMacAddress(const std::string &macAddress)
+{
+    std::vector<int32_t> zoneIds;
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (const auto &it : zoneMaps_) {
+        CHECK_AND_CONTINUE(it.second != nullptr);
+        CHECK_AND_CONTINUE(it.second->CheckDeviceInZone(macAddress));
         CHECK_AND_CONTINUE(it.first != 0);
         zoneIds.push_back(it.first);
     }
