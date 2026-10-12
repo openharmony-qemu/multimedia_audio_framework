@@ -572,7 +572,8 @@ int32_t OH_AudioSuiteEngineSystem_GetNodeParam(
     std::vector<uint8_t> paramVector(param, param + paramSize);
     int32_t error = OHAudioSuiteEngine::GetInstance().GetSystemNodeParam(node, paramVector);
     if (error == OHOS::AudioStandard::SUCCESS) {
-        int32_t ret = memcpy_s(param, paramSize, paramVector.data(), paramVector.size());
+        size_t copySize = std::min(paramVector.size(), static_cast<size_t>(paramSize));
+        int32_t ret = memcpy_s(param, paramSize, paramVector.data(), copySize);
         CHECK_AND_RETURN_RET_LOG(ret == EOK, AUDIOSUITE_ERROR_INVALID_PARAM, "memcpy inbuffer failed err%{public}d:, "
             "paramSize:%{public}u, vectorSize:%{public}zu", ret, paramSize, paramVector.size());
     }
