@@ -618,7 +618,11 @@ int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
     audioActiveDevice_.SetAdjustVolumeForZone(zoneId);
-    return audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
+    int32_t ret = audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
+    }
+    return ret;
 }
 
 int32_t AudioVolumeManager::HandleA2dpAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
