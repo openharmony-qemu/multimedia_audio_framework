@@ -586,9 +586,9 @@ void AudioEffectService::UpdateDuplicateProcessNew(std::vector<std::string> &ava
     }
 }
 
-void AudioEffectService::BuildAvailableSceneMapConfig()
+void AudioEffectService::BuildSupportedEffectConfig()
 {
-    // Update duplicate defined modes, devices, and unsupported effect chain.
+    // Build supportedEffectConfig from parsed XML, must run after EffectServiceInit and before BuildAvailableAEConfig.
     UpdateAvailableAEConfig(oriEffectConfig_);
 }
 
