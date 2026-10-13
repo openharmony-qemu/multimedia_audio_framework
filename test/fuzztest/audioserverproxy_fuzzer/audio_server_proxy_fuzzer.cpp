@@ -171,7 +171,8 @@ void AudioServerProxySuspendRenderSinkProxyFuzzTest()
 {
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
     std::string sinkName = "testSinkName";
-    audioServerProxy.SuspendRenderSinkProxy(sinkName);
+    std::string macAddress = "testMacAddress";
+    audioServerProxy.SuspendRenderSinkProxy(sinkName, macAddress);
 }
 
 void AudioServerProxyNotifyDeviceInfoProxyFuzzTest()

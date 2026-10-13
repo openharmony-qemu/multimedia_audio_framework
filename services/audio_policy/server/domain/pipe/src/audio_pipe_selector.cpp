@@ -2105,7 +2105,8 @@ bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor>
     CHECK_AND_RETURN_RET(streamDesc != nullptr && pipeInfo != nullptr, false);
 
     CHECK_AND_RETURN_RET(pipeInfo->GetRoute() == streamDesc->GetRoute() && pipeInfo->IsSameAdapter(adapterName) &&
-        (pipeInfo->IsSameName(pipeName) || pipeInfo->IsSameAdapter("remote")), false);
+        (pipeInfo->IsSameName(pipeName) || pipeInfo->IsSameAdapter("remote") ||
+        IsMultiA2dpPipeMatch(streamDesc, pipeInfo)), false);
 
     // Use networkId to distinguish multiple remote devices that may exist
     auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
@@ -2186,6 +2187,20 @@ void AudioPipeSelector::MatchCollaborativePipe(const std::shared_ptr<PipeStreamP
     UpdatePipeInfoFromStreamProp(streamDesc, streamPropInfo, *pipeInfo);
 
     pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
+}
+
+bool AudioPipeSelector::IsMultiA2dpPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const std::shared_ptr<AudioPipeInfo> &pipeInfo)
+{
+    CHECK_AND_RETURN_RET(streamDesc != nullptr && pipeInfo != nullptr, false);
+    CHECK_AND_RETURN_RET(pipeInfo->IsSameAdapter(ADAPTER_A2DP_TYPE), false);
+#ifdef MULTI_USER_ZONE
+    auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN_RET(deviceDesc != nullptr, false);
+    return pipeInfo->IsSameMacAddress(deviceDesc->macAddress_);
+#else
+    return false;
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS

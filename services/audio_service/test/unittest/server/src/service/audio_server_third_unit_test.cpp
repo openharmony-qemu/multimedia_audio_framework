@@ -782,7 +782,7 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerSuspendRenderSink_001, TestSize.Le
     
     // Test SuspendRenderSink with invalid sink name (should fail)
     std::string sinkName = "invalid_sink";
-    int32_t ret = audioServer->SuspendRenderSink(sinkName);
+    int32_t ret = audioServer->SuspendRenderSink(sinkName, "");
     
     // Verify that the function returns an error for invalid sink name
     EXPECT_NE(SUCCESS, ret);
@@ -800,7 +800,7 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerRestoreRenderSink_001, TestSize.Le
     
     // Test RestoreRenderSink with invalid sink name (should fail)
     std::string sinkName = "invalid_sink";
-    int32_t ret = audioServer->RestoreRenderSink(sinkName);
+    int32_t ret = audioServer->RestoreRenderSink(sinkName, "");
     
     // Verify that the function returns an error for invalid sink name
     EXPECT_NE(SUCCESS, ret);

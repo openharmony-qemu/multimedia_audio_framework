@@ -179,6 +179,24 @@ std::string AudioPolicyUtils::GetRemoteNetworkId(const std::string &sinkName, De
     return networkId;
 }
 
+std::string AudioPolicyUtils::GetA2dpModuleName(const std::string &macAddress, DeviceRole role)
+{
+#ifdef MULTI_USER_ZONE
+    return macAddress + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
+#else
+    return role == DeviceRole::OUTPUT_DEVICE ? BLUETOOTH_SPEAKER : BLUETOOTH_MIC;
+#endif
+}
+
+std::string AudioPolicyUtils::GetA2dpPipeName(const std::string &macAddress, DeviceRole role)
+{
+    std::string pipeName = (role == OUTPUT_DEVICE) ? "a2dp_output" : "a2dp_input";
+#ifdef MULTI_USER_ZONE
+    pipeName = (role == OUTPUT_DEVICE) ? "a2dp_" + macAddress + "_output" : pipeName;
+#endif
+    return pipeName;
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailableDevicesInner(AudioDeviceUsage usage)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
@@ -405,7 +423,8 @@ std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
     return portName;
 }
 
-std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType)
+std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType,
+    const std::string &macAddress)
 {
     std::string portName = PORT_NONE;
     switch (deviceType) {
@@ -420,7 +439,7 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
                     portName = PRIMARY_SPEAKER;
                 }
             } else {
-                portName = BLUETOOTH_SPEAKER;
+                portName = GetA2dpModuleName(macAddress, OUTPUT_DEVICE);
             }
             break;
         case DeviceType::DEVICE_TYPE_EARPIECE:
@@ -476,7 +495,7 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
 #endif
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sessionId, pipeType);
-        return GetSinkPortName(desc.deviceType_, pipeType);
+        return GetSinkPortName(desc.deviceType_, pipeType, desc.macAddress_);
     } else {
         return GetRemoteModuleName(desc.networkId_, desc.deviceRole_);
     }
@@ -492,7 +511,7 @@ std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor>
 #endif
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sessionId, pipeType);
-        return GetSinkPortName(desc->deviceType_, pipeType);
+        return GetSinkPortName(desc->deviceType_, pipeType, desc->macAddress_);
     } else {
         return GetRemoteModuleName(desc->networkId_, desc->deviceRole_);
     }

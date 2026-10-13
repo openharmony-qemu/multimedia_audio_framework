@@ -88,8 +88,8 @@ interface IStandardAudioService {
     void GetEffectOffloadEnabled([out] boolean isEffectOffloadEnabled);
     void GetAudioEffectProperty([out] AudioEffectPropertyArray propertyArray, [in] int deviceType);
     void SetAudioEffectProperty([in] AudioEffectPropertyArray propertyArray, [in] int deviceType);
-    void SuspendRenderSink([in] String sinkName);
-    void RestoreRenderSink([in] String sinkName);
+    void SuspendRenderSink([in] String sinkName, [in] String macAddress);
+    void RestoreRenderSink([in] String sinkName, [in] String macAddress);
     void LoadHdiEffectModel();
     void UpdateEffectBtOffloadSupported([in] boolean isSupported);
     void SetSinkMuteForSwitchDevice([in] String deviceClass, [in] int durationUs, [in] boolean mute, [in] String networkId);

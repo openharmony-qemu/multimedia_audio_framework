@@ -1453,25 +1453,33 @@ int32_t AudioServer::SetAuxiliarySinkEnable(bool isEnabled)
     return HPAE::IHpaeManager::GetHpaeManager().SetAuxiliarySinkEnable(isEnabled);
 }
 
-int32_t AudioServer::SuspendRenderSink(const std::string &sinkName)
+int32_t AudioServer::SuspendRenderSink(const std::string &sinkName, const std::string &macAddress)
 {
     if (!PermissionUtil::VerifyIsAudio()) {
         AUDIO_ERR_LOG("not audio calling!");
         return ERR_OPERATION_FAILED;
     }
-    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName.c_str());
+    std::string info = HDI_ID_INFO_DEFAULT;
+#ifdef MULTI_USER_ZONE
+    info = macAddress;
+#endif
+    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName, info);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "get sink fail, sinkName: %{public}s", sinkName.c_str());
     return sink->SuspendRenderSink();
 }
 
-int32_t AudioServer::RestoreRenderSink(const std::string &sinkName)
+int32_t AudioServer::RestoreRenderSink(const std::string &sinkName, const std::string &macAddress)
 {
     if (!PermissionUtil::VerifyIsAudio()) {
         AUDIO_ERR_LOG("not audio calling!");
         return ERR_OPERATION_FAILED;
     }
-    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName.c_str());
+    std::string info = HDI_ID_INFO_DEFAULT;
+#ifdef MULTI_USER_ZONE
+    info = macAddress;
+#endif
+    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName, info);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "get sink fail, sinkName: %{public}s", sinkName.c_str());
     return sink->RestoreRenderSink();

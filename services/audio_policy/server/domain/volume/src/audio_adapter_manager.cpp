@@ -2314,6 +2314,11 @@ std::string AudioAdapterManager::GetHdiSinkIdInfo(const AudioModuleInfo &audioMo
     if (audioModuleInfo.className == PRIMARY_EXTRA_CLASS) {
         return audioModuleInfo.name;
     }
+#ifdef MULTI_USER_ZONE
+    if (audioModuleInfo.className == A2DP_CLASS) {
+        return audioModuleInfo.macAddress;
+    }
+#endif
     return HDI_ID_INFO_DEFAULT;
 }
 
@@ -4708,6 +4713,10 @@ std::string AudioAdapterManager::GetModuleArgsLog(const AudioModuleInfo &audioMo
     tempModuleInfo.networkId = IsRemoteAdapter(tempModuleInfo.adapterName) ?
         GetEncryptStr(tempModuleInfo.networkId) : tempModuleInfo.networkId;
 
+#ifdef MULTI_USER_ZONE
+    tempModuleInfo.name = tempModuleInfo.adapterName == ADAPTER_A2DP_TYPE ?
+        GetEncryptStr(tempModuleInfo.name) : tempModuleInfo.name;
+#endif
     return GetModuleArgs(tempModuleInfo);
 }
 

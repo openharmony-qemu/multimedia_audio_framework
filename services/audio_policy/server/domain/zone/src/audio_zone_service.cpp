@@ -546,6 +546,21 @@ void AudioZoneService::RemoveDeviceToGlobalFromZones(const std::shared_ptr<Audio
     }
 }
 
+bool AudioZoneService::HasConnectedA2dpInExtZone()
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (const auto &it : zoneMaps_) {
+        CHECK_AND_CONTINUE(it.first != 0 && it.second != nullptr);
+        auto devices = it.second->GetAvailableDevices();
+        for (const auto &device : devices) {
+            CHECK_AND_CONTINUE(device != nullptr);
+            CHECK_AND_CONTINUE(device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP);
+            return true;
+        }
+    }
+    return false;
+}
+
 int32_t AudioZoneService::FindAudioZoneByUserId(int32_t userId)
 {
     auto findZone = [userId](const std::pair<int32_t, std::shared_ptr<AudioZone>> &item) {
@@ -577,6 +592,7 @@ int32_t AudioZoneService::FindAudioZoneByKey(int32_t uid, const std::string &dev
     CHECK_AND_RETURN_RET(uid >= 0, 0);
     int32_t userId = -1;
     ErrCode errCode = AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId);
+    AUDIO_INFO_LOG("uid: %{public}d, userId: %{public}d", uid, userId);
     CHECK_AND_RETURN_RET_LOG(errCode == ERR_OK, 0, "get userId failed for uid %{public}d", uid);
     return FindAudioZoneByUserId(userId);
 #endif

@@ -53,6 +53,8 @@ public:
         DeviceType deviceType, DeviceRole deviceRole, int32_t errorMsg, const std::string &errorDesc);
     std::string GetRemoteModuleName(std::string networkId, DeviceRole role);
     std::string GetRemoteNetworkId(const std::string &sinkName, DeviceRole role);
+    std::string GetA2dpModuleName(const std::string &macAddress, DeviceRole role);
+    std::string GetA2dpPipeName(const std::string &macAddress, DeviceRole role);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const int32_t uid = INVALID_UID, const std::string caller = "");
@@ -64,7 +66,8 @@ public:
     void ClearScoDeviceSuspendState(std::string macAddress = "");
     int64_t GetCurrentTimeMS();
     std::string GetNewSinkPortName(DeviceType deviceType);
-    std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
+    std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN,
+        const std::string &macAddress = "");
     string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat);
     std::string GetSinkName(const AudioDeviceDescriptor &desc, int32_t sessionId);
     std::string GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId);

@@ -532,12 +532,14 @@ void AudioCoreServiceConfigDistributedRoutingRoleFuzzTest(FuzzedDataProvider& fd
 
 void AudioCoreServiceHandleA2dpSuspendWhenLoadFuzzTest(FuzzedDataProvider& fdp)
 {
-    audioCoreService->HandleA2dpSuspendWhenLoad();
+    std::string macAddress = fdp.ConsumeRandomLengthString();
+    audioCoreService->HandleA2dpSuspendWhenLoad(macAddress);
 }
 
 void AudioCoreServiceHandleA2dpRestoreFuzzTest(FuzzedDataProvider& fdp)
 {
-    audioCoreService->HandleA2dpRestore();
+    std::string macAddress = fdp.ConsumeRandomLengthString();
+    audioCoreService->HandleA2dpRestore(macAddress);
 }
 
 void AudioCoreServiceCaptureConcurrentCheckFuzzTest(FuzzedDataProvider& fdp)
