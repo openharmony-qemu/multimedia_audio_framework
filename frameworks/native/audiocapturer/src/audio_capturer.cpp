@@ -2682,7 +2682,7 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     audioStream->SetCapturerInfo(info.capturerInfo);
     SetInnerStreamFastStatusChangeCallback(audioStream);
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        audioStream_->SetInnerCapturerState(true, info.params.playbackCaptureMode,
+        audioStream->SetInnerCapturerState(true, info.params.playbackCaptureMode,
             info.params.isModernInnerCapturer);
     }
     int32_t res = audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
