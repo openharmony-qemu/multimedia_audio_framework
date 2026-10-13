@@ -586,6 +586,12 @@ void AudioEffectService::UpdateDuplicateProcessNew(std::vector<std::string> &ava
     }
 }
 
+void AudioEffectService::BuildAvailableSceneMapConfig()
+{
+    // Update duplicate defined modes, devices, and unsupported effect chain.
+    UpdateAvailableAEConfig(oriEffectConfig_);
+}
+
 void AudioEffectService::BuildAvailableAEConfig()
 {
     std::vector<std::string> availableLayout;
@@ -609,9 +615,6 @@ void AudioEffectService::BuildAvailableAEConfig()
     }
 
     // update maxExtraSceneNum
-
-    // Update duplicate defined modes, devices, and unsupported effect chain.
-    UpdateAvailableAEConfig(oriEffectConfig_);
 
     UpdateDuplicateProcessNew(availableLayout, supportedEffectConfig_.preProcessNew);
     UpdateDuplicateProcessNew(availableLayout, supportedEffectConfig_.postProcessNew);
