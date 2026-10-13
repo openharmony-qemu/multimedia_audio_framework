@@ -1448,7 +1448,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
     } else {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_GAME);
-        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_GAME);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_OTHERS);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_GAME);
     }
 }
