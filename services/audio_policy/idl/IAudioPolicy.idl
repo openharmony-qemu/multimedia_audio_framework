@@ -369,7 +369,7 @@ interface IAudioPolicy {
         [in] IRemoteObject object);
     void GetSystemVolumeDegreeWithDevice([in] int volumeType, [in] int deviceType,
         [in] String networkId, [out] int volumeDegree);
-    void SkipDeviceTypes([in] boolean skipped, [in] List<int> deviceTypes);
+    void SkipDeviceTypes([in] boolean skipped, [in] List<int> deviceTypes, [in] IRemoteObject object);
     void SetDuckFactor([in] int duckFactor);
     void DisableVolumeLimitWhenVoiceCall([in] boolean disableVolumeLimit);
     void SetVolumeControlPriority([in] List<int> priorities, [out] int ret);

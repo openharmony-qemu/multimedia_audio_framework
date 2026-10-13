@@ -397,7 +397,6 @@ void AudioPolicyServer::AddSystemAbilityListeners()
 void AudioPolicyServer::AddSystemAbilityListenerAfterAudioServerStart()
 {
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
-    AddSystemAbilityListener(FUSION_CONNECTIVITY_SA_ID);
 }
 
 void AudioPolicyServer::OnStop()
@@ -497,9 +496,6 @@ void AudioPolicyServer::HandleAudioServerRelatedSystemAbility(int32_t systemAbil
             break;
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             RegisterBluetoothListener();
-            break;
-        case FUSION_CONNECTIVITY_SA_ID:
-            RegisterFusionConnectivityListener();
             break;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
         case INPUT_METHOD_SYSTEM_ABILITY_ID:
@@ -4082,12 +4078,6 @@ void AudioPolicyServer::RegisterBluetoothListener()
     coreService_->RegisterBluetoothListener();
 }
 
-void AudioPolicyServer::RegisterFusionConnectivityListener()
-{
-    AUDIO_INFO_LOG("OnAddSystemAbility fusion connectivity manager ext start");
-    coreService_->RegisterFusionConnectivityListener();
-}
-
 void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
 {
     AUDIO_INFO_LOG("SubscribeAccessibilityConfigObserver");
@@ -5275,9 +5265,20 @@ int32_t AudioPolicyServer::GetActiveBluetoothDevice(std::shared_ptr<AudioDeviceD
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes)
+int32_t AudioPolicyServer::SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes,
+    const sptr<IRemoteObject> &object)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "no system permission");
+    if (object != nullptr) {
+        sptr<AudioServerDeathRecipient> deathRecipient = new(std::nothrow) AudioServerDeathRecipient(
+            IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid());
+        CHECK_AND_RETURN_RET_LOG(deathRecipient != nullptr, ERROR, "new AudioServerDeathRecipient failed");
+        deathRecipient->SetNotifyCb([this] (pid_t pid, pid_t uid) {
+            this->eventEntry_->SkipDeviceTypes(false, {});
+        });
+        CHECK_AND_RETURN_RET_LOG(object->AddDeathRecipient(deathRecipient), ERROR, "AddDeathRecipient failed");
+    }
     std::vector<DeviceType> deviceTypeVec;
     deviceTypeVec.reserve(deviceTypes.size());
     for (auto deviceType : deviceTypes) {
