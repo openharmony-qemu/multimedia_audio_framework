@@ -75,6 +75,8 @@ public:
     // Call Dequeue will move read index ahead, together with inner base index ahead.
     OptResult Dequeue(const BufferWrap &buffer);
 
+    uint64_t GetOutOfRangeCount();
+
 private:
     bool Init();
     OptResult GetWritableSizeNoLock();
@@ -89,6 +91,7 @@ private:
     size_t baseIndex_ = 0;
     size_t writeIndex_ = 0;
     size_t readIndex_ = 0;
+    uint64_t indexOutOfRangeCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

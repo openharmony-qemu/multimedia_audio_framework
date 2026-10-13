@@ -196,6 +196,7 @@ OptResult AudioRingCache::Enqueue(const BufferWrap &buffer)
 
     if (buffer.dataSize > writableSize) {
         result = {INDEX_OUT_OF_RANGE, writableSize};
+        indexOutOfRangeCount_++;
         AUDIO_WARNING_LOG("Enqueue find buffer not enough, writableSize:%{public}zu , enqueue size:%{public}zu",
             writableSize, buffer.dataSize);
         return result;
@@ -212,6 +213,7 @@ OptResult AudioRingCache::Enqueue(const BufferWrap &buffer)
             memcpy_s(tailPtr, tailSize, static_cast<void *>(buffer.dataPtr + headSize), tailSize) == EOK) {
             writeIndex_ = tempWriteIndex; // move write index
             result = {OPERATION_SUCCESS, buffer.dataSize};
+            indexOutOfRangeCount_ = 0;
             return result;
         }
         result = {OPERATION_FAILED, writableSize};
@@ -226,6 +228,7 @@ OptResult AudioRingCache::Enqueue(const BufferWrap &buffer)
     if ((memcpy_s(writePtr, cacheTotalSize_ - offset, static_cast<void *>(buffer.dataPtr), buffer.dataSize)) == EOK) {
         writeIndex_ = tempWriteIndex; // move write index
         result = {OPERATION_SUCCESS, buffer.dataSize};
+        indexOutOfRangeCount_ = 0;
         return result;
     }
     AUDIO_ERR_LOG("Enqueue memcpy_s failed: writeIndex_[%{public}zu] baseIndex_[%{public}zu] buffer.dataSize"
@@ -321,6 +324,12 @@ OptResult AudioRingCache::Dequeue(const BufferWrap &buffer)
     }
     result = {OPERATION_SUCCESS, buffer.dataSize};
     return result;
+}
+
+uint64_t AudioRingCache::GetOutOfRangeCount()
+{
+    std::lock_guard<std::mutex> lock(cacheMutex_);
+    return indexOutOfRangeCount_;
 }
 } // namespace AudioStandard
 } // namespace OHOS
