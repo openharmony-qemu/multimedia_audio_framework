@@ -22,7 +22,7 @@ ohos_fuzztest("IpcStreamInServerFuzzTest") {
 
   include_dirs = [
     "../../../frameworks/native/audioschedule/include",
-    "../../../frameworks/native/hdiadapter_new/include".
+    "../../../frameworks/native/hdiadapter_new/include",
     "../../../services/audio_service/common/include/dfx",
     "../../../services/audio_service/server/include",
     "../../../services/audio_engine/manager/include",
