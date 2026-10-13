@@ -739,6 +739,22 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_025, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetSourcePortName API
+ * @tc.type  : FUNC
+ * @tc.number: GetSourcePortName_VA_001
+ * @tc.desc  : Test GetSourcePortName for VA spp / unidirectional / nearlink
+ */
+HWTEST(AudioPolicyUtilsUnitTest, GetSourcePortName_VA_001, TestSize.Level1)
+{
+    auto &utils = AudioPolicyUtils::GetInstance();
+    EXPECT_EQ(utils.GetSourcePortName(DEVICE_TYPE_BT_SPP, AUDIO_FLAG_NONE, false), VA_INPUT_SPP);
+    EXPECT_EQ(utils.GetSourcePortName(DEVICE_TYPE_BT_SPP, AUDIO_FLAG_NONE, true),
+        VA_INPUT_UNIDIRECTIONAL_SPP);
+    EXPECT_EQ(utils.GetSourcePortName(DEVICE_TYPE_NEARLINK_PORT, AUDIO_FLAG_NONE, false),
+        VA_INPUT_NEARLINK);
+}
+
+/**
  * @tc.name  : Test AudioPolicyUtils
  * @tc.number: ClearScoDeviceSuspendState_001
  * @tc.desc  : Test ClearScoDeviceSuspendState

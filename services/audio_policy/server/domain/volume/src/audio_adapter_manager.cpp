@@ -2331,7 +2331,8 @@ std::string AudioAdapterManager::GetHdiSourceIdInfo(const AudioModuleInfo &audio
     if (audioModuleInfo.className == "primary_extra_capturer") {
         return audioModuleInfo.name;
     }
-    return HDI_ID_INFO_DEFAULT;
+    CHECK_AND_RETURN_RET(audioModuleInfo.className == "va", HDI_ID_INFO_DEFAULT);
+    return audioModuleInfo.name.empty() ? std::string(HDI_ID_INFO_VA) : audioModuleInfo.name;
 }
 
 static AudioSampleFormat ParseSinkAudioSampleFormat(const std::string &format)

@@ -4264,6 +4264,9 @@ void AudioCoreService::CloseNormalSource()
     audioIOHandleMap_.ClosePortAndEraseIOHandle(PRIMARY_MIC);
 
     audioIOHandleMap_.ClosePortAndEraseIOHandle(VIRTUAL_AUDIO);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(VA_INPUT_SPP);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(VA_INPUT_UNIDIRECTIONAL_SPP);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(VA_INPUT_NEARLINK);
     if (isEcFeatureEnable_) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(USB_MIC);
     }

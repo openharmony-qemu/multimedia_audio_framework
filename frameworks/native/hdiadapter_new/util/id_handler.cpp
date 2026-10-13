@@ -192,7 +192,9 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
     } else if (deviceClass == "primary_extra_capturer") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, info);
     } else if (deviceClass == "va") {
-        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_VA, HDI_ID_INFO_VA);
+        const std::string idInfo = (info.empty() || info == HDI_ID_INFO_DEFAULT)
+            ? std::string(HDI_ID_INFO_VA) : info;
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_VA, idInfo);
     } else if (deviceClass == "usb") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
     } else {
