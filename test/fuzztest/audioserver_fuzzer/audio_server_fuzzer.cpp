@@ -1459,7 +1459,9 @@ void AudioServerPermissionCheckerFuzzTest()
 {
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    int32_t errCode = 0;
     audioServerPtr->PermissionChecker(config);
+    (void)errCode;
 }
 
 void AudioServerCheckPlaybackPermissionFuzzTest()

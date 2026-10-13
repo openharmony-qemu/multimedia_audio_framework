@@ -249,6 +249,7 @@ private:
     std::shared_ptr<AudioCapturerErrorCallback> audioCapturerErrorCallback_ = nullptr;
     std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> audioSensitiveRecordPermitCallback_ = nullptr;
     AppInfo appInfo_ = {};
+    uint32_t actualUsingTokenId_ = INVALID_ACTUAL_USING_TOKEN_ID;
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, false}, 0};
     bool isVoiceCallCapturer_ = false;

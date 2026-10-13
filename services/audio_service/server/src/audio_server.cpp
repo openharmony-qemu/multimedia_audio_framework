@@ -2584,6 +2584,20 @@ bool AudioServer::IsSatellite(const AudioProcessConfig &config, int32_t callingU
         callingUid == UID_CALL_MANAGER_SA && config.rendererInfo.isSatellite;
 }
 
+bool AudioServer::HandleSatelliteMode(const AudioProcessConfig &config, int32_t callingUid)
+{
+    if (!IsSatellite(config, callingUid)) {
+        return true;
+    }
+    bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
+    if (!isSupportSate) {
+        return false;
+    }
+    (void)HdiAdapterManager::GetInstance().SetAudioParameter(HDI_DEVICE_MANAGER_TYPE_LOCAL,
+        "primary", AudioParamKey::NONE, "", SATEMODEM_PARAMETER);
+    return true;
+}
+
 sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,
     const AudioPlaybackCaptureConfig &filterConfig)
 {
@@ -2594,6 +2608,10 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
 
     AudioProcessConfig resetConfig = ResetProcessConfig(config, filterConfig);
+    // Default privacy attribution to the creator token; proxy path overrides this in
+    // CheckAndApplyActualUsingToken. Ensures effectivePrivacyTokenId always has a valid value
+    // regardless of which permission branch is taken.
+    resetConfig.effectivePrivacyTokenId = resetConfig.appInfo.appTokenId;
     CHECK_AND_CALL_FUNC_RETURN_RET(CheckConfigFormat(resetConfig), nullptr,
         HILOG_COMM_ERROR("[CreateAudioProcessInner]AudioProcessConfig format is wrong, please check"
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str()));
@@ -2621,13 +2639,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
         errorCode = CheckMaxLoopbackInstances(resetConfig.audioMode);
         CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
     }
-    if (IsSatellite(resetConfig, callingUid)) {
-        bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
-        CHECK_AND_CALL_FUNC_RETURN_RET(isSupportSate, nullptr,
-            HILOG_COMM_ERROR("[CreateAudioProcessInner]Do not support satellite"));
-        (void)HdiAdapterManager::GetInstance().SetAudioParameter(HDI_DEVICE_MANAGER_TYPE_LOCAL,
-            "primary", AudioParamKey::NONE, "", SATEMODEM_PARAMETER);
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET(HandleSatelliteMode(resetConfig, callingUid), nullptr,
+        HILOG_COMM_ERROR("[CreateAudioProcessInner]Do not support satellite"));
 #ifdef FEATURE_APPGALLERY
     PolicyHandler::GetInstance().GetAndSaveClientType(resetConfig.appInfo.appUid,
         AppBundleManager::GetBundleNameFromUid(resetConfig.appInfo.appUid));
@@ -2879,7 +2892,7 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
     return true;
 }
 
-bool AudioServer::PermissionChecker(const AudioProcessConfig &config)
+bool AudioServer::PermissionChecker(AudioProcessConfig &config)
 {
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         return CheckPlaybackPermission(config);
@@ -2952,12 +2965,14 @@ int32_t AudioServer::CheckInnerRecorderPermission(const AudioProcessConfig &conf
 }
 
 // LCOV_EXCL_START
-bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
+bool AudioServer::CheckRecorderPermission(AudioProcessConfig &config)
 {
     Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
     SourceType sourceType = config.capturerInfo.sourceType;
     CHECK_AND_RETURN_RET_LOG(VALID_SOURCE_TYPE.count(sourceType), false, "invalid source type:%{public}d", sourceType);
 
+    CHECK_AND_RETURN_RET_LOG(CheckAndApplyActualUsingToken(config), false,
+        "Check and apply actual using token failed for actualUsingTokenId:%{public}u", config.actualUsingTokenId);
     AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
     if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
         CHECK_AND_CALL_FUNC_RETURN_RET(PermissionUtil::VerifySystemPermission(), false,
@@ -2999,11 +3014,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     }
 
     if (sourceType == SOURCE_TYPE_WAKEUP || sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
-        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-        bool hasIntelVoicePermission = VerifyClientPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION, tokenId);
-        CHECK_AND_RETURN_RET_LOG(hasSystemPermission && hasIntelVoicePermission, false,
-            "Create wakeup record stream failed: no permission.");
-        return true;
+        return CheckWakeupRecorderPermission(tokenId);
     }
 
     if (!HandleCheckRecorderBackgroundCapture(config)) {
@@ -3011,6 +3022,32 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
             config.callerUid);
         return false;
     }
+    return true;
+}
+
+bool AudioServer::CheckAndApplyActualUsingToken(AudioProcessConfig &config)
+{
+    if (config.actualUsingTokenId == INVALID_ACTUAL_USING_TOKEN_ID) {
+        return true;
+    }
+    Security::AccessToken::AccessTokenID callerTokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t verifyRes = Security::AccessToken::AccessTokenKit::VerifyAccessToken(
+        callerTokenId, AUDIO_USER_MICROPHONE_INDICATOR_PERMISSION);
+    if (verifyRes != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+        AUDIO_ERR_LOG("caller tokenId:%{public}u lacks proxy token permission",
+            callerTokenId);
+        return false;
+    }
+    config.effectivePrivacyTokenId = config.actualUsingTokenId;
+    return true;
+}
+
+bool AudioServer::CheckWakeupRecorderPermission(Security::AccessToken::AccessTokenID tokenId)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasIntelVoicePermission = VerifyClientPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION, tokenId);
+    CHECK_AND_RETURN_RET_LOG(hasSystemPermission && hasIntelVoicePermission, false,
+        "Create wakeup record stream failed: no permission.");
     return true;
 }
 // LCOV_EXCL_STOP

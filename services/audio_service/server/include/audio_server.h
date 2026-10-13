@@ -434,10 +434,12 @@ private:
         AudioParamKey parmKey, const std::string &renderValue);
     bool VerifyClientPermission(const std::string &permissionName,
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
-    bool PermissionChecker(const AudioProcessConfig &config);
+    bool PermissionChecker(AudioProcessConfig &config);
     bool CheckPlaybackPermission(const AudioProcessConfig &config);
     int32_t CheckInnerRecorderPermission(const AudioProcessConfig &config);
-    bool CheckRecorderPermission(const AudioProcessConfig &config);
+    bool CheckRecorderPermission(AudioProcessConfig &config);
+    bool CheckAndApplyActualUsingToken(AudioProcessConfig &config);
+    bool CheckWakeupRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
     bool HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config);
     bool CheckVoiceDownlinkPermission(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
@@ -491,6 +493,7 @@ private:
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
     void InitMaxRendererStreamCntPerUid();
     bool IsSatellite(const AudioProcessConfig &config, int32_t callingUid);
+    bool HandleSatelliteMode(const AudioProcessConfig &config, int32_t callingUid);
     void SendCreateErrorInfo(const AudioProcessConfig &config, int32_t errorCode);
     int32_t CheckMaxRendererInstances();
     int32_t CheckMaxLoopbackInstances(AudioMode audioMode);
