@@ -78,7 +78,7 @@ static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 const float ERROR_VOLUME = -0.1f;
-const uint64_t REPORT_OUT_OF_RANGE_COUNT = 10000;
+const uint64_t INVALID_LOOP_COUNT = 100;
 
 inline bool IsVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo, const AudioStreamParams &params)
 {
@@ -1867,7 +1867,10 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
     bool isBlockingRead)
 {
     Trace trace("CapturerInClientInner::HandleCapturerRead " + std::to_string(userSize));
+    int32_t loopCount = 0;
     while (readSize < userSize) {
+        loopCount++;
+        CheckLoopCount(loopCount);
         SyncCapturerAttrFromSpan();
         AUDIO_DEBUG_LOG("readSize %{public}zu < userSize %{public}zu", readSize, userSize);
         OptResult result = ringCache_->GetReadableSize();
@@ -1892,7 +1895,6 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
             clientBuffer_->GetReadbuffer(clientBuffer_->GetCurReadFrame(), currentOHBuffer_);
             BufferWrap bufferWrap = {currentOHBuffer_.buffer, clientSpanSizeInByte_};
             ringCache_->Enqueue(bufferWrap);
-            CheckOutOfRangeCount(ringCache_->GetOutOfRangeCount());
             memset_s(static_cast<void *>(bufferWrap.dataPtr), bufferWrap.dataSize, 0, bufferWrap.dataSize);
             clientBuffer_->SetCurReadFrame((clientBuffer_->GetCurReadFrame() + spanSizeInFrame_), false);
         } else {
@@ -2598,9 +2600,9 @@ bool CapturerInClientInner::JudgeFastStreamByCapturerAttr()
     return isFast;
 }
 
-void CapturerInClientInner::CheckOutOfRangeCount(uint64_t indexOutOfRangeCount)
+void CapturerInClientInner::CheckLoopCount(int32_t loopCount)
 {
-    CHECK_AND_RETURN(!(indexOutOfRangeCount == 0 || indexOutOfRangeCount % REPORT_OUT_OF_RANGE_COUNT != 0));
+    CHECK_AND_RETURN(loopCount == INVALID_LOOP_COUNT);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::STREAM_OCCUPANCY,
         Media::MediaMonitor::EventType::DURATION_AGGREGATION_EVENT);
