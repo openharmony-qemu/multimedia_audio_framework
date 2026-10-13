@@ -342,7 +342,10 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
     std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Create device descriptor failed");
     audioDeviceManager_.RemoveNewDevice(devDesc);
-    AudioRollbackManager::GetInstance().OnDeviceDisconnect(*devDesc);
+    for (auto &item : descForCb) {
+        CHECK_AND_CONTINUE(item);
+        AudioRollbackManager::GetInstance().OnDeviceDisconnect(*item);
+    }
     audioMicrophoneDescriptor_.RemoveMicrophoneDescriptor(devDesc);
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == updatedDesc.macAddress_) {
@@ -643,6 +646,12 @@ void AudioDeviceCommon::NotifyDistributedOutputChange(const AudioDeviceDescripto
         auto ret = audioRouterCenter_.NotifyDistributedOutputChange(isDistNew);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyDistributedOutputChange Failed. ret=%{public}d", ret);
     }
+}
+
+void AudioDeviceCommon::FetchAndRoute(const char* caller)
+{
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(caller);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute(caller);
 }
 
 int32_t AudioDeviceCommon::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
