@@ -274,6 +274,22 @@ void HpaeManagerFuzzTest::TearDown()
         hpaeManager_->CloseAudioPort(reloadPortId_);
     }
     hpaeManager_->DeInit();
+    // Reload failures (OnReloadAudioPortCb(-1)) and wait timeouts still leak
+    // managers with live workers: with a NEW name the manager is inserted into
+    // rendererManagerMap_ and its worker spawned BEFORE Init fails; with an OLD
+    // name the reload already erased the old sinkId, so the CloseAudioPort()
+    // calls above are no-ops. Sweep both maps after DeInit() (top-level worker
+    // joined, no concurrent writer) so every residual worker is stopped.
+    for (auto &[name, rendererMgr] : hpaeManager_->rendererManagerMap_) {
+        if (rendererMgr != nullptr) {
+            rendererMgr->DeactivateThread();
+        }
+    }
+    for (auto &[name, capturerMgr] : hpaeManager_->capturerManagerMap_) {
+        if (capturerMgr != nullptr) {
+            capturerMgr->DeactivateThread();
+        }
+    }
 }
 
 void HpaeManagerFuzzTest::HpaeCaptureStreamManagerMoveFuzzTest()
@@ -336,7 +352,9 @@ void HpaeManagerFuzzTest::ReloadAudioPortFuzzTest()
     for (int32_t i = 0; i < MAX_RELOAD_WAIT_LOOPS && !callback->IsReloadCbReceived(); i++) {
         std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
     }
-    reloadPortId_ = callback->GetPortId();
+    // Read the id only after the callback evidence arrived (the seq_cst flag
+    // publishes portId_); on timeout keep -1 and rely on the TearDown sweep.
+    reloadPortId_ = callback->IsReloadCbReceived() ? callback->GetPortId() : -1;
     TearDown();
 }
 

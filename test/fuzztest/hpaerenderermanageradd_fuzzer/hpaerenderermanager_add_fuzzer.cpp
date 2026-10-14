@@ -220,6 +220,14 @@ public:
 std::shared_ptr<IHpaeRendererManager> &GetSharedRendererManager()
 {
     if (g_sharedRendererMgr == nullptr || !g_sharedRendererMgr->IsInit()) {
+        // In this environment the sink init may fail and isInit_ stays false,
+        // so every call re-enters this branch. Stop the previous (failed)
+        // manager's worker before replacing it: the worker is spawned
+        // unconditionally by Init() and holds a strong self-reference, so it
+        // would otherwise leak one parked worker + manager per re-entry.
+        if (g_sharedRendererMgr != nullptr) {
+            g_sharedRendererMgr->DeactivateThread();
+        }
         HpaeSinkInfo sinkInfo;
         InitHpaeSinkInfo(sinkInfo);
         g_sharedRendererMgr = IHpaeRendererManager::CreateRendererManager(sinkInfo);

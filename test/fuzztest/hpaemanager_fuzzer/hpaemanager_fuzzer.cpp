@@ -57,7 +57,10 @@ using namespace OHOS::AudioStandard::HPAE;
 //     queue / unsynchronized maps and race the worker.
 //   - IsRunning / GetMsgCount are exceptions: PURE ATOMIC reads (no queue/map
 //     access), safe from the main thread. Contrast IsMsgProcessing, which reads
-//     the lock-free queue and must NOT be called here.
+//     the lock-free queue and must NOT be called here -- EXCEPT in AtExitCleanup
+//     (bounded drain before DeInit: IsFinishProcess() is a single atomic load
+//     and DeInit()'s join provides the ordering guarantee; do not "fix" the
+//     drain back out, verified safe 2026-10).
 //   - Session Effect: only Post* (async) variants, never the sync trio.
 //   - -fno-access-control reaches private members for (a) the cleanup guard
 //     body and (b) OnCallbackOpenOrReloadFailed (non-worker-only: synchronous
