@@ -103,9 +103,9 @@ int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDev
     std::string lastActiveA2dpDevice = GetActivatedBtDeviceMac();
     bool isActivated = IsBtDeviceActive(deviceDesc);
     if (isActivated) {
-        AUDIO_INFO_LOG("[%{public}s] [%{public}s] already active",
-            AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceDesc->GetMacAddress()).c_str(),
-            deviceDesc->deviceName_.c_str());
+        AUDIO_INFO_LOG("[%{public}s] id:%{public}d already active",
+            AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceDesc->macAddress_).c_str(),
+            deviceDesc->deviceId_);
     } else {
         Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(deviceDesc->macAddress_);
         std::string productId;

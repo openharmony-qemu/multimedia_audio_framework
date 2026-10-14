@@ -134,6 +134,15 @@ private:
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioConfigManager_(AudioCoreConfigManager::GetInstance()) {}
     ~AudioPolicyUtils() {}
+    bool UpdateTimestampWhenBecomeEnable(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        const std::shared_ptr<AudioDeviceDescriptor> &updated);
+    int64_t GetMinPrivacyTimestamp(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
+    void SetConnectTimestamp(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        const std::shared_ptr<AudioDeviceDescriptor> &updated, int64_t value);
+    bool IsPrivacyActiveDevice(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
+    void UpdateTimestampAfterUnwearGlasses(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        const std::shared_ptr<AudioDeviceDescriptor> &updated);
+    int64_t DecrementTimestamp(int64_t ts);
 public:
     static int32_t startDeviceId;
     static std::map<std::string, ClassType> portStrToEnum;
