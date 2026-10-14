@@ -540,7 +540,8 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_029, TestS
 /**
 * @tc.name  : Test UpdateCollaborativeStateReal when state does not change
 * @tc.number: AudioCollaborativeService_030
-* @tc.desc  : Test UpdateCollaborativeStateReal returns SUCCESS without calling UpdateCollaborativeStateToHdi when state unchanged.
+* @tc.desc  : Test UpdateCollaborativeStateReal returns SUCCESS without calling
+*            UpdateCollaborativeStateToHdi when state unchanged.
 */
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_030, TestSize.Level0)
 {
