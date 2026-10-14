@@ -18,6 +18,7 @@
 #endif
 
 #include "audio_router_follow_strategy.h"
+#include "audio_rollback_manager.h"
 #include "audio_router_infra.h"
 #include "audio_policy_log.h"
 #include "audio_scene_manager.h"
@@ -430,6 +431,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallDefault
 
 void AudioRouterFollowStrategy::OnAppDied(int32_t uid)
 {
+    AudioRollbackManager::GetInstance().OnAppDied(uid);
     AudioRouterInfra::GetInstance().OnAppDied(uid);
     {
         std::lock_guard<std::mutex> lock(curExclusiveInputDevicesMutex_);
