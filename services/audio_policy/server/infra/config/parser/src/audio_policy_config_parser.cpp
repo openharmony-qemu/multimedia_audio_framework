@@ -623,7 +623,6 @@ void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> c
             } else if (configInfo.name_ == "primary_warmup_latency") {
                 HandleWarmupLatencyParsed(configInfo.value_);
             }
-            }
         }
         curNode->MoveToNext();
     }
