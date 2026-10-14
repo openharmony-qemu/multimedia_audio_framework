@@ -78,7 +78,7 @@ static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 const float ERROR_VOLUME = -0.1f;
-const uint64_t INVALID_LOOP_COUNT = 100;
+const int32_t INVALID_LOOP_COUNT = 100;
 
 inline bool IsVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo, const AudioStreamParams &params)
 {
@@ -1868,9 +1868,10 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
 {
     Trace trace("CapturerInClientInner::HandleCapturerRead " + std::to_string(userSize));
     int32_t loopCount = 0;
+    bool isLoopCountReported = false;
     while (readSize < userSize) {
         loopCount++;
-        CheckLoopCount(loopCount);
+        CheckLoopCount(loopCount, isLoopCountReported);
         SyncCapturerAttrFromSpan();
         AUDIO_DEBUG_LOG("readSize %{public}zu < userSize %{public}zu", readSize, userSize);
         OptResult result = ringCache_->GetReadableSize();
@@ -2600,9 +2601,10 @@ bool CapturerInClientInner::JudgeFastStreamByCapturerAttr()
     return isFast;
 }
 
-void CapturerInClientInner::CheckLoopCount(int32_t loopCount)
+void CapturerInClientInner::CheckLoopCount(int32_t loopCount, bool &isLoopCountReported)
 {
-    CHECK_AND_RETURN(loopCount == INVALID_LOOP_COUNT);
+    CHECK_AND_RETURN(loopCount >= INVALID_LOOP_COUNT && !isLoopCountReported);
+    isLoopCountReported = true;
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::STREAM_OCCUPANCY,
         Media::MediaMonitor::EventType::DURATION_AGGREGATION_EVENT);
