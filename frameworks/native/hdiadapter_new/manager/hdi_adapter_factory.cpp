@@ -162,6 +162,9 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint
         case HDI_ID_TYPE_FAST:
             source = std::make_shared<FastAudioCaptureSource>();
             break;
+        case HDI_ID_TYPE_ULTRA_FAST:
+            source = std::make_shared<FastAudioCaptureSource>();
+            break;
         case HDI_ID_TYPE_FILE:
             source = std::make_shared<FileAudioCaptureSource>();
             break;

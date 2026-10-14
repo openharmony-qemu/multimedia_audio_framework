@@ -66,6 +66,9 @@ int32_t HpaeFastCapturerManager::CreateSessionNodes(const HpaeStreamInfo &stream
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
+    nodeInfo.routeFlag = sourceInfo_.routeFlag;
+    nodeInfo.deviceType = sourceInfo_.deviceType;
+    nodeInfo.captureAdapterType = sourceInfo_.adapterName == "usb" ? HDI_ADAPTER_TYPE_USB : HDI_ADAPTER_TYPE_PRIMARY;
     auto sourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     sourceOutputNode->SetAppUid(streamInfo.uid);
     sourceOutputNodeMap_[streamInfo.sessionId] = sourceOutputNode;
@@ -176,9 +179,14 @@ void HpaeFastCapturerManager::CreateSourceAttr(IAudioSourceAttr &attr)
     attr.sourceType = static_cast<int32_t>(sourceInfo_.sourceType);
     attr.openMicSpeaker = sourceInfo_.openMicSpeaker;
     attr.macAddress = sourceInfo_.macAddress;
+    attr.routeFlag = sourceInfo_.routeFlag;
     bool isVoipFast = (sourceInfo_.routeFlag & AUDIO_INPUT_FLAG_VOIP_FAST) != 0 ||
         ((sourceInfo_.routeFlag & AUDIO_INPUT_FLAG_FAST) != 0 && (sourceInfo_.routeFlag & AUDIO_INPUT_FLAG_VOIP) != 0);
     attr.audioStreamFlag = isVoipFast ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
+    if (sourceInfo_.isUltraFast) {
+        attr.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
+        attr.period = static_cast<uint32_t>(static_cast<uint64_t>(attr.sampleRate) * 2500 / AUDIO_US_PER_S);
+    }
 }
 
 int32_t HpaeFastCapturerManager::InitCapturerManager()
@@ -187,6 +195,10 @@ int32_t HpaeFastCapturerManager::InitCapturerManager()
         sourceInfo_.sourceName.c_str(), sourceInfo_.channels, sourceInfo_.samplingRate, sourceInfo_.routeFlag);
     int32_t checkRet = CheckSourceInfoFramelen(sourceInfo_);
     CHECK_AND_RETURN_RET(checkRet == SUCCESS, checkRet);
+    if (sourceInfo_.isUltraFast) {
+        CHECK_AND_RETURN_RET(sourceInfo_.frameLen * AUDIO_US_PER_S ==
+            static_cast<uint64_t>(sourceInfo_.samplingRate) * 2500, ERR_INVALID_PARAM);
+    }
 
     HpaeNodeInfo nodeInfo;
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
@@ -210,26 +222,39 @@ int32_t HpaeFastCapturerManager::InitCapturerManager()
     IAudioSourceAttr attr;
     CreateSourceAttr(attr);
     ret = sourceInputNode_->CapturerSourceInit(attr);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CapturerSourceInit failed");
+    if (ret != SUCCESS) {
+        if (sourceInfo_.isUltraFast) {
+            sourceInputNode_->CapturerSourceDeInit();
+        }
+        AUDIO_ERR_LOG("CapturerSourceInit failed: %{public}d", ret);
+        return ret;
+    }
     isInit_.store(true);
     mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     mixerNode_->Connect(sourceInputNode_);
-    WarmUpCapturer();
+    ret = WarmUpCapturer();
+    if (sourceInfo_.isUltraFast && ret != SUCCESS) {
+        isInit_.store(false);
+        sourceInputNode_->CapturerSourceDeInit();
+        return ret;
+    }
     return SUCCESS;
 }
 
-void HpaeFastCapturerManager::WarmUpCapturer()
+int32_t HpaeFastCapturerManager::WarmUpCapturer()
 {
     // Creating without Start/Stop will result in residual mmap buffer (affecting other recording channels)
     // and power consumption issues.
-    sourceInputNode_->CapturerSourceStart();
-    sourceInputNode_->CapturerSourceStop();
+    int32_t ret = sourceInputNode_->CapturerSourceStart();
+    int32_t stopRet = sourceInputNode_->CapturerSourceStop();
+    return ret == SUCCESS ? stopRet : ret;
 }
 
 int32_t HpaeFastCapturerManager::Init(bool isReload)
 {
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     hpaeSignalProcessThread_->SetFastThread(true);
+    hpaeSignalProcessThread_->SetUltraFastThread(sourceInfo_.isUltraFast);
     auto request = [this, isReload] {
         int32_t ret = InitCapturerManager();
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
@@ -588,6 +613,9 @@ void HpaeFastCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &m
     Trace trace("HpaeFastCapturerManager::AddSingleNodeToSource[" + std::to_string(sessionId) + "]");
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
+    nodeInfo.routeFlag = sourceInfo_.routeFlag;
+    nodeInfo.deviceType = sourceInfo_.deviceType;
+    nodeInfo.captureAdapterType = sourceInfo_.adapterName == "usb" ? HDI_ADAPTER_TYPE_USB : HDI_ADAPTER_TYPE_PRIMARY;
     HpaeNodeInfo inNodeInfo;
     inNodeInfo.frameLen = sourceInputNode_->GetNodeInfo().frameLen;
     inNodeInfo.samplingRate = sourceInputNode_->GetNodeInfo().samplingRate;
@@ -630,6 +658,7 @@ int32_t HpaeFastCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sour
     if (!IsInit()) {
         hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
         hpaeSignalProcessThread_->SetFastThread(true);
+        hpaeSignalProcessThread_->SetUltraFastThread(sourceInfo.isUltraFast);
     }
     auto request = [this, sourceInfo, isReload] {
         for (const auto &[sessionId, node] : sourceOutputNodeMap_) {

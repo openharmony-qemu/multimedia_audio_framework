@@ -39,6 +39,7 @@ static const std::vector<std::pair<AudioMode, uint32_t>> g_priorityOrder = {
     {AUDIO_MODE_PLAYBACK, AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT},
     {AUDIO_MODE_PLAYBACK, AUDIO_OUTPUT_FLAG_NORMAL},
     {AUDIO_MODE_RECORD, AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP},
+    {AUDIO_MODE_RECORD, AUDIO_INPUT_FLAG_ULTRA_FAST},
     {AUDIO_MODE_RECORD, AUDIO_INPUT_FLAG_FAST},
     {AUDIO_MODE_RECORD, AUDIO_INPUT_FLAG_INTERPHONE},
     {AUDIO_MODE_RECORD, AUDIO_INPUT_FLAG_AI},
@@ -59,6 +60,7 @@ static const std::map<std::pair<AudioMode, uint32_t>, AudioPipeType> g_pipeTypeM
     {{AUDIO_MODE_PLAYBACK, AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT}, PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT},
     {{AUDIO_MODE_PLAYBACK, AUDIO_OUTPUT_FLAG_NORMAL}, PIPE_TYPE_OUT_NORMAL},
     {{AUDIO_MODE_RECORD, AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP}, PIPE_TYPE_IN_VOIP},
+    {{AUDIO_MODE_RECORD, AUDIO_INPUT_FLAG_ULTRA_FAST}, PIPE_TYPE_IN_ULTRA_FAST},
     {{AUDIO_MODE_RECORD, AUDIO_INPUT_FLAG_FAST}, PIPE_TYPE_IN_LOWLATENCY},
     {{AUDIO_MODE_RECORD, AUDIO_INPUT_FLAG_INTERPHONE}, PIPE_TYPE_IN_INTERPHONE},
     {{AUDIO_MODE_RECORD, AUDIO_INPUT_FLAG_AI}, PIPE_TYPE_IN_NORMAL_AI},
@@ -79,6 +81,11 @@ ConcurrencyAction AudioConcurrencyManager::GetConcurrencyAction(
     const AudioPipeType existingPipe, const AudioPipeType commingPipe)
 {
     auto target = std::make_pair(existingPipe, commingPipe);
+    // Products may override ultra fast rules; otherwise inherit the existing 5 ms policy.
+    if (concurrencyConfigMap_.find(target) == concurrencyConfigMap_.end()) {
+        target.first = existingPipe == PIPE_TYPE_IN_ULTRA_FAST ? PIPE_TYPE_IN_LOWLATENCY : existingPipe;
+        target.second = commingPipe == PIPE_TYPE_IN_ULTRA_FAST ? PIPE_TYPE_IN_LOWLATENCY : commingPipe;
+    }
     if (concurrencyConfigMap_.find(target) == concurrencyConfigMap_.end()) {
         AUDIO_ERR_LOG("Can not find matching action for existingPipe %{public}d and commingPipe %{public}d",
             existingPipe, commingPipe);

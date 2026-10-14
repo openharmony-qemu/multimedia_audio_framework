@@ -255,6 +255,11 @@ bool AudioStreamManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, S
     return AudioPolicyManager::GetInstance().IsFastRecordingSupported(streamInfo, source);
 }
 
+bool AudioStreamManager::IsUltraFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
+{
+    return AudioPolicyManager::GetInstance().IsUltraFastRecordingSupported(streamInfo, source);
+}
+
 bool AudioStreamManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
 {
     return AudioPolicyManager::GetInstance().IsMultichannelPlaybackSupported(streamInfo, streamUsage);

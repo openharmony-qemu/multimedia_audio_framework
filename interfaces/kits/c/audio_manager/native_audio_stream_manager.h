@@ -137,6 +137,18 @@ bool OH_AudioStreamManager_IsFastRecordingSupported(
     OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_SourceType source);
 
 /**
+ * @brief Queries independent 2.5 ms recording support for the current source, device and stream format.
+ * @param streamManager Handle returned by OH_AudioManager_GetAudioStreamManager.
+ * @param streamInfo Stream format to query.
+ * @param source Recording source to query.
+ * @return true if the current scene supports ultra fast recording; otherwise false.
+ * @syscap SystemCapability.Multimedia.Audio.StreamManager
+ * @since 26.1.0
+ */
+bool OH_AudioStreamManager_IsUltraFastRecordingSupported(
+    OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_SourceType source);
+
+/**
  * @brief Return if the system recording supports intelligent noise reduction for current device.
  *
  * @param streamManager {@link OH_AudioStreamManager} handle

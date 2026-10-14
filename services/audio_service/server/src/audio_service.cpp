@@ -812,6 +812,15 @@ void AudioService::Dump(std::string &dumpString)
         }
     }
 
+    {
+        std::lock_guard<std::mutex> lock(capturerMapMutex_);
+        for (const auto &item : allCapturerMap_) {
+            auto capturer = item.second.lock();
+            if (capturer != nullptr) {
+                capturer->Dump(dumpString);
+            }
+        }
+    }
     // dump appUseNumMap_ and currentRendererStreamCnt_
     {
         std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);

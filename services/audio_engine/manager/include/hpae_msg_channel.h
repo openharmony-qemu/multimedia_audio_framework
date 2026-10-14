@@ -18,6 +18,7 @@
 #include <any>
 #include "i_stream.h"
 #include "hpae_info.h"
+#include "audio_pipe_types.h"
 #include "hpae_pcm_buffer.h"
 
 namespace OHOS {
@@ -146,6 +147,7 @@ struct HpaeDfxNodeInfo {
     bool keepRunning = false;
     uint8_t appMicInChannelCount = 0;
     int32_t deviceType = 0;
+    uint32_t captureAdapterType = HDI_ADAPTER_TYPE_UNKNOWN;
     uint32_t renderId = HDI_INVALID_RENDER_ID;
 
     uint32_t GetEffectiveSampleRate() const

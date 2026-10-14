@@ -222,6 +222,10 @@ uint32_t IdHandler::GetCaptureIdByDeviceClassExt(const std::string &deviceClass,
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_OFFLOAD, HDI_ID_INFO_DEFAULT);
     } else if (deviceClass == "primary_mmap_voip") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP);
+    } else if (deviceClass == "primary_ultra_fast") {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_DEFAULT);
+    } else if (deviceClass == "usb_arm_ultra_fast") {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_USB);
     } else if (deviceClass == "primary_mmap") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT);
     }

@@ -103,6 +103,9 @@ public:
     bool GetHasEarpiece();
     bool GetUltraFastFlag();
     bool GetArmUsbUltraFastFlag();
+    bool GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role);
+    bool IsUltraFastRecordingSupported(const AudioStreamInfo &streamInfo,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
     bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool GetFastStreamSupport(AudioStreamInfo &streamInfo, std::shared_ptr<AdapterDeviceInfo> &deviceInfo);

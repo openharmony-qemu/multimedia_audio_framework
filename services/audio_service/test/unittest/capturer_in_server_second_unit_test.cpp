@@ -1327,6 +1327,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, GetCapturerFlagsByRoute_001, TestSize.L
     ASSERT_NE(capturerInServer, nullptr);
 
     EXPECT_EQ(capturerInServer->GetCapturerFlagsByRoute(0), AUDIO_FLAG_NORMAL);
+    EXPECT_EQ(capturerInServer->GetCapturerFlagsByRoute(AUDIO_INPUT_FLAG_ULTRA_FAST), AUDIO_FLAG_ULTRA_FAST);
     EXPECT_EQ(capturerInServer->GetCapturerFlagsByRoute(AUDIO_INPUT_FLAG_FAST), AUDIO_FLAG_MMAP);
     EXPECT_EQ(capturerInServer->GetCapturerFlagsByRoute(AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP),
         AUDIO_FLAG_VOIP_FAST);

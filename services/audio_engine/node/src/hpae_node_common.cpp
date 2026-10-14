@@ -426,6 +426,7 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     sourceInfo.micInFormat = TransFormatFromStringToEnum(audioModuleInfo.micInFormat);
     sourceInfo.micInChannels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.micInChannels));
     sourceInfo.routeFlag = audioModuleInfo.routeFlag;
+    sourceInfo.isUltraFast = (audioModuleInfo.routeFlag & AUDIO_INPUT_FLAG_ULTRA_FAST) != 0;
     return SUCCESS;
 }
 

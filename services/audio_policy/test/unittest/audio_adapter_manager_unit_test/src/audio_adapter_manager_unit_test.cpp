@@ -2272,5 +2272,34 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDe
     EXPECT_EQ(ret, false);
 }
 
+/** @tc.desc: The primary and USB adapters open independent capture IDs and carry the 120 frame period. */
+HWTEST_F(AudioAdapterManagerUnitTest, UltraFastCaptureAttr_001, TestSize.Level1)
+{
+    AudioAdapterManager manager;
+    AudioModuleInfo module;
+    module.rate = "48000";
+    module.routeFlag = AUDIO_INPUT_FLAG_ULTRA_FAST;
+    auto attr = manager.GetAudioSourceAttr(module);
+    EXPECT_EQ(attr.audioStreamFlag, AUDIO_FLAG_ULTRA_FAST);
+    EXPECT_EQ(attr.period, 120);
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->routeFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+    pipe->adapterName_ = "primary";
+    std::string info;
+    HdiIdType type = HDI_ID_TYPE_PRIMARY;
+    manager.GetSourceIdInfoAndIdType(pipe, info, type);
+    EXPECT_EQ(type, HDI_ID_TYPE_ULTRA_FAST);
+    EXPECT_EQ(info, HDI_ID_INFO_DEFAULT);
+    pipe->adapterName_ = "usb";
+    manager.GetSourceIdInfoAndIdType(pipe, info, type);
+    EXPECT_EQ(type, HDI_ID_TYPE_ULTRA_FAST);
+    EXPECT_EQ(info, HDI_ID_INFO_USB);
+    module.routeFlag = AUDIO_INPUT_FLAG_FAST;
+    attr = manager.GetAudioSourceAttr(module);
+    EXPECT_EQ(attr.period, 0);
+    EXPECT_TRUE(manager.IsLowLatencyRoute(AUDIO_INPUT_FLAG_ULTRA_FAST));
+    EXPECT_FALSE(manager.IsLowLatencyRoute(AUDIO_INPUT_FLAG_NORMAL));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

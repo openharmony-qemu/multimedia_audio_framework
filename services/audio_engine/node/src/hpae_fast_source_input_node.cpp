@@ -20,6 +20,7 @@
 
 #include <cinttypes>
 #include <chrono>
+#include <sched.h>
 
 #include "audio_engine_log.h"
 #include "audio_errors.h"
@@ -392,6 +393,12 @@ void HpaeFastSourceInputNode::AsyncGetPosTime()
 {
     CHECK_AND_RETURN(!updatePosTimeThread_.joinable());
     updatePosTimeThread_ = std::thread([this]() {
+        struct sched_param param = {0};
+        param.sched_priority = 41;
+        int32_t ret = sched_setscheduler(gettid(), SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("Timestamp thread priority update failed: %{public}d", ret);
+        }
         while (!stopUpdateThread_.load()) {
             std::unique_lock<std::mutex> lock(updateThreadLock_);
             updateThreadCV_.wait_for(lock, std::chrono::milliseconds(WAIT_GET_POS_TIMEOUT_MS));

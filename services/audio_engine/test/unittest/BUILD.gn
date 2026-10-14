@@ -132,6 +132,7 @@ ohos_unittest("hpae_capturer_manager_test") {
   sources = [
     "common/test_case_common.cpp",
     "manager/hpae_capturer_manager_test.cpp",
+    "manager/hpae_fast_capturer_manager_test.cpp",
   ]
 
   configs = [ ":audio_engine_private_config" ]

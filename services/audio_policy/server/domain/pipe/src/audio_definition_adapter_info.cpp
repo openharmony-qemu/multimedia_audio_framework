@@ -156,7 +156,9 @@ std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(D
     if (networkId_ != LOCAL_NETWORK_ID) {
         targetAdapterName = "remote";
     } else {
-        if (type_ == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
+        if (type_ == DEVICE_TYPE_USB_ARM_HEADSET && (flags & AUDIO_INPUT_FLAG_ULTRA_FAST) != 0) {
+            targetAdapterName = "usb";
+        } else if (type_ == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
             targetAdapterName = "a2dp";
         } else {
             targetAdapterName = "primary";

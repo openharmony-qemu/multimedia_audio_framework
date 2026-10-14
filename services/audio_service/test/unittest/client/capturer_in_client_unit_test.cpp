@@ -2965,5 +2965,59 @@ HWTEST(CapturerInClientUnitTest, JudgeFastStreamByCapturerAttr_Normal_001, TestS
     bool ret = capturerInClientInner->JudgeFastStreamByCapturerAttr();
     EXPECT_FALSE(ret);
 }
+/** @tc.desc: Ultra fast status is accepted and reported; unsupported status values are ignored. */
+HWTEST_F(CapturerInClientUnitTest, UltraFastStatus_001, TestSize.Level1)
+{
+    auto client = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, 20001);
+    client->capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
+    EXPECT_EQ(client->GetFastStatus(), FASTSTATUS_ULTRA_FAST);
+    EXPECT_EQ(client->GetStreamClass(), IAudioStream::FAST_STREAM);
+    int32_t notifications = 0;
+    FastStatus received = FASTSTATUS_INVALID;
+    client->SetFastStatusChangeCallback([&](FastStatus status) { received = status; ++notifications; });
+    client->NotifyFastStatusChange(FASTSTATUS_ULTRA_FAST);
+    EXPECT_EQ(received, FASTSTATUS_ULTRA_FAST);
+    client->NotifyFastStatusChange(FASTSTATUS_INVALID);
+    EXPECT_EQ(notifications, 1);
+    client->NotifyFastStatusChange(FASTSTATUS_NORMAL);
+    EXPECT_EQ(received, FASTSTATUS_NORMAL);
+    client->capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
+    EXPECT_EQ(client->GetFastStatus(), FASTSTATUS_FAST);
+}
+
+/** @tc.desc: Device periods change while the application still receives 120 frame blocks. */
+HWTEST_F(CapturerInClientUnitTest, UltraFastCallbackDeviceSwitch_001, TestSize.Level1)
+{
+    auto client = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, 20001);
+    client->capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
+    client->capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
+    client->streamParams_.samplingRate = SAMPLE_RATE_48000;
+    client->streamParams_.format = SAMPLE_S16LE;
+    client->streamParams_.channels = STEREO;
+    client->streamParams_.encoding = ENCODING_PCM;
+    client->sizePerFrameInByte_ = 4;
+    client->clientBuffer_ = OHAudioBuffer::CreateFromLocal(7680, 120, 4);
+    client->InitCallbackBuffer(2500);
+    EXPECT_EQ(client->cbBufferSize_, 480);
+    for (const auto &attr : {CapturerAttrInfo{240, 1920, AUDIO_INPUT_FLAG_FAST},
+        CapturerAttrInfo{960, 7680, AUDIO_INPUT_FLAG_NORMAL},
+        CapturerAttrInfo{120, 960, AUDIO_INPUT_FLAG_ULTRA_FAST}}) {
+        client->RefreshCapturerAttrInfoFromSpan(attr);
+        client->CheckRefreshCbBuffer();
+        EXPECT_EQ(client->cbBufferSize_, 480);
+        EXPECT_EQ(client->spanSizeInFrame_, attr.spanSizeInFrame);
+    }
+    EXPECT_EQ(client->GetFastStatus(), FASTSTATUS_ULTRA_FAST);
+    client->RefreshCapturerAttrInfoFromSpan({240, 1920, AUDIO_INPUT_FLAG_ULTRA_FAST});
+    EXPECT_EQ(client->GetFastStatus(), FASTSTATUS_NORMAL);
+    client->streamParams_.samplingRate = SAMPLE_RATE_44100;
+    client->InitCallbackBuffer(20000);
+    EXPECT_EQ(client->cbBufferSize_, 4096 * 4);
+    client->capturerInfo_.originalFlag = AUDIO_FLAG_MMAP;
+    client->streamParams_.samplingRate = SAMPLE_RATE_48000;
+    client->InitCallbackBuffer(5000);
+    EXPECT_EQ(client->cbBufferSize_, 960);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

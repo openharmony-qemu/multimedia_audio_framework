@@ -38,7 +38,9 @@ HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
 {
     processConfig_ = processConfig;
     spanSizeInFrame_ = FRAME_LEN_20MS * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
-    if (processConfig_.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP &&
+    if (processConfig_.capturerInfo.capturerFlags == AUDIO_FLAG_ULTRA_FAST && !processConfig_.isInnerCapturer) {
+        spanSizeInFrame_ = static_cast<uint64_t>(processConfig.streamInfo.samplingRate) * 2500 / AUDIO_US_PER_S;
+    } else if (processConfig_.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP &&
         processConfig_.isInnerCapturer == false) {
         spanSizeInFrame_ = FRAME_LEN_5MS * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
         AUDIO_INFO_LOG("fast for spanSizeInFrame_ to 5ms: %{public}zu", spanSizeInFrame_);
@@ -46,6 +48,8 @@ HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
+    routeFlag_.store(processConfig_.capturerInfo.capturerFlags == AUDIO_FLAG_ULTRA_FAST ?
+        AUDIO_INPUT_FLAG_ULTRA_FAST : AUDIO_FLAG_NONE);
 }
 
 HpaeCapturerStreamImpl::~HpaeCapturerStreamImpl()
@@ -182,6 +186,8 @@ int32_t HpaeCapturerStreamImpl::OnStreamData(AudioCallBackCapturerStreamInfo &ca
     }
     auto callback = readCallback_.lock();
     if (callback != nullptr) {
+        callback->OnCaptureRouteChanged(callBackStreamInfo.routeFlag,
+            callBackStreamInfo.deviceType, callBackStreamInfo.adapterType);
         return callback->OnReadData(callBackStreamInfo.outputData, callBackStreamInfo.requestDataLen);
     }
     return SUCCESS;

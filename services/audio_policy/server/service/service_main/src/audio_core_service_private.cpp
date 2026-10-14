@@ -1137,6 +1137,15 @@ int32_t AudioCoreService::FetchCapturerPipeAndExecute(std::shared_ptr<AudioStrea
         }
     }
     RemoveUnusedPipe();
+    for (const auto &pipeInfo : pipeInfos) {
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+        if (pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_ULTRA_FAST &&
+            pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT && pipeInfo->id_ == OPEN_PORT_FAILURE) {
+            return ERR_DEVICE_INIT;
+        }
+    }
+    CHECK_AND_RETURN_RET(streamDesc->routeFlag_ != AUDIO_INPUT_FLAG_ULTRA_FAST ||
+        !pipeManager_->GetModuleNameBySessionId(sessionId).empty(), ERR_DEVICE_INIT);
     return SUCCESS;
 }
 
@@ -1144,6 +1153,12 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
 {
     uint32_t paIndex = 0;
     uint32_t sourceId = OpenNewAudioPortAndRoute(pipeInfo, paIndex);
+    if (pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_ULTRA_FAST && sourceId == OPEN_PORT_FAILURE) {
+        pipeInfo->id_ = OPEN_PORT_FAILURE;
+        pipeInfo->SetAction(PIPE_ACTION_DEFAULT);
+        AUDIO_ERR_LOG("Ultra fast capture HAL initialization failed");
+        return;
+    }
     pipeInfo->id_ = sourceId;
     pipeInfo->paIndex_ = paIndex;
     std::vector<SourceOutput> sourceOutputs = GetSourceOutputs();

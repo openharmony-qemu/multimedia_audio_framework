@@ -61,6 +61,7 @@ private:
         {"primary in", PIPE_TYPE_IN_NORMAL},
         {"fast out normal", PIPE_TYPE_OUT_LOWLATENCY},
         {"fast in normal", PIPE_TYPE_IN_LOWLATENCY},
+        {"ultra fast in normal", PIPE_TYPE_IN_ULTRA_FAST},
         {"offload out", PIPE_TYPE_OUT_OFFLOAD},
         {"multichannel out", PIPE_TYPE_OUT_MULTICHANNEL},
         {"direct out normal", PIPE_TYPE_OUT_DIRECT_NORMAL},

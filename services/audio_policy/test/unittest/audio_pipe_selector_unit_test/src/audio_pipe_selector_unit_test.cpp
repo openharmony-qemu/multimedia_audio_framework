@@ -2886,5 +2886,46 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsPipeFormatMatch_ChannelLayout_001, TestSiz
     EXPECT_FALSE(audioPipeSelector->IsPipeFormatMatch(streamPropInfo, pipeInfo));
     pipeInfo->moduleInfo_.channelLayout = savedLayout;
 }
+/** @tc.desc: Two ultra fast input streams share the six fast input slots; excess streams fall back. */
+HWTEST_F(AudioPipeSelectorUnitTest, UltraFastRecordingLimit_001, TestSize.Level1)
+{
+    auto selector = std::make_shared<AudioPipeSelector>();
+    auto makeStream = [](uint32_t id, AudioFlag flag, SourceType source = SOURCE_TYPE_MIC) {
+        auto desc = std::make_shared<AudioStreamDescriptor>();
+        desc->audioMode_ = AUDIO_MODE_RECORD;
+        desc->sessionId_ = id;
+        desc->routeFlag_ = flag;
+        desc->capturerInfo_.sourceType = source;
+        return desc;
+    };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams = {nullptr,
+        makeStream(1, AUDIO_INPUT_FLAG_ULTRA_FAST)};
+    auto second = makeStream(2, AUDIO_INPUT_FLAG_ULTRA_FAST);
+    selector->HandleFastStreamLimitOnCreate(streams, second);
+    EXPECT_EQ(second->GetRoute(), AUDIO_INPUT_FLAG_ULTRA_FAST);
+    streams.push_back(second);
+    auto third = makeStream(3, AUDIO_INPUT_FLAG_ULTRA_FAST);
+    selector->HandleFastStreamLimitOnCreate(streams, third);
+    EXPECT_EQ(third->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
+    for (uint32_t id = 4; id < 8; ++id) {
+        streams.push_back(makeStream(id, AUDIO_INPUT_FLAG_FAST, SOURCE_TYPE_UNPROCESSED));
+    }
+    auto seventh = makeStream(8, AUDIO_INPUT_FLAG_FAST, SOURCE_TYPE_UNPROCESSED);
+    selector->HandleFastStreamLimitOnCreate(streams, seventh);
+    EXPECT_EQ(seventh->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
+    streams = {makeStream(1, AUDIO_INPUT_FLAG_FAST)};
+    second = makeStream(2, AUDIO_INPUT_FLAG_ULTRA_FAST);
+    selector->HandleFastStreamLimitOnCreate(streams, second);
+    EXPECT_EQ(second->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
+    streams = {makeStream(1, AUDIO_INPUT_FLAG_ULTRA_FAST), makeStream(2, AUDIO_INPUT_FLAG_ULTRA_FAST),
+        makeStream(3, AUDIO_INPUT_FLAG_ULTRA_FAST)};
+    selector->HandleFastStreamLimitAndNearLinkState(streams);
+    EXPECT_EQ(streams[0]->GetRoute(), AUDIO_INPUT_FLAG_ULTRA_FAST);
+    EXPECT_EQ(streams[1]->GetRoute(), AUDIO_INPUT_FLAG_ULTRA_FAST);
+    EXPECT_EQ(streams[2]->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
+    EXPECT_EQ(selector->GetInputNormalPipeType(AUDIO_INPUT_FLAG_ULTRA_FAST), PIPE_TYPE_IN_ULTRA_FAST);
+    EXPECT_EQ(selector->GetInputNormalPipeType(AUDIO_INPUT_FLAG_FAST), PIPE_TYPE_IN_LOWLATENCY);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

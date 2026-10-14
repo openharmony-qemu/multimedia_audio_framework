@@ -495,6 +495,51 @@ bool AudioCoreConfigManager::GetArmUsbUltraFastFlag()
     return supportArmUsbUltraFast_;
 }
 
+bool AudioCoreConfigManager::GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role)
+{
+    CHECK_AND_RETURN_RET(role == PIPE_ROLE_INPUT && (adapterName == "primary" || adapterName == "usb"), false);
+    auto adapter = audioPolicyConfig_.GetAdapterInfo(PolicyAdapterInfo::GetAdapterType(adapterName));
+    CHECK_AND_RETURN_RET(adapter != nullptr, false);
+    const std::string expectedPipeName = adapterName == "primary" ?
+        "primary_ultra_fast_input" : "usb_ultra_fast_input";
+    for (const auto &pipe : adapter->pipeInfos) {
+        if (pipe != nullptr && pipe->role_ == role && pipe->name_ == expectedPipeName) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioCoreConfigManager::IsUltraFastRecordingSupported(const AudioStreamInfo &streamInfo,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
+{
+    CHECK_AND_RETURN_RET(streamInfo.encoding == ENCODING_PCM && streamInfo.format == SAMPLE_S16LE &&
+        streamInfo.samplingRate == SAMPLE_RATE_48000 &&
+        (streamInfo.channelLayout == CH_LAYOUT_MONO || streamInfo.channelLayout == CH_LAYOUT_STEREO), false);
+    for (const auto &device : devices) {
+        CHECK_AND_CONTINUE(device != nullptr && device->deviceRole_ == INPUT_DEVICE &&
+            device->networkId_ == LOCAL_NETWORK_ID);
+        auto deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(device->deviceType_, INPUT_DEVICE,
+            device->networkId_, AUDIO_INPUT_FLAG_ULTRA_FAST, 0, "", device->isUnidirectional_);
+        CHECK_AND_CONTINUE(deviceInfo != nullptr && !deviceInfo->isSimulated_);
+        auto adapter = deviceInfo->adapterInfo_.lock();
+        CHECK_AND_CONTINUE(adapter != nullptr && (adapter->adapterName == "primary" || adapter->adapterName == "usb"));
+        auto pipe = deviceInfo->supportPipeMap_.find(AUDIO_INPUT_FLAG_ULTRA_FAST);
+        CHECK_AND_CONTINUE(pipe != deviceInfo->supportPipeMap_.end() && pipe->second != nullptr &&
+            pipe->second->role_ == PIPE_ROLE_INPUT);
+        for (const auto &prop : pipe->second->streamPropInfos_) {
+            CHECK_AND_CONTINUE(prop != nullptr);
+            if (prop->sampleRate_ == SAMPLE_RATE_48000 && prop->format_ == SAMPLE_S16LE &&
+                prop->channelLayout_ == CH_LAYOUT_STEREO &&
+                prop->bufferSize_ == ULTRA_FAST_CAPTURE_FRAMES * STEREO * sizeof(int16_t) &&
+                prop->supportDeviceMap_.count(device->deviceType_) != 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool AudioCoreConfigManager::IsFastStreamSupported(AudioStreamInfo &streamInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
@@ -585,6 +630,11 @@ uint32_t AudioCoreConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescrip
         newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_,
         "", newDeviceDesc->isUnidirectional_);
     CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, flag, "Find device failed; use none flag");
+
+    if (desc->audioMode_ == AUDIO_MODE_RECORD && desc->audioFlag_ == AUDIO_INPUT_FLAG_ULTRA_FAST) {
+        return deviceInfo->supportPipeMap_.count(AUDIO_INPUT_FLAG_ULTRA_FAST) != 0 ?
+            AUDIO_INPUT_FLAG_ULTRA_FAST : AUDIO_INPUT_FLAG_NORMAL;
+    }
 
     for (auto &pipeIt : deviceInfo->supportPipeMap_) {
         if ((desc->audioMode_ == static_cast<AudioMode>(pipeIt.second->role_)) && (desc->audioFlag_ & pipeIt.first)) {
@@ -691,7 +741,7 @@ void AudioCoreConfigManager::GetStreamPropInfoForRecord(
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "stream desc is nullptr");
     CHECK_AND_RETURN_LOG(adapterPipeInfo != nullptr, "adapterPipeInfo is nullptr");
-    if (desc->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
+    if (desc->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST)) {
         AudioStreamInfo temp(streamInfo.samplingRate, ENCODING_PCM, desc->streamInfo_.format, streamInfo.channels);
         auto fastStreamPropinfo = GetStreamPropInfoFromPipe(adapterPipeInfo, temp);
         if (fastStreamPropinfo != nullptr) {
@@ -953,7 +1003,7 @@ void AudioCoreConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStreamDe
         streamInfo.channels = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
     }
 
-    if (desc->routeFlag_ == AUDIO_INPUT_FLAG_FAST) {
+    if (desc->routeFlag_ == AUDIO_INPUT_FLAG_FAST || desc->routeFlag_ == AUDIO_INPUT_FLAG_ULTRA_FAST) {
         streamInfo.channels = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
     }
 

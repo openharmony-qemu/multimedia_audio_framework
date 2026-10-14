@@ -2947,6 +2947,10 @@ int32_t AudioServer::CheckInnerRecorderPermission(const AudioProcessConfig &conf
 bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 {
     Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
+    if (config.capturerInfo.originalFlag == AUDIO_FLAG_ULTRA_FAST ||
+        config.capturerInfo.capturerFlags == AUDIO_FLAG_ULTRA_FAST) {
+        CHECK_AND_RETURN_RET(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION, tokenId), false);
+    }
     SourceType sourceType = config.capturerInfo.sourceType;
     CHECK_AND_RETURN_RET_LOG(VALID_SOURCE_TYPE.count(sourceType), false, "invalid source type:%{public}d", sourceType);
 
@@ -3655,6 +3659,7 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
 bool AudioServer::NeedDelayCreateSource(const uint32_t idBase, const uint32_t idType, const std::string &idInfo)
 {
     CHECK_AND_RETURN_RET(idBase == HDI_ID_BASE_CAPTURE, false);
+    CHECK_AND_RETURN_RET(idType != HDI_ID_TYPE_ULTRA_FAST, false);
     if (HDI_ID_TYPE_FAST == idType || HDI_ID_INFO_MMAP == idInfo || HDI_ID_INFO_USB == idInfo) {
         AUDIO_INFO_LOG("delay create");
         return true;
@@ -3685,7 +3690,13 @@ int32_t AudioServer::CreateSourcePort(uint32_t idBase, uint32_t idType, const st
         return SUCCESS;
     }
     if (!source->IsInited()) {
-        source->Init(attr);
+        int32_t ret = source->Init(attr);
+        if (attr.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST && ret != SUCCESS) {
+            source->DeInit();
+            HdiAdapterManager::GetInstance().ReleaseId(captureId);
+            captureId = HDI_INVALID_ID;
+            return ret;
+        }
     }
     return SUCCESS;
 }
@@ -3709,7 +3720,13 @@ int32_t AudioServer::CreateHdiSourcePort(const std::string &deviceClass, const s
         return SUCCESS;
     }
     if (!source->IsInited()) {
-        source->Init(attr);
+        int32_t ret = source->Init(attr);
+        if (attr.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST && ret != SUCCESS) {
+            source->DeInit();
+            HdiAdapterManager::GetInstance().ReleaseId(captureId);
+            captureId = HDI_INVALID_ID;
+            return ret;
+        }
     }
     return SUCCESS;
 }

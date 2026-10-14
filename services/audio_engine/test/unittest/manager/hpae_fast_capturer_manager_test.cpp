@@ -875,6 +875,33 @@ HWTEST_F(HpaeFastCapturerManagerTest, MoveAllStream_PreferNonMatchingId, TestSiz
     manager->HandleMsg();
     EXPECT_EQ(manager->sourceOutputNodeMap_.count(FAST_SESSION_ID), 1);
 }
+/** @tc.desc: The primary and USB independent route request 120 frames; ordinary fast remains unchanged. */
+HWTEST_F(HpaeFastCapturerManagerTest, UltraFastSourceAttr_001, TestSize.Level1)
+{
+    for (const std::string &adapter : {std::string("primary"), std::string("usb")}) {
+        auto info = CreateFastSourceInfo(AUDIO_INPUT_FLAG_ULTRA_FAST);
+        info.adapterName = adapter;
+        info.frameLen = ULTRA_FAST_CAPTURE_FRAMES;
+        info.isUltraFast = true;
+        auto manager = std::make_shared<HpaeFastCapturerManager>(info);
+        IAudioSourceAttr attr;
+        manager->CreateSourceAttr(attr);
+        EXPECT_EQ(attr.audioStreamFlag, AUDIO_FLAG_ULTRA_FAST);
+        EXPECT_EQ(attr.period, ULTRA_FAST_CAPTURE_FRAMES);
+        EXPECT_EQ(attr.routeFlag, AUDIO_INPUT_FLAG_ULTRA_FAST);
+        EXPECT_EQ(attr.adapterName, adapter);
+        info.frameLen = 240;
+        manager = std::make_shared<HpaeFastCapturerManager>(info);
+        EXPECT_EQ(manager->InitCapturerManager(), ERR_INVALID_PARAM);
+    }
+    auto info = CreateFastSourceInfo(AUDIO_INPUT_FLAG_FAST);
+    auto manager = std::make_shared<HpaeFastCapturerManager>(info);
+    IAudioSourceAttr attr;
+    manager->CreateSourceAttr(attr);
+    EXPECT_EQ(attr.audioStreamFlag, AUDIO_FLAG_MMAP);
+    EXPECT_EQ(attr.period, 0);
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

@@ -119,6 +119,13 @@ ohos_shared_library("hdiadapter_new") {
 
   defines = []
 
+  if (audio_framework_feature_ultra_fast_capture) {
+    assert(audio_framework_feature_low_latency &&
+           audio_framework_feature_new_engine_flag,
+           "Ultra fast capture requires low latency and HPAE")
+    defines += [ "FEATURE_ULTRA_FAST_CAPTURE" ]
+  }
+
   if (audio_framework_feature_file_io) {
     defines += [ "FEATURE_FILE_IO" ]
   }

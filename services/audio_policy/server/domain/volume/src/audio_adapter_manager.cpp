@@ -1415,7 +1415,8 @@ bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
 bool AudioAdapterManager::IsLowLatencyRoute(uint32_t routeFlag)
 {
     return (routeFlag & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag & AUDIO_OUTPUT_FLAG_VOIP_FAST) ||
-        (routeFlag & AUDIO_INPUT_FLAG_FAST) || (routeFlag & AUDIO_INPUT_FLAG_VOIP_FAST);
+        (routeFlag & AUDIO_INPUT_FLAG_FAST) || (routeFlag & AUDIO_INPUT_FLAG_VOIP_FAST) ||
+        (routeFlag & AUDIO_INPUT_FLAG_ULTRA_FAST);
 }
 
 void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
@@ -1669,9 +1670,12 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
         }
     } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
         std::string idInfo = GetHdiSourceIdInfo(pipeInfo->moduleInfo_);
+        pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
         IAudioSourceAttr attr = GetAudioSourceAttr(pipeInfo->moduleInfo_);
         if (IsLowLatencyRoute(pipeInfo->routeFlag_)) {
-            if ((pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP)) {
+            if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_ULTRA_FAST) {
+                attr.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
+            } else if ((pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP)) {
                 AUDIO_INFO_LOG("Use voip mmap");
                 attr.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
             } else {
@@ -1751,7 +1755,9 @@ AudioIOHandle AudioAdapterManager::OpenNotPaAudioPort(std::shared_ptr<AudioPipeI
         GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
         IAudioSourceAttr attr = GetAudioSourceAttr(pipeInfo->moduleInfo_);
         if (IsLowLatencyRoute(pipeInfo->routeFlag_)) {
-            if ((pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) ||
+            if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_ULTRA_FAST) {
+                attr.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
+            } else if ((pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) ||
                 (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP_FAST)) {
                 AUDIO_INFO_LOG("Use voip mmap");
                 attr.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
@@ -1828,6 +1834,11 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
 void AudioAdapterManager::GetSourceIdInfoAndIdType(
     std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType)
 {
+    if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_ULTRA_FAST) {
+        idType = HDI_ID_TYPE_ULTRA_FAST;
+        idInfo = pipeInfo->adapterName_ == "usb" ? HDI_ID_INFO_USB : HDI_ID_INFO_DEFAULT;
+        return;
+    }
     if (pipeInfo->adapterName_ == "primary") {
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;
@@ -2465,6 +2476,10 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
     attr.format = ParseSourceAudioSampleFormat(audioModuleInfo.format);
     if (!audioModuleInfo.rate.empty()) {
         attr.sampleRate = static_cast<uint32_t>(std::stoul(audioModuleInfo.rate));
+    }
+    if ((audioModuleInfo.routeFlag & AUDIO_INPUT_FLAG_ULTRA_FAST) != 0) {
+        attr.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
+        attr.period = static_cast<uint32_t>(static_cast<uint64_t>(attr.sampleRate) * 2500 / AUDIO_US_PER_S);
     }
     if (!audioModuleInfo.channels.empty()) {
         attr.channel = static_cast<uint32_t>(std::stoul(audioModuleInfo.channels));

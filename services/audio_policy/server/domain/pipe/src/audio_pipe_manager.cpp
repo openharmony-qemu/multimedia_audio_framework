@@ -66,6 +66,28 @@ bool AudioPipeManager::GetUltraFastFlag()
     return audioConfigManager_.GetUltraFastFlag();
 }
 
+bool AudioPipeManager::GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role)
+{
+    return audioConfigManager_.GetUltraFastFlag(adapterName, role);
+}
+
+bool AudioPipeManager::IsUltraFastRecordingAvailable(SourceType source)
+{
+    int32_t fastCount = 0;
+    int32_t ultraFastCount = 0;
+    for (const auto &desc : GetAllInputStreamDescsCopy()) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        if (desc->GetRoute() == AUDIO_INPUT_FLAG_ULTRA_FAST) {
+            ++ultraFastCount;
+            ++fastCount;
+        } else if (desc->GetRoute() == AUDIO_INPUT_FLAG_FAST) {
+            CHECK_AND_RETURN_RET(desc->GetSourceType() != source, false);
+            ++fastCount;
+        }
+    }
+    return ultraFastCount < 2 && fastCount < 6;
+}
+
 bool AudioPipeManager::GetArmUsbUltraFastFlag()
 {
     return audioConfigManager_.GetArmUsbUltraFastFlag();
@@ -526,6 +548,7 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
     if ((routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_HWDECODING) ||
         (routeFlag & AUDIO_INPUT_FLAG_FAST) ||
+        (routeFlag & AUDIO_INPUT_FLAG_ULTRA_FAST) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) ||
         (routeFlag & AUDIO_INPUT_FLAG_AI) ||
         (routeFlag & AUDIO_INPUT_FLAG_UNPROCESS) ||
@@ -1380,7 +1403,8 @@ int32_t AudioPipeManager::IsCaptureVoipCall()
                 audioInjectorPolicy.SetVoipType(NORMAL_VOIP);
                 audioInjectorPolicy.SetCapturePortIdx(pipe->paIndex_);
                 type = NORMAL_VOIP;
-            } else if (stream->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP)) {
+            } else if (stream->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST |
+                AUDIO_INPUT_FLAG_VOIP)) {
                 audioInjectorPolicy.SetVoipType(FAST_VOIP);
                 audioInjectorPolicy.SetCapturePortIdx(pipe->paIndex_);
                 return FAST_VOIP;

@@ -954,7 +954,13 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
 IAudioStream::StreamClass AudioCapturerPrivate::DecideStreamClassAndUpdateCapturerInfo(uint32_t flag)
 {
     IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
-    if (flag & AUDIO_INPUT_FLAG_FAST) {
+    const bool ultraFastRequested = capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST;
+    if (flag & AUDIO_INPUT_FLAG_ULTRA_FAST) {
+        capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
+        capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
+        capturerInfo_.pipeType = PIPE_TYPE_IN_ULTRA_FAST;
+        ret = IAudioStream::StreamClass::FAST_STREAM;
+    } else if (flag & AUDIO_INPUT_FLAG_FAST) {
         if (flag & AUDIO_INPUT_FLAG_VOIP) {
             capturerInfo_.originalFlag = AUDIO_FLAG_VOIP_FAST;
             capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
@@ -969,6 +975,9 @@ IAudioStream::StreamClass AudioCapturerPrivate::DecideStreamClassAndUpdateCaptur
     } else {
         capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
         capturerInfo_.pipeType = PIPE_TYPE_IN_NORMAL;
+    }
+    if (ultraFastRequested) {
+        capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
     }
     AUDIO_INFO_LOG("Route flag: %{public}u, streamClass: %{public}d, capturerFlags: %{public}d, pipeType: %{public}d",
         flag, ret, capturerInfo_.capturerFlags, capturerInfo_.pipeType);
@@ -2528,7 +2537,7 @@ void AudioCapturerPrivate::WriteOverflowEvent() const
     AudioPipeType pipeType = PIPE_TYPE_IN_NORMAL;
     IAudioStream::StreamClass streamClass = audioStream_->GetStreamClass();
     if (streamClass == IAudioStream::FAST_STREAM) {
-        pipeType = PIPE_TYPE_IN_LOWLATENCY;
+        pipeType = GetFastStatusInner() == FASTSTATUS_ULTRA_FAST ? PIPE_TYPE_IN_ULTRA_FAST : PIPE_TYPE_IN_LOWLATENCY;
     }
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::PERFORMANCE_UNDER_OVERRUN_STATS,
@@ -2791,7 +2800,11 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     UpdateVoiceRecognitionMicInEcDegradeFlag(switchInfo.capturerInfo, switchInfo.params);
 
     targetClass = DecideStreamClassAndUpdateCapturerInfo(flag);
-    if (targetClass == IAudioStream::VOIP_STREAM) {
+    if (capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST) {
+        switchInfo.capturerInfo.originalFlag = AUDIO_FLAG_ULTRA_FAST;
+        switchInfo.capturerInfo.capturerFlags = capturerInfo_.capturerFlags;
+        switchInfo.capturerInfo.pipeType = capturerInfo_.pipeType;
+    } else if (targetClass == IAudioStream::VOIP_STREAM) {
         switchInfo.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
         switchInfo.capturerInfo.capturerFlags = AUDIO_FLAG_VOIP_FAST;
     } else if (targetClass == IAudioStream::FAST_STREAM) {

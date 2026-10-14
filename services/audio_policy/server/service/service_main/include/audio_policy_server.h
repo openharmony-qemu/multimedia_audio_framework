@@ -168,6 +168,8 @@ public:
 
     int32_t IsFastPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage, bool &support) override;
     int32_t IsFastRecordingSupported(const AudioStreamInfo &streamInfo, int32_t source, bool &support) override;
+    int32_t IsUltraFastRecordingSupported(const AudioStreamInfo &streamInfo, int32_t source, bool &support) override;
+    int32_t IsUltraFastRecordingPlatformSupported(bool &support) override;
     int32_t IsMultichannelPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t streamUsage,
         bool &support) override;
     int32_t IsDirectPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t streamUsage,

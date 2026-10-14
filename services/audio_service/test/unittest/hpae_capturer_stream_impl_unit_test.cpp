@@ -430,5 +430,29 @@ HWTEST_F(HpaeCapturerStreamUnitTest, UpdateSpanSize_Changed_001, TestSize.Level1
     EXPECT_EQ(capturerStreamImplRet->spanSizeInFrame_, newSpanSize);
     EXPECT_EQ(capturerStreamImplRet->minBufferSize_, oldMinBufferSize * newSpanSize / oldSpanSize);
 }
+
+/**
+ * @tc.name  : Test ultra fast capture span size
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerStream_UltraFastSpanSize_001
+ * @tc.desc  : The hardware span is 2.5 ms while inner capture keeps its normal span.
+ */
+HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_UltraFastSpanSize_001, TestSize.Level1)
+{
+    AudioProcessConfig config = GetInnerCapConfig();
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
+    config.isInnerCapturer = false;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    HpaeCapturerStreamImpl stream(config);
+    size_t frames = 0;
+    stream.GetSpanSizePerFrame(frames);
+    EXPECT_EQ(frames, ULTRA_FAST_CAPTURE_FRAMES);
+    EXPECT_EQ(stream.GetRouteFlag(), AUDIO_INPUT_FLAG_ULTRA_FAST);
+
+    config.isInnerCapturer = true;
+    HpaeCapturerStreamImpl innerStream(config);
+    innerStream.GetSpanSizePerFrame(frames);
+    EXPECT_EQ(frames, 960);
+}
 }
 }

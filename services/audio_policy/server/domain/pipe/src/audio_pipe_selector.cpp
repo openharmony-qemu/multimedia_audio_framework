@@ -582,7 +582,31 @@ void AudioPipeSelector::HandleFastStreamLimitOnCreate(
 {
     CHECK_AND_RETURN_LOG(newStreamDesc != nullptr, "New stream desc is nullptr");
     uint32_t routeFlag = newStreamDesc->GetRoute();
-    CHECK_AND_RETURN(routeFlag == AUDIO_OUTPUT_FLAG_FAST || routeFlag == AUDIO_INPUT_FLAG_FAST);
+    CHECK_AND_RETURN(routeFlag == AUDIO_OUTPUT_FLAG_FAST || routeFlag == AUDIO_INPUT_FLAG_FAST ||
+        routeFlag == AUDIO_INPUT_FLAG_ULTRA_FAST);
+
+    int32_t ultraFastCount = 0;
+    int32_t fastInputCount = 0;
+    for (const auto &desc : streamDescs) {
+        CHECK_AND_CONTINUE(desc != nullptr && desc->sessionId_ != newStreamDesc->sessionId_);
+        if (desc->GetSourceType() == newStreamDesc->GetSourceType() &&
+            ((routeFlag == AUDIO_INPUT_FLAG_ULTRA_FAST && desc->GetRoute() == AUDIO_INPUT_FLAG_FAST) ||
+            (routeFlag == AUDIO_INPUT_FLAG_FAST && desc->GetRoute() == AUDIO_INPUT_FLAG_ULTRA_FAST))) {
+            newStreamDesc->ResetToNormalRoute(false);
+            return;
+        }
+        ultraFastCount += desc->GetRoute() == AUDIO_INPUT_FLAG_ULTRA_FAST;
+        fastInputCount += desc->GetRoute() == AUDIO_INPUT_FLAG_FAST || desc->GetRoute() == AUDIO_INPUT_FLAG_ULTRA_FAST;
+    }
+    if (routeFlag == AUDIO_INPUT_FLAG_ULTRA_FAST &&
+        (ultraFastCount >= 2 || fastInputCount >= MAX_FAST_STREAM_COUNT)) {
+        newStreamDesc->ResetToNormalRoute(false);
+        return;
+    }
+    if (routeFlag == AUDIO_INPUT_FLAG_FAST && fastInputCount >= MAX_FAST_STREAM_COUNT) {
+        newStreamDesc->ResetToNormalRoute(false);
+        return;
+    }
 
     int32_t fastStreamNum = static_cast<int32_t>(std::count_if(streamDescs.begin(), streamDescs.end(),
         [routeFlag](const std::shared_ptr<AudioStreamDescriptor> &streamDesc) {
@@ -599,7 +623,11 @@ void AudioPipeSelector::HandleFastStreamLimitAndNearLinkState(
 {
     int32_t fastOutputNum = 0;
     int32_t fastInputNum = 0;
+    int32_t ultraFastInputNum = 0;
+    std::set<SourceType> fastSources;
+    std::set<SourceType> ultraFastSources;
     for (auto &streamDesc : streamDescs) {
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
         if (streamDesc->isNearLinkCollaborationEnable_ &&
             (!(streamDesc->GetRoute() & AUDIO_OUTPUT_FLAG_MULTICHANNEL))) {
             streamDesc->isNearLinkCollaborationEnable_ = false;
@@ -609,10 +637,24 @@ void AudioPipeSelector::HandleFastStreamLimitAndNearLinkState(
             streamDesc->ResetToNormalRoute(false);
             continue;
         }
-        if (streamDesc->GetRoute() == AUDIO_INPUT_FLAG_FAST && ++fastInputNum > MAX_FAST_STREAM_COUNT) {
-            AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
-            streamDesc->ResetToNormalRoute(false);
+        if (streamDesc->GetRoute() == AUDIO_INPUT_FLAG_ULTRA_FAST) {
+            if (ultraFastInputNum >= 2 || fastInputNum >= MAX_FAST_STREAM_COUNT ||
+                fastSources.count(streamDesc->GetSourceType()) != 0) {
+                streamDesc->ResetToNormalRoute(false);
+            } else {
+                ++ultraFastInputNum;
+                ++fastInputNum;
+                ultraFastSources.insert(streamDesc->GetSourceType());
+            }
             continue;
+        }
+        if (streamDesc->GetRoute() == AUDIO_INPUT_FLAG_FAST) {
+            if (fastInputNum >= MAX_FAST_STREAM_COUNT || ultraFastSources.count(streamDesc->GetSourceType()) != 0) {
+                streamDesc->ResetToNormalRoute(false);
+            } else {
+                ++fastInputNum;
+                fastSources.insert(streamDesc->GetSourceType());
+            }
         }
     }
 }
@@ -1259,7 +1301,9 @@ bool AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
 
 AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
 {
-    if (flag & AUDIO_INPUT_FLAG_FAST) {
+    if (flag & AUDIO_INPUT_FLAG_ULTRA_FAST) {
+        return PIPE_TYPE_IN_ULTRA_FAST;
+    } else if (flag & AUDIO_INPUT_FLAG_FAST) {
         if (flag & AUDIO_INPUT_FLAG_VOIP) {
             return PIPE_TYPE_IN_VOIP;
         } else {
@@ -1627,6 +1671,12 @@ static void FillSpecialPipeInfoExtOther(AudioPipeInfo &info, std::shared_ptr<Ada
         info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
         info.moduleInfo_.name = "FastDpRendererSink";
         info.moduleInfo_.role = "sink";
+    } else if (pipeInfoPtr->name_ == "usb_ultra_fast_input") {
+        info.moduleInfo_.className = "usb_arm_ultra_fast";
+        info.moduleInfo_.fileName = "usb_ultra_fast_source_dump_file";
+        info.moduleInfo_.name = "UltraFastUsbArmCapturerSource";
+        info.moduleInfo_.lib = "libmodule-hdi-source.z.so";
+        info.moduleInfo_.role = "source";
     } else if (pipeInfoPtr->name_ == "fast_usb_arm_input") {
         info.moduleInfo_.className = "primary_mmap";
         info.moduleInfo_.fileName = "usb_arm_fast_source_dump_file";
@@ -1646,6 +1696,12 @@ static void FillSpecialPipeInfoExt(AudioPipeInfo &info, std::shared_ptr<AdapterP
         info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
         info.moduleInfo_.role = "sink";
         info.moduleInfo_.bufferSize = "3840";
+    } else if (pipeInfoPtr->name_ == "primary_ultra_fast_input") {
+        info.moduleInfo_.className = "primary_ultra_fast";
+        info.moduleInfo_.fileName = "primary_ultra_fast_source_dump_file";
+        info.moduleInfo_.name = "UltraFastCapturerSource";
+        info.moduleInfo_.lib = "libmodule-hdi-source.z.so";
+        info.moduleInfo_.role = "source";
     } else if (pipeInfoPtr->name_ == "fast_input") {
         info.moduleInfo_.className = "primary_mmap";
         info.moduleInfo_.fileName = "fast_source_dump_file";
@@ -1828,6 +1884,14 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
 
     if (!streamDesc->newDeviceDescs_.empty()) {
         UpdateModuleInfoWithDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
+    }
+    if (streamDesc->routeFlag_ == AUDIO_INPUT_FLAG_ULTRA_FAST) {
+        // USB device descriptors can contain several formats. Keep the selected XML 2.5 ms profile.
+        info.moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
+        info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
+        info.moduleInfo_.channels = std::to_string(streamPropInfo->channels_);
+        info.moduleInfo_.channelLayout = std::to_string(streamPropInfo->channelLayout_);
+        info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
     }
 
     if (streamDesc->IsUltraFastRequested() &&

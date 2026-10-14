@@ -21,6 +21,8 @@
 #include "OHAudioStreamBuilder.h"
 #include "OHAudioCapturer.h"
 #include "audio_utils.h"
+#include "audio_policy_manager.h"
+#include "ipc_skeleton.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82
@@ -516,6 +518,12 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetMuteWhenInterrupted(bool muteWhen
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetLatencyMode(int32_t latencyMode)
 {
+    if (latencyMode == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST && streamType_ != CAPTURER_TYPE) {
+        return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    }
+    CHECK_AND_RETURN_RET(latencyMode == AUDIOSTREAM_LATENCY_MODE_NORMAL ||
+        latencyMode == AUDIOSTREAM_LATENCY_MODE_FAST || latencyMode == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST,
+        AUDIOSTREAM_ERROR_INVALID_PARAM);
     latencyMode_ = latencyMode;
     return AUDIOSTREAM_SUCCESS;
 }
@@ -642,6 +650,14 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         "Error, invalid type input");
     CHECK_AND_RETURN_RET_LOG(capturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "Error, capturer is nullptr");
+    *capturer = nullptr;
+    if (latencyMode_ == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST) {
+        CHECK_AND_RETURN_RET(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
+            static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID())),
+            AUDIOSTREAM_ERROR_PERMISSION_DENIED_ULTRA_FAST);
+        CHECK_AND_RETURN_RET(AudioPolicyManager::GetInstance().IsUltraFastRecordingPlatformSupported(),
+            AUDIOSTREAM_ERROR_UNSUPPORTED_ULTRA_FAST);
+    }
     if (sourceType_ == SOURCE_TYPE_VOICE_DOWNLINK) {
         CHECK_AND_RETURN_RET_LOG(sensitiveRecordPermitCallback_ != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
             "Error, capturer for downlink stream must set SensitiveRecordPermitCallback");
@@ -656,7 +672,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
 
     AudioCapturerInfo capturerInfo = {
         sourceType_,
-        latencyMode_
+        latencyMode_ == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST ? AUDIO_FLAG_ULTRA_FAST : latencyMode_
     };
     capturerInfo.loopBackEffectEnabled = loopBackEffectEnabled_;
 

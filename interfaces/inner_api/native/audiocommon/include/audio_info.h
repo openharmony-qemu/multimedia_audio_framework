@@ -91,6 +91,9 @@ constexpr uint64_t AUDIO_US_PER_S = 1000000;
 constexpr uint64_t AUDIO_MS_PER_S = 1000;
 
 constexpr uint64_t DEFAULT_FAST_CBBUF_IN_USEC = 5000;
+constexpr uint64_t ULTRA_FAST_CAPTURE_PERIOD_US = 2500;
+constexpr uint32_t ULTRA_FAST_CAPTURE_FRAMES = 120;
+constexpr uint32_t MAX_ULTRA_FAST_CAPTURE_STREAMS = 2;
 constexpr uint64_t MAX_CBBUF_IN_USEC = 100000;
 constexpr uint64_t MIN_CBBUF_IN_USEC = 20000;
 constexpr uint64_t MIN_FAST_CBBUF_IN_USEC = 2500;
@@ -103,6 +106,7 @@ const float MIN_FLOAT_VOLUME = 0.0f;
 const float MAX_FLOAT_VOLUME = 1.0f;
 
 const char* MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
+const char* USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION = "ohos.permission.USE_ULTRA_FAST_AUDIO_STREAM";
 const char* MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
 const char* ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
@@ -305,6 +309,7 @@ enum AudioErrors {
     ERROR_UNSUPPORTED   = 6800104,
     ERROR_TIMEOUT       = 6800105,
     ERROR_UNSUPPORTED_FORMAT = 6800106,
+    ERROR_UNSUPPORTED_ULTRA_FAST = 6800107,
     /**
      * Audio specific errors.
      */
@@ -1639,7 +1644,9 @@ enum FastStatus {
     /** Normal status */
     FASTSTATUS_NORMAL,
     /** Fast status */
-    FASTSTATUS_FAST
+    FASTSTATUS_FAST,
+    /** Ultra fast status, 2.5 ms independent route */
+    FASTSTATUS_ULTRA_FAST
 };
 
 enum PlaybackCaptureStartState {
@@ -2503,6 +2510,7 @@ enum BoostTriggerMethod : uint32_t {
 enum ThreadPriorityConfig : uint32_t {
     THREAD_PRIORITY_QOS_7 = 0,
     THREAD_PRIORITY_4,
+    THREAD_PRIORITY_ULTRA_FAST,
 };
 
 enum XperfEventId : int32_t {

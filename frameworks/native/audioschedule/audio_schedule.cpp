@@ -21,6 +21,7 @@
 
 #include <unistd.h>
 #include <sys/types.h>
+#include <sched.h>
 #include <cstring>
 #include <unordered_map>
 #include <set>
@@ -253,6 +254,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 static constexpr unsigned int WAIT_TIMEOUT_SECONDS = 5;
+static constexpr int32_t ULTRA_FAST_CLIENT_PRIORITY = 54;
 const static std::set<std::string> USE_PRIORITY_4_BUNDLE_SET = {
 };
 }
@@ -265,6 +267,20 @@ AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPrio
     const std::string &bundleName)
     : pid_(pid), tid_(tid), bundleName_(bundleName)
 {
+    if (threadPriority == THREAD_PRIORITY_ULTRA_FAST) {
+        struct sched_param param = {0};
+        previousPolicy_ = sched_getscheduler(tid);
+        int32_t ret = sched_getparam(tid, &param);
+        CHECK_AND_RETURN_LOG(previousPolicy_ >= 0 && ret == 0, "Cannot read thread scheduler");
+        previousPriority_ = param.sched_priority;
+        param.sched_priority = ULTRA_FAST_CLIENT_PRIORITY;
+        ret = sched_setscheduler(tid, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
+        if (ret == 0) {
+            restoreScheduler_ = true;
+            return;
+        }
+        AUDIO_WARNING_LOG("Cannot set ultra fast thread priority: %{public}d", ret);
+    }
     if (USE_PRIORITY_4_BUNDLE_SET.find(bundleName) != USE_PRIORITY_4_BUNDLE_SET.end() &&
         threadPriority == THREAD_PRIORITY_4) {
         struct sched_param param = {0};
@@ -282,12 +298,21 @@ AudioScheduleGuard::AudioScheduleGuard(AudioScheduleGuard&& audioScheduleGuard)
     bundleName_(std::move(audioScheduleGuard.bundleName_)), isReported_(audioScheduleGuard.isReported_)
 {
     audioScheduleGuard.isReported_ = false;
+    restoreScheduler_ = audioScheduleGuard.restoreScheduler_;
+    previousPolicy_ = audioScheduleGuard.previousPolicy_;
+    previousPriority_ = audioScheduleGuard.previousPriority_;
+    audioScheduleGuard.restoreScheduler_ = false;
 }
 
 bool AudioScheduleGuard::operator==(const AudioScheduleGuard&) const = default;
 
 AudioScheduleGuard::~AudioScheduleGuard()
 {
+    if (restoreScheduler_) {
+        struct sched_param param = {0};
+        param.sched_priority = previousPriority_;
+        (void)sched_setscheduler(tid_, previousPolicy_, &param);
+    }
     if (isReported_) {
         UnscheduleReportData(pid_, tid_, bundleName_.c_str());
     }

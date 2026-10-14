@@ -48,6 +48,9 @@ private:
     pid_t tid_;
     std::string bundleName_;
     bool isReported_ = false;
+    bool restoreScheduler_ = false;
+    int32_t previousPolicy_ = 0;
+    int32_t previousPriority_ = 0;
 };
 
 class SharedAudioScheduleGuard {

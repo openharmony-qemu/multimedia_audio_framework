@@ -281,7 +281,9 @@ OH_AudioStream_Result OH_AudioCapturer_GetLatencyMode(OH_AudioCapturer* capturer
         "convert capturer failed");
     OHOS::AudioStandard::AudioCapturerInfo capturerInfo;
     audioCapturer->GetCapturerInfo(capturerInfo);
-    *latencyMode = (OH_AudioStream_LatencyMode)capturerInfo.capturerFlags;
+    CHECK_AND_RETURN_RET(latencyMode != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    *latencyMode = capturerInfo.originalFlag == OHOS::AudioStandard::AUDIO_FLAG_ULTRA_FAST ?
+        AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST : static_cast<OH_AudioStream_LatencyMode>(capturerInfo.capturerFlags);
     return AUDIOSTREAM_SUCCESS;
 }
 

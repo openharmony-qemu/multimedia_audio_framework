@@ -36,6 +36,14 @@ FastAudioCaptureSource::~FastAudioCaptureSource()
 int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
     AUDIO_INFO_LOG("In, flag: %{public}d", attr.audioStreamFlag);
+    if (attr.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST) {
+        CHECK_AND_RETURN_RET(attr.sampleRate != 0 && attr.period != 0 &&
+            static_cast<uint64_t>(attr.period) * AUDIO_US_PER_S ==
+            static_cast<uint64_t>(attr.sampleRate) * 2500, ERR_INVALID_PARAM);
+#ifndef FEATURE_ULTRA_FAST_CAPTURE
+        return ERR_NOT_SUPPORTED;
+#endif
+    }
     attr_ = attr;
 
     int32_t ret = CreateCapture();
@@ -45,10 +53,15 @@ int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
         AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
     }
     ret = PrepareMmapBuffer();
+    if (ret != SUCCESS && attr_.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST) {
+        DeInit();
+        return ret;
+    }
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
         HILOG_COMM_ERROR("[Init]prepare mmap buffer fail"));
     sourceInited_ = true;
-    InitPipeInfo(hdiCaptureId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_FAST,
+    InitPipeInfo(hdiCaptureId_, attr_.adapterName == "usb" ? HDI_ADAPTER_TYPE_USB : HDI_ADAPTER_TYPE_PRIMARY,
+        attr_.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST ? AUDIO_INPUT_FLAG_ULTRA_FAST : AUDIO_INPUT_FLAG_FAST,
         { static_cast<DeviceType>(attr_.deviceType) });
     return SUCCESS;
 }
@@ -453,7 +466,7 @@ void FastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &p
     param.channelCount = AUDIO_CHANNELCOUNT;
     param.interleaved = true;
     param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST));
-    param.period = 0;
+    param.period = attr_.period;
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.isBigEndian = false;
     param.isSignedData = true;
@@ -464,6 +477,11 @@ void FastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &p
 
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     param.type = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? AUDIO_MMAP_VOIP : AUDIO_MMAP_NOIRQ; // enable mmap!
+#ifdef FEATURE_ULTRA_FAST_CAPTURE
+    if (attr_.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST) {
+        param.type = AUDIO_MMAP_ULTRA_FAST;
+    }
+#endif
     param.sampleRate = attr_.sampleRate;
     param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
@@ -578,10 +596,13 @@ int32_t FastAudioCaptureSource::PrepareMmapBuffer(void)
 
     bufferFd_ = desc.memoryFd; // fcntl(fd, 1030, 3) after dup?
     int32_t periodFrameMaxSize = 1920000; // 192khz * 10s
-    CHECK_AND_RETURN_RET_LOG(desc.totalBufferFrames >= 0 && desc.transferFrameSize >= 0 &&
+    CHECK_AND_RETURN_RET_LOG(desc.totalBufferFrames > 0 && desc.transferFrameSize > 0 &&
         desc.transferFrameSize <= periodFrameMaxSize, ERR_OPERATION_FAILED,
         "invalid value, totalBufferFrames: [%{public}d], transferFrameSize: [%{public}d]", desc.totalBufferFrames,
         desc.transferFrameSize);
+    if (attr_.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST) {
+        CHECK_AND_RETURN_RET(static_cast<uint32_t>(desc.transferFrameSize) == attr_.period, ERR_NOT_SUPPORTED);
+    }
 
     uint32_t frameSizeInByte = PcmFormatToBit(attr_.format) * attr_.channel / PCM_8_BIT;
     bufferTotalFrameSize_ = static_cast<uint32_t>(desc.totalBufferFrames); // 1440 ~ 3840

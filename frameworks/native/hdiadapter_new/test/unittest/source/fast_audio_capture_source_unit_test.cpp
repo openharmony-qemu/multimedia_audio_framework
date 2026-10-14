@@ -258,5 +258,28 @@ HWTEST_F(FastAudioCaptureSourceUnitTest, EnableSyncInfo_001, TestSize.Level1)
     EXPECT_EQ(FastSource->syncInfoSize_, 1);
 }
 
+/** @tc.desc: Invalid ultra fast periods are rejected before opening HAL, and the period survives IPC. */
+HWTEST_F(FastAudioCaptureSourceUnitTest, UltraFastPeriodAndParcel_001, TestSize.Level1)
+{
+    FastAudioCaptureSource source;
+    IAudioSourceAttr attr;
+    attr.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
+    attr.sampleRate = 48000;
+    EXPECT_EQ(source.Init(attr), ERR_INVALID_PARAM);
+    attr.period = 240;
+    EXPECT_EQ(source.Init(attr), ERR_INVALID_PARAM);
+    attr.period = 120;
+    Parcel parcel;
+    ASSERT_TRUE(attr.Marshalling(parcel));
+    std::unique_ptr<IAudioSourceAttr> decoded(IAudioSourceAttr::Unmarshalling(parcel));
+    ASSERT_NE(decoded, nullptr);
+    EXPECT_EQ(decoded->period, 120);
+    EXPECT_EQ(decoded->audioStreamFlag, AUDIO_FLAG_ULTRA_FAST);
+    source.attr_ = attr;
+    AudioSampleAttributes sampleAttr = {};
+    source.InitAudioSampleAttr(sampleAttr);
+    EXPECT_EQ(sampleAttr.period, 120);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
