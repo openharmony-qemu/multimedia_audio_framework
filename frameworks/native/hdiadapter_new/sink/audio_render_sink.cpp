@@ -315,9 +315,7 @@ int32_t AudioRenderSink::Reset(void)
 int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-    if (!started_) {
-        AUDIO_WARNING_LOG("not start, invalid state");
-    }
+    if (!started_) { AUDIO_WARNING_LOG("not start, invalid state"); }
     if (audioMonoState_) {
         AdjustStereoToMono(&data, len);
     }
