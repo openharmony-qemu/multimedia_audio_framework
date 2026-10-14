@@ -52,6 +52,8 @@ public:
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t GetVolumeDataCount(int64_t &volumeData) override;
 
+    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
+
     void SetSpeed(float speed) override;
     int32_t SetVolume(float left, float right) override;
     int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) override;
@@ -66,6 +68,8 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
+    void UpdateBusStatus(bool isActive) override;
 
     void DumpInfo(std::string &dumpString) override;
 
@@ -107,6 +111,7 @@ private:
 #endif
 #ifdef MULTI_BUS_ENABLE
     AudioPlayingAppManager playingAppManager_;
+    bool busIsActive_ = false;
 #endif
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";

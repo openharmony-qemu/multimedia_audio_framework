@@ -73,6 +73,14 @@
       "value": "简洁音轨 编辑无忧"
     },
     {
+      "name": "cloud_rom_download",
+      "value": "云ROM下载"
+    },
+    {
+      "name": "cloud_rom_download_desc",
+      "value": "特性下载 安装 卸载管理"
+    },
+    {
       "name": "add",
       "value": "+"
     },

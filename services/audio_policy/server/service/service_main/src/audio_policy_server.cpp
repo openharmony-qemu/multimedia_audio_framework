@@ -397,7 +397,6 @@ void AudioPolicyServer::AddSystemAbilityListeners()
 void AudioPolicyServer::AddSystemAbilityListenerAfterAudioServerStart()
 {
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
-    AddSystemAbilityListener(FUSION_CONNECTIVITY_SA_ID);
 }
 
 void AudioPolicyServer::OnStop()
@@ -498,9 +497,6 @@ void AudioPolicyServer::HandleAudioServerRelatedSystemAbility(int32_t systemAbil
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             RegisterBluetoothListener();
             break;
-        case FUSION_CONNECTIVITY_SA_ID:
-            RegisterFusionConnectivityListener();
-            break;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
         case INPUT_METHOD_SYSTEM_ABILITY_ID:
             SubscribeVolumeKeyEvents();
@@ -593,7 +589,8 @@ void AudioPolicyServer::ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFo
         return;
     }
     auto currentDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    if (currentDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP && audioPolicyManager_.IsAbsVolumeScene()) {
+    if (currentDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
+        audioPolicyManager_.IsAbsVolumeScene(audioActiveDevice_.GetCurrentOutputDeviceMacAddr())) {
         streamInFocus = AudioStreamType::STREAM_MUSIC;
         return;
     }
@@ -1528,7 +1525,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(int32_t streamTypeIn, int32_t vo
 }
 
 int32_t AudioPolicyServer::SetSystemVolumeLevelWithDevice(int32_t streamTypeIn, int32_t volumeLevel,
-    int32_t deviceTypeIn, int32_t volumeFlag)
+    int32_t deviceTypeIn, int32_t volumeFlag, const std::string &macAddress)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
     DeviceType deviceType = static_cast<DeviceType>(deviceTypeIn);
@@ -1546,7 +1543,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDevice(int32_t streamTypeIn, 
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetSystemVolumeLevelWithDeviceInternal(streamType, volumeLevel,
-        volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, deviceType);
+        volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, deviceType, macAddress);
 }
 
 int32_t AudioPolicyServer::GetSystemActiveVolumeType(int32_t clientUid, int32_t &streamType)
@@ -1943,7 +1940,7 @@ int32_t AudioPolicyServer::IsAppVolumeMute(int32_t appUid, bool owned, bool &isM
 // LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
-    bool isUpdateUi, DeviceType deviceType)
+    bool isUpdateUi, DeviceType deviceType, std::string macAddress)
 {
     AUDIO_INFO_LOG("%{public}s streamType: %{public}d, volumeLevel: %{public}d, "
         "updateUi: %{public}d, deviceType: %{public}d", __func__, streamType, volumeLevel, isUpdateUi, deviceType);
@@ -1953,7 +1950,8 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal(AudioStreamTyp
         AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
         return ERR_OPERATION_FAILED;
     }
-    return audioVolumeManager_.SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
+    return audioVolumeManager_.SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType,
+        macAddress);
 }
 
 int32_t AudioPolicyServer::GetStreamMute(int32_t streamTypeIn, bool &mute)
@@ -3685,6 +3683,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfosForZone(int32_t zoneId,
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId %{public}d is invalid", zoneId);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
 
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> allRendererChangeInfos;
     int32_t result = GetCurrentRendererChangeInfos(allRendererChangeInfos);
@@ -4080,12 +4079,6 @@ void AudioPolicyServer::RegisterBluetoothListener()
     coreService_->RegisterBluetoothListener();
 }
 
-void AudioPolicyServer::RegisterFusionConnectivityListener()
-{
-    AUDIO_INFO_LOG("OnAddSystemAbility fusion connectivity manager ext start");
-    coreService_->RegisterFusionConnectivityListener();
-}
-
 void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
 {
     AUDIO_INFO_LOG("SubscribeAccessibilityConfigObserver");
@@ -4256,12 +4249,6 @@ int32_t AudioPolicyServer::SetDeviceAbsVolumeSupported(const std::string &macAdd
         return ERROR;
     }
     return audioVolumeManager_.SetDeviceAbsVolumeSupported(macAddress, support, volume);
-}
-
-int32_t AudioPolicyServer::IsAbsVolumeScene(bool &ret)
-{
-    ret = audioPolicyManager_.IsAbsVolumeScene();
-    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, int32_t volume,
@@ -5051,14 +5038,22 @@ int32_t AudioPolicyServer::EnableAudioZoneChangeReport(int32_t zoneId, bool enab
 
 int32_t AudioPolicyServer::AddUidToAudioZone(int32_t zoneId, int32_t uid)
 {
+#ifdef MULTI_USER_ZONE
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+#else
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+#endif
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, uid);
 }
 
 int32_t AudioPolicyServer::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
 {
+#ifdef MULTI_USER_ZONE
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+#else
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+#endif
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     int32_t ret = AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId, uid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RemoveUidFromAudioZone failed");
@@ -5157,20 +5152,6 @@ int32_t AudioPolicyServer::ResumeAudioFocusForExtAudioZone(const std::vector<int
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "No system permission");
     return AudioZoneService::GetInstance().ResumeAudioFocusForExtAudioZone(zoneIds);
-}
-
-int32_t AudioPolicyServer::ExcludeUidForExtZone(int32_t uid)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "No system permission");
-    return AudioZoneService::GetInstance().ExcludeUidForExtZone(uid);
-}
-
-int32_t AudioPolicyServer::UnexcludeUidForExtZone(int32_t uid)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "No system permission");
-    return AudioZoneService::GetInstance().UnexcludeUidForExtZone(uid);
 }
 
 int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)
@@ -5285,9 +5266,20 @@ int32_t AudioPolicyServer::GetActiveBluetoothDevice(std::shared_ptr<AudioDeviceD
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes)
+int32_t AudioPolicyServer::SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes,
+    const sptr<IRemoteObject> &object)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "no system permission");
+    if (object != nullptr) {
+        sptr<AudioServerDeathRecipient> deathRecipient = new(std::nothrow) AudioServerDeathRecipient(
+            IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid());
+        CHECK_AND_RETURN_RET_LOG(deathRecipient != nullptr, ERROR, "new AudioServerDeathRecipient failed");
+        deathRecipient->SetNotifyCb([this] (pid_t pid, pid_t uid) {
+            this->eventEntry_->SkipDeviceTypes(false, {});
+        });
+        CHECK_AND_RETURN_RET_LOG(object->AddDeathRecipient(deathRecipient), ERROR, "AddDeathRecipient failed");
+    }
     std::vector<DeviceType> deviceTypeVec;
     deviceTypeVec.reserve(deviceTypes.size());
     for (auto deviceType : deviceTypes) {
@@ -5543,6 +5535,12 @@ void AudioPolicyServer::CheckHibernateState(bool hibernate)
 void AudioPolicyServer::UpdateSafeVolumeByS4()
 {
     audioVolumeManager_.UpdateSafeVolumeByS4();
+}
+
+void AudioPolicyServer::UpdateAudioPowerState(AudioPowerState state)
+{
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->SetAudioPowerState(state);
 }
 
 void AudioPolicyServer::CheckConnectedDevice()

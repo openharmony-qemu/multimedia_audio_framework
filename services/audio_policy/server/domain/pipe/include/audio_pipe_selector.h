@@ -151,6 +151,9 @@ private:
         const std::shared_ptr<AudioStreamDescriptor> &newStreamDesc);
     void HandleFastStreamLimitAndNearLinkState(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    void HandleSpecialStreamLimitOnMultiDevice(
+        const std::shared_ptr<AudioStreamDescriptor> &existingStream,
+        const std::shared_ptr<AudioStreamDescriptor> &cmpStream);
     void SetPipeTypeByStreamType(AudioPipeType &nowPipeType, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsBothFastArmUsbNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe);
     void UpdateModuleInfoWithDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
@@ -208,6 +211,8 @@ private:
     bool IsPipeNotSupportReload(const std::shared_ptr<AudioPipeInfo> &pipe) const;
     void MatchCollaborativePipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    bool IsMultiA2dpPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::shared_ptr<AudioPipeInfo> &pipeInfo);
 
     std::shared_ptr<AudioPipeManager> pipeManager_;
     std::mutex callbackMutex_;

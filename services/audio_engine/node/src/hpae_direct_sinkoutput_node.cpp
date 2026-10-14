@@ -23,6 +23,7 @@
 #include <cinttypes>
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
+#include "util/id_handler.h"
 #include "audio_utils.h"
 #include "audio_engine_log.h"
 #include "audio_mute_factor_manager.h"
@@ -184,8 +185,10 @@ void HpaeDirectSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaeP
 int32_t HpaeDirectSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass,
     const std::string &deviceNetworkId)
 {
-    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, "", true,
-        true, GetNodeInfo().routeFlag);
+    // info is class-constant for direct classes; netId is intentionally not set
+    HdiIdInfoParam param = {.deviceClass = deviceClass};
+    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
+        IdHandler::SelectIdInfo(param), true, true, GetNodeInfo().routeFlag);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
         AUDIO_ERR_LOG("get direct sink fail, deviceClass: %{public}s, renderId_: %{public}u",
@@ -341,6 +344,12 @@ int32_t HpaeDirectSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &apps
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
     return audioRendererSink_->UpdateAppsUid(appsUid);
+}
+
+void HpaeDirectSinkOutputNode::UpdateBusStatus(bool isActive)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
+    audioRendererSink_->UpdateBusStatus(isActive);
 }
 
 void HpaeDirectSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,

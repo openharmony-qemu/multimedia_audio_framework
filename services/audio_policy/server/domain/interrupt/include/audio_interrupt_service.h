@@ -213,7 +213,7 @@ private:
     static constexpr int32_t RSS_UID = 1096;
     static constexpr int32_t SET_SCENE_DELAY = 120;
     static constexpr int32_t INTERRUPT_RESPONSE_CHECK_DELAY = 1000;
-    static constexpr int32_t RECORDING_ACTIVATION_DELAY_MS = 200;
+    static constexpr int32_t ACTIVATE_DELAY_MS = 200;
     static constexpr int32_t DEFAULT_PAUSE_TIMEOUT_S = 5;
 
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
@@ -288,6 +288,8 @@ private:
         const std::vector<SourceType> &incomingConcurrentSources);
     void UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         AudioFocusEntry &focusEntry);
+    void StopExistingPeelingForIncomingRecording(AudioFocusEntry &focusEntry,
+        const AudioInterrupt &activeInterrupt, const AudioInterrupt &incomingInterrupt);
     bool FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
         AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt);
     int32_t ProcessFocusEntry(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
@@ -485,6 +487,8 @@ private:
         const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt);
     void StopPausedStreamMonitor(uint32_t streamId);
     float GetDuckFactorForStreams(const AudioInterrupt &first, const AudioInterrupt &second) const;
+    void HandleAccessibilityDuckFactor(const int32_t zoneId, InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &sendInterrupt, const AudioStreamType incomingStreamType = STREAM_DEFAULT);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -539,7 +543,7 @@ private:
 
     AudioStreamCollector& streamCollector_;
     std::map<uint32_t, std::vector<AudioFocusBehavior>> audioFocusHisMap_;
-    bool mediaInterruptedByRec_ = false;
+    bool activateNeedDelay_ = false;
 };
 
 class PausedStreamTimeoutMonitor : public AudioPolicyStateMonitorCallback {

@@ -73,7 +73,7 @@ interface IAudioPolicy {
     void SetAdjustVolumeForZone([in] int zoneId);
     void IsAppVolumeMute([in] int appUid, [in] boolean muted, [out] boolean isMute);
     void SetSelfAppVolumeLevel([in] int volumeLevel, [in] int volumeFlag); /*volumeFlag default 0*/
-    void SetSystemVolumeLevelWithDevice([in] int volumeType, [in] int volumeLevel, [in] int deviceType, [in] int volumeFlag); /*volumeFlag default 0, DeviceType deviceType*/
+    void SetSystemVolumeLevelWithDevice([in] int volumeType, [in] int volumeLevel, [in] int deviceType, [in] int volumeFlag, [in] String macAddress); /*volumeFlag default 0, DeviceType deviceType*/
     void GetSystemVolumeLevel(
         [in] int volumeType, /* volumeType type is AudioVolumeType */
         [in] int uid,
@@ -157,7 +157,6 @@ interface IAudioPolicy {
     void GetAudioCapturerMicrophoneDescriptors([in] int sessionId, [out] List<sptr<MicrophoneDescriptor>> retMicList);
     void GetAvailableMicrophones([out] List<sptr<MicrophoneDescriptor>> retMicList);
     void SetDeviceAbsVolumeSupported([in] String macAddress, [in] boolean support, [in] int volume);
-    void IsAbsVolumeScene([out] boolean retVolume);
     void SetA2dpDeviceVolume([in] String macAddress, [in] int volume, [in] boolean updateUi);
     void SetNearlinkDeviceVolume([in] String macAddress, [in] int volumeType, [in] int volume, [in] boolean updateUi);
     void GetAvailableDevices([in] int usage, [out] List<sharedptr<AudioDeviceDescriptor>> retDeviceList);
@@ -370,7 +369,7 @@ interface IAudioPolicy {
         [in] IRemoteObject object);
     void GetSystemVolumeDegreeWithDevice([in] int volumeType, [in] int deviceType,
         [in] String networkId, [out] int volumeDegree);
-    void SkipDeviceTypes([in] boolean skipped, [in] List<int> deviceTypes);
+    void SkipDeviceTypes([in] boolean skipped, [in] List<int> deviceTypes, [in] IRemoteObject object);
     void SetDuckFactor([in] int duckFactor);
     void DisableVolumeLimitWhenVoiceCall([in] boolean disableVolumeLimit);
     void SetVolumeControlPriority([in] List<int> priorities, [out] int ret);
@@ -379,8 +378,6 @@ interface IAudioPolicy {
     void SetStopStreamInfoWhenDisconnect([in] String networkId, [in] List<int> usages, [in] List<int> uids);
     void SetDuckPassthroughMode([in] boolean enable);
     void FetchOutputDevicesByFilter([in] int streamUsage, [in] int bypass, [out] List<sharedptr<AudioDeviceDescriptor>> descs);  
-    void ExcludeUidForExtZone([in] int uid);
-    void UnexcludeUidForExtZone([in] int uid);
     void SetVolumeProtectionInfo([in] VolumeProtectionConfig config);
     void ConfirmVolumeLimitExceeded([in] int volumeType, [in] boolean confirmResult);
     void ClearVolumeProtection();

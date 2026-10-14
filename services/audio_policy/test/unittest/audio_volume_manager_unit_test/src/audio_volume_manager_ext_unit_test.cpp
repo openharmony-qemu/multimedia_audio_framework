@@ -93,8 +93,14 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, HandleA2dpAbsVolume_001, TestSize.Level1
     VolumeScale volume{volumeLevel, volumeLevel};
     AudioStreamType streamType = STREAM_RING;
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    int32_t ret = audioVolumeManager->HandleA2dpAbsVolume(streamType, volume, deviceType);
+    // Absolute volume is keyed by the mac address; the device is not in the a2dp map.
+    std::string macAddress = "11:22:33:44:55:66";
+    int32_t ret = audioVolumeManager->HandleA2dpAbsVolume(streamType, volume, deviceType, macAddress);
     EXPECT_NE(ret, 0);
+
+    // A missing mac address must fail directly without any fallback.
+    int32_t retEmptyMac = audioVolumeManager->HandleA2dpAbsVolume(streamType, volume, deviceType, "");
+    EXPECT_NE(retEmptyMac, 0);
 }
 
 /**

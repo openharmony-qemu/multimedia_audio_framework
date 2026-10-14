@@ -55,7 +55,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerSuspendRenderSink_001, TestSize.L
 {
     EXPECT_NE(nullptr, audioServer);
     
-    int32_t ret = audioServer->SuspendRenderSink("test_sink");
+    int32_t ret = audioServer->SuspendRenderSink("test_sink", "");
     EXPECT_NE(SUCCESS, ret); // Should fail with invalid sink name
 }
 
@@ -69,7 +69,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerRestoreRenderSink_001, TestSize.L
 {
     EXPECT_NE(nullptr, audioServer);
     
-    int32_t ret = audioServer->RestoreRenderSink("test_sink");
+    int32_t ret = audioServer->RestoreRenderSink("test_sink", "");
     EXPECT_NE(SUCCESS, ret); // Should fail with invalid sink name
 }
 
@@ -241,7 +241,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerSuspendRenderSink_002, TestSize.L
     EXPECT_NE(nullptr, audioServer);
     
     // Test with invalid sink name to cover error branch
-    int32_t ret = audioServer->SuspendRenderSink("invalid_sink_name");
+    int32_t ret = audioServer->SuspendRenderSink("invalid_sink_name", "");
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -256,7 +256,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerRestoreRenderSink_002, TestSize.L
     EXPECT_NE(nullptr, audioServer);
     
     // Test with invalid sink name to cover error branch
-    int32_t ret = audioServer->RestoreRenderSink("invalid_sink_name");
+    int32_t ret = audioServer->RestoreRenderSink("invalid_sink_name", "");
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -997,9 +997,9 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerSetAuxiliarySinkEnable_001, TestS
 HWTEST_F(AudioServerSecondUnitTest, AudioServerReportPlaybackCaptureUserChoice_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    
+
     int32_t ret = audioServer->ReportPlaybackCaptureUserChoice(0, true);
-    EXPECT_EQ(SUCCESS, ret); // Should fail without valid session
+    EXPECT_EQ(ERR_SYSTEM_PERMISSION_DENIED, ret);
 }
 
 /**

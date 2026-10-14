@@ -370,17 +370,17 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_114, TestSize.Level1)
     int32_t volumeLevel2 = 2;
     int32_t volumeDegree2 = 8;
     volume = {volumeLevel2, volumeDegree2};
-    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume, DEVICE_TYPE_BLUETOOTH_A2DP);
+    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume, DEVICE_TYPE_BLUETOOTH_A2DP, macAddress);
     EXPECT_NE(ret, SUCCESS);
-    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume, DEVICE_TYPE_BLUETOOTH_A2DP);
+    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume, DEVICE_TYPE_BLUETOOTH_A2DP, macAddress);
     EXPECT_NE(ret, SUCCESS);
 
     int32_t retDegree = audioVolumeManager->GetSystemVolumeDegree(streamType);
     EXPECT_NE(volumeDegree2, retDegree);
 
-    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume, DEVICE_TYPE_NEARLINK);
+    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume, DEVICE_TYPE_NEARLINK, macAddress);
     EXPECT_NE(ret, SUCCESS);
-    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume, DEVICE_TYPE_NEARLINK);
+    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volume, DEVICE_TYPE_NEARLINK, macAddress);
     EXPECT_NE(ret, SUCCESS);
 
     retDegree = audioVolumeManager->GetSystemVolumeDegree(streamType);

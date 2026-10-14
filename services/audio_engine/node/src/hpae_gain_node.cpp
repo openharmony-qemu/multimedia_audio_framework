@@ -130,7 +130,8 @@ void HpaeGainNode::ResetVolume()
 {
     auto audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;
-    uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
+    uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(),
+        IdHandler::SelectIdInfo(BuildIdInfoParam()));
     audioVolume->GetStreamAndPipeVolume(GetSessionId(), GetStreamType(), rendererId,
         streamVolume_, pipeVolume_);
     if (!isInnerCapturerOrInjector_ && streamVolume_ && pipeVolume_) {
@@ -244,6 +245,10 @@ void HpaeGainNode::ApplyFadeOut(HpaePcmBuffer *input, FadeOutState &fadeOutState
     uint32_t byteLength = 0;
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
     GetFadeLength(byteLength, input);
+    // SHORT_FADE derives byteLength from sample rate (5ms of data) without knowing the
+    // real buffer geometry; clamp to actual data size to avoid out-of-bounds access on
+    // spans shorter than 5ms (e.g. ultra-fast sinks).
+    byteLength = std::min(byteLength, static_cast<uint32_t>(input->DataSize()));
     int32_t bufferAvg = GetSimpleBufferAvg(data, byteLength);
     auto ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
     AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
@@ -286,6 +291,9 @@ void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
         rawFormat.channels = GetChannelCount();
         uint32_t byteLen = static_cast<float>(GetSampleRate()) * SHORT_FADE_PERIOD *
             rawFormat.channels * sizeof(float);
+        // Clamp to actual data size: 5ms-derived length may exceed the buffer on
+        // spans shorter than 5ms (e.g. ultra-fast sinks). See ApplyFadeOut.
+        byteLen = std::min(byteLen, static_cast<uint32_t>(input->DataSize()));
         auto ret = ProcessVol(data, byteLen, rawFormat, FADE_LOW, FADE_HIGH);
         fadeInState = false;
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
@@ -362,7 +370,8 @@ void HpaeGainNode::EnsureVolumeAvailable()
 {
     if (!streamVolume_ || (!isInnerCapturerOrInjector_ && !pipeVolume_)) {
         AudioVolume *audioVolume = AudioVolume::GetInstance();
-        uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
+        uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(),
+            IdHandler::SelectIdInfo(BuildIdInfoParam()));
         audioVolume->GetStreamAndPipeVolume(GetSessionId(), GetStreamType(), rendererId,
             streamVolume_, pipeVolume_);
     }

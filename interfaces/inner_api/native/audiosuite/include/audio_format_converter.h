@@ -21,7 +21,7 @@
 #include <mutex>
 
 #include "audio_errors.h"
-#include "audio_suite_pcm_buffer.h"
+#include "audio_suite_base.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -56,7 +56,7 @@ public:
     virtual ~AudioFormatConverter() = default;
 
     static std::shared_ptr<AudioFormatConverter> Create(
-        const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat,
+        const AudioFormat &inputFormat, const AudioFormat &outputFormat,
         const uint32_t resampleQuality = 1, const bool enableDataAlignment = false);
 
     // Input data is passed using a callback method, the output data and the original data are aligned in position.

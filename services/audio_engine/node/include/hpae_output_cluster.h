@@ -35,8 +35,7 @@ public:
     void RegisterCurrentDeviceCallback();
     int32_t GetConverterNodeCount() override;
     int32_t GetPreOutNum() override;
-    int32_t GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
-        const std::string &macAddress = "") override;
+    int32_t GetInstance(const HdiIdInfoParam &param) override;
     int32_t Init(IAudioSinkAttr &attr) override;
     int32_t DeInit() override;
     int32_t Flush(void) override;
@@ -51,6 +50,7 @@ public:
     bool IsProcessClusterConnected(HpaeProcessorType sceneType) override;
     void SetUpmixCoef(HpaeProcessorType sceneType, float coef) override;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) override;
+    void UpdateBusStatus(bool isActive) override;
     int32_t SetPriPaPower(void) override;
     int32_t SetSyncId(int32_t syncId) override;
     uint32_t GetHdiLatency() override;

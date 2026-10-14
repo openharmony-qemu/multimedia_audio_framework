@@ -1265,16 +1265,18 @@ void AudioServerSuspendRenderSinkFuzzTest()
 {
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     std::string sinkName = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    std::string macAddress = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->SuspendRenderSink(sinkName);
+    audioServerPtr->SuspendRenderSink(sinkName, macAddress);
 }
 
 void AudioServerRestoreRenderSinkFuzzTest()
 {
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     std::string sinkName = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    std::string macAddress = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->RestoreRenderSink(sinkName);
+    audioServerPtr->RestoreRenderSink(sinkName, macAddress);
 }
 
 void AudioServerSetAudioParameterFuzzTest()
@@ -1457,7 +1459,9 @@ void AudioServerPermissionCheckerFuzzTest()
 {
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    int32_t errCode = 0;
     audioServerPtr->PermissionChecker(config);
+    (void)errCode;
 }
 
 void AudioServerCheckPlaybackPermissionFuzzTest()

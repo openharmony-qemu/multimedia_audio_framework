@@ -577,6 +577,10 @@ int32_t HpaeSessionEffectNode::PauseEffect()
 int32_t HpaeSessionEffectNode::FlushEffect()
 {
     if (!effectInstance_) return 0;
+    // Stop the preheat thread BEFORE resetting the accounting it touches
+    // (fedBytes_/totalBytesIn_/stats_): joining after the reset leaves a window
+    // where the thread races the zeroing. No-op when already stopped.
+    StopPreheatThread();
     int32_t ret = effectInstance_->Flush();
     pauseAccumulatedUs_ = 0;
     ClearRawBypassBuffer();
@@ -589,8 +593,7 @@ int32_t HpaeSessionEffectNode::FlushEffect()
         isPaused_ = false;
         AUDIO_INFO_LOG("FlushEffect: paused → reset to IDLE");
     } else if (status_ == STATUS::WARMING_UP) {
-        // WARMING_UP: stop preheat thread first (avoid data race), then restart preheat
-        StopPreheatThread();
+        // Thread already stopped above; restart preheat with clean accounting.
         warmupStartTime_ = std::chrono::steady_clock::now();
         RestartPreheat();
         AUDIO_INFO_LOG("FlushEffect: WARMING_UP restart preheat, prebufTarget=%{public}zu", prebufTargetBytes_);

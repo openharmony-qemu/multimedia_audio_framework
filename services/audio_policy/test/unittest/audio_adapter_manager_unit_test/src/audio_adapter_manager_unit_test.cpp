@@ -1251,6 +1251,24 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetHdiSourceIdInfo_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: Test GetHdiSourceIdInfo
+ * @tc.number: GetHdiSourceIdInfo_VA_001
+ * @tc.type: FUNC
+ * @tc.desc: va class should use module name or default HDI_ID_INFO_VA
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetHdiSourceIdInfo_VA_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.className = "va";
+    audioModuleInfo.name = VA_INPUT_SPP;
+    EXPECT_EQ(audioAdapterManager->GetHdiSourceIdInfo(audioModuleInfo), VA_INPUT_SPP);
+
+    audioModuleInfo.name = "";
+    EXPECT_EQ(audioAdapterManager->GetHdiSourceIdInfo(audioModuleInfo), HDI_ID_INFO_VA);
+}
+
+/**
  * @tc.name: Test UpdateAudioPipeVolume_001
  * @tc.desc: Test UpdateAudioPipeVolume with empty vector
  * @tc.type: FUNC
@@ -1573,18 +1591,20 @@ HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_002, TestSize
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     auto device = std::make_shared<AudioDeviceDescriptor>();
     device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    const std::string macAddress = "11:22:33:44:55:66";
+    device->macAddress_ = macAddress;
     bool isMuted = false;
     int32_t volumeLevel = TEST_VOLUME_LEVEL;
     float volumeDb = TEST_VOLUME_DB;
-    audioAdapterManager->isAbsVolumeScene_ = false;
+    // Abs volume scene is keyed by the device mac address.
+    audioAdapterManager->SetAbsVolumeScene(macAddress, false, 0);
     audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_RING, isMuted, volumeLevel, volumeDb);
     EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
 
-    audioAdapterManager->isAbsVolumeScene_ = true;
+    audioAdapterManager->SetAbsVolumeScene(macAddress, true, 0);
     audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_RING, isMuted, volumeLevel, volumeDb);
     EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
 
-    audioAdapterManager->isAbsVolumeScene_ = true;
     audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_MUSIC, isMuted, volumeLevel, volumeDb);
     EXPECT_EQ(volumeDb, ABS_VOLUME_DB_VALUE);
 }
@@ -2044,6 +2064,36 @@ HWTEST_F(AudioAdapterManagerUnitTest, Is3daDirectBusPort_003, TestSize.Level1)
     info.name = "";
     info.busAddress = "";
     EXPECT_FALSE(AudioAdapterManager::Is3daDirectBusPort(info));
+}
+
+/**
+ * @tc.name: Is3daDirectBusPort_004
+ * @tc.desc: Test Is3daDirectBusPort rejects hex networkId names containing the "3da" substring.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, Is3daDirectBusPort_004, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    // remote module name: 64-char hex networkId containing "3da" + "_out"
+    info.name = "0123456789ab3daf0123456789abcdef0123456789abcdef0123456789abcdef_out";
+    info.busAddress = "";
+    EXPECT_FALSE(AudioAdapterManager::Is3daDirectBusPort(info));
+
+    // hex networkId carried in the bus address must not hit either
+    info.name = "primary";
+    info.busAddress = "0123456789ab3daf0123456789abcdef0123456789abcdef0123456789abcdef_out";
+    EXPECT_FALSE(AudioAdapterManager::Is3daDirectBusPort(info));
+
+    // "3da" embedded inside another token is not a 3da bus port
+    info.busAddress = "";
+    info.name = "bus3dax_out";
+    EXPECT_FALSE(AudioAdapterManager::Is3daDirectBusPort(info));
+
+    // exact "3da" token forms are legal 3da bus ports
+    info.name = "bus10_3da_out";
+    EXPECT_TRUE(AudioAdapterManager::Is3daDirectBusPort(info));
+    info.name = "3da";
+    EXPECT_TRUE(AudioAdapterManager::Is3daDirectBusPort(info));
 }
 
 /**

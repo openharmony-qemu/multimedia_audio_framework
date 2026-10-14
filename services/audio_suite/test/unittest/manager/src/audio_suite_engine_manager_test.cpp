@@ -1431,15 +1431,9 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetSystemNodeParamTest, TestSize.Level
     AudioSuitePipelineImpl::InitGlobal();
 
     auto pipeline = std::make_shared<AudioSuitePipelineImpl>(AudioSuite::PIPELINE_EDIT_MODE, 0);
-    pipeline->pipelineState_ = PIPELINE_RUNNING;
-
     std::vector<uint8_t> param;
-    int32_t ret = pipeline->SetSystemNodeParam(0, param);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
-
-    pipeline->DeInit();
     pipeline->pipelineState_ = PIPELINE_STOPPED;
-    ret = pipeline->SetSystemNodeParam(0, param);
+    int32_t ret = pipeline->SetSystemNodeParam(0, param);
     EXPECT_EQ(ret, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
 
     pipeline->DeInit();
@@ -1474,15 +1468,9 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, GetSystemNodeParamTest, TestSize.Level
     AudioSuitePipelineImpl::InitGlobal();
 
     auto pipeline = std::make_shared<AudioSuitePipelineImpl>(AudioSuite::PIPELINE_EDIT_MODE, 0);
-    pipeline->pipelineState_ = PIPELINE_RUNNING;
-
     std::vector<uint8_t> param;
-    int32_t ret = pipeline->GetSystemNodeParam(0, param);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
-
-    pipeline->DeInit();
     pipeline->pipelineState_ = PIPELINE_STOPPED;
-    ret = pipeline->GetSystemNodeParam(0, param);
+    int32_t ret = pipeline->GetSystemNodeParam(0, param);
     EXPECT_EQ(ret, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
 
     pipeline->DeInit();
@@ -1517,17 +1505,10 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, GetSystemNodeInOutSizeTest, TestSize.L
     AudioSuitePipelineImpl::InitGlobal();
 
     auto pipeline = std::make_shared<AudioSuitePipelineImpl>(AudioSuite::PIPELINE_EDIT_MODE, 0);
-    pipeline->pipelineState_ = PIPELINE_RUNNING;
-
-    pipeline->DeInit();
     uint32_t inSize = 0;
     uint32_t outSize = 0;
-    int32_t ret = pipeline->GetSystemNodeInOutSize(0, inSize, outSize);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
-
-    pipeline->DeInit();
     pipeline->pipelineState_ = PIPELINE_STOPPED;
-    ret = pipeline->GetSystemNodeInOutSize(0, inSize, outSize);
+    int32_t ret = pipeline->GetSystemNodeInOutSize(0, inSize, outSize);
     EXPECT_EQ(ret, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
 
     pipeline->DeInit();

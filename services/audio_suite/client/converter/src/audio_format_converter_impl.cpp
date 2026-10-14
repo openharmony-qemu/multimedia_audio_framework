@@ -75,11 +75,32 @@ AudioFormatConverterImpl::~AudioFormatConverterImpl()
 }
 
 std::shared_ptr<AudioFormatConverter> AudioFormatConverter::Create(
-    const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat, const uint32_t resampleQuality,
-    bool enableDataAlignment)
+    const AudioFormat &inputFormat, const AudioFormat &outputFormat,
+    const uint32_t resampleQuality, bool enableDataAlignment)
 {
+    auto inLayoutIt = LAYOUT_TO_CHANNEL.find(inputFormat.audioChannelInfo.channelLayout);
+    CHECK_AND_RETURN_RET_LOG(inLayoutIt != LAYOUT_TO_CHANNEL.end(), nullptr,
+        "Create: unsupported input channel layout");
+    auto outLayoutIt = LAYOUT_TO_CHANNEL.find(outputFormat.audioChannelInfo.channelLayout);
+    CHECK_AND_RETURN_RET_LOG(outLayoutIt != LAYOUT_TO_CHANNEL.end(), nullptr,
+        "Create: unsupported output channel layout");
+
+    uint32_t inChannelCount = (inputFormat.audioChannelInfo.numChannels != 0)
+        ? inputFormat.audioChannelInfo.numChannels
+        : static_cast<uint32_t>(inLayoutIt->second);
+    uint32_t outChannelCount = (outputFormat.audioChannelInfo.numChannels != 0)
+        ? outputFormat.audioChannelInfo.numChannels
+        : static_cast<uint32_t>(outLayoutIt->second);
+
+    PcmBufferFormat inputPcmFormat(
+        inputFormat.rate, inChannelCount,
+        inputFormat.audioChannelInfo.channelLayout, inputFormat.format);
+    PcmBufferFormat outputPcmFormat(
+        outputFormat.rate, outChannelCount,
+        outputFormat.audioChannelInfo.channelLayout, outputFormat.format);
+
     auto audioFormatConverter = std::make_shared<AudioFormatConverterImpl>();
-    int32_t ret = audioFormatConverter->Init(inputFormat, outputFormat, resampleQuality, enableDataAlignment);
+    int32_t ret = audioFormatConverter->Init(inputPcmFormat, outputPcmFormat, resampleQuality, enableDataAlignment);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Create: rawFormatConversion init failed");
 
     return audioFormatConverter;

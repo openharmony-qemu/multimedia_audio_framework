@@ -94,7 +94,7 @@ HWTEST_F(HpaeMixerNodeTest, testHpaePlayOutConnectNode, TestSize.Level0)
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 1);
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
     g_testValue = 0;
     int32_t testValue = TEST_VALUE1;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb0 =

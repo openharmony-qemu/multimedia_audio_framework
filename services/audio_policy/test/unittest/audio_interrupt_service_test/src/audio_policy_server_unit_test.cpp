@@ -3385,7 +3385,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_161, TestSize.Level1)
 
     int32_t systemAbilityId = APP_MGR_SERVICE_ID;
     std::string deviceId = "test";
-    server->HandleAudioServerRelatedSystemAbility(FUSION_CONNECTIVITY_SA_ID, deviceId);
     server->HandleAudioServerRelatedSystemAbility(systemAbilityId, deviceId);
 
     systemAbilityId = -1;
@@ -4693,7 +4692,11 @@ HWTEST(AudioPolicyUnitTest, AddUidToAudioZone_001, TestSize.Level1)
 
     // Test zoneId = 0
     int32_t ret = server->AddUidToAudioZone(0, uid);
+#ifdef MULTI_USER_ZONE
+    EXPECT_EQ(ret, SUCCESS);
+#else
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
+#endif
 
     // Test zoneId < 0
     ret = server->AddUidToAudioZone(-1, uid);
@@ -4755,7 +4758,11 @@ HWTEST(AudioPolicyUnitTest, RemoveUidFromAudioZone_001, TestSize.Level1)
 
     // Test zoneId = 0
     int32_t ret = server->RemoveUidFromAudioZone(0, uid);
+#ifdef MULTI_USER_ZONE
+    EXPECT_EQ(ret, ERROR);
+#else
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
+#endif
 
     // Test zoneId < 0
     ret = server->RemoveUidFromAudioZone(-1, uid);
@@ -6851,6 +6858,8 @@ HWTEST(AudioPolicyUnitTest, SetDeviceActive_SpecifiedUidNoPermission, TestSize.L
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    server->coreService_ = AudioCoreService::GetCoreService();
+    server->eventEntry_ = CreateEventEntry(server->coreService_);
 
     int32_t uid = 9999;
     int32_t ret = server->SetDeviceActive(DEVICE_TYPE_SPEAKER, true, uid);

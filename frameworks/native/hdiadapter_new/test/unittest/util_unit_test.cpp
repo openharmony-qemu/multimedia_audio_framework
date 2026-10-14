@@ -459,6 +459,81 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_016, TestSize.Level1)
 
 /**
  * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_017
+ * @tc.desc   : Test SelectIdInfo priority: busAddress first, unmatched class falls to default
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_017, TestSize.Level1)
+{
+    HdiIdInfoParam param;
+    param.deviceClass = "primary";
+    param.networkId = "LocalDevice";
+    param.macAddress = "11:22:33:44:55:66";
+    // unmatched class: mac/networkId are ignored, falls to default
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), HDI_ID_INFO_DEFAULT);
+
+    param.busAddress = "bus10_out";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "bus10_out");
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_018
+ * @tc.desc   : Test SelectIdInfo remote classes return networkId even when mac is set
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_018, TestSize.Level1)
+{
+    HdiIdInfoParam param;
+    param.networkId = "remote_net_id";
+    param.macAddress = "11:22:33:44:55:66";
+    param.deviceClass = "remote";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "remote_net_id");
+    param.deviceClass = "remote_offload";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "remote_net_id");
+    param.deviceClass = "remote_multichannel";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "remote_net_id");
+
+    // remote with empty networkId returns "" verbatim (policy-aligned), not default
+    param.networkId = "";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "");
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_019
+ * @tc.desc   : Test SelectIdInfo primary_extra returns the module name
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_019, TestSize.Level1)
+{
+    HdiIdInfoParam param;
+    param.deviceClass = "primary_extra";
+    param.name = "Typec_Speaker";
+    param.networkId = "LocalDevice";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "Typec_Speaker");
+
+    // primary_extra with empty name returns "" verbatim (policy-aligned), not default
+    param.name = "";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "");
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_020
+ * @tc.desc   : Test SelectIdInfo a2dp branch is gated by MULTI_USER_ZONE
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_020, TestSize.Level1)
+{
+    HdiIdInfoParam param;
+    param.deviceClass = "a2dp";
+    param.macAddress = "11:22:33:44:55:66";
+#ifdef MULTI_USER_ZONE
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "11:22:33:44:55:66");
+#else
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), HDI_ID_INFO_DEFAULT);
+#endif
+}
+
+/**
+ * @tc.name   : Test IdHandler API
  * @tc.number : IdHandlerUnitTest_010
  * @tc.desc   : Test primary_mmap_voip capture id selection for VOIP low latency path
  */

@@ -37,6 +37,13 @@ const std::string DEFAULT_DEVICE_CLASS = "primary";
 const std::string DEFAULT_DEVICE_NETWORKID = "LocalDevice";
 const std::string REMOTE_DEVICE_CLASS = "remote";
 
+static std::string ResolveCapturerDeviceNetId(const HpaeSourceInfo &sourceInfo)
+{
+    return sourceInfo.deviceClass == "primary_extra_capturer" ? sourceInfo.deviceName
+        : ((sourceInfo.deviceClass == "va" && !sourceInfo.sourceName.empty())
+            ? sourceInfo.sourceName : sourceInfo.deviceNetId);
+}
+
 HpaeCapturerManager::HpaeCapturerManager(HpaeSourceInfo &sourceInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sourceInfo_(sourceInfo)
 {
@@ -901,7 +908,8 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
         int32_t ret = InitCapturerManager();
         if (ret != SUCCESS) {
             AUDIO_INFO_LOG("re-Init failed");
-            TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
+            TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
+                sourceInfo_.deviceName, isReload ? SUCCESS : ret);
             return;
         }
         AUDIO_INFO_LOG("re-Init success");
@@ -974,10 +982,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     if (sourceInfo_.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE) {
         sourceInputClusterMap_[mainMicType_]->SetSourceInputNodeType(HPAE_SOURCE_OFFLOAD);
     }
-    std::string deviceNetId = sourceInfo_.deviceNetId;
-    if (sourceInfo_.deviceClass == "primary_extra_capturer") {
-        deviceNetId = sourceInfo_.deviceName;
-    }
+    std::string deviceNetId = ResolveCapturerDeviceNetId(sourceInfo_);
     int32_t ret = sourceInputClusterMap_[mainMicType_]->GetCapturerSourceInstance(
         sourceInfo_.deviceClass, deviceNetId, sourceInfo_.sourceType,
         sourceInfo_.sourceName, sourceInfo_.busAddress);
@@ -1004,7 +1009,8 @@ int32_t HpaeCapturerManager::Init(bool isReload)
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, isReload] {
         int32_t ret = InitCapturerManager();
-        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
+            sourceInfo_.deviceName, isReload ? SUCCESS : ret);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init failed");
         TriggerCallback(INIT_SOURCE_RESULT, sourceInfo_.sourceType);
         AUDIO_INFO_LOG("Init success");

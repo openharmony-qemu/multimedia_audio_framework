@@ -43,6 +43,8 @@ RemoteAudioCaptureSource::~RemoteAudioCaptureSource()
     if (sourceInited_.load()) {
         DeInit();
     }
+
+    CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
 }
 
 int32_t RemoteAudioCaptureSource::Init(const IAudioSourceAttr &attr)

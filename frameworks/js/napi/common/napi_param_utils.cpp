@@ -1075,6 +1075,9 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     status = GetCapturerSubStreamOptions(env, opts, in);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerSubStreamOptions failed");
 
+    status = GetActualUsingTokenId(env, opts, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseActualUsingTokenId failed");
+
     return GetPlaybackCaptureMode(env, opts, in);
 }
 
@@ -1093,6 +1096,28 @@ napi_status NapiParamUtils::GetCapturerMicInConfig(const napi_env &env, AudioCap
     status = GetCapturerSubStreamOptions(env, opts, in);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerSubStreamOptions failed");
 
+    status = GetActualUsingTokenId(env, opts, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseActualUsingTokenId failed");
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetActualUsingTokenId(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
+{
+    bool hasActualUsingTokenId = false;
+    napi_status status = napi_has_named_property(env, in, "actualUsingTokenId", &hasActualUsingTokenId);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "has actualUsingTokenId failed");
+    if (hasActualUsingTokenId) {
+        napi_value tokenIdValue = nullptr;
+        status = napi_get_named_property(env, in, "actualUsingTokenId", &tokenIdValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get actualUsingTokenId failed");
+        int32_t signedTokenId = 0;
+        status = NapiParamUtils::GetValueInt32(env, signedTokenId, tokenIdValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "parse actualUsingTokenId failed");
+        CHECK_AND_RETURN_RET_LOG(signedTokenId >= 0, napi_invalid_arg,
+            "actualUsingTokenId must not be negative");
+        opts->actualUsingTokenId = static_cast<uint32_t>(signedTokenId);
+    }
     return napi_ok;
 }
 
@@ -1860,6 +1885,22 @@ napi_status NapiParamUtils::ConvertSoundCardInfoToJs(const napi_env &env,
 }
 
 #ifndef CROSS_PLATFORM
+static int32_t FeatureNameToType(const std::string &featureName)
+{
+    static const std::map<std::string, NapiAudioEnum::AudioSuiteFeatureType> featureNameToTypeMap = {
+        {"RecordDialogAlgoRes", NapiAudioEnum::AUDIO_DIALOG_ENHANCEMENT},
+        {"RecordPicAlgoRes", NapiAudioEnum::AUDIO_CENTER_VOICE_ENHANCEMENT},
+        {"RecordDefinition", NapiAudioEnum::AUDIO_VOICE_ENHANCEMENT},
+        {"MusicMasterAlgoRes", NapiAudioEnum::AUDIO_MUSIC_ENHANCEMENT},
+        {"AudioSourceSeparationAlgoRes", NapiAudioEnum::AUDIO_SOURCE_SEPARATION},
+    };
+    auto it = featureNameToTypeMap.find(featureName);
+    if (it != featureNameToTypeMap.end()) {
+        return static_cast<int32_t>(it->second);
+    }
+    return -1;
+}
+
 napi_status NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(const napi_env &env,
     const AudioSuite::AudioSuiteDownloadStatusInfo &info, napi_value &result)
 {
@@ -1867,17 +1908,13 @@ napi_status NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(const napi_env 
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
         "SetValueAudioSuiteDownloadStatusInfo: create object failed");
 
-    status = SetValueString(env, "featureName", info.featureName, result);
+    status = SetValueInt32(env, "featureType", FeatureNameToType(info.featureName), result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
-        "SetValueAudioSuiteDownloadStatusInfo: set featureName failed");
+        "SetValueAudioSuiteDownloadStatusInfo: set featureType failed");
 
-    status = SetValueInt32(env, "downloadStatus", static_cast<int32_t>(info.state), result);
+    status = SetValueInt32(env, "status", static_cast<int32_t>(info.state), result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
-        "SetValueAudioSuiteDownloadStatusInfo: set downloadStatus failed");
-
-    status = SetValueInt64(env, "size", static_cast<int64_t>(info.size), result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
-        "SetValueAudioSuiteDownloadStatusInfo: set size failed");
+        "SetValueAudioSuiteDownloadStatusInfo: set status failed");
 
     status = SetValueString(env, "installPath", info.romPath, result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
@@ -1891,6 +1928,59 @@ napi_status NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(const napi_env 
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
         "SetValueAudioSuiteDownloadStatusInfo: set errorCode failed");
 
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetValueAudioSuiteFeatureVersionInfo(const napi_env &env,
+    const AudioSuite::AudioSuiteCloudRomVersionInfo &info, napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteFeatureVersionInfo: create object failed");
+
+    status = SetValueInt32(env, "featureType", FeatureNameToType(info.featureName), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteFeatureVersionInfo: set featureType failed");
+
+    status = SetValueInt32(env, "status", info.status, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteFeatureVersionInfo: set status failed");
+
+    status = SetValueString(env, "version", info.version, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteFeatureVersionInfo: set version failed");
+
+    status = SetValueInt64(env, "size", static_cast<int64_t>(info.size), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteFeatureVersionInfo: set size failed");
+
+    status = SetValueInt32(env, "errorCode", info.errorCode, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteFeatureVersionInfo: set errorCode failed");
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetInt32ArrayArgument(napi_env env, napi_value value, std::vector<int32_t> &result)
+{
+    bool isArray = false;
+    napi_status status = napi_is_array(env, value, &isArray);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetInt32ArrayArgument: not array");
+    CHECK_AND_RETURN_RET_LOG(isArray, napi_invalid_arg, "GetInt32ArrayArgument: value is not array");
+
+    uint32_t arrayLen = 0;
+    status = napi_get_array_length(env, value, &arrayLen);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetInt32ArrayArgument: get array length failed");
+
+    for (uint32_t i = 0; i < arrayLen; i++) {
+        napi_value element = nullptr;
+        status = napi_get_element(env, value, i, &element);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetInt32ArrayArgument: get element failed");
+        int32_t intVal = 0;
+        status = napi_get_value_int32(env, element, &intVal);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetInt32ArrayArgument: get int32 value failed");
+        result.push_back(intVal);
+    }
     return napi_ok;
 }
 #endif

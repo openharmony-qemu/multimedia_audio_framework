@@ -162,8 +162,9 @@ void AudioZoneInterruptReporter::ReportInterrupt(const string &deviceTag)
     AudioZoneFocusList newFocusList = GetFocusList();
     if (!deviceTag.empty()) {
         CHECK_AND_RETURN_LOG(!IsFocusListEqual(injectFocusList_, newFocusList), "inject focus not change");
+    } else {
+        CHECK_AND_RETURN_LOG(!IsFocusListEqual(oldFocusList_, newFocusList), "focus not change");
     }
-    CHECK_AND_RETURN_LOG(!IsFocusListEqual(oldFocusList_, newFocusList), "focus not change");
 
     AUDIO_INFO_LOG("report audio zone %{public}d device %{public}s interrupt to"
         " client %{public}d of reason %{public}d ", zoneId_, deviceTag_.c_str(), clientPid_,

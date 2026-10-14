@@ -123,10 +123,6 @@ public:
 
     virtual int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) = 0;
 
-    virtual int32_t ExcludeUidForExtZone(int32_t uid) = 0;
-
-    virtual int32_t UnexcludeUidForExtZone(int32_t uid) = 0;
-
     virtual void SetZoneDeviceVisible(bool visible) = 0;
 
     virtual int32_t RegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType,

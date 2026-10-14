@@ -1226,7 +1226,8 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, IsAbsVolumeScene_001, TestSize.Level1)
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    bool ret = server->audioPolicyManager_.IsAbsVolumeScene();
+    // No active bt device, abs volume scene lookup by mac address returns false.
+    bool ret = server->audioPolicyManager_.IsAbsVolumeScene("");
     EXPECT_EQ(ret, false);
 }
 

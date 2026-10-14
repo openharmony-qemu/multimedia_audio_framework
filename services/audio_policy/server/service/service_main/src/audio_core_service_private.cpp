@@ -211,7 +211,7 @@ bool AudioCoreService::HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeR
                 !actived.IsSameDeviceDescPtr(stream->newDeviceDescs_.front());
         });
         if (activedWillChange) {
-            HandleA2dpSuspend();
+            HandleA2dpSuspend(actived.macAddress_);
             return true;
         }
     }
@@ -219,28 +219,28 @@ bool AudioCoreService::HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeR
     return false;
 }
 
-void AudioCoreService::HandleA2dpSuspend()
+void AudioCoreService::HandleA2dpSuspend(const std::string &macAddress)
 {
+    CHECK_AND_RETURN_LOG(!macAddress.empty(), "macAddress is empty");
     std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
 
-    auto action = std::make_shared<RestoreA2dpSinkAction>();
+    auto action = std::make_shared<RestoreA2dpSinkAction>(macAddress);
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
     AsyncActionHandler::AsyncActionDesc desc;
     desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
     desc.delayTimeMs = OLD_DEVICE_UNAVALIABLE_SUSPEND_MS;
 
     CHECK_AND_RETURN_LOG(asyncHandler_ != nullptr, "asyncHandler_ is nullptr");
-    a2dpSuspendUntil_ = std::chrono::steady_clock::now() +
+    auto &state = a2dpSuspendStates_[macAddress];
+    state.suspendUntil = std::chrono::steady_clock::now() +
         std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
     CHECK_AND_RETURN_LOG(asyncHandler_->PostAsyncAction(desc), "post async action fail");
 
-    if (a2dpNeedSuspend_) {
-        return;
-    }
+    CHECK_AND_RETURN(!state.needSuspend);
 
-    AUDIO_INFO_LOG("suspend a2dp");
-    AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp");
-    a2dpNeedSuspend_ = true;
+    AUDIO_INFO_LOG("suspend a2dp, macAddress: %{public}s", GetEncryptAddr(macAddress).c_str());
+    AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp", macAddress);
+    state.needSuspend = true;
 }
 
 bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
@@ -1875,7 +1875,7 @@ int32_t AudioCoreService::MoveToLocalInputDevice(std::vector<SourceOutput> sourc
 
     uint32_t sourceId = -1; // invalid source id, use source name instead.
     std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(localDeviceDescriptor->deviceType_,
-        routeFlag);
+        routeFlag, localDeviceDescriptor->isUnidirectional_);
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
         int32_t ret = audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputs[i].paStreamId,
             sourceId, sourceName);
@@ -2491,8 +2491,7 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
             streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
             shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_[0];
             audioActiveDevice_.SetActiveBtInDeviceMac(desc->macAddress_);
-            bool ret = audioActiveDevice_.GetActiveA2dpDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP_IN,
-                streamDesc->streamInfo_);
+            bool ret = audioActiveDevice_.GetActiveA2dpInDeviceStreamInfo(streamDesc->streamInfo_);
             CHECK_AND_RETURN_RET_LOG(ret, OPEN_PORT_FAILURE, "invalid streamDesc");
             SourceType sourceType = streamDesc->capturerInfo_.sourceType;
             audioA2dpDevice_.GetA2dpModuleInfo(pipeInfo->moduleInfo_, streamDesc->streamInfo_);
@@ -3666,7 +3665,12 @@ bool AudioCoreService::DeactivateA2dpAfterExclude(
         return false;
     }
 
-    audioPolicyManager_.StopAudioPort(BLUETOOTH_SPEAKER);
+    for (const auto &deviceDesc : excludeDeviceDescs) {
+        CHECK_AND_CONTINUE(deviceDesc != nullptr && deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP);
+        std::string moduleName = AudioPolicyUtils::GetInstance().GetA2dpModuleName(
+            deviceDesc->macAddress_, OUTPUT_DEVICE);
+        audioPolicyManager_.StopAudioPort(moduleName);
+    }
     if (Bluetooth::AudioA2dpManager::GetActiveA2dpDeviceLocal() != EMPTY_ADDRESS) {
         Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(NULL_ADDRESS);
     }

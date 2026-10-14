@@ -167,7 +167,7 @@ public:
     int32_t GetSystemVolumeDegreeInterface(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, const VolumeUpdateOption &option);
     int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel,
-        bool isUpdateUi, DeviceType deviceType);
+        bool isUpdateUi, DeviceType deviceType, std::string macAddress = "");
     int32_t GetSystemVolumeLevelInterface(AudioStreamType streamType, int32_t zoneId = 0);
     void UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool& isUpdateUi = false,
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
@@ -212,7 +212,8 @@ public:
     void GetSystemVolumeLevelInfo(std::vector<AdjustVolumeInfo> &systemVolumeLevelInfo);
     std::vector<std::shared_ptr<AllDeviceVolumeInfo>> GetAllDeviceVolumeInfo();
     void GetVolumeKeyRegistrationInfo(std::vector<VolumeKeyEventRegistration> &keyRegistrationInfo);
-    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType,
+        int32_t zoneId = 0);
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
     void OnTimerExpired();
     bool IsNeedForceControlVolumeType();
@@ -276,17 +277,20 @@ private:
         int32_t zoneId, const VolumeUpdateOption &info);
     void ProcUpdateRingerMode();
     int32_t HandleA2dpAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
-        DeviceType curDeviceType);
+        DeviceType curDeviceType, const std::string &macAddress);
     int32_t HandleNearlinkDeviceAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
         DeviceType curDeviceType);
     void CancelSafeVolumeNotificationWhenSwitchDevice();
     void CheckReduceOtherActiveVolume(AudioStreamType streamType, int32_t volumeLevel);
     void HandleLegacyHighVolumeEvent();
-    int32_t SetSystemVolumeExternal(AudioStreamType streamType, const VolumeScale &volume, DeviceType deviceType);
+    int32_t SetSystemVolumeExternal(AudioStreamType streamType, const VolumeScale &volume, DeviceType deviceType,
+        const std::string &macAddress);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, const VolumeScale &volume,
         std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0);
     int32_t HandleStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
         DeviceType deviceType, int32_t zoneId);
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolumeWithZone(int32_t zoneId, AudioVolumeType volumeType,
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, DeviceType fallbackDeviceType = DEVICE_TYPE_NONE) const;
     int32_t GetCurrentNearlinkAbsVolume();
     int32_t GetNearlinkKaraokeVolume();
     NearlinkKaraokeVolumeMode GetNearlinkKaraokeMode();

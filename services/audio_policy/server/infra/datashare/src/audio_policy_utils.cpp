@@ -110,6 +110,13 @@ static inline const char* ResolvePrimaryMicPort(uint32_t routeFlag)
     }
 }
 
+static inline const char* ResolveVaSourcePort(DeviceType deviceType, bool isUnidirectional)
+{
+    return deviceType == DeviceType::DEVICE_TYPE_NEARLINK_PORT ? VA_INPUT_NEARLINK
+        : (deviceType == DeviceType::DEVICE_TYPE_BT_SPP
+            ? (isUnidirectional ? VA_INPUT_UNIDIRECTIONAL_SPP : VA_INPUT_SPP) : PORT_NONE);
+}
+
 int32_t AudioPolicyUtils::startDeviceId = 1;
 
 std::string AudioPolicyUtils::GetEncryptAddr(const std::string &addr)
@@ -170,6 +177,24 @@ std::string AudioPolicyUtils::GetRemoteNetworkId(const std::string &sinkName, De
     CHECK_AND_RETURN_RET(pos != std::string::npos, networkId);
     networkId = sinkName.substr(0, pos);
     return networkId;
+}
+
+std::string AudioPolicyUtils::GetA2dpModuleName(const std::string &macAddress, DeviceRole role)
+{
+#ifdef MULTI_USER_ZONE
+    return macAddress + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
+#else
+    return role == DeviceRole::OUTPUT_DEVICE ? BLUETOOTH_SPEAKER : BLUETOOTH_MIC;
+#endif
+}
+
+std::string AudioPolicyUtils::GetA2dpPipeName(const std::string &macAddress, DeviceRole role)
+{
+    std::string pipeName = (role == OUTPUT_DEVICE) ? "a2dp_output" : "a2dp_input";
+#ifdef MULTI_USER_ZONE
+    pipeName = (role == OUTPUT_DEVICE) ? "a2dp_" + macAddress + "_output" : pipeName;
+#endif
+    return pipeName;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailableDevicesInner(AudioDeviceUsage usage)
@@ -398,7 +423,8 @@ std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
     return portName;
 }
 
-std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType)
+std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType,
+    const std::string &macAddress)
 {
     std::string portName = PORT_NONE;
     switch (deviceType) {
@@ -413,7 +439,7 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
                     portName = PRIMARY_SPEAKER;
                 }
             } else {
-                portName = BLUETOOTH_SPEAKER;
+                portName = GetA2dpModuleName(macAddress, OUTPUT_DEVICE);
             }
             break;
         case DeviceType::DEVICE_TYPE_EARPIECE:
@@ -469,7 +495,7 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
 #endif
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sessionId, pipeType);
-        return GetSinkPortName(desc.deviceType_, pipeType);
+        return GetSinkPortName(desc.deviceType_, pipeType, desc.macAddress_);
     } else {
         return GetRemoteModuleName(desc.networkId_, desc.deviceRole_);
     }
@@ -485,13 +511,14 @@ std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor>
 #endif
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sessionId, pipeType);
-        return GetSinkPortName(desc->deviceType_, pipeType);
+        return GetSinkPortName(desc->deviceType_, pipeType, desc->macAddress_);
     } else {
         return GetRemoteModuleName(desc->networkId_, desc->deviceRole_);
     }
 }
 
-std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t routeFlag)
+std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t routeFlag,
+    bool isUnidirectional)
 {
     std::string portName = PORT_NONE;
     switch (deviceType) {
@@ -502,21 +529,19 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
         case DeviceType::DEVICE_TYPE_NEARLINK_IN:
         case DeviceType::DEVICE_TYPE_WIRED_MICIN:
         case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
-            if (Util::IsEnhancedRoutingSupported()) {
+            portName = ResolvePrimaryMicPort(routeFlag);
+            AUDIO_INFO_LOG("use %{public}s for devicetype: %{public}d", portName.c_str(), deviceType);
+            if (Util::IsEnhancedRoutingSupported() && portName == PRIMARY_MIC) {
                 auto it = deviceMsmd.find(deviceType);
                 if (it != deviceMsmd.end()) {
                     portName = it->second;
                     AUDIO_INFO_LOG("use %{public}s for devicetype: %{public}d", portName.c_str(), deviceType);
-                } else {
-                    portName = ResolvePrimaryMicPort(routeFlag);
                 }
-            } else {
-                portName = ResolvePrimaryMicPort(routeFlag);
-                AUDIO_INFO_LOG("use %{public}s for devicetype: %{public}d", portName.c_str(), deviceType);
             }
             break;
         case DeviceType::DEVICE_TYPE_BT_SPP:
-            portName = VIRTUAL_AUDIO;
+        case DeviceType::DEVICE_TYPE_NEARLINK_PORT:
+            portName = ResolveVaSourcePort(deviceType, isUnidirectional);
             break;
         case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
             portName = USB_MIC;

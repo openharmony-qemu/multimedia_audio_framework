@@ -462,6 +462,24 @@ bool AudioCoreConfigManager::GetAdapterInfoByType(AudioAdapterType type, std::sh
     return true;
 }
 
+bool AudioCoreConfigManager::IsSupportedDeviceTypeByAdapterType(AudioAdapterType adapterType, DeviceType deviceType)
+{
+    auto it = supportedDeviceTypeCache_.find(adapterType);
+    if (it != supportedDeviceTypeCache_.end()) {
+        return it->second.count(deviceType) > 0;
+    }
+    std::set<DeviceType> devices;
+    std::shared_ptr<PolicyAdapterInfo> info = audioPolicyConfig_.GetAdapterInfo(adapterType);
+    CHECK_AND_RETURN_RET(info != nullptr, false);
+    for (const auto &dev : info->deviceInfos) {
+        if (dev != nullptr) {
+            devices.insert(dev->type_);
+        }
+    }
+    supportedDeviceTypeCache_[adapterType] = devices;
+    return devices.count(deviceType) > 0;
+}
+
 bool AudioCoreConfigManager::GetHasEarpiece()
 {
     return hasEarpiece_;
@@ -495,7 +513,8 @@ bool AudioCoreConfigManager::IsFastStreamSupported(AudioStreamInfo &streamInfo,
         }
 
         deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(audioDeviceDescriptor->deviceType_,
-            audioDeviceDescriptor->deviceRole_, audioDeviceDescriptor->networkId_, audioFlag);
+            audioDeviceDescriptor->deviceRole_, audioDeviceDescriptor->networkId_, audioFlag,
+            0, "", audioDeviceDescriptor->isUnidirectional_);
         if (deviceInfo == nullptr) {
             continue;
         }
@@ -563,7 +582,8 @@ uint32_t AudioCoreConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescrip
     uint32_t flag = AUDIO_FLAG_NONE; // input or output? default?
     auto newDeviceDesc = desc->newDeviceDescs_.front();
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
-        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_,
+        "", newDeviceDesc->isUnidirectional_);
     CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, flag, "Find device failed; use none flag");
 
     for (auto &pipeIt : deviceInfo->supportPipeMap_) {
@@ -745,7 +765,8 @@ std::shared_ptr<AdapterPipeInfo> AudioCoreConfigManager::GetNormalRecordAdapterI
 
     // Get adapter info for device
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(deviceDesc->deviceType_,
-        deviceDesc->deviceRole_, deviceDesc->networkId_, AUDIO_INPUT_FLAG_NORMAL, deviceDesc->a2dpOffloadFlag_);
+        deviceDesc->deviceRole_, deviceDesc->networkId_, AUDIO_INPUT_FLAG_NORMAL, deviceDesc->a2dpOffloadFlag_,
+        "", deviceDesc->isUnidirectional_);
     CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, nullptr, "Find device failed, none streamProp");
 
     // Get support pipes for normal stream
@@ -761,7 +782,8 @@ bool AudioCoreConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStreamD
         desc->newDeviceDescs_.front() != nullptr, false, "Invalid device desc");
     auto newDeviceDesc = desc->newDeviceDescs_.front();
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
-        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_,
+        "", newDeviceDesc->isUnidirectional_);
     if (deviceInfo == nullptr) {
         AUDIO_ERR_LOG("deviceInfo == nullptr");
         return false;
@@ -795,7 +817,8 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
     CHECK_AND_RETURN_LOG(newDeviceDesc != nullptr, "DeviceDesc is null, none streamDrop");
 
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
-        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_,
+        "", newDeviceDesc->isUnidirectional_);
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
 
     std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = deviceInfo->adapterInfo_.lock();
@@ -804,9 +827,8 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
     std::unordered_map<std::string, std::shared_ptr<AdapterPipeInfo>> pipeInfoMap;
     for (const auto &pipeName : deviceInfo->supportPipes_) {
         std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfoPtr->GetPipeInfoByName(pipeName);
-        if (pipeInfo != nullptr) {
-            pipeInfoMap[pipeInfo->paProp_.busAddress_] = pipeInfo;
-        }
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+        pipeInfoMap[pipeInfo->paProp_.busAddress_] = pipeInfo;
     }
 
     auto findPipe = [&pipeInfoMap](const std::string &busAddress) -> std::shared_ptr<AdapterPipeInfo> {
@@ -851,7 +873,7 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
     auto newDeviceDesc = desc->newDeviceDescs_.front();
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
         newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_,
-        newDeviceDesc->a2dpOffloadFlag_, newDeviceDesc->macAddress_);
+        newDeviceDesc->a2dpOffloadFlag_, newDeviceDesc->macAddress_, newDeviceDesc->isUnidirectional_);
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
 
     auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
@@ -1159,7 +1181,8 @@ DirectPlaybackMode AudioCoreConfigManager::GetDirectPlaybackSupport(std::shared_
     const AudioStreamInfo &streamInfo)
 {
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
-        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
+        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE,
+        0, "", desc->isUnidirectional_);
     CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, DIRECT_PLAYBACK_NOT_SUPPORTED, "Find device failed");
     CHECK_AND_RETURN_RET_LOG(streamInfo.encoding != ENCODING_EAC3 || desc->deviceType_ == DEVICE_TYPE_HDMI ||
         desc->deviceType_ == DEVICE_TYPE_LINE_DIGITAL, DIRECT_PLAYBACK_NOT_SUPPORTED, "Not support eac3");
@@ -1283,7 +1306,8 @@ bool AudioCoreConfigManager::GetPlaybackStreamSupport(AudioStreamInfo &streamInf
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = nullptr;
 
     deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(audioDeviceDesc->deviceType_,
-        audioDeviceDesc->deviceRole_, audioDeviceDesc->networkId_, flag);
+        audioDeviceDesc->deviceRole_, audioDeviceDesc->networkId_, flag,
+        0, "", audioDeviceDesc->isUnidirectional_);
     CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
 
     for (auto &pipeIt : deviceInfo->supportPipeMap_) {
@@ -1313,7 +1337,8 @@ bool AudioCoreConfigManager::IsDirectPlaybackSupported(AudioStreamInfo &streamIn
         CHECK_AND_CONTINUE_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
 
         deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(audioDeviceDescriptor->deviceType_,
-            audioDeviceDescriptor->deviceRole_, audioDeviceDescriptor->networkId_, AUDIO_OUTPUT_FLAG_HD);
+            audioDeviceDescriptor->deviceRole_, audioDeviceDescriptor->networkId_, AUDIO_OUTPUT_FLAG_HD,
+            0, "", audioDeviceDescriptor->isUnidirectional_);
         CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
 
         DirectPlaybackMode mode = GetDirectPlaybackSupport(audioDeviceDescriptor, streamInfo);
@@ -1348,7 +1373,8 @@ bool AudioCoreConfigManager::NeedUidCheckForOffloadPipe(const std::shared_ptr<Au
     auto newDeviceDesc = desc->newDeviceDescs_.front();
     CHECK_AND_RETURN_RET_LOG(newDeviceDesc != nullptr, false, "newDeviceDesc is nullptr");
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
-        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->routeFlag_);
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->routeFlag_,
+        0, "", newDeviceDesc->isUnidirectional_);
     CHECK_AND_RETURN_RET(deviceInfo != nullptr, false);
 
     for (const auto &[flag, pipeInfo] : deviceInfo->supportPipeMap_) {
@@ -1366,7 +1392,8 @@ bool AudioCoreConfigManager::IsDeviceSimulated(std::shared_ptr<AudioDeviceDescri
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "desc is nullptr");
     CHECK_AND_RETURN_RET(desc->deviceType_ != DEVICE_TYPE_REMOTE_CAST, false);
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
-        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
+        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE,
+        0, "", desc->isUnidirectional_);
     CHECK_AND_RETURN_RET(deviceInfo != nullptr, false);
     return deviceInfo->isSimulated_;
 }

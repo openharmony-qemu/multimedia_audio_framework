@@ -32,8 +32,8 @@ namespace AudioSuite {
 
 struct ConverterHandleWrapper {
     std::shared_ptr<AudioFormatConverter> converter;
-    PcmBufferFormat inputFormat;
-    PcmBufferFormat outputFormat;
+    AudioFormat inputFormat;
+    AudioFormat outputFormat;
 };
 
 struct MixerHandleWrapper {

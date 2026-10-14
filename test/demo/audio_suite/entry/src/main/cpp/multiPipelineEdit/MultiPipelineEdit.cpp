@@ -431,6 +431,11 @@ napi_value MultiPipelineEnvPrepare(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest multiPipelinePrepare pipelineId=%{public}s", pipelineId.c_str());
 
+    // Reset global multiRenderFrameFlag before each test case to prevent cross-case pollution
+    // from previous offline AISS cases. If the current case contains AISS nodes, addAudioSeparation
+    // will set it back to true after this function returns.
+    g_multiRenderFrameFlag = false;
+
     if (g_threadPipelineManager != nullptr && g_threadPipelineManager->pipelineId == pipelineId) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "multiPipelinePrepare direct return, pipeline manager of thread had inited,"

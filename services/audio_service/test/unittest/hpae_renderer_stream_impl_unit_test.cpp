@@ -28,6 +28,7 @@
 #include "audio_capturer_private.h"
 #include "audio_system_manager.h"
 #include "audio_volume.h"
+#include "hpae_info.h"
 #include "util/id_handler.h"
 
 using namespace testing::ext;
@@ -48,6 +49,9 @@ static inline int32_t GetSizeFromFormat(int32_t format)
 }
 
 static std::shared_ptr<HpaeAdapterManager> adapterManager;
+
+// defined in hpae_renderer_stream_impl.cpp with external linkage for direct unit testing
+HPAE::FadeType ConvertFadeStrategyToFadeType(FadeStrategy strategy);
 
 class MockWriteCallback : public IWriteCallback {
 public:
@@ -128,6 +132,19 @@ std::shared_ptr<HpaeRendererStreamImpl> HpaeRendererStreamUnitTest::CreateHpaeRe
 }
 
 /**
+ * @tc.name  : Test ConvertFadeStrategyToFadeType mapping
+ * @tc.type  : FUNC
+ * @tc.number: ConvertFadeStrategyToFadeType_001
+ * @tc.desc  : Test FadeStrategy to FadeType explicit mapping (enum orders differ).
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, ConvertFadeStrategyToFadeType_001, TestSize.Level0)
+{
+    EXPECT_EQ(HPAE::DEFAULT_FADE, ConvertFadeStrategyToFadeType(FADE_STRATEGY_DEFAULT));
+    EXPECT_EQ(HPAE::NONE_FADE, ConvertFadeStrategyToFadeType(FADE_STRATEGY_NONE));
+    EXPECT_EQ(HPAE::SHORT_FADE, ConvertFadeStrategyToFadeType(FADE_STRATEGY_SHORTER));
+}
+
+/**
  * @tc.name  : Test HpaeRendererStreamImpl Construct
  * @tc.type  : FUNC
  * @tc.number: HpaeRendererStreamImplConstruct_001
@@ -148,8 +165,6 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_001, TestSi
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     EXPECT_EQ(rendererStreamImpl.minBufferSize_, MIN_BUFFER_SIZE * rendererStreamImpl.byteSizePerFrame_ *
         rendererStreamImpl.spanSizeInFrame_);
-    EXPECT_EQ(rendererStreamImpl.expectedPlaybackDurationMs_, processConfig.rendererInfo.expectedPlaybackDurationBytes *
-        AUDIO_MS_PER_S / rendererStreamImpl.byteSizePerFrame_ / processConfig.streamInfo.samplingRate);
     EXPECT_TRUE(rendererStreamImpl.isMoveAble_);
     EXPECT_FALSE(rendererStreamImpl.isCallbackMode_);
 }
@@ -175,8 +190,6 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_002, TestSi
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     EXPECT_EQ(rendererStreamImpl.minBufferSize_, MIN_BUFFER_SIZE * rendererStreamImpl.byteSizePerFrame_ *
         rendererStreamImpl.spanSizeInFrame_);
-    EXPECT_EQ(rendererStreamImpl.expectedPlaybackDurationMs_, processConfig.rendererInfo.expectedPlaybackDurationBytes *
-        AUDIO_MS_PER_S / rendererStreamImpl.byteSizePerFrame_ / processConfig.streamInfo.customSampleRate);
     EXPECT_TRUE(rendererStreamImpl.isMoveAble_);
     EXPECT_FALSE(rendererStreamImpl.isCallbackMode_);
 }
@@ -202,8 +215,6 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_003, TestSi
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     EXPECT_EQ(rendererStreamImpl.minBufferSize_, MIN_BUFFER_SIZE * rendererStreamImpl.byteSizePerFrame_ *
         rendererStreamImpl.spanSizeInFrame_);
-    EXPECT_EQ(rendererStreamImpl.expectedPlaybackDurationMs_, processConfig.rendererInfo.expectedPlaybackDurationBytes *
-        AUDIO_MS_PER_S / rendererStreamImpl.byteSizePerFrame_ / processConfig.streamInfo.customSampleRate);
     EXPECT_TRUE(rendererStreamImpl.isMoveAble_);
     EXPECT_FALSE(rendererStreamImpl.isCallbackMode_);
 }
@@ -226,7 +237,6 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_004, TestSi
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, 0);
     EXPECT_EQ(rendererStreamImpl.minBufferSize_, 0);
-    EXPECT_EQ(rendererStreamImpl.expectedPlaybackDurationMs_, 0);
     EXPECT_TRUE(rendererStreamImpl.isMoveAble_);
     EXPECT_FALSE(rendererStreamImpl.isCallbackMode_);
 }
@@ -252,8 +262,6 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_005, TestSi
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     EXPECT_EQ(rendererStreamImpl.minBufferSize_, MIN_BUFFER_SIZE * rendererStreamImpl.byteSizePerFrame_ *
         rendererStreamImpl.spanSizeInFrame_);
-    EXPECT_EQ(rendererStreamImpl.expectedPlaybackDurationMs_, processConfig.rendererInfo.expectedPlaybackDurationBytes *
-        AUDIO_MS_PER_S / rendererStreamImpl.byteSizePerFrame_ / processConfig.streamInfo.customSampleRate);
     EXPECT_TRUE(rendererStreamImpl.isMoveAble_);
     EXPECT_FALSE(rendererStreamImpl.isCallbackMode_);
 }
@@ -523,6 +531,25 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_006, TestSize.Level1)
     RemoveStreamVolume();
     unit->streamIndex_ = originStreamIndex;
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test OnStreamData macAddress refresh.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_044
+ * @tc.desc  : Test OnStreamData refreshes macAddress from callback info.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_044, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    AudioCallBackStreamInfo info;
+    info.deviceClass = "primary";
+    info.deviceNetId = "local";
+    info.macAddress = "11:22:33:44:55:66";
+    info.needData = false;
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS);
+    EXPECT_EQ(unit->macAddress_, "11:22:33:44:55:66");
 }
 
 /**

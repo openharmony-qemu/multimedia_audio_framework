@@ -76,7 +76,6 @@ namespace {
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
     constexpr int32_t PRO_AUDIO_ENGINE_FLAG = 1;
-    constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
     const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
@@ -1012,12 +1011,12 @@ int32_t RendererInServer::WriteData()
             AUDIO_ERR_LOG("not enough data!");
             return ERR_INVALID_PARAM;
         }
-        uint64_t durationMs = ((byteSizePerFrame_ * processConfig_.streamInfo.samplingRate) == 0) ? 0
-            : ((MSEC_PER_SEC * processConfig_.rendererInfo.expectedPlaybackDurationBytes) /
-            (byteSizePerFrame_ * processConfig_.streamInfo.samplingRate));
+        uint32_t fadeSampleRate = processConfig_.streamInfo.customSampleRate == 0 ?
+            processConfig_.streamInfo.samplingRate : processConfig_.streamInfo.customSampleRate;
         if (processConfig_.streamType != STREAM_ULTRASONIC &&
             processConfig_.rendererInfo.rendererFlags != AUDIO_FLAG_3DA_DIRECT &&
-            (GetFadeStrategy(durationMs) == FADE_STRATEGY_DEFAULT)) {
+            (GetFadeStrategy(processConfig_.rendererInfo.expectedPlaybackDurationBytes, byteSizePerFrame_,
+                fadeSampleRate) == FADE_STRATEGY_DEFAULT)) {
             if (currentReadFrame + spanSizeInFrame_ >= currentWriteFrame) {
                 DoFadingOut(ringBufferDesc);
             }
@@ -3193,39 +3192,31 @@ int32_t RendererInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
     return SUCCESS;
 }
 
-void RendererInServer::UpdateLatestForWorkgroup(float systemVolume)
+void RendererInServer::UpdateLatestForWorkgroup()
 {
     latestForWorkgroup_.status = status_.load();
     latestForWorkgroup_.isInSilentState = isInSilentState_;
     latestForWorkgroup_.silentModeAndMixWithOthers = silentModeAndMixWithOthers_.load();
     latestForWorkgroup_.lastWriteStandbyEnableStatus = lastWriteStandbyEnableStatus_;
-    latestForWorkgroup_.streamVolume = audioServerBuffer_->GetStreamVolume();
-    latestForWorkgroup_.systemVolume = systemVolume;
     AUDIO_INFO_LOG("[WorkgroupInServer] pid = %{public}d, status_ = %{public}d, "
         "isInSilentState_ = %{public}d, "
         "silentModeAndMixWithOthers_ = %{public}d, "
-        "lastWriteStandbyEnableStatus_ = %{public}d, "
-        "streamVolume = %{public}f, "
-        "systemVolume = %{public}f",
+        "lastWriteStandbyEnableStatus_ = %{public}d",
         processConfig_.appInfo.appPid, latestForWorkgroup_.status, latestForWorkgroup_.isInSilentState,
-        latestForWorkgroup_.silentModeAndMixWithOthers, latestForWorkgroup_.lastWriteStandbyEnableStatus,
-        latestForWorkgroup_.streamVolume, latestForWorkgroup_.systemVolume);
+        latestForWorkgroup_.silentModeAndMixWithOthers, latestForWorkgroup_.lastWriteStandbyEnableStatus);
 }
 
-bool RendererInServer::CollectInfosForWorkgroup(float systemVolume)
+bool RendererInServer::CollectInfosForWorkgroup()
 {
     bool running = (status_ == I_STATUS_STARTED) ? true : false;
-    float streamVolume = audioServerBuffer_->GetStreamVolume();
-    bool haveStreamSound = (fabs(streamVolume) > AUDIO_VOLOMUE_EPSILON) ? true : false;
-    bool haveSystemSound = (fabs(systemVolume) > AUDIO_VOLOMUE_EPSILON) ? true : false;
-
+    float finalVolume = AudioVolume::GetInstance()->GetMonitorVolumeBySessionId(streamIndex_);
+    bool haveSound = (fabs(finalVolume) > AUDIO_VOLOMUE_EPSILON) ? true : false;
     if (!latestForWorkgroupInited_) {
-        UpdateLatestForWorkgroup(systemVolume);
         latestForWorkgroupInited_ = true;
     }
-    UpdateLatestForWorkgroup(systemVolume);
+    UpdateLatestForWorkgroup();
 
-    return running && haveStreamSound && haveSystemSound &&
+    return running && haveSound &&
         !isInSilentState_ && !silentModeAndMixWithOthers_ && !lastWriteStandbyEnableStatus_;
 }
 

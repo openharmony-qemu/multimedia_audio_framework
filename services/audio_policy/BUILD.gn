@@ -659,6 +659,10 @@ audio_ohos_library("audio_policy_client") {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
+  if (audio_framework_feature_multi_user_zone) {
+    defines += [ "MULTI_USER_ZONE" ]
+  }
+
   sources = [
     "../audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
     "../audio_service/client/src/audio_filter.cpp",

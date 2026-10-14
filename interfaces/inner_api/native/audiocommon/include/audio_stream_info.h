@@ -558,6 +558,10 @@ struct AudioCallBackStreamInfo {
     size_t requestDataLen = 0;
     std::string deviceClass;
     std::string deviceNetId;
+    // Sensitive: never print in plain text logs or hidump
+    std::string macAddress;
+    std::string deviceName; // module name, primary_extra id-info discriminator (see IdHandler::SelectIdInfo)
+    std::string busAddress; // multi-bus port address, highest-priority id-info source (see IdHandler::SelectIdInfo)
     bool needData = false;
     bool forceData = false;
     uint64_t writePos_ = 0;

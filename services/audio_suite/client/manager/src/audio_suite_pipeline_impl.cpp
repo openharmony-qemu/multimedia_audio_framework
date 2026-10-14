@@ -154,7 +154,7 @@ uint32_t AudioSuitePipelineImpl::AllocatePipeLineId()
         allocateId_ = 0;
     }
 
-    AUDIO_INFO_LOG("AllocatePipeLineId sucess. id_ = %{public}u", id);
+    AUDIO_INFO_LOG("AllocatePipeLineId success. id_ = %{public}u", id);
     return id;
 }
 
@@ -1319,9 +1319,6 @@ int32_t AudioSuitePipelineImpl::MetaRenderFrame(AudioMetaFrame &metaFrame,
 int32_t AudioSuitePipelineImpl::SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param)
 {
     std::lock_guard<std::mutex> lock(pipelineMutex_);
-    CHECK_AND_RETURN_RET_LOG(pipelineState_ == PIPELINE_STOPPED, ERR_ILLEGAL_STATE,
-        "SetSystemNodeParam: pipeline not stopped");
-
     CHECK_AND_RETURN_RET_LOG(nodeMap_.find(nodeId) != nodeMap_.end(), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
         "SetSystemNodeParam: node id invalid");
 
@@ -1346,9 +1343,6 @@ int32_t AudioSuitePipelineImpl::SetSystemNodeParam(uint32_t nodeId, std::vector<
 int32_t AudioSuitePipelineImpl::GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param)
 {
     std::lock_guard<std::mutex> lock(pipelineMutex_);
-    CHECK_AND_RETURN_RET_LOG(pipelineState_ == PIPELINE_STOPPED, ERR_ILLEGAL_STATE,
-        "GetSystemNodeParam: pipeline not stopped");
-
     CHECK_AND_RETURN_RET_LOG(nodeMap_.find(nodeId) != nodeMap_.end(), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
         "GetSystemNodeParam: node id invalid");
 
@@ -1370,9 +1364,6 @@ int32_t AudioSuitePipelineImpl::GetSystemNodeParam(uint32_t nodeId, std::vector<
 int32_t AudioSuitePipelineImpl::GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSize, uint32_t &outSize)
 {
     std::lock_guard<std::mutex> lock(pipelineMutex_);
-    CHECK_AND_RETURN_RET_LOG(pipelineState_ == PIPELINE_STOPPED, ERR_ILLEGAL_STATE,
-        "GetSystemNodeInOutSize: pipeline not stopped");
-
     CHECK_AND_RETURN_RET_LOG(nodeMap_.find(nodeId) != nodeMap_.end(), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
         "GetSystemNodeInOutSize: node id invalid");
 

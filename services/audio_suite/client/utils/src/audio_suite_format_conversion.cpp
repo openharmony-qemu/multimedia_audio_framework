@@ -127,7 +127,7 @@ AudioSuitePcmBuffer *AudioSuiteFormatConversion::Process(
         rateOut_.ResizePcmBuffer(PcmBufferFormat(outFormat.sampleRate, in->GetChannelCount(),
             in->GetChannelLayout(), SAMPLE_F32LE), duration);
         ret = Resample(in, &rateOut_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Do Resample error");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Do Resample error, ret=%{public}d", ret);
         in = &rateOut_;
     }
 
@@ -137,7 +137,7 @@ AudioSuitePcmBuffer *AudioSuiteFormatConversion::Process(
         channelOut_.ResizePcmBuffer(PcmBufferFormat(in->GetSampleRate(),
             outFormat.channelCount, outFormat.channelLayout, SAMPLE_F32LE), duration);
         ret = ChannelConvert(in, &channelOut_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Channel Conversion error");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Channel Conversion error, ret=%{public}d", ret);
         in = &channelOut_;
     }
 

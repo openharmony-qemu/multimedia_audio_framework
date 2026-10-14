@@ -350,21 +350,21 @@ void AudioServerProxy::SetSinkMuteForSwitchDeviceProxy(const std::string &device
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-void AudioServerProxy::SuspendRenderSinkProxy(const std::string &sinkName)
+void AudioServerProxy::SuspendRenderSinkProxy(const std::string &sinkName, const std::string &macAddress)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SuspendRenderSink(sinkName);
+    gsp->SuspendRenderSink(sinkName, macAddress);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-void AudioServerProxy::RestoreRenderSinkProxy(const std::string &sinkName)
+void AudioServerProxy::RestoreRenderSinkProxy(const std::string &sinkName, const std::string &macAddress)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->RestoreRenderSink(sinkName);
+    gsp->RestoreRenderSink(sinkName, macAddress);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 

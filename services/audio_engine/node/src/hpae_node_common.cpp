@@ -348,6 +348,7 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.format = static_cast<AudioSampleFormat>(TransFormatFromStringToEnum(audioModuleInfo.format));
     sinkInfo.channels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.channels));
     sinkInfo.macAddress = audioModuleInfo.macAddress;
+    sinkInfo.busAddress = audioModuleInfo.busAddress;
     int32_t bufferSize = static_cast<int32_t>(StringToNum(audioModuleInfo.bufferSize));
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sinkInfo.channels != CHANNEL_UNKNOW && sinkInfo.format != INVALID_WIDTH, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -546,6 +547,19 @@ int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo)
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }
+    // Geometry guard: nodes allocate per-frame buffers as frameLen * channels *
+    // GetSizeFromFormat(format), so an out-of-range enum (e.g. the default
+    // CHANNEL_UNKNOW / INVALID_WIDTH) yields a zero-size buffer and a null
+    // conversion target in HpaeSinkInputNode::DoProcess. Policy-level support
+    // sets (RENDERER/CAPTURER_SUPPORTED_CHANNELS) are checked upstream.
+    if (streamInfo.channels == CHANNEL_UNKNOW || streamInfo.channels > CHANNEL_16) {
+        AUDIO_ERR_LOG("Invalid channels %{public}u", static_cast<uint32_t>(streamInfo.channels));
+        return ERROR;
+    }
+    if (GetSizeFromFormat(streamInfo.format) == 0) {
+        AUDIO_ERR_LOG("Invalid format %{public}u", static_cast<uint32_t>(streamInfo.format));
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -600,6 +614,9 @@ void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<I
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
     nodeInfo.deviceNetId = sinkInfo.deviceNetId;
     nodeInfo.deviceClass = sinkInfo.deviceClass;
+    nodeInfo.macAddress = sinkInfo.macAddress;
+    nodeInfo.deviceName = sinkInfo.deviceName;
+    nodeInfo.busAddress = sinkInfo.busAddress;
     nodeInfo.statusCallback = statusCallback;
 }
 

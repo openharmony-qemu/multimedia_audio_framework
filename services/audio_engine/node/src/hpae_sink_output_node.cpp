@@ -24,6 +24,7 @@
 #include "hpae_format_convert.h"
 #include "audio_utils.h"
 #include "hpae_node_common.h"
+#include "util/id_handler.h"
 #include "audio_engine_log.h"
 #include "audio_stream_enum.h"
 #include "stream_dfx_manager.h"
@@ -224,24 +225,22 @@ void HpaeSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
 #endif
 }
 
-int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId,
-    const std::string &macAddress)
+int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const HdiIdInfoParam &param)
 {
-    // macAddress has highest priority for device selection, then deviceNetId, then default
-    const std::string &info = !macAddress.empty() ? macAddress
-        : (!deviceNetId.empty() ? deviceNetId : HDI_ID_INFO_DEFAULT);
-    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info, true,
-        true, GetNodeInfo().routeFlag);
+    // Single priority source shared with policy port creation (IdHandler::SelectIdInfo)
+    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(param.deviceClass,
+        IdHandler::SelectIdInfo(param), true, true, GetNodeInfo().routeFlag);
 
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
-        // Do not print macAddress (sensitive); indicate the actual selection source instead.
-        AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, selectByMac: %{public}d, netIdLen: %{public}zu, "
-            "renderId_: %{public}u", deviceClass.c_str(), !macAddress.empty(), deviceNetId.size(), renderId_);
+        // Do not print macAddress (sensitive); indicate the selection sources instead.
+        AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, busLen: %{public}zu, macLen: %{public}zu, "
+            "netIdLen: %{public}zu, renderId_: %{public}u", param.deviceClass.c_str(), param.busAddress.size(),
+            param.macAddress.size(), param.networkId.size(), renderId_);
         HdiAdapterManager::GetInstance().ReleaseId(renderId_);
         return ERROR;
     }
-    GetAuxiliarySink(deviceClass);
+    GetAuxiliarySink(param.deviceClass);
     return SUCCESS;
 }
 
@@ -444,7 +443,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
     if (IsRemoteDeviceClass(GetDeviceClass())) {
         remoteTimePoint_ = std::chrono::high_resolution_clock::now();
     }
-    if (GetDeviceClass() == "primary" || GetDeviceClass() == "primary_extra") {
+    if (GetDeviceClass() == "primary") {
         ret = audioRendererSink_->SetPaPower(true);
         isOpenPaPower_ = true;
         isDisplayPaPowerState_ = false;
@@ -514,6 +513,12 @@ int32_t HpaeSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
     return audioRendererSink_->UpdateAppsUid(appsUid);
 }
 
+void HpaeSinkOutputNode::UpdateBusStatus(bool isActive)
+{
+    CHECK_AND_RETURN(audioRendererSink_ != nullptr);
+    audioRendererSink_->UpdateBusStatus(isActive);
+}
+
 void HpaeSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
     uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
 {
@@ -568,7 +573,7 @@ void HpaeSinkOutputNode::UpdateAuxiliarySinkState(StreamChangeType change,
 
 void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
 {
-    if (GetDeviceClass() != "primary" && GetDeviceClass() != "primary_extra") {
+    if (GetDeviceClass() != "primary") {
         return;
     }
     CHECK_AND_RETURN(collaborationState_ == COLLABORATION_CLOSE);

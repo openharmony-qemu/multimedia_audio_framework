@@ -25,6 +25,7 @@
 #include "common/hdi_adapter_info.h"
 #include "audio_definition_policy_utils.h"
 #include "audio_policy_utils.h"
+#include "audio_adapter_manager.h"
 #include "audio_utils.h"
 
 #undef LOG_DOMAIN
@@ -689,8 +690,7 @@ std::string AudioPipeManager::Get3daDirectBusAddress()
     for (auto &pipeInfo : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         const AudioModuleInfo &moduleInfo = pipeInfo->moduleInfo_;
-        if (moduleInfo.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos ||
-            moduleInfo.name.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
+        if (AudioAdapterManager::Is3daDirectBusPort(moduleInfo)) {
             return moduleInfo.busAddress.empty() ? moduleInfo.name : moduleInfo.busAddress;
         }
     }
@@ -1920,6 +1920,14 @@ std::vector<PipeDeviceVolumeGroup> AudioPipeManager::GetPipeDeviceVolumeInfoForD
 
             auto firstDevice = streamDesc->newDeviceDescs_.front();
             CHECK_AND_CONTINUE(firstDevice != nullptr);
+
+#ifdef MULTI_USER_ZONE
+            if (deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+                deviceDesc->GetMacAddress() != firstDevice->GetMacAddress()) {
+                AUDIO_INFO_LOG("a2dp macAddress not same.");
+                continue;
+            }
+#endif
 
             if (firstDevice->GetName() == deviceDesc->GetName()) {
                 ProcessPipeForVolumeInfo(pipeDeviceVolumeGroups, pipeInfo);

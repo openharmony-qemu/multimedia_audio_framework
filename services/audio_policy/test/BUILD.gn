@@ -2279,6 +2279,10 @@ ohos_unittest("audio_policy_server_unit_test") {
     defines += [ "FEATURE_DEVICE_MANAGER" ]
     external_deps += [ "device_manager:devicemanagersdk" ]
   }
+
+  if (audio_framework_feature_multi_user_zone) {
+    defines += [ "MULTI_USER_ZONE" ]
+  }
 }
 
 ohos_unittest("audio_policy_client_stub_impl_test") {

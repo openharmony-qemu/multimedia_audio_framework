@@ -209,6 +209,7 @@ void AudioCapturerPrivate::SetCapturerInfoByOptions(const AudioCapturerOptions &
     capturerInfo_.mixWithWakeUp = mixWithWakeUp_;
     capturerInfo_.cellularRecordPhoneNum = capturerOptions.capturerInfo.cellularRecordPhoneNum;
     capturerInfo_.cellularRecordToken = capturerOptions.capturerInfo.cellularRecordToken;
+    actualUsingTokenId_ = capturerOptions.actualUsingTokenId;
 }
 
 // LCOV_EXCL_START
@@ -1184,6 +1185,7 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
     SetInnerStreamFastStatusChangeCallback(audioStream_);
 
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
+    audioStream_->SetActualUsingTokenId(actualUsingTokenId_);
 
     audioStream_->SetClientDeviceId(appInfo_.deviceId);
 
@@ -2681,9 +2683,14 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
 
     audioStream->SetStreamTrackerState(false);
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
+    audioStream->SetActualUsingTokenId(actualUsingTokenId_);
     audioStream->SetClientDeviceId(appInfo_.deviceId);
     audioStream->SetCapturerInfo(info.capturerInfo);
     SetInnerStreamFastStatusChangeCallback(audioStream);
+    if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        audioStream->SetInnerCapturerState(true, info.params.playbackCaptureMode,
+            info.params.isModernInnerCapturer);
+    }
     int32_t res = audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(res == SUCCESS, ERROR,
         HILOG_COMM_ERROR("[SetSwitchInfo]SetAudioStreamInfo failed"),

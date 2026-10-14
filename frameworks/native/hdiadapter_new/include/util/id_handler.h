@@ -44,6 +44,10 @@ public:
     uint32_t GetCaptureIdByDeviceClassExt(const std::string &deviceClass, const SourceType sourceType,
         const std::string &info = HDI_ID_INFO_DEFAULT, uint32_t routeFlag = 0);
 
+    // Single priority source shared by policy port creation and engine renderId selection:
+    // busAddress > remote* networkId > primary_extra name > (MULTI_USER_ZONE) a2dp mac > default
+    static std::string SelectIdInfo(const HdiIdInfoParam &param);
+
     void IncInfoIdUseCount(uint32_t id);
     void DecInfoIdUseCount(uint32_t id);
 
@@ -69,10 +73,11 @@ private:
 
 private:
     static constexpr uint32_t HDI_ID_BASE_OFFSET = 12;
-    static constexpr uint32_t HDI_ID_TYPE_OFFSET = 6;
+    static constexpr uint32_t HDI_ID_TYPE_OFFSET = 7;
     static constexpr uint32_t HDI_ID_BASE_MASK = 0x3000;
-    static constexpr uint32_t HDI_ID_TYPE_MASK = 0x0FC0;
-    static constexpr uint32_t HDI_ID_INFO_MASK = 0x003F;
+    static constexpr uint32_t HDI_ID_TYPE_MASK = 0x0F80;
+    static constexpr uint32_t HDI_ID_INFO_MASK = 0x007F;
+    static constexpr uint32_t HDI_ID_INFO_MAX = 127;
 
     std::unordered_map<uint32_t, InfoAttr> infoIdMap_;
     std::unordered_set<uint32_t> freeInfoIdSet_;

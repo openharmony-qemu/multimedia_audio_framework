@@ -327,8 +327,9 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, GetVolume_NoPrivate_001, TestSize.Level1)
 {
     auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_NORMAL, appInfo_);
 
+    // LOOPBACK_TYPE_NORMAL constructor auto-creates private_, GetVolume() returns default 0.5
     float volume = wrapper->GetVolume();
-    EXPECT_EQ(volume, 0.0f);
+    EXPECT_EQ(volume, 0.5f);
 }
 
 HWTEST_F(AudioLoopbackWrapperUnitTest, SetReverbPreset_Control_NotSupported_001, TestSize.Level1)

@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_stream_enum.h"
+#include <cstdlib>
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B8B
@@ -31,6 +32,26 @@ IdHandler &IdHandler::GetInstance(void)
 {
     static IdHandler instance;
     return instance;
+}
+
+std::string IdHandler::SelectIdInfo(const HdiIdInfoParam &param)
+{
+    if (!param.busAddress.empty()) {
+        return param.busAddress;
+    }
+    if (param.deviceClass == "remote" || param.deviceClass == "remote_offload" ||
+        param.deviceClass == "remote_multichannel") {
+        return param.networkId;
+    }
+    if (param.deviceClass == "primary_extra") {
+        return param.name;
+    }
+#ifdef MULTI_USER_ZONE
+    if (param.deviceClass == "a2dp") {
+        return param.macAddress;
+    }
+#endif
+    return HDI_ID_INFO_DEFAULT;
 }
 
 uint32_t IdHandler::GetId(HdiIdBase base, HdiIdType type, const std::string &info)
@@ -49,6 +70,10 @@ uint32_t IdHandler::GetId(HdiIdBase base, HdiIdType type, const std::string &inf
     uint32_t infoId = CreateInfoId();
     infoIdMap_[infoId].info_ = info;
     id |= infoId;
+    if (infoId >= HDI_ID_INFO_MAX && IsRemoteType(type)) {
+        AUDIO_ERR_LOG("infoId reached maximum value");
+        _Exit(0);
+    }
     return id;
 }
 
@@ -75,7 +100,11 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
     } else if (deviceClass == "dp_fast") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_DP);
     } else if (deviceClass == "a2dp") {
+#ifdef MULTI_USER_ZONE
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, info);
+#else
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT);
+#endif
     } else if (deviceClass == "a2dp_fast") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_MMAP);
     } else if (deviceClass == "hearing_aid") {
@@ -178,7 +207,9 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
     } else if (deviceClass == "primary_extra_capturer") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, info);
     } else if (deviceClass == "va") {
-        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_VA, HDI_ID_INFO_VA);
+        const std::string idInfo = (info.empty() || info == HDI_ID_INFO_DEFAULT)
+            ? std::string(HDI_ID_INFO_VA) : info;
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_VA, idInfo);
     } else if (deviceClass == "usb") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
     } else {

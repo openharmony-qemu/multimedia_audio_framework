@@ -87,6 +87,10 @@ public:
 
     virtual ~AudioAdapterManager() {}
 
+    // Shared 3da-direct bus-port predicate: public so pipe-domain code
+    // (AudioIOHandleMap / AudioPipeManager) reuses the single implementation.
+    static bool Is3daDirectBusPort(const AudioModuleInfo &audioModuleInfo);
+
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, const VolumeScale &volume,
         std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0);
 
@@ -215,19 +219,19 @@ public:
 
     bool IsUseNonlinearAlgo() { return useNonlinearAlgo_; }
 
-    void SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume);
+    void SetAbsVolumeScene(const std::string &macAddress, bool isAbsVolumeScene, int32_t volume);
 
     int32_t SetNearlinkDeviceVolume(AudioVolumeType volumeType, int32_t volume);
 
-    bool IsAbsVolumeScene() const;
+    bool IsAbsVolumeScene(const std::string &macAddress) const;
 
-    void SetAbsVolumeMute(bool mute);
+    void SetAbsVolumeMute(const std::string &macAddress, bool mute);
 
     void SetAbsVolumeMuteNearlink(bool mute);
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
 
-    bool IsAbsVolumeMute() const;
+    bool IsAbsVolumeMute(const std::string &macAddress) const;
 
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
 
@@ -312,7 +316,8 @@ public:
     void SetVgsVolumeSupported(bool isVgsSupported);
     bool IsVgsVolumeSupported() const;
 
-    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType,
+        int32_t zoneId = 0);
     int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     int32_t UpdateDeviceSpatialEnabled(const std::string &address, const AudioSpatializationState &state);
@@ -505,7 +510,7 @@ private:
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
-    static bool Is3daDirectBusPort(const AudioModuleInfo &audioModuleInfo);
+    static bool Match3daBusToken(const std::string &portName);
     static void ConvergeTo3daSink(const AudioModuleInfo &audioModuleInfo, std::string &deviceClass,
         std::string &idInfo);
     void UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceDescriptor> device, AudioVolumeType volumeType);
@@ -539,7 +544,7 @@ private:
     void RedirectVolumeType(std::shared_ptr<AudioStreamDescriptor> streamDescriptor,
         AudioVolumeType &volumeType);
     void SaveSpecifiedDeviceVolumeInner(AudioStreamType streamType, int32_t volumeLevel,
-        DeviceType deviceType);
+        DeviceType deviceType, int32_t zoneId);
     void SaveSystemAppVolumeLevelToDb();
     void SaveSystemAppVolumeMuteStatusToDb(bool isAsync);
     int32_t RestoreSystemAppVolumeLevel();
@@ -623,11 +628,13 @@ private:
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
     std::atomic<bool> isSleVoiceStatus_ {false};
+    // Abs volume scene/mute states of A2DP devices are keyed by the device mac address.
+    mutable std::mutex absVolumeStateMutex_;
+    std::unordered_map<std::string, bool> absVolumeSceneMap_;
+    std::unordered_map<std::string, bool> absVolumeMuteMap_;
     std::atomic<bool> disableVolumeLimit_{false};
     std::atomic<bool> isAbsVolumeMuteNearlink_ {false};
     bool useNonlinearAlgo_ = false;
-    bool isAbsVolumeScene_ = false;
-    bool isAbsVolumeMute_ = false;
     bool isNeedCopyVolumeData_ = false;
     bool isNeedCopyMuteData_ = false;
     bool isNeedCopyRingerModeData_ = false;

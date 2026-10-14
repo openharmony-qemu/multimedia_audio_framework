@@ -370,6 +370,7 @@ const std::map<AudioSessionScene, std::string> AUDIO_SESSION_SCENE_MAP = {
     {AudioSessionScene::MEDIA, "MEDIA"},
     {AudioSessionScene::GAME, "GAME"},
     {AudioSessionScene::VOICE_COMMUNICATION, "VOICE_COMMUNICATION"},
+    {AudioSessionScene::VOICE_MESSAGE, "VOICE_MESSAGE"},
 };
 
 std::string AudioSessionStateToString(AudioSessionState state)

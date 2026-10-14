@@ -64,6 +64,7 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
 
 uint64_t DURATION_TIME_DEFAULT = 40;
 uint64_t DURATION_TIME_SHORT = 10;
+constexpr uint64_t MSEC_PER_SEC = 1000;
 static const float DEFAULT_APP_VOLUME = 1.0f;
 constexpr int32_t DEFAULT_APP_VOLUME_LEVEL = 100;
 uint32_t VOIP_CALL_VOICE_SERVICE = 1001;
@@ -173,6 +174,16 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamTypeIn, uint32_t 
     GetVolumeValues(sessionId, streamType, pipeId, volumes);
     AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
     return volumes->volume;
+}
+
+float AudioVolume::GetMonitorVolumeBySessionId(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
+    auto it = streamVolume_.find(sessionId);
+    if (it != streamVolume_.end()) {
+        return it->second->GetMonitorVolume();
+    }
+    return 0.0f;
 }
 
 void AudioVolume::UpdateVkbVolume(VkbMode mode, bool isMuted, float &sysVolume)
@@ -1225,23 +1236,32 @@ int32_t GetSimpleBufferAvg(uint8_t *buffer, int32_t length)
     return sum / length;
 }
 
-FadeStrategy GetFadeStrategy(uint64_t expectedPlaybackDurationMs)
+FadeStrategy GetFadeStrategy(uint64_t expectedPlaybackDurationBytes, uint64_t byteSizePerFrame,
+    uint32_t sampleRate)
 {
-    // 0 is default; duration > 40ms do default fade
-    if (expectedPlaybackDurationMs == 0 || expectedPlaybackDurationMs > DURATION_TIME_DEFAULT) {
+    // unset duration or invalid geometry, do default fade
+    if (expectedPlaybackDurationBytes == 0 || byteSizePerFrame == 0 || sampleRate == 0) {
         return FADE_STRATEGY_DEFAULT;
     }
 
+    // reverse-compute interval boundaries in byte domain: the app-supplied byte value (up to 2^64-1)
+    // is only compared, never multiplied. The boundary multiply stays far below 2^64 on the
+    // precondition that byteSizePerFrame/sampleRate are creation-time validated geometry
+    // (uint8 channels/format, uint32 rate), not arbitrary caller values.
+    uint64_t shortBoundaryBytes = DURATION_TIME_SHORT * byteSizePerFrame * sampleRate / MSEC_PER_SEC;
+    uint64_t defaultBoundaryBytes = DURATION_TIME_DEFAULT * byteSizePerFrame * sampleRate / MSEC_PER_SEC;
+
     // duration <= 10 ms no fade
-    if (expectedPlaybackDurationMs <= DURATION_TIME_SHORT && expectedPlaybackDurationMs > 0) {
+    if (expectedPlaybackDurationBytes <= shortBoundaryBytes) {
         return FADE_STRATEGY_NONE;
     }
 
     // duration > 10ms && duration <= 40ms do 5ms fade
-    if (expectedPlaybackDurationMs <= DURATION_TIME_DEFAULT && expectedPlaybackDurationMs > DURATION_TIME_SHORT) {
+    if (expectedPlaybackDurationBytes <= defaultBoundaryBytes) {
         return FADE_STRATEGY_SHORTER;
     }
 
+    // duration > 40ms do default fade
     return FADE_STRATEGY_DEFAULT;
 }
 

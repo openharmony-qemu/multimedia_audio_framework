@@ -124,7 +124,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
     AudioVoiceMphMemSize memSize;
     ret = vmAlgoApi_.getSize(&memSize);
     if (ret != AUDIO_VOICEMPH_EOK) {
-        AUDIO_ERR_LOG("AudioVoiceMphGetsize fail");
+        AUDIO_ERR_LOG("AudioVoiceMphGetsize fail, ret = %{public}d", ret);
         return ERROR;
     }
     handle_.resize(memSize.stateSize);
@@ -137,7 +137,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
     outBuf_.resize(nodeParameter_.frameLen * sizeof(float));
 
     ret = vmAlgoApi_.initAlgo(handle_.data(), scratchBuf_.data());
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "Init pure algo fail");
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "Init pure algo fail, ret=%{public}d", ret);
     AUDIO_INFO_LOG("init pure algoso success");
     return SUCCESS;
 }

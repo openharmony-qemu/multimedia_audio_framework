@@ -28,8 +28,7 @@ public:
     virtual ~IHpaeOutputCluster() = default;
     virtual int32_t GetConverterNodeCount() = 0;
     virtual int32_t GetPreOutNum() = 0;
-    virtual int32_t GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
-        const std::string &macAddress = "") = 0;
+    virtual int32_t GetInstance(const HdiIdInfoParam &param) = 0;
     virtual int32_t Init(IAudioSinkAttr &attr) = 0;
     virtual int32_t DeInit() = 0;
     virtual int32_t Flush(void) = 0;
@@ -56,6 +55,7 @@ public:
     virtual uint32_t GetRenderId() const { return HDI_INVALID_ID; }
     virtual DeviceType GetCurrentOutputDevice() const { return DEVICE_TYPE_NONE; }
     virtual void SetDeviceChangeCallback(std::function<void()> callback) {}
+    virtual void UpdateBusStatus(bool isActive) {}
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

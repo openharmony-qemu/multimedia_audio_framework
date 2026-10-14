@@ -397,9 +397,6 @@ bool AudioCoreService::isBtCrashed = false;
 mutex g_btProxyMutex;
 #endif
 
-bool AudioCoreService::isFusionConnectivityListenerRegistered = false;
-mutex g_fusionConnectivityMutex;
-
 AudioCoreService::AudioCoreService()
     : audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
       audioActiveDevice_(AudioActiveDevice::GetInstance()),
@@ -1101,6 +1098,24 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
         return;
     }
     HandlePlaybackStreamByOriginalFlag(streamDesc, isCreateProcess);
+    UpdateAudioFlagForFastStream(streamDesc);
+}
+
+// Change fast stream to normal if needed. Must be called after HandlePlaybackStreamByOriginalFlag
+void AudioCoreService::UpdateAudioFlagForFastStream(
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    CHECK_AND_RETURN(streamDesc->IsStreamRequestFastOutput());
+    // Power transition(S3/S4): fast stream downgrade to normal to avoid S3/S4 failure
+    // Feature: need to handle this scenario when ultra-fast pipe is supported in the future
+    AudioPowerState powerState = GetAudioPowerState();
+    if (powerState == AudioPowerState::SUSPENDING || powerState == AudioPowerState::HIBERNATING) {
+        AUDIO_INFO_LOG("Change stream:%{public}u from FAST to NORMAL during power transition, powerState:[%{public}s]",
+            streamDesc->sessionId_, AudioPowerStateToString(powerState));
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        return;
+    }
 }
 
 void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -2705,14 +2720,6 @@ void AudioCoreService::UnregisterBluetoothListener()
 #endif
 }
 
-void AudioCoreService::RegisterFusionConnectivityListener()
-{
-    CHECK_AND_RETURN_LOG(!isFusionConnectivityListenerRegistered,
-        "audio policy service already register fusion connectivity listerer, return");
-    isFusionConnectivityListenerRegistered = true;
-    RegisterFusionConnectivityDeathCallback();
-}
-
 void AudioCoreService::ConfigDistributedRoutingRole(
     const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
@@ -2875,37 +2882,45 @@ std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::Pre
     return previewResults;
 }
 
-bool AudioCoreService::HandleA2dpSuspendWhenLoad()
+bool AudioCoreService::HandleA2dpSuspendWhenLoad(const std::string &macAddress)
 {
-    if (a2dpNeedSuspend_.load(std::memory_order_acquire)) {
-        std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
-        if (a2dpNeedSuspend_) {
-            AUDIO_INFO_LOG("keep suspend a2dp");
-            AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp");
-            return true;
-        }
-    }
+    CHECK_AND_RETURN_RET_LOG(!macAddress.empty(), false, "macAddress is empty");
+    std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
 
+    auto it = a2dpSuspendStates_.find(macAddress);
+    if (it != a2dpSuspendStates_.end() && it->second.needSuspend) {
+        AUDIO_INFO_LOG("keep suspend a2dp, macAddress: %{public}s", GetEncryptAddr(macAddress).c_str());
+        AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp", macAddress);
+        return true;
+    }
     return false;
 }
 
-void AudioCoreService::HandleA2dpRestore()
+void AudioCoreService::HandleA2dpRestore(const std::string &macAddress)
 {
+    CHECK_AND_RETURN_LOG(!macAddress.empty(), "macAddress is empty");
     std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
 
-    if (!a2dpNeedSuspend_) {
+    auto it = a2dpSuspendStates_.find(macAddress);
+    if (it == a2dpSuspendStates_.end() || !it->second.needSuspend) {
         return;
     }
 
-    if (std::chrono::steady_clock::now() < a2dpSuspendUntil_) {
+    if (std::chrono::steady_clock::now() < it->second.suspendUntil) {
         return;
     }
 
-    a2dpNeedSuspend_ = false;
-    AUDIO_INFO_LOG("restore a2dp");
+    a2dpSuspendStates_.erase(it);
+    AUDIO_INFO_LOG("restore a2dp, macAddress: %{public}s", GetEncryptAddr(macAddress).c_str());
     if (!audioDeviceManager_.GetScoState()) {
-        AudioServerProxy::GetInstance().RestoreRenderSinkProxy("a2dp");
+        AudioServerProxy::GetInstance().RestoreRenderSinkProxy("a2dp", macAddress);
     }
+}
+
+void AudioCoreService::EraseA2dpSuspendState(const std::string &macAddress)
+{
+    std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
+    a2dpSuspendStates_.erase(macAddress);
 }
 
 void AudioCoreService::PrepareInputFetchInfos(
@@ -2956,9 +2971,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
 
         UpdateRecordStreamInfo(streamDesc);
-        if (!HandleInputStreamInRunning(streamDesc)) {
-            continue;
-        }
+        CHECK_AND_CONTINUE(HandleInputStreamInRunning(streamDesc));
 
         // handle nearlink
         int32_t inputRet = ActivateInputDevice(streamDesc, reason);
@@ -3040,32 +3053,6 @@ void AudioCoreService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
 }
 #endif
 
-void AudioCoreService::RegisterFusionConnectivityDeathCallback()
-{
-    lock_guard<mutex> lock(g_fusionConnectivityMutex);
-    AUDIO_INFO_LOG("FusionConnectivityDeathCallback Enter");
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_LOG(samgr != nullptr, "get sa manager failed");
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(FUSION_CONNECTIVITY_SA_ID);
-    CHECK_AND_RETURN_LOG(object != nullptr, "get audio service remote object failed");
-    // register death recipent
-    sptr<AudioServerDeathRecipient> asDeathRecipient =
-        new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
-    CHECK_AND_RETURN_LOG(asDeathRecipient != nullptr, "asDeathRecipient is nullptr");
-    asDeathRecipient->SetNotifyCb([] (pid_t pid, uid_t uid) {
-        FusionConnectivityCrashedCallback(pid, uid);
-    });
-    CHECK_AND_RETURN_LOG(object->AddDeathRecipient(asDeathRecipient), "failed to add deathRecipient");
-}
-
-void AudioCoreService::FusionConnectivityCrashedCallback(pid_t pid, uid_t uid)
-{
-    AUDIO_INFO_LOG("fusion connectivity sa crashed, will restore in next call");
-    lock_guard<mutex> lock(g_fusionConnectivityMutex);
-    isFusionConnectivityListenerRegistered = false;
-    GetCoreService()->GetEventEntry()->SkipDeviceTypes(false, {});
-}
-
 void AudioCoreService::UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
     const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices,
     const std::string &networkId)
@@ -3145,6 +3132,19 @@ bool AudioCoreService::IsStreamActive(uint32_t sessionId)
 void AudioCoreService::SetFirstScreenOn()
 {
     isFirstScreenOn_.store(true);
+}
+
+void AudioCoreService::SetAudioPowerState(AudioPowerState state)
+{
+    CHECK_AND_RETURN(powerState_.load() != state);
+    AudioPowerState oldState = powerState_.exchange(state);
+    AUDIO_INFO_LOG("audio power state: %{public}s -> %{public}s",
+        AudioPowerStateToString(oldState), AudioPowerStateToString(state));
+}
+
+AudioPowerState AudioCoreService::GetAudioPowerState() const
+{
+    return powerState_.load();
 }
 
 bool AudioCoreService::IsA2dpOffloadStream(uint sessionId)
@@ -4272,6 +4272,9 @@ void AudioCoreService::CloseNormalSource()
     audioIOHandleMap_.ClosePortAndEraseIOHandle(PRIMARY_MIC);
 
     audioIOHandleMap_.ClosePortAndEraseIOHandle(VIRTUAL_AUDIO);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(VA_INPUT_SPP);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(VA_INPUT_UNIDIRECTIONAL_SPP);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(VA_INPUT_NEARLINK);
     if (isEcFeatureEnable_) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(USB_MIC);
     }

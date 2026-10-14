@@ -889,7 +889,9 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_056, TestSize.Level0)
 {
     HpaeStreamInfo validStreamInfo;
     validStreamInfo.frameLen = 1024;
-    
+    validStreamInfo.channels = STEREO;
+    validStreamInfo.format = SAMPLE_S16LE;
+
     EXPECT_EQ(CheckStreamInfo(validStreamInfo), SUCCESS);
 }
 
@@ -917,7 +919,43 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_058, TestSize.Level0)
 {
     HpaeStreamInfo invalidStreamInfo;
     invalidStreamInfo.frameLen = 38401;
-    
+
+    EXPECT_EQ(CheckStreamInfo(invalidStreamInfo), ERROR);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_076
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_076
+ * @tc.desc: Test CheckStreamInfo channel boundaries (CHANNEL_UNKNOW rejected, CHANNEL_16 accepted)
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_076, TestSize.Level0)
+{
+    HpaeStreamInfo invalidStreamInfo;
+    invalidStreamInfo.frameLen = 1024;
+    invalidStreamInfo.channels = CHANNEL_UNKNOW;
+    invalidStreamInfo.format = SAMPLE_S16LE;
+    EXPECT_EQ(CheckStreamInfo(invalidStreamInfo), ERROR);
+
+    HpaeStreamInfo validStreamInfo;
+    validStreamInfo.frameLen = 1024;
+    validStreamInfo.channels = CHANNEL_16;
+    validStreamInfo.format = SAMPLE_S16LE;
+    EXPECT_EQ(CheckStreamInfo(validStreamInfo), SUCCESS);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_077
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_077
+ * @tc.desc: Test CheckStreamInfo with invalid format (INVALID_WIDTH)
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_077, TestSize.Level0)
+{
+    HpaeStreamInfo invalidStreamInfo;
+    invalidStreamInfo.frameLen = 1024;
+    invalidStreamInfo.channels = STEREO;
+    invalidStreamInfo.format = INVALID_WIDTH;
     EXPECT_EQ(CheckStreamInfo(invalidStreamInfo), ERROR);
 }
 
@@ -1266,6 +1304,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_074, TestSize.Level0)
     sinkInfo.samplingRate = SAMPLE_RATE_48000;
     sinkInfo.deviceNetId = "local";
     sinkInfo.deviceClass = "primary";
+    sinkInfo.macAddress = "11:22:33:44:55:66";
     
     std::weak_ptr<INodeCallback> statusCallback;
     HpaeNodeInfo nodeInfo;
@@ -1279,6 +1318,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_074, TestSize.Level0)
     EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_EFFECT_OUT);
     EXPECT_EQ(nodeInfo.deviceNetId, "local");
     EXPECT_EQ(nodeInfo.deviceClass, "primary");
+    EXPECT_EQ(nodeInfo.macAddress, "11:22:33:44:55:66");
 }
 
 /**
@@ -1408,7 +1448,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
     } else {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_GAME);
-        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_GAME);
+        EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_OTHERS);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_GAME);
     }
 }
@@ -1562,6 +1602,31 @@ HWTEST_F(HpaeNodeCommonTest, TransModuleInfoToHpaeSinkInfo_EmptyMacAddress, Test
     int32_t ret = TransModuleInfoToHpaeSinkInfo(moduleInfo, sinkInfo);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(sinkInfo.macAddress, "");
+}
+
+/**
+ * @tc.name: TransModuleInfoToHpaeSinkInfo_BusAddress
+ * @tc.type: FUNC
+ * @tc.number: TransModuleInfoToHpaeSinkInfo_BusAddress
+ * @tc.desc: Test TransModuleInfoToHpaeSinkInfo copies busAddress (multi-bus id info source)
+ */
+HWTEST_F(HpaeNodeCommonTest, TransModuleInfoToHpaeSinkInfo_BusAddress, TestSize.Level0)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "s16le";
+    moduleInfo.bufferSize = "3840";
+    moduleInfo.networkId = "local";
+    moduleInfo.className = "primary";
+    moduleInfo.channelLayout = "3";
+    moduleInfo.deviceType = "1";
+    moduleInfo.busAddress = "bus10_out";
+
+    HpaeSinkInfo sinkInfo;
+    int32_t ret = TransModuleInfoToHpaeSinkInfo(moduleInfo, sinkInfo);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(sinkInfo.busAddress, "bus10_out");
 }
 
 /**

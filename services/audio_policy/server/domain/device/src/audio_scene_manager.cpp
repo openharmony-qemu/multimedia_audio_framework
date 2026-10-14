@@ -204,6 +204,9 @@ void AudioSceneManager::SetAudioSceneOwnerUid(const int32_t uid)
 {
     std::lock_guard<std::mutex> lock(sceneMutex_);
     AUDIO_INFO_LOG("callOwnerUid_: %{public}d, uid: %{public}d", callOwnerUid_, uid);
+    if (callOwnerUid_ != uid) {
+        AudioSelectInterfaceService::GetInstance().SetBlockFirstOverrode(false);
+    }
     callOwnerUid_ = uid;
     if (uid == AUDIO_ID) {
         callOwnerUid_ = ANCO_SERVICE_BROKER_UID;

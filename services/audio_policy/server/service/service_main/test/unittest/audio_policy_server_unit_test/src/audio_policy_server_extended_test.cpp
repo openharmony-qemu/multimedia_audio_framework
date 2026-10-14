@@ -134,15 +134,17 @@ static AudioDeviceDescriptor& CurrentActiveDevice()
 */
 HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_003, TestSize.Level4)
 {
+    const std::string testMac = "11:22:33:44:55:66";
+    AudioActiveDevice::GetInstance().AddActiveBtDevice(testMac);
     bool isEnable = true;
-    AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable, 0);
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(testMac, isEnable, 0);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
     EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_MUSIC);
 
     isEnable = false;
-    AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable, 0);
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(testMac, isEnable, 0);
     streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
     audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
     EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_VOICE_ASSISTANT);
@@ -154,6 +156,7 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_003, TestSize.Level4)
     streamInFocus = AudioStreamType::STREAM_ALARM;
     audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
     EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_ALARM);
+    AudioActiveDevice::GetInstance().RemoveActiveBtDevice(testMac);
 }
 
 /**
@@ -176,12 +179,15 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_ChangeVolumeOnVoiceAssista
 */
 HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_ChangeVolumeOnVoiceAssistant_002, TestSize.Level1)
 {
-    AudioAdapterManager::GetInstance().SetAbsVolumeScene(true, 0);
+    const std::string testMac = "11:22:33:44:55:66";
+    AudioActiveDevice::GetInstance().AddActiveBtDevice(testMac);
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(testMac, true, 0);
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
     audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
     EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_MUSIC);
-    AudioAdapterManager::GetInstance().SetAbsVolumeScene(false, 0);
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(testMac, false, 0);
+    AudioActiveDevice::GetInstance().RemoveActiveBtDevice(testMac);
 }
 
 /**
@@ -191,11 +197,14 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_ChangeVolumeOnVoiceAssista
 */
 HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_ChangeVolumeOnVoiceAssistant_003, TestSize.Level1)
 {
-    AudioAdapterManager::GetInstance().SetAbsVolumeScene(false, 0);
+    const std::string testMac = "11:22:33:44:55:66";
+    AudioActiveDevice::GetInstance().AddActiveBtDevice(testMac);
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(testMac, false, 0);
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
     audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
     EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_VOICE_ASSISTANT);
+    AudioActiveDevice::GetInstance().RemoveActiveBtDevice(testMac);
 }
 
 /**

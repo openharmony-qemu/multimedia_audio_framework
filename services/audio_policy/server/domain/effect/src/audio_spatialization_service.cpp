@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioSpatializationService"
 #endif
 
+#include <cstdio>
 #include "audio_spatialization_service.h"
 
 #include "iservice_registry.h"
@@ -28,9 +29,17 @@
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
+#define FDSAN_TAG_PHRTF 10
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+
+static const uint32_t FDSAN_TAG_SHIFT = 32;
+
+static uint64_t MakeFdsanTag(uint64_t subId)
+{
+    return (static_cast<uint64_t>(LOG_DOMAIN & 0xFFFF) << FDSAN_TAG_SHIFT) | subId;
+}
 
 static const int32_t SPATIALIZATION_SERVICE_OK = 0;
 static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_BT_MUSIC";
@@ -718,8 +727,10 @@ void AudioSpatializationService::ClearDeviceSpatialEnabledFromEngine()
 
 int32_t AudioSpatializationService::DownloadPersonalizedHRTF(const int32_t fd, const int64_t length)
 {
+    uint64_t new_tag = MakeFdsanTag(FDSAN_TAG_PHRTF);
+    fdsan_exchange_owner_tag(fd, 0, new_tag);
     int32_t ret = audioPolicyManager_.UpdatePersonalizedHRTFBin(fd, length);
-    close(fd);
+    fdsan_close_with_tag(fd, new_tag);
     return ret;
 }
 

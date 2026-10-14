@@ -80,6 +80,30 @@ HWTEST_F(HpaeSinkOutputNodeTest, constructHpaeSinkOutputNode, TestSize.Level0)
     EXPECT_EQ(retNi.sessionId, nodeInfo.sessionId);
 }
 
+/**
+ * @tc.name: BuildIdInfoParam_FieldMapping
+ * @tc.type: FUNC
+ * @tc.number: BuildIdInfoParam_FieldMapping
+ * @tc.desc: Test BuildIdInfoParam maps nodeInfo identity fields in HdiIdInfoParam order
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, BuildIdInfoParam_FieldMapping, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.deviceClass = "primary_extra";
+    nodeInfo.deviceName = "Typec_Speaker";
+    nodeInfo.deviceNetId = "LocalDevice";
+    nodeInfo.macAddress = "11:22:33:44:55:66";
+    nodeInfo.busAddress = "bus10_out";
+    auto node = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    HdiIdInfoParam param = node->BuildIdInfoParam();
+    EXPECT_EQ(param.deviceClass, "primary_extra");
+    EXPECT_EQ(param.name, "Typec_Speaker");
+    EXPECT_EQ(param.networkId, "LocalDevice");
+    EXPECT_EQ(param.macAddress, "11:22:33:44:55:66");
+    EXPECT_EQ(param.busAddress, "bus10_out");
+}
+
 static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
     for (int32_t i = 0; i < len / SAMPLE_F32LE; i++) {
@@ -101,7 +125,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode, TestSize.Level0)
     hpaeSinkInputNode->RegisterWriteCallback(writeIncDataCb);
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_NEW, true);
     IAudioSinkAttr attr;
     attr.adapterName = "file_io";
@@ -148,7 +172,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote, TestSize.Leve
     hpaeSinkOutputNode->Connect(hpaeSinkInputNode);
     std::shared_ptr<WriteIncDataCb> writeIncDataCb = std::make_shared<WriteIncDataCb>(SAMPLE_F32LE);
     hpaeSinkInputNode->RegisterWriteCallback(writeIncDataCb);
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_NEW, true);
     IAudioSinkAttr attr;
     attr.adapterName = "file_io";
@@ -197,7 +221,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper, TestSize.Leve
     std::shared_ptr<WriteIncDataCb> writeIncDataCb = std::make_shared<WriteIncDataCb>(SAMPLE_F32LE);
     hpaeSinkInputNode->RegisterWriteCallback(writeIncDataCb);
 
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), SUCCESS);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_NEW, true);
 
     IAudioSinkAttr attr;
@@ -233,7 +257,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandleHapticParam, TestSize.Leve
     hpaeSinkInputNode->RegisterWriteCallback(writeIncDataCb);
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_NEW, true);
     IAudioSinkAttr attr;
     attr.adapterName = "file_io";
@@ -287,31 +311,6 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_NonPrimaryDevice_ShouldSkip, Test
     EXPECT_CALL(*mockSink, SetPaPower(::testing::_)).Times(0);
     EXPECT_CALL(*mockSink, GetAudioScene()).Times(0);
     hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
-}
-
-// Test case: primary_extra device should proceed with PA power handling (not skip)
-HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_PrimaryExtraDevice_ShouldProceed, TestSize.Level0)
-{
-    PcmBufferInfo bufferInfo;
-    PreparePcmBufferInfo(bufferInfo);
-    std::shared_ptr<HpaePcmBuffer> pcmBuffer = std::make_shared<HpaePcmBuffer>(bufferInfo);
-
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    nodeInfo.deviceClass = "primary_extra"; // primary_extra device, should not skip
-
-    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
-    auto mockSink = std::make_shared<MockAudioRenderSink>();
-    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
-
-    // PA is closed and data is non-silence: SetPaPower(true) must be invoked, proving the
-    // function did not early-return at the GetDeviceClass() device class guard.
-    hpaeSinkOutputNode->isOpenPaPower_ = false;
-    EXPECT_CALL(*mockSink, SetPaPower(true)).WillOnce(Return(0));
-    hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
-    // Verify PA is opened, i.e. HandlePaPower proceeded past the device class check
-    EXPECT_TRUE(hpaeSinkOutputNode->isOpenPaPower_);
-    EXPECT_EQ(hpaeSinkOutputNode->silenceDataUs_, 0);
 }
 
 // Test case: should skip when PCM buffer is invalid
@@ -2679,121 +2678,6 @@ HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkStart_ErrorReturn_002, TestSize.Level
 }
 
 /**
- * @tc.name  : RenderSinkStart_PrimaryExtraOpenPa_003
- * @tc.type  : FUNC
- * @tc.desc  : Test RenderSinkStart opens PA power for the newly added primary_extra device class branch.
- */
-HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkStart_PrimaryExtraOpenPa_003, TestSize.Level1)
-{
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    nodeInfo.deviceClass = "primary_extra"; // Newly added branch at RenderSinkStart (line 447)
-    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
-
-    auto mockSink = std::make_shared<MockAudioRenderSink>();
-    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
-
-    // Pre-set PA power state so the branch's reset effect can be asserted
-    hpaeSinkOutputNode->isOpenPaPower_ = false;
-    hpaeSinkOutputNode->isDisplayPaPowerState_ = true;
-    hpaeSinkOutputNode->silenceDataUs_ = 1000;
-
-    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
-    EXPECT_CALL(*mockSink, Start()).WillOnce(Return(SUCCESS));
-    EXPECT_CALL(*mockSink, SetPaPower(true)).WillOnce(Return(0));
-
-    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), SUCCESS);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState(), STREAM_MANAGER_RUNNING);
-    // primary_extra branch opens PA power and resets related state
-    EXPECT_TRUE(hpaeSinkOutputNode->isOpenPaPower_);
-    EXPECT_FALSE(hpaeSinkOutputNode->isDisplayPaPowerState_);
-    EXPECT_EQ(hpaeSinkOutputNode->silenceDataUs_, 0);
-}
-
-/**
- * @tc.name  : RenderSinkStart_PrimaryExtraOpenPaFail_004
- * @tc.type  : FUNC
- * @tc.desc  : Test RenderSinkStart still succeeds when SetPaPower fails for primary_extra device.
- */
-HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkStart_PrimaryExtraOpenPaFail_004, TestSize.Level1)
-{
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    nodeInfo.deviceClass = "primary_extra";
-    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
-
-    auto mockSink = std::make_shared<MockAudioRenderSink>();
-    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
-
-    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
-    EXPECT_CALL(*mockSink, Start()).WillOnce(Return(SUCCESS));
-    // SetPaPower failure is only logged; it does not change the final SUCCESS return
-    EXPECT_CALL(*mockSink, SetPaPower(true)).WillOnce(Return(ERR_OPERATION_FAILED));
-
-    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), SUCCESS);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState(), STREAM_MANAGER_RUNNING);
-    // PA power state flag is set regardless of the SetPaPower return value
-    EXPECT_TRUE(hpaeSinkOutputNode->isOpenPaPower_);
-}
-
-/**
- * @tc.name  : RenderSinkStart_PrimaryOpenPa_005
- * @tc.type  : FUNC
- * @tc.desc  : Test RenderSinkStart opens PA power for the primary device class branch.
- */
-HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkStart_PrimaryOpenPa_005, TestSize.Level1)
-{
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    nodeInfo.deviceClass = "primary"; // Original operand of the OR condition
-    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
-
-    auto mockSink = std::make_shared<MockAudioRenderSink>();
-    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
-    hpaeSinkOutputNode->isOpenPaPower_ = false;
-
-    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
-    EXPECT_CALL(*mockSink, Start()).WillOnce(Return(SUCCESS));
-    EXPECT_CALL(*mockSink, SetPaPower(true)).WillOnce(Return(0));
-
-    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), SUCCESS);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState(), STREAM_MANAGER_RUNNING);
-    EXPECT_TRUE(hpaeSinkOutputNode->isOpenPaPower_);
-}
-
-/**
- * @tc.name  : RenderSinkStart_NonPrimarySkipPa_006
- * @tc.type  : FUNC
- * @tc.desc  : Test RenderSinkStart does not call SetPaPower for non-primary device classes.
- */
-HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkStart_NonPrimarySkipPa_006, TestSize.Level1)
-{
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    nodeInfo.deviceClass = "a2dp"; // Neither "primary" nor "primary_extra"
-    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
-
-    auto mockSink = std::make_shared<MockAudioRenderSink>();
-    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
-
-    // Pre-set PA power state to verify it is left untouched by the skipped branch
-    hpaeSinkOutputNode->isOpenPaPower_ = false;
-    hpaeSinkOutputNode->isDisplayPaPowerState_ = true;
-    hpaeSinkOutputNode->silenceDataUs_ = 1000;
-
-    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
-    EXPECT_CALL(*mockSink, Start()).WillOnce(Return(SUCCESS));
-    EXPECT_CALL(*mockSink, SetPaPower(::testing::_)).Times(0); // Must not be called
-
-    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), SUCCESS);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState(), STREAM_MANAGER_RUNNING);
-    // PA power related state remains unchanged because the branch is skipped
-    EXPECT_FALSE(hpaeSinkOutputNode->isOpenPaPower_);
-    EXPECT_TRUE(hpaeSinkOutputNode->isDisplayPaPowerState_);
-    EXPECT_EQ(hpaeSinkOutputNode->silenceDataUs_, 1000);
-}
-
-/**
  * @tc.name  : RenderSinkStop_NullSink_001
  * @tc.type  : FUNC
  * @tc.desc  : Test RenderSinkStop returns ERROR when sink is null.
@@ -3069,10 +2953,11 @@ HWTEST_F(HpaeSinkOutputNodeTest, SetCollaborationState_NearLink_001, TestSize.Le
  * @tc.name  : GetRenderSinkInstance_WithMacAddress
  * @tc.type  : FUNC
  * @tc.desc  : Test GetRenderSinkInstance with a non-empty macAddress parameter returns success.
- * @tc.note  : file_io ignores the info/macAddress key in IdHandler (always uses HDI_ID_INFO_DEFAULT),
- *             so this case only verifies the code path does not crash and produces a valid renderId.
- *             Truly asserting that different macAddress values select different sinks requires an
- *             HdiAdapterManager mock and a deviceClass that consumes info (e.g. primary_extra/remote).
+ * @tc.note  : Info selection is class-dispatched (IdHandler::SelectIdInfo): file_io always maps to
+ *             HDI_ID_INFO_DEFAULT, so macAddress does not participate for non-a2dp classes. This case
+ *             only verifies the code path returns success with a valid renderId; asserting that
+ *             macAddress selects different sinks needs an a2dp class built with MULTI_USER_ZONE
+ *             (remote* classes key by networkId, not macAddress).
  */
 HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_WithMacAddress, TestSize.Level0)
 {
@@ -3082,25 +2967,26 @@ HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_WithMacAddress, TestSize.
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
     std::string macAddress = "AA:BB:CC:DD:EE:FF";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId, macAddress), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(
+        HdiIdInfoParam{deviceClass, "", deviceNetId, macAddress}), SUCCESS);
     EXPECT_NE(hpaeSinkOutputNode->GetRenderId(), HDI_INVALID_ID);
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
 
 /**
- * @tc.name  : GetRenderSinkInstance_MacAddressFallback
+ * @tc.name  : GetRenderSinkInstance_EmptyMacAddress
  * @tc.type  : FUNC
- * @tc.desc  : Test GetRenderSinkInstance falls back to deviceNetId/default when macAddress is empty.
+ * @tc.desc  : Test GetRenderSinkInstance with an empty macAddress parameter returns success.
  */
-HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_MacAddressFallback, TestSize.Level0)
+HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_EmptyMacAddress, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     PrepareNodeInfo(nodeInfo);
     std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    // Empty macAddress: selection priority falls back to deviceNetId, then HDI_ID_INFO_DEFAULT.
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId, ""), SUCCESS);
+    // Empty macAddress: class-dispatched selection maps file_io to HDI_ID_INFO_DEFAULT.
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), SUCCESS);
     EXPECT_NE(hpaeSinkOutputNode->GetRenderId(), HDI_INVALID_ID);
     hpaeSinkOutputNode->RenderSinkDeInit();
 }

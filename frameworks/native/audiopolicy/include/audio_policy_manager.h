@@ -67,7 +67,7 @@ public:
         int32_t volumeFlag = 0, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID);
 
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
-        int32_t volumeFlag = 0);
+        int32_t volumeFlag = 0, std::string macAddress = "");
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0);
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
@@ -481,8 +481,6 @@ public:
 
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, const int32_t volume);
 
-    bool IsAbsVolumeScene();
-
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
 
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
@@ -646,10 +644,6 @@ public:
     int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
 
     int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
-
-    int32_t ExcludeUidForExtZone(int32_t uid);
-
-    int32_t UnexcludeUidForExtZone(int32_t uid);
 
     void SetZoneDeviceVisible(bool visible);
 

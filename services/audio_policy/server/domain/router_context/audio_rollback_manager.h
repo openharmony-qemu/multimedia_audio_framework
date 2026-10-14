@@ -43,6 +43,8 @@ public:
     void OnDeviceNewConnect(const AudioDeviceDescriptor &desc);
     void OnDeviceDisconnect(const AudioDeviceDescriptor &desc);
     void OnConnectStateUpdate(const AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
+    void OnAppDied(int32_t uid);
+    void ExcludeSelection(SelectDeviceType type, const AudioDeviceDescriptor &desc);
 
     void SetMediaInputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);
@@ -60,14 +62,25 @@ private:
     AudioRollbackManager& operator=(AudioRollbackManager &&src) = delete;
 
     void SetSelectionRollback(int32_t uid, SelectDeviceType type,
-        uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor> &device);
-    void SetConnectLostRollback(const std::shared_ptr<AudioDeviceDescriptor> &device);
-    void RollbackSelection(const Selection &selection);
-    bool RollbackSelections(int32_t deviceId, RollbackType type);
+        uint32_t streamId, const AudioDeviceDescriptor &desc);
+    void SetConnectLostRollback(const AudioDeviceDescriptor &desc);
+    void ContinueSetDevice(const AudioDeviceDescriptor &desc);
+    void RemoveSelection(std::function<bool(Selection&)> &&pred);
+    void HandleConnectLost(const AudioDeviceDescriptor &desc);
+
+    bool RollbackSelection(const Selection &selection);
+    bool RollbackNewConnect(int32_t deviceId, RollbackType type);
+    bool RollbackSetDevice(int32_t uid, SelectDeviceType type, uint32_t streamId, int32_t deviceId);
+    bool HandleVirtualConnected(int32_t uid, SelectDeviceType type,
+        uint32_t streamId, const AudioDeviceDescriptor &desc);
+    bool FilterSetDevice(int32_t uid, SelectDeviceType type, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceDescriptor> &device);
 
     std::mutex mutex_;
     std::vector<SelectionRollback> selectionRollbacks_;
     std::unique_ptr<RollbackInfo> rollbackInfo_;
+    std::vector<Selection> virtualSelectDevices_;
+    std::set<int32_t> connectedSet_;
 };
 
 }

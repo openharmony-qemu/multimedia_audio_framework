@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Huawei Device Co., Ltd.
+ * Copyright (C) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -937,11 +937,18 @@ void AudioRendererImpl::RegisterRendererWriteDataCallback(std::shared_ptr<uintpt
         AUDIO_WARNING_LOG("writeData already subscribed. The old writeData function will be overwritten.");
     }
 
+#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
+    // Allocate once for the fixed request size reported by the platform renderer.
+    size_t bufferSize = 0;
+    int32_t sizeRet = taiheRenderer->audioRenderer_->GetBufferSize(bufferSize);
+    CHECK_AND_RETURN_LOG(sizeRet == OHOS::AudioStandard::SUCCESS && bufferSize > 0, "GetBufferSize failed");
+#else
     const auto &streamInfo = taiheRenderer->rendererOptions_.streamInfo;
     uint32_t sampleRate = streamInfo.GetEffectiveSampleRate();
     uint32_t bytesPerSample = streamInfo.channels * OHOS::AudioStandard::Util::GetSamplePerFrame(streamInfo.format);
     size_t bufferSize = OHOS::AudioStandard::Util::CalculatePcmSizeFromDurationCeiling(
         std::chrono::microseconds(OHOS::AudioStandard::MAX_CBBUF_IN_USEC), sampleRate, bytesPerSample);
+#endif
 
     taiheRenderer->rendererWriteDataCallbackTaihe_ =
         std::make_shared<TaiheRendererWriteDataCallback>(taiheRenderer, bufferSize);

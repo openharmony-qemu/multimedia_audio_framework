@@ -252,9 +252,6 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
         }
         incomingState = GetNewIncomingState(focusEntry.hintType, incomingState);
     }
-    if (incomingState == STOP && !incomingInterrupt.deviceTag.empty()) {
-        incomingState = ACTIVE;
-    }
     return SUCCESS;
 }
 

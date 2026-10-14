@@ -51,7 +51,7 @@ public:
     explicit AudioSuiteService(int32_t systemAbilityId, bool runOnCreate = false);
     virtual ~AudioSuiteService();
 
-    void OnStart() override;
+    void OnStart(const SystemAbilityOnDemandReason& startReason) override;
     void OnStop() override;
 
     ErrCode RegisterDownloadStatusCallback(const sptr<IRemoteObject> &object, ErrCode &result) override;

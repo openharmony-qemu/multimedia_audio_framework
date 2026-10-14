@@ -479,12 +479,12 @@ int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int
 }
 
 int32_t AudioPolicyManager::SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
-    DeviceType deviceType, int32_t volumeFlag)
+    DeviceType deviceType, int32_t volumeFlag, std::string macAddress)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, -1);
 
-    return gsp->SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType, volumeFlag);
+    return gsp->SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType, volumeFlag, macAddress);
 }
 
 int32_t AudioPolicyManager::SetRingerModeLegacy(AudioRingerMode ringMode)
@@ -2053,15 +2053,6 @@ int32_t AudioPolicyManager::SetDeviceAbsVolumeSupported(const std::string &macAd
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetDeviceAbsVolumeSupported(macAddress, support, volume);
-}
-
-bool AudioPolicyManager::IsAbsVolumeScene()
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
-    bool ret = true;
-    gsp->IsAbsVolumeScene(ret);
-    return ret;
 }
 
 int32_t AudioPolicyManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,

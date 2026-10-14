@@ -87,6 +87,10 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    // Remote sink routing ignores mac; keep volume-side info selection consistent with sink creation
+    nodeInfo.macAddress = sinkInfo_.macAddress;
+    nodeInfo.deviceName = sinkInfo_.deviceName;
+    nodeInfo.busAddress = sinkInfo_.busAddress;
     if (Util::IsEnhancedRoutingSupported()) {
         nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
         nodeInfo.renderId = renderId_;
@@ -113,6 +117,10 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    // Remote sink routing ignores mac; keep volume-side info selection consistent with sink creation
+    nodeInfo.macAddress = sinkInfo_.macAddress;
+    nodeInfo.deviceName = sinkInfo_.deviceName;
+    nodeInfo.busAddress = sinkInfo_.busAddress;
     if (Util::IsEnhancedRoutingSupported()) {
         nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
         nodeInfo.renderId = renderId_;
@@ -1120,7 +1128,9 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId, bool isStandby)
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = false;
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
-        
+#ifdef MULTI_BUS_ENABLE
+        UpdateBusStatusIfNoRunningStream(sessionId);
+#endif
         StopInterphoneSinkIfNeeded();
     };
     SendRequest(request, __func__);
@@ -1136,6 +1146,22 @@ void HpaeRendererManager::StopInterphoneSinkIfNeeded()
         }
     }
 }
+
+#ifdef MULTI_BUS_ENABLE
+void HpaeRendererManager::UpdateBusStatusIfNoRunningStream(uint32_t sessionId)
+{
+    bool otherRunning = false;
+    for (const auto &it : sessionNodeMap_) {
+        if (it.first != sessionId && it.second.state == HPAE_SESSION_RUNNING) {
+            otherRunning = true;
+            break;
+        }
+    }
+    if (!otherRunning && outputCluster_ != nullptr) {
+        outputCluster_->UpdateBusStatus(false);
+    }
+}
+#endif
 
 int32_t HpaeRendererManager::Flush(uint32_t sessionId)
 {
@@ -1371,6 +1397,10 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
+    nodeInfo.macAddress = sinkInfo_.macAddress;
+    nodeInfo.deviceName = sinkInfo_.deviceName;
+    nodeInfo.busAddress = sinkInfo_.busAddress;
+
     nodeInfo.routeFlag = sinkInfo_.routeFlag;
     nodeInfo.statusCallback = weak_from_this();
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
@@ -1396,10 +1426,14 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
 
 int32_t HpaeRendererManager::InitOutputCluster()
 {
-    int32_t ret = outputCluster_->GetInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId, sinkInfo_.macAddress);
+    HdiIdInfoParam sinkParam = {.deviceClass = sinkInfo_.deviceClass, .name = sinkInfo_.deviceName,
+        .networkId = sinkInfo_.deviceNetId, .macAddress = sinkInfo_.macAddress,
+        .busAddress = sinkInfo_.busAddress};
+    int32_t ret = outputCluster_->GetInstance(sinkParam);
     IAudioSinkAttr attr;
     attr.adapterName = sinkInfo_.adapterName.c_str();
     attr.sinkName = sinkInfo_.deviceClass.c_str();
+    attr.busName = sinkInfo_.deviceName;
     attr.sampleRate = sinkInfo_.samplingRate;
     attr.channel = sinkInfo_.channels;
     attr.format = sinkInfo_.format;
@@ -1436,6 +1470,9 @@ void HpaeRendererManager::InitDefaultNodeInfo()
     defaultNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     defaultNodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     defaultNodeInfo.deviceClass = sinkInfo_.deviceClass;
+    defaultNodeInfo.macAddress = sinkInfo_.macAddress;
+    defaultNodeInfo.deviceName = sinkInfo_.deviceName;
+    defaultNodeInfo.busAddress = sinkInfo_.busAddress;
     defaultNodeInfo.statusCallback = weak_from_this();
     defaultNodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
     defaultNodeInfo.renderId = renderId_;
@@ -1453,6 +1490,9 @@ void HpaeRendererManager::CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
+    nodeInfo.macAddress = sinkInfo_.macAddress;
+    nodeInfo.deviceName = sinkInfo_.deviceName;
+    nodeInfo.busAddress = sinkInfo_.busAddress;
     nodeInfo.statusCallback = weak_from_this();
     return;
 }
@@ -1918,8 +1958,7 @@ int32_t HpaeRendererManager::UpdateCollaborativeState(CollaborationState isColla
 
 int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
 {
-    if (!SafeGetMap(sinkInputNodeMap_, sessionId) ||
-        (sinkInfo_.deviceClass != "primary" && sinkInfo_.deviceClass != "primary_extra")) {
+    if (!SafeGetMap(sinkInputNodeMap_, sessionId) || sinkInfo_.deviceClass != "primary") {
         return ERR_INVALID_OPERATION;
     }
     auto &nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
@@ -1930,6 +1969,10 @@ int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
     AUDIO_INFO_LOG("session %{public}u, stream %{public}d, is zero volume %{public}d",
         sessionId, nodeInfo.streamType, isZeroVolume);
     if (!isZeroVolume) {
+        // A failed reload leaves outputCluster_ null while isInit_ stays true, so a
+        // queued Start can still reach here; siblings already guard this pointer.
+        CHECK_AND_RETURN_RET_LOG(outputCluster_ != nullptr, ERR_INVALID_OPERATION,
+            "outputCluster_ is nullptr, skip PriPa power handling");
         return outputCluster_->SetPriPaPower();
     }
     return SUCCESS;

@@ -166,10 +166,9 @@ void HpaeOutputCluster::SetUpmixCoef(HpaeProcessorType sceneType, float coef)
     converter->SetUpmixCoef(coef);
 }
 
-int32_t HpaeOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
-    const std::string &macAddress)
+int32_t HpaeOutputCluster::GetInstance(const HdiIdInfoParam &param)
 {
-    return hpaeSinkOutputNode_->GetRenderSinkInstance(deviceClass, deviceNetId, macAddress);
+    return hpaeSinkOutputNode_->GetRenderSinkInstance(param);
 }
 
 int32_t HpaeOutputCluster::Init(IAudioSinkAttr &attr)
@@ -246,6 +245,12 @@ bool HpaeOutputCluster::IsProcessClusterConnected(HpaeProcessorType sceneType)
 int32_t HpaeOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     return hpaeSinkOutputNode_->UpdateAppsUid(appsUid);
+}
+
+void HpaeOutputCluster::UpdateBusStatus(bool isActive)
+{
+    CHECK_AND_RETURN_LOG(hpaeSinkOutputNode_ != nullptr, "sinkOutputNode is null");
+    hpaeSinkOutputNode_->UpdateBusStatus(isActive);
 }
 
 void HpaeOutputCluster::NotifyStreamChangeToSink(StreamChangeType change,

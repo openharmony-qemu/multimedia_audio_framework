@@ -38,8 +38,7 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_001, TestSize.Leve
 {
     AudioStreamInfo streamInfo;
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    bool result = audioActiveDevice->GetActiveA2dpDeviceStreamInfo(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN,
-        streamInfo);
+    bool result = audioActiveDevice->GetActiveA2dpInDeviceStreamInfo(streamInfo);
     EXPECT_EQ(result, false);
 }
 
@@ -216,8 +215,7 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_003, TestSize.Leve
 {
     AudioStreamInfo streamInfo;
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    bool result = audioActiveDevice->GetActiveA2dpDeviceStreamInfo(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN,
-        streamInfo);
+    bool result = audioActiveDevice->GetActiveA2dpInDeviceStreamInfo(streamInfo);
     EXPECT_EQ(result, false);
 }
 
