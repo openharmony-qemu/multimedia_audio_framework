@@ -93,6 +93,7 @@ bool AudioPolicyService::Init(void)
     audioPolicyManager_.Init();
     RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_POLICY_CONFIG, ClockTime::GetCurMilli());
     audioEffectService_.EffectServiceInit();
+    audioEffectService_.BuildSupportedEffectConfig();
     RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_EFFECT_CONFIG, ClockTime::GetCurMilli());
     audioDeviceManager_.ParseDeviceXml();
     audioGlobalConfigManager_.ParseGlobalConfigXml();
