@@ -23,6 +23,7 @@
 #include "hpae_format_convert.h"
 #include "audio_utils.h"
 #include "hpae_node_common.h"
+#include "util/id_handler.h"
 #include "audio_engine_log.h"
 #include "stream_dfx_manager.h"
 
@@ -195,9 +196,10 @@ void HpaeRemoteSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaeP
 int32_t HpaeRemoteSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass,
     const std::string &deviceNetId)
 {
-    // Remote path must use deviceNetId (a valid distributed networkId), never macAddress,
-    // otherwise it would be treated as deviceNetworkId by RemoteAudioRenderSink and break routing.
-    const std::string &info = deviceNetId.empty() ? HDI_ID_INFO_DEFAULT : deviceNetId;
+    // Remote routing keys the sink by the distributed networkId; the SelectIdInfo remote
+    // branch returns it verbatim (never macAddress, which is not a legal networkId).
+    HdiIdInfoParam param = {.deviceClass = deviceClass, .networkId = deviceNetId};
+    const std::string info = IdHandler::SelectIdInfo(param);
     renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info, true);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {

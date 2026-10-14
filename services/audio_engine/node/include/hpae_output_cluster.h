@@ -35,8 +35,7 @@ public:
     void RegisterCurrentDeviceCallback();
     int32_t GetConverterNodeCount() override;
     int32_t GetPreOutNum() override;
-    int32_t GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
-        const std::string &macAddress = "") override;
+    int32_t GetInstance(const HdiIdInfoParam &param) override;
     int32_t Init(IAudioSinkAttr &attr) override;
     int32_t DeInit() override;
     int32_t Flush(void) override;

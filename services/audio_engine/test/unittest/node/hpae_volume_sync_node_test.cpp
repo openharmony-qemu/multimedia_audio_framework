@@ -1052,7 +1052,7 @@ HWTEST_F(HpaeVolumeSyncNodeTest, signalProcess_volumeSyncInChain_001, TestSize.L
 
     auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_F32LE);
     sinkInputNode->RegisterWriteCallback(writeCb);
-    EXPECT_EQ(sinkOutputNode->GetRenderSinkInstance("file_io", "LocalDevice"), 0);
+    EXPECT_EQ(sinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{"file_io", "", "LocalDevice"}), 0);
 
     // DoProcess should not crash
     sinkOutputNode->DoProcess();

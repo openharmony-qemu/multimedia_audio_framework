@@ -136,7 +136,7 @@ HWTEST_F(HpaeCoBufferNodeUnitTest, Process_001, TestSize.Level0)
     coBufferNode->Enqueue(&pcmBuffer);
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(sinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(sinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
     coBufferNode->enqueueRunning_ = true;
     sinkOutputNode->DoProcess();
     EXPECT_EQ(coBufferNode->Reset(), true);

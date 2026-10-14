@@ -109,7 +109,7 @@ HWTEST_F(HpaeGainNodeTest, testHpaeGainTestNode, TestSize.Level0)
     hpaeSinkOutputNode->Connect(hpaeGainNode);
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
     g_testValue = 0;
     int32_t testValue = 100;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb0 =
@@ -161,7 +161,7 @@ HWTEST_F(HpaeGainNodeTest, testDoCollFade, TestSize.Level0)
     hpaeSinkOutputNode->Connect(hpaeGainNode);
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
     g_testValue = 0;
     int32_t testValue = 100;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb0 =

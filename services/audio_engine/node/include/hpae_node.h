@@ -24,6 +24,7 @@
 #include "hpae_pcm_buffer.h"
 #include "hpae_define.h"
 #include "audio_log.h"
+#include "common/hdi_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -147,6 +148,18 @@ public:
     virtual std::string GetMacAddress() const
     {
         return nodeInfo_.macAddress;
+    }
+
+    virtual std::string GetBusAddress() const
+    {
+        return nodeInfo_.busAddress;
+    }
+
+    // Collect identity fields for IdHandler::SelectIdInfo (single priority source)
+    virtual HdiIdInfoParam BuildIdInfoParam() const
+    {
+        return HdiIdInfoParam{nodeInfo_.deviceClass, nodeInfo_.deviceName, nodeInfo_.deviceNetId,
+            nodeInfo_.macAddress, nodeInfo_.busAddress};
     }
 
     virtual std::string GetDeviceName() const

@@ -26,6 +26,7 @@
 
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
+#include "util/id_handler.h"
 #include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "volume_tools.h"
@@ -166,8 +167,9 @@ void HpaeFastSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcm
 int32_t HpaeFastSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId)
 {
     Trace trace("HpaeFastSinkOutputNode::GetRenderSinkInstance " + deviceClass + "_" + deviceNetId);
-    std::string idInfo = deviceNetId.empty() ? HDI_ID_INFO_DEFAULT : deviceNetId;
-    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, true);
+    HdiIdInfoParam param = {.deviceClass = deviceClass, .networkId = deviceNetId};
+    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
+        IdHandler::SelectIdInfo(param), true);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
         AUDIO_ERR_LOG("GetRenderSinkInstance failed, deviceClass:%{public}s deviceNetId:%{public}s renderId:%{public}u",
