@@ -70,9 +70,6 @@ static constexpr float SPACE_RENDER_MIN_EXPAND_RADIUS = 1.0f;
 static constexpr float SPACE_RENDER_MAX_EXPAND_RADIUS = 5.0f;
 static constexpr int32_t SPACE_RENDER_MIN_EXPAND_ANGLE = 0;
 static constexpr int32_t SPACE_RENDER_MAX_EXPAND_ANGLE = 360;
-static constexpr float AUDIO_VOICE_MORPHING_PITCH_MIN = 0.3f;
-static constexpr float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
-static constexpr float AUDIO_VOICE_MORPHING_PITCH_DEFAULT = 0.0f;
 static constexpr float SPEED_RATE_MIN = 0.5f;
 static constexpr float SPEED_RATE_MAX = 10.0f;
 static constexpr float PITCH_RATE_MIN = 0.1f;
@@ -1530,6 +1527,26 @@ bool AudioSuitePipelineImpl::ValidateTempoPitch(float speed, float pitch)
 
 bool AudioSuitePipelineImpl::ValidatePureVoiceChange(const AudioPureVoiceChangeOption &option)
 {
+    bool genderValid = (static_cast<int32_t>(option.optionGender) >= PURE_VOICE_CHANGE_GENDER_OPTION_MIN) &&
+                       (static_cast<int32_t>(option.optionGender) <= PURE_VOICE_CHANGE_GENDER_OPTION_MAX);
+    if (!genderValid) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetPureVoiceChangeOption failed, optionGender must be in the 1~2.", true);
+        AUDIO_ERR_LOG("SetPureVoiceChangeOption failed, optionGender %{public}d must be in the 1~2.",
+            static_cast<int32_t>(option.optionGender));
+        return false;
+    }
+    bool typeValid = (static_cast<int32_t>(option.optionType) >= PURE_VOICE_CHANGE_TYPE_MIN) &&
+                     (static_cast<int32_t>(option.optionType) <= PURE_VOICE_CHANGE_TYPE_MAX);
+    if (!typeValid) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetPureVoiceChangeOption failed, optionType must be in the 1~7.", true);
+        AUDIO_ERR_LOG("SetPureVoiceChangeOption failed, optionType %{public}d must be in the 1~7.",
+            static_cast<int32_t>(option.optionType));
+        return false;
+    }
     bool valid = (option.pitch >= AUDIO_VOICE_MORPHING_PITCH_MIN &&
                   option.pitch <= AUDIO_VOICE_MORPHING_PITCH_MAX) ||
                  option.pitch == AUDIO_VOICE_MORPHING_PITCH_DEFAULT;
@@ -1539,6 +1556,58 @@ bool AudioSuitePipelineImpl::ValidatePureVoiceChange(const AudioPureVoiceChangeO
             "SetPureVoiceChangeOption failed, pitch must be in the 0.3f~3.0f or 0.0f.", true);
         AUDIO_ERR_LOG("SetPureVoiceChangeOption failed, pitch %{public}f must be in the 0.3f~3.0f or 0.0f.",
             option.pitch);
+    }
+    return valid;
+}
+
+bool AudioSuitePipelineImpl::ValidateSoundFieldType(SoundFieldType soundFieldType)
+{
+    int32_t value = static_cast<int32_t>(soundFieldType);
+    bool valid = (value >= SOUND_FIELD_TYPE_MIN) && (value <= SOUND_FIELD_TYPE_MAX);
+    if (!valid) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSoundFieldType failed, soundFieldType must be in the 1~4.", true);
+        AUDIO_ERR_LOG("SetSoundFieldType failed, soundFieldType %{public}d must be in the 1~4.", value);
+    }
+    return valid;
+}
+
+bool AudioSuitePipelineImpl::ValidateEnvironmentType(EnvironmentType environmentType)
+{
+    int32_t value = static_cast<int32_t>(environmentType);
+    bool valid = (value >= ENVIRONMENT_TYPE_MIN) && (value <= ENVIRONMENT_TYPE_MAX);
+    if (!valid) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetEnvironmentType failed, environmentType must be in the 1~4.", true);
+        AUDIO_ERR_LOG("SetEnvironmentType failed, environmentType %{public}d must be in the 1~4.", value);
+    }
+    return valid;
+}
+
+bool AudioSuitePipelineImpl::ValidateVoiceBeautifierType(VoiceBeautifierType voiceBeautifierType)
+{
+    int32_t value = static_cast<int32_t>(voiceBeautifierType);
+    bool valid = (value >= VOICE_BEAUTIFIER_TYPE_MIN) && (value <= VOICE_BEAUTIFIER_TYPE_MAX);
+    if (!valid) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetVoiceBeautifierType failed, voiceBeautifierType must be in the 1~4.", true);
+        AUDIO_ERR_LOG("SetVoiceBeautifierType failed, voiceBeautifierType %{public}d must be in the 1~4.", value);
+    }
+    return valid;
+}
+
+bool AudioSuitePipelineImpl::ValidateGeneralVoiceChangeType(AudioGeneralVoiceChangeType type)
+{
+    int32_t value = static_cast<int32_t>(type);
+    bool valid = (value >= GENERAL_VOICE_CHANGE_TYPE_MIN) && (value <= GENERAL_VOICE_CHANGE_TYPE_MAX);
+    if (!valid) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetGeneralVoiceChangeType failed, type must be in the 1~10.", true);
+        AUDIO_ERR_LOG("SetGeneralVoiceChangeType failed, type %{public}d must be in the 1~10.", value);
     }
     return valid;
 }
@@ -1593,6 +1662,9 @@ int32_t AudioSuitePipelineImpl::GetEqualizerFrequencyBandGains(uint32_t nodeId, 
 
 int32_t AudioSuitePipelineImpl::SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType)
 {
+    if (!ValidateSoundFieldType(soundFieldType)) {
+        return ERR_INVALID_PARAM;
+    }
     std::string name = "SoundFieldType";
     std::string value = std::to_string(static_cast<int32_t>(soundFieldType));
     return SetOptions(nodeId, name, value);
@@ -1606,9 +1678,9 @@ int32_t AudioSuitePipelineImpl::GetSoundFieldType(uint32_t nodeId, SoundFieldTyp
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSoundFieldType failed");
 
     int32_t parseValue = StringToInt32(value);
-    if (parseValue < static_cast<int32_t>(SoundFieldType::AUDIO_SUITE_SOUND_FIELD_CLOSE) ||
-        parseValue > static_cast<int32_t>(SoundFieldType::AUDIO_SUITE_SOUND_FIELD_WIDE)) {
-        return ERROR;
+    if (parseValue < SOUND_FIELD_TYPE_MIN || parseValue > SOUND_FIELD_TYPE_MAX) {
+        AUDIO_ERR_LOG("GetSoundFieldType failed, invalid soundFieldType %{public}d.", parseValue);
+        return ERR_INVALID_PARAM;
     }
     soundFieldType = static_cast<SoundFieldType>(parseValue);
     return SUCCESS;
@@ -1616,6 +1688,9 @@ int32_t AudioSuitePipelineImpl::GetSoundFieldType(uint32_t nodeId, SoundFieldTyp
 
 int32_t AudioSuitePipelineImpl::SetEnvironmentType(uint32_t nodeId, EnvironmentType environmentType)
 {
+    if (!ValidateEnvironmentType(environmentType)) {
+        return ERR_INVALID_PARAM;
+    }
     std::string name = "EnvironmentType";
     std::string value = std::to_string(static_cast<int32_t>(environmentType));
     return SetOptions(nodeId, name, value);
@@ -1629,9 +1704,9 @@ int32_t AudioSuitePipelineImpl::GetEnvironmentType(uint32_t nodeId, EnvironmentT
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetEnvironmentType failed");
 
     int32_t parseValue = StringToInt32(value);
-    if (parseValue < static_cast<int32_t>(EnvironmentType::AUDIO_SUITE_ENVIRONMENT_TYPE_CLOSE) ||
-        parseValue > static_cast<int32_t>(EnvironmentType::AUDIO_SUITE_ENVIRONMENT_TYPE_GRAMOPHONE)) {
-        return ERROR;
+    if (parseValue < ENVIRONMENT_TYPE_MIN || parseValue > ENVIRONMENT_TYPE_MAX) {
+        AUDIO_ERR_LOG("GetEnvironmentType failed, invalid environmentType %{public}d.", parseValue);
+        return ERR_INVALID_PARAM;
     }
     environmentType = static_cast<EnvironmentType>(parseValue);
     return SUCCESS;
@@ -1639,6 +1714,9 @@ int32_t AudioSuitePipelineImpl::GetEnvironmentType(uint32_t nodeId, EnvironmentT
 
 int32_t AudioSuitePipelineImpl::SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifierType voiceBeautifierType)
 {
+    if (!ValidateVoiceBeautifierType(voiceBeautifierType)) {
+        return ERR_INVALID_PARAM;
+    }
     std::string name = "VoiceBeautifierType";
     std::string value = std::to_string(static_cast<int32_t>(voiceBeautifierType));
     return SetOptions(nodeId, name, value);
@@ -1652,9 +1730,9 @@ int32_t AudioSuitePipelineImpl::GetVoiceBeautifierType(uint32_t nodeId, VoiceBea
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetVoiceBeautifierType failed");
 
     int32_t parseValue = StringToInt32(value);
-    if (parseValue < static_cast<int32_t>(VoiceBeautifierType::AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR) ||
-        parseValue > static_cast<int32_t>(VoiceBeautifierType::AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_STUDIO)) {
-        return ERROR;
+    if (parseValue < VOICE_BEAUTIFIER_TYPE_MIN || parseValue > VOICE_BEAUTIFIER_TYPE_MAX) {
+        AUDIO_ERR_LOG("GetVoiceBeautifierType failed, invalid voiceBeautifierType %{public}d.", parseValue);
+        return ERR_INVALID_PARAM;
     }
     voiceBeautifierType = static_cast<VoiceBeautifierType>(parseValue);
     return SUCCESS;
@@ -1738,6 +1816,9 @@ int32_t AudioSuitePipelineImpl::GetPureVoiceChangeOption(uint32_t nodeId, AudioP
 
 int32_t AudioSuitePipelineImpl::SetGeneralVoiceChangeType(uint32_t nodeId, AudioGeneralVoiceChangeType type)
 {
+    if (!ValidateGeneralVoiceChangeType(type)) {
+        return ERR_INVALID_PARAM;
+    }
     return SetParamsTemplate(nodeId, "AudioGeneralVoiceChangeType", type);
 }
 
