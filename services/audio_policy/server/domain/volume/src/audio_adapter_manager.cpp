@@ -1208,7 +1208,8 @@ int32_t AudioAdapterManager::SetStreamMute(std::shared_ptr<AudioDeviceDescriptor
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is null");
     CHECK_AND_RETURN_RET_LOG(!device->volumeBehavior_.isVolumeControlDisabled,
-        ERR_INVALIERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLEDD_PARAM, "device->volumeBehavior_.isVolumeControlDisabled is true!");
+        ERR_INVALIERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLEDD_PARAM,
+            "device->volumeBehavior_.isVolumeControlDisabled is true!");
 
     int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
     if (isSetStreamMute == SUCCESS) {
