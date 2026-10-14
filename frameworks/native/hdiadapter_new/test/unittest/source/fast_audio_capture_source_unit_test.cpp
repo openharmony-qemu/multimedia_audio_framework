@@ -281,5 +281,33 @@ HWTEST_F(FastAudioCaptureSourceUnitTest, UltraFastPeriodAndParcel_001, TestSize.
     EXPECT_EQ(sampleAttr.period, 120);
 }
 
+/** @tc.desc: Capture requests select the corresponding HDI mmap type without a build flag. */
+HWTEST_F(FastAudioCaptureSourceUnitTest, CaptureMmapType_001, TestSize.Level1)
+{
+    FastAudioCaptureSource source;
+    source.attr_.sampleRate = SAMPLE_RATE_48000;
+    source.attr_.format = SAMPLE_S16LE;
+    source.attr_.channel = STEREO;
+    source.attr_.sourceType = SOURCE_TYPE_MIC;
+    AudioSampleAttributes sampleAttr = {};
+
+    source.attr_.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
+    source.attr_.period = ULTRA_FAST_CAPTURE_FRAMES;
+    source.InitAudioSampleAttr(sampleAttr);
+    EXPECT_EQ(sampleAttr.type, AUDIO_MMAP_ULTRA_FAST);
+    EXPECT_EQ(sampleAttr.period, ULTRA_FAST_CAPTURE_FRAMES);
+
+    source.attr_.audioStreamFlag = AUDIO_FLAG_MMAP;
+    source.attr_.period = 0;
+    source.InitAudioSampleAttr(sampleAttr);
+    EXPECT_EQ(sampleAttr.type, AUDIO_MMAP_NOIRQ);
+    EXPECT_EQ(sampleAttr.period, 0);
+
+    source.attr_.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
+    source.InitAudioSampleAttr(sampleAttr);
+    EXPECT_EQ(sampleAttr.type, AUDIO_MMAP_VOIP);
+    EXPECT_EQ(sampleAttr.period, 0);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

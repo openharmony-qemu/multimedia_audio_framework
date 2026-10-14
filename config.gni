@@ -37,8 +37,6 @@ declare_args() {
   audio_framework_feature_file_io = true
   audio_framework_feature_inner_capturer = true
   audio_framework_feature_low_latency = true
-  # Enable only with HDI/HAL support for AUDIO_MMAP_ULTRA_FAST and independent capture channels.
-  audio_framework_feature_ultra_fast_capture = false
   audio_framework_feature_3da_direct = true
   audio_framework_feature_new_engine_flag = true
   audio_framework_feature_usb_audio = false

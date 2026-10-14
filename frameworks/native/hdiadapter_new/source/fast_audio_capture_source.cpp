@@ -40,9 +40,6 @@ int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
         CHECK_AND_RETURN_RET(attr.sampleRate != 0 && attr.period != 0 &&
             static_cast<uint64_t>(attr.period) * AUDIO_US_PER_S ==
             static_cast<uint64_t>(attr.sampleRate) * 2500, ERR_INVALID_PARAM);
-#ifndef FEATURE_ULTRA_FAST_CAPTURE
-        return ERR_NOT_SUPPORTED;
-#endif
     }
     attr_ = attr;
 
@@ -477,11 +474,9 @@ void FastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &p
 
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     param.type = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? AUDIO_MMAP_VOIP : AUDIO_MMAP_NOIRQ; // enable mmap!
-#ifdef FEATURE_ULTRA_FAST_CAPTURE
     if (attr_.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST) {
         param.type = AUDIO_MMAP_ULTRA_FAST;
     }
-#endif
     param.sampleRate = attr_.sampleRate;
     param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
