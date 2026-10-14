@@ -194,34 +194,40 @@ void WaitForMsgProcessing(std::shared_ptr<IHpaeRendererManager> &hpaeRendererMan
 // spawn 一个 detached QoS 线程(SetThreadQosLevelAsync),退出时撞 ConcurrentTaskClient
 // 静态析构 UAF;共享后全局只 1 个,Init 后毫秒级结束。
 // 与 hpaemanager_fuzzer 对齐:用 RAII 守卫在静态析构前先 DeactivateThread 停 worker,
-// 规避「静态析构阶段 join」潜在风险(同仓 HpaeFuzzCleanupGuard 同理)。守卫作为函数
-// 局部 static 声明在 mgr 之后,逆序析构先于 mgr 运行 -> worker 先停 -> 再析构。
-std::shared_ptr<IHpaeRendererManager> &GetSharedRendererManager();
+// 规避「静态析构阶段 join」潜在风险(同仓 HpaeFuzzCleanupGuard 同理)。mgr 存储在文件级
+// g_sharedRendererMgr(构造完成于启动期),守卫仍为函数级 static(其析构仅在 manager 机制
+// 被触碰过后才注册,注册必然晚于 g_sharedRendererMgr 构造)→ 逆序析构守卫先跑:worker 先
+// 停,再析构 mgr。守卫直读 g_sharedRendererMgr,绝不走本函数的 lazy 再初始化分支(见 dtor 注释)。
+static std::shared_ptr<IHpaeRendererManager> g_sharedRendererMgr;
 
 class SharedRendererManagerCleanupGuard {
 public:
     ~SharedRendererManagerCleanupGuard()
     {
-        auto &mgr = GetSharedRendererManager();
-        if (mgr != nullptr) {
-            mgr->DeactivateThread();
+        // Read g_sharedRendererMgr DIRECTLY -- never via GetSharedRendererManager().
+        // In the fuzz environment the sink init may fail, isInit_ stays false and the
+        // getter re-enters the create+Init branch, which consumes fuzz input through
+        // GetData: at static-destruction time RAW_DATA already points to the buffer
+        // freed by libFuzzer right after the callback (heap-use-after-free), and
+        // re-creating a manager here would spawn worker threads during static
+        // destruction. Direct access keeps the destructor a pure cleanup.
+        if (g_sharedRendererMgr != nullptr) {
+            g_sharedRendererMgr->DeactivateThread();
         }
     }
 };
 
-
 std::shared_ptr<IHpaeRendererManager> &GetSharedRendererManager()
 {
-    static std::shared_ptr<IHpaeRendererManager> mgr;
-    if (mgr == nullptr || !mgr->IsInit()) {
+    if (g_sharedRendererMgr == nullptr || !g_sharedRendererMgr->IsInit()) {
         HpaeSinkInfo sinkInfo;
         InitHpaeSinkInfo(sinkInfo);
-        mgr = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-        mgr->Init();
-        WaitForMsgProcessing(mgr);
+        g_sharedRendererMgr = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+        g_sharedRendererMgr->Init();
+        WaitForMsgProcessing(g_sharedRendererMgr);
     }
     static SharedRendererManagerCleanupGuard guard;
-    return mgr;
+    return g_sharedRendererMgr;
 }
 
 uint32_t g_setupSession(std::shared_ptr<IHpaeRendererManager> &mgr)
@@ -614,6 +620,11 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
     } else {
         AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }
+
+    // The input buffer is owned by libFuzzer and freed right after this callback
+    // returns; clear the global pointer so no exit-time path (static destructors)
+    // can re-read the freed buffer through GetData.
+    RAW_DATA = nullptr;
 
     return true;
 }
