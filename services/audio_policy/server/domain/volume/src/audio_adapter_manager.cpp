@@ -1658,7 +1658,7 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
                 Match3daBusToken(pipeInfo->moduleInfo_.busAddress)) {
                 ConvergeTo3daSink(pipeInfo->moduleInfo_, deviceClass, idInfo);
             }
-            result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, ioHandle);
+            result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, true, ioHandle);
         }
     } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
         std::string idInfo = GetHdiSourceIdInfo(pipeInfo->moduleInfo_);
@@ -1674,7 +1674,7 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
         attr.routeFlag = pipeInfo->routeFlag_;
         pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
         attr.sourceName = pipeInfo->moduleInfo_.name;
-        result = audioServerProxy_->CreateHdiSourcePort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
+        result = audioServerProxy_->CreateHdiSourcePort(pipeInfo->moduleInfo_.className, idInfo, attr, true, ioHandle);
     }
     IPCSkeleton::SetCallingIdentity(identity);
     return result;
@@ -1900,6 +1900,9 @@ AudioIOHandle AudioAdapterManager::ReloadA2dpAudioPort(const AudioModuleInfo &au
     CHECK_AND_RETURN_RET_LOG(audioServerProxy_ != nullptr, ioHandle, "audioServerProxy_ null");
     curActiveCount_++;
 
+    int32_t ret = audioServiceAdapter_->ReloadAudioPort(audioModuleInfo.lib, audioModuleInfo);
+    paIndex = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
+
     int32_t result = SUCCESS;
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     if (audioModuleInfo.lib == "libmodule-inner-capturer-sink.z.so") {
@@ -1910,17 +1913,15 @@ AudioIOHandle AudioAdapterManager::ReloadA2dpAudioPort(const AudioModuleInfo &au
         if (audioModuleInfo.role == HDI_AUDIO_PORT_SINK_ROLE) {
             std::string idInfo = GetHdiSinkIdInfo(audioModuleInfo);
             IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
-            result = audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr, ioHandle);
+            result = audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr, false, ioHandle);
         } else if (audioModuleInfo.role == HDI_AUDIO_PORT_SOURCE_ROLE) {
             std::string idInfo = GetHdiSourceIdInfo(audioModuleInfo);
             IAudioSourceAttr attr = GetAudioSourceAttr(audioModuleInfo);
-            result = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr, ioHandle);
+            result = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr, false, ioHandle);
         }
     }
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ioHandle, "Call audioServer open port failed:%{public}d", result);
-    int32_t ret = audioServiceAdapter_->ReloadAudioPort(audioModuleInfo.lib, audioModuleInfo);
-    paIndex = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
 
     HILOG_COMM_INFO("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end", ioHandle, paIndex);
     return ioHandle;
@@ -1950,11 +1951,11 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
                 ConvergeTo3daSink(audioModuleInfo, deviceClass, idInfo);
             }
             IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
-            result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, ioHandle);
+            result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, true, ioHandle);
         } else if (audioModuleInfo.role == HDI_AUDIO_PORT_SOURCE_ROLE) {
             std::string idInfo = GetHdiSourceIdInfo(audioModuleInfo);
             IAudioSourceAttr attr = GetAudioSourceAttr(audioModuleInfo);
-            result = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr, ioHandle);
+            result = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr, true, ioHandle);
         }
     }
     IPCSkeleton::SetCallingIdentity(identity);

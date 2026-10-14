@@ -651,7 +651,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerCreateHdiSinkPort_001, TestSize.L
     
     IAudioSinkAttr attr;
     uint32_t renderId = 0;
-    int32_t ret = audioServer->CreateHdiSinkPort("speaker", "test_info", attr, renderId);
+    int32_t ret = audioServer->CreateHdiSinkPort("speaker", "test_info", attr, true, renderId);
     EXPECT_EQ(SUCCESS, ret); // Should fail without proper setup
 }
 
@@ -683,7 +683,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerCreateHdiSourcePort_001, TestSize
     
     IAudioSourceAttr attr;
     uint32_t captureId = 0;
-    int32_t ret = audioServer->CreateHdiSourcePort("mic", "test_info", attr, captureId);
+    int32_t ret = audioServer->CreateHdiSourcePort("mic", "test_info", attr, true, captureId);
     EXPECT_EQ(SUCCESS, ret); // Should fail without proper setup
 }
 

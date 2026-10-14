@@ -604,26 +604,26 @@ void AudioServerProxy::UnloadHdiAdapterProxy(uint32_t devMgrType, const std::str
 }
 
 uint32_t AudioServerProxy::CreateHdiSinkPortProxy(const std::string &deviceClass, const std::string &idInfo,
-    const IAudioSinkAttr &attr)
+    const IAudioSinkAttr &attr, bool isResident)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, HDI_INVALID_ID);
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     uint32_t renderId = 0;
-    int32_t res = gsp->CreateHdiSinkPort(deviceClass, idInfo, attr, renderId);
+    int32_t res = gsp->CreateHdiSinkPort(deviceClass, idInfo, attr, isResident, renderId);
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, HDI_INVALID_ID, "CreateHdiSinkPort failed");
     return renderId;
 }
 
 uint32_t AudioServerProxy::CreateHdiSourcePortProxy(const std::string &deviceClass, const std::string &idInfo,
-    const IAudioSourceAttr &attr)
+    const IAudioSourceAttr &attr, bool isResident)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, HDI_INVALID_ID);
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     uint32_t captureId = 0;
-    int32_t res = gsp->CreateHdiSourcePort(deviceClass, idInfo, attr, captureId);
+    int32_t res = gsp->CreateHdiSourcePort(deviceClass, idInfo, attr, isResident, captureId);
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, HDI_INVALID_ID, "CreateHdiSourcePort failed");
     return captureId;

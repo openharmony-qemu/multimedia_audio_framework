@@ -109,9 +109,9 @@ public:
     int32_t LoadHdiAdapterProxy(uint32_t devMgrType, const std::string &adapterName);
     void UnloadHdiAdapterProxy(uint32_t devMgrType, const std::string &adapterName, bool force);
     uint32_t CreateHdiSinkPortProxy(const std::string &deviceClass, const std::string &idInfo,
-        const IAudioSinkAttr &attr);
+        const IAudioSinkAttr &attr, bool isResident = true);
     uint32_t CreateHdiSourcePortProxy(const std::string &deviceClass, const std::string &idInfo,
-        const IAudioSourceAttr &attr);
+        const IAudioSourceAttr &attr, bool isResident = true);
     void DestroyHdiPortProxy(uint32_t id);
     void SetDeviceConnectedFlag(bool flag);
     void NotifySettingsDataReady();

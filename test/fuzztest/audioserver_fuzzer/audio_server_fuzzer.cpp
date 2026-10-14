@@ -1038,7 +1038,7 @@ void AudioServerCreateHdiSinkPortTest()
     std::string deviceClass = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     std::string idInfo = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    audioServerPtr->CreateHdiSinkPort(deviceClass, idInfo, attr, renderId);
+    audioServerPtr->CreateHdiSinkPort(deviceClass, idInfo, attr, true, renderId);
 }
 
 void AudioServerCreateHdiSourcePortTest()
@@ -1050,7 +1050,7 @@ void AudioServerCreateHdiSourcePortTest()
     std::string deviceClass = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     std::string idInfo = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    audioServerPtr->CreateHdiSourcePort(deviceClass, idInfo, attr, captureId);
+    audioServerPtr->CreateHdiSourcePort(deviceClass, idInfo, attr, true, captureId);
 }
 
 void AudioServerRegisterDataTransferCallbackTest()
