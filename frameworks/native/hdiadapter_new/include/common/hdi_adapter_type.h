@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include <cstring>
+#include "audio_errors.h"
 #include "audio_info.h"
 
 namespace OHOS {
