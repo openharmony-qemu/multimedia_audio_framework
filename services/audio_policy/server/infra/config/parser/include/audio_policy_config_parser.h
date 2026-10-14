@@ -81,7 +81,6 @@ private:
     void HandleUpdateRouteSupportParsed(std::string &value);
     void HandleUpdateAnahsSupportParsed(std::string &value);
     void HandleEncodingEac3SupportParsed(std::shared_ptr<AdapterPipeInfo> pipeInfo, const std::string &value);
-    void HandleLatencyConfigParsed(const std::string &name, const std::string &value);
     void HandleEffectLatencyParsed(const std::string &value);
     void HandleWarmupLatencyParsed(const std::string &value);
     
