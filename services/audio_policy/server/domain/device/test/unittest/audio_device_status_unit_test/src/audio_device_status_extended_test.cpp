@@ -521,20 +521,22 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_028, TestSize.Level4)
 /**
  * @tc.name  : Test AudioDeviceStatus.
  * @tc.number: AudioDeviceStatus_029
- * @tc.desc  : Test AddAudioDevice sets isSupportMultiZone.
+ * @tc.desc  : Test AddDevice sets isSupportMultiZone.
  */
 HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_029, TestSize.Level4)
 {
-    AudioModuleInfo speakerInfo;
-    speakerInfo.role = ROLE_SINK;
-    speakerInfo.name = "Speaker";
-    audioDeviceStatus_->audioConfigManager_.deviceClassInfo_[ClassType::TYPE_PRIMARY] = { speakerInfo };
-    audioDeviceStatus_->AddAudioDevice(speakerInfo, DEVICE_TYPE_SPEAKER);
+    PolicyAdapterInfo adapterInfo;
+    AdapterDeviceInfo speakerInfo;
+    speakerInfo.name_ = "Speaker";
+    speakerInfo.type_ = DEVICE_TYPE_SPEAKER;
+    speakerInfo.role_ = OUTPUT_DEVICE;
+    audioDeviceStatus_->AddDevice(adapterInfo, speakerInfo);
 
-    AudioModuleInfo micInfo;
-    micInfo.role = ROLE_SOURCE;
-    micInfo.name = "Built_in_mic";
-    audioDeviceStatus_->AddAudioDevice(micInfo, DEVICE_TYPE_MIC);
+    AdapterDeviceInfo micInfo;
+    micInfo.name_ = "Built_in_mic";
+    micInfo.type_ = DEVICE_TYPE_MIC;
+    micInfo.role_ = INPUT_DEVICE;
+    audioDeviceStatus_->AddDevice(adapterInfo, micInfo);
 
     auto &devices = audioDeviceStatus_->audioConnectedDevice_.connectedDevices_;
     for (auto &desc : devices) {
