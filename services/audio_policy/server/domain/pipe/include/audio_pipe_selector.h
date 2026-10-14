@@ -80,6 +80,7 @@ private:
         std::string &adapterName, std::string &pipeName);
     void ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
+    void FillLatencyConfig(AudioPipeInfo &info, std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr);
     AudioStreamAction JudgeStreamAction(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe);
     void SortStreamDescsByStartTime(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     AudioPipeType GetInputNormalPipeType(uint32_t flag);
