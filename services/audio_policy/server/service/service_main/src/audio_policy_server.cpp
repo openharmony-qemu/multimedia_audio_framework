@@ -3767,9 +3767,6 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     {
         std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
         eventEntry_->RegisteredTrackerClientDied(uid, pid);
-        eventEntry_->ClearSelectedInputDeviceByUid(uid);
-        eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
-            BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
 
         auto filter = [&pid](int val) {
             return pid == val;
@@ -3807,9 +3804,6 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
 
     AudioZoneService::GetInstance().UnRegisterAudioZoneClient(pid);
     AudioZoneService::GetInstance().ReleaseAudioZoneByClientPid(pid);
-    eventEntry_->ClearSelectedInputDeviceByUid(uid);
-    eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
-        BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
 }
 
 int32_t AudioPolicyServer::ResumeStreamState()

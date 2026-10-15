@@ -643,6 +643,10 @@ private:
     void ProcessInputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag);
     void RemoveUnusedPipe(const AudioStreamDeviceChangeReasonExt reason =
         AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    void RemoveAndCloseUnusedCapturerPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos,
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    void RemoveAndCloseUnusedPipeInternal(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos,
+        const AudioStreamDeviceChangeReasonExt &reason);
     void RemoveUnusedRecordPipe();
     void MoveStreamSink(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<AudioPipeInfo> pipeInfo, const AudioStreamDeviceChangeReasonExt reason);
@@ -655,8 +659,7 @@ private:
     void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const std::vector<SourceOutput>& sourceOutputs);
     void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-        const std::vector<SourceOutput>& sourceOutputs,
-        std::shared_ptr<AudioPipeInfo> pipeInfo);
+        const std::vector<SourceOutput>& sourceOutputs, std::shared_ptr<AudioPipeInfo> pipeInfo);
     int32_t MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
         std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor, uint32_t routeFlag = AUDIO_FLAG_NONE);
     int32_t MoveToRemoteInputDevice(
@@ -706,8 +709,8 @@ private:
         InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage);
     void HandleNormalOrDualToneRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage);
-    void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-        const uint32_t pipeId);
+    void UpdateRingerOrAlarmerDualDeviceOutputRouter(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t pipeId);
     void UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
