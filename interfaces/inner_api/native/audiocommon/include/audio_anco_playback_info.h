@@ -95,7 +95,7 @@ public:
         packageName_ = packageName;
     }
 
-    std::string GetPackageName() const
+    const std::string& GetPackageName() const
     {
         return packageName_;
     }
