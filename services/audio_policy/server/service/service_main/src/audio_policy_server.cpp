@@ -6419,6 +6419,7 @@ int32_t AudioPolicyServer::SetVADeviceExceptionFlag(const std::string& macAddres
             AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
             AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(
                 std::make_shared<AudioDeviceDescriptor>(*devDesc), EXCEPTION_FLAG_UPDATE, reason);
+            eventEntry_->FetchInputDeviceAndRoute("SetVADeviceExceptionFlag");
             break;
         }
     }
