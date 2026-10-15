@@ -1691,6 +1691,126 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusterByDevice_004, TestSize.Le
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
+// Output cluster stub with a controllable GetCurrentOutputDevice, for UpdateRenderDeviceType UT.
+class TestDeviceTypeOutputCluster : public HpaeOutputCluster {
+public:
+    explicit TestDeviceTypeOutputCluster(DeviceType deviceType)
+        : HpaeOutputCluster(HpaeNodeInfo()), currentDeviceType_(deviceType) {}
+
+    DeviceType GetCurrentOutputDevice() const override
+    {
+        return currentDeviceType_;
+    }
+
+private:
+    DeviceType currentDeviceType_;
+};
+
+// ==================== UT for UpdateRenderDeviceType ====================
+
+/**
+ * @tc.name  : Test HpaeRendererManagerUpdateRenderDeviceType_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerUpdateRenderDeviceType_001
+ * @tc.desc  : Test UpdateRenderDeviceType when outputCluster_ is nullptr.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerUpdateRenderDeviceType_001, TestSize.Level1)
+{
+    hpaeRendererManager_->renderDeviceType_ = DEVICE_TYPE_SPEAKER;
+    hpaeRendererManager_->outputCluster_ = nullptr;
+    EXPECT_EQ(hpaeRendererManager_->UpdateRenderDeviceType(), false);
+    EXPECT_EQ(hpaeRendererManager_->renderDeviceType_, DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerUpdateRenderDeviceType_002
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerUpdateRenderDeviceType_002
+ * @tc.desc  : Test UpdateRenderDeviceType when current output device is DEVICE_TYPE_INVALID.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerUpdateRenderDeviceType_002, TestSize.Level1)
+{
+    hpaeRendererManager_->renderDeviceType_ = DEVICE_TYPE_SPEAKER;
+    hpaeRendererManager_->outputCluster_ = std::make_shared<TestDeviceTypeOutputCluster>(DEVICE_TYPE_INVALID);
+    EXPECT_EQ(hpaeRendererManager_->UpdateRenderDeviceType(), false);
+    EXPECT_EQ(hpaeRendererManager_->renderDeviceType_, DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerUpdateRenderDeviceType_003
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerUpdateRenderDeviceType_003
+ * @tc.desc  : Test UpdateRenderDeviceType when current output device is DEVICE_TYPE_NONE.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerUpdateRenderDeviceType_003, TestSize.Level1)
+{
+    hpaeRendererManager_->renderDeviceType_ = DEVICE_TYPE_SPEAKER;
+    hpaeRendererManager_->outputCluster_ = std::make_shared<TestDeviceTypeOutputCluster>(DEVICE_TYPE_NONE);
+    EXPECT_EQ(hpaeRendererManager_->UpdateRenderDeviceType(), false);
+    EXPECT_EQ(hpaeRendererManager_->renderDeviceType_, DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerUpdateRenderDeviceType_004
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerUpdateRenderDeviceType_004
+ * @tc.desc  : Test UpdateRenderDeviceType when device type is the same as renderDeviceType_.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerUpdateRenderDeviceType_004, TestSize.Level1)
+{
+    hpaeRendererManager_->renderDeviceType_ = DEVICE_TYPE_SPEAKER;
+    hpaeRendererManager_->outputCluster_ = std::make_shared<TestDeviceTypeOutputCluster>(DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(hpaeRendererManager_->UpdateRenderDeviceType(), false);
+    EXPECT_EQ(hpaeRendererManager_->renderDeviceType_, DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerUpdateRenderDeviceType_005
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerUpdateRenderDeviceType_005
+ * @tc.desc  : Test UpdateRenderDeviceType when device type changes to a valid different type.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerUpdateRenderDeviceType_005, TestSize.Level1)
+{
+    hpaeRendererManager_->renderDeviceType_ = DEVICE_TYPE_SPEAKER;
+    hpaeRendererManager_->outputCluster_ =
+        std::make_shared<TestDeviceTypeOutputCluster>(DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(hpaeRendererManager_->UpdateRenderDeviceType(), true);
+    EXPECT_EQ(hpaeRendererManager_->renderDeviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+}
+
+// ==================== UT for ReloadSinkinputs ====================
+
+/**
+ * @tc.name  : Test HpaeRendererManagerReloadSinkinputs_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerReloadSinkinputs_001
+ * @tc.desc  : Test ReloadSinkinputs with a running session in sinkInputNodeMap_.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadSinkinputs_001, TestSize.Level1)
+{
+    // sinkInputNodeMap_[1] holds a RUNNING node from SetUp.
+    hpaeRendererManager_->sinkInputNodeMap_[1]->connectedProcessorType_ = HPAE_SCENE_EFFECT_NONE;
+    hpaeRendererManager_->ReloadSinkinputs();
+    WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerReloadSinkinputs_002
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerReloadSinkinputs_002
+ * @tc.desc  : Test ReloadSinkinputs with a stopped session and a null node in sinkInputNodeMap_.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadSinkinputs_002, TestSize.Level1)
+{
+    sinkInputNode_->SetState(HPAE_SESSION_STOPPED);
+    hpaeRendererManager_->sinkInputNodeMap_[2] = nullptr;
+    hpaeRendererManager_->ReloadSinkinputs();
+    WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+}
+
 // ==================== UT for DisconnectNodeFromEffectChain ====================
 
 /**

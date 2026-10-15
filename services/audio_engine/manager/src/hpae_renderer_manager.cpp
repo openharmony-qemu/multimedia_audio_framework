@@ -1411,7 +1411,9 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
     outputCluster_->SetTimeoutStopThd(sinkInfo_.suspendTime);
     if (Util::IsEnhancedRoutingSupported()) {
         outputCluster_->SetDeviceChangeCallback([this]() {
-            RefreshProcessClusterByDevice();
+            if (UpdateRenderDeviceType()) {
+                ReloadSinkinputs();
+            }
         });
     }
     int32_t ret = InitOutputCluster();
@@ -2233,6 +2235,36 @@ void HpaeRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
             }
         }
         outputCluster_->UpdateAppsUid(appsUid_);
+    };
+    SendRequest(request, __func__);
+}
+
+bool HpaeRendererManager::UpdateRenderDeviceType()
+{
+    CHECK_AND_RETURN_RET_LOG(outputCluster_ != nullptr, false, "outputCluster_ is nullptr");
+    DeviceType deviceType = outputCluster_->GetCurrentOutputDevice();
+    if (deviceType == DEVICE_TYPE_INVALID || deviceType == DEVICE_TYPE_NONE) {
+        return false;
+    }
+    CHECK_AND_RETURN_RET_LOG(deviceType != renderDeviceType_, false,
+        "deviceType:%{public}d not changed, no need to reload", deviceType);
+    AUDIO_INFO_LOG("Device change, renderDeviceType_ from %{public}d to %{public}d",
+        renderDeviceType_, deviceType);
+    renderDeviceType_ = deviceType;
+    return true;
+}
+
+void HpaeRendererManager::ReloadSinkinputs()
+{
+    auto request = [this]() {
+        for (const auto &it : sinkInputNodeMap_) {
+            if (it.second != nullptr && it.second->GetState() == HPAE_SESSION_RUNNING) {
+                AUDIO_INFO_LOG("sessionId :%{public}u need reload", it.first);
+                DetachSessionEffectNodeForRefresh(it.first, it.second->connectedProcessorType_);
+                DisConnectInputSession(it.first);
+                ConnectInputSession(it.first);
+            }
+        }
     };
     SendRequest(request, __func__);
 }

@@ -236,6 +236,10 @@ private:
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
         bool aissSwitchEnabled = false);
     int32_t InitOutputCluster();
+    // Sync renderDeviceType_ from the cluster's current output device. Skips invalid/none
+    // types and unchanged values; returns true only when renderDeviceType_ was updated.
+    bool UpdateRenderDeviceType();
+    void ReloadSinkinputs();
 
 private:
 
