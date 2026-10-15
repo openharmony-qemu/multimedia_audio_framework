@@ -510,12 +510,18 @@ int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
     }
 
     audioSourceAttr_ = attr;
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturerSource_->Init(attr) == SUCCESS, ERROR,
+    int32_t ret = audioCapturerSource_->Init(attr);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Source init fail");
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD,
                 BusinessScenario::CREATE, ERR_OPERATION_FAILED),
-            "Source init fail", false),
-        "Source init fail");
+            "Source init fail", false);
+        // Release the source reference on init failure to avoid leaking captureId_.
+        audioCapturerSource_ = nullptr;
+        HdiAdapterManager::GetInstance().ReleaseId(captureId_);
+        return ERROR;
+    }
     SetSourceState(STREAM_MANAGER_IDLE);
 #ifdef IS_EMULATOR
     // Due to the peculiar implementation of the emulator's HDI,

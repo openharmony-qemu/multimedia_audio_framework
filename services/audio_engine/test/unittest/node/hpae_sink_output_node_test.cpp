@@ -2779,6 +2779,33 @@ HWTEST_F(HpaeSinkOutputNodeTest, FaultCode_RenderSinkInit_SinkInitFail, TestSize
 }
 
 /**
+ * @tc.name  : FaultCode_RenderSinkInit_SinkInitFailReleasesSink
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkInit releases audioRendererSink_ and renderId_ when Init fails.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, FaultCode_RenderSinkInit_SinkInitFailReleasesSink, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+    hpaeSinkOutputNode->renderId_ = 1;
+
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(false));
+    EXPECT_CALL(*mockSink, Init(_)).WillOnce(Return(ERR_OPERATION_FAILED));
+
+    IAudioSinkAttr attr;
+    attr.adapterName = "primary";
+    int32_t result = hpaeSinkOutputNode->RenderSinkInit(attr);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+    EXPECT_EQ(hpaeSinkOutputNode->audioRendererSink_, nullptr);
+    EXPECT_EQ(hpaeSinkOutputNode->renderId_, HDI_INVALID_ID);
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkDeInit(), ERROR);
+}
+
+/**
  * @tc.name  : FaultCode_UpdateAppsUid_NullSink
  * @tc.type  : FUNC
  * @tc.desc  : Test UpdateAppsUid returns ERROR when audioRendererSink_ is nullptr,
