@@ -51,6 +51,18 @@ HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeMixerNode::OnTraceInfoChanged()
+{
+    HpaePluginNode::OnTraceInfoChanged();
+    RebuildTraceName();
+}
+
+void HpaeMixerNode::RebuildTraceName()
+{
+    processTraceName_ = "[sceneType:" + std::to_string(GetSceneType()) + "]" + "HpaeMixerNode::SignalProcess";
 }
 
 HpaeMixerNode::~HpaeMixerNode()
@@ -135,7 +147,7 @@ int32_t HpaeMixerNode::InitAudioLimiter()
 
 HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    Trace trace("[sceneType:" + std::to_string(GetSceneType()) + "]" + "HpaeMixerNode::SignalProcess");
+    Trace trace(processTraceName_);
     mixedOutput_.Reset();
 
     if (GetSceneType() != HPAE_SCENE_EFFECT_OUT) {

@@ -95,6 +95,24 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, Collaboration
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeRenderEffectNode::OnTraceInfoChanged()
+{
+    HpaePluginNode::OnTraceInfoChanged();
+    RebuildTraceName();
+}
+
+// Trace reflects the node-configured format; it may lag behind mid-stream upstream re-negotiation
+// (loudness/SE/effect-chain changes). Effect processing still uses per-frame input buffer values.
+void HpaeRenderEffectNode::RebuildTraceName()
+{
+    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
+    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
+    auto len = "len[" + std::to_string(GetFrameLen()) + "]";
+    auto render = "render[" + std::to_string(renderId_) + "]";
+    traceName_ = "[" + sceneType_ + "]HpaeRenderEffectNode::SignalProcess " + rate + ch + len + render;
 }
 
 HpaeRenderEffectNode::~HpaeRenderEffectNode()
@@ -163,11 +181,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
         AUDIO_WARNING_LOG("inputs size is empty");
         return nullptr;
     }
-    auto rate = "rate[" + std::to_string(inputs[0]->GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(inputs[0]->GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(inputs[0]->GetFrameLen()) + "]";
-    auto render = "render[" + std::to_string(renderId_) + "]";
-    Trace trace("[" + sceneType_ + "]HpaeRenderEffectNode::SignalProcess " + rate + ch + len + render);
+    Trace trace(traceName_);
 
     if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
         return inputs[0];

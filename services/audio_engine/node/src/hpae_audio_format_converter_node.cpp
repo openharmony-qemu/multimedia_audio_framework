@@ -84,6 +84,22 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeAudioFormatConverterNode::OnTraceInfoChanged()
+{
+    HpaePluginNode::OnTraceInfoChanged();
+    RebuildTraceName();
+}
+
+void HpaeAudioFormatConverterNode::RebuildTraceName()
+{
+    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
+    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
+    auto len = "len[" + std::to_string(GetFrameLen()) + "]";
+    processTraceName_ = "[" + std::to_string(GetSessionId()) + "]HpaeAudioFormatConverterNode::DoProcess "
+        + rate + ch + len;
 }
 
 HpaeAudioFormatConverterNode::~HpaeAudioFormatConverterNode()
@@ -104,11 +120,7 @@ void HpaeAudioFormatConverterNode::RegisterCallback(INodeFormatInfoCallback *cal
 
 void HpaeAudioFormatConverterNode::DoProcess()
 {
-    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(GetFrameLen()) + "]";
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeAudioFormatConverterNode::DoProcess "
-        + rate + ch + len);
+    Trace trace(processTraceName_);
     std::vector<HpaePcmBuffer *> &preOutputs = inputStream_.ReadPreOutputData();
     bool hasPreOutput = !preOutputs.empty() && preOutputs[0] != nullptr;
     bool hasValidInput = hasPreOutput && preOutputs[0]->IsValid();

@@ -81,6 +81,7 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
 }
 
 void HpaeSourceInputNode::UpdateSourceInputMapCancatMicEc()
@@ -164,6 +165,18 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeSourceInputNode::OnTraceInfoChanged()
+{
+    RebuildTraceName();
+}
+
+void HpaeSourceInputNode::RebuildTraceName()
+{
+    processTraceName_ = "[" + std::to_string(GetNodeId()) + "]HpaeSourceInputNode::DoProcess "
+        + GetTraceInfo();
 }
 
 HpaeSourceInputNode::~HpaeSourceInputNode()
@@ -328,7 +341,7 @@ void HpaeSourceInputNode::DoProcessInnerMicAndEc(const uint64_t &replyBytes, con
 
 void HpaeSourceInputNode::DoProcess()
 {
-    Trace trace("[" + std::to_string(GetNodeId()) + "]HpaeSourceInputNode::DoProcess " + GetTraceInfo());
+    Trace trace(processTraceName_);
     CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr,
         "audioCapturerSource_ is nullptr NodeId: %{public}u", GetNodeId());
     uint64_t replyBytes = 0;

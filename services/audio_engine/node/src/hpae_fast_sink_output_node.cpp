@@ -385,7 +385,7 @@ int32_t HpaeFastSinkOutputNode::RefreshSpanSize(bool &isUpdated)
         "sync:%{public}u)", GetSessionId(), oldFd, oldTotal, oldSpan, oldByte, oldSync, dstBufferFd_,
         dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_, syncInfoSize_);
 
-    GetNodeInfo().frameLen = dstSpanSizeInframe_;
+    SetFrameLen(dstSpanSizeInframe_);
     readTimeModel_.SetSpanCount(dstSpanSizeInframe_);
     writeTimeModel_.SetSpanCount(dstSpanSizeInframe_);
 
@@ -496,7 +496,7 @@ int32_t HpaeFastSinkOutputNode::PrepareDeviceBuffer()
     int32_t ret = GetAdapterBufferInfo();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
         "GetAdapterBufferInfo fail, ret:%{public}d", ret);
-    GetNodeInfo().frameLen = dstSpanSizeInframe_;
+    SetFrameLen(dstSpanSizeInframe_);
     readTimeModel_.SetSpanCount(dstSpanSizeInframe_);
     writeTimeModel_.SetSpanCount(dstSpanSizeInframe_);
     uint32_t sampleRate = sinkOutAttr_.sampleRate == 0 ? GetNodeInfo().samplingRate : sinkOutAttr_.sampleRate;
