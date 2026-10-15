@@ -1220,6 +1220,7 @@ HWTEST_F(HpaeManagerSeE2eTest, Flush_triggersSessionEffectFlush_E2E, TestSize.Le
     streamInfo.frameLen = TEST_FRAME_LEN;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.channels = STEREO;
+    streamInfo.format = SAMPLE_F32LE;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_NEW};
 
@@ -1260,6 +1261,7 @@ HWTEST_F(HpaeManagerSeE2eTest, PauseStandby_triggersSessionEffectPause_E2E, Test
     streamInfo.frameLen = TEST_FRAME_LEN;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.channels = STEREO;
+    streamInfo.format = SAMPLE_F32LE;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_NEW};
 
@@ -1464,6 +1466,7 @@ static bool SetupStreamWithSE(std::shared_ptr<HpaeManager> hpaeManager_,
     streamInfo.frameLen = TEST_FRAME_LEN;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.channels = STEREO;
+    streamInfo.format = SAMPLE_F32LE;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_NEW};
 
@@ -1499,6 +1502,7 @@ static bool SetupOffloadStreamWithSE(std::shared_ptr<HpaeManager> hpaeManager_,
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.channels = STEREO;
     streamInfo.channelLayout = CH_LAYOUT_STEREO;
+    streamInfo.format = SAMPLE_F32LE;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_NEW};
 
