@@ -40,6 +40,7 @@ static int32_t NUM_2 = 2;
 static std::string g_rootPath = "/data/";
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
+constexpr int32_t MAX_RELOAD_WAIT_LOOPS = 50;
 constexpr int32_t FRAME_LENGTH = 882;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t TEST_RENDER_SESSION_ID = 123457;
@@ -265,7 +266,30 @@ void HpaeManagerFuzzTest::TearDown()
 {
     hpaeManager_->CloseAudioPort(sinkPortId_);
     hpaeManager_->CloseAudioPort(sourcePortId_);
+    // A reload with a NEW name creates a second renderer manager whose port is
+    // never closed otherwise; closing it DeInit()s that manager, which joins
+    // its worker and waits out any in-flight reload -- without this the worker
+    // survives until process exit and races static destruction (UAF).
+    if (reloadPortId_ != -1) {
+        hpaeManager_->CloseAudioPort(reloadPortId_);
+    }
     hpaeManager_->DeInit();
+    // Reload failures (OnReloadAudioPortCb(-1)) and wait timeouts still leak
+    // managers with live workers: with a NEW name the manager is inserted into
+    // rendererManagerMap_ and its worker spawned BEFORE Init fails; with an OLD
+    // name the reload already erased the old sinkId, so the CloseAudioPort()
+    // calls above are no-ops. Sweep both maps after DeInit() (top-level worker
+    // joined, no concurrent writer) so every residual worker is stopped.
+    for (auto &[name, rendererMgr] : hpaeManager_->rendererManagerMap_) {
+        if (rendererMgr != nullptr) {
+            rendererMgr->DeactivateThread();
+        }
+    }
+    for (auto &[name, capturerMgr] : hpaeManager_->capturerManagerMap_) {
+        if (capturerMgr != nullptr) {
+            capturerMgr->DeactivateThread();
+        }
+    }
 }
 
 void HpaeManagerFuzzTest::HpaeCaptureStreamManagerMoveFuzzTest()
@@ -312,11 +336,25 @@ void HpaeManagerFuzzTest::OpenAudioPortFuzzTest()
 void HpaeManagerFuzzTest::ReloadAudioPortFuzzTest()
 {
     AudioPortSetUp();
+    // The callback registered in AudioPortSetUp is local and already dead (the
+    // manager keeps only a weak_ptr): re-register a live one so the reload
+    // result is observable. The reload request runs on the NEW renderer
+    // manager's signal worker, which the manager-queue wait does NOT cover --
+    // wait for the OnReloadAudioPortCb evidence instead (success: new portId,
+    // failure: SINK_INVALID_ID = -1).
+    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
     AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
     audioModuleInfo.lib = libList_[GetData<uint32_t>() % libList_.size()];
     audioModuleInfo.name = audioPortNameList_[GetData<uint32_t>() % audioPortNameList_.size()];
     audioModuleInfo.className = DeviceClassList[GetData<uint32_t>() % DeviceClassList.size()];
     hpaeManager_->ReloadAudioPort(audioModuleInfo);
+    for (int32_t i = 0; i < MAX_RELOAD_WAIT_LOOPS && !callback->IsReloadCbReceived(); i++) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
+    }
+    // Read the id only after the callback evidence arrived (the seq_cst flag
+    // publishes portId_); on timeout keep -1 and rely on the TearDown sweep.
+    reloadPortId_ = callback->IsReloadCbReceived() ? callback->GetPortId() : -1;
     TearDown();
 }
 
