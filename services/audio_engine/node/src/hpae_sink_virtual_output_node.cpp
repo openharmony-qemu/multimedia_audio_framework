@@ -84,9 +84,13 @@ HpaeSinkVirtualOutputNode::~HpaeSinkVirtualOutputNode()
 
 void HpaeSinkVirtualOutputNode::DoRenderProcess()
 {
-    // Guard trace names and ring cache against ReloadNode reconfig on the manager thread
-    std::lock_guard<std::mutex> lock(mutex_);
-    Trace trace(renderTraceName_);
+    // Copy the trace name under a short lock against ReloadNode rebuild on the manager thread
+    std::string traceName;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        traceName = renderTraceName_;
+    }
+    Trace trace(traceName);
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     CHECK_AND_RETURN(!outputVec.empty());
     HpaePcmBuffer *outputData = outputVec.front();
@@ -99,6 +103,8 @@ void HpaeSinkVirtualOutputNode::DoRenderProcess()
     }
 #endif
 
+    // Guard ring cache against ReloadNode reconfig on the manager thread
+    std::lock_guard<std::mutex> lock(mutex_);
     OptResult result = ringCache_->Enqueue(
         {reinterpret_cast<uint8_t *>(outputData->GetPcmDataBuffer()), outputData->DataSize()});
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "ringCache enqueue fail");
