@@ -967,6 +967,31 @@ HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceInitTest_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test CapturerSourceInit
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceInitTest_005
+ * @tc.desc  : Test CapturerSourceInit releases source and captureId_ when Init fails
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceInitTest_005, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    IAudioSourceAttr attr;
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+
+    EXPECT_CALL(*mockCaptureSource, IsInited()).WillOnce(Return(false));
+    EXPECT_CALL(*mockCaptureSource, Init(_)).WillOnce(Return(ERROR));
+
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
+    EXPECT_EQ(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_EQ(hpaeSourceInputNode->captureId_, HDI_INVALID_ID);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceDeInit(), SUCCESS);
+}
+
+/**
  * @tc.name  : Test CaptureFrame fail
  * @tc.type  : FUNC
  * @tc.number: CaptureFrameFailTest_001
