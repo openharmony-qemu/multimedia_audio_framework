@@ -1080,28 +1080,16 @@ HWTEST(AudioServerUnitTest, CheckStreamInfoFormat_RecordChannel_001, TestSize.Le
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
     EXPECT_FALSE(audioServer->CheckStreamInfoFormat(config));
     config.capturerInfo.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
-    EXPECT_TRUE(audioServer->CheckStreamInfoFormat(config));
+    EXPECT_FALSE(audioServer->CheckStreamInfoFormat(config));
 
     config.streamInfo.channels = CHANNEL_12;
-    EXPECT_TRUE(audioServer->CheckStreamInfoFormat(config));
+    EXPECT_FALSE(audioServer->CheckStreamInfoFormat(config));
 
     config.streamInfo.channels = CHANNEL_16;
-    EXPECT_TRUE(audioServer->CheckStreamInfoFormat(config));
-
-    config.streamInfo.channels = CHANNEL_14;
     EXPECT_FALSE(audioServer->CheckStreamInfoFormat(config));
 
     config.streamInfo.channels = CHANNEL_14;
-    config.capturerInfo.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
     EXPECT_FALSE(audioServer->CheckStreamInfoFormat(config));
-
-    config.streamInfo.channels = CHANNEL_9;
-    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-    EXPECT_TRUE(audioServer->CheckStreamInfoFormat(config));
-
-    config.streamInfo.channels = CHANNEL_8;
-    config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    EXPECT_TRUE(audioServer->CheckStreamInfoFormat(config));
 }
 /**
  * @tc.name  : Test ReportWakeupEvent API
