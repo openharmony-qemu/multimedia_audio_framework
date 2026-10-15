@@ -64,6 +64,8 @@ void HpaeGainNode::OnTraceInfoChanged()
     RebuildTraceName();
 }
 
+// Trace reflects the node-configured format; it may lag behind mid-stream upstream re-negotiation
+// (loudness/SE/effect-chain changes). Gain processing still uses per-frame input buffer values.
 void HpaeGainNode::RebuildTraceName()
 {
     auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";

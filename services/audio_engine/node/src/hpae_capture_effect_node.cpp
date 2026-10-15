@@ -142,6 +142,7 @@ void HpaeCaptureEffectNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpa
     std::shared_ptr<HpaeNode> realPreNode = preNode->GetSharedInstance(nodeInfo);
     CHECK_AND_RETURN_LOG(realPreNode != nullptr, "realPreNode is nullptr");
     inputStream_.Connect(realPreNode, preNode->GetOutputPort(nodeInfo));
+    RebuildTraceName();
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
         callback->OnNotifyDfxNodeInfo(true, realPreNode->GetNodeId(), GetNodeId());
@@ -156,6 +157,7 @@ void HpaeCaptureEffectNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<
         "%{public}u has disconnected with preNode", GetNodeId());
     const auto port = preNode->GetOutputPort(nodeInfo, true);
     inputStream_.DisConnect(port);
+    RebuildTraceName();
 #ifdef ENABLE_HIDUMP_DFX
     CHECK_AND_RETURN_LOG(port != nullptr, "port is nullptr");
     if (auto callback = GetNodeStatusCallback().lock()) {

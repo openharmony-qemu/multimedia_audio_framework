@@ -84,6 +84,8 @@ HpaeSinkVirtualOutputNode::~HpaeSinkVirtualOutputNode()
 
 void HpaeSinkVirtualOutputNode::DoRenderProcess()
 {
+    // Guard trace names and ring cache against ReloadNode reconfig on the manager thread
+    std::lock_guard<std::mutex> lock(mutex_);
     Trace trace(renderTraceName_);
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     CHECK_AND_RETURN(!outputVec.empty());
@@ -104,8 +106,8 @@ void HpaeSinkVirtualOutputNode::DoRenderProcess()
 
 void HpaeSinkVirtualOutputNode::DoProcess()
 {
-    Trace trace(processTraceName_);
     std::lock_guard<std::mutex> lock(mutex_);
+    Trace trace(processTraceName_);
     DoProcessInner();
 }
 
