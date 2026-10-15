@@ -178,6 +178,34 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, FaultCode_RenderSinkInit_NullSink, TestSi
     int32_t result = remoteNode->RenderSinkInit(attr);
     EXPECT_EQ(result, ERROR);
 }
+
+/**
+ * @tc.name  : RenderSinkInit_InitFailedReleasesSink_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkInit releases audioRendererSink_ and renderId_ when Init fails.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, RenderSinkInit_InitFailedReleasesSink_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    remoteNode->audioRendererSink_ = mockSink;
+    remoteNode->renderId_ = 1;
+
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(false));
+    EXPECT_CALL(*mockSink, Init(_)).WillOnce(Return(ERROR));
+
+    IAudioSinkAttr attr;
+    attr.adapterName = "remote";
+    int32_t result = remoteNode->RenderSinkInit(attr);
+    EXPECT_EQ(result, ERROR);
+    EXPECT_EQ(remoteNode->audioRendererSink_, nullptr);
+    EXPECT_EQ(remoteNode->renderId_, HDI_INVALID_ID);
+    EXPECT_NE(remoteNode->RenderSinkDeInit(), SUCCESS);
+}
+
 // ==================== New UT for GetRenderId and GetCurrentActiveDevice ====================
 
 /**

@@ -757,6 +757,7 @@ ohos_unittest("hpae_remote_sink_output_node_test") {
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
     "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   sanitize = {

@@ -177,7 +177,14 @@ int32_t HpaeFastSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
         ERROR, "invalid audioCapturerSource");
     audioSourceAttr_ = attr;
     if (!audioCapturerSource_->IsInited()) {
-        CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Init(attr) == SUCCESS, ERROR, "Source init fail");
+        int32_t initRet = audioCapturerSource_->Init(attr);
+        if (initRet != SUCCESS) {
+            AUDIO_ERR_LOG("Source init fail");
+            // Release the source reference on init failure to avoid leaking captureId_.
+            audioCapturerSource_ = nullptr;
+            HdiAdapterManager::GetInstance().ReleaseId(captureId_);
+            return ERROR;
+        }
     }
     int32_t ret = PrepareDeviceBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "PrepareDeviceBuffer failed");

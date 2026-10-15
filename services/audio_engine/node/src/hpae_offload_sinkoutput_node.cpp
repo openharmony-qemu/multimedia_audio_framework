@@ -215,12 +215,17 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     timer.Start();
 #endif
     int32_t ret = audioRendererSink_->Init(attr);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("audioRendererSink_ init failed, errCode is %{public}d", ret);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::CREATE, ERR_OPERATION_FAILED),
-            "audioRendererSink_ init failed", false),
-        "audioRendererSink_ init failed, errCode is %{public}d", ret);
+            "audioRendererSink_ init failed", false);
+        // Release the sink reference on init failure to avoid leaking renderId_.
+        audioRendererSink_ = nullptr;
+        HdiAdapterManager::GetInstance().ReleaseId(renderId_);
+        return ret;
+    }
     SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
