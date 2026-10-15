@@ -245,21 +245,15 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerSetVoiceVolume_001, TestSize.Level
 HWTEST_F(AudioServerThirdUnitTest, AudioServerCheckStreamInfoFormat_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-
-    // Test CheckStreamInfoFormat with valid config
+    
     AudioProcessConfig config;
-    // Initialize config with valid data
-    config.streamInfo.samplingRate = SAMPLE_RATE_44100; // Valid sampling rate
-    config.streamInfo.format = SAMPLE_S16LE; // Valid format
-    config.streamInfo.encoding = ENCODING_PCM; // Valid encoding
-    config.streamInfo.channelLayout = CH_LAYOUT_MONO; // Valid channel layout
-    // audioMode defaults to AUDIO_MODE_PLAYBACK(0), channels must be in RENDERER_SUPPORTED_CHANNELS.
-    // Default channels=0 (CHANNEL_UNKNOW) is not supported; set to MONO which is valid.
-    config.streamInfo.channels = AudioChannel::MONO;
-
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.streamInfo.samplingRate = SAMPLE_RATE_44100;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.channelLayout = CH_LAYOUT_MONO;
+    
     bool result = audioServer->CheckStreamInfoFormat(config);
-
-    // Verify that the function returns true for valid config
     EXPECT_TRUE(result);
 }
 
