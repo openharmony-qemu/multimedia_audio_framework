@@ -186,12 +186,18 @@ int32_t AudioPolicyService::SetAncoSourceOutputStreamMute(int32_t uid, bool setM
 
 int32_t AudioPolicyService::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
 {
-    return audioPolicyManager_.SetAncoPlaybackInfo(ancoPlaybackInfos);
+    AUDIO_INFO_LOG("AudioPolicyService::SetAncoPlaybackInfo infos size: %{public}zu", ancoPlaybackInfos.size());
+    std::lock_guard<std::mutex> lock(ancoPlaybackInfoMutex_);
+    ancoPlaybackInfoCache_ = ancoPlaybackInfos;
+    return SUCCESS;
 }
 
 int32_t AudioPolicyService::GetAncoPlaybackInfo(std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
 {
-    return audioPolicyManager_.GetAncoPlaybackInfo(ancoPlaybackInfos);
+    AUDIO_INFO_LOG("AudioPolicyService::GetAncoPlaybackInfo infos size: %{public}zu", ancoPlaybackInfoCache_.size());
+    std::lock_guard<std::mutex> lock(ancoPlaybackInfoMutex_);
+    ancoPlaybackInfos = ancoPlaybackInfoCache_;
+    return SUCCESS;
 }
 
 void AudioPolicyService::RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo)

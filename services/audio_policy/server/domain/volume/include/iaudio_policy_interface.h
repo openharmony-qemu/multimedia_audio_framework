@@ -149,9 +149,6 @@ public:
 
     virtual int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute) = 0;
 
-    virtual int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos) = 0;
-    virtual int32_t GetAncoPlaybackInfo(std::vector<AncoPlaybackInfo> &ancoPlaybackInfos) = 0;
-
     virtual bool GetStreamMute(AudioStreamType streamType,
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc, int32_t zoneId = 0) = 0;
 

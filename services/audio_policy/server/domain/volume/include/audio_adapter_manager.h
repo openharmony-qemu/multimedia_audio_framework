@@ -159,9 +159,6 @@ public:
 
     int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute);
 
-    int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
-    int32_t GetAncoPlaybackInfo(std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
-
     bool GetStreamMute(AudioStreamType streamType,
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc, int32_t zoneId = 0);
 
@@ -659,8 +656,6 @@ private:
     std::mutex deviceConnectMutex_;
     std::mutex offloadSessionMutex_;
     int32_t cloneState_ = 0;
-    std::mutex ancoBundleNameMutex_;
-    std::vector<AncoPlaybackInfo> lastAncoPlaybackInfos_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

@@ -427,6 +427,9 @@ private:
     VADeviceManager& vaDeviceManager_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
     AudioPolicyDump& audioPolicyDump_;
+
+    std::mutex ancoPlaybackInfoMutex_;
+    std::vector<AncoPlaybackInfo> ancoPlaybackInfoCache_;
 };
 
 } // namespace AudioStandard
