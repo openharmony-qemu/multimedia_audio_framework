@@ -70,7 +70,7 @@ const int32_t DUAL_TONE_RING_VOLUME = 0;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
 constexpr const char *HIPLAY_DEVICE = "hiplay";
 constexpr int32_t RSS_UID = 1096;
-constexpr int32_t KARAOKE_DISABLE_MUTE_DURATION_US = 850000;
+constexpr int32_t KARAOKE_DISABLE_MUTE_DURATION_US = 1200000;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
