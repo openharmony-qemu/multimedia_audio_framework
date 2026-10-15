@@ -200,8 +200,13 @@ int32_t HpaeFastSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
         Trace hdiInitTrace("HDI::Init sessionId[" + std::to_string(GetSessionId()) + "]");
         ret = audioRendererSink_->Init(attr);
         hdiInitTrace.End();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-            "audioRendererSink_ init failed, errCode is %{public}d", ret);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("audioRendererSink_ init failed, errCode is %{public}d", ret);
+            // Release the sink reference on init failure to avoid leaking renderId_.
+            audioRendererSink_ = nullptr;
+            HdiAdapterManager::GetInstance().ReleaseId(renderId_);
+            return ret;
+        }
     }
     adapterType_ = attr.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? ADAPTER_TYPE_VOIP_FAST :
         (isUltraFast_ ? ADAPTER_TYPE_ULTRA_FAST : ADAPTER_TYPE_FAST);
