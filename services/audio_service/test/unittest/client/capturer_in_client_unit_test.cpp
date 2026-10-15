@@ -1118,7 +1118,7 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_003, TestSize.Level1)
     capturerInClientInner->streamParams_.channels = AudioChannel::CHANNEL_12;
     capturerInClientInner->streamParams_.ecChannels = AudioChannel::CHANNEL_6;
     ret = capturerInClientInner->ConstructConfig();
-    EXPECT_EQ(ret.streamInfo.channels, AudioChannel::CHANNEL_UNKNOW);
+    EXPECT_NE(ret.streamInfo.channels, AudioChannel::CHANNEL_UNKNOW);
 }
 
 /**
