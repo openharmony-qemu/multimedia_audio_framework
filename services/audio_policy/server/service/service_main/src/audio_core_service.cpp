@@ -47,7 +47,7 @@
 #include "audio_record_controller.h"
 
 namespace {
-    #include "v6_1/iaudio_manager.h"
+    #include "v6_2/iaudio_manager.h"
 }
 
 namespace OHOS {

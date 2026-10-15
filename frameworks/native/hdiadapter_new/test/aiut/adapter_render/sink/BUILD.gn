@@ -79,6 +79,7 @@ ohos_unittest("sink_aiut") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "drivers_interface_audio:libaudio_proxy_6.1",
+    "drivers_interface_audio:libaudio_proxy_6.2",
     "drivers_interface_bluetooth:hdi_audio_bluetooth_header",
     "hdf_core:libhdf_ipc_adapter",
   ]
