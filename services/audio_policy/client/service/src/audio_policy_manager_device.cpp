@@ -881,6 +881,14 @@ int32_t AudioPolicyManager::GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrap
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::SetVADeviceExceptionFlag(const std::string &macAddress, bool exceptionFlag)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is null");
+    gsp->SetVADeviceExceptionFlag(macAddress, exceptionFlag);
+    return SUCCESS;
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::FetchOutputDevicesByFilter(
     StreamUsage usage, RouterType bypass)
 {

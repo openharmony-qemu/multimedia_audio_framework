@@ -57,6 +57,7 @@
 #include "audio_select_interface_service.h"
 #include "audio_router_infra.h"
 #include "audio_device_info.h"
+#include "audio_device_manager.h"
 #include "stream_dfx_manager.h"
 #include "audio_record_controller.h"
 #include "ipc_skeleton.h"
@@ -6398,6 +6399,25 @@ int32_t AudioPolicyServer::GetVADeviceBroker(sptr<IRemoteObject> &client)
 int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, sptr<IRemoteObject>& controller)
 {
     VADeviceManager::GetInstance().GetDeviceController(macAddress, controller);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetVADeviceExceptionFlag(const std::string& macAddress, bool exceptionFlag)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    auto connectedDevices = AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
+    for (auto &devDesc : connectedDevices) {
+        if (devDesc != nullptr && devDesc->macAddress_ == macAddress &&
+            (devDesc->deviceType_ == DEVICE_TYPE_BT_SPP || devDesc->deviceType_ == DEVICE_TYPE_NEARLINK_PORT)) {
+            devDesc->exceptionFlag_ = exceptionFlag;
+            AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+            AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(
+                std::make_shared<AudioDeviceDescriptor>(*devDesc), EXCEPTION_FLAG_UPDATE, reason);
+            eventEntry_->FetchInputDeviceAndRoute("SetVADeviceExceptionFlag");
+            break;
+        }
+    }
     return SUCCESS;
 }
 

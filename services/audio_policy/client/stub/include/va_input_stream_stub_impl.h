@@ -35,6 +35,7 @@ public:
     int32_t Stop() override;
     int32_t Close() override;
     int32_t GetCapturePosition(uint64_t& attr_1, uint64_t& attr_2) override;
+    int32_t NotifyStartStreamFailed() override;
 
 private:
     std::shared_ptr<VAInputStreamCallback> vaInputStreamCallback_;

@@ -26,4 +26,5 @@ interface IVAInputStream {
     void Close();
 
     void GetCapturePosition([out] unsigned long attr_1, [out] unsigned long attr_2);
+    void NotifyStartStreamFailed();
 };

@@ -36,6 +36,7 @@ public:
 class VAInputStreamCallback : public VAStreamCallback {
 public:
     virtual int32_t GetCapturePosition(uint64_t& attr_1, uint64_t& attr_2) = 0;
+    virtual void NotifyStartStreamFailed() = 0;
 };
 
 class VADeviceControllerCallback {
