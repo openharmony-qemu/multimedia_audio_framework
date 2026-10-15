@@ -185,6 +185,40 @@ HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorRendererManagerStartPauseT
 }
 
 /**
+ * @tc.name  : Test OnFadeDoneRunningState_001
+ * @tc.type  : FUNC
+ * @tc.number: OnFadeDoneRunningState_001
+ * @tc.desc  : Test OnFadeDone skips teardown when the session has been restarted (RUNNING).
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, OnFadeDoneRunningState_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->sceneCluster_ != nullptr, true);
+    EXPECT_EQ(hpaeRendererManager->sceneCluster_->GetConnectSinkInputNum(), 1);
+
+    // A stale pause fade-done arriving after a rapid re-Start must not tear down the session.
+    hpaeRendererManager->OnFadeDone(streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
+    HpaeSinkInputInfo sinkInputInfo;
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(hpaeRendererManager->sceneCluster_->GetConnectSinkInputNum(), 1);
+
+    EXPECT_EQ(hpaeRendererManager->Release(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
+/**
  * @tc.name  : Test HpaeInjectorRendererManagerTest
  * @tc.type  : FUNC
  * @tc.number: HpaeInjectorRendererManagerTest
