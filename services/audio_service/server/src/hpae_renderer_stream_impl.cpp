@@ -569,6 +569,7 @@ int32_t HpaeRendererStreamImpl::GetLatencyWithFlag(uint64_t &latency, LatencyFla
             AUDIO_INFO_LOG("Cold start: add warmup %{public}d ms, total %{public}u ms",
                 warmup, sinkLatency);
         }
+        uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
         uint32_t nearlinkLatency = GetNearlinkLatency();
         retLatency = static_cast<uint64_t>(sinkLatency) * AUDIO_US_PER_MS;
         retLatency += static_cast<uint64_t>(a2dpOffloadLatency) * AUDIO_US_PER_MS;
