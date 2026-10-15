@@ -226,7 +226,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDevicesClientManager::G
 
 int32_t AudioDevicesClientManager::SetDeviceActive(DeviceType deviceType, bool flag, const int32_t clientUid) const
 {
-    int32_t uid = clientUid == -1 ? getuid() : clientUid;
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(IsActiveDeviceType(deviceType), ERR_NOT_SUPPORTED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             ERR_PLAY_DEVICE_SWITCH_INVALID_PARAM, "SetDeviceActive device not supported", true),
@@ -234,7 +233,7 @@ int32_t AudioDevicesClientManager::SetDeviceActive(DeviceType deviceType, bool f
 
     /* Call Audio Policy SetDeviceActive */
     int32_t ret = AudioPolicyManager::GetInstance().SetDeviceActive(
-        static_cast<InternalDeviceType>(deviceType), flag, uid);
+        static_cast<InternalDeviceType>(deviceType), flag, clientUid);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "SetDeviceActive failed", true));
