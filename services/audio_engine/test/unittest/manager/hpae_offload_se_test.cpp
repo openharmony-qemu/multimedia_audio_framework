@@ -687,7 +687,7 @@ HWTEST_F(HpaeOffloadSeTest, moveAllStreamToNewSink_curNodeNull_noDeref, TestSize
 HWTEST_F(HpaeOffloadSeTest, deleteInputSession_curNodeNull_earlyReturn, TestSize.Level0)
 {
     manager_->curNode_ = nullptr;
-    manager_->converterForLoudness_ = nullptr; 
+    manager_->converterForLoudness_ = nullptr;
 
     manager_->DeleteInputSession();
 
