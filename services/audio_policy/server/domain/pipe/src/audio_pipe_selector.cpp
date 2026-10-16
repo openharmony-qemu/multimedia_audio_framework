@@ -2096,6 +2096,16 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
     }
 }
 
+void AudioPipeSelector::FillLatencyConfig(AudioPipeInfo &info,
+    std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr)
+{
+    info.moduleInfo_.halLatency = pipeInfoPtr->halLatency_;
+    PolicyGlobalConfigs globalConfigs;
+    pipeManager_->GetGlobalConfigs(globalConfigs);
+    info.moduleInfo_.effectLatency = globalConfigs.primaryEffectLatency;
+    info.moduleInfo_.warmupLatency = globalConfigs.primaryWarmupLatency;
+}
+
 void AudioPipeSelector::UpdateModuleInfoWithDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
     AudioModuleInfo &moduleInfo)
 {
@@ -2191,6 +2201,8 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     // engine uses networkId to distinguish different renders,
     // so we need to set networkId after UpdateModuleInfoWithDevice;
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
+
+    FillLatencyConfig(info, pipeInfoPtr);
 
     info.streamDescriptors_.push_back(streamDesc);
     info.streamDescMap_[streamDesc->sessionId_] = streamDesc;

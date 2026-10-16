@@ -3675,8 +3675,14 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
         }
     }
 
-    (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?
-        RegisterSinkLatencyFetcher(renderId, PRIMARY_SINK_LATENCY_MS) : RegisterSinkLatencyFetcher(renderId);
+    if (attr.halLatency != LATENCY_UNCONFIG) {
+        RegisterSinkLatencyFetcher(renderId,
+            attr.effectLatency, attr.halLatency, attr.warmupLatency);
+    } else {
+        (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?
+            RegisterSinkLatencyFetcher(renderId, PRIMARY_SINK_LATENCY_MS) :
+            RegisterSinkLatencyFetcher(renderId);
+    }
     return SUCCESS;
 }
 
@@ -3720,7 +3726,12 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
     if (!sink->IsInited()) {
         sink->Init(attr);
     }
-    RegisterSinkLatencyFetcher(renderId);
+    if (attr.halLatency != LATENCY_UNCONFIG) {
+        RegisterSinkLatencyFetcher(renderId,
+            attr.effectLatency, attr.halLatency, attr.warmupLatency);
+    } else {
+        RegisterSinkLatencyFetcher(renderId);
+    }
     return SUCCESS;
 }
 
@@ -3822,14 +3833,28 @@ int32_t AudioServer::DestroyHdiPort(uint32_t id)
     return SUCCESS;
 }
 
-void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency)
+void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency, uint32_t warmupLatency)
 {
+    AUDIO_INFO_LOG("Register fixed sink latency: %{public}u ms, warmup %{public}u ms, renderId %{public}u",
+        sinkLatency, warmupLatency, renderId);
     SinkLatencyFetcherManager::GetInstance().RegisterProvider(renderId,
         [sinkLatency] (uint32_t renderId, uint32_t &latency) -> int32_t {
         latency = sinkLatency;
         return SUCCESS;
-    });
+    }, warmupLatency);
     return;
+}
+
+void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, int32_t effectLatency,
+    int32_t halLatency, int32_t warmupLatency)
+{
+    AUDIO_INFO_LOG("Register sink latency: effect=%{public}d, hal=%{public}d, warmup=%{public}d, renderId=%{public}u",
+        effectLatency, halLatency, warmupLatency, renderId);
+    SinkLatencyFetcherManager::GetInstance().RegisterProvider(renderId,
+        [halLatency] (uint32_t renderId, uint32_t &latency) -> int32_t {
+        latency = static_cast<uint32_t>(halLatency);
+        return SUCCESS;
+    }, halLatency, effectLatency, warmupLatency);
 }
 
 void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId)

@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_policy_log.h"
 
@@ -191,6 +192,9 @@ struct AudioModuleInfo {
     uint32_t suspendIdleTimeout = DEFAULT_SUSPEND_TIME_IN_MS;
     bool allUsbDeviceDisable_ = false;
     std::set<std::pair<int32_t, int32_t>> disableUsbDeviceSet_ {};
+    int32_t effectLatency = LATENCY_UNCONFIG;
+    int32_t halLatency = LATENCY_UNCONFIG;
+    int32_t warmupLatency = LATENCY_UNCONFIG;
 
     std::list<AudioModuleInfo> ports;
     std::string extra;

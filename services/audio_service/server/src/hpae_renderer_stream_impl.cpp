@@ -357,9 +357,26 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(uint32_t &sinkLatency)
             return SUCCESS;
         }
     }
-    HdiIdInfoParam idParam = {.deviceClass = deviceClass, .name = deviceName, .networkId = deviceNetId,
-        .macAddress = macAddress, .busAddress = busAddress};
-    return GetSinkLatencyInner(idParam, sinkLatency);
+    uint32_t cachedLatency = 0;
+    if (TryGetCachedSinkLatency(deviceClass, deviceNetId, cachedLatency)) {
+        sinkLatency = cachedLatency;
+        int32_t effect = GetSinkEffectLatency(deviceClass, deviceNetId);
+        if (effect != LATENCY_UNCONFIG && !IsDirectPipe(deviceClass)) {
+            sinkLatency += static_cast<uint32_t>(effect);
+        }
+        int32_t warmup = GetSinkWarmupLatency(deviceClass, deviceNetId);
+        if (warmup != LATENCY_UNCONFIG && !IsSinkRunning(deviceClass, deviceNetId)) {
+            sinkLatency += static_cast<uint32_t>(warmup);
+            AUDIO_INFO_LOG("Cold start: add warmup %{public}d ms, total %{public}u ms",
+                warmup, sinkLatency);
+        }
+    } else {
+        HdiIdInfoParam idParam = {.deviceClass = deviceClass, .name = deviceName, .networkId = deviceNetId,
+            .macAddress = macAddress, .busAddress = busAddress};
+        int32_t ret = GetSinkLatencyInner(idParam, sinkLatency);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSinkLatencyInner HDI failed");
+    }
+    return SUCCESS;
 }
 
 int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(const HdiIdInfoParam &param, uint32_t &sinkLatency)
@@ -532,9 +549,26 @@ int32_t HpaeRendererStreamImpl::GetLatencyWithFlag(uint64_t &latency, LatencyFla
     }
 
     if (needHardware) {
+        std::string deviceClass;
+        std::string deviceNetId;
+        {
+            std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+            deviceClass = deviceClass_;
+            deviceNetId = deviceNetId_;
+        }
         uint32_t sinkLatency = 0;
         int32_t ret = FetchSinkLatency(sinkLatency);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchSinkLatency failed");
+        int32_t effect = GetSinkEffectLatency(deviceClass, deviceNetId);
+        if (effect != LATENCY_UNCONFIG && !IsDirectPipe(deviceClass)) {
+            sinkLatency += static_cast<uint32_t>(effect);
+        }
+        int32_t warmup = GetSinkWarmupLatency(deviceClass, deviceNetId);
+        if (warmup != LATENCY_UNCONFIG && !IsSinkRunning(deviceClass, deviceNetId)) {
+            sinkLatency += static_cast<uint32_t>(warmup);
+            AUDIO_INFO_LOG("Cold start: add warmup %{public}d ms, total %{public}u ms",
+                warmup, sinkLatency);
+        }
         uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
         uint32_t nearlinkLatency = GetNearlinkLatency();
         retLatency = static_cast<uint64_t>(sinkLatency) * AUDIO_US_PER_MS;
@@ -1228,6 +1262,59 @@ int32_t HpaeRendererStreamImpl::FetchSinkLatency(uint32_t &sinkLatency)
     }
     CHECK_AND_RETURN_RET_LOG(fetcher, ERR_OPERATION_FAILED, "sinkLatencyFetcher is null");
     return fetcher(sinkLatency);
+}
+
+bool HpaeRendererStreamImpl::TryGetCachedSinkLatency(const std::string &deviceClass,
+    const std::string &deviceNetId, uint32_t &sinkLatency)
+{
+    uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
+        deviceClass, deviceNetId, false);
+    if (renderId == HDI_INVALID_ID) {
+        return false;
+    }
+    return SinkLatencyFetcherManager::GetInstance().TryGetCachedLatency(renderId, sinkLatency);
+}
+
+int32_t HpaeRendererStreamImpl::GetSinkWarmupLatency(const std::string &deviceClass,
+    const std::string &deviceNetId)
+{
+    uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
+        deviceClass, deviceNetId, false);
+    if (renderId == HDI_INVALID_ID) {
+        return LATENCY_UNCONFIG;
+    }
+    return SinkLatencyFetcherManager::GetInstance().GetWarmupLatency(renderId);
+}
+
+int32_t HpaeRendererStreamImpl::GetSinkEffectLatency(const std::string &deviceClass,
+    const std::string &deviceNetId)
+{
+    uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
+        deviceClass, deviceNetId, false);
+    if (renderId == HDI_INVALID_ID) {
+        return LATENCY_UNCONFIG;
+    }
+    return SinkLatencyFetcherManager::GetInstance().GetEffectLatency(renderId);
+}
+
+bool HpaeRendererStreamImpl::IsSinkRunning(const std::string &deviceClass,
+    const std::string &deviceNetId)
+{
+    uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
+        deviceClass, deviceNetId, false);
+    if (renderId == HDI_INVALID_ID) {
+        return false;
+    }
+    auto sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
+    if (sink == nullptr) {
+        return false;
+    }
+    return sink->IsFrameRendering();
+}
+
+bool HpaeRendererStreamImpl::IsDirectPipe(const std::string &deviceClass)
+{
+    return deviceClass.find("direct") != std::string::npos;
 }
 
 uint64_t HpaeRendererStreamImpl::GetOffloadLatency()

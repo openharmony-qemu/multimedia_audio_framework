@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include <cstring>
+#include "audio_errors.h"
 #include "audio_info.h"
 
 namespace OHOS {
@@ -48,6 +49,9 @@ typedef struct IAudioSinkAttr : public Parcelable {
     int32_t hdPlayBackMode = 0;
     bool isUltraFast = false;
     std::string busName = "";
+    int32_t effectLatency = LATENCY_UNCONFIG;
+    int32_t halLatency = LATENCY_UNCONFIG;
+    int32_t warmupLatency = LATENCY_UNCONFIG;
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -71,7 +75,10 @@ typedef struct IAudioSinkAttr : public Parcelable {
             parcel.WriteUint32(routeFlag) &&
             parcel.WriteInt32(hdPlayBackMode) &&
             parcel.WriteBool(isUltraFast) &&
-            parcel.WriteString(busName);
+            parcel.WriteString(busName) &&
+            parcel.WriteInt32(effectLatency) &&
+            parcel.WriteInt32(halLatency) &&
+            parcel.WriteInt32(warmupLatency);
     }
 
     static IAudioSinkAttr *Unmarshalling(Parcel &parcel)
@@ -102,6 +109,9 @@ typedef struct IAudioSinkAttr : public Parcelable {
         attr->hdPlayBackMode = parcel.ReadInt32();
         attr->isUltraFast = parcel.ReadBool();
         attr->busName = parcel.ReadString();
+        attr->effectLatency = parcel.ReadInt32();
+        attr->halLatency = parcel.ReadInt32();
+        attr->warmupLatency = parcel.ReadInt32();
         return attr;
     }
 } IAudioSinkAttr;
