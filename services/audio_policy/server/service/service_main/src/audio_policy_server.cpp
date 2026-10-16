@@ -6605,7 +6605,30 @@ int32_t AudioPolicyServer::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVo
         ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
-    return coreService_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    int32_t ret = coreService_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetActiveStreamsVolumeInfo failed");
+    return GetAncoActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+}
+
+int32_t AudioPolicyServer::GetAncoActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
+{
+    std::vector<AncoPlaybackInfo> ancoPlaybackInfos;
+    audioPolicyService_.GetAncoPlaybackInfo(ancoPlaybackInfos);
+    for (const auto &info : ancoPlaybackInfos) {
+        if (info.GetPlaybackState() != ANCO_PLAYBACK_STATE_PLAYING) {
+            continue;
+        }
+        int32_t systemAppVolumePercentage = 0;
+        audioVolumeManager_.GetSystemAppVolumePercentage(info.GetUid(), systemAppVolumePercentage);
+        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(
+            static_cast<StreamUsage>(info.GetUsage()));
+        ActiveStreamVolumeInfo activeStreamVolumeInfo {volumeType, systemAppVolumePercentage, info.GetUid()};
+        if (std::find(activeStreamsVolumeInfo.begin(), activeStreamsVolumeInfo.end(),
+            activeStreamVolumeInfo) == activeStreamsVolumeInfo.end()) {
+            activeStreamsVolumeInfo.push_back(activeStreamVolumeInfo);
+        }
+    }
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::SetAudioZoneVolumeConfig(const std::string &zoneName,

@@ -1151,5 +1151,111 @@ HWTEST_F(AudioPolicyServerMethodsTest, RemoveUnmuteWhitelistDeathRecipient_003, 
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 0u);
 }
+
+/**
+ * @tc.name  : GetAncoActiveStreamsVolumeInfo_Empty
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo with no AncoPlaybackInfo set
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_Empty, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_->streamCollector_.audioRendererChangeInfos_.clear();
+
+    std::vector<AncoPlaybackInfo> emptyAncoInfos;
+    audioPolicyServer_->SetAncoPlaybackInfo(emptyAncoInfos);
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioPolicyServer_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+
+    audioPolicyServer_->SetAncoPlaybackInfo(emptyAncoInfos);
+}
+
+/**
+ * @tc.name  : GetAncoActiveStreamsVolumeInfo_SingleMedia
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo with single media usage AncoPlaybackInfo
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_SingleMedia, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_->streamCollector_.audioRendererChangeInfos_.clear();
+
+    AncoPlaybackInfo ancoInfo;
+    ancoInfo.SetUid(2001);
+    ancoInfo.SetUsage(static_cast<int32_t>(STREAM_USAGE_MEDIA));
+    ancoInfo.SetPlaybackState(ANCO_PLAYBACK_STATE_PLAYING);
+    std::vector<AncoPlaybackInfo> ancoInfos = { ancoInfo };
+    audioPolicyServer_->SetAncoPlaybackInfo(ancoInfos);
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioPolicyServer_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+
+    auto it = std::find_if(activeStreamsVolumeInfo.begin(), activeStreamsVolumeInfo.end(),
+        [](const ActiveStreamVolumeInfo &info) { return info.clientUid_ == 2001; });
+    EXPECT_NE(it, activeStreamsVolumeInfo.end());
+    if (it != activeStreamsVolumeInfo.end()) {
+        EXPECT_EQ(STREAM_MUSIC, it->volumeType_);
+    }
+
+    std::vector<AncoPlaybackInfo> emptyAncoInfos;
+    audioPolicyServer_->SetAncoPlaybackInfo(emptyAncoInfos);
+}
+
+/**
+ * @tc.name  : GetAncoActiveStreamsVolumeInfo_NonPlayingState
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo excludes non-PLAYING AncoPlaybackInfo
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_NonPlayingState, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_->streamCollector_.audioRendererChangeInfos_.clear();
+
+    AncoPlaybackInfo ancoInfo;
+    ancoInfo.SetUid(4001);
+    ancoInfo.SetUsage(static_cast<int32_t>(STREAM_USAGE_MEDIA));
+    ancoInfo.SetPlaybackState(ANCO_PLAYBACK_STATE_PAUSED);
+    std::vector<AncoPlaybackInfo> ancoInfos = { ancoInfo };
+    audioPolicyServer_->SetAncoPlaybackInfo(ancoInfos);
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioPolicyServer_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+
+    auto it = std::find_if(activeStreamsVolumeInfo.begin(), activeStreamsVolumeInfo.end(),
+        [](const ActiveStreamVolumeInfo &info) { return info.clientUid_ == 4001; });
+    EXPECT_EQ(it, activeStreamsVolumeInfo.end());
+
+    std::vector<AncoPlaybackInfo> emptyAncoInfos;
+    audioPolicyServer_->SetAncoPlaybackInfo(emptyAncoInfos);
+}
+
+/**
+ * @tc.name  : GetAncoActiveStreamsVolumeInfo_Duplicate
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo deduplicates same uid and volumeType
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_Duplicate, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_->streamCollector_.audioRendererChangeInfos_.clear();
+
+    AncoPlaybackInfo ancoInfo1;
+    ancoInfo1.SetUid(3001);
+    ancoInfo1.SetUsage(static_cast<int32_t>(STREAM_USAGE_MEDIA));
+    ancoInfo1.SetPlaybackState(ANCO_PLAYBACK_STATE_PLAYING);
+    AncoPlaybackInfo ancoInfo2;
+    ancoInfo2.SetUid(3001);
+    ancoInfo2.SetUsage(static_cast<int32_t>(STREAM_USAGE_MEDIA));
+    ancoInfo2.SetPlaybackState(ANCO_PLAYBACK_STATE_PLAYING);
+    std::vector<AncoPlaybackInfo> ancoInfos = { ancoInfo1, ancoInfo2 };
+    audioPolicyServer_->SetAncoPlaybackInfo(ancoInfos);
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioPolicyServer_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+
+    auto count = std::count_if(activeStreamsVolumeInfo.begin(), activeStreamsVolumeInfo.end(),
+        [](const ActiveStreamVolumeInfo &info) { return info.clientUid_ == 3001; });
+    EXPECT_EQ(1, static_cast<int32_t>(count));
+
+    std::vector<AncoPlaybackInfo> emptyAncoInfos;
+    audioPolicyServer_->SetAncoPlaybackInfo(emptyAncoInfos);
+}
 } // namespace AudioStandard
 } // namespace OHOS
