@@ -15,6 +15,14 @@
 #ifndef AUDIO_ROLLBACK_MANAGER_H
 #define AUDIO_ROLLBACK_MANAGER_H
 
+#include <condition_variable>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <utility>
+#include <vector>
 #include "audio_router_infra.h"
 
 namespace OHOS {
@@ -34,6 +42,27 @@ struct RollbackInfo {
 struct SelectionRollback {
     int32_t targetId{0};
     Selection selection;
+};
+
+class StepTimer {
+public:
+    StepTimer() = default;
+    StepTimer(const StepTimer&) = delete;
+    StepTimer& operator=(const StepTimer&) = delete;
+    StepTimer(StepTimer&&) = delete;
+    StepTimer& operator=(StepTimer&&) = delete;
+    ~StepTimer();
+
+    void SetTimeout(uint32_t timeoutMs, std::function<void()> fn);
+private:
+    void WorkLoop();
+    std::vector<std::function<void()>> PickTasks(int64_t &now);
+
+    std::mutex mutex_;
+    bool running_{false};
+    std::thread worker_;
+    std::vector<std::pair<int64_t, std::function<void()>>> tasks_;
+    std::condition_variable cv_;
 };
 
 class AudioRollbackManager {
@@ -81,6 +110,7 @@ private:
     std::unique_ptr<RollbackInfo> rollbackInfo_;
     std::vector<Selection> virtualSelectDevices_;
     std::set<int32_t> connectedSet_;
+    StepTimer timer_;
 };
 
 }
