@@ -27,6 +27,10 @@
 #include "stream_flag_info.h"
 #include "audio_policy_server.h"
 
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+#include "input_manager.h"
+#endif
+
 using namespace testing::ext;
 
 namespace OHOS {
