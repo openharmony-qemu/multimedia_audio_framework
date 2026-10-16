@@ -2986,6 +2986,16 @@ int32_t AudioPolicyServer::SetAncoSourceOutputStreamMute(int32_t uid, bool setMu
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    return audioPolicyService_.SetAncoPlaybackInfo(ancoPlaybackInfos);
+}
+
+int32_t AudioPolicyServer::GetAncoPlaybackInfo(std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    return audioPolicyService_.GetAncoPlaybackInfo(ancoPlaybackInfos);
+}
+
 int32_t AudioPolicyServer::SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object)
 {
     if (object == nullptr) {

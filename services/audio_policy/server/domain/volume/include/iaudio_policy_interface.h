@@ -31,6 +31,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

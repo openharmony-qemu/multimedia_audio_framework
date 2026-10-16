@@ -40,6 +40,7 @@
 #include "boot_animation_state_info.h"
 #include "audio_separation_effect_enabled_change_callback.h"
 #include "audio_info.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -276,6 +277,8 @@ public:
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);
+
+    int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
 
     int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
 

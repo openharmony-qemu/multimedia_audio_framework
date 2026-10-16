@@ -51,6 +51,7 @@ sequenceable audio_info..OHOS.AudioStandard.SystemRecordControllerConfig;
 sequenceable audio_info..OHOS.AudioStandard.SystemRecordControllerChangeInfo;
 sequenceable stream_flag_info..OHOS.AudioStandard.StreamFlagInfo;
 sequenceable audio_info..OHOS.AudioStandard.VolumeProtectionConfig;
+sequenceable audio_anco_playback_info..OHOS.AudioStandard.AncoPlaybackInfo;
 
 // ! WARNING !
 // ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
@@ -301,6 +302,7 @@ interface IAudioPolicy {
     void GetSystemVolumeDegree([in] int volumeType, [in] int uid, [out] int volumeDegree, [in] int zoneId /* default INVALID_ZONEID */);
     void GetMinVolumeDegree([in] int volumeType, [in] int deviceType, [out] int volumeDegree);
     void SetAncoSourceOutputStreamMute([in] int uid, [in] boolean setMute);
+    void SetAncoPlaybackInfo([in] List<AncoPlaybackInfo> ancoPlaybackInfos);
     void UpdateSafeVolumeByStrMode();
     void SetOffloadAllowedForUid([in] unsigned int uid, [in] boolean allowed);
     [oneway] void RecordBootAnimationClientStateTime([in] List<long> info);

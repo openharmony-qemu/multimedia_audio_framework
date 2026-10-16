@@ -39,6 +39,7 @@
 #include "audio_connected_device.h"
 #include "boot_animation_state_info.h"
 #include "audio_iohandle_map.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

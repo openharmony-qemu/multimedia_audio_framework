@@ -1305,6 +1305,13 @@ int32_t AudioPolicyManager::SetAncoSourceOutputStreamMute(int32_t uid, bool setM
     return gsp->SetAncoSourceOutputStreamMute(uid, setMute);
 }
 
+int32_t AudioPolicyManager::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
+    return gsp->SetAncoPlaybackInfo(ancoPlaybackInfos);
+}
+
 int32_t AudioPolicyManager::SetQueryBundleNameListCallback(
     const std::shared_ptr<AudioQueryBundleNameListCallback> &callback)
 {
