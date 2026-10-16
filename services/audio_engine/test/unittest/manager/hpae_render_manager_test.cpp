@@ -1781,13 +1781,18 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerUpdateRenderDeviceType_005,
 
 // ==================== UT for ReloadSinkinputs ====================
 
-// Make UpdateRenderDeviceType inside ReloadSinkinputs return true (valid type, changed)
-// or false (type unchanged), by controlling renderDeviceType_ and the stub cluster.
+// Prepare the manager so ReloadSinkinputs' request lambda executes: without ActivateThread
+// the process thread never drains hpaeNoLockQueue_, so SendRequest must take the synchronous
+// INTERPHONE route (same trick as CoverageDrainAndAuxiliarySinkImmediateQueue_001 and the
+// INTERPHONE branch of HpaeRendererManager::Init). Also controls the UpdateRenderDeviceType
+// result inside the request via renderDeviceType_ and the stub cluster.
 static void PrepareDeviceTypeForReload(const std::shared_ptr<HpaeRendererManager> &manager,
     DeviceType currentType, DeviceType clusterType)
 {
     manager->renderDeviceType_ = currentType;
     manager->outputCluster_ = std::make_shared<TestDeviceTypeOutputCluster>(clusterType);
+    manager->hpaeSignalProcessThread_.reset();
+    manager->sinkInfo_.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
 }
 
 /**
