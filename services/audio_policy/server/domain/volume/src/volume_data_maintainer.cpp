@@ -130,6 +130,69 @@ void VolumeDataMaintainer::SetAppVolumeMuted(int32_t appUid, bool muted)
     appMuteStatusMap_[appUid][ownedAppUid] = muted;
 }
 
+void VolumeDataMaintainer::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    int ownedAppUid = IPCSkeleton::GetCallingUid();
+    if (muted) {
+        appMuteAndHideStatusMap_[appUid][ownedAppUid] = muted;
+    } else {
+        auto uidIt = appMuteAndHideStatusMap_.find(appUid);
+        if (uidIt != appMuteAndHideStatusMap_.end()) {
+            uidIt->second.erase(ownedAppUid);
+            if (uidIt->second.empty()) {
+                appMuteAndHideStatusMap_.erase(uidIt);
+            }
+        }
+    }
+}
+
+bool VolumeDataMaintainer::GetAppMuteAndHideVolumeBar(int32_t appUid)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    auto iter = appMuteAndHideStatusMap_.find(appUid);
+    return (iter != appMuteAndHideStatusMap_.end()) && !iter->second.empty();
+}
+
+bool VolumeDataMaintainer::GetAppMuteAndHideOwned(int32_t appUid)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    int ownedAppUid = IPCSkeleton::GetCallingUid();
+    auto iter = appMuteAndHideStatusMap_.find(appUid);
+    return iter != appMuteAndHideStatusMap_.end() && iter->second.count(ownedAppUid) > 0;
+}
+
+bool VolumeDataMaintainer::GetAppMuteAggregate(int32_t appUid)
+{
+    bool isMute = false;
+    GetAppMute(appUid, isMute);
+    return isMute || GetAppMuteAndHideVolumeBar(appUid);
+}
+
+bool VolumeDataMaintainer::GetAppMuteOwnedAggregate(int32_t appUid)
+{
+    bool isMute = false;
+    GetAppMuteOwned(appUid, isMute);
+    return isMute || GetAppMuteAndHideOwned(appUid);
+}
+
+void VolumeDataMaintainer::ClearAppMuteAndHideByOwnerUid(int32_t ownedAppUid,
+    std::vector<int32_t> &affectedAppUids)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    for (auto it = appMuteAndHideStatusMap_.begin(); it != appMuteAndHideStatusMap_.end();) {
+        auto &callerMap = it->second;
+        if (callerMap.erase(ownedAppUid) > 0) {
+            affectedAppUids.push_back(it->first);
+        }
+        if (callerMap.empty()) {
+            it = appMuteAndHideStatusMap_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 void VolumeDataMaintainer::SetAppStreamMuted(int32_t appUid, AudioStreamType streamType, bool muted)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);

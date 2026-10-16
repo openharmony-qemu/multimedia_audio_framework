@@ -100,6 +100,12 @@ public:
     void GetAppMute(int32_t appUid, bool &isMute);
     void GetAppMuteOwned(int32_t appUid, bool &isMute);
     void SetAppVolumeMuted(int32_t appUid, bool muted);
+    void SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted);
+    bool GetAppMuteAndHideVolumeBar(int32_t appUid);
+    bool GetAppMuteAndHideOwned(int32_t appUid);
+    bool GetAppMuteAggregate(int32_t appUid);
+    bool GetAppMuteOwnedAggregate(int32_t appUid);
+    void ClearAppMuteAndHideByOwnerUid(int32_t ownedAppUid, std::vector<int32_t> &affectedAppUids);
     void SetAppStreamMuted(int32_t appUid, AudioStreamType streamType, bool muted);
     bool IsAppStreamMuted(int32_t appUid, AudioStreamType streamType);
     int32_t GetAppVolume(int32_t appUid);
@@ -223,6 +229,7 @@ private:
 
     std::unordered_map<int32_t, int32_t> appVolumeLevelMap_; // save App volume map
     std::unordered_map<int32_t, std::unordered_map<int32_t, bool>> appMuteStatusMap_; // save App volume Mutestatus map
+    std::unordered_map<int32_t, std::unordered_map<int32_t, bool>> appMuteAndHideStatusMap_;
     std::unordered_map<int32_t, int32_t> systemAppVolumeLevelMap_; // save system-controlled app volume level
     std::unordered_map<int32_t, bool> systemAppVolumeMuteStatusMap_; // save system-controlled app volume mute status
     std::vector<AudioStreamType> volumeList_;

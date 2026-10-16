@@ -83,6 +83,12 @@ public:
 
     virtual int32_t SetAppVolumeMuted(int32_t appUid, bool muted) = 0;
 
+    virtual int32_t SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted) = 0;
+
+    virtual bool IsAppMuteAndHideVolumeBar(int32_t appUid) = 0;
+
+    virtual int32_t ClearAppMuteAndHideByOwnerUid(int32_t callerUid) = 0;
+
     virtual int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) = 0;
 
     virtual int32_t SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted) = 0;

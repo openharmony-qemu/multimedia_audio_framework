@@ -168,6 +168,8 @@ public:
      */
     int32_t SetAppVolumeMuted(const int32_t appUid, const bool muted, const int32_t flag = 0);
 
+    int32_t SetAppVolumeMuteAndHideVolumeBar(const int32_t appUid, const bool muted);
+
     /**
      * @brief Set the mute state of the VoIP renderer for the specified uid and streamId.
      * If there are multiple callers setting muted states for the same uid and streamId,
