@@ -681,9 +681,13 @@ HWTEST_F(HpaeOffloadSeTest, moveAllStreamToNewSink_curNodeNull_noDeref, TestSize
 }
 
 // OSE-4h: DeleteInputSession with curNode_ null — the entry guard returns before teardown.
+// Note: DisConnectInputSession (called before the curNode_ guard in DeleteInputSession)
+// dereferences curNode_ without a null check, so null out converterForLoudness_ first to
+// make DisConnectInputSession early-return and reach the curNode_ guard untouched.
 HWTEST_F(HpaeOffloadSeTest, deleteInputSession_curNodeNull_earlyReturn, TestSize.Level0)
 {
     manager_->curNode_ = nullptr;
+    manager_->converterForLoudness_ = nullptr; 
 
     manager_->DeleteInputSession();
 
