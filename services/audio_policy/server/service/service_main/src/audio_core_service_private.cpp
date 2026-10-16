@@ -4105,5 +4105,10 @@ bool AudioCoreService::IsUltraFastSupportedForDevice(DeviceType deviceType)
 {
     return (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) ? isSupportArmUsbUltraFast_ : isSupportUltraFast_;
 }
+
+void AudioCoreService::MutePrimarySinkByCollaborative(int32_t duration)
+{
+    audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, duration, true, true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

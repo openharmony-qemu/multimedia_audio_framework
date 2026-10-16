@@ -32,6 +32,7 @@ const int START_POS = 6;
 const int END_POS = 13;
 const int SLE_FLAG = 1;
 static constexpr int32_t SET_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE_TIMEOUT = 15;
+static constexpr int32_t COLLABORATIVE_STATE_CHANGE_MUTE_SINK_PORT_US = 200000; // 200ms
 
 static bool IsCollaborativePlaybackSupportedDeviceType(DeviceType deviceType)
 {
@@ -175,6 +176,10 @@ int32_t AudioCollaborativeService::SetCollaborativePlaybackEnabledForDevice(
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     CHECK_AND_RETURN_RET_LOG(AudioCoreService::GetCoreService() != nullptr &&
         AudioCoreService::GetCoreService()->GetEventEntry() != nullptr,  ERR_OPERATION_FAILED, "nullptr");
+    if (selectedAudioDevice->IsA2dpOffload() && enabled && selectedAudioDevice->macAddress_ == curDeviceAddress_) {
+        AudioCoreService::GetCoreService()->GetEventEntry()->MutePrimarySinkByCollaborative(
+            COLLABORATIVE_STATE_CHANGE_MUTE_SINK_PORT_US);
+    }
     AudioCoreService::GetCoreService()->GetEventEntry()->
         FetchOutputDeviceAndRoute("SetCollaborativePlaybackEnabledForDevice");
     return SUCCESS;
