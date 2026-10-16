@@ -1781,18 +1781,30 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerUpdateRenderDeviceType_005,
 
 // ==================== UT for ReloadSinkinputs ====================
 
+// Make UpdateRenderDeviceType inside ReloadSinkinputs return true (valid type, changed)
+// or false (type unchanged), by controlling renderDeviceType_ and the stub cluster.
+static void PrepareDeviceTypeForReload(const std::shared_ptr<HpaeRendererManager> &manager,
+    DeviceType currentType, DeviceType clusterType)
+{
+    manager->renderDeviceType_ = currentType;
+    manager->outputCluster_ = std::make_shared<TestDeviceTypeOutputCluster>(clusterType);
+}
+
 /**
  * @tc.name  : Test HpaeRendererManagerReloadSinkinputs_001
  * @tc.type  : FUNC
  * @tc.number: HpaeRendererManagerReloadSinkinputs_001
- * @tc.desc  : Test ReloadSinkinputs with a running session in sinkInputNodeMap_.
+ * @tc.desc  : Test ReloadSinkinputs when device type is unchanged, reload skipped.
  */
 HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadSinkinputs_001, TestSize.Level1)
 {
-    // sinkInputNodeMap_[1] holds a RUNNING node from SetUp.
-    hpaeRendererManager_->sinkInputNodeMap_[1]->connectedProcessorType_ = HPAE_SCENE_EFFECT_NONE;
+    // sinkInputNodeMap_[1] holds a RUNNING node with a changed processor type from SetUp,
+    // so it would reload if the request lambda reached the loop.
+    sinkInputNode_->connectedProcessorType_ = HPAE_SCENE_MUSIC;
+    PrepareDeviceTypeForReload(hpaeRendererManager_, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_SPEAKER);
     hpaeRendererManager_->ReloadSinkinputs();
     WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_EQ(hpaeRendererManager_->renderDeviceType_, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
 }
 
@@ -1800,14 +1812,85 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadSinkinputs_001, TestS
  * @tc.name  : Test HpaeRendererManagerReloadSinkinputs_002
  * @tc.type  : FUNC
  * @tc.number: HpaeRendererManagerReloadSinkinputs_002
- * @tc.desc  : Test ReloadSinkinputs with a stopped session and a null node in sinkInputNodeMap_.
+ * @tc.desc  : Test ReloadSinkinputs with device type changed and an empty sinkInputNodeMap_.
  */
 HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadSinkinputs_002, TestSize.Level1)
 {
-    sinkInputNode_->SetState(HPAE_SESSION_STOPPED);
-    hpaeRendererManager_->sinkInputNodeMap_[2] = nullptr;
+    hpaeRendererManager_->sinkInputNodeMap_.clear();
+    PrepareDeviceTypeForReload(hpaeRendererManager_, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_BLUETOOTH_A2DP);
     hpaeRendererManager_->ReloadSinkinputs();
     WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_EQ(hpaeRendererManager_->renderDeviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerReloadSinkinputs_003
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerReloadSinkinputs_003
+ * @tc.desc  : Test ReloadSinkinputs when sinkInputNodeMap_ only contains a null node.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadSinkinputs_003, TestSize.Level1)
+{
+    hpaeRendererManager_->sinkInputNodeMap_[1] = nullptr;
+    PrepareDeviceTypeForReload(hpaeRendererManager_, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_BLUETOOTH_A2DP);
+    hpaeRendererManager_->ReloadSinkinputs();
+    WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_EQ(hpaeRendererManager_->renderDeviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerReloadSinkinputs_004
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerReloadSinkinputs_004
+ * @tc.desc  : Test ReloadSinkinputs skips a running session whose processor type is unchanged.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadSinkinputs_004, TestSize.Level1)
+{
+    // GetProcessorType(1) resolves to HPAE_SCENE_EFFECT_NONE in this fixture (no
+    // sessionNodeMap_ entry), so an equal connectedProcessorType_ makes the condition fail.
+    sinkInputNode_->connectedProcessorType_ = HPAE_SCENE_EFFECT_NONE;
+    PrepareDeviceTypeForReload(hpaeRendererManager_, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_BLUETOOTH_A2DP);
+    hpaeRendererManager_->ReloadSinkinputs();
+    WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_EQ(hpaeRendererManager_->renderDeviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(sinkInputNode_->connectedProcessorType_, HPAE_SCENE_EFFECT_NONE);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerReloadSinkinputs_005
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerReloadSinkinputs_005
+ * @tc.desc  : Test ReloadSinkinputs skips a stopped session whose processor type changed.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadSinkinputs_005, TestSize.Level1)
+{
+    sinkInputNode_->SetState(HPAE_SESSION_STOPPED);
+    sinkInputNode_->connectedProcessorType_ = HPAE_SCENE_MUSIC;
+    PrepareDeviceTypeForReload(hpaeRendererManager_, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_BLUETOOTH_A2DP);
+    hpaeRendererManager_->ReloadSinkinputs();
+    WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_EQ(hpaeRendererManager_->renderDeviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerReloadSinkinputs_006
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerReloadSinkinputs_006
+ * @tc.desc  : Test ReloadSinkinputs reloads a running session whose processor type changed.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadSinkinputs_006, TestSize.Level1)
+{
+    // RUNNING node with connectedProcessorType_ != GetProcessorType(1): enters the reload
+    // body; detach/disconnect/connect all early-return safely on the empty sceneClusterMap_.
+    sinkInputNode_->connectedProcessorType_ = HPAE_SCENE_MUSIC;
+    PrepareDeviceTypeForReload(hpaeRendererManager_, DEVICE_TYPE_SPEAKER, DEVICE_TYPE_BLUETOOTH_A2DP);
+    hpaeRendererManager_->ReloadSinkinputs();
+    WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_EQ(hpaeRendererManager_->renderDeviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
     EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
 }
 

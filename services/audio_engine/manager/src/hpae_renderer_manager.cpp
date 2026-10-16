@@ -1411,9 +1411,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
     outputCluster_->SetTimeoutStopThd(sinkInfo_.suspendTime);
     if (Util::IsEnhancedRoutingSupported()) {
         outputCluster_->SetDeviceChangeCallback([this]() {
-            if (UpdateRenderDeviceType()) {
-                ReloadSinkinputs();
-            }
+            ReloadSinkinputs();
         });
     }
     int32_t ret = InitOutputCluster();
@@ -2257,8 +2255,12 @@ bool HpaeRendererManager::UpdateRenderDeviceType()
 void HpaeRendererManager::ReloadSinkinputs()
 {
     auto request = [this]() {
+        if (!UpdateRenderDeviceType()) {
+            return;
+        }
         for (const auto &it : sinkInputNodeMap_) {
-            if (it.second != nullptr && it.second->GetState() == HPAE_SESSION_RUNNING) {
+            if (it.second != nullptr && it.second->connectedProcessorType_ != GetProcessorType(it.first) &&
+                it.second->GetState() == HPAE_SESSION_RUNNING) {
                 AUDIO_INFO_LOG("sessionId :%{public}u need reload", it.first);
                 DetachSessionEffectNodeForRefresh(it.first, it.second->connectedProcessorType_);
                 DisConnectInputSession(it.first);
