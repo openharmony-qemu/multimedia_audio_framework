@@ -1250,7 +1250,6 @@ void AudioSuitePipelineImpl::CheckRenderFrameOverTimeCount()
 
     AUDIO_INFO_LOG("Report SuiteEngineUtilizationStats event for pipeline.");
 
-
     renderFrameTotalCount_ = 0;
     std::fill(renderFrameOvertimeCounters_.begin(), renderFrameOvertimeCounters_.end(), 0);
 }
