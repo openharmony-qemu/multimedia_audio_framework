@@ -465,6 +465,10 @@ void HpaeInjectorRendererManager::OnFadeDone(uint32_t sessionId)
     auto request = [this, sessionId]() {
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Fade done, not find sessionId %{public}u", sessionId);
+        // Fade-done is an async FIFO message and can be overtaken by a rapid re-Start:
+        // a stale pause fade-done must not tear down a session that is running again.
+        CHECK_AND_RETURN_LOG(sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_RUNNING,
+            "no need disconnect renderer input session, %{public}u is running", sessionId);
         AUDIO_INFO_LOG("Fade done, callback at injectorRendererManager");
         DisConnectInputSession(sessionId);
         IOperation operation = sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPING ?

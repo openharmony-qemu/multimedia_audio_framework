@@ -527,6 +527,64 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerStartPuaseStreamTest, TestS
     TestIRendererManagerStartPuaseStream<HpaeOffloadRendererManager>();
 }
 
+/**
+ * @tc.name  : Test OnFadeDoneRunningState_001
+ * @tc.type  : FUNC
+ * @tc.number: OnFadeDoneRunningState_001
+ * @tc.desc  : Test OnFadeDone skips teardown when the session has been restarted (RUNNING).
+ */
+HWTEST_F(HpaeRendererManagerTest, OnFadeDoneRunningState_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    // A stale pause fade-done arriving after a rapid re-Start must not tear down the session.
+    hpaeRendererManager->OnFadeDone(streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
+    auto it = hpaeRendererManager->sinkInputNodeMap_.find(streamInfo.sessionId);
+    ASSERT_EQ(it != hpaeRendererManager->sinkInputNodeMap_.end(), true);
+    EXPECT_EQ(it->second->state_, HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(hpaeRendererManager->Release(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
+/**
+ * @tc.name  : Test OnFadeDonePausingState_001
+ * @tc.type  : FUNC
+ * @tc.number: OnFadeDonePausingState_001
+ * @tc.desc  : Test OnFadeDone tears down normally when the session is PAUSING.
+ */
+HWTEST_F(HpaeRendererManagerTest, OnFadeDonePausingState_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    auto it = hpaeRendererManager->sinkInputNodeMap_.find(streamInfo.sessionId);
+    ASSERT_EQ(it != hpaeRendererManager->sinkInputNodeMap_.end(), true);
+    it->second->SetState(HPAE_SESSION_PAUSING);
+    hpaeRendererManager->OnFadeDone(streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(it->second->state_, HPAE_SESSION_PAUSED);
+
+    EXPECT_EQ(hpaeRendererManager->Release(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
 HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerFlushDrainStreamTest, TestSize.Level1)
 {
     TestIRendererManagerFlushDrainStream<HpaeRendererManager>();
