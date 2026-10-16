@@ -46,11 +46,17 @@ private:
     PcmBufferInfo pcmBufferInfo_;
 protected:
     virtual HpaePcmBuffer* SignalProcess(const std::vector<HpaePcmBuffer*>& inputs) = 0;
+    // Derived classes overriding this must chain: HpaePluginNode::OnTraceInfoChanged();
+    void OnTraceInfoChanged() override;
+    void RebuildSilenceTraceName();
     OutputPort<HpaePcmBuffer *> outputStream_;
     InputPort<HpaePcmBuffer*> inputStream_;
     bool enableProcess_;
     HpaePcmBuffer silenceData_;
     bool isSourceNode_ = false;
+
+    // Cached is_silence trace name; rebuilt in ctor and whenever scene type or node name changes
+    std::string silenceTraceName_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

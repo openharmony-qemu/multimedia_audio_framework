@@ -51,6 +51,7 @@ sequenceable audio_info..OHOS.AudioStandard.SystemRecordControllerConfig;
 sequenceable audio_info..OHOS.AudioStandard.SystemRecordControllerChangeInfo;
 sequenceable stream_flag_info..OHOS.AudioStandard.StreamFlagInfo;
 sequenceable audio_info..OHOS.AudioStandard.VolumeProtectionConfig;
+sequenceable audio_anco_playback_info..OHOS.AudioStandard.AncoPlaybackInfo;
 
 // ! WARNING !
 // ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
@@ -73,7 +74,7 @@ interface IAudioPolicy {
     void SetAdjustVolumeForZone([in] int zoneId);
     void IsAppVolumeMute([in] int appUid, [in] boolean muted, [out] boolean isMute);
     void SetSelfAppVolumeLevel([in] int volumeLevel, [in] int volumeFlag); /*volumeFlag default 0*/
-    void SetSystemVolumeLevelWithDevice([in] int volumeType, [in] int volumeLevel, [in] int deviceType, [in] int volumeFlag); /*volumeFlag default 0, DeviceType deviceType*/
+    void SetSystemVolumeLevelWithDevice([in] int volumeType, [in] int volumeLevel, [in] int deviceType, [in] int volumeFlag, [in] String macAddress); /*volumeFlag default 0, DeviceType deviceType*/
     void GetSystemVolumeLevel(
         [in] int volumeType, /* volumeType type is AudioVolumeType */
         [in] int uid,
@@ -293,6 +294,7 @@ interface IAudioPolicy {
     void SetQueryDeviceVolumeBehaviorCallback([in] IRemoteObject object);
     void GetVADeviceBroker([out] IRemoteObject client);
     void GetVADeviceController([in] String macAddress, [out] IRemoteObject controller);
+    void SetVADeviceExceptionFlag([in] String macAddress, [in] boolean exceptionFlag);
     void SetAppConcurrencyMode([in] int appUid, [in] int mode);
     void SetAppSilentOnDisplay([in] int displayId);
     void IsIntelligentNoiseReductionEnabledForCurrentDevice([in] int sourceType, [out] boolean ret);
@@ -300,6 +302,7 @@ interface IAudioPolicy {
     void GetSystemVolumeDegree([in] int volumeType, [in] int uid, [out] int volumeDegree, [in] int zoneId /* default INVALID_ZONEID */);
     void GetMinVolumeDegree([in] int volumeType, [in] int deviceType, [out] int volumeDegree);
     void SetAncoSourceOutputStreamMute([in] int uid, [in] boolean setMute);
+    void SetAncoPlaybackInfo([in] List<AncoPlaybackInfo> ancoPlaybackInfos);
     void UpdateSafeVolumeByStrMode();
     void SetOffloadAllowedForUid([in] unsigned int uid, [in] boolean allowed);
     [oneway] void RecordBootAnimationClientStateTime([in] List<long> info);
@@ -369,7 +372,7 @@ interface IAudioPolicy {
         [in] IRemoteObject object);
     void GetSystemVolumeDegreeWithDevice([in] int volumeType, [in] int deviceType,
         [in] String networkId, [out] int volumeDegree);
-    void SkipDeviceTypes([in] boolean skipped, [in] List<int> deviceTypes);
+    void SkipDeviceTypes([in] boolean skipped, [in] List<int> deviceTypes, [in] IRemoteObject object);
     void SetDuckFactor([in] int duckFactor);
     void DisableVolumeLimitWhenVoiceCall([in] boolean disableVolumeLimit);
     void SetVolumeControlPriority([in] List<int> priorities, [out] int ret);

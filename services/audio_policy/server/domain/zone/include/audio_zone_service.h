@@ -85,7 +85,9 @@ public:
         const StreamUsage &usage, DeviceRole deviceRole);
 #ifdef MULTI_USER_ZONE
     std::vector<int32_t> FindAudioZoneByDeviceForExtZone(const std::shared_ptr<AudioDeviceDescriptor> &device);
+    std::vector<int32_t> FindAudioZoneByMacAddress(const std::string &macAddress);
     void RemoveDeviceToGlobalFromZones(const std::shared_ptr<AudioDeviceDescriptor> &device);
+    bool HasConnectedA2dpInExtZone();
 #endif
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, DeviceType deviceType, bool enable);
@@ -182,9 +184,9 @@ private:
 #endif
     std::vector<uint32_t> GetLocalSessionIds(const std::shared_ptr<AudioInterruptService> &interruptService,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
-    void WriteZoneDeviceChange(int32_t zoneId, bool isBind,
+    void WriteZoneDeviceChange(const std::string &zoneName, bool isBind,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
-    void WriteZoneKeyChange(int32_t zoneId, bool isBind, const AudioZoneBindKey &key);
+    void WriteZoneKeyChange(const std::string &zoneName, bool isBind, const AudioZoneBindKey &key);
 };
 } // namespace AudioStandard
 } // namespace OHOS

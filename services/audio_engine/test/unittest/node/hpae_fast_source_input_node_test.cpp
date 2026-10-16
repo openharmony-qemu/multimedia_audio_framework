@@ -313,6 +313,29 @@ HWTEST_F(HpaeFastSourceInputNodeTest, CapturerSourceInitRejectsInvalidInputs, Te
 }
 
 /**
+ * @tc.name  : CapturerSourceInitReleasesSourceOnFailure
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_032
+ * @tc.desc  : Test CapturerSourceInit releases source and captureId_ when Init fails.
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, CapturerSourceInitReleasesSourceOnFailure, TestSize.Level1)
+{
+    IAudioSourceAttr attr;
+    InitAudioSourceAttr(attr);
+
+    auto fastNode = CreateFastNode();
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    AttachMockSource(fastNode, mockSource);
+    EXPECT_CALL(*mockSource, IsInited()).WillOnce(Return(false)).WillRepeatedly(Return(false));
+    EXPECT_CALL(*mockSource, Init(_)).WillOnce(Return(ERROR));
+
+    EXPECT_NE(fastNode->CapturerSourceInit(attr), SUCCESS);
+    EXPECT_EQ(fastNode->audioCapturerSource_, nullptr);
+    EXPECT_EQ(fastNode->captureId_, HDI_INVALID_ID);
+    EXPECT_EQ(fastNode->CapturerSourceDeInit(), SUCCESS);
+}
+
+/**
  * @tc.name  : CapturerSourceInitAndDeInit
  * @tc.type  : FUNC
  * @tc.number: HpaeFastSourceInputNodeTest_006

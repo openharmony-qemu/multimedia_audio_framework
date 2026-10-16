@@ -78,6 +78,12 @@ private:
 #endif
     bool needEmptyChunk_ = true;
     std::unordered_map<SplitStreamType, StreamUsage> usageMap_;
+
+    void OnTraceInfoChanged() override;
+    void RebuildTraceName();
+
+    // Cached DoProcess trace name; rebuilt in ctor and whenever node info changes
+    std::string processTraceName_;
 };
 
 }  // namespace HPAE

@@ -693,14 +693,19 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPolicyManager::GetActiveBluetoothDev
 
 int32_t AudioPolicyManager::SkipDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes)
 {
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
+    sptr<IRemoteObject> object = GetAudioPolicyClientStubObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "audio policy client stub object is NULL.");
     std::vector<int32_t> deviceTypeVec;
     deviceTypeVec.reserve(deviceTypes.size());
     for (auto deviceType : deviceTypes) {
         deviceTypeVec.push_back(static_cast<int32_t>(deviceType));
     }
-    return gsp->SkipDeviceTypes(skipped, deviceTypeVec);
+
+    return gsp->SkipDeviceTypes(skipped, deviceTypeVec, object);
 }
 
 int32_t AudioPolicyManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
@@ -873,6 +878,14 @@ int32_t AudioPolicyManager::GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrap
     CHECK_AND_RETURN_RET_LOG(vaBrokerWrapper != nullptr, ERROR, "vaBrokerWrapper is null");
     vaBroker = vaBrokerWrapper;
 
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::SetVADeviceExceptionFlag(const std::string &macAddress, bool exceptionFlag)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is null");
+    gsp->SetVADeviceExceptionFlag(macAddress, exceptionFlag);
     return SUCCESS;
 }
 

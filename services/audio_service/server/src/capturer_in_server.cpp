@@ -827,7 +827,7 @@ void CapturerInServer::HandleMultiAncoCapturer(const std::vector<std::string> &b
 
 bool CapturerInServer::TurnOnMicIndicator()
 {
-    uint32_t tokenId = processConfig_.appInfo.appTokenId;
+    uint32_t tokenId = processConfig_.effectivePrivacyTokenId;
     if (isMicIndicatorOn_) {
         AUDIO_WARNING_LOG("MicIndicator:already on, Stream:%{public}u.", streamIndex_);
     } else {
@@ -849,7 +849,7 @@ bool CapturerInServer::TurnOnMicIndicator()
 
 bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
 {
-    uint32_t tokenId = processConfig_.appInfo.appTokenId;
+    uint32_t tokenId = processConfig_.effectivePrivacyTokenId;
     if (isMicIndicatorOn_) {
         bool ret = RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, streamIndex_);
         if (!ret) {

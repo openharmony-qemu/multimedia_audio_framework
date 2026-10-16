@@ -2876,8 +2876,8 @@ HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpSuspendWhenLoad_001, TestSize.Level
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->Init();
 
-    audioCoreService->a2dpNeedSuspend_.store(true);
-    EXPECT_TRUE(audioCoreService->HandleA2dpSuspendWhenLoad());
+    audioCoreService->a2dpSuspendStates_["test_mac"].needSuspend = true;
+    EXPECT_TRUE(audioCoreService->HandleA2dpSuspendWhenLoad("test_mac"));
 }
 
 /**
@@ -2891,8 +2891,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpSuspendWhenLoad_002, TestSize.Level
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->Init();
 
-    audioCoreService->a2dpNeedSuspend_.store(false);
-    EXPECT_FALSE(audioCoreService->HandleA2dpSuspendWhenLoad());
+    EXPECT_FALSE(audioCoreService->HandleA2dpSuspendWhenLoad("test_mac"));
 }
 
 /**
@@ -2906,12 +2905,12 @@ HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpRestore_001, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->Init();
 
-    audioCoreService->a2dpNeedSuspend_ = false;
+    audioCoreService->a2dpSuspendStates_["test_mac"].needSuspend = false;
     const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
-    audioCoreService->a2dpSuspendUntil_ = std::chrono::steady_clock::now() +
+    audioCoreService->a2dpSuspendStates_["test_mac"].suspendUntil = std::chrono::steady_clock::now() +
         std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
-    audioCoreService->HandleA2dpRestore();
-    EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
+    audioCoreService->HandleA2dpRestore("test_mac");
+    EXPECT_FALSE(audioCoreService->a2dpSuspendStates_["test_mac"].needSuspend);
 }
 
 /**
@@ -2925,12 +2924,12 @@ HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpRestore_002, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->Init();
 
-    audioCoreService->a2dpNeedSuspend_ = true;
+    audioCoreService->a2dpSuspendStates_["test_mac"].needSuspend = true;
     const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
-    audioCoreService->a2dpSuspendUntil_ = std::chrono::steady_clock::now() +
+    audioCoreService->a2dpSuspendStates_["test_mac"].suspendUntil = std::chrono::steady_clock::now() +
         std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
-    audioCoreService->HandleA2dpRestore();
-    EXPECT_TRUE(audioCoreService->a2dpNeedSuspend_);
+    audioCoreService->HandleA2dpRestore("test_mac");
+    EXPECT_TRUE(audioCoreService->a2dpSuspendStates_["test_mac"].needSuspend);
 }
 
 /**
@@ -2944,14 +2943,15 @@ HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpRestore_003, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->Init();
 
-    audioCoreService->a2dpNeedSuspend_ = true;
+    audioCoreService->a2dpSuspendStates_["test_mac"].needSuspend = true;
     const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
     auto now = std::chrono::steady_clock::now();
-    audioCoreService->a2dpSuspendUntil_ = now - std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
+    audioCoreService->a2dpSuspendStates_["test_mac"].suspendUntil =
+        now - std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
     auto afterSuspend = now + std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
-    audioCoreService->HandleA2dpRestore();
+    audioCoreService->HandleA2dpRestore("test_mac");
     EXPECT_TRUE(std::chrono::steady_clock::now() < afterSuspend);
-    EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
+    EXPECT_EQ(audioCoreService->a2dpSuspendStates_.count("test_mac"), 0);
 }
 
 /**

@@ -150,6 +150,9 @@ ohos_shared_library("hdiadapter_new") {
   if (audio_framework_feature_multi_bus) {
     defines += [ "MULTI_BUS_ENABLE" ]
   }
+  if (audio_framework_feature_multi_user_zone) {
+    defines += [ "MULTI_USER_ZONE" ]
+  }
   
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -253,12 +256,16 @@ ohos_unittest("hdiadapter_unit_test") {
 
   defines = []
 
+  if (audio_framework_feature_multi_user_zone) {
+    defines += [ "MULTI_USER_ZONE" ]
+  }
+
   if (audio_framework_feature_power_manager) {
     sources += [ "util/audio_running_lock.cpp" ]
     defines += [ "FEATURE_POWER_MANAGER" ]
     external_deps += [ "power_manager:powermgr_client" ]
   }
-  
+
   if (audio_framework_feature_distributed_audio) {
     sources += [
       "test/unittest/remote_device_manager_unit_test.cpp",

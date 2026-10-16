@@ -33,7 +33,7 @@ namespace {
 static const int32_t REFETCH_DEVICE = 4;
 constexpr int32_t REMOTE_USER_TERMINATED = 200;
 constexpr int32_t DUAL_CONNECTION_FAILURE = 201;
-constexpr int32_t KARAOKE_START_MUTE_DURATION_US = 850000;
+constexpr int32_t KARAOKE_START_MUTE_DURATION_US = 1200000;
 } // namespace
 int32_t AudioSleDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)

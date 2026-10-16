@@ -842,5 +842,45 @@ HWTEST_F(AudioA2dpDeviceUnitTest, ReloadOrOpenAudioPort_001, TestSize.Level1)
     EXPECT_NE(result, 0);
 }
 
+/**
+ * @tc.name: LoadA2dpModuleInner_001
+ * @tc.desc: Test AudioA2dpDeviceBehavior LoadA2dpModuleInner with sink role (output branch)
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, LoadA2dpModuleInner_001, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "a2dp_sink";
+    moduleInfo.role = "sink";
+    moduleInfo.macAddress = "test_mac";
+    AudioIOHandle ioHandle = 1;
+    uint32_t paIndex = 1;
+    int32_t result = a2dpDeviceBehavior_.LoadA2dpModuleInner(moduleInfo, ioHandle, paIndex);
+    EXPECT_EQ(result, SUCCESS);
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->RemoveAudioPipeInfo(ioHandle);
+}
+
+/**
+ * @tc.name: LoadA2dpModuleInner_002
+ * @tc.desc: Test AudioA2dpDeviceBehavior LoadA2dpModuleInner with source role (input branch)
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, LoadA2dpModuleInner_002, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "a2dp_source";
+    moduleInfo.role = "source";
+    moduleInfo.macAddress = "test_mac";
+    AudioIOHandle ioHandle = 2;
+    uint32_t paIndex = 2;
+    int32_t result = a2dpDeviceBehavior_.LoadA2dpModuleInner(moduleInfo, ioHandle, paIndex);
+    EXPECT_EQ(result, SUCCESS);
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->RemoveAudioPipeInfo(ioHandle);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

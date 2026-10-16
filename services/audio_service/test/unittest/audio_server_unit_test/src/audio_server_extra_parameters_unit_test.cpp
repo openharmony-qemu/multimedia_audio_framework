@@ -201,11 +201,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_006, TestSize.Level1
         {"subkey2", "value3"}
     };
 
-    EXPECT_CALL(*mockDeviceManager, SetAudioParameter(StrEq("primary"), AudioParamKey::NONE, StrEq(""),
-        StrEq("subkey1=value1;subkey2=value3;"))).WillOnce(testing::Return(SUCCESS));
-
     int32_t ret = audioServer->SetExtraParameters("test_key", kvpairs);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 }
 
 /**

@@ -19,6 +19,7 @@
 #include "audio_info.h"
 #include "audio_policy_interface.h"
 #include "audio_group_manager.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -136,6 +137,7 @@ public:
     int32_t SetBackgroundMuteCallback(const std::shared_ptr<AudioBackgroundMuteCallback> &callback);
     int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);
+    int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
 
     /**
      * @brief Set system sound uri

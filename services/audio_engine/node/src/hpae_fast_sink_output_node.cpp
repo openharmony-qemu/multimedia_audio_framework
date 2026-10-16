@@ -26,6 +26,7 @@
 
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
+#include "util/id_handler.h"
 #include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "volume_tools.h"
@@ -166,8 +167,9 @@ void HpaeFastSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcm
 int32_t HpaeFastSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId)
 {
     Trace trace("HpaeFastSinkOutputNode::GetRenderSinkInstance " + deviceClass + "_" + deviceNetId);
-    std::string idInfo = deviceNetId.empty() ? HDI_ID_INFO_DEFAULT : deviceNetId;
-    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, true);
+    HdiIdInfoParam param = {.deviceClass = deviceClass, .networkId = deviceNetId};
+    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
+        IdHandler::SelectIdInfo(param), true);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
         AUDIO_ERR_LOG("GetRenderSinkInstance failed, deviceClass:%{public}s deviceNetId:%{public}s renderId:%{public}u",
@@ -198,8 +200,13 @@ int32_t HpaeFastSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
         Trace hdiInitTrace("HDI::Init sessionId[" + std::to_string(GetSessionId()) + "]");
         ret = audioRendererSink_->Init(attr);
         hdiInitTrace.End();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-            "audioRendererSink_ init failed, errCode is %{public}d", ret);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("audioRendererSink_ init failed, errCode is %{public}d", ret);
+            // Release the sink reference on init failure to avoid leaking renderId_.
+            audioRendererSink_ = nullptr;
+            HdiAdapterManager::GetInstance().ReleaseId(renderId_);
+            return ret;
+        }
     }
     adapterType_ = attr.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? ADAPTER_TYPE_VOIP_FAST :
         (isUltraFast_ ? ADAPTER_TYPE_ULTRA_FAST : ADAPTER_TYPE_FAST);
@@ -383,7 +390,7 @@ int32_t HpaeFastSinkOutputNode::RefreshSpanSize(bool &isUpdated)
         "sync:%{public}u)", GetSessionId(), oldFd, oldTotal, oldSpan, oldByte, oldSync, dstBufferFd_,
         dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_, syncInfoSize_);
 
-    GetNodeInfo().frameLen = dstSpanSizeInframe_;
+    SetFrameLen(dstSpanSizeInframe_);
     readTimeModel_.SetSpanCount(dstSpanSizeInframe_);
     writeTimeModel_.SetSpanCount(dstSpanSizeInframe_);
 
@@ -494,7 +501,7 @@ int32_t HpaeFastSinkOutputNode::PrepareDeviceBuffer()
     int32_t ret = GetAdapterBufferInfo();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
         "GetAdapterBufferInfo fail, ret:%{public}d", ret);
-    GetNodeInfo().frameLen = dstSpanSizeInframe_;
+    SetFrameLen(dstSpanSizeInframe_);
     readTimeModel_.SetSpanCount(dstSpanSizeInframe_);
     writeTimeModel_.SetSpanCount(dstSpanSizeInframe_);
     uint32_t sampleRate = sinkOutAttr_.sampleRate == 0 ? GetNodeInfo().samplingRate : sinkOutAttr_.sampleRate;

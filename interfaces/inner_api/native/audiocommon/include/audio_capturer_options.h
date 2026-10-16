@@ -50,6 +50,7 @@ struct AudioCapturerOptions {
     AudioStreamInfo ecStreamInfo;
     StaticAudioPlaybackCaptureConfig staticPlaybackCaptureConfig;
     bool mixWithWakeUp = false;
+    uint32_t actualUsingTokenId = INVALID_ACTUAL_USING_TOKEN_ID;
 };
 }  //namespace AudioStandard
 }  //namespace OHOS

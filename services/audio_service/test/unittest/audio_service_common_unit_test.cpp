@@ -1454,7 +1454,9 @@ HWTEST(AudioServiceCommonUnitTest, CheckWriteOrReadFrame_001, TestSize.Level1)
 HWTEST(AudioServiceCommonUnitTest, CheckWriteOrReadFrame_002, TestSize.Level1)
 {
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 10;
-    EXPECT_FALSE(g_oHAudioBuffer->CheckWriteOrReadFrame(15));
+    // After alignment check removal, CheckWriteOrReadFrame only checks spanSizeInFrame != 0.
+    // spanSizeInFrame=10 (non-zero), so any frame value is valid and returns true.
+    EXPECT_TRUE(g_oHAudioBuffer->CheckWriteOrReadFrame(15));
 }
 
 /**

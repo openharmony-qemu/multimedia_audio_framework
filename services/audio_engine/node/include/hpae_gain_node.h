@@ -82,6 +82,12 @@ private:
     std::shared_ptr<StreamVolume> streamVolume_;
     std::shared_ptr<PipeVolume> pipeVolume_;
     bool isFast_ = false;
+
+    void OnTraceInfoChanged() override;
+    void RebuildTraceName();
+
+    // Cached SignalProcess trace name; rebuilt in ctor and whenever node info changes
+    std::string traceName_;
 };
 
 }  // namespace HPAE

@@ -393,9 +393,11 @@ inline const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
     CHANNEL_6,
     CHANNEL_7,
     CHANNEL_8,
-    CHANNEL_9
+    CHANNEL_9,
+    CHANNEL_10,
+    CHANNEL_12,
+    CHANNEL_16
 };
-
 
 inline const std::vector<AudioEncodingType> AUDIO_SUPPORTED_ENCODING_TYPES {
     ENCODING_PCM,
@@ -558,6 +560,8 @@ struct AudioCallBackStreamInfo {
     std::string deviceNetId;
     // Sensitive: never print in plain text logs or hidump
     std::string macAddress;
+    std::string deviceName; // module name, primary_extra id-info discriminator (see IdHandler::SelectIdInfo)
+    std::string busAddress; // multi-bus port address, highest-priority id-info source (see IdHandler::SelectIdInfo)
     bool needData = false;
     bool forceData = false;
     uint64_t writePos_ = 0;

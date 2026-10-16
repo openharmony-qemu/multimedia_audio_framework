@@ -636,19 +636,21 @@ HWTEST_F(AudioVolumeUnitTest, GetSimpleBufferAvg_001, TestSize.Level1)
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
  * @tc.number: GetFadeStrategy_001
- * @tc.desc  : Test AudioVolume interface.
+ * @tc.desc  : Test GetFadeStrategy with default band (unset or longer than 40ms).
  */
 HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_001, TestSize.Level1)
 {
-    auto audioVolume = std::make_shared<AudioVolume>();
-    ASSERT_TRUE(audioVolume != nullptr);
+    // 4 bytes per frame at 48000Hz: 10ms = 1920 bytes, 40ms = 7680 bytes
+    const uint64_t byteSizePerFrame = 4;
+    const uint32_t sampleRate = 48000;
 
-    uint64_t expectedPlaybackDurationMs = 0;
-    auto ret = GetFadeStrategy(expectedPlaybackDurationMs);
+    auto ret = GetFadeStrategy(0, byteSizePerFrame, sampleRate); // unset duration
     EXPECT_EQ(ret, FADE_STRATEGY_DEFAULT);
 
-    expectedPlaybackDurationMs = 50;
-    ret = GetFadeStrategy(expectedPlaybackDurationMs);
+    ret = GetFadeStrategy(7681, byteSizePerFrame, sampleRate); // just above 40ms
+    EXPECT_EQ(ret, FADE_STRATEGY_DEFAULT);
+
+    ret = GetFadeStrategy(19200000, byteSizePerFrame, sampleRate); // 10s content
     EXPECT_EQ(ret, FADE_STRATEGY_DEFAULT);
 }
 
@@ -656,27 +658,26 @@ HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_001, TestSize.Level1)
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
  * @tc.number: GetFadeStrategy_002
- * @tc.desc  : Test AudioVolume interface.
+ * @tc.desc  : Test GetFadeStrategy with none/shorter band boundaries.
  */
 HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_002, TestSize.Level1)
 {
-    auto audioVolume = std::make_shared<AudioVolume>();
-    ASSERT_TRUE(audioVolume != nullptr);
+    const uint64_t byteSizePerFrame = 4;
+    const uint32_t sampleRate = 48000;
 
-    uint64_t expectedPlaybackDurationMs = 5;
-    auto ret = GetFadeStrategy(expectedPlaybackDurationMs);
+    auto ret = GetFadeStrategy(1, byteSizePerFrame, sampleRate); // sub-millisecond
     EXPECT_EQ(ret, FADE_STRATEGY_NONE);
 
-    expectedPlaybackDurationMs = -1;
-    ret = GetFadeStrategy(expectedPlaybackDurationMs);
-    EXPECT_EQ(ret, FADE_STRATEGY_DEFAULT);
+    ret = GetFadeStrategy(1920, byteSizePerFrame, sampleRate); // exactly 10ms
+    EXPECT_EQ(ret, FADE_STRATEGY_NONE);
 
-    expectedPlaybackDurationMs = 15;
-    ret = GetFadeStrategy(expectedPlaybackDurationMs);
+    ret = GetFadeStrategy(1921, byteSizePerFrame, sampleRate); // just above 10ms
     EXPECT_EQ(ret, FADE_STRATEGY_SHORTER);
 
-    expectedPlaybackDurationMs = 15;
-    ret = GetFadeStrategy(expectedPlaybackDurationMs);
+    ret = GetFadeStrategy(3840, byteSizePerFrame, sampleRate); // 20ms
+    EXPECT_EQ(ret, FADE_STRATEGY_SHORTER);
+
+    ret = GetFadeStrategy(7680, byteSizePerFrame, sampleRate); // exactly 40ms
     EXPECT_EQ(ret, FADE_STRATEGY_SHORTER);
 }
 
@@ -1438,23 +1439,50 @@ HWTEST_F(AudioVolumeUnitTest, GetStopFadeoutState_003, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetCurVolume_002 API
+ * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
- * @tc.number: GetCurVolume_002
- * @tc.desc  : Test GetCurVolume_002 interface
+ * @tc.number: GetFadeStrategy_003
+ * @tc.desc  : Test GetFadeStrategy with truncated byte boundaries (1 byte per frame at 22050Hz).
  */
 HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_003, TestSize.Level1)
 {
-    uint64_t DURATION_TIME_DEFAULT = 40;
-    uint64_t DURATION_TIME_SHORT = 10;
-    uint64_t DURATION_INIT = 0;
-    EXPECT_EQ(FADE_STRATEGY_DEFAULT, GetFadeStrategy(DURATION_INIT));
-    EXPECT_EQ(FADE_STRATEGY_DEFAULT, GetFadeStrategy(DURATION_TIME_DEFAULT + 1));
-    EXPECT_EQ(FADE_STRATEGY_NONE, GetFadeStrategy(DURATION_TIME_SHORT));
-    EXPECT_EQ(FADE_STRATEGY_NONE, GetFadeStrategy(DURATION_INIT + 1));
-    EXPECT_EQ(FADE_STRATEGY_SHORTER, GetFadeStrategy(DURATION_TIME_SHORT + 1));
-    EXPECT_EQ(FADE_STRATEGY_SHORTER, GetFadeStrategy(DURATION_TIME_DEFAULT - 1));
-    EXPECT_EQ(FADE_STRATEGY_SHORTER, GetFadeStrategy(DURATION_TIME_DEFAULT));
+    // boundaries truncate to 220 bytes (10ms) and 882 bytes (40ms)
+    const uint64_t byteSizePerFrame = 1;
+    const uint32_t sampleRate = 22050;
+
+    EXPECT_EQ(FADE_STRATEGY_NONE, GetFadeStrategy(220, byteSizePerFrame, sampleRate));
+    EXPECT_EQ(FADE_STRATEGY_SHORTER, GetFadeStrategy(221, byteSizePerFrame, sampleRate));
+    EXPECT_EQ(FADE_STRATEGY_SHORTER, GetFadeStrategy(882, byteSizePerFrame, sampleRate));
+    EXPECT_EQ(FADE_STRATEGY_DEFAULT, GetFadeStrategy(883, byteSizePerFrame, sampleRate));
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetFadeStrategy_004
+ * @tc.desc  : Test GetFadeStrategy with invalid geometry.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_004, TestSize.Level1)
+{
+    EXPECT_EQ(FADE_STRATEGY_DEFAULT, GetFadeStrategy(1920, 0, 48000)); // byteSizePerFrame is 0
+    EXPECT_EQ(FADE_STRATEGY_DEFAULT, GetFadeStrategy(1920, 4, 0)); // sampleRate is 0
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetFadeStrategy_005
+ * @tc.desc  : Regression: huge duration bytes must not overflow into short-fade bands.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_005, TestSize.Level1)
+{
+    const uint64_t byteSizePerFrame = 4;
+    const uint32_t sampleRate = 48000;
+
+    // old implementation computed ms = bytes * 1000 / bytesPerSec, the multiply wrapped around 2^64
+    EXPECT_EQ(FADE_STRATEGY_DEFAULT, GetFadeStrategy(UINT64_MAX, byteSizePerFrame, sampleRate));
+    // UINT64_MAX / 1000 + 200 used to wrap to 1ms and misclassify as FADE_STRATEGY_NONE
+    EXPECT_EQ(FADE_STRATEGY_DEFAULT, GetFadeStrategy(UINT64_MAX / 1000 + 200, byteSizePerFrame, sampleRate));
 }
 
 /**

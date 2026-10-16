@@ -58,6 +58,18 @@ HpaeFastSourceInputNode::HpaeFastSourceInputNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeFastSourceInputNode::OnTraceInfoChanged()
+{
+    RebuildTraceName();
+}
+
+void HpaeFastSourceInputNode::RebuildTraceName()
+{
+    processTraceName_ = "[" + std::to_string(GetNodeId()) + "]HpaeFastSourceInputNode::DoProcess "
+        + GetTraceInfo();
 }
 
 HpaeFastSourceInputNode::~HpaeFastSourceInputNode()
@@ -75,7 +87,7 @@ HpaeFastSourceInputNode::~HpaeFastSourceInputNode()
 
 void HpaeFastSourceInputNode::DoProcess()
 {
-    Trace trace("[" + std::to_string(GetNodeId()) + "]HpaeFastSourceInputNode::DoProcess " + GetTraceInfo());
+    Trace trace(processTraceName_);
     CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr, "audioCapturerSource_ is nullptr");
     CHECK_AND_RETURN_LOG(srcAudioBuffer_ != nullptr, "srcAudioBuffer_ is nullptr");
     CHECK_AND_RETURN(GetSourceState() == STREAM_MANAGER_RUNNING);
@@ -177,7 +189,14 @@ int32_t HpaeFastSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
         ERROR, "invalid audioCapturerSource");
     audioSourceAttr_ = attr;
     if (!audioCapturerSource_->IsInited()) {
-        CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Init(attr) == SUCCESS, ERROR, "Source init fail");
+        int32_t initRet = audioCapturerSource_->Init(attr);
+        if (initRet != SUCCESS) {
+            AUDIO_ERR_LOG("Source init fail");
+            // Release the source reference on init failure to avoid leaking captureId_.
+            audioCapturerSource_ = nullptr;
+            HdiAdapterManager::GetInstance().ReleaseId(captureId_);
+            return ERROR;
+        }
     }
     int32_t ret = PrepareDeviceBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "PrepareDeviceBuffer failed");
@@ -349,7 +368,7 @@ int32_t HpaeFastSourceInputNode::PrepareDeviceBuffer()
 {
     int32_t ret = GetAdapterBufferInfo();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAdapterBufferInfo failed");
-    GetNodeInfo().frameLen = srcSpanSizeInframe_;
+    SetFrameLen(srcSpanSizeInframe_);
     writeTimeModel_.SetSpanCount(srcSpanSizeInframe_);
     uint32_t sampleRate = audioSourceAttr_.sampleRate == 0 ? GetNodeInfo().samplingRate : audioSourceAttr_.sampleRate;
     CHECK_AND_RETURN_RET_LOG(sampleRate > 0, ERR_INVALID_PARAM, "sampleRate is invalid");

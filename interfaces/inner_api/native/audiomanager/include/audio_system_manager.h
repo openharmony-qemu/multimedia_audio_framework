@@ -25,6 +25,7 @@
 #include "audio_workgroup_client_manager.h"
 #include "audio_capturer_types.h"
 #include "audio_record_control_manager.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -64,11 +65,13 @@ public:
      * @param volumeType Enumerates the audio volume type.
      * @param volume The volume to be set for the current stream.
      * @param deviceType The volume to be set for the device.
+     * @param macAddress The volume to be set for the macAddress, only effect on car.
      * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 16
      */
-    int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType);
+    int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType,
+        std::string macAddress = "");
 
     /**
      * @brief Set the system-controlled app volume percentage for the specified UID.
@@ -1304,6 +1307,7 @@ public:
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);
+    int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
     int32_t SetAudioVKBInfoMgrCallback(const std::shared_ptr<AudioVKBInfoMgrCallback> &callback);
     int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);

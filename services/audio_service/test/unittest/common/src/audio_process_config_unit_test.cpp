@@ -17,6 +17,7 @@
 #include "audio_stream_types.h"
 #include <gtest/gtest.h>
 #include <string>
+#include "parcel.h"
 
 using namespace OHOS::AudioStandard;
 
@@ -194,6 +195,59 @@ HWTEST_F(AudioProcessConfigUnitTest, DumpProcessConfig_EdgeCases, testing::ext::
     result = ProcessConfig::DumpProcessConfig(config);
     EXPECT_FALSE(result.empty());
     EXPECT_NE(result.find("rendererInfo"), std::string::npos);
+}
+
+HWTEST_F(AudioProcessConfigUnitTest, DumpProcessConfig_ActualUsingTokenId, testing::ext::TestSize.Level1)
+{
+    AudioProcessConfig config = GetDefaultProcessConfig();
+    config.actualUsingTokenId = 0;
+    std::string result = ProcessConfig::DumpProcessConfig(config);
+    EXPECT_FALSE(result.empty());
+    // When 0, should not be dumped
+    EXPECT_EQ(result.find("actualUsingTokenId"), std::string::npos);
+
+    config.actualUsingTokenId = 88888;
+    result = ProcessConfig::DumpProcessConfig(config);
+    EXPECT_FALSE(result.empty());
+    EXPECT_NE(result.find("actualUsingTokenId"), std::string::npos);
+    EXPECT_NE(result.find("88888"), std::string::npos);
+}
+
+HWTEST_F(AudioProcessConfigUnitTest, Marshalling_ActualUsingTokenId_Default, testing::ext::TestSize.Level1)
+{
+    AudioProcessConfig config = GetDefaultProcessConfig();
+    config.audioMode = AudioMode::AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    config.actualUsingTokenId = 0;
+
+    OHOS::Parcel parcel;
+    bool ret = config.Marshalling(parcel);
+    EXPECT_TRUE(ret);
+    parcel.RewindRead(0);
+
+    std::unique_ptr<AudioProcessConfig> deConfig(AudioProcessConfig::Unmarshalling(parcel));
+    ASSERT_NE(deConfig, nullptr);
+    EXPECT_EQ(deConfig->actualUsingTokenId, 0u);
+    EXPECT_EQ(deConfig->appInfo.appTokenId, config.appInfo.appTokenId);
+}
+
+HWTEST_F(AudioProcessConfigUnitTest, Marshalling_ActualUsingTokenId_Set, testing::ext::TestSize.Level1)
+{
+    AudioProcessConfig config = GetDefaultProcessConfig();
+    config.audioMode = AudioMode::AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    config.actualUsingTokenId = 99999;
+
+    OHOS::Parcel parcel;
+    bool ret = config.Marshalling(parcel);
+    EXPECT_TRUE(ret);
+    parcel.RewindRead(0);
+
+    std::unique_ptr<AudioProcessConfig> deConfig(AudioProcessConfig::Unmarshalling(parcel));
+    ASSERT_NE(deConfig, nullptr);
+    EXPECT_EQ(deConfig->actualUsingTokenId, 99999u);
+    // creator appTokenId must remain unchanged
+    EXPECT_EQ(deConfig->appInfo.appTokenId, config.appInfo.appTokenId);
 }
 
 } // namespace AudioStandard

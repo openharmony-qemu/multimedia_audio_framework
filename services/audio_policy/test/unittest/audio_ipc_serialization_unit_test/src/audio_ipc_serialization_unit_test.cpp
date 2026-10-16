@@ -206,7 +206,8 @@ static bool IsAudioDeviceDescriptorEqual(const AudioDeviceDescriptor &a, const A
         a.hasPair_ == b.hasPair_ &&
         a.isVrSupported_ == b.isVrSupported_ &&
         a.sinkLatencyMs_ == b.sinkLatencyMs_ &&
-        a.sinkLatencyValid_ == b.sinkLatencyValid_;
+        a.sinkLatencyValid_ == b.sinkLatencyValid_ &&
+        a.isPriorityReduced_ == b.isPriorityReduced_;
 }
 
 static bool IsAudioProcessConfigEqual(const AudioProcessConfig &a, const AudioProcessConfig &b)
@@ -575,6 +576,7 @@ HWTEST(AudioIpcSerializationUnitTest, AudioDeviceDescriptor_001, TestSize.Level1
     descriptor.isVrSupported_ = true;
     descriptor.sinkLatencyMs_ = TEST_VALUE_4 * 10;
     descriptor.sinkLatencyValid_ = true;
+    descriptor.isPriorityReduced_ = true;
 
     EXPECT_TRUE(descriptor.Marshalling(parcel));
     auto newDescriptor = std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel));

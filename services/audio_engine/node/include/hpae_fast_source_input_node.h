@@ -98,6 +98,8 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckRecordSignal(uint8_t *buffer, size_t bufferSize);
+    void OnTraceInfoChanged() override;
+    void RebuildTraceName();
 
     OutputPort<HpaePcmBuffer *> outputStream_;
     PcmBufferInfo pcmBufferInfo_;
@@ -131,6 +133,9 @@ private:
     bool latencyMeasEnabled_ = false;
     bool signalDetected_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+
+    // Cached DoProcess trace name; rebuilt in ctor and whenever node info changes
+    std::string processTraceName_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

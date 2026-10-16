@@ -40,6 +40,7 @@
 #include "boot_animation_state_info.h"
 #include "audio_separation_effect_enabled_change_callback.h"
 #include "audio_info.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -67,7 +68,7 @@ public:
         int32_t volumeFlag = 0, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID);
 
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
-        int32_t volumeFlag = 0);
+        int32_t volumeFlag = 0, std::string macAddress = "");
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0);
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
@@ -276,6 +277,8 @@ public:
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);
+
+    int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
 
     int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
 
@@ -820,6 +823,7 @@ public:
     int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrapper> &vaBroker);
+    int32_t SetVADeviceExceptionFlag(const std::string &macAddress, bool exceptionFlag);
     bool IsCollaborativePlaybackSupported();
     bool IsCollaborativePlaybackSupportedForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);

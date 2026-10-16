@@ -479,12 +479,12 @@ int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int
 }
 
 int32_t AudioPolicyManager::SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
-    DeviceType deviceType, int32_t volumeFlag)
+    DeviceType deviceType, int32_t volumeFlag, std::string macAddress)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, -1);
 
-    return gsp->SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType, volumeFlag);
+    return gsp->SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType, volumeFlag, macAddress);
 }
 
 int32_t AudioPolicyManager::SetRingerModeLegacy(AudioRingerMode ringMode)
@@ -1303,6 +1303,13 @@ int32_t AudioPolicyManager::SetAncoSourceOutputStreamMute(int32_t uid, bool setM
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetAncoSourceOutputStreamMute(uid, setMute);
+}
+
+int32_t AudioPolicyManager::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
+    return gsp->SetAncoPlaybackInfo(ancoPlaybackInfos);
 }
 
 int32_t AudioPolicyManager::SetQueryBundleNameListCallback(

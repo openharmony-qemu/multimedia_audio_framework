@@ -39,6 +39,7 @@
 #include "audio_connected_device.h"
 #include "boot_animation_state_info.h"
 #include "audio_iohandle_map.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -316,7 +317,8 @@ public:
     void SetVgsVolumeSupported(bool isVgsSupported);
     bool IsVgsVolumeSupported() const;
 
-    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType,
+        int32_t zoneId = 0);
     int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     int32_t UpdateDeviceSpatialEnabled(const std::string &address, const AudioSpatializationState &state);
@@ -543,7 +545,7 @@ private:
     void RedirectVolumeType(std::shared_ptr<AudioStreamDescriptor> streamDescriptor,
         AudioVolumeType &volumeType);
     void SaveSpecifiedDeviceVolumeInner(AudioStreamType streamType, int32_t volumeLevel,
-        DeviceType deviceType);
+        DeviceType deviceType, int32_t zoneId);
     void SaveSystemAppVolumeLevelToDb();
     void SaveSystemAppVolumeMuteStatusToDb(bool isAsync);
     int32_t RestoreSystemAppVolumeLevel();

@@ -72,7 +72,7 @@ HWTEST_F(OHAudioBufferAiut, OHAudioBuffer_CheckWriteOrReadFrame_Valid, TestSize.
 /**
  * @tc.name  : Test CheckWriteOrReadFrame with unaligned frame
  * @tc.number: OHAudioBuffer_CheckWriteOrReadFrame_Unaligned
- * @tc.desc  : Test CheckWriteOrReadFrame returns false with non-span-aligned frame.
+ * @tc.desc  : Test CheckWriteOrReadFrame returns true with non-span-aligned frame (alignment check removed).
  */
 HWTEST_F(OHAudioBufferAiut, OHAudioBuffer_CheckWriteOrReadFrame_Unaligned, TestSize.Level1)
 {
@@ -80,7 +80,7 @@ HWTEST_F(OHAudioBufferAiut, OHAudioBuffer_CheckWriteOrReadFrame_Unaligned, TestS
     auto buffer = CreateTestBuffer();
     AIUT_ASSERT_NE_INFO_LOG(buffer, nullptr, "buffer is null");
     bool ret = buffer->CheckWriteOrReadFrame(TEST_FRAME_POS_100);
-    AIUT_EXPECT_FALSE_INFO_LOG(ret, "CheckWriteOrReadFrame should return false for unaligned frame");
+    AIUT_EXPECT_TRUE_INFO_LOG(ret, "CheckWriteOrReadFrame should return true for unaligned frame (alignment removed)");
 }
 
 /**
@@ -525,7 +525,7 @@ HWTEST_F(OHAudioBufferAiut, OHAudioBuffer_SetCurReadWriteFrame, TestSize.Level0)
 /**
  * @tc.name  : Test SetCurWriteFrame with unaligned frame via OHAudioBuffer
  * @tc.number: OHAudioBuffer_SetCurWriteFrame_Unaligned
- * @tc.desc  : Test SetCurWriteFrame returns ERR_INVALID_PARAM with unaligned frame.
+ * @tc.desc  : Test SetCurWriteFrame returns SUCCESS with unaligned frame (alignment check removed).
  */
 HWTEST_F(OHAudioBufferAiut, OHAudioBuffer_SetCurWriteFrame_Unaligned, TestSize.Level1)
 {
@@ -533,8 +533,8 @@ HWTEST_F(OHAudioBufferAiut, OHAudioBuffer_SetCurWriteFrame_Unaligned, TestSize.L
     auto buffer = CreateTestBuffer();
     AIUT_ASSERT_NE_INFO_LOG(buffer, nullptr, "buffer is null");
     int32_t ret = buffer->SetCurWriteFrame(TEST_FRAME_POS_100, false);
-    AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
-        "SetCurWriteFrame unaligned should fail, ret=%d", ret);
+    AIUT_EXPECT_EQ_INFO_LOG(ret, SUCCESS,
+        "SetCurWriteFrame unaligned should succeed (alignment removed), ret=%d", ret);
 }
 
 /**

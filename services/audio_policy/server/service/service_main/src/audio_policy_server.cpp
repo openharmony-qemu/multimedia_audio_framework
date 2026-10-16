@@ -57,6 +57,7 @@
 #include "audio_select_interface_service.h"
 #include "audio_router_infra.h"
 #include "audio_device_info.h"
+#include "audio_device_manager.h"
 #include "stream_dfx_manager.h"
 #include "audio_record_controller.h"
 #include "ipc_skeleton.h"
@@ -397,7 +398,6 @@ void AudioPolicyServer::AddSystemAbilityListeners()
 void AudioPolicyServer::AddSystemAbilityListenerAfterAudioServerStart()
 {
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
-    AddSystemAbilityListener(FUSION_CONNECTIVITY_SA_ID);
 }
 
 void AudioPolicyServer::OnStop()
@@ -497,9 +497,6 @@ void AudioPolicyServer::HandleAudioServerRelatedSystemAbility(int32_t systemAbil
             break;
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             RegisterBluetoothListener();
-            break;
-        case FUSION_CONNECTIVITY_SA_ID:
-            RegisterFusionConnectivityListener();
             break;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
         case INPUT_METHOD_SYSTEM_ABILITY_ID:
@@ -1529,7 +1526,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(int32_t streamTypeIn, int32_t vo
 }
 
 int32_t AudioPolicyServer::SetSystemVolumeLevelWithDevice(int32_t streamTypeIn, int32_t volumeLevel,
-    int32_t deviceTypeIn, int32_t volumeFlag)
+    int32_t deviceTypeIn, int32_t volumeFlag, const std::string &macAddress)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
     DeviceType deviceType = static_cast<DeviceType>(deviceTypeIn);
@@ -1547,7 +1544,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDevice(int32_t streamTypeIn, 
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetSystemVolumeLevelWithDeviceInternal(streamType, volumeLevel,
-        volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, deviceType);
+        volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, deviceType, macAddress);
 }
 
 int32_t AudioPolicyServer::GetSystemActiveVolumeType(int32_t clientUid, int32_t &streamType)
@@ -1944,7 +1941,7 @@ int32_t AudioPolicyServer::IsAppVolumeMute(int32_t appUid, bool owned, bool &isM
 // LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
-    bool isUpdateUi, DeviceType deviceType)
+    bool isUpdateUi, DeviceType deviceType, std::string macAddress)
 {
     AUDIO_INFO_LOG("%{public}s streamType: %{public}d, volumeLevel: %{public}d, "
         "updateUi: %{public}d, deviceType: %{public}d", __func__, streamType, volumeLevel, isUpdateUi, deviceType);
@@ -1954,7 +1951,8 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal(AudioStreamTyp
         AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
         return ERR_OPERATION_FAILED;
     }
-    return audioVolumeManager_.SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
+    return audioVolumeManager_.SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType,
+        macAddress);
 }
 
 int32_t AudioPolicyServer::GetStreamMute(int32_t streamTypeIn, bool &mute)
@@ -2988,6 +2986,16 @@ int32_t AudioPolicyServer::SetAncoSourceOutputStreamMute(int32_t uid, bool setMu
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    return audioPolicyService_.SetAncoPlaybackInfo(ancoPlaybackInfos);
+}
+
+int32_t AudioPolicyServer::GetAncoPlaybackInfo(std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    return audioPolicyService_.GetAncoPlaybackInfo(ancoPlaybackInfos);
+}
+
 int32_t AudioPolicyServer::SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object)
 {
     if (object == nullptr) {
@@ -3686,6 +3694,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfosForZone(int32_t zoneId,
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId %{public}d is invalid", zoneId);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
 
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> allRendererChangeInfos;
     int32_t result = GetCurrentRendererChangeInfos(allRendererChangeInfos);
@@ -3769,9 +3778,6 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     {
         std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
         eventEntry_->RegisteredTrackerClientDied(uid, pid);
-        eventEntry_->ClearSelectedInputDeviceByUid(uid);
-        eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
-            BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
 
         auto filter = [&pid](int val) {
             return pid == val;
@@ -3809,9 +3815,6 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
 
     AudioZoneService::GetInstance().UnRegisterAudioZoneClient(pid);
     AudioZoneService::GetInstance().ReleaseAudioZoneByClientPid(pid);
-    eventEntry_->ClearSelectedInputDeviceByUid(uid);
-    eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
-        BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
 }
 
 int32_t AudioPolicyServer::ResumeStreamState()
@@ -4079,12 +4082,6 @@ void AudioPolicyServer::RegisterBluetoothListener()
 {
     AUDIO_INFO_LOG("OnAddSystemAbility bluetooth service start");
     coreService_->RegisterBluetoothListener();
-}
-
-void AudioPolicyServer::RegisterFusionConnectivityListener()
-{
-    AUDIO_INFO_LOG("OnAddSystemAbility fusion connectivity manager ext start");
-    coreService_->RegisterFusionConnectivityListener();
 }
 
 void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
@@ -5274,9 +5271,20 @@ int32_t AudioPolicyServer::GetActiveBluetoothDevice(std::shared_ptr<AudioDeviceD
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes)
+int32_t AudioPolicyServer::SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes,
+    const sptr<IRemoteObject> &object)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "no system permission");
+    if (object != nullptr) {
+        sptr<AudioServerDeathRecipient> deathRecipient = new(std::nothrow) AudioServerDeathRecipient(
+            IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid());
+        CHECK_AND_RETURN_RET_LOG(deathRecipient != nullptr, ERROR, "new AudioServerDeathRecipient failed");
+        deathRecipient->SetNotifyCb([this] (pid_t pid, pid_t uid) {
+            this->eventEntry_->SkipDeviceTypes(false, {});
+        });
+        CHECK_AND_RETURN_RET_LOG(object->AddDeathRecipient(deathRecipient), ERROR, "AddDeathRecipient failed");
+    }
     std::vector<DeviceType> deviceTypeVec;
     deviceTypeVec.reserve(deviceTypes.size());
     for (auto deviceType : deviceTypes) {
@@ -6401,6 +6409,25 @@ int32_t AudioPolicyServer::GetVADeviceBroker(sptr<IRemoteObject> &client)
 int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, sptr<IRemoteObject>& controller)
 {
     VADeviceManager::GetInstance().GetDeviceController(macAddress, controller);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetVADeviceExceptionFlag(const std::string& macAddress, bool exceptionFlag)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    auto connectedDevices = AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
+    for (auto &devDesc : connectedDevices) {
+        if (devDesc != nullptr && devDesc->macAddress_ == macAddress &&
+            (devDesc->deviceType_ == DEVICE_TYPE_BT_SPP || devDesc->deviceType_ == DEVICE_TYPE_NEARLINK_PORT)) {
+            devDesc->exceptionFlag_ = exceptionFlag;
+            AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+            AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(
+                std::make_shared<AudioDeviceDescriptor>(*devDesc), EXCEPTION_FLAG_UPDATE, reason);
+            eventEntry_->FetchInputDeviceAndRoute("SetVADeviceExceptionFlag");
+            break;
+        }
+    }
     return SUCCESS;
 }
 

@@ -194,7 +194,10 @@ bool AudioPipeInfo::IsNormalSourcePipe(bool isEcFeatureEnable) const
     std::unordered_set<std::string> normalSourceModuleNames = {
         BLUETOOTH_MIC,
         PRIMARY_MIC,
-        VIRTUAL_AUDIO
+        VIRTUAL_AUDIO,
+        VA_INPUT_SPP,
+        VA_INPUT_UNIDIRECTIONAL_SPP,
+        VA_INPUT_NEARLINK
     };
     if (isEcFeatureEnable) {
         normalSourceModuleNames.insert(USB_MIC);

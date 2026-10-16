@@ -31,6 +31,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -282,7 +283,7 @@ public:
     virtual void UpdateSafeVolumeByS4() = 0;
 
     virtual int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
-        DeviceType deviceType) = 0;
+        DeviceType deviceType, int32_t zoneId = 0) = 0;
 
     virtual int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled) = 0;
     virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) = 0;

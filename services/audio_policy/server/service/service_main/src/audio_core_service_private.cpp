@@ -211,7 +211,7 @@ bool AudioCoreService::HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeR
                 !actived.IsSameDeviceDescPtr(stream->newDeviceDescs_.front());
         });
         if (activedWillChange) {
-            HandleA2dpSuspend();
+            HandleA2dpSuspend(actived.macAddress_);
             return true;
         }
     }
@@ -219,28 +219,28 @@ bool AudioCoreService::HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeR
     return false;
 }
 
-void AudioCoreService::HandleA2dpSuspend()
+void AudioCoreService::HandleA2dpSuspend(const std::string &macAddress)
 {
+    CHECK_AND_RETURN_LOG(!macAddress.empty(), "macAddress is empty");
     std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
 
-    auto action = std::make_shared<RestoreA2dpSinkAction>();
+    auto action = std::make_shared<RestoreA2dpSinkAction>(macAddress);
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
     AsyncActionHandler::AsyncActionDesc desc;
     desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
     desc.delayTimeMs = OLD_DEVICE_UNAVALIABLE_SUSPEND_MS;
 
     CHECK_AND_RETURN_LOG(asyncHandler_ != nullptr, "asyncHandler_ is nullptr");
-    a2dpSuspendUntil_ = std::chrono::steady_clock::now() +
+    auto &state = a2dpSuspendStates_[macAddress];
+    state.suspendUntil = std::chrono::steady_clock::now() +
         std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
     CHECK_AND_RETURN_LOG(asyncHandler_->PostAsyncAction(desc), "post async action fail");
 
-    if (a2dpNeedSuspend_) {
-        return;
-    }
+    CHECK_AND_RETURN(!state.needSuspend);
 
-    AUDIO_INFO_LOG("suspend a2dp");
-    AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp");
-    a2dpNeedSuspend_ = true;
+    AUDIO_INFO_LOG("suspend a2dp, macAddress: %{public}s", GetEncryptAddr(macAddress).c_str());
+    AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp", macAddress);
+    state.needSuspend = true;
 }
 
 bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
@@ -496,6 +496,7 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
     CheckNeedPreRemoveUnusedPipe(pipeInfos);
     uint32_t audioFlag;
+    RemoveAndCloseUnusedCapturerPipe(pipeInfos);
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         HILOG_COMM_INFO("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
@@ -1122,6 +1123,7 @@ int32_t AudioCoreService::FetchCapturerPipeAndExecute(std::shared_ptr<AudioStrea
 
     CheckNeedPreRemoveUnusedPipe(pipeInfos);
 
+    RemoveAndCloseUnusedCapturerPipe(pipeInfos);
     for (auto &pipeInfo : pipeInfos) {
         HILOG_COMM_INFO("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
@@ -1232,9 +1234,9 @@ void AudioCoreService::ProcessInputPipeReload(std::shared_ptr<AudioPipeInfo> pip
     ProcessInputPipeUpdate(pipeInfo, flag);
 }
 
-void AudioCoreService::RemoveUnusedPipe(const AudioStreamDeviceChangeReasonExt reason)
+void AudioCoreService::RemoveAndCloseUnusedPipeInternal(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos,
+    const AudioStreamDeviceChangeReasonExt &reason)
 {
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedPipe();
     bool isOldDeviceUnavailable = reason.IsOldDeviceUnavaliable() || reason.IsOldDeviceUnavaliableExt();
     for (auto pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
@@ -1280,6 +1282,20 @@ void AudioCoreService::RemoveUnusedPipe(const AudioStreamDeviceChangeReasonExt r
         audioPolicyManager_.RemoveAudioPipeVolume(pipeInfo->id_);
     }
     StopNoRunningPipe();
+}
+
+void AudioCoreService::RemoveUnusedPipe(const AudioStreamDeviceChangeReasonExt reason)
+{
+    RemoveAndCloseUnusedPipeInternal(pipeManager_->GetUnusedPipe(), reason);
+}
+
+void AudioCoreService::RemoveAndCloseUnusedCapturerPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos,
+    const AudioStreamDeviceChangeReasonExt reason)
+{
+    // Keep enhanced-routing capability gating in one place for all capturer fetch paths.
+    CHECK_AND_RETURN_LOG(Util::IsEnhancedRoutingSupported(), "enhanced routing is not supported");
+    auto unusedPipes = pipeManager_->GetUnusedPipeForCapturer(pipeInfos);
+    RemoveAndCloseUnusedPipeInternal(unusedPipes, reason);
 }
 
 void AudioCoreService::RemoveUnusedRecordPipe()
@@ -1828,8 +1844,7 @@ void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> s
 }
 
 void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-    const std::vector<SourceOutput>& sourceOutputs,
-    std::shared_ptr<AudioPipeInfo> pipeInfo)
+    const std::vector<SourceOutput>& sourceOutputs, std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
     Trace trace("AudioCoreService::MoveToNewInputDevice");
     std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_, sourceOutputs);
@@ -1875,7 +1890,7 @@ int32_t AudioCoreService::MoveToLocalInputDevice(std::vector<SourceOutput> sourc
 
     uint32_t sourceId = -1; // invalid source id, use source name instead.
     std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(localDeviceDescriptor->deviceType_,
-        routeFlag);
+        routeFlag, localDeviceDescriptor->isUnidirectional_);
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
         int32_t ret = audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputs[i].paStreamId,
             sourceId, sourceName);
@@ -3665,7 +3680,12 @@ bool AudioCoreService::DeactivateA2dpAfterExclude(
         return false;
     }
 
-    audioPolicyManager_.StopAudioPort(BLUETOOTH_SPEAKER);
+    for (const auto &deviceDesc : excludeDeviceDescs) {
+        CHECK_AND_CONTINUE(deviceDesc != nullptr && deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP);
+        std::string moduleName = AudioPolicyUtils::GetInstance().GetA2dpModuleName(
+            deviceDesc->macAddress_, OUTPUT_DEVICE);
+        audioPolicyManager_.StopAudioPort(moduleName);
+    }
     if (Bluetooth::AudioA2dpManager::GetActiveA2dpDeviceLocal() != EMPTY_ADDRESS) {
         Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(NULL_ADDRESS);
     }

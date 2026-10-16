@@ -121,6 +121,7 @@ public:
     pid_t GetClientPid();
 
     bool CheckDeviceInZone(AudioDeviceDescriptor device);
+    bool CheckDeviceInZone(const std::string &macAddress);
 
     bool HasVolumeControllableDeviceInZone();
 

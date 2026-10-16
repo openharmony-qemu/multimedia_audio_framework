@@ -36,6 +36,7 @@
 #include "audio_format_utils.h"
 #include "audio_bundle_manager.h"
 #include "os_account_subprofile_client.h"
+#include "util/id_handler.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -804,7 +805,7 @@ int32_t AudioAdapterManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType 
     VolumeScale buffedVolume = volume;
     volumeDataMaintainer_.SaveVolumeToMap(volDeviceDesc, streamType, buffedVolume, zoneId);
     SetRemoteVolumeForPassThroughDevice(volDeviceDesc, volumeLevel);
-    return SetVolumeDbForDeviceInPipe(volDeviceDesc, streamType);
+    return SetVolumeDbForDeviceInPipe(volDeviceDesc, streamType, zoneId);
 }
 
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, const VolumeScale &volume,
@@ -860,33 +861,40 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, co
 }
 
 int32_t AudioAdapterManager::SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
-    DeviceType deviceType)
+    DeviceType deviceType, int32_t zoneId)
 {
     AUDIO_INFO_LOG("%{public}s: streamType: %{public}d, volumeLevel: %{public}d, "
-        "deviceType: %{public}d",  __func__, streamType, volumeLevel, deviceType);
-    int32_t mimRet = GetMinVolumeLevel(streamType, deviceType);
-    int32_t maxRet = GetMaxVolumeLevel(streamType, deviceType);
+        "deviceType: %{public}d, zoneId: %{public}d",  __func__, streamType, volumeLevel, deviceType, zoneId);
+    int32_t mimRet = GetMinVolumeLevel(streamType, deviceType, zoneId);
+    int32_t maxRet = GetMaxVolumeLevel(streamType, deviceType, zoneId);
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope,mimRet:%{public}d maxRet:%{public}d", mimRet, maxRet);
-    SaveSpecifiedDeviceVolumeInner(streamType, volumeLevel, deviceType);
+    SaveSpecifiedDeviceVolumeInner(streamType, volumeLevel, deviceType, zoneId);
     return SUCCESS;
 }
 
 void AudioAdapterManager::SaveSpecifiedDeviceVolumeInner(AudioStreamType streamType, int32_t volumeLevel,
-    DeviceType deviceType)
+    DeviceType deviceType, int32_t zoneId)
 {
-    std::thread([this, streamType, volumeLevel, deviceType]() {
+    std::thread([this, streamType, volumeLevel, deviceType, zoneId]() {
         AUDIO_INFO_LOG("SaveSpecifiedDeviceVolumeInner: streamType: %{public}d, volumeLevel: %{public}d, "
             "deviceType: %{public}d", streamType, volumeLevel, deviceType);
-        auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
-        VolumeScale volume = {volumeLevel, -1, GetMaxVolumeLevel(streamType, deviceType)};
-        volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volume);
-        auto descs = audioConnectedDevice_.GetCopy();
-        for (auto &temp : descs) {
-            CHECK_AND_CONTINUE(temp != nullptr);
-            CHECK_AND_CONTINUE(temp->deviceType_ == deviceType);
-            volumeDataMaintainer_.InitDeviceVolumeMap(temp);
-            UpdateSafeVolumeInner(temp);
+        std::shared_ptr<AudioDeviceDescriptor> desc;
+        VolumeScale volume = {volumeLevel, -1, GetMaxVolumeLevel(streamType, deviceType, zoneId)};
+        if (zoneId > 0) {
+            desc = AudioZoneService::GetInstance().GetDeviceDescriptor(zoneId, deviceType);
+            volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volume, zoneId);
+            volumeDataMaintainer_.InitDeviceVolumeMap(desc, zoneId);
+        } else {
+            desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
+            volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volume, zoneId);
+            auto descs = audioConnectedDevice_.GetCopy();
+            for (auto &temp : descs) {
+                CHECK_AND_CONTINUE(temp != nullptr);
+                CHECK_AND_CONTINUE(temp->deviceType_ == deviceType);
+                volumeDataMaintainer_.InitDeviceVolumeMap(temp);
+                UpdateSafeVolumeInner(temp);
+            }
         }
     }).detach();
 }
@@ -1207,6 +1215,10 @@ int32_t AudioAdapterManager::SetStreamMute(std::shared_ptr<AudioDeviceDescriptor
     AudioStreamType streamType, bool mute, StreamUsage streamUsage, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is null");
+    CHECK_AND_RETURN_RET_LOG(!device->volumeBehavior_.isVolumeControlDisabled,
+        ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED,
+        "device->volumeBehavior_.isVolumeControlDisabled is true!");
+
     int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
     if (isSetStreamMute == SUCCESS) {
         return SUCCESS;
@@ -2297,17 +2309,10 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
 
 std::string AudioAdapterManager::GetHdiSinkIdInfo(const AudioModuleInfo &audioModuleInfo) const
 {
-    if (!audioModuleInfo.busAddress.empty()) {
-        return audioModuleInfo.busAddress;
-    }
-    if (audioModuleInfo.className == "remote" || audioModuleInfo.className == "remote_offload" ||
-        audioModuleInfo.className == "remote_multichannel") {
-        return audioModuleInfo.networkId;
-    }
-    if (audioModuleInfo.className == PRIMARY_EXTRA_CLASS) {
-        return audioModuleInfo.name;
-    }
-    return HDI_ID_INFO_DEFAULT;
+    // Delegate to the single priority source shared with the engine side
+    HdiIdInfoParam param = {audioModuleInfo.className, audioModuleInfo.name, audioModuleInfo.networkId,
+        audioModuleInfo.macAddress, audioModuleInfo.busAddress};
+    return IdHandler::SelectIdInfo(param);
 }
 
 std::string AudioAdapterManager::GetHdiSourceIdInfo(const AudioModuleInfo &audioModuleInfo) const
@@ -2324,7 +2329,8 @@ std::string AudioAdapterManager::GetHdiSourceIdInfo(const AudioModuleInfo &audio
     if (audioModuleInfo.className == "primary_extra_capturer") {
         return audioModuleInfo.name;
     }
-    return HDI_ID_INFO_DEFAULT;
+    CHECK_AND_RETURN_RET(audioModuleInfo.className == "va", HDI_ID_INFO_DEFAULT);
+    return audioModuleInfo.name.empty() ? std::string(HDI_ID_INFO_VA) : audioModuleInfo.name;
 }
 
 static AudioSampleFormat ParseSinkAudioSampleFormat(const std::string &format)
@@ -3607,11 +3613,6 @@ void AudioAdapterManager::SetAbsVolumeScene(const std::string &macAddress, bool 
             absVolumeMuteMap_[macAddress] = (volume == 0) ? true : false;
         }
     }
-    // The global projection (effect state and shared scene) only follows the active devices.
-    if (!audioActiveDevice_.IsActiveBtDevice(macAddress)) {
-        AUDIO_INFO_LOG("non-active device, skip global abs volume scene projection");
-        return;
-    }
     CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "SetAbsVolumeScene audio adapter null");
     audioServiceAdapter_->SetAbsVolumeStateToEffect(isAbsVolumeScene);
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(isAbsVolumeScene);
@@ -4584,7 +4585,7 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
         CHECK_AND_CONTINUE(it != group.volumeTypeIoHandles_.end());
         AUDIO_INFO_LOG("device: %{public}d, networkId: %{private}s, pipeIds size: %{public}zu",
             desc->deviceType_, desc->networkId_.c_str(), it->second.size());
-        UpdateTypeVolumeForPipe(volumeType, group.deviceDesc_, it->second);
+        UpdateTypeVolumeForPipe(volumeType, group.deviceDesc_, it->second, zoneId);
     }
     return SUCCESS;
 }
@@ -4620,13 +4621,13 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
         return;
     }
 
-    bool isMuted = GetStreamMuteForVolumeSet(device, volumeType);
-    int32_t volumeLevel = GetStreamVolumeInternal(device, volumeType) * (isMuted ? 0 : 1);
+    bool isMuted = GetStreamMuteForVolumeSet(device, volumeType, zoneId);
+    int32_t volumeLevel = GetStreamVolumeInternal(device, volumeType, zoneId) * (isMuted ? 0 : 1);
     SaveSystemVolumeForSwitchDevice(device, volumeType, volumeLevel);
 
     bool useSpeaker = Util::IsDualToneStreamType(volumeType);
     DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : device->deviceType_;
-    int32_t volumeDegree = GetStreamVolumeDegreeInternal(device, volumeType) * (isMuted ? 0 : 1);
+    int32_t volumeDegree = GetStreamVolumeDegreeInternal(device, volumeType, zoneId) * (isMuted ? 0 : 1);
 
     float volumeDb = volumeAdjustZoneId_ == 0 ? CalculateVolumeDbByDegree(deviceType, volumeType, volumeDegree) :
         CalculateVolumeDbNonlinear(volumeType, deviceType, volumeLevel);
@@ -4705,6 +4706,10 @@ std::string AudioAdapterManager::GetModuleArgsLog(const AudioModuleInfo &audioMo
     tempModuleInfo.networkId = IsRemoteAdapter(tempModuleInfo.adapterName) ?
         GetEncryptStr(tempModuleInfo.networkId) : tempModuleInfo.networkId;
 
+#ifdef MULTI_USER_ZONE
+    tempModuleInfo.name = tempModuleInfo.adapterName == ADAPTER_A2DP_TYPE ?
+        GetEncryptStr(tempModuleInfo.name) : tempModuleInfo.name;
+#endif
     return GetModuleArgs(tempModuleInfo);
 }
 

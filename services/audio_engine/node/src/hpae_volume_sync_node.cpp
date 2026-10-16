@@ -37,7 +37,8 @@ HpaeVolumeSyncNode::HpaeVolumeSyncNode(HpaeNodeInfo &nodeInfo)
 {
     AUDIO_INFO_LOG("HpaeVolumeSyncNode created, SessionId:%{public}u deviceClass:%{public}s",
         GetSessionId(), GetDeviceClass().c_str());
-    renderId_ = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
+    renderId_ = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(),
+        IdHandler::SelectIdInfo(BuildIdInfoParam()));
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeVolumeSyncNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -60,7 +61,8 @@ HpaeVolumeSyncNode::~HpaeVolumeSyncNode()
 std::shared_ptr<IAudioRenderSink> HpaeVolumeSyncNode::GetRenderSink()
 {
     if (renderId_ == HDI_INVALID_ID) {
-        renderId_ = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
+        renderId_ = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(),
+            IdHandler::SelectIdInfo(BuildIdInfoParam()));
     }
     return HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
 }

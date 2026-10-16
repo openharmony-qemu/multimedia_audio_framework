@@ -50,6 +50,7 @@
 #include "audio_policy_manager_listener.h"
 #include "audio_device_manager.h"
 #include "audio_policy_dump.h"
+#include "audio_anco_playback_info.h"
 #include "app_state_listener.h"
 #include "audio_core_service.h"
 #include "audio_converter_parser.h"
@@ -110,7 +111,7 @@ public:
         int32_t uid, int32_t zoneId = INVALID_ZONEID) override;
 
     int32_t SetSystemVolumeLevelWithDevice(int32_t volumeType, int32_t volumeLevel, int32_t deviceType,
-        int32_t volumeFlag = 0) override;
+        int32_t volumeFlag = 0, const std::string &macAddress = "") override;
 
     int32_t SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage) override;
 
@@ -341,6 +342,9 @@ public:
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute) override;
+
+    int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos) override;
+    int32_t GetAncoPlaybackInfo(std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
 
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) override;
 
@@ -639,7 +643,8 @@ public:
 
     int32_t GetActiveBluetoothDevice(std::shared_ptr<AudioDeviceDescriptor> &descs) override;
 
-    int32_t SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes) override;
+    int32_t SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes,
+        const sptr<IRemoteObject> &object = nullptr) override;
 
     int32_t GetConverterConfig(ConverterConfig &cfg) override;
 
@@ -734,6 +739,7 @@ public:
     int32_t GetVADeviceBroker(sptr<IRemoteObject> &client) override;
 
     int32_t GetVADeviceController(const std::string &macAddress, sptr<IRemoteObject> &controller) override;
+    int32_t SetVADeviceExceptionFlag(const std::string &macAddress, bool exceptionFlag) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
     std::set<int32_t> GetStreamIdsForAudioSessionByStreamUsage(
@@ -905,7 +911,7 @@ private:
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedRingtoneVolume = false);
     int32_t SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
-        bool isUpdateUi, DeviceType deviceType);
+        bool isUpdateUi, DeviceType deviceType, std::string macAddress = "");
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
@@ -948,7 +954,6 @@ private:
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
     void RegisterBluetoothListener();
-    void RegisterFusionConnectivityListener();
     void SubscribeAccessibilityConfigObserver();
     void RegisterDataObserver();
     void RegisterPowerStateListener();

@@ -28,8 +28,7 @@ public:
     virtual ~IHpaeOutputCluster() = default;
     virtual int32_t GetConverterNodeCount() = 0;
     virtual int32_t GetPreOutNum() = 0;
-    virtual int32_t GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
-        const std::string &macAddress = "") = 0;
+    virtual int32_t GetInstance(const HdiIdInfoParam &param) = 0;
     virtual int32_t Init(IAudioSinkAttr &attr) = 0;
     virtual int32_t DeInit() = 0;
     virtual int32_t Flush(void) = 0;

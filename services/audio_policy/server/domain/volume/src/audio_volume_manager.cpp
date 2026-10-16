@@ -70,7 +70,7 @@ const int32_t DUAL_TONE_RING_VOLUME = 0;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
 constexpr const char *HIPLAY_DEVICE = "hiplay";
 constexpr int32_t RSS_UID = 1096;
-constexpr int32_t KARAOKE_DISABLE_MUTE_DURATION_US = 850000;
+constexpr int32_t KARAOKE_DISABLE_MUTE_DURATION_US = 1200000;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -300,7 +300,7 @@ int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLev
     return appVolumeManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioVolumeManager::GetDeviceForVolumeWithZone(int32_t &zoneId,
+std::shared_ptr<AudioDeviceDescriptor> AudioVolumeManager::GetDeviceForVolumeWithZone(int32_t zoneId,
     AudioVolumeType volumeType, StreamUsage streamUsage, DeviceType fallbackDeviceType) const
 {
     if (zoneId > 0) {
@@ -314,7 +314,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioVolumeManager::GetDeviceForVolumeWit
         }
         // Zone device not available, fall back to the original device fetch and global volume.
         AUDIO_WARNING_LOG("fetch device from zone %{public}d failed, fallback to GetDeviceForVolume", zoneId);
-        zoneId = 0;
     }
     return fallbackDeviceType == DEVICE_TYPE_NONE ?
         audioActiveDevice_.GetDeviceForVolume(volumeType) :
@@ -619,7 +618,11 @@ int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
     audioActiveDevice_.SetAdjustVolumeForZone(zoneId);
-    return audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
+    int32_t ret = audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
+    }
+    return ret;
 }
 
 int32_t AudioVolumeManager::HandleA2dpAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
@@ -843,10 +846,10 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelInternal(AudioStreamType streamT
 }
 
 int32_t AudioVolumeManager::SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
-    DeviceType deviceType)
+    DeviceType deviceType, int32_t zoneId)
 {
     return audioPolicyManager_.SaveSpecifiedDeviceVolume(
-        VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel, deviceType);
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel, deviceType, zoneId);
 }
 
 VolumeScale AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, VolumeScale volume,
@@ -2598,7 +2601,7 @@ bool AudioVolumeManager::ShouldNotifyForLegacyVolume(int32_t volumeLevel)
 }
 
 int32_t AudioVolumeManager::SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel,
-    bool isUpdateUi, DeviceType deviceType)
+    bool isUpdateUi, DeviceType deviceType, std::string macAddress)
 {
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "desc is nullptr");
@@ -2611,11 +2614,16 @@ int32_t AudioVolumeManager::SetSingleStreamVolumeWithDevice(AudioStreamType stre
     }
 
     int32_t ret = SUCCESS;
+    int32_t zoneId = 0;
+#ifdef MULTI_USER_ZONE
+    auto zoneIds = AudioZoneService::GetInstance().FindAudioZoneByMacAddress(macAddress);
+    zoneId = zoneIds.size() > 0 ? zoneIds[0] : zoneId;
+#endif
     if (curOutputDeviceType != deviceType) {
-        ret = SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
+        ret = SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType, zoneId);
     } else {
-        bool mute = GetStreamMuteInterface(streamType);
-        VolumeUpdateOption option{isUpdateUi, mute};
+        bool mute = GetStreamMuteInterface(streamType, zoneId);
+        VolumeUpdateOption option{isUpdateUi, mute, zoneId};
         ret = SetSingleStreamVolume(streamType, volumeLevel, option);
     }
 
@@ -2624,10 +2632,10 @@ int32_t AudioVolumeManager::SetSingleStreamVolumeWithDevice(AudioStreamType stre
         VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
         int32_t resultOfNotification = SUCCESS;
         if (curOutputDeviceType != deviceType) {
-            resultOfNotification = SaveSpecifiedDeviceVolume(STREAM_NOTIFICATION, volumeLevel, deviceType);
+            resultOfNotification = SaveSpecifiedDeviceVolume(STREAM_NOTIFICATION, volumeLevel, deviceType, zoneId);
         } else {
-            bool mute = GetStreamMuteInterface(STREAM_NOTIFICATION);
-            VolumeUpdateOption option{isUpdateUi, mute};
+            bool mute = GetStreamMuteInterface(STREAM_NOTIFICATION, zoneId);
+            VolumeUpdateOption option{isUpdateUi, mute, zoneId};
             resultOfNotification = SetSingleStreamVolume(STREAM_NOTIFICATION, volumeLevel, option);
         }
         AUDIO_INFO_LOG(" Set notification volume result: %{public}d", resultOfNotification);

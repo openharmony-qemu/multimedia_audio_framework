@@ -1443,6 +1443,130 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038A, TestSize.Level
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_ActualUsingTokenId_003.
+ * @tc.desc  : TurnOnMicIndicator uses the effective token (actualUsingTokenId) for refcount.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_ActualUsingTokenId_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    // Simulate the post-create state: effectivePrivacyTokenId populated with proxy token at create time.
+    processConfig.effectivePrivacyTokenId = 5678;
+    processConfig.actualUsingTokenId = 5678;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->streamIndex_ = 200;
+    capturerInServer_->isMicIndicatorOn_ = false;
+
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+    // Pre-populate so NotifyPrivacyStart takes the early-return path (avoids PrivacyKit dep).
+    manager.tokenIdRecordMap_[5678] = {999};
+
+    auto ret = capturerInServer_->TurnOnMicIndicator();
+    EXPECT_TRUE(ret);
+    EXPECT_TRUE(capturerInServer_->isMicIndicatorOn_);
+    // The effective token (5678), not the creator token (1234), should be recorded.
+    EXPECT_EQ(manager.tokenIdRecordMap_.count(5678u), 1u);
+    EXPECT_EQ(manager.tokenIdRecordMap_.count(1234u), 0u);
+    EXPECT_EQ(manager.tokenIdRecordMap_[5678u].count(200u), 1u);
+
+    ret = capturerInServer_->TurnOffMicIndicator(CAPTURER_RELEASED);
+    EXPECT_TRUE(ret);
+    EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
+    // 200 should be removed; 999 still keeps the token entry (StopUsingMicrophone not called).
+    EXPECT_EQ(manager.tokenIdRecordMap_[5678u].count(200u), 0u);
+    manager.tokenIdRecordMap_.clear();
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_ActualUsingTokenId_004.
+ * @tc.desc  : When actualUsingTokenId == 0, TurnOnMicIndicator still uses creator appTokenId.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_ActualUsingTokenId_004, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.appInfo.appTokenId = 1234;
+    processConfig.effectivePrivacyTokenId = 1234; // non-proxy path: equals appTokenId
+    processConfig.actualUsingTokenId = 0;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->streamIndex_ = 201;
+    capturerInServer_->isMicIndicatorOn_ = false;
+
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+    manager.tokenIdRecordMap_[1234] = {888};
+
+    auto ret = capturerInServer_->TurnOnMicIndicator();
+    EXPECT_TRUE(ret);
+    // Creator token (1234) recorded, not some proxy token.
+    EXPECT_EQ(manager.tokenIdRecordMap_.count(1234u), 1u);
+    EXPECT_EQ(manager.tokenIdRecordMap_[1234u].count(201u), 1u);
+
+    capturerInServer_->TurnOffMicIndicator(CAPTURER_RELEASED);
+    manager.tokenIdRecordMap_.clear();
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_ActualUsingTokenId_006.
+ * @tc.desc  : Same target token multi-session refcount: start/stop one session
+ *             does not affect the other (concurrency).
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_ActualUsingTokenId_006, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    // Simulate the post-create state: effectivePrivacyTokenId populated with proxy token at create time.
+    processConfig.effectivePrivacyTokenId = 5678;
+    processConfig.actualUsingTokenId = 5678;
+    std::weak_ptr<IStreamListener> streamListener;
+
+    // Two capturers proxying to the same target token (5678), different sessions.
+    auto cap1 = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(cap1 != nullptr);
+    cap1->streamIndex_ = 100;
+    cap1->isMicIndicatorOn_ = false;
+    auto cap2 = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(cap2 != nullptr);
+    cap2->streamIndex_ = 200;
+    cap2->isMicIndicatorOn_ = false;
+
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+    // Pre-populate so NotifyPrivacyStart takes the early-return path (avoids PrivacyKit dep).
+    manager.tokenIdRecordMap_[5678] = {999};
+
+    // Both turn on the indicator with the same effective token.
+    EXPECT_TRUE(cap1->TurnOnMicIndicator());
+    EXPECT_TRUE(cap1->isMicIndicatorOn_);
+    EXPECT_TRUE(cap2->TurnOnMicIndicator());
+    EXPECT_TRUE(cap2->isMicIndicatorOn_);
+    // Both sessions should be recorded under the same target token.
+    EXPECT_EQ(manager.tokenIdRecordMap_[5678u].count(100u), 1u);
+    EXPECT_EQ(manager.tokenIdRecordMap_[5678u].count(200u), 1u);
+
+    // Stop one session; the other should keep the token alive (no StopUsingMicrophone).
+    EXPECT_TRUE(cap1->TurnOffMicIndicator(CAPTURER_STOPPED));
+    EXPECT_FALSE(cap1->isMicIndicatorOn_);
+    EXPECT_EQ(manager.tokenIdRecordMap_.count(5678u), 1u); // token still in map
+    EXPECT_EQ(manager.tokenIdRecordMap_[5678u].count(100u), 0u); // 100 removed
+    EXPECT_EQ(manager.tokenIdRecordMap_[5678u].count(200u), 1u); // 200 still there
+
+    // Stop the second session; session 200 removed.
+    EXPECT_TRUE(cap2->TurnOffMicIndicator(CAPTURER_RELEASED));
+    EXPECT_FALSE(cap2->isMicIndicatorOn_);
+    EXPECT_EQ(manager.tokenIdRecordMap_[5678u].count(200u), 0u);
+    manager.tokenIdRecordMap_.clear();
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
  * @tc.number: CapturerInServerUnitTest_038B.
  * @tc.desc  : Test StartInner with remote cast source.
  */

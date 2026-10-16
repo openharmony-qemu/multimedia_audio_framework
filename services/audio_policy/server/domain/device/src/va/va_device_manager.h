@@ -84,9 +84,13 @@ private:
 
     std::mutex statusMutex_;
 
-    void RegisterVAAdapterToMap();
+    void AddVADeviceToAdapter(const std::shared_ptr<VADevice> &vaDevice);
 
-    void AddVAStreamPropToMap(std::list<VAAudioStreamProperty> properties);
+    void GetVAPipeAndDeviceName(const VADeviceConfiguration &config,
+        std::string &pipeName, std::string &deviceName, DeviceType &deviceType);
+
+    void AddVAStreamPropToMap(std::list<VAAudioStreamProperty> properties,
+        const std::string &pipeName, const std::string &deviceName);
 
     std::shared_ptr<AudioDeviceDescriptor> ConvertVADeviceToDescriptor(const std::shared_ptr<VADevice> &vaDevice);
 

@@ -293,9 +293,10 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
 }
 
 int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
-    DeviceType deviceType)
+    DeviceType deviceType, std::string macAddress)
 {
-    return AudioVolumeClientManager::GetInstance().SetVolumeWithDevice(volumeType, volumeLevel, deviceType);
+    return AudioVolumeClientManager::GetInstance().SetVolumeWithDevice(volumeType, volumeLevel, deviceType,
+        macAddress);
 }
 
 int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType, int32_t uid, int32_t zoneId) const
@@ -641,6 +642,11 @@ std::string AudioSystemManager::GetSystemSoundUri(const std::string &key)
 std::string AudioSystemManager::GetSystemSoundPath(const int32_t systemSoundType)
 {
     return AudioSystemClientPolicyManager::GetInstance().GetSystemSoundPath(systemSoundType);
+}
+
+int32_t AudioSystemManager::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    return AudioSystemClientPolicyManager::GetInstance().SetAncoPlaybackInfo(ancoPlaybackInfos);
 }
 
 // Below stub implementation is added to handle compilation error in call manager
