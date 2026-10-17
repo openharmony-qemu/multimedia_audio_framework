@@ -556,16 +556,29 @@ void FastAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &para
 {
     param.channelCount = AUDIO_CHANNELCOUNT;
     param.interleaved = true;
-    param.streamId = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ?
-        static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP_FAST)) :
-        static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_FAST));
+    if (attr_.isUltraFast) {
+        param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE,
+            HDI_RENDER_OFFSET_ULTRA_FAST));
+    } else if (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) {
+        param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE,
+            HDI_RENDER_OFFSET_VOIP_FAST));
+    } else {
+        param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE,
+            HDI_RENDER_OFFSET_FAST));
+    }
     param.period = attr_.period == 0 ? DEEP_BUFFER_RENDER_PERIOD_SIZE : attr_.period;
     param.isBigEndian = false;
     param.isSignedData = true;
     param.stopThreshold = INT_MAX;
     param.silenceThreshold = 0;
 
-    param.type = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? AUDIO_MMAP_VOIP : AUDIO_MMAP_NOIRQ;
+    if (attr_.isUltraFast) {
+        param.type = AUDIO_ULTRA_LOW_LAT;
+    } else if (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) {
+        param.type = AUDIO_MMAP_VOIP;
+    } else {
+        param.type = AUDIO_MMAP_NOIRQ;
+    }
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
     if (param.channelCount == MONO) {
