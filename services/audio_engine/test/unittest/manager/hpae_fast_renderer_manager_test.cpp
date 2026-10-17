@@ -569,14 +569,14 @@ HWTEST_F(HpaeFastRendererManagerTest, handleMsg_001, TestSize.Level0)
  * @tc.name  : getThreadName_001
  * @tc.type  : FUNC
  * @tc.number: HpaeFastRendererManagerTest_029
- * @tc.desc  : Test GetThreadName returns device name
+ * @tc.desc  : Test GetThreadName returns fast audio out thread name
  */
 HWTEST_F(HpaeFastRendererManagerTest, getThreadName_001, TestSize.Level0)
 {
     HpaeSinkInfo sinkInfo = GetFastSinkInfo();
     sinkInfo.deviceName = "test_device";
     auto manager = std::make_shared<HpaeFastRendererManager>(sinkInfo);
-    EXPECT_EQ(manager->GetThreadName(), "test_device");
+    EXPECT_EQ(manager->GetThreadName(), ThreadName::FAST_AUDIO_OUT);
 }
 
 /**

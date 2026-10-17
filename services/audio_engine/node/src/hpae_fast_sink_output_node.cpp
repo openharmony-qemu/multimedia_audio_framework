@@ -22,6 +22,7 @@
 #include <cinttypes>
 #include <limits>
 #include <numeric>
+#include <pthread.h>
 #include <unistd.h>
 
 #include "hpae_format_convert.h"
@@ -591,6 +592,7 @@ void HpaeFastSinkOutputNode::AsyncGetPosTime()
             (void)GetDeviceHandleInfo(frames, nanoTime);
         }
     });
+    pthread_setname_np(updatePosTimeThread_.native_handle(), ThreadName::FAST_AUDIO_OUT_POSITION);
 }
 
 void HpaeFastSinkOutputNode::UpdateVirtualDeviceHandleInfo()

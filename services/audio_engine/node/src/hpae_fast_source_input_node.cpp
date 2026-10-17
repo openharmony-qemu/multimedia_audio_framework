@@ -20,6 +20,7 @@
 
 #include <cinttypes>
 #include <chrono>
+#include <pthread.h>
 
 #include "audio_engine_log.h"
 #include "audio_errors.h"
@@ -422,6 +423,7 @@ void HpaeFastSourceInputNode::AsyncGetPosTime()
             (void)GetDeviceHandleInfo(frames, nanoTime);
         }
     });
+    pthread_setname_np(updatePosTimeThread_.native_handle(), ThreadName::FAST_AUDIO_IN_POSITION);
 }
 
 void HpaeFastSourceInputNode::StopUpdateThread()
