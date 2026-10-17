@@ -41,6 +41,8 @@ taihe_shared_library("audio_taihe") {
 
   cflags = [ "-Os" ]
 
+  branch_protector_ret = "pac_ret"
+
   sanitize = {
     cfi = true
     cfi_cross_dso = true

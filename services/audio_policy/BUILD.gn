@@ -650,6 +650,16 @@ audio_ohos_library("audio_policy_client") {
   branch_protector_ret = "pac_ret"
   install_enable = true
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
   defines = []
   if (audio_framework_feature_dtmf_tone) {
     defines += [ "FEATURE_DTMF_TONE" ]
