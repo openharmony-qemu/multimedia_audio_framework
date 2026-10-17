@@ -1450,7 +1450,8 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
             processConfig_.rendererInfo.rendererFlags, rendererFlags);
         processConfig_.rendererInfo.rendererFlags = rendererFlags;
         stateListener->OnOperationHandled(UPDATE_SPANSIZE, rendererFlags == AUDIO_FLAG_NORMAL ?
-            FASTSTATUS_NORMAL : FASTSTATUS_FAST);
+            FASTSTATUS_NORMAL : (rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST ?
+            FASTSTATUS_ULTRA_FAST : FASTSTATUS_FAST));
     }
 
     spanSizeInFrame_ = newSpanSizeInFrame;

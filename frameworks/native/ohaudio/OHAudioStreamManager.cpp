@@ -138,6 +138,26 @@ bool OH_AudioStreamManager_IsFastPlaybackSupported(
     return ohAudioStreamManager->IsFastPlaybackSupported(audioStreamInfo, streamUsage);
 }
 
+bool OH_AudioStreamManager_IsUltraFastPlaybackSupported(
+    OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_Usage usage)
+{
+    OHAudioStreamManager* ohAudioStreamManager = convertManager(streamManager);
+    if (ohAudioStreamManager == nullptr || streamInfo == nullptr || !VALID_OH_STREAM_USAGES.count(usage)) {
+        AUDIO_ERR_LOG("Invalid params!");
+        return false;
+    }
+
+    StreamUsage streamUsage = static_cast<StreamUsage>(usage);
+    AudioStreamInfo audioStreamInfo = {
+        (AudioSamplingRate)streamInfo->samplingRate,
+        (AudioEncodingType)streamInfo->encodingType,
+        (AudioSampleFormat)streamInfo->sampleFormat,
+        AudioChannel::STEREO,
+        (AudioChannelLayout)streamInfo->channelLayout
+    };
+    return ohAudioStreamManager->IsUltraFastPlaybackSupported(audioStreamInfo, streamUsage);
+}
+
 bool OH_AudioStreamManager_IsFastRecordingSupported(
     OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_SourceType source)
 {
@@ -262,6 +282,12 @@ bool OHAudioStreamManager::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, 
 {
     CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
     return audioStreamManager_->IsFastPlaybackSupported(streamInfo, usage);
+}
+
+bool OHAudioStreamManager::IsUltraFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
+{
+    CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
+    return audioStreamManager_->IsUltraFastPlaybackSupported(streamInfo, usage);
 }
 
 bool OHAudioStreamManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)

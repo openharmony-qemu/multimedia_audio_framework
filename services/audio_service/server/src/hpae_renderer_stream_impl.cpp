@@ -68,7 +68,8 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
     usedSampleRate_ = processConfig.streamInfo.customSampleRate == 0 ?
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) : processConfig.streamInfo.customSampleRate;
     
-    if (processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_FAST &&
+    if ((processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_FAST ||
+        processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_ULTRA_FAST) &&
         processConfig_.isInnerCapturer == false && deviceName != "FastDpRendererSink" && isCallbackMode) {
         if (processConfig_.ultraFastFlag & ULTRA_IMPLEMENTED) {
             // If the server uses ultra fast route, spanInMs should be 2.5ms regardless of whether the client request

@@ -1155,6 +1155,10 @@ void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioS
         case AUDIO_FLAG_VOIP_DIRECT:
             streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
             return;
+        case AUDIO_FLAG_TRUE_ULTRA_FAST:
+            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_ULTRA_FAST;
+            streamDesc->SetUltraFastRequested(true);
+            return;
         case AUDIO_FLAG_ULTRA_FAST:
             streamDesc->ResetUltraFastFlag();
             GetFlagForUltraFastStream(streamDesc, isCreateProcess);

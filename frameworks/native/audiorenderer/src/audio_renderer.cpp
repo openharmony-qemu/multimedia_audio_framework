@@ -1039,7 +1039,12 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
 IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRendererInfo(uint32_t flag)
 {
     IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
-    if (flag & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
+    if (flag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+        rendererInfo_.originalFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
+        rendererInfo_.rendererFlags = AUDIO_FLAG_TRUE_ULTRA_FAST;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_ULTRA_FAST;
+        ret = IAudioStream::StreamClass::FAST_STREAM;
+    } else if (flag & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_3DA_DIRECT;
     } else if (flag & AUDIO_OUTPUT_FLAG_FAST) {

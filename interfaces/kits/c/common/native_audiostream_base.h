@@ -664,7 +664,8 @@ typedef enum {
     /**
      * fast status
      */
-    AUDIOSTREAM_FASTSTATUS_FAST = 1
+    AUDIOSTREAM_FASTSTATUS_FAST = 1,
+    AUDIOSTREAM_FASTSTATUS_ULTRA_FAST = 2
 } OH_AudioStream_FastStatus;
 
 /**

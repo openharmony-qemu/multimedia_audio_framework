@@ -2457,7 +2457,7 @@ void AudioAdapterManager::FillSinkLatencyAttr(IAudioSinkAttr &attr,
 void AudioAdapterManager::FillUltraFastPeriod(IAudioSinkAttr &attr,
     const AudioModuleInfo &audioModuleInfo) const
 {
-    if (audioModuleInfo.className == "ultra_fast" || audioModuleInfo.className == "usb_arm_ultra_fast") {
+    if (audioModuleInfo.className.find("ultra_fast") != std::string::npos) {
         uint32_t formatByteSize = GetFormatByteSize(attr.format);
         attr.period = static_cast<uint32_t>(
             static_cast<float>(attr.sampleRate * attr.channel * formatByteSize) *

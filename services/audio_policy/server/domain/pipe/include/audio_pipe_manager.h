@@ -207,6 +207,7 @@ public:
     StreamUsage GetLastestRunningCallStreamUsage();
     bool HasUltraFastPipe();
     bool IsUltraFastSupportedDevice(DeviceType deviceType);
+    uint32_t GetUltraFastStreamCount();
     bool IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::vector<std::string> GetNoRunningPipeModuleName();
     bool CheckNoRunningCondition(std::shared_ptr<AudioPipeInfo> pipeInfo);

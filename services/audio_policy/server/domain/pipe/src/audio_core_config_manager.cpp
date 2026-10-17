@@ -1015,7 +1015,7 @@ void AudioCoreConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStreamDe
         return;
     }
 
-    if (desc->routeFlag_ == AUDIO_OUTPUT_FLAG_FAST) {
+    if (desc->routeFlag_ == AUDIO_OUTPUT_FLAG_FAST || desc->routeFlag_ == AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
         std::shared_ptr<PipeStreamPropInfo> propInfo = pipeInfo->streamPropInfos_.front();
         if (propInfo == nullptr) {
             AUDIO_WARNING_LOG("propInfo is null!");

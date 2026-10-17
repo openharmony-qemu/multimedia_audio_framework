@@ -2315,6 +2315,9 @@ int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
 
 FastStatus RendererInClientInner::GetFastStatus()
 {
+    if (IsUltraFastStream()) {
+        return FASTSTATUS_ULTRA_FAST;
+    }
     if (JudgeFastStreamByRendererAttr()) {
         return FASTSTATUS_FAST;
     }
@@ -2329,7 +2332,7 @@ void RendererInClientInner::SetFastStatusChangeCallback(const std::function<void
 
 void RendererInClientInner::NotifyFastStatusChange(FastStatus status)
 {
-    if (status != FASTSTATUS_FAST && status != FASTSTATUS_NORMAL) {
+    if (status != FASTSTATUS_FAST && status != FASTSTATUS_NORMAL && status != FASTSTATUS_ULTRA_FAST) {
         AUDIO_WARNING_LOG("Invalid fast status:%{public}d", status);
         return;
     }
