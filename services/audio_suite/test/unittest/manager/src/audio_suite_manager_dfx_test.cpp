@@ -416,7 +416,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetEnvironmentTypeInvalidEnumValueTest
 
     // Test invalid enum value (10) to test deep layer fault interception
     ret = pipeline->SetEnvironmentType(nodeId, static_cast<EnvironmentType>(10));
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     // Destroy node
     ret = pipeline->DestroyNode(nodeId);
@@ -441,7 +441,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetVoiceBeautifierTypeInvalidEnumValue
 
     // Test invalid enum value (10) to test deep layer fault interception
     ret = pipeline->SetVoiceBeautifierType(nodeId, static_cast<VoiceBeautifierType>(10));
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     // Destroy node
     ret = pipeline->DestroyNode(nodeId);
@@ -466,7 +466,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetGeneralVoiceChangeTypeInvalidEnumVa
 
     // Test invalid enum value (20) to test deep layer fault interception
     ret = pipeline->SetGeneralVoiceChangeType(nodeId, static_cast<AudioGeneralVoiceChangeType>(20));
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     // Destroy node
     ret = pipeline->DestroyNode(nodeId);
@@ -491,7 +491,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetSoundFieldTypeInvalidEnumValueTest,
 
     // Test invalid enum value (10) to test deep layer fault interception
     ret = pipeline->SetSoundFieldType(nodeId, static_cast<SoundFieldType>(10));
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     // Destroy node
     ret = pipeline->DestroyNode(nodeId);
