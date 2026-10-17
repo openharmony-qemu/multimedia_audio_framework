@@ -891,6 +891,7 @@ private:
     int32_t UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     int32_t UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
         const AudioSessionStrategy &strategy, const bool isStandalone);
+    int32_t VerifyUidAndPid(const int32_t uid, const int32_t pid);
 
     AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;
