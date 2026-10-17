@@ -1957,11 +1957,11 @@ int32_t AudioPolicyServerHandler::SetClientCallbacksEnable(const CallbackChange 
 
     int32_t clientId = IPCSkeleton::GetCallingPid();
     int32_t uid = IPCSkeleton::GetCallingUid();
+    lock_guard<mutex> runnerlock(handleMapMutex_);
     pidUidMap_[clientId] = uid;
     if (uid == RSS_UID) {
         pidOfRss_ = clientId;
     }
-    lock_guard<mutex> runnerlock(handleMapMutex_);
     clientCallbacksMap_[clientId][callbackchange] = enable;
     string str = (enable ? "true" : "false");
     AUDIO_INFO_LOG("Set clientId:%{public}d, callbacks:%{public}d, enable:%{public}s",
