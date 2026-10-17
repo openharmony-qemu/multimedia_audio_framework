@@ -59,6 +59,16 @@ static const std::vector<DeviceType> VOLUME_GROUP_TYPE_LIST = {
     DEVICE_TYPE_WIRED_HEADSET
 };
 
+static const std::vector<DeviceType> PC_VOLUME_GROUP_TYPE_LIST = {
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_USB_ARM_HEADSET
+};
+
 static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
     // all keys for system sound uri
     "ringtone_for_sim_card_0",
@@ -2814,7 +2824,9 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
     }
     bool resetFirstFlag = false;
     AUDIO_INFO_LOG("InitVolumeMap: Write defalut stream volumes to database");
-    for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
+    const std::vector<DeviceType> &volumeGroupTypeList = VolumeUtils::IsPCVolumeEnable() ?
+        PC_VOLUME_GROUP_TYPE_LIST : VOLUME_GROUP_TYPE_LIST;
+    for (auto &deviceType : volumeGroupTypeList) {
         auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
         for (auto &streamType : defaultVolumeTypeList_) {
             CHECK_AND_CONTINUE(volumeDataMaintainer_.CheckVolumeState(desc, streamType) != SUCCESS);
@@ -2866,7 +2878,9 @@ void AudioAdapterManager::CloneVolumeMap(void)
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "clone volumemap failed, audioPolicyKvStore_nullptr");
     // read volume from private Kvstore
     AUDIO_INFO_LOG("Copy Volume from private database to shareDatabase");
-    for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
+    const std::vector<DeviceType> &volumeGroupTypeList = VolumeUtils::IsPCVolumeEnable() ?
+        PC_VOLUME_GROUP_TYPE_LIST : VOLUME_GROUP_TYPE_LIST;
+    for (auto &deviceType : volumeGroupTypeList) {
         auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
         for (auto &streamType : defaultVolumeTypeList_) {
             std::string volumeKey = GetVolumeKeyForKvStore(deviceType, streamType);
@@ -2918,7 +2932,9 @@ void AudioAdapterManager::TransferMuteStatus(void)
 void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
 {
     if (isFirstBoot) {
-        for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
+        const std::vector<DeviceType> &volumeGroupTypeList = VolumeUtils::IsPCVolumeEnable() ?
+            PC_VOLUME_GROUP_TYPE_LIST : VOLUME_GROUP_TYPE_LIST;
+        for (auto &deviceType : volumeGroupTypeList) {
             for (auto &streamType : defaultVolumeTypeList_) {
                 CheckAndDealMuteStatus(deviceType, streamType);
             }
@@ -2965,7 +2981,9 @@ void AudioAdapterManager::CloneMuteStatusMap(void)
     // read mute status from private Kvstore
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "clone mute status failed, audioPolicyKvStore_ nullptr");
     AUDIO_INFO_LOG("Copy mute from private database to shareDatabase");
-    for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
+    const std::vector<DeviceType> &volumeGroupTypeList = VolumeUtils::IsPCVolumeEnable() ?
+        PC_VOLUME_GROUP_TYPE_LIST : VOLUME_GROUP_TYPE_LIST;
+    for (auto &deviceType : volumeGroupTypeList) {
         for (auto &streamType : defaultVolumeTypeList_) {
             std::string muteKey = GetMuteKeyForKvStore(deviceType, streamType);
             Key key = muteKey;
