@@ -73,6 +73,8 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
 
+    int32_t SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted);
+
     int32_t SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted);
 
     int32_t SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted);

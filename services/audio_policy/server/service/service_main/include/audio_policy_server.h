@@ -123,6 +123,9 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag) override;
 
+    int32_t SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted,
+        const sptr<IRemoteObject> &callerObj) override;
+
     int32_t SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted,
         const sptr<IRemoteObject> &callerObj) override;
 
@@ -396,6 +399,10 @@ public:
     void RegisterVoipMuteDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj);
 
     void OnVoipMuteCallerDied(int32_t callerUid);
+
+    void RegisterAppVolumeMuteAndHideDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj);
+
+    void OnAppVolumeMuteAndHideCallerDied(int32_t callerUid);
 
     int32_t RegisterUnmuteWhitelistDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj);
 
@@ -1063,6 +1070,8 @@ private:
     std::mutex clientDiedListenerStateMutex_;
     std::mutex voipMuteMutex_;
     std::unordered_map<int32_t, sptr<IRemoteObject::DeathRecipient>> voipMuteDeathRecipients_;
+    std::mutex appVolumeMuteAndHideMutex_;
+    std::unordered_map<int32_t, sptr<IRemoteObject::DeathRecipient>> appVolumeMuteAndHideDeathRecipients_;
     std::mutex unmuteWhitelistMutex_;
     std::unordered_map<int32_t, sptr<IRemoteObject::DeathRecipient>> unmuteWhitelistDeathRecipients_;
     std::mutex subscribeVolumeKey_;

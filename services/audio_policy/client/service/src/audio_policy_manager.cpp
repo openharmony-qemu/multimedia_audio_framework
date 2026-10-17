@@ -384,6 +384,23 @@ int32_t AudioPolicyManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
     return gsp->SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
 
+int32_t AudioPolicyManager::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    sptr<IRemoteObject> callerObj;
+    {
+        std::unique_lock<std::mutex> lock(registerCallbackMutex_);
+        if (audioPolicyClientStubCB_ == nullptr) {
+            audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+        }
+        if (audioPolicyClientStubCB_ != nullptr) {
+            callerObj = audioPolicyClientStubCB_->AsObject();
+        }
+    }
+    return gsp->SetAppVolumeMuteAndHideVolumeBar(appUid, muted, callerObj);
+}
+
 int32_t AudioPolicyManager::SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

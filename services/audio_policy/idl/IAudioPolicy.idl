@@ -386,4 +386,5 @@ interface IAudioPolicy {
     void ClearVolumeProtection();
     void SetUnmuteWhitelist([in] List<int> uids, [in] IRemoteObject callerObj);
     void ClearUnmuteWhitelist();
+    void SetAppVolumeMuteAndHideVolumeBar([in] int appUid, [in] boolean muted, [in] IRemoteObject callerObj);
 }

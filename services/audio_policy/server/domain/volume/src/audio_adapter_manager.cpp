@@ -487,7 +487,37 @@ int32_t AudioAdapterManager::SetAppVolumeMuted(int32_t appUid, bool muted)
     AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d",
         appUid, muted);
     volumeDataMaintainer_.SetAppVolumeMuted(appUid, muted);
-    return SetAppVolumeMutedDB(appUid, muted);
+    bool aggregateMuted = volumeDataMaintainer_.GetAppMuteAggregate(appUid);
+    return SetAppVolumeMutedDB(appUid, aggregateMuted);
+}
+
+int32_t AudioAdapterManager::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d", appUid, muted);
+    volumeDataMaintainer_.SetAppVolumeMuteAndHideVolumeBar(appUid, muted);
+    bool aggregateMuted = volumeDataMaintainer_.GetAppMuteAggregate(appUid);
+    return SetAppVolumeMutedDB(appUid, aggregateMuted);
+}
+
+bool AudioAdapterManager::IsAppMuteAndHideVolumeBar(int32_t appUid)
+{
+    return volumeDataMaintainer_.GetAppMuteAndHideVolumeBar(appUid);
+}
+
+int32_t AudioAdapterManager::ClearAppMuteAndHideByOwnerUid(int32_t callerUid)
+{
+    AUDIO_INFO_LOG("callerUid: %{public}d", callerUid);
+    std::lock_guard<std::mutex> lock(audioVolumeMutex_);
+    std::vector<int32_t> affectedAppUids;
+    volumeDataMaintainer_.ClearAppMuteAndHideByOwnerUid(callerUid, affectedAppUids);
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
+    for (int32_t appUid : affectedAppUids) {
+        bool aggregateMuted = volumeDataMaintainer_.GetAppMuteAggregate(appUid);
+        audioVolume->SetAppVolumeMute(appUid, aggregateMuted);
+    }
+    SendOffloadVolume();
+    return SUCCESS;
 }
 
 int32_t AudioAdapterManager::SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
@@ -783,9 +813,9 @@ int32_t AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &i
     AUDIO_INFO_LOG("IsAppVolumeMute: appUid: %{public}d, owned:%{public}d",
         appUid, owned);
     if (owned) {
-        volumeDataMaintainer_.GetAppMuteOwned(appUid, isMute);
+        isMute = volumeDataMaintainer_.GetAppMuteOwnedAggregate(appUid);
     } else {
-        volumeDataMaintainer_.GetAppMute(appUid, isMute);
+        isMute = volumeDataMaintainer_.GetAppMuteAggregate(appUid);
     }
     return SUCCESS;
 }

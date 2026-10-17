@@ -459,6 +459,21 @@ int32_t AudioVolumeManager::SetAppVolumeMuted(int32_t appUid, bool muted)
     return appVolumeManager_.SetAppVolumeMuted(appUid, muted);
 }
 
+int32_t AudioVolumeManager::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted)
+{
+    return appVolumeManager_.SetAppVolumeMuteAndHideVolumeBar(appUid, muted);
+}
+
+bool AudioVolumeManager::IsAppMuteAndHideVolumeBar(int32_t appUid)
+{
+    return appVolumeManager_.IsAppMuteAndHideVolumeBar(appUid);
+}
+
+int32_t AudioVolumeManager::ClearAppMuteAndHideByOwnerUid(int32_t callerUid)
+{
+    return appVolumeManager_.ClearAppMuteAndHideByOwnerUid(callerUid);
+}
+
 int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     return appVolumeManager_.IsAppVolumeMute(appUid, owned, isMute);

@@ -1961,6 +1961,10 @@ std::vector<std::pair<int32_t, AudioStreamType>> AudioStreamCollector::GetActive
     for (auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING && !changeInfo->backMute) {
             int32_t uid = changeInfo->clientUID;
+            bool isMuteAndHide = AudioVolumeManager::GetInstance().IsAppMuteAndHideVolumeBar(uid);
+            if (isMuteAndHide) {
+                continue;
+            }
             AudioStreamType streamType = GetStreamType(
                 changeInfo->rendererInfo.contentType, changeInfo->rendererInfo.streamUsage);
             std::pair streamPair {uid, streamType};

@@ -1354,6 +1354,42 @@ void AudioPolicyServer::OnVoipMuteCallerDied(int32_t callerUid)
     }
 }
 
+void AudioPolicyServer::RegisterAppVolumeMuteAndHideDeathRecipient(int32_t callerUid,
+    const sptr<IRemoteObject> &callerObj)
+{
+    CHECK_AND_RETURN_LOG(callerObj != nullptr, "callerObj is null, skip app volume mute and hide death recipient");
+    std::lock_guard<std::mutex> lock(appVolumeMuteAndHideMutex_);
+    if (appVolumeMuteAndHideDeathRecipients_.find(callerUid) != appVolumeMuteAndHideDeathRecipients_.end()) {
+        AUDIO_DEBUG_LOG("app volume mute and hide death recipient already registered for callerUid:%{public}d",
+            callerUid);
+        return;
+    }
+    sptr<IRemoteObject::DeathRecipient> dr = new(std::nothrow) PolicyClientDeathRecipient(
+        [this, callerUid]() { this->OnAppVolumeMuteAndHideCallerDied(callerUid); });
+    CHECK_AND_RETURN_LOG(dr != nullptr, "create PolicyClientDeathRecipient failed for app volume mute and hide");
+    if (!callerObj->AddDeathRecipient(dr)) {
+        AUDIO_WARNING_LOG("AddDeathRecipient failed for callerUid:%{public}d", callerUid);
+        return;
+    }
+    appVolumeMuteAndHideDeathRecipients_[callerUid] = dr;
+    AUDIO_INFO_LOG("register app volume mute and hide death recipient for callerUid:%{public}d", callerUid);
+}
+
+void AudioPolicyServer::OnAppVolumeMuteAndHideCallerDied(int32_t callerUid)
+{
+    AUDIO_INFO_LOG("app volume mute and hide caller died, callerUid:%{public}d", callerUid);
+    audioVolumeManager_.ClearAppMuteAndHideByOwnerUid(callerUid);
+    sptr<IRemoteObject::DeathRecipient> dr;
+    {
+        std::lock_guard<std::mutex> lock(appVolumeMuteAndHideMutex_);
+        auto it = appVolumeMuteAndHideDeathRecipients_.find(callerUid);
+        if (it != appVolumeMuteAndHideDeathRecipients_.end()) {
+            dr = std::move(it->second);
+            appVolumeMuteAndHideDeathRecipients_.erase(it);
+        }
+    }
+}
+
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
 {
@@ -1366,6 +1402,18 @@ int32_t AudioPolicyServer::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t
     }
     AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d", appUid, muted);
     return audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
+}
+
+int32_t AudioPolicyServer::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted,
+    const sptr<IRemoteObject> &callerObj)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    RegisterAppVolumeMuteAndHideDeathRecipient(callerUid, callerObj);
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d, callerUid: %{public}d", appUid, muted, callerUid);
+    return audioVolumeManager_.SetAppVolumeMuteAndHideVolumeBar(appUid, muted);
 }
 
 int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage)
