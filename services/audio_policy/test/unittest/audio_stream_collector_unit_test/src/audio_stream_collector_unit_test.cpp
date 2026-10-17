@@ -15,6 +15,7 @@
 
 #include "audio_stream_collector_unit_test.h"
 #include "audio_system_manager.h"
+#include "audio_adapter_manager.h"
 #include "standard_client_tracker_proxy.h"
 #include "audio_spatialization_service.h"
 #include "app_state_listener.h"
@@ -2394,6 +2395,70 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetStreamTypeFromUsageContent_FoundInMap,
     auto result = streamCollector.GetStreamTypeFromUsageContent(STREAM_USAGE_VOICE_COMMUNICATION,
         CONTENT_TYPE_SPEECH);
     EXPECT_EQ(result, STREAM_VOICE_COMMUNICATION);
+}
+
+/* ==================== GetActiveStreams mute-and-hide tests ==================== */
+
+/**
+ * @tc.name  : GetActiveStreams_MuteAndHide_True
+ * @tc.number: GetActiveStreams_MuteAndHide_001
+ * @tc.desc  : Test GetActiveStreams skips stream when IsAppMuteAndHideVolumeBar is true.
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, GetActiveStreams_MuteAndHide_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 6001;
+    AudioStreamCollector &collector = AudioStreamCollector::GetAudioStreamCollector();
+    auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
+    changeInfo->clientUID = TEST_APP_UID;
+    changeInfo->rendererState = RENDERER_RUNNING;
+    changeInfo->backMute = false;
+    changeInfo->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    collector.audioRendererChangeInfos_.clear();
+    collector.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    auto result = collector.GetActiveStreams();
+    bool found = false;
+    for (const auto &pair : result) {
+        if (pair.first == TEST_APP_UID) {
+            found = true;
+            break;
+        }
+    }
+    EXPECT_FALSE(found);
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, false);
+    collector.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : GetActiveStreams_MuteAndHide_False
+ * @tc.number: GetActiveStreams_MuteAndHide_002
+ * @tc.desc  : Test GetActiveStreams includes stream when IsAppMuteAndHideVolumeBar is false.
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, GetActiveStreams_MuteAndHide_002, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 6002;
+    AudioStreamCollector &collector = AudioStreamCollector::GetAudioStreamCollector();
+    auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
+    changeInfo->clientUID = TEST_APP_UID;
+    changeInfo->rendererState = RENDERER_RUNNING;
+    changeInfo->backMute = false;
+    changeInfo->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    collector.audioRendererChangeInfos_.clear();
+    collector.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+
+    auto result = collector.GetActiveStreams();
+    bool found = false;
+    for (const auto &pair : result) {
+        if (pair.first == TEST_APP_UID) {
+            found = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found);
+    collector.audioRendererChangeInfos_.clear();
 }
 } // namespace AudioStandard
 } // namespace OHOS
