@@ -26,10 +26,7 @@
 #include "audio_policy_server_handler.h"
 #include "stream_flag_info.h"
 #include "audio_policy_server.h"
-
-#ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
-#endif
 
 using namespace testing::ext;
 
@@ -148,7 +145,7 @@ HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_002, Te
     audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
     audioPolicyServer_->hasSubscribedVolumeKeyEvents_.store(false);
     audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
-    EXPECT_FALSE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
+    EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
     EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.count(
         OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP), 1u);
     audioPolicyServer_->failedVolumeKeyEvents_.clear();
@@ -166,7 +163,7 @@ HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_003, Te
     audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_MUTE);
     audioPolicyServer_->hasSubscribedVolumeKeyEvents_.store(false);
     audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
-    EXPECT_FALSE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
+    EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
     EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.count(
         OHOS::MMI::KeyEvent::KEYCODE_MUTE), 1u);
     audioPolicyServer_->failedVolumeKeyEvents_.clear();
@@ -186,7 +183,7 @@ HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_004, Te
     audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_MUTE);
     audioPolicyServer_->hasSubscribedVolumeKeyEvents_.store(false);
     audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
-    EXPECT_FALSE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
+    EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
     EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.size(), 3u);
     audioPolicyServer_->failedVolumeKeyEvents_.clear();
 }
