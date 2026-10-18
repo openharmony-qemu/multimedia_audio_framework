@@ -58,7 +58,7 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     AUDIO_INFO_LOG("Init with format:%{public}d, period:%{public}d", attr.format, attr.period);
     attr_ = attr;
     auto it = streamFlagToHalName.find(attr_.audioStreamFlag);
-    halName_ = (it != streamFlagToHalName.end()) ? it->second : "voip";
+    halName_ = (it != streamFlagToHalName.end()) ? it->second : "primary";
     bool isUltraFast = attr_.isUltraFast;
     int32_t ret = CreateRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
