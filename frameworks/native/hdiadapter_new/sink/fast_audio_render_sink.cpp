@@ -50,7 +50,11 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("Init with format:%{public}d, period:%{public}d", attr.format, attr.period);
     attr_ = attr;
-    halName_ = attr_.audioStreamFlag == AUDIO_FLAG_MMAP ? "primary" : "voip";
+    if (attr_.audioStreamFlag == AUDIO_FLAG_TRUE_ULTRA_FAST) {
+        halName_ = "ultra";
+    } else {
+        halName_ = attr_.audioStreamFlag == AUDIO_FLAG_MMAP ? "primary" : "voip";
+    }
     bool isUltraFast = attr_.period == static_cast<uint32_t>(
         static_cast<float>(attr.sampleRate * attr.channel * GetFormatByteSize(attr.format)) *
         ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
