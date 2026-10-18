@@ -2593,9 +2593,6 @@ int32_t AudioPolicyServer::IsUltraFastPlaybackSupported(const AudioStreamInfo &s
     bool &support)
 {
     support = false;
-    if (!audioConfigManager_.GetUltraFastFlag()) {
-        return SUCCESS;
-    }
     AudioRendererInfo rendererInfo = {};
     rendererInfo.streamUsage = static_cast<StreamUsage>(usage);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc{};
@@ -2610,8 +2607,11 @@ int32_t AudioPolicyServer::IsUltraFastPlaybackSupported(const AudioStreamInfo &s
     }
     for (const auto &deviceDesc : desc) {
         if (deviceDesc != nullptr && pipeManager->IsUltraFastSupportedDevice(deviceDesc->deviceType_)) {
-            support = true;
-            break;
+            std::string adapterName = (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) ? "usb" : "primary";
+            if (audioConfigManager_.GetUltraFastFlag(adapterName, PIPE_ROLE_OUTPUT)) {
+                support = true;
+                break;
+            }
         }
     }
     return SUCCESS;

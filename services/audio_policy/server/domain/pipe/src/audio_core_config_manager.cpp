@@ -531,6 +531,21 @@ bool AudioCoreConfigManager::GetUltraFastFlag()
     return supportUltraFast_;
 }
 
+bool AudioCoreConfigManager::GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role)
+{
+    for (auto &adapterIt : audioPolicyConfig_.adapterInfoMap) {
+        if (adapterIt.second->adapterName != adapterName) {
+            continue;
+        }
+        for (auto &pipeInfo : adapterIt.second->pipeInfos) {
+            if (pipeInfo->role_ == role && (pipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool AudioCoreConfigManager::GetArmUsbUltraFastFlag()
 {
     return supportArmUsbUltraFast_;

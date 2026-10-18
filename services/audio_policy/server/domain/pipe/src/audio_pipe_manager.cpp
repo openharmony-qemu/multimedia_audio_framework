@@ -66,6 +66,11 @@ bool AudioPipeManager::GetUltraFastFlag()
     return audioConfigManager_.GetUltraFastFlag();
 }
 
+bool AudioPipeManager::GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role)
+{
+    return audioConfigManager_.GetUltraFastFlag(adapterName, role);
+}
+
 bool AudioPipeManager::GetArmUsbUltraFastFlag()
 {
     return audioConfigManager_.GetArmUsbUltraFastFlag();

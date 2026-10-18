@@ -2009,7 +2009,7 @@ static void FillSpecialPipeInfoExtOther(AudioPipeInfo &info, std::shared_ptr<Ada
         info.moduleInfo_.name = info.GetUltraFastFlag() ? "UltraFastUsbArmRendererSink" : "FastUsbArmRendererSink";
         info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
         info.moduleInfo_.role = "sink";
-    } else if (pipeInfoPtr->name_ == "ultra_fast_usb_arm_output") {
+    } else if (pipeInfoPtr->name_ == "usb_ultra_fast_output") {
         info.moduleInfo_.className = "usb_arm_ultra_fast_v2";
         info.moduleInfo_.fileName = "usb_arm_ultra_fast_v2_dump_file";
         info.moduleInfo_.name = "UltraFastV2UsbArmRendererSink";
@@ -2132,7 +2132,7 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
         info.moduleInfo_.name = info.GetUltraFastFlag() ? "UltraFastRendererSink" : "FastRendererSink";
         info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
         info.moduleInfo_.role = "sink";
-    } else if (pipeInfoPtr->name_ == "ultra_fast_output") {
+    } else if (pipeInfoPtr->name_ == "primary_ultra_fast_output") {
         info.moduleInfo_.className = "ultra_fast_v2";
         info.moduleInfo_.fileName = "ultra_fast_v2_dump_file";
         info.moduleInfo_.name = "UltraFastV2RendererSink";
