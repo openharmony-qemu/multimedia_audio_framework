@@ -26,6 +26,7 @@
 #include "audio_policy_server_handler.h"
 #include "stream_flag_info.h"
 #include "audio_policy_server.h"
+#include "input_manager.h"
 
 using namespace testing::ext;
 
@@ -130,6 +131,61 @@ HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_001, Te
     audioPolicyServer_->hasSubscribedVolumeKeyEvents_.store(false);
     audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
     EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
+}
+#endif
+
+/**
+ * @tc.name  : SubscribeVolumeKeyEventsRetryFunc_002
+ * @tc.desc  : Test retry exhaustion with volume up key
+ */
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_002, TestSize.Level2)
+{
+    audioPolicyServer_->failedVolumeKeyEvents_.clear();
+    audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
+    audioPolicyServer_->hasSubscribedVolumeKeyEvents_.store(false);
+    audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
+    EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
+    EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.count(
+        OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP), 1u);
+    audioPolicyServer_->failedVolumeKeyEvents_.clear();
+}
+#endif
+
+/**
+ * @tc.name  : SubscribeVolumeKeyEventsRetryFunc_003
+ * @tc.desc  : Test retry exhaustion with mute key
+ */
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_003, TestSize.Level2)
+{
+    audioPolicyServer_->failedVolumeKeyEvents_.clear();
+    audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_MUTE);
+    audioPolicyServer_->hasSubscribedVolumeKeyEvents_.store(false);
+    audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
+    EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
+    EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.count(
+        OHOS::MMI::KeyEvent::KEYCODE_MUTE), 1u);
+    audioPolicyServer_->failedVolumeKeyEvents_.clear();
+}
+#endif
+
+/**
+ * @tc.name  : SubscribeVolumeKeyEventsRetryFunc_004
+ * @tc.desc  : Test retry exhaustion with multiple failed keys
+ */
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_004, TestSize.Level2)
+{
+    audioPolicyServer_->failedVolumeKeyEvents_.clear();
+    audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
+    audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
+    audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_MUTE);
+    audioPolicyServer_->hasSubscribedVolumeKeyEvents_.store(false);
+    audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
+    EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
+    EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.size(), 3u);
+    audioPolicyServer_->failedVolumeKeyEvents_.clear();
 }
 #endif
 
