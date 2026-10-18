@@ -232,7 +232,8 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     if (rendererInfo_.rendererFlags != AUDIO_FLAG_NORMAL && rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT && rendererInfo_.rendererFlags != AUDIO_FLAG_3DA_DIRECT) {
+        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT && rendererInfo_.rendererFlags != AUDIO_FLAG_3DA_DIRECT &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_TRUE_ULTRA_FAST) {
         AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", rendererInfo_.rendererFlags);
         rendererInfo_.rendererFlags = 0;
     }
@@ -308,7 +309,7 @@ int32_t RendererInClientInner::InitSharedBuffer()
 
 bool RendererInClientInner::IsLowLatencyRenderer() const
 {
-    return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST);
+    return (rendererInfo_.audioFlag & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST));
 }
 
 uint64_t RendererInClientInner::GetDefaultCallbackBufferDurationInUs() const
@@ -1566,7 +1567,9 @@ void RendererInClientInner::RefreshRendererAttrInfoFromSpan(const RendererAttrIn
     }
     cacheSizeInFrame_ = attr.engineSize;
     rendererInfo_.audioFlag = attr.routeFlag;
-    if ((attr.routeFlag & AUDIO_OUTPUT_FLAG_FAST) == 0) {
+    if (attr.routeFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_TRUE_ULTRA_FAST;
+    } else if ((attr.routeFlag & AUDIO_OUTPUT_FLAG_FAST) == 0) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     } else if (attr.routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;

@@ -1399,6 +1399,9 @@ void RendererInServer::UpdateStreamStatusByRendererState()
 
 int32_t RendererInServer::GetRendererFlagsByRoute(uint32_t routeFlag)
 {
+    if (routeFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+        return AUDIO_FLAG_TRUE_ULTRA_FAST;
+    }
     if (routeFlag & AUDIO_OUTPUT_FLAG_FAST) {
         if (routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
             return AUDIO_FLAG_VOIP_FAST;
@@ -1425,7 +1428,8 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
 
     size_t newEngineSizeInFrame = newSpanSizeInFrame;
     if (rendererFlags != AUDIO_FLAG_MMAP &&
-        rendererFlags != AUDIO_FLAG_VOIP_FAST) {
+        rendererFlags != AUDIO_FLAG_VOIP_FAST &&
+        rendererFlags != AUDIO_FLAG_TRUE_ULTRA_FAST) {
         newEngineSizeInFrame = newSpanSizeInFrame * DEFAULT_SPAN_SIZE;
     }
     
@@ -1441,7 +1445,8 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
             "routeFlag:%{public}u isLowLatency:%{public}d",
             streamIndex_, newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag,
             rendererFlags == AUDIO_FLAG_MMAP ||
-            rendererFlags == AUDIO_FLAG_VOIP_FAST);
+            rendererFlags == AUDIO_FLAG_VOIP_FAST ||
+            rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST);
         audioServerBuffer_->SetPendingSpanSize(newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag);
     }
 
@@ -1610,7 +1615,7 @@ int32_t RendererInServer::StartInner(bool hasNoCallback)
             PLAY_START_OPERATION_FAILED, "Policy start client failed", false),
         HILOG_COMM_ERROR("[StartInner]Policy start client failed, reason: %{public}d", ret));
 
-    if (!(processConfig_.rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST)) {
+    if (!(processConfig_.rendererInfo.audioFlag & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST))) {
         // Bluetooth connection may take a long time, which may cause the data before and after the connection
         // are not continuous, resulting in pop sounds. To avoid the problem,
         // WaitForDataConnection() needs to be called after UpdateSessionOperation(), where device is activated,
@@ -3649,7 +3654,7 @@ int32_t RendererInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_
     if (cacheSizeInFrame > spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT) {
         cacheSizeInFrame = spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT;
     }
-    if (processConfig_.rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST) {
+    if (processConfig_.rendererInfo.audioFlag & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST)) {
         cacheCount = FAST_ROUTE_CACHE_COUNT;
         AUDIO_INFO_LOG("CalculateCacheCount: cacheSizeInFrame=%{public}u, spanSizeInFrame_=%{public}zu, "
             "cacheCount=%{public}u", cacheSizeInFrame, spanSizeInFrame_, cacheCount);

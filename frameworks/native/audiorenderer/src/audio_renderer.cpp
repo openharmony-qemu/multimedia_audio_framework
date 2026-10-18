@@ -105,6 +105,7 @@ static const std::map<AudioFlag, int32_t> OUTPUT_ROUTE_TO_STREAM_MAP = {
     {AUDIO_OUTPUT_FLAG_NORMAL, AUDIO_FLAG_NORMAL},
     {AUDIO_OUTPUT_FLAG_DIRECT, AUDIO_FLAG_DIRECT},
     {AUDIO_OUTPUT_FLAG_FAST, AUDIO_FLAG_MMAP},
+    {AUDIO_OUTPUT_FLAG_ULTRA_FAST, AUDIO_FLAG_TRUE_ULTRA_FAST},
 };
 
 static const std::map<uint32_t, IAudioStream::StreamClass> AUDIO_OUTPUT_FLAG_GROUP_MAP = {
@@ -113,6 +114,7 @@ static const std::map<uint32_t, IAudioStream::StreamClass> AUDIO_OUTPUT_FLAG_GRO
     {AUDIO_OUTPUT_FLAG_MULTICHANNEL, IAudioStream::StreamClass::PA_STREAM},
     {AUDIO_OUTPUT_FLAG_LOWPOWER, IAudioStream::StreamClass::PA_STREAM},
     {AUDIO_OUTPUT_FLAG_FAST, IAudioStream::StreamClass::FAST_STREAM},
+    {AUDIO_OUTPUT_FLAG_ULTRA_FAST, IAudioStream::StreamClass::FAST_STREAM},
     {AUDIO_OUTPUT_FLAG_HWDECODING, IAudioStream::StreamClass::PA_STREAM},
 };
 
@@ -1945,7 +1947,8 @@ int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
         ERROR_INVALID_PARAM, "loudnessGain set invalid");
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_TRUE_ULTRA_FAST,
         ERROR_UNSUPPORTED, "low latency mode not supported");
     return currentStream->SetLoudnessGain(loudnessGain);
 }
@@ -1961,7 +1964,8 @@ float AudioRendererPrivate::GetLoudnessGain() const
 
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_TRUE_ULTRA_FAST,
         0.0f, "low latency mode not supported");
 
     return currentStream->GetLoudnessGain();
