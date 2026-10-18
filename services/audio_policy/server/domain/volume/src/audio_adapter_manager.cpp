@@ -1434,7 +1434,8 @@ bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
 bool AudioAdapterManager::IsLowLatencyRoute(uint32_t routeFlag)
 {
     return (routeFlag & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag & AUDIO_OUTPUT_FLAG_VOIP_FAST) ||
-        (routeFlag & AUDIO_INPUT_FLAG_FAST) || (routeFlag & AUDIO_INPUT_FLAG_VOIP_FAST);
+        (routeFlag & AUDIO_INPUT_FLAG_FAST) || (routeFlag & AUDIO_INPUT_FLAG_VOIP_FAST) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST);
 }
 
 void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
@@ -1658,6 +1659,9 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
                 (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP_FAST)) {
                 AUDIO_INFO_LOG("Use voip mmap");
                 attr.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
+            } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+                AUDIO_INFO_LOG("Use true ultra fast");
+                attr.audioStreamFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
             } else {
                 attr.audioStreamFlag = AUDIO_FLAG_MMAP;
             }
@@ -1677,9 +1681,6 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
             if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_3DA_DIRECT) ||
                 Match3daBusToken(pipeInfo->moduleInfo_.busAddress)) {
                 ConvergeTo3daSink(pipeInfo->moduleInfo_, deviceClass, idInfo);
-            }
-            if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
-                attr.audioStreamFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
             }
             result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, true, ioHandle);
         }
@@ -1809,6 +1810,9 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
             if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
                 idInfo = HDI_ID_INFO_VOIP;
             }
+        } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+            idType = HDI_ID_TYPE_FAST;
+            idInfo = HDI_ID_INFO_ULTRA_FAST;
         } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT) {
             idType = HDI_ID_TYPE_PRIMARY;
             if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
@@ -1832,6 +1836,9 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;
             idInfo = HDI_ID_INFO_USB;
+        } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+            idType = HDI_ID_TYPE_FAST;
+            idInfo = HDI_ID_INFO_ULTRA_FAST_USB_ARM;
         }
     } else if (pipeInfo->adapterName_ == "hdmi") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
