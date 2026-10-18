@@ -25,6 +25,7 @@
 #include "audio_engine_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "audio_schedule.h"
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
 #include "oh_audio_buffer.h"
@@ -412,6 +413,7 @@ void HpaeFastSourceInputNode::AsyncGetPosTime()
 {
     CHECK_AND_RETURN(!updatePosTimeThread_.joinable());
     updatePosTimeThread_ = std::thread([this]() {
+        ScheduleReportData(getpid(), gettid(), "");
         while (!stopUpdateThread_.load()) {
             std::unique_lock<std::mutex> lock(updateThreadLock_);
             updateThreadCV_.wait_for(lock, std::chrono::milliseconds(WAIT_GET_POS_TIMEOUT_MS));
