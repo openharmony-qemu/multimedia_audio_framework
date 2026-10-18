@@ -392,7 +392,9 @@ IAudioSinkAttr HpaeFastRendererManager::CreateSinkAttr()
         attr.pin = AUDIO_PIN_OUT_DP;
     }
     if (sinkInfo_.isUltraFast) {
-        attr.audioStreamFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
+        if (sinkInfo_.deviceClass.find("ultra_fast_v2") != std::string::npos) {
+            attr.audioStreamFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
+        }
         uint32_t formatByteSize = GetFormatByteSize(attr.format);
         attr.period = static_cast<uint32_t>(
             static_cast<float>(attr.sampleRate * attr.channel * formatByteSize) *

@@ -413,7 +413,7 @@ void HpaeFastSourceInputNode::AsyncGetPosTime()
 {
     CHECK_AND_RETURN(!updatePosTimeThread_.joinable());
     updatePosTimeThread_ = std::thread([this]() {
-        ScheduleReportData(getpid(), gettid(), "");
+        ScheduleReportData(getpid(), gettid(), "audio_server");
         while (!stopUpdateThread_.load()) {
             std::unique_lock<std::mutex> lock(updateThreadLock_);
             updateThreadCV_.wait_for(lock, std::chrono::milliseconds(WAIT_GET_POS_TIMEOUT_MS));
