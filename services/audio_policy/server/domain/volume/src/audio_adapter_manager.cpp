@@ -1674,15 +1674,12 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
         } else {
             std::string deviceClass = pipeInfo->moduleInfo_.className;
             idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
-            // 3DA direct pipe: converge to the cabin sink (renderId from GetId(RENDER,
-            // AUDIO_VIVID_3DA_DIRECT, "3DA")). Without this, a primary-profile sink is
-            // created and HAL rejects the vivid channel mask ("CheckRenderCaptureParams
-            // failed"). busAddress is matched by the exact 3da token (any bus number)
-            // because the play-time new pipe may not carry the 3DA route flag yet at
-            // port-open time.
             if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_3DA_DIRECT) ||
                 Match3daBusToken(pipeInfo->moduleInfo_.busAddress)) {
                 ConvergeTo3daSink(pipeInfo->moduleInfo_, deviceClass, idInfo);
+            }
+            if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+                attr.audioStreamFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
             }
             result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, true, ioHandle);
         }
