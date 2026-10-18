@@ -1811,8 +1811,8 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
                 idInfo = HDI_ID_INFO_VOIP;
             }
         } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
-            idType = HDI_ID_TYPE_FAST;
-            idInfo = HDI_ID_INFO_ULTRA_FAST;
+            idType = HDI_ID_TYPE_ULTRA_FAST;
+            idInfo = HDI_ID_INFO_DEFAULT;
         } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT) {
             idType = HDI_ID_TYPE_PRIMARY;
             if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
@@ -1837,8 +1837,8 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
             idType = HDI_ID_TYPE_FAST;
             idInfo = HDI_ID_INFO_USB;
         } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
-            idType = HDI_ID_TYPE_FAST;
-            idInfo = HDI_ID_INFO_ULTRA_FAST_USB_ARM;
+            idType = HDI_ID_TYPE_ULTRA_FAST;
+            idInfo = HDI_ID_INFO_USB;
         }
     } else if (pipeInfo->adapterName_ == "hdmi") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {

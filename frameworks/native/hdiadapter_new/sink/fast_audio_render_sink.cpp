@@ -657,6 +657,16 @@ int32_t FastAudioRenderSink::CreateRender(void)
     void *render = deviceManager->CreateRender(attr_.adapterName, &param, &deviceDesc, hdiRenderId_);
     audioRender_ = static_cast<struct IAudioRender *>(render);
     CHECK_AND_RETURN_RET(audioRender_ != nullptr, ERR_NOT_STARTED);
+    if (attr_.isUltraFast) {
+        uint32_t expectedPeriod = static_cast<uint32_t>(
+            static_cast<float>(attr_.sampleRate * attr_.channel * GetFormatByteSize(attr_.format)) *
+            ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
+        if (param.period != expectedPeriod) {
+            AUDIO_ERR_LOG("HAL returned period %{public}u, expected %{public}u for ultra fast",
+                param.period, expectedPeriod);
+            return ERR_NOT_STARTED;
+        }
+    }
     return SUCCESS;
 }
 
