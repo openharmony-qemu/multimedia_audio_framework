@@ -241,6 +241,7 @@ ohos_shared_library("audio_engine_node") {
     ":audio_engine_utils",
     "../../frameworks/native/audioclock:audio_clock",
     "../../frameworks/native/audioeffect:audio_effect",
+    "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_policy:audio_foundation",
