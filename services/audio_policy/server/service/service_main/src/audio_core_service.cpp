@@ -1508,7 +1508,8 @@ void AudioCoreService::ForceStopInterphoneStreamsIfNecessary(const std::shared_p
 void AudioCoreService::CheckFastToNormalForPlayback(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     SessionOperationMsg opMsg)
 {
-    if (opMsg == SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL && (streamDesc->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST)) {
+    if (opMsg == SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL &&
+        (streamDesc->routeFlag_ & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST))) {
         streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
         AUDIO_INFO_LOG("fast playback need to change to FORCED_NORMAL");
     }

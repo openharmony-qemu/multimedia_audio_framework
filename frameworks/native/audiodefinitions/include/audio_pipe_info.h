@@ -108,7 +108,8 @@ public:
 
     bool IsRouteFast() const
     {
-        return (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag_ & AUDIO_INPUT_FLAG_FAST);
+        return (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag_ & AUDIO_INPUT_FLAG_FAST) ||
+            (routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST);
     }
 
     bool IsRouteOffload() const

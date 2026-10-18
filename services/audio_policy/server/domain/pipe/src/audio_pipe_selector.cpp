@@ -2248,10 +2248,12 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         UpdateModuleInfoWithDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
 
-    if (streamDesc->IsUltraFastRequested() &&
-        !AudioPipeManager::GetPipeManager()->HasRunningStream(streamDesc->sessionId_)) {
-        info.SetUltraFastFlag(true);
-        streamDesc->SetUltraFastImplemented(true);
+    if (streamDesc->IsUltraFastRequested()) {
+        if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_ULTRA_FAST ||
+            !AudioPipeManager::GetPipeManager()->HasRunningStream(streamDesc->sessionId_)) {
+            info.SetUltraFastFlag(true);
+            streamDesc->SetUltraFastImplemented(true);
+        }
     }
 
     // engine uses networkId to distinguish different renders,
@@ -2444,7 +2446,7 @@ void AudioPipeSelector::MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> 
     std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN(streamDesc != nullptr && pipeInfo != nullptr, "streamDesc or pipeInfo is nullptr");
-    CHECK_AND_RETURN(pipeInfo->GetRoute() & AUDIO_OUTPUT_FLAG_FAST);
+    CHECK_AND_RETURN(pipeInfo->GetRoute() & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST));
     streamDesc->SetUltraFastImplemented(pipeInfo->GetUltraFastFlag());
 }
 

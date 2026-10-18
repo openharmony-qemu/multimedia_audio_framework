@@ -264,7 +264,8 @@ public:
 
     bool IsFastStream() const
     {
-        return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST) != 0;
+        return (rendererInfo_.audioFlag & (AUDIO_OUTPUT_FLAG_FAST |
+            AUDIO_OUTPUT_FLAG_ULTRA_FAST)) != 0;
     }
 
     void UpdateLogTag()
