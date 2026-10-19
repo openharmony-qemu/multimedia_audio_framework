@@ -6290,8 +6290,7 @@ bool AudioPolicyServer::IsDeviceSupportLoopback(std::shared_ptr<AudioDeviceDescr
 {
     DeviceType type = device->getType();
     if (type == DEVICE_TYPE_USB_ARM_HEADSET || type == DEVICE_TYPE_USB_HEADSET) {
-        static bool ret = AudioServerProxy::GetInstance().IsAudioLoopbackSupported(LOOPBACK_HARDWARE, type);
-        return ret;
+        return AudioServerProxy::GetInstance().IsAudioLoopbackSupported(LOOPBACK_HARDWARE, type);
     }
 
     CHECK_AND_RETURN_RET(type == DEVICE_TYPE_NEARLINK, false);
