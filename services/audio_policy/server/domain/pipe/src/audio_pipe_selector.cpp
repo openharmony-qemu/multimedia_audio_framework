@@ -2249,7 +2249,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     }
 
     if (streamDesc->IsUltraFastRequested()) {
-        if (streamDesc->GetRoute() == AUDIO_OUTPUT_FLAG_ULTRA_FAST ||
+        if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_ULTRA_FAST ||
             !AudioPipeManager::GetPipeManager()->HasRunningStream(streamDesc->sessionId_)) {
             info.SetUltraFastFlag(true);
             streamDesc->SetUltraFastImplemented(true);
