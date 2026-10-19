@@ -2377,7 +2377,6 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "AudioCoreService is null");
     coreService->UpdateSinkLatencyForOutputDevices(newRendererInfo, INVALID_STREAM_ID, deviceDescs);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "UpdateLatencyAndFilterDevices failed");
     bool hasBTPermission = false;
     if (!forceNoBTPermission) {
         hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
@@ -6364,7 +6363,7 @@ int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioD
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> tempOutputDevices = eventEntry_->
         GetPreferredOutputDeviceDescriptors(rendererInfo, IPCSkeleton::GetCallingUid(), LOCAL_NETWORK_ID);
     auto coreService = AudioCoreService::GetCoreService();
-    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "AudioCoreService is null");
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, SUCCESS, "AudioCoreService is null");
     coreService->UpdateSinkLatencyForOutputDevices(rendererInfo, INVALID_STREAM_ID, deviceDescs);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !tempOutputDevices.empty(), SUCCESS, "No suppprted output device.");
