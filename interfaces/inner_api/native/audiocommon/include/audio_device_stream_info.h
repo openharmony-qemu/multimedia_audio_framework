@@ -23,6 +23,7 @@ namespace AudioStandard {
 struct DeviceStreamInfo {
     AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
+    std::set<AudioSampleFormat> formats;
     std::set<AudioChannelLayout> channelLayout;
     std::set<AudioSamplingRate> samplingRate;
 

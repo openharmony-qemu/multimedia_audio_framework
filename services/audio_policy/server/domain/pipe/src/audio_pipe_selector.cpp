@@ -775,6 +775,25 @@ void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
         return;
     }
     std::shared_ptr<AudioDeviceDescriptor> temp = streamDesc->newDeviceDescs_.front();
+
+    if (temp->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET && !temp->audioStreamInfo_.empty()) {
+        SelectedDeviceFormat selected = AudioDefinitionPolicyUtils::SelectBestOutputFormat(
+            streamDesc->streamInfo_, temp->audioStreamInfo_);
+        streamPropInfo->format_ = selected.format;
+        streamPropInfo->sampleRate_ = static_cast<uint32_t>(selected.rate);
+        streamPropInfo->channelLayout_ = selected.channelLayout;
+        streamPropInfo->channels_ = ConvertLayoutToAudioChannel(selected.channelLayout);
+        DeviceStreamInfo streamInfo;
+        streamInfo.format = selected.format;
+        streamInfo.formats.insert(selected.format);
+        streamInfo.samplingRate.insert(selected.rate);
+        streamInfo.channelLayout.insert(selected.channelLayout);
+        temp->audioStreamInfo_ = {streamInfo};
+        AUDIO_INFO_LOG("ArmUsb best format: rate=%{public}u, format=%{public}u, layout=%{public}" PRIu64,
+            streamPropInfo->sampleRate_, streamPropInfo->format_, streamPropInfo->channelLayout_);
+        return;
+    }
+
     DeviceStreamInfo streamInfo;
     streamInfo.format = streamPropInfo->format_;
     streamInfo.samplingRate = {static_cast<AudioSamplingRate>(streamPropInfo->sampleRate_)};
@@ -1753,6 +1772,7 @@ ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
     ConcurrencyAction action = AudioConcurrencyManager::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
     action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
     UpdateActionForHdPlay(existingStream, incomingStream, action);
+    UpdateActionForArmUsbFastConcede(existingStream, incomingStream, action);
     bool isIncomingStreamIsLoopback = incomingStream->capturerInfo_.isLoopback ||
         incomingStream->rendererInfo_.isLoopback;
     // No running offload can not concede incoming special pipe
@@ -2354,6 +2374,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
         MatchUltraFastPipe(pipeInfo, streamDesc);
         MatchFastArmusbPipe(pipeInfo, streamDesc);
         MatchArmusbInputPipe(pipeInfo, streamDesc);
+        MatchArmUsbFormatPipe(streamPropInfo, pipeInfo, streamDesc);
 
         pipeManager_->AddStreamToPipe(pipeInfo, streamDesc, PIPE_ACTION_UPDATE);
         HILOG_COMM_INFO("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
@@ -2415,6 +2436,28 @@ void AudioPipeSelector::MatchArmusbInputPipe(const std::shared_ptr<AudioPipeInfo
     CHECK_AND_RETURN(!pipeInfo->IsSameUsbDevice(deviceDesc));
 
     AUDIO_INFO_LOG("ArmUsb input pipe device changed, update moduleInfo with new device info");
+    UpdateModuleInfoWithDevice(deviceDesc, pipeInfo->moduleInfo_);
+    pipeInfo->InitAudioStreamInfo();
+    pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
+}
+
+void AudioPipeSelector::MatchArmUsbFormatPipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+    const std::shared_ptr<AudioPipeInfo> &pipeInfo, std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN(streamDesc != nullptr && pipeInfo != nullptr && streamPropInfo != nullptr);
+    CHECK_AND_RETURN(streamDesc->IsPlayback() && !streamDesc->newDeviceDescs_.empty());
+    auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN(deviceDesc != nullptr && deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET);
+    CHECK_AND_RETURN(pipeInfo->name_ != "fast_usb_arm_output");
+
+    if (IsPipeFormatMatch(streamPropInfo, pipeInfo)) {
+        return;
+    }
+
+    AUDIO_INFO_LOG("ArmUsb format mismatch, reload: pipeRate=%{public}s pipeFormat=%{public}s, "
+        "streamRate=%{public}u streamFormat=%{public}u",
+        pipeInfo->moduleInfo_.rate.c_str(), pipeInfo->moduleInfo_.format.c_str(),
+        streamPropInfo->sampleRate_, streamPropInfo->format_);
     UpdateModuleInfoWithDevice(deviceDesc, pipeInfo->moduleInfo_);
     pipeInfo->InitAudioStreamInfo();
     pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
@@ -2516,6 +2559,41 @@ void AudioPipeSelector::UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescrip
     }
     AUDIO_INFO_LOG("old action: %{public}d, update as %{public}d", action, newAction);
     action = newAction;
+}
+
+void AudioPipeSelector::UpdateActionForArmUsbFastConcede(
+    std::shared_ptr<AudioStreamDescriptor> &existingStream,
+    std::shared_ptr<AudioStreamDescriptor> &incomingStream, ConcurrencyAction &action)
+{
+    CHECK_AND_RETURN_LOG(existingStream != nullptr && incomingStream != nullptr, "stream is nullptr");
+    CHECK_AND_RETURN(action == PLAY_BOTH || action == CONCEDE_INCOMING);
+    CHECK_AND_RETURN(existingStream->IsPlayback() && incomingStream->IsPlayback());
+    CHECK_AND_RETURN(existingStream->GetRoute() & AUDIO_OUTPUT_FLAG_FAST);
+    auto existingDevice = existingStream->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN(existingDevice != nullptr &&
+        existingDevice->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET);
+    CHECK_AND_RETURN(IsSameAdapter(existingStream, incomingStream));
+
+    uint32_t incomingRate = incomingStream->streamInfo_.GetEffectiveSampleRate();
+    CHECK_AND_RETURN(incomingRate > static_cast<uint32_t>(AudioSamplingRate::SAMPLE_RATE_48000));
+
+    bool deviceSupports = false;
+    for (const auto &cap : existingDevice->GetAudioStreamInfo()) {
+        for (const auto &rate : cap.samplingRate) {
+            if (static_cast<uint32_t>(rate) >= incomingRate) {
+                deviceSupports = true;
+                break;
+            }
+        }
+        if (deviceSupports) {
+            break;
+        }
+    }
+    CHECK_AND_RETURN(deviceSupports);
+
+    AUDIO_INFO_LOG("ArmUsb fast concede: existing fast %{public}u falls back to normal for high-spec %{public}u (rate=%{public}u)",
+        existingStream->GetSessionId(), incomingStream->GetSessionId(), incomingRate);
+    action = CONCEDE_EXISTING;
 }
 
 bool AudioPipeSelector::IsUpdateActionForDeviceLevelHdPlay(

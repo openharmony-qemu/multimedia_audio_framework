@@ -228,5 +228,97 @@ DeviceType AudioDefinitionPolicyUtils::GetDeviceTypeFromStr(const std::string &d
     }
     return DEVICE_TYPE_NONE;
 }
+
+SelectedDeviceFormat AudioDefinitionPolicyUtils::SelectBestOutputFormat(const AudioStreamInfo &appStreamInfo,
+    const std::list<DeviceStreamInfo> &deviceCaps)
+{
+    SelectedDeviceFormat result;
+    std::set<uint32_t> deviceRates;
+    std::set<AudioSampleFormat> deviceFormats;
+    std::set<AudioChannelLayout> deviceLayouts;
+    for (const auto &cap : deviceCaps) {
+        for (const auto &rate : cap.samplingRate) {
+            deviceRates.insert(static_cast<uint32_t>(rate));
+        }
+        if (cap.formats.empty()) {
+            if (cap.format != AudioSampleFormat::INVALID_WIDTH) {
+                deviceFormats.insert(cap.format);
+            }
+        } else {
+            for (const auto &fmt : cap.formats) {
+                deviceFormats.insert(fmt);
+            }
+        }
+        for (const auto &layout : cap.channelLayout) {
+            deviceLayouts.insert(layout);
+        }
+    }
+
+    if (deviceRates.empty() && deviceFormats.empty() && deviceLayouts.empty()) {
+        return result;
+    }
+
+    uint32_t appRate = appStreamInfo.GetEffectiveSampleRate();
+    if (!deviceRates.empty()) {
+        uint32_t selected = *deviceRates.begin();
+        for (const auto &rate : deviceRates) {
+            if (rate <= appRate) {
+                selected = rate;
+            }
+        }
+        result.rate = static_cast<AudioSamplingRate>(selected);
+    }
+
+    if (!deviceFormats.empty()) {
+        AudioSampleFormat appFmt = appStreamInfo.format;
+        if (deviceFormats.count(appFmt) > 0) {
+            result.format = appFmt;
+        } else {
+            AudioSampleFormat best = *deviceFormats.begin();
+            bool found = false;
+            for (const auto &fmt : deviceFormats) {
+                if (fmt <= appFmt) {
+                    best = fmt;
+                    found = true;
+                }
+            }
+            result.format = found ? best : *deviceFormats.rbegin();
+        }
+    }
+
+    if (!deviceLayouts.empty()) {
+        uint32_t appCh = static_cast<uint32_t>(appStreamInfo.channels);
+        bool matched = false;
+        uint32_t maxLe = 0;
+        for (const auto &layout : deviceLayouts) {
+            uint32_t ch = static_cast<uint32_t>(ConvertLayoutToAudioChannel(layout));
+            if (ch == appCh) {
+                result.channelLayout = layout;
+                matched = true;
+                break;
+            }
+            if (ch <= appCh && ch > maxLe) {
+                maxLe = ch;
+            }
+        }
+        if (!matched) {
+            if (maxLe > 0) {
+                for (const auto &layout : deviceLayouts) {
+                    if (static_cast<uint32_t>(ConvertLayoutToAudioChannel(layout)) == maxLe) {
+                        result.channelLayout = layout;
+                        break;
+                    }
+                }
+            } else {
+                result.channelLayout = *deviceLayouts.begin();
+            }
+        }
+    }
+
+    AUDIO_INFO_LOG("SelectBestOutputFormat: appRate=%{public}u, rate=%{public}u, format=%{public}u, layout=%{public}u",
+        appRate, static_cast<uint32_t>(result.rate), static_cast<uint32_t>(result.format),
+        static_cast<uint32_t>(result.channelLayout));
+    return result;
+}
 }
 }

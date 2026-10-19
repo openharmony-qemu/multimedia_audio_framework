@@ -30,10 +30,19 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+struct SelectedDeviceFormat {
+    AudioSamplingRate rate = AudioSamplingRate::SAMPLE_RATE_48000;
+    AudioSampleFormat format = AudioSampleFormat::SAMPLE_S16LE;
+    AudioChannelLayout channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+};
+
 class AudioDefinitionPolicyUtils {
 public:
     static uint32_t PcmFormatToBytes(AudioSampleFormat format);
     static DeviceType GetDeviceTypeFromStr(const std::string &deviceTypeStr);
+    static SelectedDeviceFormat SelectBestOutputFormat(const AudioStreamInfo &appStreamInfo,
+        const std::list<DeviceStreamInfo> &deviceCaps);
 private:
     AudioDefinitionPolicyUtils() {}
     ~AudioDefinitionPolicyUtils() {}

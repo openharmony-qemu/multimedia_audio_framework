@@ -415,25 +415,40 @@ void AudioDeviceDescriptor::UpdateDeviceInfoByAudioParameters(const std::string 
     key = getRole() == DeviceRole::OUTPUT_DEVICE ? "sink_rate" : "source_rate";
     it = parameters.find(key);
     if (it != parameters.end()) {
-        uint32_t samplingRate = 0;
-        ConvertToUint32(it->second, samplingRate);
-        streamInfo.samplingRate.insert(static_cast<AudioSamplingRate>(samplingRate));
+        auto rateList = Util::SplitString(it->second, '|');
+        for (const auto &rateStr : rateList) {
+            uint32_t samplingRate = 0;
+            ConvertToUint32(rateStr, samplingRate);
+            streamInfo.samplingRate.insert(static_cast<AudioSamplingRate>(samplingRate));
+        }
     }
 
     key = getRole() == DeviceRole::OUTPUT_DEVICE ? "sink_format" : "source_format";
     it = parameters.find(key);
     if (it != parameters.end()) {
-        streamInfo.format = g_formatStrToEnum[ParseAudioFormat(it->second)];
+        auto formatList = Util::SplitString(it->second, '|');
+        bool isFirst = true;
+        for (const auto &formatStr : formatList) {
+            AudioSampleFormat fmt = g_formatStrToEnum[ParseAudioFormat(formatStr)];
+            streamInfo.formats.insert(fmt);
+            if (isFirst) {
+                streamInfo.format = fmt;
+                isFirst = false;
+            }
+        }
     }
 
     key = getRole() == DeviceRole::OUTPUT_DEVICE ? "sink_chans" : "source_chans";
     it = parameters.find(key);
     if (it != parameters.end()) {
-        uint32_t channels = 0;
-        ConvertToUint32(it->second, channels);
-        AudioChannelLayout channelLayout = static_cast<AudioChannel>(channels) == CHANNEL_4 ?
-            CH_LAYOUT_4POINT0 : CH_LAYOUT_UNKNOWN;
-        streamInfo.channelLayout.insert(channelLayout);
+        auto chanList = Util::SplitString(it->second, '|');
+        for (const auto &chanStr : chanList) {
+            uint32_t channels = 0;
+            ConvertToUint32(chanStr, channels);
+            AudioChannelLayout channelLayout = static_cast<AudioChannel>(channels) == CHANNEL_4 ?
+                CH_LAYOUT_4POINT0 : CH_LAYOUT_UNKNOWN;
+            streamInfo.channelLayout.insert(channelLayout);
+        }
     }
     audioStreamInfo_.clear();
     audioStreamInfo_.push_back(streamInfo);
