@@ -6364,8 +6364,8 @@ int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioD
         GetPreferredOutputDeviceDescriptors(rendererInfo, IPCSkeleton::GetCallingUid(), LOCAL_NETWORK_ID);
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, SUCCESS, "AudioCoreService is null");
-    coreService->UpdateSinkLatencyForOutputDevices(rendererInfo, INVALID_STREAM_ID, deviceDescs);
-    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
+    coreService->UpdateSinkLatencyForOutputDevices(rendererInfo, INVALID_STREAM_ID, tempOutputDevices);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(tempOutputDevices);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !tempOutputDevices.empty(), SUCCESS, "No suppprted output device.");
     auto rawOutput = tempOutputDevices.front();
     CHECK_AND_RETURN_RET_LOG(rawOutput != nullptr, SUCCESS, "OutputDevice is nullptr");
@@ -6373,7 +6373,7 @@ int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioD
     // descriptor's own mac, so the judged device is exactly the preferred device being returned.
     CHECK_AND_RETURN_RET_LOG(IsDeviceSupportLoopback(rawOutput), SUCCESS, "not supported OutputDevice: %{public}s",
         AudioInfoDumpUtils::GetDeviceTypeName(rawOutput->getType()).c_str());
-    result = SanitizeAndSetClientInfo(tempOutputDevices);
+    int32_t result = SanitizeAndSetClientInfo(tempOutputDevices);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "SanitizeAndSetClientInfo failed");
     // Re-take the front element: sanitizing replaced it with a copy whose macAddress_ is cleared.
     outputDevice = tempOutputDevices.front();
