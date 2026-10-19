@@ -94,7 +94,6 @@ static constexpr int32_t READY_CONDITION_WAIT_LIMIT = 5;
 static constexpr uint64_t SERVICE_READY_MASK = 1ULL;
 static constexpr uint64_t REQUIRED_PIPE_READY_MASK = 1ULL << 1;
 static constexpr uint64_t READY_CONDITION_MASK = SERVICE_READY_MASK | REQUIRED_PIPE_READY_MASK;
-static constexpr int64_t COLLABORATIVE_STATE_CHANGE_MUTE_SINK_PORT_US = 200000; // 200ms
 struct ConcurrentCaptureDfxResult {
     std::vector<std::string> existingAppName{};
     std::vector<uint8_t> existingAppState{};

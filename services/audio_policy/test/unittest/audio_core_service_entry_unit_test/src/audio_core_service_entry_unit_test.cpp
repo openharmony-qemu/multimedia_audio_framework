@@ -1610,5 +1610,34 @@ HWTEST(AudioCoreServiceEntryTest, ReleaseMultiChannelPipe_MultiChannelReopened_0
     EXPECT_EQ(ret, ERROR);
     EXPECT_EQ(audioCoreService->isMultiChannelInRelease_.load(), false);
 }
+
+/**
+ * @tc.name  : MutePrimarySinkByCollaborative_001
+ * @tc.number: MutePrimarySinkByCollaborative_001
+ * @tc.desc  : Test EventEntry::MutePrimarySinkByCollaborative forwards the mute request to the core service.
+ */
+HWTEST(AudioCoreServiceEntryTest, MutePrimarySinkByCollaborative_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto eventEntry = CreateEventEntry(audioCoreService);
+    ASSERT_NE(eventEntry, nullptr);
+    EXPECT_NO_THROW(eventEntry->MutePrimarySinkByCollaborative(200000));
+}
+
+/**
+ * @tc.name  : MutePrimarySinkByCollaborative_002
+ * @tc.number: MutePrimarySinkByCollaborative_002
+ * @tc.desc  : Test EventEntry::MutePrimarySinkByCollaborative returns safely when core service is nullptr.
+ */
+HWTEST(AudioCoreServiceEntryTest, MutePrimarySinkByCollaborative_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::shared_ptr<AudioCoreService::EventEntry> eventEntry =
+        std::make_shared<AudioCoreService::EventEntry>(nullptr, audioCoreService->readyConditionNotifier_);
+    ASSERT_NE(eventEntry, nullptr);
+    EXPECT_NO_THROW(eventEntry->MutePrimarySinkByCollaborative(200000));
+}
 } // namespace AudioStandard
 } // namespace OHOS
