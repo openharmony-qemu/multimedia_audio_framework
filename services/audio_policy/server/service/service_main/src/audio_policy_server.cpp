@@ -6337,7 +6337,11 @@ int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioD
     int32_t result = GetPreferredOutputDeviceDescriptors(rendererInfo, true, tempOutputDevices);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !tempOutputDevices.empty(), SUCCESS, "No suppprted output device.");
     outputDevice = tempOutputDevices.front();
-    CHECK_AND_RETURN_RET(outputDevice != nullptr && IsDeviceSupportLoopback(outputDevice), SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(outputDevice != nullptr, SUCCESS, "OutputDevice is nullptr");
+    bool isSupported = false;
+    int32_t checkResult = IsAudioLoopbackSupported(LOOPBACK_HARDWARE, outputDevice->getType(), isSupported);
+    CHECK_AND_RETURN_RET_LOG(checkResult == SUCCESS && isSupported, SUCCESS, "not supported OutputDevice: %{public}s",
+        AudioInfoDumpUtils::GetDeviceTypeName(outputDevice->getType()).c_str());
 
     AudioCapturerInfo capturerInfo;
     capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
@@ -6348,8 +6352,11 @@ int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioD
     result = GetPreferredInputDeviceDescriptors(capturerInfo, tempInputDevices);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !tempInputDevices.empty(), SUCCESS, "No suppprted input device.");
     inputDevice = tempInputDevices.front();
-    CHECK_AND_RETURN_RET(inputDevice != nullptr &&
-        g_maySupportedDevicePairSet.count({inputDevice->getType(), outputDevice->getType()}), SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(inputDevice != nullptr, SUCCESS, "InputDevice is nullptr");
+    CHECK_AND_RETURN_RET_LOG(g_maySupportedDevicePairSet.count({inputDevice->getType(), outputDevice->getType()}),
+        SUCCESS, "not supported device pair, inputDevice: %{public}s, OutputDevice: %{public}s",
+        AudioInfoDumpUtils::GetDeviceTypeName(inputDevice->getType()).c_str(),
+        AudioInfoDumpUtils::GetDeviceTypeName(outputDevice->getType()).c_str());
 
     ret = SUCCESS;
     return SUCCESS;
