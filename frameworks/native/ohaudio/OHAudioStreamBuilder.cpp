@@ -21,6 +21,7 @@
 #include "OHAudioStreamBuilder.h"
 #include "OHAudioCapturer.h"
 #include "audio_utils.h"
+#include "ipc_skeleton.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82
