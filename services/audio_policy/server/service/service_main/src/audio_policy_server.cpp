@@ -2377,6 +2377,7 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "AudioCoreService is null");
     coreService->UpdateSinkLatencyForOutputDevices(newRendererInfo, INVALID_STREAM_ID, deviceDescs);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
+
     bool hasBTPermission = false;
     if (!forceNoBTPermission) {
         hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
