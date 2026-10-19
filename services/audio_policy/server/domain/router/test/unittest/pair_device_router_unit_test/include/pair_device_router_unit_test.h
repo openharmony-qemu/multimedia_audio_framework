@@ -28,14 +28,16 @@ namespace AudioStandard {
 
 class PairDeviceRouterUnitTest : public testing::Test {
 public:
-    // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
-    // TearDownTestCase: Called after all test case
     static void TearDownTestCase(void);
-    // SetUp: Called before each test cases
     void SetUp(void);
-    // TearDown: Called after each test cases
     void TearDown(void);
+
+protected:
+    static constexpr int32_t UID = 100;
+    static constexpr uint32_t SESSION = 200;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> systemOutputs_;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
