@@ -2373,28 +2373,43 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     AudioRendererInfo newRendererInfo = rendererInfo;
     deviceDescs = eventEntry_->GetPreferredOutputDeviceDescriptors(newRendererInfo, IPCSkeleton::GetCallingUid(),
         LOCAL_NETWORK_ID);
-    int32_t result = UpdateLatencyAndFilterDevices(newRendererInfo, deviceDescs);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "UpdateLatencyAndFilterDevices failed");
-    return SanitizeAndSetClientInfo(forceNoBTPermission, deviceDescs);
-}
-
-int32_t AudioPolicyServer::UpdateLatencyAndFilterDevices(const AudioRendererInfo &rendererInfo,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
-{
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "AudioCoreService is null");
-    coreService->UpdateSinkLatencyForOutputDevices(rendererInfo, INVALID_STREAM_ID, deviceDescs);
+    coreService->UpdateSinkLatencyForOutputDevices(newRendererInfo, INVALID_STREAM_ID, deviceDescs);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
-    return SUCCESS;
-}
-
-int32_t AudioPolicyServer::SanitizeAndSetClientInfo(bool forceNoBTPermission,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
-{
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "UpdateLatencyAndFilterDevices failed");
     bool hasBTPermission = false;
     if (!forceNoBTPermission) {
         hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     }
+
+    if (!hasBTPermission) {
+        audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
+    }
+
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
+    AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
+    for (auto &desc : deviceDescs) {
+        CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        clientInfo.isSupportedDevice_ = audioPolicyUtils_.IsSupportedDevice(AudioBundleManager::GetBundleName(),
+            desc->deviceType_, hasSystemPermission);
+        desc->SetClientInfo(clientInfo);
+        desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
+        if (desc->IsAudioDeviceDescriptor()) {
+            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
+        }
+        if (!hasSystemPermission && desc->deviceType_ == DEVICE_TYPE_BT_SPP) {
+            desc->deviceType_ = DEVICE_TYPE_SYSTEM_PRIVATE;
+        }
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SanitizeAndSetClientInfo(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
+{
+    bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
 
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
@@ -6348,7 +6363,10 @@ int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioD
     rendererInfo.loopbackMode = LOOPBACK_HARDWARE;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> tempOutputDevices = eventEntry_->
         GetPreferredOutputDeviceDescriptors(rendererInfo, IPCSkeleton::GetCallingUid(), LOCAL_NETWORK_ID);
-    int32_t result = UpdateLatencyAndFilterDevices(rendererInfo, tempOutputDevices);
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "AudioCoreService is null");
+    coreService->UpdateSinkLatencyForOutputDevices(rendererInfo, INVALID_STREAM_ID, deviceDescs);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !tempOutputDevices.empty(), SUCCESS, "No suppprted output device.");
     auto rawOutput = tempOutputDevices.front();
     CHECK_AND_RETURN_RET_LOG(rawOutput != nullptr, SUCCESS, "OutputDevice is nullptr");
@@ -6356,7 +6374,7 @@ int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioD
     // descriptor's own mac, so the judged device is exactly the preferred device being returned.
     CHECK_AND_RETURN_RET_LOG(IsDeviceSupportLoopback(rawOutput), SUCCESS, "not supported OutputDevice: %{public}s",
         AudioInfoDumpUtils::GetDeviceTypeName(rawOutput->getType()).c_str());
-    result = SanitizeAndSetClientInfo(true, tempOutputDevices);
+    result = SanitizeAndSetClientInfo(tempOutputDevices);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "SanitizeAndSetClientInfo failed");
     // Re-take the front element: sanitizing replaced it with a copy whose macAddress_ is cleared.
     outputDevice = tempOutputDevices.front();
