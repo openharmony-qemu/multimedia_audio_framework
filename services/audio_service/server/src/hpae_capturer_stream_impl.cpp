@@ -33,6 +33,7 @@ static SafeMap<void *, std::weak_ptr<HpaeCapturerStreamImpl>> paCapturerMap_;
 const int32_t MIN_BUFFER_SIZE = 2;
 const int32_t FRAME_LEN_20MS = 20 * SOURCE_PERIOD_SIZE;
 const int32_t FRAME_LEN_5MS = 5;
+const int32_t BARE_FRAME_LEN_20MS = 20;
 
 HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
 {
@@ -42,6 +43,16 @@ HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
         processConfig_.isInnerCapturer == false) {
         spanSizeInFrame_ = FRAME_LEN_5MS * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
         AUDIO_INFO_LOG("fast for spanSizeInFrame_ to 5ms: %{public}zu", spanSizeInFrame_);
+    }
+    // The inner-capturer chain supplies one bare-20ms frame per tick (the ProcessCluster and
+    // InnerCapSink geometry derive from the sink rate * 20ms and are never PERIOD-scaled),
+    // so the server span must stay at bare 20ms too. A PERIOD-scaled span makes
+    // CapturerInServer::CheckForOnReadData reject every per-tick write whose size equals
+    // one engine tick ("Length is less than spanSizeInBytes"), so no audio frame ever
+    // reaches the client. No-op on PERIOD == 1 platforms.
+    if (processConfig_.isInnerCapturer) {
+        spanSizeInFrame_ = BARE_FRAME_LEN_20MS * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
+        AUDIO_INFO_LOG("inner capturer spanSizeInFrame_ pinned to 20ms: %{public}zu", spanSizeInFrame_);
     }
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));

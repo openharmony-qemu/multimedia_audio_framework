@@ -368,5 +368,33 @@ HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_017, TestSize.Level2)
     auto ret = capturerStreamImplRet->GetMinimumBufferSize(minBufferSize);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test inner capturer span pinning
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerStream_018
+ * @tc.desc  : Inner-capturer streams pin the server span to bare 20ms so that a per-tick
+ *             engine write (one sink-tick frame per 20ms) always satisfies
+ *             CapturerInServer::CheckForOnReadData. On PERIOD == 1 UT builds both branches
+ *             compute the same value; the PERIOD > 1 behaviour is guarded by the
+ *             "inner capturer spanSizeInFrame_ pinned to 20ms" device log.
+ */
+HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_018, TestSize.Level1)
+{
+    adapterManager = std::make_shared<HpaeAdapterManager>(DUP_PLAYBACK);
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.isInnerCapturer = true;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    std::string deviceName = "";
+    std::shared_ptr<ICapturerStream> capturerStream =
+        adapterManager->CreateCapturerStream(processConfig, deviceName);
+    ASSERT_NE(capturerStream, nullptr);
+    auto capturerStreamImpl = std::static_pointer_cast<HpaeCapturerStreamImpl>(capturerStream);
+
+    size_t spanSizeInFrame = 0;
+    capturerStreamImpl->GetSpanSizePerFrame(spanSizeInFrame);
+    const size_t expectedSpan = SAMPLE_RATE_48000 * 20 / 1000; // bare 20ms, no PERIOD scaling
+    EXPECT_EQ(spanSizeInFrame, expectedSpan);
+}
 }
 }
