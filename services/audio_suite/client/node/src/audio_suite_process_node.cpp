@@ -395,39 +395,31 @@ void AudioSuiteProcessNode::CheckEffectNodeOvertimeCount()
         rtfOver100Count_,
         signalProcessTotalCount_);
 
-    bool allOvertimeCounterZero = std::all_of(
-        std::begin(rtfOvertimeCounters_),
-        std::end(rtfOvertimeCounters_),
-        [](int32_t count) { return count == 0; }
-    );
-    if (!allOvertimeCounterZero || rtfOver100Count_ != 0) {
-        // report SuiteEngineUtilizationStats event
-        std::shared_ptr<Media::MediaMonitor::EventBean> bean =
-            std::make_shared<Media::MediaMonitor::EventBean>(Media::MediaMonitor::ModuleId::AUDIO,
-                Media::MediaMonitor::EventId::SUITE_ENGINE_UTILIZATION_STATS,
-                Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+    // report SuiteEngineUtilizationStats event
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean =
+        std::make_shared<Media::MediaMonitor::EventBean>(Media::MediaMonitor::ModuleId::AUDIO,
+            Media::MediaMonitor::EventId::SUITE_ENGINE_UTILIZATION_STATS,
+            Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
 
-        bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
-        bean->Add("AUDIO_NODE_TYPE", GetNodeTypeString());
-        if (GetAudioNodeWorkMode() == PIPELINE_REALTIME_MODE) {
-            bean->Add("RT_MODE_RENDER_COUNT", signalProcessTotalCount_);
-            bean->Add("RT_MODE_RTF_OVER_BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_BASE]);
-            bean->Add("RT_MODE_RTF_OVER_110BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_110BASE]);
-            bean->Add("RT_MODE_RTF_OVER_120BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_120BASE]);
-            bean->Add("RT_MODE_RTF_OVER_100_COUNT", rtfOver100Count_);
-        } else {
-            bean->Add("EDIT_MODE_RENDER_COUNT", signalProcessTotalCount_);
-            bean->Add("EDIT_MODE_RTF_OVER_BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_BASE]);
-            bean->Add("EDIT_MODE_RTF_OVER_110BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_110BASE]);
-            bean->Add("EDIT_MODE_RTF_OVER_120BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_120BASE]);
-            bean->Add("EDIT_MODE_RTF_OVER_100_COUNT", rtfOver100Count_);
-        }
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-
-        AUDIO_WARNING_LOG(
-            "effect node [%{public}s] run signalProcess overtime, report SuiteEngineUtilizationStats event.",
-            GetNodeTypeString().c_str());
+    bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
+    bean->Add("AUDIO_NODE_TYPE", GetNodeTypeString());
+    if (GetAudioNodeWorkMode() == PIPELINE_REALTIME_MODE) {
+        bean->Add("RT_MODE_RENDER_COUNT", signalProcessTotalCount_);
+        bean->Add("RT_MODE_RTF_OVER_BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_BASE]);
+        bean->Add("RT_MODE_RTF_OVER_110BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_110BASE]);
+        bean->Add("RT_MODE_RTF_OVER_120BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_120BASE]);
+        bean->Add("RT_MODE_RTF_OVER_100_COUNT", rtfOver100Count_);
+    } else {
+        bean->Add("EDIT_MODE_RENDER_COUNT", signalProcessTotalCount_);
+        bean->Add("EDIT_MODE_RTF_OVER_BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_BASE]);
+        bean->Add("EDIT_MODE_RTF_OVER_110BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_110BASE]);
+        bean->Add("EDIT_MODE_RTF_OVER_120BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_120BASE]);
+        bean->Add("EDIT_MODE_RTF_OVER_100_COUNT", rtfOver100Count_);
     }
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+
+    AUDIO_INFO_LOG("Report SuiteEngineUtilizationStats event for effect node [%{public}s].",
+        GetNodeTypeString().c_str());
 
     // reset counter
     signalProcessTotalCount_ = 0;
