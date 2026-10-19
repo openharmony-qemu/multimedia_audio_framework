@@ -390,6 +390,7 @@ HWTEST_F(HpaeFastRendererManagerTest, addNodeToSink_001, TestSize.Level1)
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     HpaeNodeInfo nodeInfo;
     nodeInfo.sessionId = 60001;
@@ -417,6 +418,7 @@ HWTEST_F(HpaeFastRendererManagerTest, addAllNodesToSink_001, TestSize.Level1)
 {
     EXPECT_EQ(fastManager_->Init(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
 
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
     HpaeNodeInfo info1;
