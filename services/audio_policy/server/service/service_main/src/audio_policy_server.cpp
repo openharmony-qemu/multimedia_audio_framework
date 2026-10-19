@@ -6366,7 +6366,7 @@ int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioD
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, SUCCESS, "AudioCoreService is null");
     coreService->UpdateSinkLatencyForOutputDevices(rendererInfo, INVALID_STREAM_ID, tempOutputDevices);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(tempOutputDevices);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !tempOutputDevices.empty(), SUCCESS, "No suppprted output device.");
+    CHECK_AND_RETURN_RET_LOG(!tempOutputDevices.empty(), SUCCESS, "No suppprted output device.");
     auto rawOutput = tempOutputDevices.front();
     CHECK_AND_RETURN_RET_LOG(rawOutput != nullptr, SUCCESS, "OutputDevice is nullptr");
     // The check must run before SanitizeAndSetClientInfo clears macAddress_: it queries SLE with the
