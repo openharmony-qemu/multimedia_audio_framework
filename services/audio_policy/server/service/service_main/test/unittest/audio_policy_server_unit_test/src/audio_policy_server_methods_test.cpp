@@ -1313,5 +1313,130 @@ HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_Duplicate,
     std::vector<AncoPlaybackInfo> emptyAncoInfos;
     audioPolicyServer_->SetAncoPlaybackInfo(emptyAncoInfos);
 }
+
+/**
+ * @tc.name  : SetAppVolumeMuteAndHideVolumeBar_001
+ * @tc.desc  : Test with system permission. Should return SUCCESS.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, SetAppVolumeMuteAndHideVolumeBar_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 3001;
+    sptr<RemoteObjectTestStub> callerObj = new RemoteObjectTestStub();
+    callerObj->addDeathResult_ = true;
+    int32_t ret = audioPolicyServer_->SetAppVolumeMuteAndHideVolumeBar(
+        TEST_APP_UID, true, callerObj);
+    EXPECT_EQ(ret, SUCCESS);
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+}
+
+/**
+ * @tc.name  : SetAppVolumeMuteAndHideVolumeBar_002
+ * @tc.desc  : Test with muted=false. Should return SUCCESS.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, SetAppVolumeMuteAndHideVolumeBar_002, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 3002;
+    sptr<RemoteObjectTestStub> callerObj = new RemoteObjectTestStub();
+    callerObj->addDeathResult_ = true;
+    audioPolicyServer_->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true, callerObj);
+    int32_t ret = audioPolicyServer_->SetAppVolumeMuteAndHideVolumeBar(
+        TEST_APP_UID, false, callerObj);
+    EXPECT_EQ(ret, SUCCESS);
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+}
+
+/* ==================== RegisterAppVolumeMuteAndHideDeathRecipient tests ==================== */
+
+/**
+ * @tc.name  : RegisterAppVolumeMuteAndHideDeathRecipient_001
+ * @tc.desc  : Test with null callerObj. Should skip registration.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RegisterAppVolumeMuteAndHideDeathRecipient_001,
+    TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID = 4001;
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+    audioPolicyServer_->RegisterAppVolumeMuteAndHideDeathRecipient(TEST_CALLER_UID, nullptr);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 0u);
+}
+
+/**
+ * @tc.name  : RegisterAppVolumeMuteAndHideDeathRecipient_002
+ * @tc.desc  : Test registering twice for same callerUid. Second should be skipped.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RegisterAppVolumeMuteAndHideDeathRecipient_002,
+    TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID = 4002;
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = true;
+    audioPolicyServer_->RegisterAppVolumeMuteAndHideDeathRecipient(TEST_CALLER_UID, obj);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 1u);
+    audioPolicyServer_->RegisterAppVolumeMuteAndHideDeathRecipient(TEST_CALLER_UID, obj);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 1u);
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+}
+
+/**
+ * @tc.name  : RegisterAppVolumeMuteAndHideDeathRecipient_003
+ * @tc.desc  : Test successful new registration with AddDeathRecipient=true.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RegisterAppVolumeMuteAndHideDeathRecipient_003,
+    TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID = 4003;
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = true;
+    audioPolicyServer_->RegisterAppVolumeMuteAndHideDeathRecipient(TEST_CALLER_UID, obj);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 1u);
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+}
+
+/**
+ * @tc.name  : RegisterAppVolumeMuteAndHideDeathRecipient_004
+ * @tc.desc  : Test when AddDeathRecipient returns false. Should not register.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RegisterAppVolumeMuteAndHideDeathRecipient_004,
+    TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID = 4004;
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = false;
+    audioPolicyServer_->RegisterAppVolumeMuteAndHideDeathRecipient(TEST_CALLER_UID, obj);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 0u);
+}
+
+/* ==================== OnAppVolumeMuteAndHideCallerDied tests ==================== */
+
+/**
+ * @tc.name  : OnAppVolumeMuteAndHideCallerDied_001
+ * @tc.desc  : Test when callerUid is registered. Should clear and remove entry.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, OnAppVolumeMuteAndHideCallerDied_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID = 4005;
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = true;
+    audioPolicyServer_->RegisterAppVolumeMuteAndHideDeathRecipient(TEST_CALLER_UID, obj);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 1u);
+    audioPolicyServer_->OnAppVolumeMuteAndHideCallerDied(TEST_CALLER_UID);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 0u);
+}
+
+/**
+ * @tc.name  : OnAppVolumeMuteAndHideCallerDied_002
+ * @tc.desc  : Test when callerUid is not in map. Should be no-op.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, OnAppVolumeMuteAndHideCallerDied_002, TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID_NOT_FOUND = 9999;
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+    audioPolicyServer_->OnAppVolumeMuteAndHideCallerDied(TEST_CALLER_UID_NOT_FOUND);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 0u);
+}
 } // namespace AudioStandard
 } // namespace OHOS

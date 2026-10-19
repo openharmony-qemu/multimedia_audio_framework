@@ -1210,5 +1210,35 @@ HWTEST(AudioVolumeClientManagerUnitTest, ClearUnmuteWhitelist_001, TestSize.Leve
     // UT environment: proxy null, ClearUnmuteWhitelist returns ERR_NULL_POINTER
     EXPECT_EQ(result, ERR_NULL_POINTER);
 }
+
+/* ==================== SetAppVolumeMuteAndHideVolumeBar tests ==================== */
+
+/**
+ * @tc.name  : SetAppVolumeMuteAndHideVolumeBar_001
+ * @tc.number: SetAppVolumeMuteAndHideVolumeBar_001
+ * @tc.desc  : Test with system permission. Should delegate to policy manager.
+ */
+HWTEST(AudioVolumeClientManagerUnitTest, SetAppVolumeMuteAndHideVolumeBar_001, TestSize.Level1)
+{
+    GetPermission();
+    constexpr int32_t TEST_APP_UID = 7001;
+    int32_t result = AudioVolumeClientManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(
+        TEST_APP_UID, true);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : SetAppVolumeMuteAndHideVolumeBar_002
+ * @tc.number: SetAppVolumeMuteAndHideVolumeBar_002
+ * @tc.desc  : Test with muted=false. Should delegate to policy manager.
+ */
+HWTEST(AudioVolumeClientManagerUnitTest, SetAppVolumeMuteAndHideVolumeBar_002, TestSize.Level1)
+{
+    GetPermission();
+    constexpr int32_t TEST_APP_UID = 7002;
+    int32_t result = AudioVolumeClientManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(
+        TEST_APP_UID, false);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
