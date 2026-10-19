@@ -1296,6 +1296,12 @@ void AudioCoreService::RemoveAndCloseUnusedCapturerPipe(std::vector<std::shared_
     CHECK_AND_RETURN_LOG(Util::IsEnhancedRoutingSupported(), "enhanced routing is not supported");
     auto unusedPipes = pipeManager_->GetUnusedPipeForCapturer(pipeInfos);
     RemoveAndCloseUnusedPipeInternal(unusedPipes, reason);
+    // The closed unused pipes are no longer valid, remove them from pipeInfos to avoid
+    // processing them again in the subsequent pipe execution loop.
+    pipeInfos.erase(std::remove_if(pipeInfos.begin(), pipeInfos.end(),
+        [&unusedPipes](const std::shared_ptr<AudioPipeInfo> &pipeInfo) {
+            return std::find(unusedPipes.begin(), unusedPipes.end(), pipeInfo) != unusedPipes.end();
+        }), pipeInfos.end());
 }
 
 void AudioCoreService::RemoveUnusedRecordPipe()
