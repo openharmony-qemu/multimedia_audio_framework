@@ -33,11 +33,16 @@ enum ClientType {
     CLIENT_TYPE_GAME = 1,
 };
 
+struct ClientTypeInfo {
+    ClientType clientType;
+    std::string bundleName;
+};
+
 class ClientTypeListener {
 public:
     virtual ~ClientTypeListener() = default;
 
-    virtual void OnClientTypeQueryCompleted(uint32_t uid, ClientType clientType) = 0;
+    virtual void OnClientTypeQueryCompleted(uint32_t uid, ClientType clientType, const std::string &bundleName) = 0;
 };
 
 class ClientTypeManagerHandler : public AppExecFwk::EventHandler {

@@ -827,7 +827,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, ShouldCallbackToClient_002, TestSize.Lev
     interruptEvent.hintType = INTERRUPT_HINT_DUCK;
 
     ClientTypeManager::GetInstance()->clientTypeMap_.clear();
-    ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid, ClientType::CLIENT_TYPE_GAME);
+    ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid, ClientType::CLIENT_TYPE_GAME, "test");
     EXPECT_EQ(audioInterruptService_->ShouldCallbackToClient(uid, streamId, interruptEvent), true);
     EXPECT_EQ(interruptEvent.callbackToApp, false);
 }
@@ -845,7 +845,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, ShouldCallbackToClient_003, TestSize.Lev
     interruptEvent.hintType = INTERRUPT_HINT_UNDUCK;
 
     ClientTypeManager::GetInstance()->clientTypeMap_.clear();
-    ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid, ClientType::CLIENT_TYPE_GAME);
+    ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid, ClientType::CLIENT_TYPE_GAME, "test");
     EXPECT_EQ(audioInterruptService_->ShouldCallbackToClient(uid, streamId, interruptEvent), true);
     EXPECT_EQ(interruptEvent.callbackToApp, false);
 }
@@ -863,7 +863,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, ShouldCallbackToClient_004, TestSize.Lev
     interruptEvent.hintType = INTERRUPT_HINT_RESUME;
 
     ClientTypeManager::GetInstance()->clientTypeMap_.clear();
-    ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid, ClientType::CLIENT_TYPE_GAME);
+    ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid, ClientType::CLIENT_TYPE_GAME, "test");
 
     audioInterruptService_->policyServer_ = new AudioPolicyServer(0);
     ASSERT_NE(audioInterruptService_->policyServer_, nullptr);
@@ -884,7 +884,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, ShouldCallbackToClient_005, TestSize.Lev
     interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
 
     ClientTypeManager::GetInstance()->clientTypeMap_.clear();
-    ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid, ClientType::CLIENT_TYPE_GAME);
+    ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid, ClientType::CLIENT_TYPE_GAME, "test");
     audioInterruptService_->policyServer_ = new AudioPolicyServer(0);
     ASSERT_NE(audioInterruptService_->policyServer_, nullptr);
 
@@ -904,7 +904,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, ShouldCallbackToClient_006, TestSize.Lev
     interruptEvent.hintType = INTERRUPT_HINT_STOP;
 
     ClientTypeManager::GetInstance()->clientTypeMap_.clear();
-    ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid, ClientType::CLIENT_TYPE_GAME);
+    ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid, ClientType::CLIENT_TYPE_GAME, "test");
     audioInterruptService_->policyServer_ = new AudioPolicyServer(0);
     ASSERT_NE(audioInterruptService_->policyServer_, nullptr);
 
@@ -924,7 +924,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, ShouldCallbackToClient_007, TestSize.Lev
     interruptEvent.hintType = INTERRUPT_HINT_NONE;
 
     ClientTypeManager::GetInstance()->clientTypeMap_.clear();
-    ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid, ClientType::CLIENT_TYPE_GAME);
+    ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid, ClientType::CLIENT_TYPE_GAME, "test");
 
     EXPECT_EQ(audioInterruptService_->ShouldCallbackToClient(uid, streamId, interruptEvent), false);
 }

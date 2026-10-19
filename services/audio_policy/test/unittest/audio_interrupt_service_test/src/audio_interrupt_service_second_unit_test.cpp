@@ -1749,7 +1749,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_064, TestSize.
     auto ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
     EXPECT_EQ(true, ret);
 
-    ClientTypeManager::GetInstance()->clientTypeMap_[uid] = CLIENT_TYPE_GAME;
+    ClientTypeManager::GetInstance()->clientTypeMap_[uid] = {CLIENT_TYPE_GAME, "test"};
     interruptEvent.hintType = INTERRUPT_HINT_DUCK;
     ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
     EXPECT_EQ(true, ret);
@@ -1935,7 +1935,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptInternal01, Te
 
     bool updateScene = false;
 
-    ClientTypeManager::GetInstance()->clientTypeMap_[uid] = CLIENT_TYPE_GAME;
+    ClientTypeManager::GetInstance()->clientTypeMap_[uid] = {CLIENT_TYPE_GAME, "test"};
 
     audioInterruptService->GameRecogSetParam(CLIENT_TYPE_GAME, SOURCE_TYPE_VOICE_RECOGNITION, true);
     auto ret = audioInterruptService->ActivateAudioInterruptInternal(DEFAULT_ZONE_ID,

@@ -35,13 +35,13 @@ public:
     ClientType GetClientTypeByUid(uint32_t uid);
     ClientType GetClientTypeByUidSync(int32_t uid);
 
-    void OnClientTypeQueryCompleted(uint32_t uid, ClientType clientType) override;
+    void OnClientTypeQueryCompleted(uint32_t uid, ClientType clientType, const std::string &bundleName) override;
 
     void SetQueryClientTypeCallback(const sptr<IStandardAudioPolicyManagerListener> &callback);
 
 private:
     ffrt::mutex clientTypeMapMutex_;
-    std::unordered_map<uint32_t, ClientType> clientTypeMap_;
+    std::unordered_map<uint32_t, ClientTypeInfo> clientTypeMap_;
 
     std::mutex handlerMutex_;
     ffrt::condition_variable cv;
