@@ -695,9 +695,9 @@ public:
 
     int32_t NotifyProcessBackgroundState(int32_t uid, int32_t pid) override;
 
-    int32_t SetVirtualCall(bool isVirtual) override;
+    int32_t SetVirtualCall(bool isVirtual, int32_t uid) override;
 
-    int32_t GetVirtualCall(bool &isVirtual) override;
+    int32_t GetVirtualCall(int32_t uid, bool &isVirtual) override;
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, bool isConnected) override;
 

@@ -5927,21 +5927,21 @@ int32_t AudioPolicyServer::NotifyProcessBackgroundState(int32_t uid, int32_t pid
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetVirtualCall(bool isVirtual)
+int32_t AudioPolicyServer::SetVirtualCall(bool isVirtual, int32_t uid)
 {
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    AUDIO_INFO_LOG("Set VirtualCall is %{public}d", isVirtual);
-    return audioDeviceCommon_.SetVirtualCall(callerUid, isVirtual);
+    if (uid == 0 || !PermissionUtil::VerifySystemPermission()) {
+        uid = IPCSkeleton::GetCallingUid();
+    }
+    AUDIO_INFO_LOG("Set VirtualCall is %{public}d, uid: %{public}d", isVirtual, uid);
+    return audioDeviceCommon_.SetVirtualCall(uid, isVirtual);
 }
 
-int32_t AudioPolicyServer::GetVirtualCall(bool &isVirtual)
+int32_t AudioPolicyServer::GetVirtualCall(int32_t uid, bool &isVirtual)
 {
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    isVirtual = audioDeviceCommon_.GetVirtualCall(callerUid);
+    if (uid == 0) {
+        uid = IPCSkeleton::GetCallingUid();
+    }
+    isVirtual = audioDeviceCommon_.GetVirtualCall(uid);
     return SUCCESS;
 }
 

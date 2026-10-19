@@ -324,9 +324,9 @@ public:
      */
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
     
-    bool GetVirtualCall();
+    bool GetVirtualCall(int32_t uid = 0);
     void CleanUpResource();
-    int32_t SetVirtualCall(bool isVirtual);
+    int32_t SetVirtualCall(bool isVirtual, int32_t uid = 0);
 
 private:
     AudioSystemClientPolicyManager() = default;

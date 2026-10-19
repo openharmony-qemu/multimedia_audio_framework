@@ -896,14 +896,14 @@ int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const 
     return AudioSystemClientPolicyManager::GetInstance().LoadSplitModule(splitArgs, networkId);
 }
 
-int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual)
+int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual, int32_t uid)
 {
-    return AudioSystemClientPolicyManager::GetInstance().SetVirtualCall(isVirtual);
+    return AudioSystemClientPolicyManager::GetInstance().SetVirtualCall(isVirtual, uid);
 }
 
-bool AudioSystemManager::GetVirtualCall()
+bool AudioSystemManager::GetVirtualCall(int32_t uid)
 {
-    return AudioSystemClientPolicyManager::GetInstance().GetVirtualCall();
+    return AudioSystemClientPolicyManager::GetInstance().GetVirtualCall(uid);
 }
 
 int32_t AudioSystemManager::SetQueryAllowedPlaybackCallback(

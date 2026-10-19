@@ -779,9 +779,9 @@ public:
 
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
-    int32_t SetVirtualCall(const bool isVirtual);
+    int32_t SetVirtualCall(const bool isVirtual, int32_t uid = 0);
 
-    bool GetVirtualCall();
+    bool GetVirtualCall(int32_t uid = 0);
 
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionId,
         const SourceType sourceType, bool isRunning);
