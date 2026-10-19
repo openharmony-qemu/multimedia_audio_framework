@@ -2410,7 +2410,6 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
 int32_t AudioPolicyServer::SanitizeAndSetClientInfo(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
     bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
-
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
     }
