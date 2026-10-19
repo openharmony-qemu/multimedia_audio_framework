@@ -986,6 +986,10 @@ private:
     void InfoDumpHelp(std::string &dumpString);
 
     bool IsDeviceSupportLoopback(std::shared_ptr<AudioDeviceDescriptor> device);
+    int32_t UpdateLatencyAndFilterDevices(const AudioRendererInfo &rendererInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+    int32_t SanitizeAndSetClientInfo(bool forceNoBTPermission,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
 
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
     void AddSystemAbilityListeners();
