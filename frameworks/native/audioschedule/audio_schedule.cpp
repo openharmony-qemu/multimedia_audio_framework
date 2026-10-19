@@ -289,11 +289,6 @@ AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPrio
             AUDIO_ERR_LOG("Set VIP priority failed, ret=%{public}d", ret);
         }
         fclose(fp);
-    } else if (threadPriority == THREAD_PRIORITY_ULTRA_FAST_4) {
-        struct sched_param param = {0};
-        param.sched_priority = SCHED_PRIORITY_NUM_4;
-        int32_t ret = sched_setscheduler(tid, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
-        CHECK_AND_RETURN_LOG(ret == 0, "Set thread ultra fast priority 4 fail, ret=%{public}d", ret);
     } else if (USE_PRIORITY_4_BUNDLE_SET.find(bundleName) != USE_PRIORITY_4_BUNDLE_SET.end() &&
         threadPriority == THREAD_PRIORITY_4) {
         struct sched_param param = {0};
