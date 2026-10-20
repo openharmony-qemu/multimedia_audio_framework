@@ -27,6 +27,7 @@
 #include "parameters.h"
 #include <fstream>
 #include "app_bundle_manager.h"
+#include "stream_dfx_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -1189,13 +1190,24 @@ void AudioStreamCollector::ReportExceptionForBackgroundMute(uint32_t sessionId, 
 {
     std::string appName = AppBundleManager::GetBundleNameFromUid(uid);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::UNDERRUN_ISSUE,
         Media::MediaMonitor::FAULT_EVENT);
-    bean->Add("APP_NAME", appName);
-    bean->Add("STREAM_TYPE", static_cast<int32_t>(usage));
-    bean->Add("TYPE", TYPE_BACKGROUND_PLAYBACK);
-    AUDIO_ERR_LOG("ReportExceptionForBackMute: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
-        appName.c_str(), static_cast<int32_t>(usage), TYPE_BACKGROUND_PLAYBACK);
+    bean->Add("ISSUE_TYPE", TYPE_BACKGROUND_PLAYBACK);
+    bean->Add("STREAM_INFO_1", std::to_string(DFX_INVALID_STREAM_INFO));
+    bean->Add("STREAM_INFO_2", std::to_string(DFX_INVALID_STREAM_INFO));
+    bean->Add("STREAM_INFO_3", static_cast<int32_t>(usage));
+    bean->Add("STREAM_INFO_4", DFX_INVALID_STREAM_INFO);
+    bean->Add("APP_INFO_1", appName);
+    bean->Add("APP_INFO_2", std::to_string(DFX_INVALID_APP_INFO));
+    bean->Add("APP_INFO_3", DFX_INVALID_APP_INFO);
+    bean->Add("EXCEPTION_INFO_1", std::to_string(DFX_INVALID_EXCEPTION_INFO));
+    bean->Add("EXCEPTION_INFO_2", std::to_string(DFX_INVALID_EXCEPTION_INFO));
+    bean->Add("EXCEPTION_INFO_3", DFX_INVALID_EXCEPTION_INFO);
+    bean->Add("EXCEPTION_INFO_4", DFX_INVALID_EXCEPTION_INFO);
+    bean->Add("DEVICE_INFO_1", std::to_string(DFX_INVALID_DEVICE_INFO));
+    bean->Add("DEVICE_INFO_2", DFX_INVALID_DEVICE_INFO);
+    bean->Add("SYSTEM_INFO_1", DFX_INVALID_SYSTEM_INFO);
+    bean->Add("SYSTEM_INFO_2", DFX_INVALID_SYSTEM_INFO);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
