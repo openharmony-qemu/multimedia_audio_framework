@@ -157,13 +157,6 @@ bool AudioSceneManager::IsInPhoneCallScene()
     return audioScene_ == AUDIO_SCENE_PHONE_CALL;
 }
 
-bool AudioSceneManager::IsRingScene()
-{
-    std::lock_guard<std::mutex> lock(sceneMutex_);
-    return audioScene_ == AUDIO_SCENE_RINGING ||
-        audioScene_ == AUDIO_SCENE_VOICE_RINGING;
-}
-
 bool AudioSceneManager::IsHangUpScene()
 {
     std::lock_guard<std::mutex> lock(sceneMutex_);
