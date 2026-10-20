@@ -1162,6 +1162,12 @@ void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioS
                 streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
                 return;
             }
+            if (!pipeManager_->GetUltraFastFlag("primary", PIPE_ROLE_OUTPUT) &&
+                !pipeManager_->GetUltraFastFlag("usb", PIPE_ROLE_OUTPUT)) {
+                AUDIO_INFO_LOG("No true ultra-fast pipe, downgrade to FAST");
+                streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+                return;
+            }
             if (!PermissionUtil::VerifyIsSystemApp() &&
                 streamDesc->GetMainNewDeviceType() != DEVICE_TYPE_USB_ARM_HEADSET) {
                 AUDIO_INFO_LOG("Non-system app on non-USB-ARM device, downgrade to FAST");
