@@ -142,11 +142,11 @@ uint32_t IdHandler::GetRenderIdByDeviceClassSub(const std::string &deviceClass, 
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_CALL_ASSISTANT);
     } else if (deviceClass == "primary_mmap" || deviceClass == "ultra_fast") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT);
-    } else if (deviceClass == "ultra_fast_v2") {
+    } else if (deviceClass == "true_ultra_fast") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_DEFAULT);
     } else if (deviceClass == "usb_arm_fast" || deviceClass == "usb_arm_ultra_fast") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_USB);
-    } else if (deviceClass == "usb_arm_ultra_fast_v2") {
+    } else if (deviceClass == "usb_arm_true_ultra_fast") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_USB);
     } else if (deviceClass == "primary_direct") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DIRECT);

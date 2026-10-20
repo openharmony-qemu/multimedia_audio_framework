@@ -280,6 +280,11 @@ public:
             rendererInfo_.rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST;
     }
 
+    bool IsTrueUltraFastStream() const
+    {
+        return rendererInfo_.rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST;
+    }
+
     bool IsUltraFastStreamRequested() const;
 
     void SetupFastStreamThreadPriority();

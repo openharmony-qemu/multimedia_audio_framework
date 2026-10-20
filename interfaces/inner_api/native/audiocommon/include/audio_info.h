@@ -52,15 +52,15 @@ constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
 constexpr int32_t AUDIO_FLAG_INVALID = -1;
 constexpr int32_t AUDIO_FLAG_NORMAL = 0;
 constexpr int32_t AUDIO_FLAG_MMAP = 1;
-constexpr int32_t AUDIO_FLAG_VOIP_FAST = 13;
+constexpr int32_t AUDIO_FLAG_TRUE_ULTRA_FAST = 2;
 constexpr int32_t AUDIO_FLAG_DIRECT = 3;
 constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
 constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
 constexpr int32_t AUDIO_FLAG_3DA_DIRECT = 6;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_FLAG_ULTRA_FAST = 11;
-constexpr int32_t AUDIO_FLAG_TRUE_ULTRA_FAST = 2;
 constexpr int32_t AUDIO_FLAG_INTERPHONE_VOIP = 12;
+constexpr int32_t AUDIO_FLAG_VOIP_FAST = 13;
 constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
 constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_FLAG_VKB_ALL_RING = 1026;
@@ -2522,6 +2522,7 @@ enum ThreadPriorityConfig : uint32_t {
     THREAD_PRIORITY_QOS_7 = 0,
     THREAD_PRIORITY_4,
     THREAD_PRIORITY_VIP_10,
+    THREAD_PRIORITY_ULTRA_FAST_4,
 };
 
 enum XperfEventId : int32_t {

@@ -1078,7 +1078,10 @@ void RendererInClientInner::SetupFastStreamThreadPriority()
 {
     ThreadPriorityConfig threadPriority = THREAD_PRIORITY_QOS_7;
 
-    if (IsUltraFastStream()) {
+    if (IsTrueUltraFastStream()) {
+        BindBigAndMidCore();
+        threadPriority = THREAD_PRIORITY_ULTRA_FAST_4;
+    } else if (IsUltraFastStream()) {
         BindBigAndMidCore();
         threadPriority = THREAD_PRIORITY_4;
     } else {

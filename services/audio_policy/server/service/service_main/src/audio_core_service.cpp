@@ -1172,6 +1172,12 @@ void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioS
             streamDesc->SetUltraFastRequested(true);
             return;
         case AUDIO_FLAG_ULTRA_FAST:
+            if (pipeManager_->GetUltraFastFlag("primary", PIPE_ROLE_OUTPUT) ||
+                pipeManager_->GetUltraFastFlag("usb", PIPE_ROLE_OUTPUT)) {
+                AUDIO_INFO_LOG("True ultra-fast pipe exists, downgrade flag=11 to FAST");
+                streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+                return;
+            }
             streamDesc->ResetUltraFastFlag();
             GetFlagForUltraFastStream(streamDesc, isCreateProcess);
             break;

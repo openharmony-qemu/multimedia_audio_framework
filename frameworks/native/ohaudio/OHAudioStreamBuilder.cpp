@@ -22,6 +22,7 @@
 #include "OHAudioCapturer.h"
 #include "audio_utils.h"
 #include "ipc_skeleton.h"
+#include "audio_policy_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82
@@ -567,6 +568,11 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
             IPCSkeleton::GetCallingTokenID())) {
             AUDIO_ERR_LOG("Permission denied for ultra fast playback");
             return AUDIOSTREAM_ERROR_PERMISSION_DENIED_ULTRA_FAST;
+        }
+        StreamUsage streamUsage = static_cast<StreamUsage>(usage_);
+        if (!AudioPolicyManager::GetInstance().IsUltraFastPlaybackSupported(streamInfo, streamUsage)) {
+            AUDIO_ERR_LOG("Ultra fast playback not supported");
+            return AUDIOSTREAM_ERROR_UNSUPPORTED_ULTRA_FAST;
         }
         rendererInfo.originalFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
     }
