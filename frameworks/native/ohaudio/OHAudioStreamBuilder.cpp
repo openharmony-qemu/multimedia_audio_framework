@@ -20,6 +20,7 @@
 #include "native_audiostreambuilder.h"
 #include "OHAudioStreamBuilder.h"
 #include "OHAudioCapturer.h"
+#include "OHAudioRenderer.h"
 #include "audio_utils.h"
 #include "ipc_skeleton.h"
 

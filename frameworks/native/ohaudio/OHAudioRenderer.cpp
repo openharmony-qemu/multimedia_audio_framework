@@ -30,7 +30,8 @@ static const int64_t SECOND_TO_NANOSECOND = 1000000000;
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 
-bool OHAudioRenderer::IsUltraFastPlaybackSupported(const AudioStreamInfo &streamInfo, StreamUsage streamUsage)
+bool OHOS::AudioStandard::OHAudioRenderer::IsUltraFastPlaybackSupported(
+    const AudioStreamInfo &streamInfo, StreamUsage streamUsage)
 {
     return AudioRenderer::IsUltraFastPlaybackSupported(streamInfo, streamUsage);
 }
