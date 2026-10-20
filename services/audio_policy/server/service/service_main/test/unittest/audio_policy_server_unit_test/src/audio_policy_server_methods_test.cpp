@@ -1214,6 +1214,9 @@ HWTEST_F(AudioPolicyServerMethodsTest, RemoveUnmuteWhitelistDeathRecipient_003, 
  */
 HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_Empty, TestSize.Level1)
 {
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
     audioPolicyServer_->coreService_->streamCollector_.audioRendererChangeInfos_.clear();
 
     std::vector<AncoPlaybackInfo> emptyAncoInfos;
@@ -1232,6 +1235,9 @@ HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_Empty, Tes
  */
 HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_SingleMedia, TestSize.Level1)
 {
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
     audioPolicyServer_->coreService_->streamCollector_.audioRendererChangeInfos_.clear();
 
     AncoPlaybackInfo ancoInfo;
@@ -1262,6 +1268,9 @@ HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_SingleMedi
  */
 HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_NonPlayingState, TestSize.Level1)
 {
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
     audioPolicyServer_->coreService_->streamCollector_.audioRendererChangeInfos_.clear();
 
     AncoPlaybackInfo ancoInfo;
@@ -1289,6 +1298,9 @@ HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_NonPlaying
  */
 HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_Duplicate, TestSize.Level1)
 {
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
     audioPolicyServer_->coreService_->streamCollector_.audioRendererChangeInfos_.clear();
 
     AncoPlaybackInfo ancoInfo1;
