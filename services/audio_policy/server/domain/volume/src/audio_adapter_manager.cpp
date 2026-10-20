@@ -2479,7 +2479,6 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
     }
     if ((audioModuleInfo.routeFlag & AUDIO_INPUT_FLAG_ULTRA_FAST) != 0) {
         attr.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
-        attr.period = static_cast<uint32_t>(static_cast<uint64_t>(attr.sampleRate) * 2500 / AUDIO_US_PER_S);
     }
     if (!audioModuleInfo.channels.empty()) {
         attr.channel = static_cast<uint32_t>(std::stoul(audioModuleInfo.channels));

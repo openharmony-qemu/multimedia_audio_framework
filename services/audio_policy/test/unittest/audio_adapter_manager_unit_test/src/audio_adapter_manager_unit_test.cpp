@@ -2272,7 +2272,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDe
     EXPECT_EQ(ret, false);
 }
 
-/** @tc.desc: The primary and USB adapters open independent capture IDs and carry the 120 frame period. */
+/** @tc.desc: The primary and USB adapters open independent capture IDs and carry the ultra fast flag. */
 HWTEST_F(AudioAdapterManagerUnitTest, UltraFastCaptureAttr_001, TestSize.Level1)
 {
     AudioAdapterManager manager;
@@ -2281,7 +2281,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, UltraFastCaptureAttr_001, TestSize.Level1)
     module.routeFlag = AUDIO_INPUT_FLAG_ULTRA_FAST;
     auto attr = manager.GetAudioSourceAttr(module);
     EXPECT_EQ(attr.audioStreamFlag, AUDIO_FLAG_ULTRA_FAST);
-    EXPECT_EQ(attr.period, 120);
     auto pipe = std::make_shared<AudioPipeInfo>();
     pipe->routeFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
     pipe->adapterName_ = "primary";
@@ -2296,7 +2295,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UltraFastCaptureAttr_001, TestSize.Level1)
     EXPECT_EQ(info, HDI_ID_INFO_USB);
     module.routeFlag = AUDIO_INPUT_FLAG_FAST;
     attr = manager.GetAudioSourceAttr(module);
-    EXPECT_EQ(attr.period, 0);
+    EXPECT_NE(attr.audioStreamFlag, AUDIO_FLAG_ULTRA_FAST);
     EXPECT_TRUE(manager.IsLowLatencyRoute(AUDIO_INPUT_FLAG_ULTRA_FAST));
     EXPECT_FALSE(manager.IsLowLatencyRoute(AUDIO_INPUT_FLAG_NORMAL));
 }

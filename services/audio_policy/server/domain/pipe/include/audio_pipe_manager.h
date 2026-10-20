@@ -52,7 +52,6 @@ public:
     bool Init();
     bool GetUltraFastFlag();
     bool GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role);
-    bool IsUltraFastRecordingAvailable(SourceType source);
     bool GetArmUsbUltraFastFlag();
     bool PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc);
     uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName,

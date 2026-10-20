@@ -71,23 +71,6 @@ bool AudioPipeManager::GetUltraFastFlag(const std::string &adapterName, AudioPip
     return audioConfigManager_.GetUltraFastFlag(adapterName, role);
 }
 
-bool AudioPipeManager::IsUltraFastRecordingAvailable(SourceType source)
-{
-    int32_t fastCount = 0;
-    int32_t ultraFastCount = 0;
-    for (const auto &desc : GetAllInputStreamDescsCopy()) {
-        CHECK_AND_CONTINUE(desc != nullptr);
-        if (desc->GetRoute() == AUDIO_INPUT_FLAG_ULTRA_FAST) {
-            ++ultraFastCount;
-            ++fastCount;
-        } else if (desc->GetRoute() == AUDIO_INPUT_FLAG_FAST) {
-            CHECK_AND_RETURN_RET(desc->GetSourceType() != source, false);
-            ++fastCount;
-        }
-    }
-    return ultraFastCount < 2 && fastCount < 6;
-}
-
 bool AudioPipeManager::GetArmUsbUltraFastFlag()
 {
     return audioConfigManager_.GetArmUsbUltraFastFlag();

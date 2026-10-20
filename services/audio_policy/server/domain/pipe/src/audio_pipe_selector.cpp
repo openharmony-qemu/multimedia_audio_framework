@@ -589,12 +589,6 @@ void AudioPipeSelector::HandleFastStreamLimitOnCreate(
     int32_t fastInputCount = 0;
     for (const auto &desc : streamDescs) {
         CHECK_AND_CONTINUE(desc != nullptr && desc->sessionId_ != newStreamDesc->sessionId_);
-        if (desc->GetSourceType() == newStreamDesc->GetSourceType() &&
-            ((routeFlag == AUDIO_INPUT_FLAG_ULTRA_FAST && desc->GetRoute() == AUDIO_INPUT_FLAG_FAST) ||
-            (routeFlag == AUDIO_INPUT_FLAG_FAST && desc->GetRoute() == AUDIO_INPUT_FLAG_ULTRA_FAST))) {
-            newStreamDesc->ResetToNormalRoute(false);
-            return;
-        }
         ultraFastCount += desc->GetRoute() == AUDIO_INPUT_FLAG_ULTRA_FAST;
         fastInputCount += desc->GetRoute() == AUDIO_INPUT_FLAG_FAST || desc->GetRoute() == AUDIO_INPUT_FLAG_ULTRA_FAST;
     }
@@ -624,8 +618,6 @@ void AudioPipeSelector::HandleFastStreamLimitAndNearLinkState(
     int32_t fastOutputNum = 0;
     int32_t fastInputNum = 0;
     int32_t ultraFastInputNum = 0;
-    std::set<SourceType> fastSources;
-    std::set<SourceType> ultraFastSources;
     for (auto &streamDesc : streamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
         if (streamDesc->isNearLinkCollaborationEnable_ &&
@@ -638,22 +630,19 @@ void AudioPipeSelector::HandleFastStreamLimitAndNearLinkState(
             continue;
         }
         if (streamDesc->GetRoute() == AUDIO_INPUT_FLAG_ULTRA_FAST) {
-            if (ultraFastInputNum >= 2 || fastInputNum >= MAX_FAST_STREAM_COUNT ||
-                fastSources.count(streamDesc->GetSourceType()) != 0) {
+            if (ultraFastInputNum >= 2 || fastInputNum >= MAX_FAST_STREAM_COUNT) {
                 streamDesc->ResetToNormalRoute(false);
             } else {
                 ++ultraFastInputNum;
                 ++fastInputNum;
-                ultraFastSources.insert(streamDesc->GetSourceType());
             }
             continue;
         }
         if (streamDesc->GetRoute() == AUDIO_INPUT_FLAG_FAST) {
-            if (fastInputNum >= MAX_FAST_STREAM_COUNT || ultraFastSources.count(streamDesc->GetSourceType()) != 0) {
+            if (fastInputNum >= MAX_FAST_STREAM_COUNT) {
                 streamDesc->ResetToNormalRoute(false);
             } else {
                 ++fastInputNum;
-                fastSources.insert(streamDesc->GetSourceType());
             }
         }
     }

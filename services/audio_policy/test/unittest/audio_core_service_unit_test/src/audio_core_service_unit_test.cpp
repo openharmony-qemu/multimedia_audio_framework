@@ -8561,5 +8561,79 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateAudioFlagForFastStream_003, TestSize.Le
     EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
     coreService->SetAudioPowerState(AudioPowerState::ACTIVE);
 }
+/** @tc.desc: Ultra fast selection and fast fallback do not depend on a source type whitelist. */
+HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.Level1)
+{
+    auto *coreService = GetServerPtr()->coreService_.get();
+    ASSERT_NE(coreService, nullptr);
+    const uint64_t savedToken = IPCSkeleton::GetSelfTokenID();
+    const char *perms[] = {"ohos.permission.USE_ULTRA_FAST_AUDIO_STREAM"};
+    NativeTokenInfoParams tokenInfo = {
+        .dcapsNum = 0,
+        .permsNum = 1,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "audio_core_service_ultra_fast_test",
+        .aplStr = "system_basic",
+    };
+    const uint64_t tokenId = GetAccessTokenId(&tokenInfo);
+    SetSelfTokenID(tokenId);
+    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+    EXPECT_TRUE(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
+        static_cast<uint32_t>(tokenId)));
+
+    auto &config = AudioPolicyConfigData::GetInstance();
+    auto savedDevices = config.deviceInfoMap;
+    config.deviceInfoMap.clear();
+    auto adapter = std::make_shared<PolicyAdapterInfo>();
+    adapter->adapterName = "primary";
+    auto device = std::make_shared<AdapterDeviceInfo>();
+    device->name_ = "Hifi_Headset_In";
+    device->type_ = DEVICE_TYPE_USB_HEADSET;
+    device->role_ = INPUT_DEVICE;
+    device->adapterInfo_ = adapter;
+    auto pipe = std::make_shared<AdapterPipeInfo>();
+    pipe->name_ = "primary_ultra_fast_input";
+    pipe->role_ = PIPE_ROLE_INPUT;
+    auto prop = CreatePipeStreamPropInfoForDevice(DEVICE_TYPE_USB_HEADSET, STEREO);
+    prop->bufferSize_ = ULTRA_FAST_CAPTURE_FRAMES * STEREO * sizeof(int16_t);
+    pipe->streamPropInfos_ = {prop};
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
+    config.deviceInfoMap[{DEVICE_TYPE_USB_HEADSET, INPUT_DEVICE}] = {device};
+
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->audioMode_ = AUDIO_MODE_RECORD;
+    stream->capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
+    stream->capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
+    stream->appInfo_.appTokenId = static_cast<uint32_t>(tokenId);
+    stream->streamInfo_ = AudioStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO, CH_LAYOUT_MONO);
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    desc->deviceRole_ = INPUT_DEVICE;
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    stream->newDeviceDescs_ = {desc};
+    for (SourceType source : {SOURCE_TYPE_MIC, SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_LIVE,
+        SOURCE_TYPE_VOICE_RECOGNITION, SOURCE_TYPE_CAMCORDER, SOURCE_TYPE_VOICE_COMMUNICATION,
+        SOURCE_TYPE_VOICE_MESSAGE, SOURCE_TYPE_VOICE_CALL, SOURCE_TYPE_VOICE_DOWNLINK,
+        SOURCE_TYPE_PLAYBACK_CAPTURE}) {
+        stream->capturerInfo_.sourceType = source;
+        device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
+        coreService->UpdateRecordStreamInfo(stream);
+        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST) << source;
+        device->supportPipeMap_.clear();
+        coreService->UpdateRecordStreamInfo(stream);
+        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_FAST) << source;
+        stream->streamInfo_.samplingRate = SAMPLE_RATE_44100;
+        coreService->UpdateRecordStreamInfo(stream);
+        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL) << source;
+        stream->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+    }
+    config.deviceInfoMap = savedDevices;
+    SetSelfTokenID(savedToken);
+    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

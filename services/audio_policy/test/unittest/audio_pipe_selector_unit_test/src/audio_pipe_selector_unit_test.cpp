@@ -2916,7 +2916,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, UltraFastRecordingLimit_001, TestSize.Level1
     streams = {makeStream(1, AUDIO_INPUT_FLAG_FAST)};
     second = makeStream(2, AUDIO_INPUT_FLAG_ULTRA_FAST);
     selector->HandleFastStreamLimitOnCreate(streams, second);
-    EXPECT_EQ(second->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
+    EXPECT_EQ(second->GetRoute(), AUDIO_INPUT_FLAG_ULTRA_FAST);
     streams = {makeStream(1, AUDIO_INPUT_FLAG_ULTRA_FAST), makeStream(2, AUDIO_INPUT_FLAG_ULTRA_FAST),
         makeStream(3, AUDIO_INPUT_FLAG_ULTRA_FAST)};
     selector->HandleFastStreamLimitAndNearLinkState(streams);
@@ -2925,6 +2925,38 @@ HWTEST_F(AudioPipeSelectorUnitTest, UltraFastRecordingLimit_001, TestSize.Level1
     EXPECT_EQ(streams[2]->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
     EXPECT_EQ(selector->GetInputNormalPipeType(AUDIO_INPUT_FLAG_ULTRA_FAST), PIPE_TYPE_IN_ULTRA_FAST);
     EXPECT_EQ(selector->GetInputNormalPipeType(AUDIO_INPUT_FLAG_FAST), PIPE_TYPE_IN_LOWLATENCY);
+}
+
+/** @tc.desc: Same-source fast and ultra fast streams coexist within the input stream limits. */
+HWTEST_F(AudioPipeSelectorUnitTest, UltraFastRecordingSameSource_001, TestSize.Level1)
+{
+    auto selector = std::make_shared<AudioPipeSelector>();
+    for (SourceType source : {SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_RECOGNITION, SOURCE_TYPE_CAMCORDER,
+        SOURCE_TYPE_VOICE_COMMUNICATION, SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_LIVE}) {
+        for (bool ultraFirst : {false, true}) {
+            std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
+            for (uint32_t id = 0; id < 7; ++id) {
+                auto desc = std::make_shared<AudioStreamDescriptor>();
+                desc->audioMode_ = AUDIO_MODE_RECORD;
+                desc->sessionId_ = id + 1;
+                desc->capturerInfo_.sourceType = source;
+                bool isUltra = ultraFirst ? id < 2 : (id >= 4 && id < 6);
+                const AudioFlag route = isUltra ? AUDIO_INPUT_FLAG_ULTRA_FAST : AUDIO_INPUT_FLAG_FAST;
+                desc->routeFlag_ = route;
+                selector->HandleFastStreamLimitOnCreate(streams, desc);
+                EXPECT_EQ(desc->GetRoute(), id < 6 ? route : AUDIO_INPUT_FLAG_NORMAL) << source << ":" << id;
+                streams.push_back(desc);
+            }
+            streams[6]->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+            selector->HandleFastStreamLimitAndNearLinkState(streams);
+            for (uint32_t id = 0; id < 6; ++id) {
+                bool isUltra = ultraFirst ? id < 2 : id >= 4;
+                EXPECT_EQ(streams[id]->GetRoute(),
+                    isUltra ? AUDIO_INPUT_FLAG_ULTRA_FAST : AUDIO_INPUT_FLAG_FAST) << source << ":" << id;
+            }
+            EXPECT_EQ(streams[6]->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
+        }
+    }
 }
 
 } // namespace AudioStandard

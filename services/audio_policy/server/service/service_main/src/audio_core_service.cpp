@@ -1251,12 +1251,9 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
         CHECK_AND_RETURN(info.encoding == ENCODING_PCM && info.format == SAMPLE_S16LE &&
             info.samplingRate == SAMPLE_RATE_48000 &&
             (info.channels == MONO || info.channels == STEREO));
-        const SourceType source = streamDesc->capturerInfo_.sourceType;
-        if ((source == SOURCE_TYPE_MIC || source == SOURCE_TYPE_UNPROCESSED || source == SOURCE_TYPE_LIVE) &&
-            audioConfigManager_.IsUltraFastRecordingSupported(info, streamDesc->newDeviceDescs_)) {
+        if (audioConfigManager_.IsUltraFastRecordingSupported(info, streamDesc->newDeviceDescs_)) {
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
-        } else if ((source == SOURCE_TYPE_MIC || source == SOURCE_TYPE_UNPROCESSED || source == SOURCE_TYPE_LIVE) &&
-            IsStreamSupportMmap(streamDesc)) {
+        } else if (IsStreamSupportMmap(streamDesc)) {
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
         }
         return;
