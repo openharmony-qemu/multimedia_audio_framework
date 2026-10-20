@@ -542,12 +542,9 @@ bool AudioCoreConfigManager::IsUltraFastRecordingDeviceSupported(
     return false;
 }
 
-bool AudioCoreConfigManager::IsUltraFastRecordingSupported(const AudioStreamInfo &streamInfo,
+bool AudioCoreConfigManager::IsUltraFastRecordingSupported(
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
 {
-    CHECK_AND_RETURN_RET(streamInfo.encoding == ENCODING_PCM && streamInfo.format == SAMPLE_S16LE &&
-        streamInfo.samplingRate == SAMPLE_RATE_48000 &&
-        (streamInfo.channelLayout == CH_LAYOUT_MONO || streamInfo.channelLayout == CH_LAYOUT_STEREO), false);
     for (const auto &device : devices) {
         CHECK_AND_CONTINUE(device != nullptr && device->deviceRole_ == INPUT_DEVICE &&
             device->networkId_ == LOCAL_NETWORK_ID);
@@ -555,19 +552,14 @@ bool AudioCoreConfigManager::IsUltraFastRecordingSupported(const AudioStreamInfo
             device->networkId_, AUDIO_INPUT_FLAG_ULTRA_FAST, 0, "", device->isUnidirectional_);
         CHECK_AND_CONTINUE(deviceInfo != nullptr && !deviceInfo->isSimulated_);
         auto adapter = deviceInfo->adapterInfo_.lock();
-        CHECK_AND_CONTINUE(adapter != nullptr && (adapter->adapterName == "primary" || adapter->adapterName == "usb"));
+        CHECK_AND_CONTINUE(adapter != nullptr && GetUltraFastFlag(adapter->adapterName, PIPE_ROLE_INPUT));
         auto pipe = deviceInfo->supportPipeMap_.find(AUDIO_INPUT_FLAG_ULTRA_FAST);
         CHECK_AND_CONTINUE(pipe != deviceInfo->supportPipeMap_.end() && pipe->second != nullptr &&
             pipe->second->role_ == PIPE_ROLE_INPUT);
-        for (const auto &prop : pipe->second->streamPropInfos_) {
-            CHECK_AND_CONTINUE(prop != nullptr);
-            if (prop->sampleRate_ == SAMPLE_RATE_48000 && prop->format_ == SAMPLE_S16LE &&
-                prop->channelLayout_ == CH_LAYOUT_STEREO &&
-                prop->bufferSize_ == ULTRA_FAST_CAPTURE_FRAMES * STEREO * sizeof(int16_t) &&
-                prop->supportDeviceMap_.count(device->deviceType_) != 0) {
-                return true;
-            }
-        }
+        const std::string expectedPipeName = adapter->adapterName == "primary" ?
+            "primary_ultra_fast_input" : "usb_ultra_fast_input";
+        CHECK_AND_CONTINUE(pipe->second->name_ == expectedPipeName);
+        return true;
     }
     return false;
 }
