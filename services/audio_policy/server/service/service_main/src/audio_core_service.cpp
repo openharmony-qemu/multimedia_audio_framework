@@ -817,8 +817,9 @@ int32_t AudioCoreService::CreateCapturerClient(
         streamDesc->capturerInfo_.capturerFlags == AUDIO_FLAG_ULTRA_FAST) {
         CHECK_AND_RETURN_RET(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
             IPCSkeleton::GetCallingTokenID()), ERR_PERMISSION_DENIED);
-        CHECK_AND_RETURN_RET(audioConfigManager_.GetUltraFastFlag("primary", PIPE_ROLE_INPUT) ||
-            audioConfigManager_.GetUltraFastFlag("usb", PIPE_ROLE_INPUT), ERROR_UNSUPPORTED_ULTRA_FAST);
+        CHECK_AND_RETURN_RET(AudioCoreConfigManager::GetInstance().GetUltraFastFlag("primary", PIPE_ROLE_INPUT) ||
+            AudioCoreConfigManager::GetInstance().GetUltraFastFlag("usb", PIPE_ROLE_INPUT),
+            ERROR_UNSUPPORTED_ULTRA_FAST);
         streamDesc->appInfo_.appTokenId = IPCSkeleton::GetCallingTokenID();
         streamDesc->capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
     }
@@ -1251,7 +1252,7 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
         CHECK_AND_RETURN(info.encoding == ENCODING_PCM && info.format == SAMPLE_S16LE &&
             info.samplingRate == SAMPLE_RATE_48000 &&
             (info.channels == MONO || info.channels == STEREO));
-        if (audioConfigManager_.IsUltraFastRecordingSupported(streamDesc->newDeviceDescs_)) {
+        if (AudioCoreConfigManager::GetInstance().IsUltraFastRecordingSupported(streamDesc->newDeviceDescs_)) {
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
         } else if (IsStreamSupportMmap(streamDesc)) {
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
