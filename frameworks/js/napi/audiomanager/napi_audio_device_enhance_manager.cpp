@@ -316,6 +316,10 @@ napi_value NapiAudioDeviceEnhanceManager::SelectInputDeviceForAudioCapturer(napi
 
 napi_value NapiAudioDeviceEnhanceManager::GetSoundCardInfo(napi_env env, napi_callback_info info)
 {
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+    NapiAudioError::ThrowError(env, "GetSoundCardInfo is unavailable", NAPI_ERR_UNAVAILABLE_ON_DEVICE);
+    return NapiParamUtils::GetUndefinedValue(env);
+#else
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), NapiAudioError::ThrowErrorAndReturn(
         env, "not system app", NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
@@ -348,6 +352,7 @@ napi_value NapiAudioDeviceEnhanceManager::GetSoundCardInfo(napi_env env, napi_ca
         output = jsObj;
     };
     return NapiAsyncWork::Enqueue(env, context, "GetSoundCardInfo", executor, complete);
+#endif
 }
 
 napi_value NapiAudioDeviceEnhanceManager::Init(napi_env env, napi_value exports)

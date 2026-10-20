@@ -17,6 +17,7 @@
 #define HDI_ADAPTER_INFO_H
 
 #include <stdint.h>
+#include <string>
 
 // id
 enum HdiIdBase : uint32_t {
@@ -84,6 +85,15 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_3DA "3DA"
 // Keyword in module name / busAddress identifying a 3DA direct bus port (any bus number)
 #define HDI_BUS_KEYWORD_3DA "3da"
+
+// Identity context for selecting the HDI sink id info (see IdHandler::SelectIdInfo)
+struct HdiIdInfoParam {
+    std::string deviceClass; // module className, e.g. primary / primary_extra / remote
+    std::string name;        // module name, the primary_extra discriminator
+    std::string networkId;   // distributed networkId, used by remote* classes
+    std::string macAddress;  // a2dp device mac (MULTI_USER_ZONE), sensitive: never log
+    std::string busAddress;  // multi-bus port address, highest priority
+};
 
 // device manager
 enum HdiDeviceManagerType : uint32_t {

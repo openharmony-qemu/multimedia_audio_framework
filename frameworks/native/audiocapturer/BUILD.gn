@@ -74,6 +74,10 @@ ohos_shared_library("audio_capturer") {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
+  if (audio_framework_feature_multi_bus) {
+    defines += [ "MULTI_BUS_ENABLE" ]
+  }
+
   deps = [
     "../../../services/audio_service:audio_common",
     "../../../services/audio_policy:audio_policy_client",

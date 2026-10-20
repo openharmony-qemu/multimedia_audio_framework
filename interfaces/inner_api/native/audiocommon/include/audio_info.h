@@ -113,6 +113,7 @@ const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_
 const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
 const char* INJECT_PLAYBACK_TO_AUDIO_CAPTURE_PERMISSION = "ohos.permission.INJECT_PLAYBACK_TO_AUDIO_CAPTURE";
 const char* VOIP_CAPTURE_CONCURRENCY_PERMISSION = "ohos.permission.VOIP_CAPTURE_CONCURRENCY";
+const char* AUDIO_USER_MICROPHONE_INDICATOR_PERMISSION = "ohos.permission.AUDIO_USER_MICROPHONE_INDICATOR";
 
 const char* PRIMARY_WAKEUP = "Built_in_wakeup";
 const char* INNER_CAPTURER_SINK = "InnerCapturerSink_";
@@ -1461,7 +1462,7 @@ public:
 
 struct AppInfo {
     int32_t appUid { INVALID_UID };
-    uint32_t appTokenId { 0 };
+    uint32_t appTokenId { 0 }; // tokenID of the app that creates the stream
     int32_t appPid { 0 };
     uint64_t appFullTokenId { 0 };
     std::string deviceId {""};
@@ -1776,6 +1777,8 @@ struct StaticBufferInfo : public Parcelable {
     }
 };
 
+constexpr uint32_t INVALID_ACTUAL_USING_TOKEN_ID = 0;
+
 struct AudioProcessConfig : public Parcelable {
     int32_t callerUid = INVALID_UID;
 
@@ -1785,6 +1788,12 @@ struct AudioProcessConfig : public Parcelable {
     // auth rewrite of `appInfo`. Used to key per-app volume on the real app uid.
     // Not marshalled: populated and consumed server-side only.
     AppInfo originalAppInfo;
+
+    uint32_t actualUsingTokenId = INVALID_ACTUAL_USING_TOKEN_ID; // tokenID of the app that actually uses the stream
+
+    // tokenID used for privacy indicator attribution (assigned from appTokenId or actualUsingTokenId based on scenario)
+    // Server-side only, not marshalled.
+    uint32_t effectivePrivacyTokenId = 0;
 
     AudioStreamInfo streamInfo;
 
@@ -1848,17 +1857,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(privacyType);
 
         // AudioCapturerInfo
-        parcel.WriteInt32(capturerInfo.sourceType);
-        parcel.WriteInt32(capturerInfo.capturerFlags);
-        parcel.WriteInt32(capturerInfo.originalFlag);
-        parcel.WriteInt32(capturerInfo.pipeType);
-        parcel.WriteInt32(capturerInfo.recorderType);
-        parcel.WriteBool(capturerInfo.isLoopback);
-        parcel.WriteInt32(static_cast<int32_t>(capturerInfo.loopbackMode));
-        parcel.WriteBool(capturerInfo.mixWithWakeUp);
-        parcel.WriteBool(capturerInfo.loopBackEffectEnabled);
-        parcel.WriteString(capturerInfo.cellularRecordPhoneNum);
-        parcel.WriteString(capturerInfo.cellularRecordToken);
+        MarshallingCapturerInfo(parcel);
 
         // streamType
         parcel.WriteInt32(streamType);
@@ -1884,6 +1883,8 @@ struct AudioProcessConfig : public Parcelable {
         if (rendererInfo.isStatic) {
             staticBufferInfo.Marshalling(parcel);
         }
+
+        parcel.WriteUint32(actualUsingTokenId);
 
         return true;
     }
@@ -1919,17 +1920,7 @@ struct AudioProcessConfig : public Parcelable {
         config->privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
 
         // AudioCapturerInfo
-        config->capturerInfo.sourceType = static_cast<SourceType>(parcel.ReadInt32());
-        config->capturerInfo.capturerFlags = parcel.ReadInt32();
-        config->capturerInfo.originalFlag = parcel.ReadInt32();
-        config->capturerInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
-        config->capturerInfo.recorderType = static_cast<RecorderType>(parcel.ReadInt32());
-        config->capturerInfo.isLoopback = parcel.ReadBool();
-        config->capturerInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
-        config->capturerInfo.mixWithWakeUp = parcel.ReadBool();
-        config->capturerInfo.loopBackEffectEnabled = parcel.ReadBool();
-        config->capturerInfo.cellularRecordPhoneNum = parcel.ReadString();
-        config->capturerInfo.cellularRecordToken = parcel.ReadString();
+        UnmarshallingCapturerInfo(parcel, config);
 
         // streamType
         config->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
@@ -1960,6 +1951,8 @@ struct AudioProcessConfig : public Parcelable {
             }
             config->staticBufferInfo = *infoPtr;
         }
+
+        config->actualUsingTokenId = parcel.ReadUint32();
         return config;
     }
 
@@ -1985,6 +1978,21 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteBool(rendererInfo.isStatic);
     }
 
+    void MarshallingCapturerInfo(Parcel &parcel) const
+    {
+        parcel.WriteInt32(capturerInfo.sourceType);
+        parcel.WriteInt32(capturerInfo.capturerFlags);
+        parcel.WriteInt32(capturerInfo.originalFlag);
+        parcel.WriteInt32(capturerInfo.pipeType);
+        parcel.WriteInt32(capturerInfo.recorderType);
+        parcel.WriteBool(capturerInfo.isLoopback);
+        parcel.WriteInt32(static_cast<int32_t>(capturerInfo.loopbackMode));
+        parcel.WriteBool(capturerInfo.mixWithWakeUp);
+        parcel.WriteBool(capturerInfo.loopBackEffectEnabled);
+        parcel.WriteString(capturerInfo.cellularRecordPhoneNum);
+        parcel.WriteString(capturerInfo.cellularRecordToken);
+    }
+
     static void UnmarshallingRendererInfo(Parcel &parcel, AudioProcessConfig *config)
     {
         config->rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
@@ -2005,6 +2013,21 @@ struct AudioProcessConfig : public Parcelable {
         config->rendererInfo.isVirtualKeyboard = static_cast<VkbMode>(parcel.ReadInt32());
         config->rendererInfo.keepRunning = parcel.ReadBool();
         config->rendererInfo.isStatic = parcel.ReadBool();
+    }
+
+    static void UnmarshallingCapturerInfo(Parcel &parcel, AudioProcessConfig *config)
+    {
+        config->capturerInfo.sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        config->capturerInfo.capturerFlags = parcel.ReadInt32();
+        config->capturerInfo.originalFlag = parcel.ReadInt32();
+        config->capturerInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+        config->capturerInfo.recorderType = static_cast<RecorderType>(parcel.ReadInt32());
+        config->capturerInfo.isLoopback = parcel.ReadBool();
+        config->capturerInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        config->capturerInfo.mixWithWakeUp = parcel.ReadBool();
+        config->capturerInfo.loopBackEffectEnabled = parcel.ReadBool();
+        config->capturerInfo.cellularRecordPhoneNum = parcel.ReadString();
+        config->capturerInfo.cellularRecordToken = parcel.ReadString();
     }
 };
 
@@ -2510,6 +2533,7 @@ enum BoostTriggerMethod : uint32_t {
 enum ThreadPriorityConfig : uint32_t {
     THREAD_PRIORITY_QOS_7 = 0,
     THREAD_PRIORITY_4,
+    THREAD_PRIORITY_VIP_10,
     THREAD_PRIORITY_ULTRA_FAST,
 };
 

@@ -37,6 +37,7 @@ public:
     void GetAvailableEffects(std::vector<Effect> &availableEffects);
     void UpdateAvailableEffects(std::vector<Effect> &newAvailableEffects);
     void GetSupportedEffectConfig(SupportedEffectConfig &supportedEffectConfig);
+    void BuildSupportedEffectConfig();
     void BuildAvailableAEConfig();
     void SetMasterSinkAvailable();
     void SetEffectChainManagerAvailable();

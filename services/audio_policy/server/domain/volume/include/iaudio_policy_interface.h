@@ -31,6 +31,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -81,6 +82,12 @@ public:
     virtual int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, DeviceType deviceType) = 0;
 
     virtual int32_t SetAppVolumeMuted(int32_t appUid, bool muted) = 0;
+
+    virtual int32_t SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted) = 0;
+
+    virtual bool IsAppMuteAndHideVolumeBar(int32_t appUid) = 0;
+
+    virtual int32_t ClearAppMuteAndHideByOwnerUid(int32_t callerUid) = 0;
 
     virtual int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) = 0;
 

@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/test.gni")
+import("../../../../../../../config.gni")
 
 ohos_unittest("adapter_manager_aiut") {
   testonly = true
@@ -56,6 +57,10 @@ ohos_unittest("adapter_manager_aiut") {
   ]
 
   defines = [ "FEATURE_DISTRIBUTE_AUDIO" ]
+
+  if (audio_framework_feature_multi_user_zone) {
+    defines += [ "MULTI_USER_ZONE" ]
+  }
 
   deps = [
     "../../../..:hdiadapter_new",

@@ -230,6 +230,11 @@ int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
     return AudioVolumeClientManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
 
+int32_t AudioSystemManager::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted)
+{
+    return AudioVolumeClientManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(appUid, muted);
+}
+
 int32_t AudioSystemManager::SetVoipRendererMuteForUid(const int32_t appUid, const int64_t streamId, const bool muted)
 {
     return AudioVolumeClientManager::GetInstance().SetVoipRendererMuteForUid(appUid, streamId, muted);
@@ -642,6 +647,11 @@ std::string AudioSystemManager::GetSystemSoundUri(const std::string &key)
 std::string AudioSystemManager::GetSystemSoundPath(const int32_t systemSoundType)
 {
     return AudioSystemClientPolicyManager::GetInstance().GetSystemSoundPath(systemSoundType);
+}
+
+int32_t AudioSystemManager::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    return AudioSystemClientPolicyManager::GetInstance().SetAncoPlaybackInfo(ancoPlaybackInfos);
 }
 
 // Below stub implementation is added to handle compilation error in call manager

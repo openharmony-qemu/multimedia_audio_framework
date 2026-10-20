@@ -57,6 +57,7 @@
 #include "audio_select_interface_service.h"
 #include "audio_router_infra.h"
 #include "audio_device_info.h"
+#include "audio_device_manager.h"
 #include "stream_dfx_manager.h"
 #include "audio_record_controller.h"
 #include "ipc_skeleton.h"
@@ -1353,6 +1354,42 @@ void AudioPolicyServer::OnVoipMuteCallerDied(int32_t callerUid)
     }
 }
 
+void AudioPolicyServer::RegisterAppVolumeMuteAndHideDeathRecipient(int32_t callerUid,
+    const sptr<IRemoteObject> &callerObj)
+{
+    CHECK_AND_RETURN_LOG(callerObj != nullptr, "callerObj is null, skip app volume mute and hide death recipient");
+    std::lock_guard<std::mutex> lock(appVolumeMuteAndHideMutex_);
+    if (appVolumeMuteAndHideDeathRecipients_.find(callerUid) != appVolumeMuteAndHideDeathRecipients_.end()) {
+        AUDIO_DEBUG_LOG("app volume mute and hide death recipient already registered for callerUid:%{public}d",
+            callerUid);
+        return;
+    }
+    sptr<IRemoteObject::DeathRecipient> dr = new(std::nothrow) PolicyClientDeathRecipient(
+        [this, callerUid]() { this->OnAppVolumeMuteAndHideCallerDied(callerUid); });
+    CHECK_AND_RETURN_LOG(dr != nullptr, "create PolicyClientDeathRecipient failed for app volume mute and hide");
+    if (!callerObj->AddDeathRecipient(dr)) {
+        AUDIO_WARNING_LOG("AddDeathRecipient failed for callerUid:%{public}d", callerUid);
+        return;
+    }
+    appVolumeMuteAndHideDeathRecipients_[callerUid] = dr;
+    AUDIO_INFO_LOG("register app volume mute and hide death recipient for callerUid:%{public}d", callerUid);
+}
+
+void AudioPolicyServer::OnAppVolumeMuteAndHideCallerDied(int32_t callerUid)
+{
+    AUDIO_INFO_LOG("app volume mute and hide caller died, callerUid:%{public}d", callerUid);
+    audioVolumeManager_.ClearAppMuteAndHideByOwnerUid(callerUid);
+    sptr<IRemoteObject::DeathRecipient> dr;
+    {
+        std::lock_guard<std::mutex> lock(appVolumeMuteAndHideMutex_);
+        auto it = appVolumeMuteAndHideDeathRecipients_.find(callerUid);
+        if (it != appVolumeMuteAndHideDeathRecipients_.end()) {
+            dr = std::move(it->second);
+            appVolumeMuteAndHideDeathRecipients_.erase(it);
+        }
+    }
+}
+
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
 {
@@ -1365,6 +1402,18 @@ int32_t AudioPolicyServer::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t
     }
     AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d", appUid, muted);
     return audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
+}
+
+int32_t AudioPolicyServer::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted,
+    const sptr<IRemoteObject> &callerObj)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    RegisterAppVolumeMuteAndHideDeathRecipient(callerUid, callerObj);
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d, callerUid: %{public}d", appUid, muted, callerUid);
+    return audioVolumeManager_.SetAppVolumeMuteAndHideVolumeBar(appUid, muted);
 }
 
 int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage)
@@ -3010,6 +3059,16 @@ int32_t AudioPolicyServer::SetAncoSourceOutputStreamMute(int32_t uid, bool setMu
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    return audioPolicyService_.SetAncoPlaybackInfo(ancoPlaybackInfos);
+}
+
+int32_t AudioPolicyServer::GetAncoPlaybackInfo(std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    return audioPolicyService_.GetAncoPlaybackInfo(ancoPlaybackInfos);
+}
+
 int32_t AudioPolicyServer::SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object)
 {
     if (object == nullptr) {
@@ -3708,6 +3767,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfosForZone(int32_t zoneId,
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId %{public}d is invalid", zoneId);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
 
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> allRendererChangeInfos;
     int32_t result = GetCurrentRendererChangeInfos(allRendererChangeInfos);
@@ -3791,9 +3851,6 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     {
         std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
         eventEntry_->RegisteredTrackerClientDied(uid, pid);
-        eventEntry_->ClearSelectedInputDeviceByUid(uid);
-        eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
-            BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
 
         auto filter = [&pid](int val) {
             return pid == val;
@@ -3831,9 +3888,6 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
 
     AudioZoneService::GetInstance().UnRegisterAudioZoneClient(pid);
     AudioZoneService::GetInstance().ReleaseAudioZoneByClientPid(pid);
-    eventEntry_->ClearSelectedInputDeviceByUid(uid);
-    eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
-        BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
 }
 
 int32_t AudioPolicyServer::ResumeStreamState()
@@ -6431,6 +6485,25 @@ int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, 
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SetVADeviceExceptionFlag(const std::string& macAddress, bool exceptionFlag)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    auto connectedDevices = AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
+    for (auto &devDesc : connectedDevices) {
+        if (devDesc != nullptr && devDesc->macAddress_ == macAddress &&
+            (devDesc->deviceType_ == DEVICE_TYPE_BT_SPP || devDesc->deviceType_ == DEVICE_TYPE_NEARLINK_PORT)) {
+            devDesc->exceptionFlag_ = exceptionFlag;
+            AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+            AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(
+                std::make_shared<AudioDeviceDescriptor>(*devDesc), EXCEPTION_FLAG_UPDATE, reason);
+            eventEntry_->FetchInputDeviceAndRoute("SetVADeviceExceptionFlag");
+            break;
+        }
+    }
+    return SUCCESS;
+}
+
 
 int32_t AudioPolicyServer::SelectPrivateDevice(int32_t devType, const std::string &macAddress)
 {
@@ -6605,7 +6678,30 @@ int32_t AudioPolicyServer::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVo
         ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
-    return coreService_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    int32_t ret = coreService_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetActiveStreamsVolumeInfo failed");
+    return GetAncoActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+}
+
+int32_t AudioPolicyServer::GetAncoActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
+{
+    std::vector<AncoPlaybackInfo> ancoPlaybackInfos;
+    audioPolicyService_.GetAncoPlaybackInfo(ancoPlaybackInfos);
+    for (const auto &info : ancoPlaybackInfos) {
+        if (info.GetPlaybackState() != ANCO_PLAYBACK_STATE_PLAYING) {
+            continue;
+        }
+        int32_t systemAppVolumePercentage = 0;
+        audioVolumeManager_.GetSystemAppVolumePercentage(info.GetUid(), systemAppVolumePercentage);
+        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(
+            static_cast<StreamUsage>(info.GetUsage()));
+        ActiveStreamVolumeInfo activeStreamVolumeInfo {volumeType, systemAppVolumePercentage, info.GetUid()};
+        if (std::find(activeStreamsVolumeInfo.begin(), activeStreamsVolumeInfo.end(),
+            activeStreamVolumeInfo) == activeStreamsVolumeInfo.end()) {
+            activeStreamsVolumeInfo.push_back(activeStreamVolumeInfo);
+        }
+    }
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::SetAudioZoneVolumeConfig(const std::string &zoneName,

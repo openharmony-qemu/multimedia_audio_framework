@@ -145,8 +145,8 @@ public:
     int32_t UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName) override;
     int32_t SetAudioMonoState(bool audioMono) override;
     int32_t SetAudioBalanceValue(float audioBalance) override;
-    int32_t SuspendRenderSink(const std::string &sinkName) override;
-    int32_t RestoreRenderSink(const std::string &sinkName) override;
+    int32_t SuspendRenderSink(const std::string &sinkName, const std::string &macAddress) override;
+    int32_t RestoreRenderSink(const std::string &sinkName, const std::string &macAddress) override;
 
     int32_t SetAsrAecMode(int32_t asrAecMode) override;
     int32_t GetAsrAecMode(int32_t &asrAecMode) override;
@@ -434,15 +434,19 @@ private:
         AudioParamKey parmKey, const std::string &renderValue);
     bool VerifyClientPermission(const std::string &permissionName,
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
-    bool PermissionChecker(const AudioProcessConfig &config);
+    bool PermissionChecker(AudioProcessConfig &config);
     bool CheckPlaybackPermission(const AudioProcessConfig &config);
     int32_t CheckInnerRecorderPermission(const AudioProcessConfig &config);
-    bool CheckRecorderPermission(const AudioProcessConfig &config);
+    bool CheckRecorderPermission(AudioProcessConfig &config);
+    bool CheckAndApplyActualUsingToken(AudioProcessConfig &config);
+    bool CheckWakeupRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
     bool HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config);
     bool CheckVoiceDownlinkPermission(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
     void RegisterSinkLatencyFetcher(uint32_t renderId);
-    void RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency);
+    void RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency, uint32_t warmupLatency = 0);
+    void RegisterSinkLatencyFetcher(uint32_t renderId, int32_t effectLatency,
+        int32_t halLatency, int32_t warmupLatency);
 
     void ResetRecordConfig(AudioProcessConfig &config,
         const AudioPlaybackCaptureConfig &filterConfig);
@@ -491,6 +495,7 @@ private:
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
     void InitMaxRendererStreamCntPerUid();
     bool IsSatellite(const AudioProcessConfig &config, int32_t callingUid);
+    bool HandleSatelliteMode(const AudioProcessConfig &config, int32_t callingUid);
     void SendCreateErrorInfo(const AudioProcessConfig &config, int32_t errorCode);
     int32_t CheckMaxRendererInstances();
     int32_t CheckMaxLoopbackInstances(AudioMode audioMode);

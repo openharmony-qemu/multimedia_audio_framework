@@ -987,6 +987,16 @@ int32_t AudioVolumeClientManager::SetAppVolumeMuted(int32_t appUid, bool muted, 
     return AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
 
+int32_t AudioVolumeClientManager::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("SetAppVolumeMuteAndHideVolumeBar: appUid[%{public}d], muted[%{public}d]",
+        appUid, muted);
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+        "SetAppVolumeMuteAndHideVolumeBar: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(appUid, muted);
+}
+
 int32_t AudioVolumeClientManager::SetVoipRendererMuteForUid(int32_t appUid, const int64_t streamId, bool muted)
 {
     AUDIO_INFO_LOG("appUid[%{public}d], streamId[%{public}d], muted[%{public}d]",

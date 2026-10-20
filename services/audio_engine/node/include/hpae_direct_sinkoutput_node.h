@@ -61,6 +61,8 @@ public:
 
 private:
     bool ReadDataAndConvertFormat();
+    void OnTraceInfoChanged() override;
+    void RebuildTraceName();
 
     InputPort<HpaePcmBuffer *> inputStream_;
     std::vector<char> renderFrameData_;
@@ -76,6 +78,9 @@ private:
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
 #endif
+
+    // Cached DoProcess trace name; rebuilt in ctor and whenever node info changes
+    std::string processTraceName_;
 };
 
 }  // namespace HPAE

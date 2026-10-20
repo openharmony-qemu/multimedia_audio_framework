@@ -187,6 +187,12 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetSupportedChannels_001, TestSize.
 {
     vector<AudioChannel> supportedChannelList = AudioCapturer::GetSupportedChannels();
     EXPECT_EQ(CAPTURER_SUPPORTED_CHANNELS.size(), supportedChannelList.size());
+    EXPECT_NE(find(supportedChannelList.begin(), supportedChannelList.end(), CHANNEL_10),
+        supportedChannelList.end());
+    EXPECT_NE(find(supportedChannelList.begin(), supportedChannelList.end(), CHANNEL_12),
+        supportedChannelList.end());
+    EXPECT_NE(find(supportedChannelList.begin(), supportedChannelList.end(), CHANNEL_16),
+        supportedChannelList.end());
 }
 
 /**

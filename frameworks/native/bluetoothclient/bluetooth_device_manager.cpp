@@ -138,8 +138,8 @@ DeviceCategory GetDeviceCategory(const BluetoothRemoteDevice &device, DeviceCate
     uint16_t vendor = 0;
     device.GetDeviceProductType(cod, majorClass, majorMinorClass);
     device.GetDeviceVendorId(vendor);
-    AUDIO_WARNING_LOG("Device type majorClass: %{public}d, majorMinorClass: %{public}d, vendor: %{public}u.",
-        majorClass, majorMinorClass, vendor);
+    AUDIO_WARNING_LOG("%{public}s majorClass: %{public}d, majorMinorClass: %{public}d, vendor: %{public}u.",
+        GetEncryptAddr(device.GetDeviceAddr()).c_str(), majorClass, majorMinorClass, vendor);
     DeviceCategory bluetoothCategory = defaultValue;
     auto pos = bluetoothDeviceCategoryMap_.find(std::make_pair(majorClass, majorMinorClass));
     if (pos != bluetoothDeviceCategoryMap_.end()) {

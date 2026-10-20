@@ -132,6 +132,11 @@ std::string ProcessConfig::DumpProcessConfig(const AudioProcessConfig &config)
 
     temp << "originalSessionId<" << config.originalSessionId << ">";
 
+    if (config.actualUsingTokenId != INVALID_ACTUAL_USING_TOKEN_ID) {
+        temp << " actualUsingTokenId<" << config.actualUsingTokenId << ">";
+        temp << " effectivePrivacyTokenId<" << config.effectivePrivacyTokenId << ">";
+    }
+
     return temp.str();
 }
 } // namespace AudioStandard

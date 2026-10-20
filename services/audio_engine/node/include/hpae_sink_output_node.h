@@ -40,8 +40,7 @@ public:
     void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback);
-    int32_t GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId,
-        const std::string &macAddress = "");
+    int32_t GetRenderSinkInstance(const HdiIdInfoParam &param);
     int32_t RenderSinkInit(IAudioSinkAttr &attr);
     int32_t RenderSinkDeInit();
     int32_t RenderSinkFlush(void);
@@ -72,6 +71,9 @@ private:
     void HandlePaPower(HpaePcmBuffer *pcmBuffer);
     void HandleHapticParam(uint64_t syncTime);
     bool ReadDataAndConvertFormat();
+    void OnTraceInfoChanged() override;
+    void RebuildTraceName();
+    void RebuildAuxTraceName();
     InputPort<HpaePcmBuffer *> inputStream_;
     std::vector<char, AlignedAllocator<char, 16>> renderFrameData_; // 16 for alignment in byte
     
@@ -112,6 +114,11 @@ private:
 #endif
     std::atomic<size_t> collRenderFrameFailedCount_ = 0;
     std::atomic<CollaborationState> collaborationState_ = COLLABORATION_CLOSE;
+
+    // Cached DoProcess trace name; rebuilt in ctor and whenever node info changes
+    std::string processTraceName_;
+    // Cached RenderFrameForAuxiliarySink trace name; rebuilt when its inputs change
+    std::string auxTraceName_;
 };
 
 }  // namespace HPAE

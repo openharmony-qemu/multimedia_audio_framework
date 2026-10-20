@@ -333,6 +333,7 @@ void AudioDeviceDescriptor::CopyExtendedFields(const AudioDeviceDescriptor &devi
     sinkLatencyMs_ = deviceDescriptor.sinkLatencyMs_;
     sinkLatencyValid_ = deviceDescriptor.sinkLatencyValid_;
     isSupportReload_ = deviceDescriptor.isSupportReload_;
+    isPriorityReduced_ = deviceDescriptor.isPriorityReduced_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -517,31 +518,7 @@ bool AudioDeviceDescriptor::MarshallingInnerdata(Parcel &parcel, int32_t devType
         parcel.WriteString(displayName_) && parcel.WriteString(model_) &&
         MarshallingDeviceStreamInfoList(audioStreamInfo_, parcel) &&
         MarshallingAudioStreamInfoList(capabilities, parcel) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
-        parcel.WriteInt32(static_cast<int32_t>(connectState_)) &&
-        parcel.WriteBool(exceptionFlag_) &&
-        parcel.WriteInt64(connectTimeStamp_) &&
-        parcel.WriteBool(isScoRealConnected_) &&
-        parcel.WriteBool(isEnable_) &&
-        parcel.WriteBool(isExclusiveMicScoUnavailable_) &&
-        parcel.WriteInt32(mediaVolume_) &&
-        parcel.WriteInt32(callVolume_) &&
-        parcel.WriteBool(isLowLatencyDevice_) &&
-        parcel.WriteInt32(a2dpOffloadFlag_) &&
-        parcel.WriteBool(descriptorType_) &&
-        parcel.WriteBool(spatializationSupported_) &&
-        parcel.WriteBool(hasPair_) &&
-        parcel.WriteInt32(routerType_) && parcel.WriteInt32(isVrSupported_) &&
-        parcel.WriteBool(isSupportWearDetectionEnable_) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) && parcel.WriteBool(modemCallSupported_) &&
-        parcel.WriteBool(highQualityRecordingSupported_) && parcel.WriteBool(isUnidirectional_) &&
-        parcel.WriteString(dmDeviceInfo_) && parcel.WriteInt32(hdPlaybackMode_) &&
-        parcel.WriteBool(isSupportRemoteMultichannel_) && parcel.WriteUint32(deviceTokenId_) &&
-        parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType())) &&
-        parcel.WriteBool(isSilent_) && parcel.WriteBool(isSupportMultiZone_) &&
-        parcel.WriteInt32(static_cast<int32_t>(visibleMode_)) &&
-        parcel.WriteUint32(sinkLatencyMs_) && parcel.WriteBool(sinkLatencyValid_) &&
-        parcel.WriteBool(isSupportReload_);
+        MarshallingExt(parcel);
 }
 
 void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
@@ -590,7 +567,12 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteString(model_) &&
         MarshallingDeviceStreamInfoList(streamInfo, parcel) &&
         MarshallingAudioStreamInfoList(capabilities, parcel) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
+        MarshallingExt(parcel);
+}
+
+bool AudioDeviceDescriptor::MarshallingExt(Parcel &parcel) const
+{
+    return parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
         parcel.WriteInt32(static_cast<int32_t>(connectState_)) &&
         parcel.WriteBool(exceptionFlag_) &&
         parcel.WriteInt64(connectTimeStamp_) &&
@@ -604,20 +586,17 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteBool(descriptorType_) &&
         parcel.WriteBool(spatializationSupported_) &&
         parcel.WriteBool(hasPair_) &&
-        parcel.WriteInt32(routerType_) &&
-        parcel.WriteInt32(isVrSupported_) &&
+        parcel.WriteInt32(routerType_) && parcel.WriteInt32(isVrSupported_) &&
         parcel.WriteBool(isSupportWearDetectionEnable_) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) &&
-        parcel.WriteBool(modemCallSupported_) &&
-        parcel.WriteBool(highQualityRecordingSupported_) &&
-        parcel.WriteBool(isUnidirectional_) &&
-        parcel.WriteString(dmDeviceInfo_) &&
-        parcel.WriteInt32(hdPlaybackMode_) &&
+        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) && parcel.WriteBool(modemCallSupported_) &&
+        parcel.WriteBool(highQualityRecordingSupported_) && parcel.WriteBool(isUnidirectional_) &&
+        parcel.WriteString(dmDeviceInfo_) && parcel.WriteInt32(hdPlaybackMode_) &&
         parcel.WriteBool(isSupportRemoteMultichannel_) && parcel.WriteUint32(deviceTokenId_) &&
-        parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType())) && parcel.WriteBool(isSilent_) &&
-        parcel.WriteBool(isSupportMultiZone_) && parcel.WriteInt32(static_cast<int32_t>(visibleMode_)) &&
+        parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType())) &&
+        parcel.WriteBool(isSilent_) && parcel.WriteBool(isSupportMultiZone_) &&
+        parcel.WriteInt32(static_cast<int32_t>(visibleMode_)) &&
         parcel.WriteUint32(sinkLatencyMs_) && parcel.WriteBool(sinkLatencyValid_) &&
-        parcel.WriteBool(isSupportReload_);
+        parcel.WriteBool(isSupportReload_) && parcel.WriteBool(isPriorityReduced_);
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
@@ -674,6 +653,7 @@ void AudioDeviceDescriptor::UnmarshallingSelfExt(Parcel &parcel)
     sinkLatencyMs_ = parcel.ReadUint32();
     sinkLatencyValid_ = parcel.ReadBool();
     isSupportReload_ = parcel.ReadBool();
+    isPriorityReduced_ = parcel.ReadBool();
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
@@ -747,7 +727,7 @@ bool AudioDeviceDescriptor::IsSameDeviceDesc(const AudioDeviceDescriptor &device
         (!IsUsb(deviceType_) || deviceDescriptor.deviceRole_ == deviceRole_);
 }
 
-bool AudioDeviceDescriptor::IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const
+bool AudioDeviceDescriptor::IsSameDeviceDescPtr(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
 {
     CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, false, "input deviceDescriptor is null");
     return deviceDescriptor->deviceType_ == deviceType_ &&
@@ -764,10 +744,40 @@ bool AudioDeviceDescriptor::IsSameBtDeviceDesc(const AudioDeviceDescriptor &devi
         deviceDescriptor.networkId_ == networkId_;
 }
 
-bool AudioDeviceDescriptor::IsSameBtDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const
+bool AudioDeviceDescriptor::IsSameBtDeviceDescPtr(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
 {
     CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, false, "input deviceDescriptor is null");
     return IsSameBtDeviceDesc(*deviceDescriptor);
+}
+
+bool AudioDeviceDescriptor::IsSameBtOrSppDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const
+{
+    return IsBtOrSppDevice(deviceDescriptor.deviceType_) &&
+        IsBtOrSppDevice(deviceType_) &&
+        deviceDescriptor.macAddress_ == macAddress_ &&
+        deviceDescriptor.networkId_ == networkId_;
+}
+
+bool AudioDeviceDescriptor::IsSameBtOrSppDeviceDescPtr(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, false, "input deviceDescriptor is null");
+    return IsSameBtOrSppDeviceDesc(*deviceDescriptor);
+}
+
+bool AudioDeviceDescriptor::IsSameNearlinkOrPortDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const
+{
+    return IsNearlinkOrPortDevice(deviceDescriptor.deviceType_) &&
+        IsNearlinkOrPortDevice(deviceType_) &&
+        deviceDescriptor.macAddress_ == macAddress_ &&
+        deviceDescriptor.networkId_ == networkId_;
+}
+
+bool AudioDeviceDescriptor::IsSameNearlinkOrPortDeviceDescPtr(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, false, "input deviceDescriptor is null");
+    return IsSameNearlinkOrPortDeviceDesc(*deviceDescriptor);
 }
 
 bool AudioDeviceDescriptor::IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const

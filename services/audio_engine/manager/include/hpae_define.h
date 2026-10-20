@@ -21,6 +21,13 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+namespace ThreadName {
+inline constexpr char FAST_AUDIO_OUT[] = "FastAudioOut";
+inline constexpr char FAST_AUDIO_IN[] = "FastAudioIn";
+inline constexpr char FAST_AUDIO_OUT_POSITION[] = "FastAudioOutPos";
+inline constexpr char FAST_AUDIO_IN_POSITION[] = "FastAudioInPos";
+}  // namespace ThreadName
+
 constexpr uint32_t MILLISECOND_PER_SECOND = 1000;
 constexpr uint32_t FRAME_LEN_20MS = 20; // 20ms
 constexpr uint32_t ACCESSORY_FRAME_LEN_NEED_HALVE = 40; // accessory 40ms need halve to 20ms

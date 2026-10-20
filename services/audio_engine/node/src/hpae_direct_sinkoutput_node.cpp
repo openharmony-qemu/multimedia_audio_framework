@@ -23,6 +23,7 @@
 #include <cinttypes>
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
+#include "util/id_handler.h"
 #include "audio_utils.h"
 #include "audio_engine_log.h"
 #include "audio_mute_factor_manager.h"
@@ -53,6 +54,17 @@ HpaeDirectSinkOutputNode::HpaeDirectSinkOutputNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeDirectSinkOutputNode::OnTraceInfoChanged()
+{
+    RebuildTraceName();
+}
+
+void HpaeDirectSinkOutputNode::RebuildTraceName()
+{
+    processTraceName_ = "HpaeDirectSinkOutputNode::DoProcess " + GetTraceInfo();
 }
 
 HpaeDirectSinkOutputNode::~HpaeDirectSinkOutputNode()
@@ -99,7 +111,7 @@ bool HpaeDirectSinkOutputNode::ReadDataAndConvertFormat()
 
 void HpaeDirectSinkOutputNode::DoProcess()
 {
-    Trace trace("HpaeDirectSinkOutputNode::DoProcess " + GetTraceInfo());
+    Trace trace(processTraceName_);
     if (audioRendererSink_ == nullptr) {
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
         return;
@@ -184,8 +196,10 @@ void HpaeDirectSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaeP
 int32_t HpaeDirectSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass,
     const std::string &deviceNetworkId)
 {
-    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, "", true,
-        true, GetNodeInfo().routeFlag);
+    // info is class-constant for direct classes; netId is intentionally not set
+    HdiIdInfoParam param = {.deviceClass = deviceClass};
+    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
+        IdHandler::SelectIdInfo(param), true, true, GetNodeInfo().routeFlag);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
         AUDIO_ERR_LOG("get direct sink fail, deviceClass: %{public}s, renderId_: %{public}u",
@@ -214,8 +228,13 @@ int32_t HpaeDirectSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     timer.Start();
 #endif
     int32_t ret = audioRendererSink_->Init(attr);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-        "audioRendererSink_ init failed, errCode is %{public}d", ret);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("audioRendererSink_ init failed, errCode is %{public}d", ret);
+        // Release the sink reference on init failure to avoid leaking renderId_.
+        audioRendererSink_ = nullptr;
+        HdiAdapterManager::GetInstance().ReleaseId(renderId_);
+        return ret;
+    }
     audioRendererSink_->SetVolume(volume, volume);
     SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM

@@ -19,6 +19,7 @@
 #include <iostream>
 #include <string>
 #include <mutex>
+#include <atomic>
 #include <functional>
 #include <vector>
 #include "audio_info.h"
@@ -42,6 +43,7 @@ public:
     virtual int32_t Init(const IAudioSinkAttr &attr) = 0;
     virtual void DeInit(void) = 0;
     virtual bool IsInited(void) = 0;
+    bool IsFrameRendering() const { return firstFrameRendered_.load(); }
 
     virtual int32_t Start(void) = 0;
     virtual int32_t Stop(void) = 0;
@@ -171,6 +173,7 @@ protected:
     // Common variables
     SinkCallbackWrapper callback_ = {};
     std::mutex sinkMutex_;
+    std::atomic<bool> firstFrameRendered_ {false};
 
 private:
     // For sink info notify

@@ -61,6 +61,7 @@ public:
     {
         return 0;
     }
+    void NotifyStartStreamFailed() override {}
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

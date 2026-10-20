@@ -1453,25 +1453,33 @@ int32_t AudioServer::SetAuxiliarySinkEnable(bool isEnabled)
     return HPAE::IHpaeManager::GetHpaeManager().SetAuxiliarySinkEnable(isEnabled);
 }
 
-int32_t AudioServer::SuspendRenderSink(const std::string &sinkName)
+int32_t AudioServer::SuspendRenderSink(const std::string &sinkName, const std::string &macAddress)
 {
     if (!PermissionUtil::VerifyIsAudio()) {
         AUDIO_ERR_LOG("not audio calling!");
         return ERR_OPERATION_FAILED;
     }
-    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName.c_str());
+    std::string info = HDI_ID_INFO_DEFAULT;
+#ifdef MULTI_USER_ZONE
+    info = macAddress;
+#endif
+    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName, info);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "get sink fail, sinkName: %{public}s", sinkName.c_str());
     return sink->SuspendRenderSink();
 }
 
-int32_t AudioServer::RestoreRenderSink(const std::string &sinkName)
+int32_t AudioServer::RestoreRenderSink(const std::string &sinkName, const std::string &macAddress)
 {
     if (!PermissionUtil::VerifyIsAudio()) {
         AUDIO_ERR_LOG("not audio calling!");
         return ERR_OPERATION_FAILED;
     }
-    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName.c_str());
+    std::string info = HDI_ID_INFO_DEFAULT;
+#ifdef MULTI_USER_ZONE
+    info = macAddress;
+#endif
+    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName, info);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "get sink fail, sinkName: %{public}s", sinkName.c_str());
     return sink->RestoreRenderSink();
@@ -2332,6 +2340,34 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
     return resetConfig;
 }
 
+// Check capturer channel validity: must be in CAPTURER_SUPPORTED_CHANNELS,
+// and 10/12/16 multichannel requires UNPROCESSED_VOICE_ASSISTANT sourceType + system app.
+static bool IsCapturerChannelAllowed(const AudioProcessConfig &config)
+{
+    AudioChannel channels = config.streamInfo.channels;
+    if (NotContain(CAPTURER_SUPPORTED_CHANNELS, channels)) {
+        return false;
+    }
+    if (IsOverTenChannels(channels)) {
+#ifdef MULTI_BUS_ENABLE
+        if (IsUnprocVoiceAsstMultiChRej(config.capturerInfo.sourceType, channels)) {
+            AUDIO_ERR_LOG("multichannel rejected, channels:%{public}d, sourceType:%{public}d",
+                config.streamInfo.channels, config.capturerInfo.sourceType);
+            return false;
+        }
+        if (!PermissionUtil::VerifyIsSystemApp()) {
+            AUDIO_ERR_LOG("multichannel requires system app, channels:%{public}d", config.streamInfo.channels);
+            return false;
+        }
+#else
+        AUDIO_ERR_LOG("multichannel not allowed without MULTI_BUS_ENABLE, channels:%{public}d",
+            config.streamInfo.channels);
+        return false;
+#endif
+    }
+    return true;
+}
+
 bool AudioServer::CheckStreamInfoFormat(const AudioProcessConfig &config)
 {
     if (NotContain(AUDIO_SUPPORTED_SAMPLING_RATES, config.streamInfo.samplingRate)) {
@@ -2365,8 +2401,9 @@ bool AudioServer::CheckStreamInfoFormat(const AudioProcessConfig &config)
         return false;
     }
 
-    if (config.audioMode == AUDIO_MODE_RECORD && NotContain(CAPTURER_SUPPORTED_CHANNELS, config.streamInfo.channels)) {
-        AUDIO_ERR_LOG("Check format failed invalid capturer channels:%{public}d", config.streamInfo.channels);
+    if (config.audioMode == AUDIO_MODE_RECORD && !IsCapturerChannelAllowed(config)) {
+        AUDIO_ERR_LOG("Check format failed invalid capturer channels:%{public}d, sourceType:%{public}d",
+            config.streamInfo.channels, config.capturerInfo.sourceType);
         return false;
     }
 
@@ -2576,6 +2613,20 @@ bool AudioServer::IsSatellite(const AudioProcessConfig &config, int32_t callingU
         callingUid == UID_CALL_MANAGER_SA && config.rendererInfo.isSatellite;
 }
 
+bool AudioServer::HandleSatelliteMode(const AudioProcessConfig &config, int32_t callingUid)
+{
+    if (!IsSatellite(config, callingUid)) {
+        return true;
+    }
+    bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
+    if (!isSupportSate) {
+        return false;
+    }
+    (void)HdiAdapterManager::GetInstance().SetAudioParameter(HDI_DEVICE_MANAGER_TYPE_LOCAL,
+        "primary", AudioParamKey::NONE, "", SATEMODEM_PARAMETER);
+    return true;
+}
+
 sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,
     const AudioPlaybackCaptureConfig &filterConfig)
 {
@@ -2586,6 +2637,10 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
 
     AudioProcessConfig resetConfig = ResetProcessConfig(config, filterConfig);
+    // Default privacy attribution to the creator token; proxy path overrides this in
+    // CheckAndApplyActualUsingToken. Ensures effectivePrivacyTokenId always has a valid value
+    // regardless of which permission branch is taken.
+    resetConfig.effectivePrivacyTokenId = resetConfig.appInfo.appTokenId;
     CHECK_AND_CALL_FUNC_RETURN_RET(CheckConfigFormat(resetConfig), nullptr,
         HILOG_COMM_ERROR("[CreateAudioProcessInner]AudioProcessConfig format is wrong, please check"
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str()));
@@ -2613,13 +2668,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
         errorCode = CheckMaxLoopbackInstances(resetConfig.audioMode);
         CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
     }
-    if (IsSatellite(resetConfig, callingUid)) {
-        bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
-        CHECK_AND_CALL_FUNC_RETURN_RET(isSupportSate, nullptr,
-            HILOG_COMM_ERROR("[CreateAudioProcessInner]Do not support satellite"));
-        (void)HdiAdapterManager::GetInstance().SetAudioParameter(HDI_DEVICE_MANAGER_TYPE_LOCAL,
-            "primary", AudioParamKey::NONE, "", SATEMODEM_PARAMETER);
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET(HandleSatelliteMode(resetConfig, callingUid), nullptr,
+        HILOG_COMM_ERROR("[CreateAudioProcessInner]Do not support satellite"));
 #ifdef FEATURE_APPGALLERY
     PolicyHandler::GetInstance().GetAndSaveClientType(resetConfig.appInfo.appUid,
         AppBundleManager::GetBundleNameFromUid(resetConfig.appInfo.appUid));
@@ -2871,7 +2921,7 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
     return true;
 }
 
-bool AudioServer::PermissionChecker(const AudioProcessConfig &config)
+bool AudioServer::PermissionChecker(AudioProcessConfig &config)
 {
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         return CheckPlaybackPermission(config);
@@ -2944,7 +2994,7 @@ int32_t AudioServer::CheckInnerRecorderPermission(const AudioProcessConfig &conf
 }
 
 // LCOV_EXCL_START
-bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
+bool AudioServer::CheckRecorderPermission(AudioProcessConfig &config)
 {
     Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
     if (config.capturerInfo.originalFlag == AUDIO_FLAG_ULTRA_FAST ||
@@ -2954,6 +3004,8 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     SourceType sourceType = config.capturerInfo.sourceType;
     CHECK_AND_RETURN_RET_LOG(VALID_SOURCE_TYPE.count(sourceType), false, "invalid source type:%{public}d", sourceType);
 
+    CHECK_AND_RETURN_RET_LOG(CheckAndApplyActualUsingToken(config), false,
+        "Check and apply actual using token failed for actualUsingTokenId:%{public}u", config.actualUsingTokenId);
     AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
     if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
         CHECK_AND_CALL_FUNC_RETURN_RET(PermissionUtil::VerifySystemPermission(), false,
@@ -2995,11 +3047,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     }
 
     if (sourceType == SOURCE_TYPE_WAKEUP || sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
-        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-        bool hasIntelVoicePermission = VerifyClientPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION, tokenId);
-        CHECK_AND_RETURN_RET_LOG(hasSystemPermission && hasIntelVoicePermission, false,
-            "Create wakeup record stream failed: no permission.");
-        return true;
+        return CheckWakeupRecorderPermission(tokenId);
     }
 
     if (!HandleCheckRecorderBackgroundCapture(config)) {
@@ -3007,6 +3055,32 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
             config.callerUid);
         return false;
     }
+    return true;
+}
+
+bool AudioServer::CheckAndApplyActualUsingToken(AudioProcessConfig &config)
+{
+    if (config.actualUsingTokenId == INVALID_ACTUAL_USING_TOKEN_ID) {
+        return true;
+    }
+    Security::AccessToken::AccessTokenID callerTokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t verifyRes = Security::AccessToken::AccessTokenKit::VerifyAccessToken(
+        callerTokenId, AUDIO_USER_MICROPHONE_INDICATOR_PERMISSION);
+    if (verifyRes != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+        AUDIO_ERR_LOG("caller tokenId:%{public}u lacks proxy token permission",
+            callerTokenId);
+        return false;
+    }
+    config.effectivePrivacyTokenId = config.actualUsingTokenId;
+    return true;
+}
+
+bool AudioServer::CheckWakeupRecorderPermission(Security::AccessToken::AccessTokenID tokenId)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    bool hasIntelVoicePermission = VerifyClientPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION, tokenId);
+    CHECK_AND_RETURN_RET_LOG(hasSystemPermission && hasIntelVoicePermission, false,
+        "Create wakeup record stream failed: no permission.");
     return true;
 }
 // LCOV_EXCL_STOP
@@ -3324,13 +3398,11 @@ int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &deviceClass, 
         AudioService::GetInstance()->SetEndpointMuteForSwitchDevice(deviceClass, mute);
     }
 
-    std::string info;
-    if (deviceClass == PRIMARY_EXTRA_CLASS) {
-        info = networkId;
-    } else {
-        info = networkId == LOCAL_NETWORK_ID ? HDI_ID_INFO_DEFAULT : networkId;
-    }
-    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
+    // Only class + networkId are known here; for primary_extra networkId carries the module
+    // name (pipe selector sets networkId = name), so pass it as the name field too.
+    HdiIdInfoParam param = {.deviceClass = deviceClass, .name = networkId, .networkId = networkId};
+    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
+        IdHandler::SelectIdInfo(param));
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "has no valid sink");
     return sink->SetSinkMuteForSwitchDevice(mute);
@@ -3607,8 +3679,14 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
         }
     }
 
-    (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?
-        RegisterSinkLatencyFetcher(renderId, PRIMARY_SINK_LATENCY_MS) : RegisterSinkLatencyFetcher(renderId);
+    if (attr.halLatency != LATENCY_UNCONFIG) {
+        RegisterSinkLatencyFetcher(renderId,
+            attr.effectLatency, attr.halLatency, attr.warmupLatency);
+    } else {
+        (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?
+            RegisterSinkLatencyFetcher(renderId, PRIMARY_SINK_LATENCY_MS) :
+            RegisterSinkLatencyFetcher(renderId);
+    }
     return SUCCESS;
 }
 
@@ -3652,7 +3730,12 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
     if (!sink->IsInited()) {
         sink->Init(attr);
     }
-    RegisterSinkLatencyFetcher(renderId);
+    if (attr.halLatency != LATENCY_UNCONFIG) {
+        RegisterSinkLatencyFetcher(renderId,
+            attr.effectLatency, attr.halLatency, attr.warmupLatency);
+    } else {
+        RegisterSinkLatencyFetcher(renderId);
+    }
     return SUCCESS;
 }
 
@@ -3767,14 +3850,28 @@ int32_t AudioServer::DestroyHdiPort(uint32_t id)
     return SUCCESS;
 }
 
-void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency)
+void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency, uint32_t warmupLatency)
 {
+    AUDIO_INFO_LOG("Register fixed sink latency: %{public}u ms, warmup %{public}u ms, renderId %{public}u",
+        sinkLatency, warmupLatency, renderId);
     SinkLatencyFetcherManager::GetInstance().RegisterProvider(renderId,
         [sinkLatency] (uint32_t renderId, uint32_t &latency) -> int32_t {
         latency = sinkLatency;
         return SUCCESS;
-    });
+    }, warmupLatency);
     return;
+}
+
+void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, int32_t effectLatency,
+    int32_t halLatency, int32_t warmupLatency)
+{
+    AUDIO_INFO_LOG("Register sink latency: effect=%{public}d, hal=%{public}d, warmup=%{public}d, renderId=%{public}u",
+        effectLatency, halLatency, warmupLatency, renderId);
+    SinkLatencyFetcherManager::GetInstance().RegisterProvider(renderId,
+        [halLatency] (uint32_t renderId, uint32_t &latency) -> int32_t {
+        latency = static_cast<uint32_t>(halLatency);
+        return SUCCESS;
+    }, halLatency, effectLatency, warmupLatency);
 }
 
 void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId)

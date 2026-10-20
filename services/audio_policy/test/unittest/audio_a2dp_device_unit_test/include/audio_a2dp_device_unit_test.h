@@ -19,6 +19,7 @@
 #include "audio_a2dp_device_behavior.h"
 #include "audio_active_device.h"
 #include "audio_iohandle_map.h"
+#include "audio_pipe_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

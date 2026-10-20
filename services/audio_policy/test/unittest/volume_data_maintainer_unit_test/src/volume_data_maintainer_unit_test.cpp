@@ -20,6 +20,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_zone_service.h"
+#include "ipc_skeleton.h"
 
 using namespace testing::ext;
 
@@ -1025,6 +1026,303 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_VolumeMapKey_001, Test
     std::string mapKey = vd->GetVolumeValueMapKey(desc, TEST_PRIMARY_ZONE_ID);
     EXPECT_TRUE(mapKey.find("100000") == std::string::npos);
     EXPECT_TRUE(mapKey.find("zone__") != std::string::npos || mapKey.find("deviceGroup_") != std::string::npos);
+}
+/* ==================== SetAppVolumeMuteAndHideVolumeBar tests ==================== */
+
+/**
+ * @tc.name  : Test SetAppVolumeMuteAndHideVolumeBar with muted=true.
+ * @tc.number: VolumeDataMaintainer_SetAppVolumeMuteAndHideVolumeBar_001
+ * @tc.desc  : Set mute-and-hide to true. Map should contain entry for appUid.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_SetAppVolumeMuteAndHideVolumeBar_001,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1001;
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    EXPECT_TRUE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID));
+}
+
+/**
+ * @tc.name  : Test SetAppVolumeMuteAndHideVolumeBar with muted=false, uid not found.
+ * @tc.number: VolumeDataMaintainer_SetAppVolumeMuteAndHideVolumeBar_002
+ * @tc.desc  : Unmute an appUid that was never muted. No-op, should not crash.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_SetAppVolumeMuteAndHideVolumeBar_002,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID_NOT_EXIST = 9999;
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID_NOT_EXIST, false);
+    EXPECT_FALSE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID_NOT_EXIST));
+}
+
+/**
+ * @tc.name  : Test SetAppVolumeMuteAndHideVolumeBar with muted=false, uid found, not empty after erase.
+ * @tc.number: VolumeDataMaintainer_SetAppVolumeMuteAndHideVolumeBar_003
+ * @tc.desc  : After mute then unmute, if multiple callers exist, entry should remain.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_SetAppVolumeMuteAndHideVolumeBar_003,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1002;
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, false);
+    EXPECT_FALSE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID));
+}
+
+/**
+ * @tc.name  : Test SetAppVolumeMuteAndHideVolumeBar with muted=false, uid found, empty after erase.
+ * @tc.number: VolumeDataMaintainer_SetAppVolumeMuteAndHideVolumeBar_004
+ * @tc.desc  : After mute then unmute single caller, entry should be removed from map.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_SetAppVolumeMuteAndHideVolumeBar_004,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1003;
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    EXPECT_TRUE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID));
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, false);
+    EXPECT_FALSE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID));
+}
+
+/* ==================== GetAppMuteAndHideVolumeBar tests ==================== */
+
+/**
+ * @tc.name  : Test GetAppMuteAndHideVolumeBar with uid not found.
+ * @tc.number: VolumeDataMaintainer_GetAppMuteAndHideVolumeBar_001
+ * @tc.desc  : Query appUid that was never muted. Should return false.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetAppMuteAndHideVolumeBar_001,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID_NOT_FOUND = 8888;
+    EXPECT_FALSE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID_NOT_FOUND));
+}
+
+/**
+ * @tc.name  : Test GetAppMuteAndHideVolumeBar with uid found and not empty.
+ * @tc.number: VolumeDataMaintainer_GetAppMuteAndHideVolumeBar_002
+ * @tc.desc  : After setting mute-and-hide, query should return true.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetAppMuteAndHideVolumeBar_002,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1004;
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    EXPECT_TRUE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID));
+}
+
+/* ==================== GetAppMuteAndHideOwned tests ==================== */
+
+/**
+ * @tc.name  : Test GetAppMuteAndHideOwned with uid not found.
+ * @tc.number: VolumeDataMaintainer_GetAppMuteAndHideOwned_001
+ * @tc.desc  : Query owned mute for appUid that was never muted. Should return false.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetAppMuteAndHideOwned_001,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID_NOT_FOUND = 7777;
+    EXPECT_FALSE(vd->GetAppMuteAndHideOwned(TEST_APP_UID_NOT_FOUND));
+}
+
+/**
+ * @tc.name  : Test GetAppMuteAndHideOwned with uid found and owned.
+ * @tc.number: VolumeDataMaintainer_GetAppMuteAndHideOwned_002
+ * @tc.desc  : After setting mute-and-hide, owned query should return true (same caller UID).
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetAppMuteAndHideOwned_002,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1005;
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    EXPECT_TRUE(vd->GetAppMuteAndHideOwned(TEST_APP_UID));
+}
+
+/* ==================== GetAppMuteAggregate tests (A || B short-circuit) ==================== */
+
+/**
+ * @tc.name  : Test GetAppMuteAggregate with regular mute true (A=true, short-circuit).
+ * @tc.number: VolumeDataMaintainer_GetAppMuteAggregate_001
+ * @tc.desc  : Regular mute is true, hide mute not evaluated. Aggregate should be true.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetAppMuteAggregate_001,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1006;
+    vd->SetAppVolumeMuted(TEST_APP_UID, true);
+    EXPECT_TRUE(vd->GetAppMuteAggregate(TEST_APP_UID));
+}
+
+/**
+ * @tc.name  : Test GetAppMuteAggregate with regular false, hide true (A=false, B=true).
+ * @tc.number: VolumeDataMaintainer_GetAppMuteAggregate_002
+ * @tc.desc  : Regular mute false, hide mute true. Aggregate should be true.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetAppMuteAggregate_002,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1007;
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    EXPECT_TRUE(vd->GetAppMuteAggregate(TEST_APP_UID));
+}
+
+/**
+ * @tc.name  : Test GetAppMuteAggregate with both false (A=false, B=false).
+ * @tc.number: VolumeDataMaintainer_GetAppMuteAggregate_003
+ * @tc.desc  : Neither regular nor hide mute set. Aggregate should be false.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetAppMuteAggregate_003,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1008;
+    EXPECT_FALSE(vd->GetAppMuteAggregate(TEST_APP_UID));
+}
+
+/* ==================== GetAppMuteOwnedAggregate tests (A || B short-circuit) ==================== */
+
+/**
+ * @tc.name  : Test GetAppMuteOwnedAggregate with regular mute true (A=true, short-circuit).
+ * @tc.number: VolumeDataMaintainer_GetAppMuteOwnedAggregate_001
+ * @tc.desc  : Regular owned mute true, hide not evaluated. Aggregate should be true.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetAppMuteOwnedAggregate_001,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1009;
+    vd->SetAppVolumeMuted(TEST_APP_UID, true);
+    EXPECT_TRUE(vd->GetAppMuteOwnedAggregate(TEST_APP_UID));
+}
+
+/**
+ * @tc.name  : Test GetAppMuteOwnedAggregate with regular false, hide true (A=false, B=true).
+ * @tc.number: VolumeDataMaintainer_GetAppMuteOwnedAggregate_002
+ * @tc.desc  : Regular owned mute false, hide mute true. Aggregate should be true.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetAppMuteOwnedAggregate_002,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1010;
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    EXPECT_TRUE(vd->GetAppMuteOwnedAggregate(TEST_APP_UID));
+}
+
+/**
+ * @tc.name  : Test GetAppMuteOwnedAggregate with both false (A=false, B=false).
+ * @tc.number: VolumeDataMaintainer_GetAppMuteOwnedAggregate_003
+ * @tc.desc  : Neither regular owned nor hide mute set. Aggregate should be false.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetAppMuteOwnedAggregate_003,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1011;
+    EXPECT_FALSE(vd->GetAppMuteOwnedAggregate(TEST_APP_UID));
+}
+
+/* ==================== ClearAppMuteAndHideByOwnerUid tests ==================== */
+
+/**
+ * @tc.name  : Test ClearAppMuteAndHideByOwnerUid with empty map.
+ * @tc.number: VolumeDataMaintainer_ClearAppMuteAndHideByOwnerUid_001
+ * @tc.desc  : Clear with no entries. Loop does not execute, affectedAppUids empty.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_ClearAppMuteAndHideByOwnerUid_001,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_CALLER_UID = 5000;
+    std::vector<int32_t> affectedUids;
+    vd->ClearAppMuteAndHideByOwnerUid(TEST_CALLER_UID, affectedUids);
+    EXPECT_TRUE(affectedUids.empty());
+}
+
+/**
+ * @tc.name  : Test ClearAppMuteAndHideByOwnerUid with ownedAppUid not in any callerMap.
+ * @tc.number: VolumeDataMaintainer_ClearAppMuteAndHideByOwnerUid_002
+ * @tc.desc  : Entry exists but callerUid not present. Not erased, affected empty.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_ClearAppMuteAndHideByOwnerUid_002,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1012;
+    constexpr int32_t TEST_CALLER_UID_NOT_IN_MAP = 9999;
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    std::vector<int32_t> affectedUids;
+    vd->ClearAppMuteAndHideByOwnerUid(TEST_CALLER_UID_NOT_IN_MAP, affectedUids);
+    EXPECT_TRUE(affectedUids.empty());
+    EXPECT_TRUE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID));
+}
+
+/**
+ * @tc.name  : Test ClearAppMuteAndHideByOwnerUid with ownedAppUid in callerMap, empty after erase.
+ * @tc.number: VolumeDataMaintainer_ClearAppMuteAndHideByOwnerUid_003
+ * @tc.desc  : Single caller muted an app. Clear removes entry, appUid in affected list.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_ClearAppMuteAndHideByOwnerUid_003,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID = 1013;
+    int32_t testCallerUid = IPCSkeleton::GetCallingUid();
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    std::vector<int32_t> affectedUids;
+    vd->ClearAppMuteAndHideByOwnerUid(testCallerUid, affectedUids);
+    EXPECT_EQ(affectedUids.size(), 1U);
+    EXPECT_EQ(affectedUids[0], TEST_APP_UID);
+    EXPECT_FALSE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID));
+}
+
+/**
+ * @tc.name  : Test ClearAppMuteAndHideByOwnerUid multiple apps affected.
+ * @tc.number: VolumeDataMaintainer_ClearAppMuteAndHideByOwnerUid_004
+ * @tc.desc  : Multiple apps muted by same caller. Clear should affect all.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_ClearAppMuteAndHideByOwnerUid_004,
+    TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    constexpr int32_t TEST_APP_UID_A = 1014;
+    constexpr int32_t TEST_APP_UID_B = 1015;
+    int32_t testCallerUid = IPCSkeleton::GetCallingUid();
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID_A, true);
+    vd->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID_B, true);
+    std::vector<int32_t> affectedUids;
+    vd->ClearAppMuteAndHideByOwnerUid(testCallerUid, affectedUids);
+    EXPECT_EQ(affectedUids.size(), 2U);
+    EXPECT_FALSE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID_A));
+    EXPECT_FALSE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID_B));
 }
 } // AudioStandardnamespace
 } // OHOSnamespace

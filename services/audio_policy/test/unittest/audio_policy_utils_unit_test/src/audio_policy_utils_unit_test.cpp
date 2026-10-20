@@ -15,6 +15,7 @@
 
 #include "audio_policy_utils_unit_test.h"
 #include "audio_errors.h"
+#include "audio_router_infra.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -1089,5 +1090,101 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_FilterDevicesByTokenId
     EXPECT_EQ(devices.size(), 0);
 }
 
+/**
+ * @tc.name  : Test UpdateTimestampWhenBecomeEnable API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_UpdateTimestampWhenBecomeEnable_001
+ * @tc.desc  : Test UpdateTimestampWhenBecomeEnable
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_UpdateTimestampWhenBecomeEnable_001, TestSize.Level1)
+{
+    auto backup = AudioRouterInfra::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    AudioPolicyUtils::GetInstance().audioDeviceManager_.ParseDeviceXml();
+    auto current = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    current->deviceCategory_ = BT_SOUNDBOX;
+    current->deviceUsage_ = ALL_USAGE;
+    current->macAddress_ = "11:11:11:11:11:11";
+    current->deviceId_ = 2;
+
+    // current is public device
+    AudioRouterInfra::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID,
+        {std::make_shared<AudioDeviceSimpleDescriptor>(current->deviceType_,
+            current->deviceRole_,
+            current->deviceId_,
+            current->networkId_,
+            current->macAddress_)});
+
+    auto updated = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    updated->deviceUsage_ = ALL_USAGE;
+    updated->macAddress_ = "22:22:22:22:22:22";
+    updated->deviceId_ = 3;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices {current, updated};
+
+    // glasses become enable
+    updated->deviceCategory_ = BT_GLASSES;
+    EXPECT_FALSE(AudioPolicyUtils::GetInstance().UpdateTimestampWhenBecomeEnable(devices, updated));
+
+    // soundbox become enable
+    updated->deviceCategory_ = BT_SOUNDBOX;
+    EXPECT_FALSE(AudioPolicyUtils::GetInstance().UpdateTimestampWhenBecomeEnable(devices, updated));
+
+    // headphone become enable
+    updated->deviceCategory_ = BT_HEADPHONE;
+    EXPECT_FALSE(AudioPolicyUtils::GetInstance().UpdateTimestampWhenBecomeEnable(devices, updated));
+
+    // current is privacy device
+    current->deviceCategory_ = BT_HEADPHONE;
+    AudioRouterInfra::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID,
+        {std::make_shared<AudioDeviceSimpleDescriptor>(current->deviceType_,
+            current->deviceRole_,
+            current->deviceId_,
+            current->networkId_,
+            current->macAddress_)});
+    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateTimestampWhenBecomeEnable(devices, updated));
+
+    AudioRouterInfra::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, backup);
+}
+
+/**
+ * @tc.name  : Test UpdateTimestampAfterUnwearGlasses API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_UpdateTimestampAfterUnwearGlasses_001
+ * @tc.desc  : Test UpdateTimestampAfterUnwearGlasses
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_UpdateTimestampAfterUnwearGlasses_001, TestSize.Level1)
+{
+    AudioPolicyUtils::GetInstance().audioDeviceManager_.ParseDeviceXml();
+    auto updated = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    updated->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    updated->deviceUsage_ = ALL_USAGE;
+    updated->macAddress_ = "11:11:11:11:11:11";
+    updated->isPriorityReduced_ = false;
+    updated->connectTimeStamp_ = 500;
+    updated->deviceId_ = 3;
+
+    auto desc1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc1->deviceCategory_ = BT_HEADPHONE;
+    desc1->deviceUsage_ = ALL_USAGE;
+    desc1->macAddress_ = "22:22:22:22:22:22";
+    desc1->isPriorityReduced_ = true;
+    desc1->connectTimeStamp_ = 0;
+    desc1->deviceId_ = 4;
+
+    auto desc2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    desc2->deviceCategory_ = BT_HEADPHONE;
+    desc2->deviceUsage_ = ALL_USAGE;
+    desc2->macAddress_ = "33:33:33:33:33:33";
+    desc2->isPriorityReduced_ = false;
+    desc2->connectTimeStamp_ = 1000;
+    desc2->deviceId_ = 5;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices {updated, desc1, desc2};
+    EXPECT_TRUE(desc1->isPriorityReduced_);
+    EXPECT_TRUE(desc1->connectTimeStamp_ < updated->connectTimeStamp_);
+    AudioPolicyUtils::GetInstance().UpdateTimestampAfterUnwearGlasses(devices, updated);
+    EXPECT_FALSE(desc1->isPriorityReduced_);
+    EXPECT_FALSE(desc1->connectTimeStamp_ < updated->connectTimeStamp_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

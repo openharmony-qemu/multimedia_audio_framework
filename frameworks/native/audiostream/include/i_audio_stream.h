@@ -172,6 +172,8 @@ public:
     virtual int32_t SetInMainThreadState(bool isInMainThread) = 0;
     virtual void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) = 0;
     virtual void SetClientDeviceId(const std::string &deviceId) = 0;
+    // Privacy attribution token for recording; default no-op, overridden by capturer client.
+    virtual void SetActualUsingTokenId(uint32_t actualUsingTokenId) {}
     virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
     virtual void GetRendererInfo(AudioRendererInfo &rendererInfo) = 0;
     virtual void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) = 0;

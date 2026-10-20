@@ -19,6 +19,8 @@
 #include "audio_schedule.h"
 #include "audio_schedule_guard.h"
 
+#include <fcntl.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sched.h>
@@ -262,12 +264,35 @@ std::map<std::pair<pid_t, pid_t>,
     std::weak_ptr<SharedAudioScheduleGuard>> SharedAudioScheduleGuard::guardMap_;
 std::mutex SharedAudioScheduleGuard::mutex_;
 std::condition_variable SharedAudioScheduleGuard::cv_;
+struct TaskConfig {
+    pid_t pid;
+    unsigned int value;
+};
+#define AUDIO_SERVER_SET_VIP_PRIO 25
+#define AUDIO_SERVER_PERF_CTRL_MAGIC 'x'
+#define AUDIO_SERVER_PERF_CTRL_SET_VIP_PERIO \
+    _IOW(AUDIO_SERVER_PERF_CTRL_MAGIC, AUDIO_SERVER_SET_VIP_PRIO, struct TaskConfig)
 
 AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPriority,
     const std::string &bundleName)
     : pid_(pid), tid_(tid), bundleName_(bundleName)
 {
-    if (threadPriority == THREAD_PRIORITY_ULTRA_FAST) {
+<<<<<<< master
+    if (threadPriority == THREAD_PRIORITY_VIP_10) {
+        AUDIO_INFO_LOG("Set thread VIP_10 priority, tid=%{public}d, bundleName=%{public}s", tid, bundleName.c_str());
+        FILE *fp = fopen("/dev/perf_ctrl", "r+");
+        CHECK_AND_RETURN_LOG(fp != nullptr, "Open /dev/perf_ctrl failed");
+        int32_t fd = fileno(fp);
+        CHECK_AND_CALL_FUNC_RETURN(fd >= 0, fclose(fp));
+        struct TaskConfig config = {0};
+        config.pid = tid;
+        config.value = 10; // 10 is the value for VIP_10 priority, set 0 to clear vip prio.
+        int32_t ret = ioctl(fd, AUDIO_SERVER_PERF_CTRL_SET_VIP_PERIO, &config);
+        if (ret < 0) {
+            AUDIO_ERR_LOG("Set VIP priority failed, ret=%{public}d", ret);
+        }
+        fclose(fp);
+    } else if (threadPriority == THREAD_PRIORITY_ULTRA_FAST) {
         struct sched_param param = {0};
         previousPolicy_ = sched_getscheduler(tid);
         int32_t ret = sched_getparam(tid, &param);
@@ -280,8 +305,7 @@ AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPrio
             return;
         }
         AUDIO_WARNING_LOG("Cannot set ultra fast thread priority: %{public}d", ret);
-    }
-    if (USE_PRIORITY_4_BUNDLE_SET.find(bundleName) != USE_PRIORITY_4_BUNDLE_SET.end() &&
+    } else if (USE_PRIORITY_4_BUNDLE_SET.find(bundleName) != USE_PRIORITY_4_BUNDLE_SET.end() &&
         threadPriority == THREAD_PRIORITY_4) {
         struct sched_param param = {0};
         param.sched_priority = SCHED_PRIORITY_NUM_4;

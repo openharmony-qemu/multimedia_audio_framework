@@ -88,7 +88,9 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     // Remote sink routing ignores mac; keep volume-side info selection consistent with sink creation
-    nodeInfo.macAddress = IsRemoteDevice() ? "" : sinkInfo_.macAddress;
+    nodeInfo.macAddress = sinkInfo_.macAddress;
+    nodeInfo.deviceName = sinkInfo_.deviceName;
+    nodeInfo.busAddress = sinkInfo_.busAddress;
     if (Util::IsEnhancedRoutingSupported()) {
         nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
         nodeInfo.renderId = renderId_;
@@ -116,7 +118,9 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     // Remote sink routing ignores mac; keep volume-side info selection consistent with sink creation
-    nodeInfo.macAddress = IsRemoteDevice() ? "" : sinkInfo_.macAddress;
+    nodeInfo.macAddress = sinkInfo_.macAddress;
+    nodeInfo.deviceName = sinkInfo_.deviceName;
+    nodeInfo.busAddress = sinkInfo_.busAddress;
     if (Util::IsEnhancedRoutingSupported()) {
         nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
         nodeInfo.renderId = renderId_;
@@ -1393,7 +1397,9 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
-    nodeInfo.macAddress = IsRemoteDevice() ? "" : sinkInfo_.macAddress;
+    nodeInfo.macAddress = sinkInfo_.macAddress;
+    nodeInfo.deviceName = sinkInfo_.deviceName;
+    nodeInfo.busAddress = sinkInfo_.busAddress;
 
     nodeInfo.routeFlag = sinkInfo_.routeFlag;
     nodeInfo.statusCallback = weak_from_this();
@@ -1420,7 +1426,10 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
 
 int32_t HpaeRendererManager::InitOutputCluster()
 {
-    int32_t ret = outputCluster_->GetInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId, sinkInfo_.macAddress);
+    HdiIdInfoParam sinkParam = {.deviceClass = sinkInfo_.deviceClass, .name = sinkInfo_.deviceName,
+        .networkId = sinkInfo_.deviceNetId, .macAddress = sinkInfo_.macAddress,
+        .busAddress = sinkInfo_.busAddress};
+    int32_t ret = outputCluster_->GetInstance(sinkParam);
     IAudioSinkAttr attr;
     attr.adapterName = sinkInfo_.adapterName.c_str();
     attr.sinkName = sinkInfo_.deviceClass.c_str();
@@ -1461,7 +1470,9 @@ void HpaeRendererManager::InitDefaultNodeInfo()
     defaultNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     defaultNodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     defaultNodeInfo.deviceClass = sinkInfo_.deviceClass;
-    defaultNodeInfo.macAddress = IsRemoteDevice() ? "" : sinkInfo_.macAddress;
+    defaultNodeInfo.macAddress = sinkInfo_.macAddress;
+    defaultNodeInfo.deviceName = sinkInfo_.deviceName;
+    defaultNodeInfo.busAddress = sinkInfo_.busAddress;
     defaultNodeInfo.statusCallback = weak_from_this();
     defaultNodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
     defaultNodeInfo.renderId = renderId_;
@@ -1479,7 +1490,9 @@ void HpaeRendererManager::CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
-    nodeInfo.macAddress = IsRemoteDevice() ? "" : sinkInfo_.macAddress;
+    nodeInfo.macAddress = sinkInfo_.macAddress;
+    nodeInfo.deviceName = sinkInfo_.deviceName;
+    nodeInfo.busAddress = sinkInfo_.busAddress;
     nodeInfo.statusCallback = weak_from_this();
     return;
 }

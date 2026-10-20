@@ -420,14 +420,16 @@ void SuspendRenderSink(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::string sinkName = provider.ConsumeRandomLengthString();
-    audioServer->SuspendRenderSink(sinkName);
+    std::string macAddress = provider.ConsumeRandomLengthString();
+    audioServer->SuspendRenderSink(sinkName, macAddress);
 }
 
 void RestoreRenderSink(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::string sinkName = provider.ConsumeRandomLengthString();
-    audioServer->RestoreRenderSink(sinkName);
+    std::string macAddress = provider.ConsumeRandomLengthString();
+    audioServer->RestoreRenderSink(sinkName, macAddress);
 }
 
 void LoadHdiEffectModel(FuzzedDataProvider &provider)

@@ -264,6 +264,11 @@ std::string AudioSystemClientPolicyManager::GetSystemSoundUri(const std::string 
     return AudioPolicyManager::GetInstance().GetSystemSoundUri(key);
 }
 
+int32_t AudioSystemClientPolicyManager::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    return AudioPolicyManager::GetInstance().SetAncoPlaybackInfo(ancoPlaybackInfos);
+}
+
 std::string AudioSystemClientPolicyManager::GetSystemSoundPath(int32_t systemSoundType)
 {
     std::string systemSoundPath = AudioPolicyManager::GetInstance().GetSystemSoundPath(systemSoundType);

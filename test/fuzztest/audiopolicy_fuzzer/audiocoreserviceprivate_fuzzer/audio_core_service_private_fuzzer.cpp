@@ -990,7 +990,8 @@ void HandleA2dpSuspendWhenFetchFuzzTest()
         return;
     }
     audioCoreService->HandleA2dpSuspendWhenFetch(reason, audioDeviceDescriptor, streamDescs);
-    audioCoreService->HandleA2dpSuspend();
+    std::string macAddress = "00:00:00:00:00:00";
+    audioCoreService->HandleA2dpSuspend(macAddress);
     audioCoreService->UpdateActiveDeviceAndVolumeBeforeMoveSession(streamDescs, reason);
     audioCoreService->FetchRendererPipesAndExecute(streamDescs, reason);
     audioCoreService->CheckRingAndVoipScene(reason);

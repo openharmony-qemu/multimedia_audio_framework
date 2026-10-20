@@ -31,6 +31,26 @@ enum EcType {
     EC_TYPE_DIFF_ADAPTER
 };
 
+static const std::unordered_set<DeviceType> ecSupportedOutputDevices = {
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_NEARLINK,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_DP,
+    DEVICE_TYPE_HDMI,
+    DEVICE_TYPE_LINE_DIGITAL,
+};
+
+static const std::unordered_set<std::string> ecSupportedInputAdapters = {
+    ADAPTER_PRIMARY_TYPE,
+    ADAPTER_USB_TYPE,
+    ADAPTER_DP_TYPE,
+};
+
 struct AudioEcInfo {
     AudioEcInfo()
     {

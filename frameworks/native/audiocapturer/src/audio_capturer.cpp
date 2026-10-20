@@ -209,6 +209,7 @@ void AudioCapturerPrivate::SetCapturerInfoByOptions(const AudioCapturerOptions &
     capturerInfo_.mixWithWakeUp = mixWithWakeUp_;
     capturerInfo_.cellularRecordPhoneNum = capturerOptions.capturerInfo.cellularRecordPhoneNum;
     capturerInfo_.cellularRecordToken = capturerOptions.capturerInfo.cellularRecordToken;
+    actualUsingTokenId_ = capturerOptions.actualUsingTokenId;
 }
 
 // LCOV_EXCL_START
@@ -223,8 +224,11 @@ static inline bool IsMicInRequested(const AudioCapturerOptions &capturerOptions)
     return capturerOptions.micInStreamInfo.channels > CHANNEL_UNKNOW;
 }
 
+// UNPROCESSED_VOICE_ASSISTANT is for car multi-MIC arrays (10/12/16 channels).
+// car does not deliver ec; ec validation is skipped when ecChannels is 0.
 static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions &capturerOptions)
 {
+#ifndef MULTI_BUS_ENABLE
     if (sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT &&
         (capturerOptions.ecStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
         capturerOptions.ecStreamInfo.format != capturerOptions.streamInfo.format)) {
@@ -232,7 +236,7 @@ static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions 
             "can only be samplingRate and format same");
         return false;
     }
-
+#endif
     if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION && IsMicInEcRequested(capturerOptions)) {
         if (capturerOptions.micInStreamInfo.channels > CHANNEL_UNKNOW &&
             (capturerOptions.micInStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
@@ -1190,6 +1194,7 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
     SetInnerStreamFastStatusChangeCallback(audioStream_);
 
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
+    audioStream_->SetActualUsingTokenId(actualUsingTokenId_);
 
     audioStream_->SetClientDeviceId(appInfo_.deviceId);
 
@@ -2687,9 +2692,14 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
 
     audioStream->SetStreamTrackerState(false);
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
+    audioStream->SetActualUsingTokenId(actualUsingTokenId_);
     audioStream->SetClientDeviceId(appInfo_.deviceId);
     audioStream->SetCapturerInfo(info.capturerInfo);
     SetInnerStreamFastStatusChangeCallback(audioStream);
+    if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        audioStream->SetInnerCapturerState(true, info.params.playbackCaptureMode,
+            info.params.isModernInnerCapturer);
+    }
     int32_t res = audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(res == SUCCESS, ERROR,
         HILOG_COMM_ERROR("[SetSwitchInfo]SetAudioStreamInfo failed"),

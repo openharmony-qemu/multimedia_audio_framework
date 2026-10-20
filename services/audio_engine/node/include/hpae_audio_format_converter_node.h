@@ -75,6 +75,8 @@ private:
     void UpdateNodeInfoOnOutChange(uint32_t numChannels, AudioChannelLayout channelLayout, uint32_t oldOutRate);
     void ReconfigOutputBuffers(const PcmBufferInfo &outPcmBufferInfo);
     void ResizeDualBuffers(uint32_t inCh, uint32_t outCh, uint32_t maxOutFrames);
+    void OnTraceInfoChanged() override;
+    void RebuildTraceName();
 
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer converterOutput_;
@@ -110,6 +112,9 @@ private:
     uint32_t pullAheadMaxCredit_ = 0;
 
     float frameLenInMs_ = 0.0f;
+
+    // Cached DoProcess trace name; rebuilt in ctor and whenever node info changes
+    std::string processTraceName_;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif

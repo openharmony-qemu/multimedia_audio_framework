@@ -19,6 +19,7 @@
 #include "audio_stream_enum.h"
 #include "audio_device_descriptor.h"
 #include "audio_info.h"
+#include "audio_ec_info.h"
 
 using namespace testing::ext;
 
@@ -76,6 +77,48 @@ static void MakeDeviceInfoMap(AudioPolicyConfigData &configData, std::shared_ptr
     std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};
     auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     configData.deviceInfoMap[deviceKey] = deviceInfoSet;
+}
+
+static std::shared_ptr<AudioStreamDescriptor> MakeRecordStream(uint32_t sessionId, SourceType sourceType,
+    DeviceType deviceType)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = sessionId;
+    stream->audioMode_ = AUDIO_MODE_RECORD;
+    stream->streamStatus_ = STREAM_STATUS_STARTED;
+    stream->capturerInfo_.sourceType = sourceType;
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = deviceType;
+    device->networkId_ = LOCAL_NETWORK_ID;
+    stream->newDeviceDescs_.push_back(device);
+    return stream;
+}
+
+static std::shared_ptr<AudioStreamDescriptor> MakePlaybackStream(uint32_t sessionId, StreamUsage usage,
+    DeviceType deviceType)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = sessionId;
+    stream->audioMode_ = AUDIO_MODE_PLAYBACK;
+    stream->streamStatus_ = STREAM_STATUS_STARTED;
+    stream->rendererInfo_.streamUsage = usage;
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = deviceType;
+    device->networkId_ = LOCAL_NETWORK_ID;
+    stream->newDeviceDescs_.push_back(device);
+    return stream;
+}
+
+static std::shared_ptr<AudioPipeInfo> MakePipeWithStream(AudioPipeRole role, uint32_t pipeId,
+    const std::shared_ptr<AudioStreamDescriptor> &stream)
+{
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->id_ = pipeId;
+    pipe->pipeRole_ = role;
+    if (stream != nullptr) {
+        pipe->streamDescriptors_.push_back(stream);
+    }
+    return pipe;
 }
 
 /**
@@ -2886,78 +2929,185 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsPipeFormatMatch_ChannelLayout_001, TestSiz
     EXPECT_FALSE(audioPipeSelector->IsPipeFormatMatch(streamPropInfo, pipeInfo));
     pipeInfo->moduleInfo_.channelLayout = savedLayout;
 }
-/** @tc.desc: Two ultra fast input streams share the six fast input slots; excess streams fall back. */
-HWTEST_F(AudioPipeSelectorUnitTest, UltraFastRecordingLimit_001, TestSize.Level1)
+
+/**
+ * @tc.name  : GetEcTypeByDevice_UnsupportedOutput_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Output device not in ecSupportedOutputDevices should not enable EC.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetEcTypeByDevice_UnsupportedOutput_001, TestSize.Level1)
 {
-    auto selector = std::make_shared<AudioPipeSelector>();
-    auto makeStream = [](uint32_t id, AudioFlag flag, SourceType source = SOURCE_TYPE_MIC) {
-        auto desc = std::make_shared<AudioStreamDescriptor>();
-        desc->audioMode_ = AUDIO_MODE_RECORD;
-        desc->sessionId_ = id;
-        desc->routeFlag_ = flag;
-        desc->capturerInfo_.sourceType = source;
-        return desc;
-    };
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams = {nullptr,
-        makeStream(1, AUDIO_INPUT_FLAG_ULTRA_FAST)};
-    auto second = makeStream(2, AUDIO_INPUT_FLAG_ULTRA_FAST);
-    selector->HandleFastStreamLimitOnCreate(streams, second);
-    EXPECT_EQ(second->GetRoute(), AUDIO_INPUT_FLAG_ULTRA_FAST);
-    streams.push_back(second);
-    auto third = makeStream(3, AUDIO_INPUT_FLAG_ULTRA_FAST);
-    selector->HandleFastStreamLimitOnCreate(streams, third);
-    EXPECT_EQ(third->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
-    for (uint32_t id = 4; id < 8; ++id) {
-        streams.push_back(makeStream(id, AUDIO_INPUT_FLAG_FAST, SOURCE_TYPE_UNPROCESSED));
-    }
-    auto seventh = makeStream(8, AUDIO_INPUT_FLAG_FAST, SOURCE_TYPE_UNPROCESSED);
-    selector->HandleFastStreamLimitOnCreate(streams, seventh);
-    EXPECT_EQ(seventh->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
-    streams = {makeStream(1, AUDIO_INPUT_FLAG_FAST)};
-    second = makeStream(2, AUDIO_INPUT_FLAG_ULTRA_FAST);
-    selector->HandleFastStreamLimitOnCreate(streams, second);
-    EXPECT_EQ(second->GetRoute(), AUDIO_INPUT_FLAG_ULTRA_FAST);
-    streams = {makeStream(1, AUDIO_INPUT_FLAG_ULTRA_FAST), makeStream(2, AUDIO_INPUT_FLAG_ULTRA_FAST),
-        makeStream(3, AUDIO_INPUT_FLAG_ULTRA_FAST)};
-    selector->HandleFastStreamLimitAndNearLinkState(streams);
-    EXPECT_EQ(streams[0]->GetRoute(), AUDIO_INPUT_FLAG_ULTRA_FAST);
-    EXPECT_EQ(streams[1]->GetRoute(), AUDIO_INPUT_FLAG_ULTRA_FAST);
-    EXPECT_EQ(streams[2]->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
-    EXPECT_EQ(selector->GetInputNormalPipeType(AUDIO_INPUT_FLAG_ULTRA_FAST), PIPE_TYPE_IN_ULTRA_FAST);
-    EXPECT_EQ(selector->GetInputNormalPipeType(AUDIO_INPUT_FLAG_FAST), PIPE_TYPE_IN_LOWLATENCY);
+    EXPECT_TRUE(AudioCoreConfigManager::GetInstance().Init(true));
+    auto selector = AudioPipeSelector::GetPipeSelector();
+    auto inputStream = MakeRecordStream(TEST_SESSION_ID_BASE + 201, SOURCE_TYPE_VOICE_COMMUNICATION,
+        DEVICE_TYPE_MIC);
+    auto outputStream = MakePlaybackStream(TEST_SESSION_ID_BASE + 202, STREAM_USAGE_VOICE_COMMUNICATION,
+        DEVICE_TYPE_BLUETOOTH_A2DP);
+    outputStream->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+    outputStream->streamInfo_.channels = STEREO;
+    outputStream->streamInfo_.format = SAMPLE_S16LE;
+
+    auto outputPipe = MakePipeWithStream(PIPE_ROLE_OUTPUT, 6101, outputStream);
+    outputPipe->moduleInfo_.rate = "48000";
+    outputPipe->moduleInfo_.format = "s16";
+    outputPipe->moduleInfo_.channels = "2";
+    selector->pipeManager_->AddAudioPipeInfo(outputPipe);
+
+    auto inputPipe = std::make_shared<AudioPipeInfo>();
+    inputPipe->pipeRole_ = PIPE_ROLE_INPUT;
+    inputPipe->moduleInfo_.rate = "16000";
+    inputPipe->moduleInfo_.format = "s16";
+    inputPipe->audioStreamInfo_.samplingRate = SAMPLE_RATE_16000;
+    inputPipe->audioStreamInfo_.channels = MONO;
+    inputPipe->audioStreamInfo_.format = SAMPLE_S16LE;
+
+    AudioModuleInfo ecModuleInfo;
+    selector->ResolveTargetEcModuleInfo(inputStream, inputPipe, ecModuleInfo);
+    selector->pipeManager_->RemoveAudioPipeInfo(outputPipe);
+    EXPECT_TRUE(ecModuleInfo.ecType.empty());
 }
 
-/** @tc.desc: Same-source fast and ultra fast streams coexist within the input stream limits. */
-HWTEST_F(AudioPipeSelectorUnitTest, UltraFastRecordingSameSource_001, TestSize.Level1)
+/**
+ * @tc.name  : GetEcTypeByDevice_SupportedOutput_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Output device in ecSupportedOutputDevices should enable EC.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetEcTypeByDevice_SupportedOutput_001, TestSize.Level1)
 {
-    auto selector = std::make_shared<AudioPipeSelector>();
-    for (SourceType source : {SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_RECOGNITION, SOURCE_TYPE_CAMCORDER,
-        SOURCE_TYPE_VOICE_COMMUNICATION, SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_LIVE}) {
-        for (bool ultraFirst : {false, true}) {
-            std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
-            for (uint32_t id = 0; id < 7; ++id) {
-                auto desc = std::make_shared<AudioStreamDescriptor>();
-                desc->audioMode_ = AUDIO_MODE_RECORD;
-                desc->sessionId_ = id + 1;
-                desc->capturerInfo_.sourceType = source;
-                bool isUltra = ultraFirst ? id < 2 : (id >= 4 && id < 6);
-                const AudioFlag route = isUltra ? AUDIO_INPUT_FLAG_ULTRA_FAST : AUDIO_INPUT_FLAG_FAST;
-                desc->routeFlag_ = route;
-                selector->HandleFastStreamLimitOnCreate(streams, desc);
-                EXPECT_EQ(desc->GetRoute(), id < 6 ? route : AUDIO_INPUT_FLAG_NORMAL) << source << ":" << id;
-                streams.push_back(desc);
-            }
-            streams[6]->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
-            selector->HandleFastStreamLimitAndNearLinkState(streams);
-            for (uint32_t id = 0; id < 6; ++id) {
-                bool isUltra = ultraFirst ? id < 2 : id >= 4;
-                EXPECT_EQ(streams[id]->GetRoute(),
-                    isUltra ? AUDIO_INPUT_FLAG_ULTRA_FAST : AUDIO_INPUT_FLAG_FAST) << source << ":" << id;
-            }
-            EXPECT_EQ(streams[6]->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
-        }
-    }
+    EXPECT_TRUE(AudioCoreConfigManager::GetInstance().Init(true));
+    auto selector = AudioPipeSelector::GetPipeSelector();
+    auto inputStream = MakeRecordStream(TEST_SESSION_ID_BASE + 203, SOURCE_TYPE_VOICE_COMMUNICATION,
+        DEVICE_TYPE_MIC);
+    auto outputStream = MakePlaybackStream(TEST_SESSION_ID_BASE + 204, STREAM_USAGE_VOICE_COMMUNICATION,
+        DEVICE_TYPE_SPEAKER);
+    outputStream->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+    outputStream->streamInfo_.channels = STEREO;
+    outputStream->streamInfo_.format = SAMPLE_S16LE;
+
+    auto outputPipe = MakePipeWithStream(PIPE_ROLE_OUTPUT, 6102, outputStream);
+    outputPipe->moduleInfo_.rate = "48000";
+    outputPipe->moduleInfo_.format = "s16";
+    outputPipe->moduleInfo_.channels = "2";
+    selector->pipeManager_->AddAudioPipeInfo(outputPipe);
+
+    auto inputPipe = std::make_shared<AudioPipeInfo>();
+    inputPipe->pipeRole_ = PIPE_ROLE_INPUT;
+    inputPipe->moduleInfo_.rate = "16000";
+    inputPipe->moduleInfo_.format = "s16";
+    inputPipe->audioStreamInfo_.samplingRate = SAMPLE_RATE_16000;
+    inputPipe->audioStreamInfo_.channels = MONO;
+    inputPipe->audioStreamInfo_.format = SAMPLE_S16LE;
+
+    AudioModuleInfo ecModuleInfo;
+    selector->ResolveTargetEcModuleInfo(inputStream, inputPipe, ecModuleInfo);
+    selector->pipeManager_->RemoveAudioPipeInfo(outputPipe);
+    EXPECT_EQ(ecModuleInfo.ecType, std::to_string(EC_TYPE_SAME_ADAPTER));
 }
 
+/**
+ * @tc.name  : TryOccupyEcForAdapter_AdapterNotInSet_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Adapter in ecSupportedInputAdapters should apply EC.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, TryOccupyEcForAdapter_AdapterNotInSet_001, TestSize.Level1)
+{
+    EXPECT_TRUE(AudioCoreConfigManager::GetInstance().Init(true));
+    auto selector = AudioPipeSelector::GetPipeSelector();
+    auto inputStream = MakeRecordStream(TEST_SESSION_ID_BASE + 205, SOURCE_TYPE_VOICE_COMMUNICATION,
+        DEVICE_TYPE_MIC);
+    auto outputStream = MakePlaybackStream(TEST_SESSION_ID_BASE + 206, STREAM_USAGE_VOICE_COMMUNICATION,
+        DEVICE_TYPE_SPEAKER);
+    outputStream->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+    outputStream->streamInfo_.channels = STEREO;
+    outputStream->streamInfo_.format = SAMPLE_S16LE;
+
+    auto outputPipe = MakePipeWithStream(PIPE_ROLE_OUTPUT, 6103, outputStream);
+    outputPipe->moduleInfo_.rate = "48000";
+    outputPipe->moduleInfo_.format = "s16";
+    outputPipe->moduleInfo_.channels = "2";
+    selector->pipeManager_->AddAudioPipeInfo(outputPipe);
+
+    auto inputPipe = std::make_shared<AudioPipeInfo>();
+    inputPipe->pipeRole_ = PIPE_ROLE_INPUT;
+    inputPipe->moduleInfo_.adapterName = "primary";
+    inputPipe->moduleInfo_.rate = "16000";
+    inputPipe->moduleInfo_.format = "s16";
+    inputPipe->audioStreamInfo_.samplingRate = SAMPLE_RATE_16000;
+    inputPipe->audioStreamInfo_.channels = MONO;
+    inputPipe->audioStreamInfo_.format = SAMPLE_S16LE;
+
+    std::unordered_set<std::string> ecOccupiedAdapters;
+    std::unordered_set<std::string> micRefOccupiedAdapters;
+    selector->UpdateInputPipeEcAndMicRefByHighestStream(inputStream, inputPipe, ecOccupiedAdapters,
+        micRefOccupiedAdapters);
+    selector->pipeManager_->RemoveAudioPipeInfo(outputPipe);
+    EXPECT_FALSE(inputPipe->moduleInfo_.ecType.empty());
+}
+
+/**
+ * @tc.name  : TryOccupyEcForAdapter_AdapterInSet_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Adapter not in ecSupportedInputAdapters should not apply EC.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, TryOccupyEcForAdapter_AdapterInSet_001, TestSize.Level1)
+{
+    EXPECT_TRUE(AudioCoreConfigManager::GetInstance().Init(true));
+    auto selector = AudioPipeSelector::GetPipeSelector();
+    auto inputStream = MakeRecordStream(TEST_SESSION_ID_BASE + 207, SOURCE_TYPE_VOICE_COMMUNICATION,
+        DEVICE_TYPE_MIC);
+    auto outputStream = MakePlaybackStream(TEST_SESSION_ID_BASE + 208, STREAM_USAGE_VOICE_COMMUNICATION,
+        DEVICE_TYPE_SPEAKER);
+    outputStream->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+    outputStream->streamInfo_.channels = STEREO;
+    outputStream->streamInfo_.format = SAMPLE_S16LE;
+
+    auto outputPipe = MakePipeWithStream(PIPE_ROLE_OUTPUT, 6104, outputStream);
+    outputPipe->moduleInfo_.rate = "48000";
+    outputPipe->moduleInfo_.format = "s16";
+    outputPipe->moduleInfo_.channels = "2";
+    selector->pipeManager_->AddAudioPipeInfo(outputPipe);
+
+    auto inputPipe = std::make_shared<AudioPipeInfo>();
+    inputPipe->pipeRole_ = PIPE_ROLE_INPUT;
+    inputPipe->moduleInfo_.adapterName = ADAPTER_A2DP_TYPE;
+    inputPipe->moduleInfo_.rate = "16000";
+    inputPipe->moduleInfo_.format = "s16";
+    inputPipe->audioStreamInfo_.samplingRate = SAMPLE_RATE_16000;
+    inputPipe->audioStreamInfo_.channels = MONO;
+    inputPipe->audioStreamInfo_.format = SAMPLE_S16LE;
+
+    std::unordered_set<std::string> ecOccupiedAdapters;
+    std::unordered_set<std::string> micRefOccupiedAdapters;
+    selector->UpdateInputPipeEcAndMicRefByHighestStream(inputStream, inputPipe, ecOccupiedAdapters,
+        micRefOccupiedAdapters);
+    selector->pipeManager_->RemoveAudioPipeInfo(outputPipe);
+    EXPECT_TRUE(inputPipe->moduleInfo_.ecType.empty());
+}
+
+/**
+ * @tc.name  : UpdateMicRefModuleInfo_002
+ * @tc.type  : FUNC
+ * @tc.desc  : When streamDesc is valid with device and shouldOpenMicRef is false,
+ *             GetAudioEffectPropertyProxy should be called.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateMicRefModuleInfo_002, TestSize.Level1)
+{
+    auto selector = AudioPipeSelector::GetPipeSelector();
+    AudioModuleInfo moduleInfo;
+    moduleInfo.openMicRef = "1";
+    moduleInfo.micRefRate = "48000";
+    moduleInfo.micRefChannels = "4";
+    moduleInfo.micRefFormat = "s16le";
+
+    auto streamDesc = MakeRecordStream(TEST_SESSION_ID_BASE + 200, SOURCE_TYPE_MIC, DEVICE_TYPE_USB_HEADSET);
+    ASSERT_NE(streamDesc, nullptr);
+    ASSERT_FALSE(streamDesc->newDeviceDescs_.empty());
+
+    selector->UpdateMicRefModuleInfo(streamDesc, false, moduleInfo);
+    EXPECT_EQ(moduleInfo.openMicRef, "0");
+    EXPECT_TRUE(moduleInfo.micRefRate.empty());
+    EXPECT_TRUE(moduleInfo.micRefChannels.empty());
+    EXPECT_TRUE(moduleInfo.micRefFormat.empty());
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -334,7 +334,7 @@ HWTEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest, TestSize.L
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 1);
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
     g_testValue1 = DEFAULT_TEST_VALUE_FIRST;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb0 =
         std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, g_testValue1);

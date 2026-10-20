@@ -1095,20 +1095,15 @@ bool AudioPolicyServerHandler::IsForceGetZoneDevice(int32_t uid)
 }
 
 void AudioPolicyServerHandler::ValidatePreferredOutputDeviceCallback(int32_t clientPid,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
+    StreamUsage streamUsage, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
-    int32_t zoneId = AudioActiveDevice::GetInstance().GetAdjustVolumeZoneId();
-    if (IsForceGetZoneDevice(pidUidMap_[clientPid]) && zoneId > 0) {
-        deviceDescs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
-            STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
-        return;
-    }
-    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(pidUidMap_[clientPid], OUTPUT_DEVICE);
-    CHECK_AND_RETURN(zoneId != 0);
-    auto tmpDeviceDescs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
-        STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
-    CHECK_AND_RETURN(!tmpDeviceDescs.empty());
-    deviceDescs = tmpDeviceDescs;
+    CHECK_AND_RETURN(IsForceGetZoneDevice(pidUidMap_[clientPid]));
+    auto desc = AudioActiveDevice::GetInstance().GetDeviceForVolume(
+        VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage));
+    CHECK_AND_RETURN_LOG(desc != nullptr, "get device for volume is nullptr");
+    deviceDescs.clear();
+    deviceDescs.push_back(desc);
+    return;
 }
 
 bool AudioPolicyServerHandler::HasVolumeKeyEventCallbacks(int32_t clientPid)
@@ -1621,7 +1616,7 @@ void AudioPolicyServerHandler::ProcessPreferredOutputDeviceForClient(int32_t cli
     for (auto rendererFilter : rendererFilterList) {
         auto deviceDescs = AudioCoreService::GetCoreService()->
             GetPreferredOutputDeviceDescInner(rendererFilter.rendererInfo, LOCAL_NETWORK_ID, rendererFilter.uid);
-        ValidatePreferredOutputDeviceCallback(clientPid, deviceDescs);
+        ValidatePreferredOutputDeviceCallback(clientPid, rendererFilter.rendererInfo.streamUsage, deviceDescs);
         AudioCoreService::GetCoreService()->UpdateSinkLatencyForOutputDevices(rendererFilter.rendererInfo,
             static_cast<uint32_t>(rendererFilter.streamId), deviceDescs);
         for (auto &desc : deviceDescs) {

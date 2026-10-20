@@ -119,6 +119,7 @@ int32_t DirectAudioRenderSink::Start(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Start(audioRender_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
+    firstFrameRendered_.store(false);
     started_ = true;
 #ifdef MULTI_BUS_ENABLE
     playingAppManager_.Start();
@@ -162,6 +163,7 @@ int32_t DirectAudioRenderSink::Stop(void)
         CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
         int32_t ret = audioRender_->Stop(audioRender_);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
+        firstFrameRendered_.store(false);
     }
 #ifdef MULTI_BUS_ENABLE
     playingAppManager_.Stop();
@@ -233,6 +235,7 @@ int32_t DirectAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
         }
 #endif
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
+        firstFrameRendered_.store(true);
         if (writeLen != 0) {
             // EAC3 format is not supported to count volume, stream info in not needed.
             if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {

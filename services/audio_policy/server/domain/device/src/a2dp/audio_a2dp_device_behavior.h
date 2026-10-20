@@ -49,6 +49,7 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     int32_t LoadA2dpModule(const A2dpReloadContext &context);
+    int32_t LoadA2dpModuleInner(const AudioModuleInfo &moduleInfo, AudioIOHandle ioHandle, uint32_t paIndex);
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, const A2dpReloadContext &context);
     AudioIOHandle ReloadOrOpenAudioPort(int32_t engineFlag, AudioModuleInfo &moduleInfo,
         uint32_t &paIndex);

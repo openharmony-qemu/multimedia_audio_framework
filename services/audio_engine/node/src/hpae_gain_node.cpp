@@ -55,6 +55,23 @@ HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo, bool isFast)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeGainNode::OnTraceInfoChanged()
+{
+    HpaePluginNode::OnTraceInfoChanged();
+    RebuildTraceName();
+}
+
+// Trace reflects the node-configured format; it may lag behind mid-stream upstream re-negotiation
+// (loudness/SE/effect-chain changes). Gain processing still uses per-frame input buffer values.
+void HpaeGainNode::RebuildTraceName()
+{
+    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
+    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
+    auto len = "len[" + std::to_string(GetFrameLen()) + "]";
+    traceName_ = "[" + std::to_string(GetSessionId()) + "]HpaeGainNode::SignalProcess " + rate + ch + len;
 }
 
 HpaeGainNode::~HpaeGainNode()
@@ -74,10 +91,7 @@ HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &i
         AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
         return nullptr;
     }
-    auto rate = "rate[" + std::to_string(inputs[0]->GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(inputs[0]->GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(inputs[0]->GetFrameLen()) + "]";
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeGainNode::SignalProcess " + rate + ch + len);
+    Trace trace(traceName_);
     if (fadeOutState_ == FadeOutState::DONE_FADEOUT) {
         AUDIO_INFO_LOG("fadeout done, set session %{public}d silence", GetSessionId());
         SilenceData(inputs[0]);
@@ -131,7 +145,7 @@ void HpaeGainNode::ResetVolume()
     auto audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;
     uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(),
-        IdHandler::SelectIdInfo(GetMacAddress(), GetDeviceNetId()));
+        IdHandler::SelectIdInfo(BuildIdInfoParam()));
     audioVolume->GetStreamAndPipeVolume(GetSessionId(), GetStreamType(), rendererId,
         streamVolume_, pipeVolume_);
     if (!isInnerCapturerOrInjector_ && streamVolume_ && pipeVolume_) {
@@ -371,7 +385,7 @@ void HpaeGainNode::EnsureVolumeAvailable()
     if (!streamVolume_ || (!isInnerCapturerOrInjector_ && !pipeVolume_)) {
         AudioVolume *audioVolume = AudioVolume::GetInstance();
         uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(),
-            IdHandler::SelectIdInfo(GetMacAddress(), GetDeviceNetId()));
+            IdHandler::SelectIdInfo(BuildIdInfoParam()));
         audioVolume->GetStreamAndPipeVolume(GetSessionId(), GetStreamType(), rendererId,
             streamVolume_, pipeVolume_);
     }

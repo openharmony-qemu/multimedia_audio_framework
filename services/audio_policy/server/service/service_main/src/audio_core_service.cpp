@@ -2910,37 +2910,45 @@ std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::Pre
     return previewResults;
 }
 
-bool AudioCoreService::HandleA2dpSuspendWhenLoad()
+bool AudioCoreService::HandleA2dpSuspendWhenLoad(const std::string &macAddress)
 {
-    if (a2dpNeedSuspend_.load(std::memory_order_acquire)) {
-        std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
-        if (a2dpNeedSuspend_) {
-            AUDIO_INFO_LOG("keep suspend a2dp");
-            AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp");
-            return true;
-        }
-    }
+    CHECK_AND_RETURN_RET_LOG(!macAddress.empty(), false, "macAddress is empty");
+    std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
 
+    auto it = a2dpSuspendStates_.find(macAddress);
+    if (it != a2dpSuspendStates_.end() && it->second.needSuspend) {
+        AUDIO_INFO_LOG("keep suspend a2dp, macAddress: %{public}s", GetEncryptAddr(macAddress).c_str());
+        AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp", macAddress);
+        return true;
+    }
     return false;
 }
 
-void AudioCoreService::HandleA2dpRestore()
+void AudioCoreService::HandleA2dpRestore(const std::string &macAddress)
 {
+    CHECK_AND_RETURN_LOG(!macAddress.empty(), "macAddress is empty");
     std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
 
-    if (!a2dpNeedSuspend_) {
+    auto it = a2dpSuspendStates_.find(macAddress);
+    if (it == a2dpSuspendStates_.end() || !it->second.needSuspend) {
         return;
     }
 
-    if (std::chrono::steady_clock::now() < a2dpSuspendUntil_) {
+    if (std::chrono::steady_clock::now() < it->second.suspendUntil) {
         return;
     }
 
-    a2dpNeedSuspend_ = false;
-    AUDIO_INFO_LOG("restore a2dp");
+    a2dpSuspendStates_.erase(it);
+    AUDIO_INFO_LOG("restore a2dp, macAddress: %{public}s", GetEncryptAddr(macAddress).c_str());
     if (!audioDeviceManager_.GetScoState()) {
-        AudioServerProxy::GetInstance().RestoreRenderSinkProxy("a2dp");
+        AudioServerProxy::GetInstance().RestoreRenderSinkProxy("a2dp", macAddress);
     }
+}
+
+void AudioCoreService::EraseA2dpSuspendState(const std::string &macAddress)
+{
+    std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
+    a2dpSuspendStates_.erase(macAddress);
 }
 
 void AudioCoreService::PrepareInputFetchInfos(
@@ -4326,6 +4334,12 @@ void AudioCoreService::GetTargetSourceTypeAndMatchingFlag(SourceType source,
             targetSource = SOURCE_TYPE_UNPROCESSED;
             useMatchingPropInfo = true;
             break;
+#ifdef MULTI_BUS_ENABLE
+        case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
+            targetSource = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
+            useMatchingPropInfo = true;
+            break;
+#endif
         case SOURCE_TYPE_LIVE:
             targetSource = SOURCE_TYPE_LIVE;
             break;

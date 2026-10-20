@@ -70,7 +70,7 @@ const int32_t DUAL_TONE_RING_VOLUME = 0;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
 constexpr const char *HIPLAY_DEVICE = "hiplay";
 constexpr int32_t RSS_UID = 1096;
-constexpr int32_t KARAOKE_DISABLE_MUTE_DURATION_US = 850000;
+constexpr int32_t KARAOKE_DISABLE_MUTE_DURATION_US = 1200000;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -459,6 +459,21 @@ int32_t AudioVolumeManager::SetAppVolumeMuted(int32_t appUid, bool muted)
     return appVolumeManager_.SetAppVolumeMuted(appUid, muted);
 }
 
+int32_t AudioVolumeManager::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted)
+{
+    return appVolumeManager_.SetAppVolumeMuteAndHideVolumeBar(appUid, muted);
+}
+
+bool AudioVolumeManager::IsAppMuteAndHideVolumeBar(int32_t appUid)
+{
+    return appVolumeManager_.IsAppMuteAndHideVolumeBar(appUid);
+}
+
+int32_t AudioVolumeManager::ClearAppMuteAndHideByOwnerUid(int32_t callerUid)
+{
+    return appVolumeManager_.ClearAppMuteAndHideByOwnerUid(callerUid);
+}
+
 int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     return appVolumeManager_.IsAppVolumeMute(appUid, owned, isMute);
@@ -618,7 +633,11 @@ int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
     audioActiveDevice_.SetAdjustVolumeForZone(zoneId);
-    return audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
+    int32_t ret = audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
+    }
+    return ret;
 }
 
 int32_t AudioVolumeManager::HandleA2dpAbsVolume(AudioStreamType streamType, const VolumeScale &volume,

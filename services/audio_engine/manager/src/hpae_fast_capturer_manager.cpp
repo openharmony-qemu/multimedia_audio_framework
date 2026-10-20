@@ -649,7 +649,7 @@ void HpaeFastCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &m
 
 std::string HpaeFastCapturerManager::GetThreadName()
 {
-    return sourceInfo_.deviceName;
+    return ThreadName::FAST_AUDIO_IN;
 }
 
 int32_t HpaeFastCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceInfo, bool isReload)

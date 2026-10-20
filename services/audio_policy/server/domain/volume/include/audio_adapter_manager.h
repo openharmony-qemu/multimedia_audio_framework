@@ -39,6 +39,7 @@
 #include "audio_connected_device.h"
 #include "boot_animation_state_info.h"
 #include "audio_iohandle_map.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -97,6 +98,12 @@ public:
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, DeviceType deviceType);
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
+
+    int32_t SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted);
+
+    bool IsAppMuteAndHideVolumeBar(int32_t appUid);
+
+    int32_t ClearAppMuteAndHideByOwnerUid(int32_t callerUid);
 
     int32_t SetAppVolumeMutedDB(int32_t appUid, bool muted);
 
@@ -242,6 +249,8 @@ public:
     std::string GetHdiSourceIdInfo(const AudioModuleInfo &audioModuleInfo) const;
 
     IAudioSinkAttr GetAudioSinkAttr(const AudioModuleInfo &audioModuleInfo) const;
+    void FillSinkLatencyAttr(IAudioSinkAttr &attr, const AudioModuleInfo &audioModuleInfo) const;
+    void FillUltraFastPeriod(IAudioSinkAttr &attr, const AudioModuleInfo &audioModuleInfo) const;
 
     IAudioSourceAttr GetAudioSourceAttr(const AudioModuleInfo &audioModuleInfo) const;
 

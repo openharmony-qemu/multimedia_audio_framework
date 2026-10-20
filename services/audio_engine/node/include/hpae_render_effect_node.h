@@ -95,6 +95,8 @@ private:
     bool IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer);
     int32_t SplitCollaborativeData();
     bool OffloadRendererCheckNotifyEffect(const HpaeSinkInfo &sinkInfo, bool isPcmOffload);
+    void OnTraceInfoChanged() override;
+    void RebuildTraceName();
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer effectOutput_;
     std::unique_ptr<HpaePcmBuffer> directOutput_ = nullptr;
@@ -111,6 +113,9 @@ private:
 #endif
     std::shared_ptr<HpaeTempEffectBuffer> tempEffectBuffer_ = nullptr;
     CollaborationRouteMode collaborationRouteMode_ = COLLABORATION_INVALID_ROUTE_MODE;
+
+    // Cached SignalProcess trace name; rebuilt in ctor and whenever node info changes
+    std::string traceName_;
 };
 
 } // namespace HPAE

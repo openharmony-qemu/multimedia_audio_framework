@@ -75,8 +75,8 @@ public:
     void SetSinkMuteForSwitchDeviceProxy(const std::string &deviceClass, int32_t durationUs, bool mute,
         const std::string &networkId = LOCAL_NETWORK_ID);
     int32_t SetMicrophoneMuteProxy(bool isMute);
-    void SuspendRenderSinkProxy(const std::string &sinkName);
-    void RestoreRenderSinkProxy(const std::string &sinkName);
+    void SuspendRenderSinkProxy(const std::string &sinkName, const std::string &macAddress);
+    void RestoreRenderSinkProxy(const std::string &sinkName, const std::string &macAddress);
     void LoadHdiEffectModelProxy();
     void NotifyDeviceInfoProxy(std::string networkId, bool connected);
     void NotifyTaskIdInfoProxy(std::string &taskId, bool connected);

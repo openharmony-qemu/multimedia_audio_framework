@@ -78,6 +78,7 @@ static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 const float ERROR_VOLUME = -0.1f;
+const int32_t INVALID_LOOP_COUNT = 100;
 
 inline bool IsVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo, const AudioStreamParams &params)
 {
@@ -202,6 +203,11 @@ void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
     appTokenId_ = appTokenId;
     fullTokenId_ = fullTokenId;
     return;
+}
+
+void CapturerInClientInner::SetActualUsingTokenId(uint32_t actualUsingTokenId)
+{
+    actualUsingTokenId_ = actualUsingTokenId;
 }
 
 void CapturerInClientInner::SetClientDeviceId(const std::string &deviceId)
@@ -562,6 +568,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.appInfo.appTokenId = appTokenId_;
     config.appInfo.appFullTokenId = fullTokenId_;
     config.appInfo.deviceId = deviceId_;
+    config.actualUsingTokenId = actualUsingTokenId_;
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.ecChannels);
@@ -1882,7 +1889,11 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
     bool isBlockingRead)
 {
     Trace trace("CapturerInClientInner::HandleCapturerRead " + std::to_string(userSize));
+    int32_t loopCount = 0;
+    bool isLoopCountReported = false;
     while (readSize < userSize) {
+        loopCount++;
+        CheckLoopCount(loopCount, isLoopCountReported);
         SyncCapturerAttrFromSpan();
         AUDIO_DEBUG_LOG("readSize %{public}zu < userSize %{public}zu", readSize, userSize);
         OptResult result = ringCache_->GetReadableSize();
@@ -2628,6 +2639,25 @@ bool CapturerInClientInner::JudgeFastStreamByCapturerAttr()
     SyncCapturerAttrFromSpan();
     bool isFast = (GetFastStatus() == FASTSTATUS_FAST || GetFastStatus() == FASTSTATUS_ULTRA_FAST);
     return isFast;
+}
+
+void CapturerInClientInner::CheckLoopCount(int32_t loopCount, bool &isLoopCountReported)
+{
+    CHECK_AND_RETURN(loopCount >= INVALID_LOOP_COUNT && !isLoopCountReported);
+    isLoopCountReported = true;
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::STREAM_OCCUPANCY,
+        Media::MediaMonitor::EventType::DURATION_AGGREGATION_EVENT);
+    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+
+    bean->Add("IS_PLAYBACK", clientConfig_.audioMode == AUDIO_MODE_PLAYBACK ? 1 : 0);
+    bean->Add("SESSIONID", static_cast<int32_t>(clientConfig_.originalSessionId));
+    bean->Add("UID", clientConfig_.appInfo.appUid);
+    bean->Add("STREAM_OR_SOURCE_TYPE", clientConfig_.capturerInfo.sourceType);
+    bean->Add("START_TIME", static_cast<uint64_t>(1));
+    bean->Add("UPLOAD_TIME", static_cast<uint64_t>(1));
+    bean->Add("STANDBY_DURATION_S", static_cast<uint64_t>(0));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 } // namespace AudioStandard
 } // namespace OHOS

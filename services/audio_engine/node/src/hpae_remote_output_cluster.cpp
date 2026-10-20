@@ -171,12 +171,11 @@ void HpaeRemoteOutputCluster::SetUpmixCoef(HpaeProcessorType sceneType, float co
     converter->SetUpmixCoef(coef);
 }
 
-int32_t HpaeRemoteOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
-    const std::string &macAddress)
+int32_t HpaeRemoteOutputCluster::GetInstance(const HdiIdInfoParam &param)
 {
-    // macAddress is intentionally ignored on the remote path: remote sink requires a valid
-    // distributed networkId, and a MAC address is not a legal networkId (would break routing).
-    return hpaeSinkOutputNode_->GetRenderSinkInstance(deviceClass, deviceNetId);
+    // macAddress/busAddress are intentionally dropped on the remote path: remote classes never
+    // carry a bus address, and a MAC is not a legal networkId (would break routing).
+    return hpaeSinkOutputNode_->GetRenderSinkInstance(param.deviceClass, param.networkId);
 }
 
 int32_t HpaeRemoteOutputCluster::Init(IAudioSinkAttr &attr)

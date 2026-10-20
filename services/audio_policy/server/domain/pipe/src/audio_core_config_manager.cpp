@@ -703,6 +703,11 @@ void AudioCoreConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sourc
         case SOURCE_TYPE_UNPROCESSED:
             useMatchingPropInfo = ecEnableState_ ? false : true;
             break;
+#ifdef MULTI_BUS_ENABLE
+        case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
+            useMatchingPropInfo = true;
+            break;
+#endif
         default:
             break;
     }
@@ -785,6 +790,11 @@ void AudioCoreConfigManager::GetStreamPropInfoForRecord(
     auto firstStreamPropInfo = GetAvailableStreamPropInfoForDevice(adapterPipeInfo->streamPropInfos_,
         desc->newDeviceDescs_.front()->deviceType_);
     CHECK_AND_RETURN_LOG(firstStreamPropInfo != nullptr, "Get firstStreamPropInfo for normal capture failed");
+#ifdef MULTI_BUS_ENABLE
+    CHECK_AND_RETURN_LOG(!IsUnprocVoiceAsstMultiChRej(desc->capturerInfo_.sourceType, streamInfo.channels),
+        "multichannel rejected, channels:%{public}d, sourceType:%{public}d",
+        streamInfo.channels, desc->capturerInfo_.sourceType);
+#endif
     // Use *ptr to get copy and avoid modify the source data from XML
     *info = *firstStreamPropInfo;
     bool useMatchingPropInfo = false;

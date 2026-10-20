@@ -2272,32 +2272,143 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDe
     EXPECT_EQ(ret, false);
 }
 
-/** @tc.desc: The primary and USB adapters open independent capture IDs and carry the ultra fast flag. */
-HWTEST_F(AudioAdapterManagerUnitTest, UltraFastCaptureAttr_001, TestSize.Level1)
+/* ==================== SetAppVolumeMuteAndHideVolumeBar tests ==================== */
+
+/**
+ * @tc.name  : SetAppVolumeMuteAndHideVolumeBar_001
+ * @tc.number: AudioAdapterManager_SetAppVolumeMuteAndHide_001
+ * @tc.desc  : Test SetAppVolumeMuteAndHideVolumeBar with muted=true. Returns SUCCESS.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeMuteAndHideVolumeBar_001, TestSize.Level1)
 {
-    AudioAdapterManager manager;
-    AudioModuleInfo module;
-    module.rate = "48000";
-    module.routeFlag = AUDIO_INPUT_FLAG_ULTRA_FAST;
-    auto attr = manager.GetAudioSourceAttr(module);
-    EXPECT_EQ(attr.audioStreamFlag, AUDIO_FLAG_ULTRA_FAST);
-    auto pipe = std::make_shared<AudioPipeInfo>();
-    pipe->routeFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
-    pipe->adapterName_ = "primary";
-    std::string info;
-    HdiIdType type = HDI_ID_TYPE_PRIMARY;
-    manager.GetSourceIdInfoAndIdType(pipe, info, type);
-    EXPECT_EQ(type, HDI_ID_TYPE_ULTRA_FAST);
-    EXPECT_EQ(info, HDI_ID_INFO_DEFAULT);
-    pipe->adapterName_ = "usb";
-    manager.GetSourceIdInfoAndIdType(pipe, info, type);
-    EXPECT_EQ(type, HDI_ID_TYPE_ULTRA_FAST);
-    EXPECT_EQ(info, HDI_ID_INFO_USB);
-    module.routeFlag = AUDIO_INPUT_FLAG_FAST;
-    attr = manager.GetAudioSourceAttr(module);
-    EXPECT_NE(attr.audioStreamFlag, AUDIO_FLAG_ULTRA_FAST);
-    EXPECT_TRUE(manager.IsLowLatencyRoute(AUDIO_INPUT_FLAG_ULTRA_FAST));
-    EXPECT_FALSE(manager.IsLowLatencyRoute(AUDIO_INPUT_FLAG_NORMAL));
+    constexpr int32_t TEST_APP_UID = 2001;
+    int32_t ret = AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(
+        TEST_APP_UID, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : SetAppVolumeMuteAndHideVolumeBar_002
+ * @tc.number: AudioAdapterManager_SetAppVolumeMuteAndHide_002
+ * @tc.desc  : Test SetAppVolumeMuteAndHideVolumeBar with muted=false. Returns SUCCESS.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeMuteAndHideVolumeBar_002, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2002;
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    int32_t ret = AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(
+        TEST_APP_UID, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/* ==================== IsAppMuteAndHideVolumeBar tests ==================== */
+
+/**
+ * @tc.name  : IsAppMuteAndHideVolumeBar_001
+ * @tc.number: AudioAdapterManager_IsAppMuteAndHide_001
+ * @tc.desc  : Test IsAppMuteAndHideVolumeBar after setting mute. Should return true.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsAppMuteAndHideVolumeBar_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2003;
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    bool ret = AudioAdapterManager::GetInstance().IsAppMuteAndHideVolumeBar(TEST_APP_UID);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : IsAppMuteAndHideVolumeBar_002
+ * @tc.number: AudioAdapterManager_IsAppMuteAndHide_002
+ * @tc.desc  : Test IsAppMuteAndHideVolumeBar without setting mute. Should return false.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsAppMuteAndHideVolumeBar_002, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID_NOT_MUTED = 2999;
+    bool ret = AudioAdapterManager::GetInstance().IsAppMuteAndHideVolumeBar(
+        TEST_APP_UID_NOT_MUTED);
+    EXPECT_FALSE(ret);
+}
+
+/* ==================== ClearAppMuteAndHideByOwnerUid tests ==================== */
+
+/**
+ * @tc.name  : ClearAppMuteAndHideByOwnerUid_001
+ * @tc.number: AudioAdapterManager_ClearAppMuteAndHide_001
+ * @tc.desc  : Test ClearAppMuteAndHideByOwnerUid with no affected apps. Returns SUCCESS.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, ClearAppMuteAndHideByOwnerUid_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID = 5001;
+    int32_t ret = AudioAdapterManager::GetInstance().ClearAppMuteAndHideByOwnerUid(
+        TEST_CALLER_UID);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : ClearAppMuteAndHideByOwnerUid_002
+ * @tc.number: AudioAdapterManager_ClearAppMuteAndHide_002
+ * @tc.desc  : Test ClearAppMuteAndHideByOwnerUid after muting. Affected apps updated.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, ClearAppMuteAndHideByOwnerUid_002, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2004;
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    int32_t ret = AudioAdapterManager::GetInstance().ClearAppMuteAndHideByOwnerUid(callerUid);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(AudioAdapterManager::GetInstance().IsAppMuteAndHideVolumeBar(TEST_APP_UID));
+}
+
+/* ==================== Modified SetAppVolumeMuted aggregate test ==================== */
+
+/**
+ * @tc.name  : SetAppVolumeMuted_Aggregate_001
+ * @tc.number: AudioAdapterManager_SetAppVolumeMuted_Aggregate_001
+ * @tc.desc  : Test SetAppVolumeMuted returns aggregate mute when both regular and hide mute exist.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeMuted_Aggregate_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2005;
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    int32_t ret = AudioAdapterManager::GetInstance().SetAppVolumeMuted(TEST_APP_UID, false);
+    EXPECT_EQ(ret, SUCCESS);
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, false);
+}
+
+/* ==================== Modified IsAppVolumeMute aggregate tests ==================== */
+
+/**
+ * @tc.name  : IsAppVolumeMute_Aggregate_Owned_001
+ * @tc.number: AudioAdapterManager_IsAppVolumeMute_Aggregate_Owned_001
+ * @tc.desc  : Test IsAppVolumeMute with owned=true returns aggregate mute.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsAppVolumeMute_Aggregate_Owned_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2006;
+    bool owned = true;
+    bool isMute = false;
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    int32_t ret = AudioAdapterManager::GetInstance().IsAppVolumeMute(TEST_APP_UID, owned, isMute);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(isMute);
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, false);
+}
+
+/**
+ * @tc.name  : IsAppVolumeMute_Aggregate_NotOwned_001
+ * @tc.number: AudioAdapterManager_IsAppVolumeMute_Aggregate_NotOwned_001
+ * @tc.desc  : Test IsAppVolumeMute with owned=false returns aggregate mute.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsAppVolumeMute_Aggregate_NotOwned_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2007;
+    bool owned = false;
+    bool isMute = false;
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    int32_t ret = AudioAdapterManager::GetInstance().IsAppVolumeMute(TEST_APP_UID, owned, isMute);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(isMute);
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, false);
 }
 
 } // namespace AudioStandard

@@ -36,6 +36,7 @@
 #include "audio_format_utils.h"
 #include "audio_bundle_manager.h"
 #include "os_account_subprofile_client.h"
+#include "util/id_handler.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -486,7 +487,37 @@ int32_t AudioAdapterManager::SetAppVolumeMuted(int32_t appUid, bool muted)
     AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d",
         appUid, muted);
     volumeDataMaintainer_.SetAppVolumeMuted(appUid, muted);
-    return SetAppVolumeMutedDB(appUid, muted);
+    bool aggregateMuted = volumeDataMaintainer_.GetAppMuteAggregate(appUid);
+    return SetAppVolumeMutedDB(appUid, aggregateMuted);
+}
+
+int32_t AudioAdapterManager::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d", appUid, muted);
+    volumeDataMaintainer_.SetAppVolumeMuteAndHideVolumeBar(appUid, muted);
+    bool aggregateMuted = volumeDataMaintainer_.GetAppMuteAggregate(appUid);
+    return SetAppVolumeMutedDB(appUid, aggregateMuted);
+}
+
+bool AudioAdapterManager::IsAppMuteAndHideVolumeBar(int32_t appUid)
+{
+    return volumeDataMaintainer_.GetAppMuteAndHideVolumeBar(appUid);
+}
+
+int32_t AudioAdapterManager::ClearAppMuteAndHideByOwnerUid(int32_t callerUid)
+{
+    AUDIO_INFO_LOG("callerUid: %{public}d", callerUid);
+    std::lock_guard<std::mutex> lock(audioVolumeMutex_);
+    std::vector<int32_t> affectedAppUids;
+    volumeDataMaintainer_.ClearAppMuteAndHideByOwnerUid(callerUid, affectedAppUids);
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
+    for (int32_t appUid : affectedAppUids) {
+        bool aggregateMuted = volumeDataMaintainer_.GetAppMuteAggregate(appUid);
+        audioVolume->SetAppVolumeMute(appUid, aggregateMuted);
+    }
+    SendOffloadVolume();
+    return SUCCESS;
 }
 
 int32_t AudioAdapterManager::SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
@@ -782,9 +813,9 @@ int32_t AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &i
     AUDIO_INFO_LOG("IsAppVolumeMute: appUid: %{public}d, owned:%{public}d",
         appUid, owned);
     if (owned) {
-        volumeDataMaintainer_.GetAppMuteOwned(appUid, isMute);
+        isMute = volumeDataMaintainer_.GetAppMuteOwnedAggregate(appUid);
     } else {
-        volumeDataMaintainer_.GetAppMute(appUid, isMute);
+        isMute = volumeDataMaintainer_.GetAppMuteAggregate(appUid);
     }
     return SUCCESS;
 }
@@ -1214,6 +1245,10 @@ int32_t AudioAdapterManager::SetStreamMute(std::shared_ptr<AudioDeviceDescriptor
     AudioStreamType streamType, bool mute, StreamUsage streamUsage, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is null");
+    CHECK_AND_RETURN_RET_LOG(!device->volumeBehavior_.isVolumeControlDisabled,
+        ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED,
+        "device->volumeBehavior_.isVolumeControlDisabled is true!");
+
     int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
     if (isSetStreamMute == SUCCESS) {
         return SUCCESS;
@@ -2315,17 +2350,10 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
 
 std::string AudioAdapterManager::GetHdiSinkIdInfo(const AudioModuleInfo &audioModuleInfo) const
 {
-    if (!audioModuleInfo.busAddress.empty()) {
-        return audioModuleInfo.busAddress;
-    }
-    if (audioModuleInfo.className == "remote" || audioModuleInfo.className == "remote_offload" ||
-        audioModuleInfo.className == "remote_multichannel") {
-        return audioModuleInfo.networkId;
-    }
-    if (audioModuleInfo.className == PRIMARY_EXTRA_CLASS) {
-        return audioModuleInfo.name;
-    }
-    return HDI_ID_INFO_DEFAULT;
+    // Delegate to the single priority source shared with the engine side
+    HdiIdInfoParam param = {audioModuleInfo.className, audioModuleInfo.name, audioModuleInfo.networkId,
+        audioModuleInfo.macAddress, audioModuleInfo.busAddress};
+    return IdHandler::SelectIdInfo(param);
 }
 
 std::string AudioAdapterManager::GetHdiSourceIdInfo(const AudioModuleInfo &audioModuleInfo) const
@@ -2438,7 +2466,23 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
         attr.pin = AUDIO_PIN_OUT_DP;
     }
 
-    // Calculate period for ultra_fast to achieve 2.5ms low latency
+    FillUltraFastPeriod(attr, audioModuleInfo);
+    FillSinkLatencyAttr(attr, audioModuleInfo);
+
+    return attr;
+}
+
+void AudioAdapterManager::FillSinkLatencyAttr(IAudioSinkAttr &attr,
+    const AudioModuleInfo &audioModuleInfo) const
+{
+    attr.effectLatency = audioModuleInfo.effectLatency;
+    attr.halLatency = audioModuleInfo.halLatency;
+    attr.warmupLatency = audioModuleInfo.warmupLatency;
+}
+
+void AudioAdapterManager::FillUltraFastPeriod(IAudioSinkAttr &attr,
+    const AudioModuleInfo &audioModuleInfo) const
+{
     if (audioModuleInfo.className == "ultra_fast" || audioModuleInfo.className == "usb_arm_ultra_fast") {
         uint32_t formatByteSize = GetFormatByteSize(attr.format);
         attr.period = static_cast<uint32_t>(
@@ -2447,8 +2491,6 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
         AUDIO_INFO_LOG("GetAudioSinkAttr: ultra_fast period=%{public}u (2.5ms latency)", attr.period);
         attr.isUltraFast = true;
     }
-
-    return attr;
 }
 
 void AudioAdapterManager::GetHdiSourceTypeToAudioSourceAttr(IAudioSourceAttr &attr, int32_t sourceType) const
@@ -4722,6 +4764,10 @@ std::string AudioAdapterManager::GetModuleArgsLog(const AudioModuleInfo &audioMo
     tempModuleInfo.networkId = IsRemoteAdapter(tempModuleInfo.adapterName) ?
         GetEncryptStr(tempModuleInfo.networkId) : tempModuleInfo.networkId;
 
+#ifdef MULTI_USER_ZONE
+    tempModuleInfo.name = tempModuleInfo.adapterName == ADAPTER_A2DP_TYPE ?
+        GetEncryptStr(tempModuleInfo.name) : tempModuleInfo.name;
+#endif
     return GetModuleArgs(tempModuleInfo);
 }
 

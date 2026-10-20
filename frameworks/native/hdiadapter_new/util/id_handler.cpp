@@ -34,13 +34,24 @@ IdHandler &IdHandler::GetInstance(void)
     return instance;
 }
 
-const std::string &IdHandler::SelectIdInfo(const std::string &macAddress, const std::string &deviceNetId)
+std::string IdHandler::SelectIdInfo(const HdiIdInfoParam &param)
 {
-    static const std::string defaultInfo = HDI_ID_INFO_DEFAULT;
-    if (!macAddress.empty()) {
-        return macAddress;
+    if (!param.busAddress.empty()) {
+        return param.busAddress;
     }
-    return !deviceNetId.empty() ? deviceNetId : defaultInfo;
+    if (param.deviceClass == "remote" || param.deviceClass == "remote_offload" ||
+        param.deviceClass == "remote_multichannel") {
+        return param.networkId;
+    }
+    if (param.deviceClass == "primary_extra") {
+        return param.name;
+    }
+#ifdef MULTI_USER_ZONE
+    if (param.deviceClass == "a2dp") {
+        return param.macAddress;
+    }
+#endif
+    return HDI_ID_INFO_DEFAULT;
 }
 
 uint32_t IdHandler::GetId(HdiIdBase base, HdiIdType type, const std::string &info)
@@ -89,7 +100,11 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
     } else if (deviceClass == "dp_fast") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_DP);
     } else if (deviceClass == "a2dp") {
+#ifdef MULTI_USER_ZONE
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, info);
+#else
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT);
+#endif
     } else if (deviceClass == "a2dp_fast") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_MMAP);
     } else if (deviceClass == "hearing_aid") {

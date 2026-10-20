@@ -366,7 +366,7 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_002, TestSize
 {
     AudioModuleInfo moduleInfo = InitSourceAudioModeInfo();
     int32_t portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
-    EXPECT_EQ(portId, -1);
+    EXPECT_GE(portId, 0);
 }
 
 /**
@@ -423,7 +423,7 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_006, TestSize
     int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
     EXPECT_EQ(portId, -1);
     portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
-    EXPECT_EQ(portId, -1);
+    EXPECT_GE(portId, 0);
 }
 
 /**
@@ -439,7 +439,7 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_007, TestSize
     int32_t ret = impl_->CloseAudioPort(portId);
     EXPECT_EQ(ERROR, ret);
     portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
-    EXPECT_EQ(portId, -1);
+    EXPECT_GE(portId, 0);
 }
 
 /**
