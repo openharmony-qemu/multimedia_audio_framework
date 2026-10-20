@@ -318,10 +318,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_015, TestS
 }
 
 /**
-* @tc.name  : Test SetCollaborativePlaybackEnableForDevice with A2DP offload current device enabled.
+* @tc.name  : Test SetCollaborativePlaybackEnableForDevice with A2DP current device enabled.
 * @tc.number: AudioCollaborativeService_016
 * @tc.desc  : MutePrimarySinkByCollaborative should be triggered when the enabled device is an A2DP
-*             offload device and it is the current device.
+*             device and it is the current device.
 */
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_016, TestSize.Level0)
 {
@@ -329,18 +329,16 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_016, TestS
     audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
     audioDevice->macAddress_ = testAddr1;
-    audioDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDevice->a2dpOffloadFlag_ = A2DP_OFFLOAD;
+    audioCollaborativeService_.curDeviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioCollaborativeService_.curDeviceAddress_ = testAddr1;
-    AudioCoreService::GetCoreService()->Init();
     int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
-* @tc.name  : Test SetCollaborativePlaybackEnableForDevice with A2DP offload current device disabled.
+* @tc.name  : Test SetCollaborativePlaybackEnableForDevice with A2DP current device disabled.
 * @tc.number: AudioCollaborativeService_017
-* @tc.desc  : MutePrimarySinkByCollaborative should not be triggered when the A2DP offload device is disabled.
+* @tc.desc  : MutePrimarySinkByCollaborative should not be triggered when the A2DP device is disabled.
 */
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_017, TestSize.Level0)
 {
@@ -348,18 +346,16 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_017, TestS
     audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
     audioDevice->macAddress_ = testAddr1;
-    audioDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDevice->a2dpOffloadFlag_ = A2DP_OFFLOAD;
+    audioCollaborativeService_.curDeviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioCollaborativeService_.curDeviceAddress_ = testAddr1;
-    AudioCoreService::GetCoreService()->Init();
     int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice, false);
     EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
-* @tc.name  : Test SetCollaborativePlaybackEnableForDevice with non-current A2DP offload device.
+* @tc.name  : Test SetCollaborativePlaybackEnableForDevice with non-current A2DP device.
 * @tc.number: AudioCollaborativeService_018
-* @tc.desc  : MutePrimarySinkByCollaborative should not be triggered when the A2DP offload device is current.
+* @tc.desc  : MutePrimarySinkByCollaborative should not be triggered when the A2DP device is current.
 */
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_018, TestSize.Level0)
 {
@@ -367,29 +363,8 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_018, TestS
     audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
     audioDevice->macAddress_ = testAddr1;
-    audioDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDevice->a2dpOffloadFlag_ = A2DP_OFFLOAD;
+    audioCollaborativeService_.curDeviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioCollaborativeService_.curDeviceAddress_ = testAddr2;
-    AudioCoreService::GetCoreService()->Init();
-    int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice, true);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test SetCollaborativePlaybackEnableForDevice with non-offlaod A2DP current deivce enabled.
-* @tc.number: AudioCollaborativeService_019
-* @tc.desc  : MutePrimarySinkByCollaborative should not be triggered when the device is not A2DP offload.
-*/
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_019, TestSize.Level0)
-{
-    audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
-    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
-    const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
-    audioDevice->macAddress_ = testAddr1;
-    audioDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDevice->a2dpOffloadFlag_ = A2DP_NOT_OFFLOAD;
-    audioCollaborativeService_.curDeviceAddress_ = testAddr1;
-    AudioCoreService::GetCoreService()->Init();
     int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice, true);
     EXPECT_EQ(ret, SUCCESS);
 }
