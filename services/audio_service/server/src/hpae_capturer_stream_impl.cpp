@@ -44,13 +44,15 @@ HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
         spanSizeInFrame_ = FRAME_LEN_5MS * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
         AUDIO_INFO_LOG("fast for spanSizeInFrame_ to 5ms: %{public}zu", spanSizeInFrame_);
     }
-    // The inner-capturer chain supplies one bare-20ms frame per tick: the ProcessCluster and
-    // InnerCapSink geometry derive from the sink rate * 20ms and are not PERIOD-scaled (the
-    // remote-cast softlink path is the one PERIOD-scaled exception, see hpae_soft_link).
-    // So the server span must stay at bare 20ms too. A PERIOD-scaled span makes
-    // CapturerInServer::CheckForOnReadData reject every per-tick write whose size equals
-    // one engine tick ("Length is less than spanSizeInBytes"), so no audio frame ever
-    // reaches the client. No-op on PERIOD == 1 platforms.
+    // Span pinning applies only to inner capturers (isInnerCapturer, i.e. PLAYBACK_CAPTURE
+    // streams bound to InnerCapturerSink): their engine chain (ProcessCluster + InnerCapSink)
+    // supplies one bare-20ms frame per tick, so the server span must stay at bare 20ms too.
+    // A PERIOD-scaled span makes CapturerInServer::CheckForOnReadData reject every per-tick
+    // write ("Length is less than spanSizeInBytes"), so no audio frame ever reaches the
+    // client. Remote-cast captures (SOURCE_TYPE_REMOTE_CAST, isInnerCapturer == false) do
+    // not take this branch: they keep the PERIOD-scaled span paired with their sink's
+    // RENDER_FRAME_INTERVAL * SOURCE_PERIOD_SIZE supply cadence (see audio_core_service and
+    // hpae_soft_link). No-op on PERIOD == 1 platforms.
     if (processConfig_.isInnerCapturer) {
         spanSizeInFrame_ = BARE_FRAME_LEN_20MS * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
         AUDIO_INFO_LOG("inner capturer spanSizeInFrame_ pinned to 20ms: %{public}zu", spanSizeInFrame_);

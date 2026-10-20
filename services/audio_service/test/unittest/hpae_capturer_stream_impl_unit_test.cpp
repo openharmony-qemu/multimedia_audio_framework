@@ -375,9 +375,11 @@ HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_017, TestSize.Level2)
  * @tc.number: HpaeCapturerStream_018
  * @tc.desc  : Inner-capturer streams pin the server span to bare 20ms so that a per-tick
  *             engine write (one sink-tick frame per 20ms) always satisfies
- *             CapturerInServer::CheckForOnReadData. On PERIOD == 1 UT builds both branches
- *             compute the same value; the PERIOD > 1 behaviour is guarded by the
- *             "inner capturer spanSizeInFrame_ pinned to 20ms" device log.
+ *             CapturerInServer::CheckForOnReadData. Behavioural placeholder only: on
+ *             PERIOD == 1 UT builds the pinning branch and the PERIOD path compute the
+ *             same value, so this case cannot detect an accidental removal of the branch;
+ *             regression guarding for PERIOD > 1 relies on the
+ *             "inner capturer spanSizeInFrame_ pinned to 20ms" device log fingerprint.
  */
 HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_018, TestSize.Level1)
 {
