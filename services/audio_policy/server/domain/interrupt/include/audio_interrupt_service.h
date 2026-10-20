@@ -366,7 +366,10 @@ private:
     void ApplyDuckPassthroughMode(AudioFocusEntry &focusEntry);
     void HandleSessionTimeOutEvent(const int32_t pid);
     int32_t GetAudioSessionZoneidByPid(const int32_t pid);
-    bool HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
+    bool HandleLowPriorityEvent(const int32_t pid, const AudioInterrupt &removeAudioInterrupt,
+        std::shared_ptr<AudioInterruptZone> &zoneInfo);
+    bool RemoveFocusStreamType(const int32_t pid, const AudioInterrupt &removeAudioInterrupt,
+        std::shared_ptr<AudioInterruptZone> &zoneInfo);
     void SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
     void SetNonInterruptMute(int32_t streamId, bool muteFlag);

@@ -548,9 +548,15 @@ void AudioInterruptService::ProcessSilentChangeInterrupt(const MuteFocusInfo &au
         itZone->second->audioFocusInfoList = audioFocusInfoList;
         zonesMap_[activeZoneId] = itZone->second;
     } else {
+        if (sessionService_.IsAudioSessionActivated(activeInterrupt.pid)) {
+            if (HandleLowPriorityEvent(activeInterrupt.pid, activeInterrupt, itZone->second)) {
+                RemovePlaceholderInterruptForSession(activeInterrupt.pid);
+            }
+        }
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
-        AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
-            activeInterrupt.streamId, incomingInterrupt.streamId);
+        AUDIO_INFO_LOG("NotifyStreamSilentChange:OnInterrupt for active streamId:%{public}d "
+            "hintType:%{public}d. By streamId: %{public}d",
+            activeInterrupt.streamId, interruptEvent.hintType, incomingInterrupt.streamId);
         SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
         DeactivateAudioInterruptInternal(activeZoneId, activeInterrupt);
     }
@@ -817,7 +823,7 @@ void AudioInterruptService::HandlePausedTimeout(int32_t zoneId, uint32_t streamI
     auto audioInterrupt = iter->first;
 
     if (sessionService_.IsAudioSessionActivated(audioInterrupt.pid)) {
-        if (HandleLowPriorityEvent(audioInterrupt.pid, audioInterrupt.streamId)) {
+        if (HandleLowPriorityEvent(audioInterrupt.pid, audioInterrupt, itZone->second)) {
             RemovePlaceholderInterruptForSession(audioInterrupt.pid);
         }
     }

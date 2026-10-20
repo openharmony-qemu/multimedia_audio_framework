@@ -2490,23 +2490,42 @@ void AudioInterruptService::RemoveFocusInfo(std::list<std::pair<AudioInterrupt, 
         interruptDfx_->HandleInterruptCallbackEvent(iterActive->first);
     }
     int32_t pidToRemove = (iterActive->first).pid;
-    uint32_t streamId = (iterActive->first).streamId;
+    AudioInterrupt removeAudioInterrupt = iterActive->first;
     iterActive = tmpFocusInfoList.erase(iterActive);
     zoneInfo->audioFocusInfoList = tmpFocusInfoList;
     bool isAudioSessionDeactivated = false;
     if (sessionService_.IsAudioSessionActivated(pidToRemove)) {
-        isAudioSessionDeactivated = HandleLowPriorityEvent(pidToRemove, streamId);
+        isAudioSessionDeactivated = HandleLowPriorityEvent(pidToRemove, removeAudioInterrupt, zoneInfo);
     }
     if (isAudioSessionDeactivated) {
         removeFocusInfoPidList.push_back(pidToRemove);
     }
 }
 
-bool AudioInterruptService::HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId)
+bool AudioInterruptService::RemoveFocusStreamType(const int32_t pid, const AudioInterrupt &removeAudioInterrupt,
+    std::shared_ptr<AudioInterruptZone> &zoneInfo)
+{
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpFocusInfoList = zoneInfo->audioFocusInfoList;
+    auto isPresent = [pid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
+        return pair.first.pid == pid && pair.first.isAudioSessionInterrupt;
+    };
+    auto iter = std::find_if(tmpFocusInfoList.begin(), tmpFocusInfoList.end(), isPresent);
+    bool isFakefocus = (iter != tmpFocusInfoList.end());
+
+    AudioStreamType removeStreamType = removeAudioInterrupt.audioFocusType.streamType;
+    SourceType removeSourceType = removeAudioInterrupt.audioFocusType.sourceType;
+    bool isMixStream = (removeStreamType == STREAM_ALARM || removeStreamType == STREAM_NOTIFICATION ||
+        removeStreamType == STREAM_ACCESSIBILITY || removeStreamType == STREAM_DTMF ||
+        removeStreamType == STREAM_VOICE_CALL_ASSISTANT || removeStreamType == STREAM_ULTRASONIC);
+    return isFakefocus && (isMixStream || (removeSourceType >= 0));
+}
+
+bool AudioInterruptService::HandleLowPriorityEvent(const int32_t pid, const AudioInterrupt &removeAudioInterrupt,
+    std::shared_ptr<AudioInterruptZone> &zoneInfo)
 {
     // If AudioSession is deactivated, return true, otherwise, return false.
-    sessionService_.RemoveStreamInfo(pid, streamId);
-    if (sessionService_.IsStreamInfoEmpty(pid)) {
+    sessionService_.RemoveStreamInfo(pid, removeAudioInterrupt.streamId);
+    if (sessionService_.IsStreamInfoEmpty(pid) && !RemoveFocusStreamType(pid, removeAudioInterrupt, zoneInfo)) {
         AUDIO_INFO_LOG("The audio session is empty because the last one stream is interruptted!");
         sessionService_.DeactivateAudioSession(pid);
 
