@@ -642,7 +642,11 @@ void BluetoothAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes 
 void BluetoothAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
     deviceDesc.pins = PIN_OUT_SPEAKER;
+#ifdef MULTI_USER_ZONE
+    deviceDesc.desc = attr_.address.c_str();
+#else
     deviceDesc.desc = nullptr;
+#endif
 }
 
 int32_t BluetoothAudioRenderSink::CreateRender(void)
