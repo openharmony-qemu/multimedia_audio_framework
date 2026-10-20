@@ -22,6 +22,7 @@
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
+#include "audio_suite_common.h"
 #include "OHAudioSuiteEngine.h"
 #include "OHAudioSuiteNodeBuilder.h"
 #include "stream_dfx_manager.h"
@@ -620,9 +621,6 @@ static const int SPACE_RENDER_MIN_EXPAND_ANGLE = 0;
 static const int SPACE_RENDER_MAX_EXPAND_ANGLE = 360;
 static const float SPACE_RENDER_MIN_EXPAND_RADIUS = 1.0f;
 static const float SPACE_RENDER_MAX_EXPAND_RADIUS = 5.0f;
-static const float AUDIO_VOICE_MORPHING_PITCH_MIN = 0.3f;
-static const float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
-static const float AUDIO_VOICE_MORPHING_PITCH_DEFAULT = 0.0f;
 
 int32_t OHSuiteInputNodeRequestDataCallBack::OnRequestDataCallBack(
     void *audioData, int32_t audioDataSize, bool *finished)
@@ -713,6 +711,10 @@ int32_t OHAudioSuiteEngine::CreatePipeline(
     OH_AudioSuitePipeline **audioSuitePipeline, OH_AudioSuite_PipelineWorkMode ohWorkMode)
 {
     CHECK_AND_RETURN_RET_LOG(audioSuitePipeline != nullptr, ERR_INVALID_PARAM, "CreatePipeline pipeline is nullptr");
+    CHECK_AND_RETURN_RET_LOG(
+        ohWorkMode == AUDIOSUITE_PIPELINE_EDIT_MODE || ohWorkMode == AUDIOSUITE_PIPELINE_REALTIME_MODE,
+        ERR_INVALID_PARAM, "CreatePipeline failed, invalid workMode: %{public}d.",
+        static_cast<int32_t>(ohWorkMode));
     std::lock_guard<std::mutex> lock(engineMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST,
         "CreatePipeline failed, engine not initialized.");
@@ -1191,6 +1193,10 @@ int32_t OHAudioSuiteEngine::GetEqualizerFrequencyBandGains(
 int32_t OHAudioSuiteEngine::SetSoundFieldType(
     OHAudioNode *node, OH_SoundFieldType soundFieldType)
 {
+    CHECK_AND_RETURN_RET_LOG(
+        soundFieldType >= SOUND_FIELD_FRONT_FACING && soundFieldType <= SOUND_FIELD_WIDE,
+        ERR_INVALID_PARAM, "SetSoundFieldType failed, invalid soundFieldType: %{public}d.",
+        static_cast<int32_t>(soundFieldType));
     std::shared_ptr<AudioSuitePipeline> pipeline;
     uint32_t nodeId = INVALID_NODE_ID;
     int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_SOUND_FIELD, pipeline, nodeId);
@@ -1205,6 +1211,10 @@ int32_t OHAudioSuiteEngine::SetSoundFieldType(
 int32_t OHAudioSuiteEngine::SetEnvironmentType(
     OHAudioNode *node, OH_EnvironmentType environmentType)
 {
+    CHECK_AND_RETURN_RET_LOG(
+        environmentType >= ENVIRONMENT_TYPE_BROADCAST && environmentType <= ENVIRONMENT_TYPE_GRAMOPHONE,
+        ERR_INVALID_PARAM, "SetEnvironmentType failed, invalid environmentType: %{public}d.",
+        static_cast<int32_t>(environmentType));
     std::shared_ptr<AudioSuitePipeline> pipeline;
     uint32_t nodeId = INVALID_NODE_ID;
     int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_ENVIRONMENT_EFFECT, pipeline, nodeId);
@@ -1219,6 +1229,11 @@ int32_t OHAudioSuiteEngine::SetEnvironmentType(
 int32_t OHAudioSuiteEngine::SetVoiceBeautifierType(
     OHAudioNode *node, OH_VoiceBeautifierType voiceBeautifierType)
 {
+    CHECK_AND_RETURN_RET_LOG(
+        voiceBeautifierType >= VOICE_BEAUTIFIER_TYPE_CLEAR &&
+        voiceBeautifierType <= VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO,
+        ERR_INVALID_PARAM, "SetVoiceBeautifierType failed, invalid voiceBeautifierType: %{public}d.",
+        static_cast<int32_t>(voiceBeautifierType));
     std::shared_ptr<AudioSuitePipeline> pipeline;
     uint32_t nodeId = INVALID_NODE_ID;
     int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_VOICE_BEAUTIFIER, pipeline, nodeId);
@@ -1433,6 +1448,16 @@ int32_t OHAudioSuiteEngine::GetTempoAndPitch(OHAudioNode* node, float* speed, fl
 int32_t OHAudioSuiteEngine::SetPureVoiceChangeOption(
     OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption option)
 {
+    CHECK_AND_RETURN_RET_LOG(
+        option.optionGender >= OH_AudioSuite_PureVoiceChangeGenderOption::PURE_VOICE_CHANGE_FEMALE &&
+        option.optionGender <= OH_AudioSuite_PureVoiceChangeGenderOption::PURE_VOICE_CHANGE_MALE,
+        ERR_INVALID_PARAM, "SetPureVoiceChangeOption failed, invalid optionGender: %{public}d.",
+        static_cast<int32_t>(option.optionGender));
+    CHECK_AND_RETURN_RET_LOG(
+        option.optionType >= OH_AudioSuite_PureVoiceChangeType::PURE_VOICE_CHANGE_TYPE_CARTOON &&
+        option.optionType <= OH_AudioSuite_PureVoiceChangeType::PURE_VOICE_CHANGE_TYPE_SEASONED,
+        ERR_INVALID_PARAM, "SetPureVoiceChangeOption failed, invalid optionType: %{public}d.",
+        static_cast<int32_t>(option.optionType));
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         (option.pitch >= AUDIO_VOICE_MORPHING_PITCH_MIN && option.pitch <= AUDIO_VOICE_MORPHING_PITCH_MAX) ||
             option.pitch == AUDIO_VOICE_MORPHING_PITCH_DEFAULT,
@@ -1479,6 +1504,11 @@ int32_t OHAudioSuiteEngine::GetPureVoiceChangeOption(
 
 int32_t OHAudioSuiteEngine::SetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType type)
 {
+    CHECK_AND_RETURN_RET_LOG(
+        type >= OH_AudioSuite_GeneralVoiceChangeType::GENERAL_VOICE_CHANGE_TYPE_CUTE &&
+        type <= OH_AudioSuite_GeneralVoiceChangeType::GENERAL_VOICE_CHANGE_TYPE_WAR,
+        ERR_INVALID_PARAM, "SetGeneralVoiceChangeType failed, invalid type: %{public}d.",
+        static_cast<int32_t>(type));
     std::shared_ptr<AudioSuitePipeline> pipeline;
     uint32_t nodeId = INVALID_NODE_ID;
     int32_t ret = GetAudioSuitePipelineAndNodeId(node, NODE_TYPE_GENERAL_VOICE_CHANGE, pipeline, nodeId);

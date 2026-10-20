@@ -25,6 +25,7 @@
 #include <cstdint>
 #include "audio_suite_log.h"
 #include "audio_suite_serializer.h"
+#include "audio_suite_common.h"
 #include "audio_suite_pure_voice_change_algo_interface_impl.h"
 #include "audio_utils.h"
 #include "securec.h"
@@ -38,8 +39,6 @@ const float PCM_SAMPLE_AVERAGE_FACTOR = 0.5f;
 const float PCM_SAMPLE_SCALE_FACTOR = 1.0f / 32768.0f;
 const float PCM_SAMPLE_CLIP_MAX = 32767.0f;
 const float PCM_SAMPLE_CLIP_MIN = -32768.0f;
-static const float AUDIO_VOICE_MORPHING_PITCH_MIN = 0.3f;
-static const float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
 
 static const std::unordered_map<std::string, AudioVoiceMphTradType> pureTypeMap = {
     {"1", AUDIO_VOICE_MPH_TRAD_CARTOON},
