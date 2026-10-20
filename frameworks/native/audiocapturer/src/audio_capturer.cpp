@@ -1175,7 +1175,7 @@ void AudioCapturerPrivate::GetCapturerDebugErrorInfo(AudioCapturerDebugInfo &deb
         debugInfo.errorInfos.size());
 }
 
-FastStatus AudioCapturerPrivate::GetFastStatusInner()
+FastStatus AudioCapturerPrivate::GetFastStatusInner() const
 {
     // inner function. Must be called with AudioCapturerPrivate::capturerMutex_ held.
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioStream_ != nullptr, FASTSTATUS_INVALID,

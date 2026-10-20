@@ -457,7 +457,8 @@ void FastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &p
     param.format = AUDIO_FORMAT_TYPE_PCM_16_BIT;
     param.channelCount = AUDIO_CHANNELCOUNT;
     param.interleaved = true;
-    param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST));
+    param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE,
+        attr_.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST ? HDI_CAPTURE_OFFSET_ULTRA_FAST : HDI_CAPTURE_OFFSET_FAST));
     param.period = 0;
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.isBigEndian = false;
@@ -470,7 +471,7 @@ void FastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &p
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     param.type = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? AUDIO_MMAP_VOIP : AUDIO_MMAP_NOIRQ; // enable mmap!
     if (attr_.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST) {
-        param.type = AUDIO_MMAP_ULTRA_FAST;
+        param.type = AUDIO_ULTRA_LOW_LAT;
     }
     param.sampleRate = attr_.sampleRate;
     param.format = ConvertToHdiFormat(attr_.format);
@@ -551,7 +552,8 @@ int32_t FastAudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
-    int32_t streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST));
+    int32_t streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE,
+        attr_.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST ? HDI_CAPTURE_OFFSET_ULTRA_FAST : HDI_CAPTURE_OFFSET_FAST));
     int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, input :%{public}d",
         attr_.adapterName.c_str(), inputDevice, streamId, inputType);
