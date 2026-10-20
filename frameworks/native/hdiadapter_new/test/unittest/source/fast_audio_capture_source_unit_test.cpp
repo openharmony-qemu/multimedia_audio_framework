@@ -258,29 +258,6 @@ HWTEST_F(FastAudioCaptureSourceUnitTest, EnableSyncInfo_001, TestSize.Level1)
     EXPECT_EQ(FastSource->syncInfoSize_, 1);
 }
 
-/** @tc.desc: Invalid ultra fast periods are rejected before opening HAL, and the period survives IPC. */
-HWTEST_F(FastAudioCaptureSourceUnitTest, UltraFastPeriodAndParcel_001, TestSize.Level1)
-{
-    FastAudioCaptureSource source;
-    IAudioSourceAttr attr;
-    attr.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
-    attr.sampleRate = 48000;
-    EXPECT_EQ(source.Init(attr), ERR_INVALID_PARAM);
-    attr.period = 240;
-    EXPECT_EQ(source.Init(attr), ERR_INVALID_PARAM);
-    attr.period = 120;
-    Parcel parcel;
-    ASSERT_TRUE(attr.Marshalling(parcel));
-    std::unique_ptr<IAudioSourceAttr> decoded(IAudioSourceAttr::Unmarshalling(parcel));
-    ASSERT_NE(decoded, nullptr);
-    EXPECT_EQ(decoded->period, 120);
-    EXPECT_EQ(decoded->audioStreamFlag, AUDIO_FLAG_ULTRA_FAST);
-    source.attr_ = attr;
-    AudioSampleAttributes sampleAttr = {};
-    source.InitAudioSampleAttr(sampleAttr);
-    EXPECT_EQ(sampleAttr.period, 120);
-}
-
 /** @tc.desc: Capture requests select the corresponding HDI mmap type without a build flag. */
 HWTEST_F(FastAudioCaptureSourceUnitTest, CaptureMmapType_001, TestSize.Level1)
 {
@@ -292,13 +269,11 @@ HWTEST_F(FastAudioCaptureSourceUnitTest, CaptureMmapType_001, TestSize.Level1)
     AudioSampleAttributes sampleAttr = {};
 
     source.attr_.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
-    source.attr_.period = ULTRA_FAST_CAPTURE_FRAMES;
     source.InitAudioSampleAttr(sampleAttr);
     EXPECT_EQ(sampleAttr.type, AUDIO_MMAP_ULTRA_FAST);
-    EXPECT_EQ(sampleAttr.period, ULTRA_FAST_CAPTURE_FRAMES);
+    EXPECT_EQ(sampleAttr.period, 0);
 
     source.attr_.audioStreamFlag = AUDIO_FLAG_MMAP;
-    source.attr_.period = 0;
     source.InitAudioSampleAttr(sampleAttr);
     EXPECT_EQ(sampleAttr.type, AUDIO_MMAP_NOIRQ);
     EXPECT_EQ(sampleAttr.period, 0);

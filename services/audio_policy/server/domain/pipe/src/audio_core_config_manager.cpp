@@ -510,6 +510,38 @@ bool AudioCoreConfigManager::GetUltraFastFlag(const std::string &adapterName, Au
     return false;
 }
 
+bool AudioCoreConfigManager::IsUltraFastRecordingDeviceSupported(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices, bool isSystemApp)
+{
+    static const std::set<std::string> primarySystemDevices = {
+        "Builtin_Mic_In", "Hifi_Headset_In"
+    };
+    for (const auto &device : devices) {
+        CHECK_AND_CONTINUE(device != nullptr && device->deviceRole_ == INPUT_DEVICE &&
+            device->networkId_ == LOCAL_NETWORK_ID);
+        auto deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(device->deviceType_, INPUT_DEVICE,
+            device->networkId_, AUDIO_INPUT_FLAG_ULTRA_FAST, 0, "", device->isUnidirectional_);
+        CHECK_AND_CONTINUE(deviceInfo != nullptr && !deviceInfo->isSimulated_);
+        auto adapter = deviceInfo->adapterInfo_.lock();
+        CHECK_AND_CONTINUE(adapter != nullptr && GetUltraFastFlag(adapter->adapterName, PIPE_ROLE_INPUT));
+        auto pipe = deviceInfo->supportPipeMap_.find(AUDIO_INPUT_FLAG_ULTRA_FAST);
+        CHECK_AND_CONTINUE(pipe != deviceInfo->supportPipeMap_.end() && pipe->second != nullptr &&
+            pipe->second->role_ == PIPE_ROLE_INPUT);
+        const std::string expectedPipeName = adapter->adapterName == "primary" ?
+            "primary_ultra_fast_input" : "usb_ultra_fast_input";
+        CHECK_AND_CONTINUE(pipe->second->name_ == expectedPipeName);
+        if (adapter->adapterName == "primary") {
+            if (deviceInfo->name_ == "Hifi_Headset_In" ||
+                (isSystemApp && primarySystemDevices.count(deviceInfo->name_) != 0)) {
+                return true;
+            }
+        } else if (device->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool AudioCoreConfigManager::IsUltraFastRecordingSupported(const AudioStreamInfo &streamInfo,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
 {

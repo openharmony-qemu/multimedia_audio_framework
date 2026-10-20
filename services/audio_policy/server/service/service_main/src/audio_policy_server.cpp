@@ -2532,17 +2532,18 @@ int32_t AudioPolicyServer::IsUltraFastRecordingPlatformSupported(bool &support)
 int32_t AudioPolicyServer::IsUltraFastRecordingSupported(const AudioStreamInfo &streamInfo, int32_t source,
     bool &support)
 {
+    // Keep the IPC/API signature; this query describes devices, not format or available stream slots.
+    (void)streamInfo;
     support = false;
     bool platformSupported = false;
     IsUltraFastRecordingPlatformSupported(platformSupported);
     CHECK_AND_RETURN_RET(platformSupported, SUCCESS);
-    CHECK_AND_RETURN_RET(source == SOURCE_TYPE_MIC || source == SOURCE_TYPE_UNPROCESSED ||
-        source == SOURCE_TYPE_LIVE, SUCCESS);
+    CHECK_AND_RETURN_RET(source > SOURCE_TYPE_INVALID && source <= SOURCE_TYPE_MAX, SUCCESS);
+    const bool isSystemApp = PermissionUtil::VerifyIsSystemAppWithoutRoot();
     AudioCapturerInfo info(static_cast<SourceType>(source), AUDIO_FLAG_ULTRA_FAST);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-    GetPreferredInputDeviceDescriptors(info, devices);
-    support = audioConfigManager_.IsUltraFastRecordingSupported(streamInfo, devices);
-    support = support && AudioPipeManager::GetPipeManager()->IsUltraFastRecordingAvailable(static_cast<SourceType>(source));
+    CHECK_AND_RETURN_RET(GetPreferredInputDeviceDescriptors(info, devices) == SUCCESS, SUCCESS);
+    support = audioConfigManager_.IsUltraFastRecordingDeviceSupported(devices, isSystemApp);
     return SUCCESS;
 }
 

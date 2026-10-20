@@ -185,7 +185,6 @@ void HpaeFastCapturerManager::CreateSourceAttr(IAudioSourceAttr &attr)
     attr.audioStreamFlag = isVoipFast ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     if (sourceInfo_.isUltraFast) {
         attr.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
-        attr.period = static_cast<uint32_t>(static_cast<uint64_t>(attr.sampleRate) * 2500 / AUDIO_US_PER_S);
     }
 }
 

@@ -137,11 +137,15 @@ bool OH_AudioStreamManager_IsFastRecordingSupported(
     OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_SourceType source);
 
 /**
- * @brief Queries independent 2.5 ms recording support for the current source, device and stream format.
+ * @brief Queries independent 2.5 ms recording support for the current input device and calling application.
  * @param streamManager Handle returned by OH_AudioManager_GetAudioStreamManager.
- * @param streamInfo Stream format to query.
- * @param source Recording source to query.
- * @return true if the current scene supports ultra fast recording; otherwise false.
+ * @param streamInfo Non-null stream information, retained for compatibility; format fields are not checked.
+ * @param source Recording source used to select the current input device.
+ * @return true if the device is supported for the caller; otherwise false.
+ * Primary supports Hifi_Headset_In for third-party apps, and additionally Builtin_Mic_In for system apps.
+ * USB ARM support follows the independent USB input configuration. Wired, Bluetooth SCO and Nearlink
+ * input devices are not included in the current Primary ultra-fast device allowlist.
+ * This query does not check permissions, available stream slots or whether Generate will succeed.
  * @syscap SystemCapability.Multimedia.Audio.StreamManager
  * @since 26.1.0
  */

@@ -36,11 +36,6 @@ FastAudioCaptureSource::~FastAudioCaptureSource()
 int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
     AUDIO_INFO_LOG("In, flag: %{public}d", attr.audioStreamFlag);
-    if (attr.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST) {
-        CHECK_AND_RETURN_RET(attr.sampleRate != 0 && attr.period != 0 &&
-            static_cast<uint64_t>(attr.period) * AUDIO_US_PER_S ==
-            static_cast<uint64_t>(attr.sampleRate) * 2500, ERR_INVALID_PARAM);
-    }
     attr_ = attr;
 
     int32_t ret = CreateCapture();
@@ -463,7 +458,7 @@ void FastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &p
     param.channelCount = AUDIO_CHANNELCOUNT;
     param.interleaved = true;
     param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST));
-    param.period = attr_.period;
+    param.period = 0;
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.isBigEndian = false;
     param.isSignedData = true;
@@ -595,10 +590,6 @@ int32_t FastAudioCaptureSource::PrepareMmapBuffer(void)
         desc.transferFrameSize <= periodFrameMaxSize, ERR_OPERATION_FAILED,
         "invalid value, totalBufferFrames: [%{public}d], transferFrameSize: [%{public}d]", desc.totalBufferFrames,
         desc.transferFrameSize);
-    if (attr_.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST) {
-        CHECK_AND_RETURN_RET(static_cast<uint32_t>(desc.transferFrameSize) == attr_.period, ERR_NOT_SUPPORTED);
-    }
-
     uint32_t frameSizeInByte = PcmFormatToBit(attr_.format) * attr_.channel / PCM_8_BIT;
     bufferTotalFrameSize_ = static_cast<uint32_t>(desc.totalBufferFrames); // 1440 ~ 3840
     eachReadFrameSize_ = static_cast<uint32_t>(desc.transferFrameSize); // 240

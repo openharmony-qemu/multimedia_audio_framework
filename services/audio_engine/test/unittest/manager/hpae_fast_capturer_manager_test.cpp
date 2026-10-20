@@ -887,7 +887,6 @@ HWTEST_F(HpaeFastCapturerManagerTest, UltraFastSourceAttr_001, TestSize.Level1)
         IAudioSourceAttr attr;
         manager->CreateSourceAttr(attr);
         EXPECT_EQ(attr.audioStreamFlag, AUDIO_FLAG_ULTRA_FAST);
-        EXPECT_EQ(attr.period, ULTRA_FAST_CAPTURE_FRAMES);
         EXPECT_EQ(attr.routeFlag, AUDIO_INPUT_FLAG_ULTRA_FAST);
         EXPECT_EQ(attr.adapterName, adapter);
         info.frameLen = 240;
@@ -899,7 +898,6 @@ HWTEST_F(HpaeFastCapturerManagerTest, UltraFastSourceAttr_001, TestSize.Level1)
     IAudioSourceAttr attr;
     manager->CreateSourceAttr(attr);
     EXPECT_EQ(attr.audioStreamFlag, AUDIO_FLAG_MMAP);
-    EXPECT_EQ(attr.period, 0);
 }
 
 } // namespace HPAE
