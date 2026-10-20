@@ -326,7 +326,7 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_015, TestS
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_016, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
-    audioCollaborativeService_.isCollaborationStateEnabled = COLLABORATION_CLOSE;
+    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
     audioDevice->macAddress_ = testAddr1;
     audioDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
@@ -345,7 +345,7 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_016, TestS
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_017, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
-    audioCollaborativeService_.isCollaborationStateEnabled = COLLABORATION_CLOSE;
+    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
     audioDevice->macAddress_ = testAddr1;
     audioDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
@@ -364,7 +364,7 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_017, TestS
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_018, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
-    audioCollaborativeService_.isCollaborationStateEnabled = COLLABORATION_CLOSE;
+    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
     audioDevice->macAddress_ = testAddr1;
     audioDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
@@ -383,7 +383,7 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_018, TestS
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_019, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
-    audioCollaborativeService_.isCollaborationStateEnabled = COLLABORATION_CLOSE;
+    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
     audioDevice->macAddress_ = testAddr1;
     audioDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
