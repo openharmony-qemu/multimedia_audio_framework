@@ -524,5 +524,12 @@ void OHAudioBuffer::ClearPendingSpanSize()
     ohAudioBufferBase_.ClearPendingSpanSize();
 }
 
+void OHAudioBuffer::UpdateSpanBasicInfo(uint64_t spanSize, uint64_t totalSizeInFrame, uint64_t byteSizePerFrame)
+{
+    spanBasicInfo_.spanSizeInFrame_ = static_cast<uint32_t>(spanSize);
+    spanBasicInfo_.spanSizeInByte_ = static_cast<size_t>(spanSize * byteSizePerFrame);
+    spanBasicInfo_.spanConut_ = spanSize == 0 ? 0 : static_cast<uint32_t>(totalSizeInFrame / spanSize);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

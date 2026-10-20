@@ -44,9 +44,10 @@ HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
         spanSizeInFrame_ = FRAME_LEN_5MS * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
         AUDIO_INFO_LOG("fast for spanSizeInFrame_ to 5ms: %{public}zu", spanSizeInFrame_);
     }
-    // The inner-capturer chain supplies one bare-20ms frame per tick (the ProcessCluster and
-    // InnerCapSink geometry derive from the sink rate * 20ms and are never PERIOD-scaled),
-    // so the server span must stay at bare 20ms too. A PERIOD-scaled span makes
+    // The inner-capturer chain supplies one bare-20ms frame per tick: the ProcessCluster and
+    // InnerCapSink geometry derive from the sink rate * 20ms and are not PERIOD-scaled (the
+    // remote-cast softlink path is the one PERIOD-scaled exception, see hpae_soft_link).
+    // So the server span must stay at bare 20ms too. A PERIOD-scaled span makes
     // CapturerInServer::CheckForOnReadData reject every per-tick write whose size equals
     // one engine tick ("Length is less than spanSizeInBytes"), so no audio frame ever
     // reaches the client. No-op on PERIOD == 1 platforms.
@@ -200,19 +201,40 @@ int32_t HpaeCapturerStreamImpl::OnStreamData(AudioCallBackCapturerStreamInfo &ca
 void HpaeCapturerStreamImpl::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
 {
     if (operation == OPERATION_UPDATE_SPANSIZE) {
+        uint32_t spanSizeInFrame = 0;
+        int32_t ret = IHpaeManager::GetHpaeManager().GetStreamSpanSize(HPAE_STREAM_CLASS_TYPE_RECORD,
+            processConfig_.originalSessionId, spanSizeInFrame);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "GetStreamSpanSize failed:%{public}d", ret);
         uint32_t routeFlag = 0;
-        int32_t ret = IHpaeManager::GetHpaeManager().GetStreamRouteFlag(HPAE_STREAM_CLASS_TYPE_RECORD,
+        ret = IHpaeManager::GetHpaeManager().GetStreamRouteFlag(HPAE_STREAM_CLASS_TYPE_RECORD,
             processConfig_.originalSessionId, routeFlag);
         if (ret == SUCCESS) {
             routeFlag_.store(routeFlag);
         }
-        AUDIO_INFO_LOG("OnStatusUpdate recv span update, streamIndex:%{public}u sessionId:%{public}u "
-            "routeFlag:%{public}u", streamIndex_, processConfig_.originalSessionId, routeFlag);
+        AUDIO_INFO_LOG("OnStatusUpdate recv span update, streamIndex:%{public}u sessionId:%{public}u span:%{public}u "
+            "routeFlag:%{public}u", streamIndex_, processConfig_.originalSessionId, spanSizeInFrame, routeFlag);
+        ret = UpdateSpanSize(spanSizeInFrame);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "UpdateSpanSize failed:%{public}d", ret);
     }
     auto statusCallback = statusCallback_.lock();
     if (statusCallback) {
         statusCallback->OnStatusUpdate(operation);
     }
+}
+
+int32_t HpaeCapturerStreamImpl::UpdateSpanSize(uint32_t spanSizeInFrame)
+{
+    CHECK_AND_RETURN_RET_LOG(spanSizeInFrame != 0, ERR_INVALID_PARAM, "spanSizeInFrame is 0");
+    if (spanSizeInFrame_ == spanSizeInFrame) {
+        AUDIO_DEBUG_LOG("UpdateSpanSize unchanged, sessionId:%{public}u span:%{public}u",
+            processConfig_.originalSessionId, spanSizeInFrame);
+        return SUCCESS;
+    }
+    AUDIO_INFO_LOG("UpdateSpanSize change, sessionId:%{public}u oldSpan:%{public}zu newSpan:%{public}u "
+        "oldMinBuf:%{public}zu", processConfig_.originalSessionId, spanSizeInFrame_, spanSizeInFrame, minBufferSize_);
+    spanSizeInFrame_ = spanSizeInFrame;
+    minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
+    return SUCCESS;
 }
 
 BufferDesc HpaeCapturerStreamImpl::DequeueBuffer(size_t length)

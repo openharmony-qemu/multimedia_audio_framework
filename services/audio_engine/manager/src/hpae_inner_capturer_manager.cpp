@@ -786,8 +786,10 @@ int32_t HpaeInnerCapturerManager::CreateCapturerInputSessionInner(const HpaeStre
         std::make_shared<HpaeAudioFormatConverterNode>(outputNodeInfo, nodeInfo);
     capturerAudioFormatConverterNodeMap_[streamInfo.sessionId]->SetSourceNode(true);
     capturerSessionNodeMap_[streamInfo.sessionId].sceneType = nodeInfo.sceneType;
-    // Re-sync the server stream and the client read cadence to the sink tick, mirroring the
-    // move-in pairing on renderer managers: the capturer stream impl recomputes spanSizeInFrame_.
+    // Notify the capturer stream impl of the sink-tick span: it re-computes spanSizeInFrame_ /
+    // minBufferSize_ and CapturerInServer rebuilds the server buffer (mirroring the move-in
+    // pairing on renderer managers). For inner capturers the ctor already pins the span to the
+    // bare 20ms sink tick, so this notification is normally a no-op kept as a safety net.
     TriggerCallback(UPDATE_SPAN_SIZE, streamInfo.sessionId, static_cast<uint32_t>(nodeInfo.frameLen),
         HPAE_STREAM_CLASS_TYPE_RECORD);
     return SUCCESS;
