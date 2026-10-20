@@ -1680,7 +1680,7 @@ int32_t AudioSuitePipelineImpl::GetSoundFieldType(uint32_t nodeId, SoundFieldTyp
     int32_t parseValue = StringToInt32(value);
     if (parseValue < SOUND_FIELD_TYPE_MIN || parseValue > SOUND_FIELD_TYPE_MAX) {
         AUDIO_ERR_LOG("GetSoundFieldType failed, invalid soundFieldType %{public}d.", parseValue);
-        return ERR_INVALID_PARAM;
+        return ERROR;
     }
     soundFieldType = static_cast<SoundFieldType>(parseValue);
     return SUCCESS;
@@ -1706,7 +1706,7 @@ int32_t AudioSuitePipelineImpl::GetEnvironmentType(uint32_t nodeId, EnvironmentT
     int32_t parseValue = StringToInt32(value);
     if (parseValue < ENVIRONMENT_TYPE_MIN || parseValue > ENVIRONMENT_TYPE_MAX) {
         AUDIO_ERR_LOG("GetEnvironmentType failed, invalid environmentType %{public}d.", parseValue);
-        return ERR_INVALID_PARAM;
+        return ERROR;
     }
     environmentType = static_cast<EnvironmentType>(parseValue);
     return SUCCESS;
@@ -1732,7 +1732,7 @@ int32_t AudioSuitePipelineImpl::GetVoiceBeautifierType(uint32_t nodeId, VoiceBea
     int32_t parseValue = StringToInt32(value);
     if (parseValue < VOICE_BEAUTIFIER_TYPE_MIN || parseValue > VOICE_BEAUTIFIER_TYPE_MAX) {
         AUDIO_ERR_LOG("GetVoiceBeautifierType failed, invalid voiceBeautifierType %{public}d.", parseValue);
-        return ERR_INVALID_PARAM;
+        return ERROR;
     }
     voiceBeautifierType = static_cast<VoiceBeautifierType>(parseValue);
     return SUCCESS;
