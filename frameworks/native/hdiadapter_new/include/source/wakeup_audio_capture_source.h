@@ -21,7 +21,7 @@
 #include <iostream>
 #include <cstring>
 #include <mutex>
-#include "v6_1/iaudio_manager.h"
+#include "v6_2/iaudio_manager.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "util/callback_wrapper.h"

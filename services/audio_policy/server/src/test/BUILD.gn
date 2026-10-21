@@ -78,6 +78,7 @@ ohos_unittest("audio_policy_manager_listener_unit_test") {
     "data_share:datashare_consumer",
     "distributed_notification_service:ans_innerkits",
     "drivers_interface_audio:libaudio_proxy_6.1",
+    "drivers_interface_audio:libaudio_proxy_6.2",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
