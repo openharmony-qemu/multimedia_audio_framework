@@ -2109,7 +2109,7 @@ void AudioCoreService::HandleRingerOrAlarmerRoute(std::shared_ptr<AudioStreamDes
     InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage)
 {
     if (!streamDesc->newDeviceDescs_.front()->isSupportWearDetectionEnable_ ||
-        (streamUsage == STREAM_USAGE_ALARM && !audioSceneManager_.IsRingScene())) {
+        streamUsage == STREAM_USAGE_ALARM) {
         UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, pipeId);
         return;
     }
