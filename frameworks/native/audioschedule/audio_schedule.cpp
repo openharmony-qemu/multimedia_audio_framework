@@ -55,6 +55,7 @@ constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS
 constexpr int64_t g_value = 0;
 constexpr uint32_t g_procType = OHOS::ResourceSchedule::ResType::RES_TYPE_PROCESS_QOS_CHANGE;
 constexpr int32_t AUDIO_PROC_QOS_TABLE = 7;
+constexpr int32_t SCHED_PRIORITY_NUM_4 = 4;
 std::atomic<bool> g_audioServerAuthQosFinish = false;
 constexpr int32_t RES_VALUE_PROCESS_QOS_ENABLE = 0;
 constexpr int32_t RES_VALUE_PROCESS_QOS_DISABLE = 1;
@@ -255,7 +256,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 static constexpr unsigned int WAIT_TIMEOUT_SECONDS = 5;
-static constexpr int32_t SCHED_PRIORITY_NUM_4 = 4;
 const static std::set<std::string> USE_PRIORITY_4_BUNDLE_SET = {
 };
 }
@@ -312,21 +312,12 @@ AudioScheduleGuard::AudioScheduleGuard(AudioScheduleGuard&& audioScheduleGuard)
     bundleName_(std::move(audioScheduleGuard.bundleName_)), isReported_(audioScheduleGuard.isReported_)
 {
     audioScheduleGuard.isReported_ = false;
-    restoreScheduler_ = audioScheduleGuard.restoreScheduler_;
-    previousPolicy_ = audioScheduleGuard.previousPolicy_;
-    previousPriority_ = audioScheduleGuard.previousPriority_;
-    audioScheduleGuard.restoreScheduler_ = false;
 }
 
 bool AudioScheduleGuard::operator==(const AudioScheduleGuard&) const = default;
 
 AudioScheduleGuard::~AudioScheduleGuard()
 {
-    if (restoreScheduler_) {
-        struct sched_param param = {0};
-        param.sched_priority = previousPriority_;
-        (void)sched_setscheduler(tid_, previousPolicy_, &param);
-    }
     if (isReported_) {
         UnscheduleReportData(pid_, tid_, bundleName_.c_str());
     }
