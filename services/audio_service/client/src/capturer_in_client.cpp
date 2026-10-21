@@ -1962,23 +1962,15 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
 
     std::lock_guard<std::mutex> lock(readMutex_);
     // if first call, call set thread priority. if thread tid change recall set thread priority
-    if (needSetThreadPriority_ && ClockTime::GetCurNano() >= threadPriorityRetryTimeNs_) {
+    if (needSetThreadPriority_) {
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 RECORD_SEND_DATA_ILLEGAL_STATE, "ipcStream_ is null", true), "ipcStream_ is null");
-        const uint32_t priority = capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST ?
-            THREAD_PRIORITY_ULTRA_FAST : THREAD_PRIORITY_QOS_7;
-        const int32_t ret = ipcStream_->RegisterThreadPriority(gettid(),
+        ipcStream_->RegisterThreadPriority(gettid(),
             AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid),
-            METHOD_WRITE_OR_READ, priority);
-        if (ret == SUCCESS) {
-            needSetThreadPriority_ = false;
-        } else {
-            constexpr int64_t PRIORITY_RETRY_INTERVAL_NS = AUDIO_NS_PER_SECOND;
-            threadPriorityRetryTimeNs_ = ClockTime::GetCurNano() + PRIORITY_RETRY_INTERVAL_NS;
-            AUDIO_WARNING_LOG("Register read thread priority failed, tid:%{public}d requested:%{public}u "
-                "originalFlag:%{public}d ret:%{public}d", gettid(), priority, capturerInfo_.originalFlag, ret);
-        }
+            METHOD_WRITE_OR_READ, capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST ?
+            THREAD_PRIORITY_ULTRA_FAST : THREAD_PRIORITY_QOS_7);
+        needSetThreadPriority_ = false;
     }
 
     size_t readSize = 0;

@@ -44,9 +44,6 @@ public:
 
     ~AudioScheduleGuard();
 private:
-    friend class SharedAudioScheduleGuard;
-    bool SetUltraFastThreadPriority();
-
     pid_t pid_;
     pid_t tid_;
     std::string bundleName_;
@@ -73,7 +70,6 @@ public:
     ~SharedAudioScheduleGuard();
 private:
     AudioScheduleGuard guard_;
-    bool registered_ = false;
 
     pid_t pid_;
     pid_t tid_;
