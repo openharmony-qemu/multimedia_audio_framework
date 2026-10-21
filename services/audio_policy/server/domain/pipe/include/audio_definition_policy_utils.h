@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
+#include <vector>
 #include "singleton.h"
 #include "audio_info.h"
 #include "audio_utils.h"
@@ -43,6 +44,12 @@ public:
     static DeviceType GetDeviceTypeFromStr(const std::string &deviceTypeStr);
     static SelectedDeviceFormat SelectBestOutputFormat(const AudioStreamInfo &appStreamInfo,
         const std::list<DeviceStreamInfo> &deviceCaps);
+    static bool FindHighestFormatStreamOnDevice(const std::string &macAddress,
+        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams,
+        const std::shared_ptr<AudioStreamDescriptor> &extra, AudioStreamInfo &highestInfo);
+    static bool HasVoipStreamOnDevice(const std::string &macAddress,
+        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams,
+        const std::shared_ptr<AudioPipeInfo> &pipeInfo);
 private:
     AudioDefinitionPolicyUtils() {}
     ~AudioDefinitionPolicyUtils() {}

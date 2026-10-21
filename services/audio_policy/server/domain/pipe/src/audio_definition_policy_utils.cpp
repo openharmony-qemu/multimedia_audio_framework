@@ -229,6 +229,65 @@ DeviceType AudioDefinitionPolicyUtils::GetDeviceTypeFromStr(const std::string &d
     return DEVICE_TYPE_NONE;
 }
 
+static void SelectBestRate(uint32_t appRate, const std::set<uint32_t> &deviceRates,
+    AudioSamplingRate &result)
+{
+    CHECK_AND_RETURN(!deviceRates.empty());
+    uint32_t selected = *deviceRates.begin();
+    for (const auto &rate : deviceRates) {
+        if (rate <= appRate) {
+            selected = rate;
+        }
+    }
+    result = static_cast<AudioSamplingRate>(selected);
+}
+
+static void SelectBestFormat(AudioSampleFormat appFmt, const std::set<AudioSampleFormat> &deviceFormats,
+    AudioSampleFormat &result)
+{
+    CHECK_AND_RETURN(!deviceFormats.empty());
+    if (deviceFormats.count(appFmt) > 0) {
+        result = appFmt;
+        return;
+    }
+    AudioSampleFormat best = *deviceFormats.begin();
+    bool found = false;
+    for (const auto &fmt : deviceFormats) {
+        if (fmt <= appFmt) {
+            best = fmt;
+            found = true;
+        }
+    }
+    result = found ? best : *deviceFormats.rbegin();
+}
+
+static void SelectBestChannel(AudioChannel appCh, const std::set<AudioChannelLayout> &deviceLayouts,
+    AudioChannelLayout &result)
+{
+    CHECK_AND_RETURN(!deviceLayouts.empty());
+    uint32_t appChVal = static_cast<uint32_t>(appCh);
+    uint32_t maxLe = 0;
+    for (const auto &layout : deviceLayouts) {
+        uint32_t ch = static_cast<uint32_t>(ConvertLayoutToAudioChannel(layout));
+        if (ch == appChVal) {
+            result = layout;
+            return;
+        }
+        if (ch <= appChVal && ch > maxLe) {
+            maxLe = ch;
+        }
+    }
+    if (maxLe > 0) {
+        for (const auto &layout : deviceLayouts) {
+            if (static_cast<uint32_t>(ConvertLayoutToAudioChannel(layout)) == maxLe) {
+                result = layout;
+                return;
+            }
+        }
+    }
+    result = *deviceLayouts.begin();
+}
+
 SelectedDeviceFormat AudioDefinitionPolicyUtils::SelectBestOutputFormat(const AudioStreamInfo &appStreamInfo,
     const std::list<DeviceStreamInfo> &deviceCaps)
 {
@@ -253,72 +312,73 @@ SelectedDeviceFormat AudioDefinitionPolicyUtils::SelectBestOutputFormat(const Au
             deviceLayouts.insert(layout);
         }
     }
-
     if (deviceRates.empty() && deviceFormats.empty() && deviceLayouts.empty()) {
         return result;
     }
-
     uint32_t appRate = appStreamInfo.GetEffectiveSampleRate();
-    if (!deviceRates.empty()) {
-        uint32_t selected = *deviceRates.begin();
-        for (const auto &rate : deviceRates) {
-            if (rate <= appRate) {
-                selected = rate;
-            }
-        }
-        result.rate = static_cast<AudioSamplingRate>(selected);
-    }
-
-    if (!deviceFormats.empty()) {
-        AudioSampleFormat appFmt = appStreamInfo.format;
-        if (deviceFormats.count(appFmt) > 0) {
-            result.format = appFmt;
-        } else {
-            AudioSampleFormat best = *deviceFormats.begin();
-            bool found = false;
-            for (const auto &fmt : deviceFormats) {
-                if (fmt <= appFmt) {
-                    best = fmt;
-                    found = true;
-                }
-            }
-            result.format = found ? best : *deviceFormats.rbegin();
-        }
-    }
-
-    if (!deviceLayouts.empty()) {
-        uint32_t appCh = static_cast<uint32_t>(appStreamInfo.channels);
-        bool matched = false;
-        uint32_t maxLe = 0;
-        for (const auto &layout : deviceLayouts) {
-            uint32_t ch = static_cast<uint32_t>(ConvertLayoutToAudioChannel(layout));
-            if (ch == appCh) {
-                result.channelLayout = layout;
-                matched = true;
-                break;
-            }
-            if (ch <= appCh && ch > maxLe) {
-                maxLe = ch;
-            }
-        }
-        if (!matched) {
-            if (maxLe > 0) {
-                for (const auto &layout : deviceLayouts) {
-                    if (static_cast<uint32_t>(ConvertLayoutToAudioChannel(layout)) == maxLe) {
-                        result.channelLayout = layout;
-                        break;
-                    }
-                }
-            } else {
-                result.channelLayout = *deviceLayouts.begin();
-            }
-        }
-    }
-
+    SelectBestRate(appRate, deviceRates, result.rate);
+    SelectBestFormat(appStreamInfo.format, deviceFormats, result.format);
+    SelectBestChannel(appStreamInfo.channels, deviceLayouts, result.channelLayout);
     AUDIO_INFO_LOG("SelectBestOutputFormat: appRate=%{public}u, rate=%{public}u, format=%{public}u, layout=%{public}u",
         appRate, static_cast<uint32_t>(result.rate), static_cast<uint32_t>(result.format),
         static_cast<uint32_t>(result.channelLayout));
     return result;
+}
+
+bool AudioDefinitionPolicyUtils::FindHighestFormatStreamOnDevice(const std::string &macAddress,
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams,
+    const std::shared_ptr<AudioStreamDescriptor> &extra, AudioStreamInfo &highestInfo)
+{
+    uint32_t highestRate = 0;
+    bool found = false;
+    auto checkStream = [&macAddress, &highestRate, &highestInfo, &found](
+        const std::shared_ptr<AudioStreamDescriptor> &stream) {
+        CHECK_AND_RETURN(stream != nullptr && stream->IsPlayback() && !stream->newDeviceDescs_.empty());
+        auto dev = stream->newDeviceDescs_[0];
+        CHECK_AND_RETURN(dev != nullptr && dev->macAddress_ == macAddress);
+        uint32_t rate = stream->streamInfo_.GetEffectiveSampleRate();
+        if (rate > highestRate || (rate == highestRate && stream->streamInfo_.format > highestInfo.format)) {
+            highestRate = rate;
+            highestInfo = stream->streamInfo_;
+            found = true;
+        }
+    };
+    for (const auto &stream : streams) {
+        checkStream(stream);
+    }
+    if (extra != nullptr) {
+        checkStream(extra);
+    }
+    if (found) {
+        AUDIO_INFO_LOG("FindHighestFormatStreamOnDevice: mac=%{public}s, rate=%{public}u, format=%{public}u",
+            macAddress.c_str(), highestRate, static_cast<uint32_t>(highestInfo.format));
+    }
+    return found;
+}
+
+bool AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(const std::string &macAddress,
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams,
+    const std::shared_ptr<AudioPipeInfo> &pipeInfo)
+{
+    auto checkVoip = [](const std::shared_ptr<AudioStreamDescriptor> &stream, const std::string &addr) -> bool {
+        CHECK_AND_RETURN_RET(stream != nullptr && stream->IsPlayback() && !stream->newDeviceDescs_.empty(), false);
+        auto dev = stream->newDeviceDescs_[0];
+        CHECK_AND_RETURN_RET(dev != nullptr && dev->macAddress_ == addr, false);
+        return (stream->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) != 0;
+    };
+    for (const auto &stream : streams) {
+        if (checkVoip(stream, macAddress)) {
+            return true;
+        }
+    }
+    if (pipeInfo != nullptr) {
+        for (const auto &stream : pipeInfo->streamDescriptors_) {
+            if (checkVoip(stream, macAddress)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 }
 }

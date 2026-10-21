@@ -22,6 +22,7 @@
 #include "audio_core_service.h"
 #include "audio_iohandle_map.h"
 #include "audio_core_config_manager.h"
+#include "audio_definition_policy_utils.h"
 #include "audio_policy_utils.h"
 #include "audio_pipe_manager.h"
 
@@ -164,12 +165,47 @@ void AudioArmDeviceBehavior::UpdateArmModuleInfo(const std::shared_ptr<AudioDevi
     CHECK_AND_RETURN_LOG(deviceDesc->GetAudioStreamInfo().size() != 0, "AudioStreamInfo is empty");
     DeviceStreamInfo deviceStreamInfo = deviceDesc->GetAudioStreamInfo().back();
     CHECK_AND_RETURN_LOG(!deviceStreamInfo.samplingRate.empty(), "samplingRate is empty");
-    std::string halRate = std::to_string(*deviceStreamInfo.samplingRate.begin());
-    std::string halFormat = formatEnumToStr[deviceStreamInfo.format];
-    AudioChannelLayout halChannelLayout = deviceStreamInfo.GetMainChannelLayout();
-    std::string halChannels = std::to_string(ConvertLayoutToAudioChannel(halChannelLayout));
-    AUDIO_INFO_LOG("RATE from hal is: %{public}s, format from hal is: %{public}s, channel from hal is %{public}s, "
-        "format ori: %{public}u", halRate.c_str(), halFormat.c_str(), halChannels.c_str(), deviceStreamInfo.format);
+
+    std::string halRate;
+    std::string halFormat;
+    AudioChannelLayout halChannelLayout = CH_LAYOUT_UNKNOWN;
+    std::string halChannels;
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    if (pipeManager != nullptr) {
+        auto allStreams = pipeManager->GetAllOutputStreamDescs();
+        std::string macAddr = deviceDesc->GetMacAddress();
+        bool hasVoip = AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(macAddr, allStreams, nullptr);
+        AudioStreamInfo highestInfo;
+        bool hasStream = AudioDefinitionPolicyUtils::FindHighestFormatStreamOnDevice(
+            macAddr, allStreams, nullptr, highestInfo);
+        if (hasVoip) {
+            halRate = std::to_string(SAMPLE_RATE_48000);
+            halFormat = formatEnumToStr[SAMPLE_S16LE];
+            halChannelLayout = CH_LAYOUT_STEREO;
+            halChannels = std::to_string(ConvertLayoutToAudioChannel(halChannelLayout));
+            AUDIO_INFO_LOG("ArmUsb VoIP active, use 48k fixed format");
+        } else if (hasStream) {
+            SelectedDeviceFormat selected = AudioDefinitionPolicyUtils::SelectBestOutputFormat(
+                highestInfo, deviceDesc->GetAudioStreamInfo());
+            halRate = std::to_string(selected.rate);
+            halFormat = formatEnumToStr[selected.format];
+            halChannelLayout = selected.channelLayout;
+            halChannels = std::to_string(ConvertLayoutToAudioChannel(halChannelLayout));
+            AUDIO_INFO_LOG("ArmUsb highest stream: rate=%{public}s, format=%{public}s", halRate.c_str(),
+                halFormat.c_str());
+        }
+    }
+
+    if (halRate.empty()) {
+        halRate = std::to_string(*deviceStreamInfo.samplingRate.rbegin());
+        halFormat = formatEnumToStr[deviceStreamInfo.format];
+        halChannelLayout = deviceStreamInfo.GetMainChannelLayout();
+        halChannels = std::to_string(ConvertLayoutToAudioChannel(halChannelLayout));
+        AUDIO_INFO_LOG("ArmUsb no running stream, use HAL default: rate=%{public}s, format=%{public}s",
+            halRate.c_str(), halFormat.c_str());
+    }
+
     if (!halRate.empty()) {
         moduleInfo.rate = halRate;
     }
@@ -218,9 +254,20 @@ int32_t AudioArmDeviceBehavior::ProcessModuleActivation(
     }
 
     if (AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name)) {
-        int32_t result = ReloadArmAudioPort(moduleInfo);
-        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_INVALID_PARAM,
-            "Reload usb %{public}s failed %{public}d", moduleInfo.role.c_str(), result);
+        AudioIOHandle existingHandle = HDI_INVALID_ID;
+        AudioIOHandleMap::GetInstance().GetModuleIdByKey(moduleInfo.name, existingHandle);
+        auto pipeManager = AudioPipeManager::GetPipeManager();
+        auto existingPipe = (pipeManager != nullptr) ? pipeManager->GetPipeinfoById(existingHandle) : nullptr;
+        if (existingPipe != nullptr &&
+            existingPipe->moduleInfo_.rate == moduleInfo.rate &&
+            existingPipe->moduleInfo_.format == moduleInfo.format &&
+            existingPipe->moduleInfo_.channels == moduleInfo.channels) {
+            AUDIO_INFO_LOG("ArmUsb format unchanged, skip reload: rate=%{public}s", moduleInfo.rate.c_str());
+        } else {
+            int32_t result = ReloadArmAudioPort(moduleInfo);
+            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_INVALID_PARAM,
+                "Reload usb %{public}s failed %{public}d", moduleInfo.role.c_str(), result);
+        }
     } else {
         int32_t result = AudioIOHandleMap::GetInstance()
             .OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);

@@ -777,8 +777,26 @@ void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
     std::shared_ptr<AudioDeviceDescriptor> temp = streamDesc->newDeviceDescs_.front();
 
     if (temp->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET && !temp->audioStreamInfo_.empty()) {
-        SelectedDeviceFormat selected = AudioDefinitionPolicyUtils::SelectBestOutputFormat(
-            streamDesc->streamInfo_, temp->audioStreamInfo_);
+        bool isVoip = (streamDesc->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) != 0;
+        auto allStreams = pipeManager_->GetAllOutputStreamDescs();
+        bool hasVoip = isVoip || AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(
+            temp->macAddress_, allStreams, nullptr);
+        SelectedDeviceFormat selected;
+        if (hasVoip) {
+            selected.rate = AudioSamplingRate::SAMPLE_RATE_48000;
+            selected.format = AudioSampleFormat::SAMPLE_S16LE;
+            selected.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+        } else {
+            AudioStreamInfo highestInfo;
+            if (AudioDefinitionPolicyUtils::FindHighestFormatStreamOnDevice(
+                temp->macAddress_, allStreams, streamDesc, highestInfo)) {
+                selected = AudioDefinitionPolicyUtils::SelectBestOutputFormat(
+                    highestInfo, temp->audioStreamInfo_);
+            } else {
+                selected = AudioDefinitionPolicyUtils::SelectBestOutputFormat(
+                    streamDesc->streamInfo_, temp->audioStreamInfo_);
+            }
+        }
         streamPropInfo->format_ = selected.format;
         streamPropInfo->sampleRate_ = static_cast<uint32_t>(selected.rate);
         streamPropInfo->channelLayout_ = selected.channelLayout;
@@ -789,8 +807,8 @@ void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
         streamInfo.samplingRate.insert(selected.rate);
         streamInfo.channelLayout.insert(selected.channelLayout);
         temp->audioStreamInfo_ = {streamInfo};
-        AUDIO_INFO_LOG("ArmUsb best format: rate=%{public}u, format=%{public}u, layout=%{public}" PRIu64,
-            streamPropInfo->sampleRate_, streamPropInfo->format_, streamPropInfo->channelLayout_);
+        AUDIO_INFO_LOG("ArmUsb format: rate=%{public}u, format=%{public}u, isVoip=%{public}d, hasVoip=%{public}d",
+            streamPropInfo->sampleRate_, streamPropInfo->format_, isVoip, hasVoip);
         return;
     }
 
@@ -1043,12 +1061,17 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
 
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
         GetStreamPropInfoWithBusSelector(streamDesc, streamPropInfo);
+        if (!streamDesc->newDeviceDescs_.empty() && streamDesc->newDeviceDescs_.front() != nullptr &&
+            streamDesc->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+            UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
+        }
         if (newPipeIter != newPipeInfoList.end()) {
             MatchSpecialRemotePipe(streamPropInfo, *newPipeIter, streamDesc);
             MatchCollaborativePipe(streamPropInfo, *newPipeIter, streamDesc);
             MatchUltraFastPipe(*newPipeIter, streamDesc);
             MatchFastArmusbPipe(*newPipeIter, streamDesc);
             MatchArmusbInputPipe(*newPipeIter, streamDesc);
+            MatchArmUsbFormatPipe(streamPropInfo, *newPipeIter, streamDesc);
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
             continue;
@@ -2454,10 +2477,24 @@ void AudioPipeSelector::MatchArmUsbFormatPipe(const std::shared_ptr<PipeStreamPr
         return;
     }
 
-    AUDIO_INFO_LOG("ArmUsb format mismatch, reload: pipeRate=%{public}s pipeFormat=%{public}s, "
-        "streamRate=%{public}u streamFormat=%{public}u",
-        pipeInfo->moduleInfo_.rate.c_str(), pipeInfo->moduleInfo_.format.c_str(),
-        streamPropInfo->sampleRate_, streamPropInfo->format_);
+    bool isVoip = (streamDesc->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) != 0;
+    bool hasVoipOnPipe = AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(
+        deviceDesc->macAddress_, pipeManager_->GetAllOutputStreamDescs(), pipeInfo);
+    bool shouldReload = false;
+
+    if (isVoip || hasVoipOnPipe) {
+        shouldReload = true;
+    } else {
+        uint32_t streamRate = streamPropInfo->sampleRate_;
+        uint32_t pipeRate = static_cast<uint32_t>(strtoul(pipeInfo->moduleInfo_.rate.c_str(), nullptr, 10));
+        shouldReload = streamRate > static_cast<uint32_t>(AudioSamplingRate::SAMPLE_RATE_48000) &&
+            streamRate > pipeRate;
+    }
+
+    CHECK_AND_RETURN(shouldReload);
+
+    AUDIO_INFO_LOG("ArmUsb format reload: pipeRate=%{public}s streamRate=%{public}u isVoip=%{public}d hasVoip=%{public}d",
+        pipeInfo->moduleInfo_.rate.c_str(), streamPropInfo->sampleRate_, isVoip, hasVoipOnPipe);
     UpdateModuleInfoWithDevice(deviceDesc, pipeInfo->moduleInfo_);
     pipeInfo->InitAudioStreamInfo();
     pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;

@@ -103,6 +103,7 @@ static const int32_t DEFAULT_FAST_PIPE_CLOSE_DELAY_TIME_MS = 3000;
 static const int32_t A2DP_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 200;
 static const int32_t ARMUSB_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 0;
 static const int32_t MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 0;
+static const int32_t ARM_PIPE_RELOAD_DELAY_MS = 5000;
 static const std::unordered_map<std::string, int32_t> FAST_PIPE_DELAY_RELEASE_TIME_MS = {
     {"voip_fast_output", VOIP_FAST_PIPE_CLOSE_DELAY_TIME_MS},
     {"voip_fast_input", VOIP_REC_FAST_PIPE_CLOSE_DELAY_TIME_MS},
@@ -1073,6 +1074,9 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioCoreService::ProcessOutputPipeUpdate");
+    if (pipeInfo->moduleInfo_.deviceType == std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET))) {
+        CancelArmReload(pipeInfo->moduleInfo_.name);
+    }
     bool hasMoveStream = false;
     for (auto &desc : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
@@ -1275,6 +1279,10 @@ void AudioCoreService::RemoveAndCloseUnusedPipeInternal(const std::vector<std::s
             }
             AUDIO_INFO_LOG("primary_extra %{public}s close immediately (old device unavailable)",
                 pipeInfo->name_.c_str());
+        } else if (pipeInfo->moduleInfo_.deviceType ==
+            std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET)) && !isOldDeviceUnavailable) {
+            DelayReloadArmPipe(pipeInfo);
+            continue;
         }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
@@ -3063,6 +3071,70 @@ void AudioCoreService::UpdateFastState(std::shared_ptr<AudioPipeInfo> pipeInfo)
         isFastOpenedMap_[pipeInfo->name_] = true;
     }
     fastCloseCondition_.notify_all();
+}
+
+void AudioCoreService::DelayReloadArmPipe(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    const AudioIOHandle id = pipeInfo->id_;
+    const std::string &moduleName = pipeInfo->moduleInfo_.name;
+    AUDIO_INFO_LOG("DelayReloadArmPipe id:%{public}u, module:%{public}s", id, moduleName.c_str());
+    {
+        std::lock_guard<std::mutex> lock(armReloadMutex_);
+        CHECK_AND_RETURN_LOG(!isArmReloadPendingMap_[moduleName], "%{public}s already pending reload",
+            moduleName.c_str());
+        isArmReloadPendingMap_[moduleName] = true;
+        isArmReopenedMap_[moduleName] = false;
+    }
+    AudioModuleInfo moduleInfo = pipeInfo->moduleInfo_;
+    moduleInfo.rate = std::to_string(SAMPLE_RATE_48000);
+    auto fmtIt = AudioDefinitionPolicyUtils::enumToFormatStr.find(SAMPLE_S16LE);
+    moduleInfo.format = (fmtIt != AudioDefinitionPolicyUtils::enumToFormatStr.end()) ? fmtIt->second : "s16le";
+    moduleInfo.channels = "2";
+    moduleInfo.channelLayout = std::to_string(CH_LAYOUT_STEREO);
+    uint32_t bufferSize = 48000 * 2 *
+        AudioPolicyUtils::GetInstance().PcmFormatToBytes(SAMPLE_S16LE) * 20 / 1000;
+    moduleInfo.bufferSize = std::to_string(bufferSize);
+
+    auto reloadFunc = [this, id, moduleName, moduleInfo] {
+        {
+            std::unique_lock<std::mutex> lock(armReloadMutex_);
+            armReloadCondition_.wait_for(lock, std::chrono::milliseconds(ARM_PIPE_RELOAD_DELAY_MS),
+                [this, &moduleName] { return isArmReopenedMap_[moduleName]; });
+        }
+        if (isArmReopenedMap_[moduleName]) {
+            std::lock_guard<std::mutex> lock(armReloadMutex_);
+            isArmReloadPendingMap_[moduleName] = false;
+            AUDIO_INFO_LOG("ArmUsb pipe %{public}s re-opened, cancel reload", moduleName.c_str());
+            return;
+        }
+        uint32_t paIndex = HDI_INVALID_ID;
+        audioPolicyManager_.ReloadAudioPort(moduleInfo, paIndex);
+        if (paIndex != HDI_INVALID_ID) {
+            auto pipeInfo = pipeManager_->GetPipeinfoById(id);
+            if (pipeInfo != nullptr) {
+                pipeInfo->moduleInfo_ = moduleInfo;
+                pipeInfo->paIndex_ = paIndex;
+                pipeInfo->InitAudioStreamInfo();
+                AUDIO_INFO_LOG("ArmUsb pipe %{public}s reloaded to 48k", moduleName.c_str());
+            }
+        }
+        std::lock_guard<std::mutex> lock(armReloadMutex_);
+        isArmReloadPendingMap_[moduleName] = false;
+    };
+    std::thread reloadThread(reloadFunc);
+    reloadThread.detach();
+}
+
+void AudioCoreService::CancelArmReload(const std::string &moduleName)
+{
+    std::lock_guard<std::mutex> lock(armReloadMutex_);
+    auto it = isArmReloadPendingMap_.find(moduleName);
+    if (it != isArmReloadPendingMap_.end() && it->second) {
+        isArmReopenedMap_[moduleName] = true;
+        armReloadCondition_.notify_all();
+        AUDIO_INFO_LOG("CancelArmReload for %{public}s", moduleName.c_str());
+    }
 }
 
 void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
