@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sched.h>
+#include <cerrno>
 #include <cstring>
 #include <unordered_map>
 #include <set>
@@ -277,7 +278,6 @@ AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPrio
     const std::string &bundleName)
     : pid_(pid), tid_(tid), bundleName_(bundleName)
 {
-<<<<<<< master
     if (threadPriority == THREAD_PRIORITY_VIP_10) {
         AUDIO_INFO_LOG("Set thread VIP_10 priority, tid=%{public}d, bundleName=%{public}s", tid, bundleName.c_str());
         FILE *fp = fopen("/dev/perf_ctrl", "r+");
@@ -293,18 +293,8 @@ AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPrio
         }
         fclose(fp);
     } else if (threadPriority == THREAD_PRIORITY_ULTRA_FAST) {
-        struct sched_param param = {0};
-        previousPolicy_ = sched_getscheduler(tid);
-        int32_t ret = sched_getparam(tid, &param);
-        CHECK_AND_RETURN_LOG(previousPolicy_ >= 0 && ret == 0, "Cannot read thread scheduler");
-        previousPriority_ = param.sched_priority;
-        param.sched_priority = ULTRA_FAST_CLIENT_PRIORITY;
-        ret = sched_setscheduler(tid, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
-        if (ret == 0) {
-            restoreScheduler_ = true;
-            return;
-        }
-        AUDIO_WARNING_LOG("Cannot set ultra fast thread priority: %{public}d", ret);
+        (void)SetUltraFastThreadPriority();
+        return;
     } else if (USE_PRIORITY_4_BUNDLE_SET.find(bundleName) != USE_PRIORITY_4_BUNDLE_SET.end() &&
         threadPriority == THREAD_PRIORITY_4) {
         struct sched_param param = {0};
@@ -315,6 +305,34 @@ AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPrio
         ScheduleReportData(pid, tid, bundleName.c_str());
     }
     isReported_ = true;
+}
+
+bool AudioScheduleGuard::SetUltraFastThreadPriority()
+{
+    struct sched_param previousParam = {0};
+    const int32_t policy = sched_getscheduler(tid_);
+    const int32_t getRet = sched_getparam(tid_, &previousParam);
+    if (policy < 0 || getRet != 0) {
+        const int32_t error = errno;
+        AUDIO_WARNING_LOG("Read ultra fast scheduler failed, tid:%{public}d errno:%{public}d", tid_, error);
+        return false;
+    }
+    struct sched_param param = {0};
+    param.sched_priority = ULTRA_FAST_CLIENT_PRIORITY;
+    if (sched_setscheduler(tid_, SCHED_FIFO | SCHED_RESET_ON_FORK, &param) != 0) {
+        const int32_t error = errno;
+        AUDIO_WARNING_LOG("Set ultra fast scheduler failed, tid:%{public}d priority:%{public}d errno:%{public}d",
+            tid_, param.sched_priority, error);
+        return false;
+    }
+    if (!restoreScheduler_) {
+        previousPolicy_ = policy;
+        previousPriority_ = previousParam.sched_priority;
+        restoreScheduler_ = true;
+    }
+    AUDIO_INFO_LOG("Ultra fast scheduler applied, tid:%{public}d policy:%{public}d priority:%{public}d",
+        tid_, SCHED_FIFO, param.sched_priority);
+    return true;
 }
 
 AudioScheduleGuard::AudioScheduleGuard(AudioScheduleGuard&& audioScheduleGuard)
@@ -363,6 +381,10 @@ std::shared_ptr<SharedAudioScheduleGuard> SharedAudioScheduleGuard::Create(pid_t
     CHECK_AND_RETURN_RET_LOG(!isTimeout, nullptr, "timeout");
 
     if (sharedGuard) {
+        if (threadPriority == THREAD_PRIORITY_ULTRA_FAST && !sharedGuard->guard_.SetUltraFastThreadPriority()) {
+            lock.unlock();
+            return nullptr;
+        }
         AUDIO_INFO_LOG("ret exist obj");
         return sharedGuard;
     }
@@ -370,7 +392,12 @@ std::shared_ptr<SharedAudioScheduleGuard> SharedAudioScheduleGuard::Create(pid_t
     if (!guardMap_.contains({pid, tid})) {
         sharedGuard = std::make_shared<SharedAudioScheduleGuard>(pid, tid, threadPriority, bundleName);
         CHECK_AND_RETURN_RET_LOG(sharedGuard, nullptr, "no mem");
+        if (threadPriority == THREAD_PRIORITY_ULTRA_FAST && !sharedGuard->guard_.restoreScheduler_) {
+            lock.unlock();
+            return nullptr;
+        }
         guardMap_.insert({{pid, tid}, sharedGuard});
+        sharedGuard->registered_ = true;
         return sharedGuard;
     }
 
@@ -383,7 +410,9 @@ SharedAudioScheduleGuard::~SharedAudioScheduleGuard()
     std::lock_guard lock(mutex_);
     // unreport must guard by mutex
     AudioScheduleGuard tempGuard(std::move(guard_));
-    guardMap_.erase({pid_, tid_});
+    if (registered_) {
+        guardMap_.erase({pid_, tid_});
+    }
     cv_.notify_all();
 }
 } // namespace AudioStandard

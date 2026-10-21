@@ -348,6 +348,7 @@ private:
     bool isWakeupCapturer_ = false;
 
     bool needSetThreadPriority_ = true;
+    int64_t threadPriorityRetryTimeNs_ = 0;
 
     AudioStreamParams streamParams_; // in plan: replace it with AudioCapturerParams
 
