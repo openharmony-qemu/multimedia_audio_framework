@@ -31,6 +31,7 @@
 #include "parcel.h"
 #include "audio_stream_enum.h"
 #include "oh_audio_buffer.h"
+#include "ipc_skeleton.h"
 
 using namespace testing::ext;
 
@@ -2516,6 +2517,31 @@ HWTEST(IpcStreamInServerUnitTest, RegisterThreadPriority_001, TestSize.Level4)
     auto ret =
         ipcStreamInServerRet.RegisterThreadPriority(tidRet, clientBundleNameRet, METHOD_START, THREAD_PRIORITY_QOS_7);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/** @tc.desc: Ultra-fast scheduling keeps permission and mode checks without requiring a proc thread lookup. */
+HWTEST(IpcStreamInServerUnitTest, RegisterUltraFastPriorityChecks_001, TestSize.Level1)
+{
+    const uint32_t flags[] = {ULTRA_NONE, ULTRA_REQUESTED, ULTRA_IMPLEMENTED, ULTRA_REQUESTED | ULTRA_IMPLEMENTED};
+    for (uint32_t flag : flags) {
+        AudioProcessConfig config;
+        config.appInfo.appUid = IPCSkeleton::GetCallingUid();
+        config.ultraFastFlag = flag;
+        IpcStreamInServer stream(config, AUDIO_MODE_PLAYBACK);
+        EXPECT_EQ(stream.RegisterThreadPriority(-1, "", METHOD_WRITE_OR_READ, THREAD_PRIORITY_ULTRA_FAST),
+            ERR_PERMISSION_DENIED);
+    }
+    AudioProcessConfig config;
+    config.appInfo.appUid = IPCSkeleton::GetCallingUid() + 1;
+    config.ultraFastFlag = ULTRA_REQUESTED | ULTRA_IMPLEMENTED;
+    IpcStreamInServer foreignStream(config, AUDIO_MODE_PLAYBACK);
+    EXPECT_EQ(foreignStream.RegisterThreadPriority(-1, "", METHOD_WRITE_OR_READ, THREAD_PRIORITY_ULTRA_FAST),
+        ERR_PERMISSION_DENIED);
+    config.appInfo.appUid = IPCSkeleton::GetCallingUid();
+    config.capturerInfo.originalFlag = AUDIO_FLAG_NORMAL;
+    IpcStreamInServer capturer(config, AUDIO_MODE_RECORD);
+    EXPECT_EQ(capturer.RegisterThreadPriority(-1, "", METHOD_WRITE_OR_READ, THREAD_PRIORITY_ULTRA_FAST),
+        ERR_PERMISSION_DENIED);
 }
 
 /**

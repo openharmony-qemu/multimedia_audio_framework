@@ -239,8 +239,18 @@ public:
     virtual int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
         uint32_t threadPriority) override
     {
-        return 0;
+        registeredPriority_ = threadPriority;
+        registeredMethod_ = method;
+        registeredTid_ = tid;
+        ++priorityCalls_;
+        return priorityResult_;
     }
+
+    uint32_t registeredPriority_ = THREAD_PRIORITY_QOS_7;
+    uint32_t registeredMethod_ = METHOD_MAX;
+    int32_t registeredTid_ = 0;
+    uint32_t priorityCalls_ = 0;
+    int32_t priorityResult_ = SUCCESS;
 
     virtual int32_t SetDefaultOutputDevice(int32_t defaultOuputDevice, bool skipForce = false) override { return 0; }
 
@@ -3028,6 +3038,39 @@ HWTEST_F(CapturerInClientUnitTest, UltraFastCallbackDeviceSwitch_001, TestSize.L
     client->streamParams_.samplingRate = SAMPLE_RATE_48000;
     client->InitCallbackBuffer(5000);
     EXPECT_EQ(client->cbBufferSize_, 960);
+}
+
+/** @tc.desc: Only a capturer with an original ultra-fast request selects ultra-fast scheduling. */
+HWTEST_F(CapturerInClientUnitTest, SetupFastStreamThreadPriority_001, TestSize.Level1)
+{
+    const int32_t flags[] = {AUDIO_FLAG_ULTRA_FAST, AUDIO_FLAG_MMAP, AUDIO_FLAG_VOIP_FAST, AUDIO_FLAG_NORMAL};
+    for (int32_t flag : flags) {
+        auto client = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+        auto ipc = sptr<IpcStreamTest>::MakeSptr();
+        client->ipcStream_ = ipc;
+        client->capturerInfo_.originalFlag = flag;
+        client->capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
+        EXPECT_EQ(client->SetupFastStreamThreadPriority(), SUCCESS);
+        EXPECT_EQ(ipc->registeredPriority_, flag == AUDIO_FLAG_ULTRA_FAST ?
+            THREAD_PRIORITY_ULTRA_FAST : THREAD_PRIORITY_QOS_7);
+        EXPECT_EQ(ipc->registeredTid_, gettid());
+        EXPECT_EQ(ipc->registeredMethod_, METHOD_WRITE_OR_READ);
+        EXPECT_EQ(ipc->priorityCalls_, 1u);
+    }
+}
+
+/** @tc.desc: Missing IPC and registration failures are returned to the callback startup path. */
+HWTEST_F(CapturerInClientUnitTest, SetupFastStreamThreadPriorityFailure_001, TestSize.Level1)
+{
+    auto client = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    client->capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
+    EXPECT_EQ(client->SetupFastStreamThreadPriority(), ERR_ILLEGAL_STATE);
+    auto ipc = sptr<IpcStreamTest>::MakeSptr();
+    client->ipcStream_ = ipc;
+    ipc->priorityResult_ = ERR_PERMISSION_DENIED;
+    EXPECT_EQ(client->SetupFastStreamThreadPriority(), ERR_PERMISSION_DENIED);
+    EXPECT_EQ(ipc->registeredPriority_, THREAD_PRIORITY_ULTRA_FAST);
+    EXPECT_EQ(ipc->priorityCalls_, 1u);
 }
 
 } // namespace AudioStandard
