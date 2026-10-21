@@ -17,7 +17,6 @@
 #include "parameter.h"
 #include "audio_engine_log.h"
 #include "audio_schedule.h"
-#include <sched.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,11 +53,6 @@ void HpaeSignalProcessThread::SetFastThread(bool isFast)
     isFastThread_ = isFast;
 }
 
-void HpaeSignalProcessThread::SetUltraFastThread(bool isUltraFast)
-{
-    isUltraFastThread_ = isUltraFast;
-}
-
 void HpaeSignalProcessThread::BindCore()
 {
     if (coreBinded_) {
@@ -88,14 +82,7 @@ void HpaeSignalProcessThread::Notify()
 
 void HpaeSignalProcessThread::Run()
 {
-    if (isUltraFastThread_) {
-        BindCore();
-        struct sched_param param = {0};
-        param.sched_priority = 54;
-        if (sched_setscheduler(gettid(), SCHED_FIFO | SCHED_RESET_ON_FORK, &param) != 0) {
-            SetThreadQosLevel();
-        }
-    } else if (isFastThread_) {
+    if (isFastThread_) {
         BindCore();
         bool setPriorityResult = SetHpaeDataThreadPriority();
         if (!setPriorityResult) {

@@ -41,7 +41,6 @@ public:
     }
     void SleepUntilNotify(int64_t sleepInUs);
     void SetFastThread(bool isFast);
-    void SetUltraFastThread(bool isUltraFast);
 private:
     void BindCore();
 private:
@@ -54,7 +53,6 @@ private:
     std::mutex mutex_;
     bool coreBinded_ = false;
     bool isFastThread_ = false;
-    bool isUltraFastThread_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
