@@ -755,6 +755,7 @@ private:
         const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
     bool GetStreamMuteInternal(AudioStreamType streamType, int32_t zoneId = 0);
     bool IsVolumeTypeValid(AudioStreamType streamType);
+    bool IsPublicVolumeType(AudioVolumeType volumeType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
     bool IsRingerModeValid(AudioRingerMode ringMode);
     bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
