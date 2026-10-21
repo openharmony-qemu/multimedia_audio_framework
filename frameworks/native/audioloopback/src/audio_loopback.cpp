@@ -625,7 +625,7 @@ AudioLoopbackErrorType AudioLoopbackPrivate::CheckDeviceSupport()
 {
     // Delegate to the server encapsulation: it validates each device against HDI
     // in real time and matches the pair against the supported-pair whitelist.
-    AudioDevicePair devicePair = AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair(ture);
+    AudioDevicePair devicePair = AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair(true);
     CHECK_AND_RETURN_RET_LOG(devicePair.first != nullptr && devicePair.second != nullptr,
         ERROR_DEVICE_NOT_SUPPORT, "No supported loopback device pair");
     activeInputDevice_ = devicePair.first->deviceType_;
