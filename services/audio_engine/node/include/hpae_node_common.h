@@ -15,6 +15,8 @@
 
 #ifndef HPAE_NODE_COMMON_H
 #define HPAE_NODE_COMMON_H
+#include <set>
+#include <string>
 #include "hpae_define.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_effect.h"
@@ -25,6 +27,13 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static constexpr uint32_t BASE_TEN = 10;
+
+static const std::set<std::string> ULTRA_FAST_DEVICE_CLASSES = {
+    "ultra_fast",
+    "true_ultra_fast",
+    "usb_arm_ultra_fast",
+    "usb_arm_true_ultra_fast",
+};
 
 bool CheckHpaeNodeInfoIsSame(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &curNodeInfo);
 HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType);

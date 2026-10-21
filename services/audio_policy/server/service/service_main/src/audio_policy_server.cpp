@@ -78,6 +78,13 @@ const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
     STREAM_NOTIFICATION
 };
 
+const std::unordered_map<DeviceType, std::string> ULTRA_FAST_DEVICE_TO_ADAPTER = {
+    {DEVICE_TYPE_SPEAKER, "primary"},
+    {DEVICE_TYPE_EARPIECE, "primary"},
+    {DEVICE_TYPE_USB_HEADSET, "primary"},
+    {DEVICE_TYPE_USB_ARM_HEADSET, "usb"},
+};
+
 const size_t ADD_VOL_RECORD_LIMIT = 3;
 constexpr int64_t ADD_VOL_DURATION_LIMIT = 800 * 1000 * 1000; // 800ms
 const int64_t SILENT_FRAME_LIMIT = -50;
@@ -2597,21 +2604,17 @@ int32_t AudioPolicyServer::IsUltraFastPlaybackSupported(const AudioStreamInfo &s
     rendererInfo.streamUsage = static_cast<StreamUsage>(usage);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc{};
     GetPreferredOutputDeviceDescriptors(rendererInfo, false, desc);
-    AudioStreamInfo newStreamInfo = streamInfo;
-    if (!audioConfigManager_.IsFastStreamSupported(newStreamInfo, desc)) {
-        return SUCCESS;
-    }
-    auto pipeManager = AudioPipeManager::GetPipeManager();
-    if (pipeManager == nullptr) {
-        return SUCCESS;
-    }
     for (const auto &deviceDesc : desc) {
-        if (deviceDesc != nullptr && pipeManager->IsUltraFastSupportedDevice(deviceDesc->deviceType_)) {
-            std::string adapterName = (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) ? "usb" : "primary";
-            if (audioConfigManager_.GetUltraFastFlag(adapterName, PIPE_ROLE_OUTPUT)) {
-                support = true;
-                break;
-            }
+        if (deviceDesc == nullptr) {
+            continue;
+        }
+        auto it = ULTRA_FAST_DEVICE_TO_ADAPTER.find(deviceDesc->deviceType_);
+        if (it == ultraFastDeviceToAdapter.end()) {
+            continue;
+        }
+        if (audioConfigManager_.GetUltraFastFlag(it->second, PIPE_ROLE_OUTPUT)) {
+            support = true;
+            break;
         }
     }
     return SUCCESS;

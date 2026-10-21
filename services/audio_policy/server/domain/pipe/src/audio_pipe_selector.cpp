@@ -862,17 +862,8 @@ void AudioPipeSelector::HandleFastStreamLimitAndNearLinkState(
         }
         uint32_t route = streamDesc->GetRoute();
         if (route == AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
-            ++ultraFastOutputNum;
-            ++fastOutputNum;
-            if (fastOutputNum > MAX_FAST_STREAM_COUNT) {
-                AUDIO_INFO_LOG("reach fast limit (incl ultra), set %{public}u to normal", streamDesc->sessionId_);
-                streamDesc->ResetToNormalRoute(false);
-                continue;
-            }
-            if (ultraFastOutputNum > MAX_ULTRA_FAST_STREAM_COUNT) {
-                AUDIO_INFO_LOG("reach ultra fast limit, set %{public}u to FAST", streamDesc->sessionId_);
-                streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
-            }
+            HandleUltraFastStreamLimit(streamDesc, fastOutputNum, ultraFastOutputNum);
+            continue;
         } else if (route == AUDIO_OUTPUT_FLAG_FAST && ++fastOutputNum > MAX_FAST_STREAM_COUNT) {
             AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
             streamDesc->ResetToNormalRoute(false);
@@ -882,6 +873,22 @@ void AudioPipeSelector::HandleFastStreamLimitAndNearLinkState(
             streamDesc->ResetToNormalRoute(false);
             continue;
         }
+    }
+}
+
+void AudioPipeSelector::HandleUltraFastStreamLimit(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    int32_t &fastOutputNum, int32_t &ultraFastOutputNum)
+{
+    ++ultraFastOutputNum;
+    ++fastOutputNum;
+    if (fastOutputNum > MAX_FAST_STREAM_COUNT) {
+        AUDIO_INFO_LOG("reach fast limit (incl ultra), set %{public}u to normal", streamDesc->sessionId_);
+        streamDesc->ResetToNormalRoute(false);
+        return;
+    }
+    if (ultraFastOutputNum > MAX_ULTRA_FAST_STREAM_COUNT) {
+        AUDIO_INFO_LOG("reach ultra fast limit, set %{public}u to FAST", streamDesc->sessionId_);
+        streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
     }
 }
 
@@ -2097,13 +2104,41 @@ static void FillRemoteMultichannelPipeInfo(AudioPipeInfo &info, std::shared_ptr<
         AudioPolicyUtils::GetInstance().GetDeviceRole(deviceDesc->deviceType_)) + "_multichannel";
 }
 
+static void FillFastOutputPipeInfo(AudioPipeInfo &info)
+{
+    info.moduleInfo_.className = info.GetUltraFastFlag() ? "ultra_fast" : "primary_mmap";
+    info.moduleInfo_.fileName = info.GetUltraFastFlag() ? "ultra_fast_dump_file" : "fast_dump_file";
+    info.moduleInfo_.name = info.GetUltraFastFlag() ? "UltraFastRendererSink" : "FastRendererSink";
+    info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+    info.moduleInfo_.role = "sink";
+}
+
+static void FillPrimaryUltraFastOutputPipeInfo(AudioPipeInfo &info)
+{
+    info.moduleInfo_.className = "true_ultra_fast";
+    info.moduleInfo_.fileName = "true_ultra_fast_dump_file";
+    info.moduleInfo_.name = "UltraFastV2RendererSink";
+    info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+    info.moduleInfo_.role = "sink";
+    info.SetUltraFastFlag(true);
+}
+
+static void FillVoipFastOutputPipeInfo(AudioPipeInfo &info)
+{
+    info.moduleInfo_.className = "primary_mmap_voip";
+    info.moduleInfo_.fileName = "fast_voip_dump_file";
+    info.moduleInfo_.name = "FastVOIPRendererSink";
+    info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+    info.moduleInfo_.role = "sink";
+}
+
 static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipeInfo> pipeInfoPtr,
     std::shared_ptr<AudioStreamDescriptor> streamDesc, std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
 {
     if (pipeInfoPtr->name_ == "multichannel_output") {
         info.moduleInfo_.className = "multichannel";
         info.moduleInfo_.fileName = "mch_dump_file";
-        info.moduleInfo_.fixedLatency = "1"; // for fix max request
+        info.moduleInfo_.fixedLatency = "1";
         AUDIO_INFO_LOG("Buffer size: %{public}s channels: %{public}s channelLayout:%{public}s",
             info.moduleInfo_.bufferSize.c_str(), info.moduleInfo_.channels.c_str(),
             info.moduleInfo_.channelLayout.c_str());
@@ -2127,24 +2162,11 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
             AudioPolicyUtils::GetInstance().GetRemoteModuleName(streamDesc->newDeviceDescs_[0]->networkId_,
             AudioPolicyUtils::GetInstance().GetDeviceRole(streamDesc->newDeviceDescs_[0]->deviceType_)) + "_offload";
     } else if (pipeInfoPtr->name_ == "fast_output") {
-        info.moduleInfo_.className = info.GetUltraFastFlag() ? "ultra_fast" : "primary_mmap";
-        info.moduleInfo_.fileName = info.GetUltraFastFlag() ? "ultra_fast_dump_file" : "fast_dump_file";
-        info.moduleInfo_.name = info.GetUltraFastFlag() ? "UltraFastRendererSink" : "FastRendererSink";
-        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
-        info.moduleInfo_.role = "sink";
+        FillFastOutputPipeInfo(info);
     } else if (pipeInfoPtr->name_ == "primary_ultra_fast_output") {
-        info.moduleInfo_.className = "true_ultra_fast";
-        info.moduleInfo_.fileName = "true_ultra_fast_dump_file";
-        info.moduleInfo_.name = "UltraFastV2RendererSink";
-        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
-        info.moduleInfo_.role = "sink";
-        info.SetUltraFastFlag(true);
+        FillPrimaryUltraFastOutputPipeInfo(info);
     } else if (pipeInfoPtr->name_ == "voip_fast_output") {
-        info.moduleInfo_.className = "primary_mmap_voip";
-        info.moduleInfo_.fileName = "fast_voip_dump_file";
-        info.moduleInfo_.name = "FastVOIPRendererSink";
-        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
-        info.moduleInfo_.role = "sink";
+        FillVoipFastOutputPipeInfo(info);
     } else if (pipeInfoPtr->name_ == "multichannel_distributed_output") {
         FillRemoteMultichannelPipeInfo(info, streamDesc);
     } else {

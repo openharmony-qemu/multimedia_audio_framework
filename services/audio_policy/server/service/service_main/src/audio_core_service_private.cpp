@@ -3219,7 +3219,8 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
             return PRIMARY_MMAP_VOIP;
         } else if (routeFlag == (AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP)) {
             return PRIMARY_DIRECT_VOIP;
-        } else if ((routeFlag == AUDIO_OUTPUT_FLAG_FAST || routeFlag == AUDIO_OUTPUT_FLAG_ULTRA_FAST) && defaultSinkPortName == PRIMARY_SPEAKER) {
+        } else if ((routeFlag == AUDIO_OUTPUT_FLAG_FAST || routeFlag == AUDIO_OUTPUT_FLAG_ULTRA_FAST) &&
+            defaultSinkPortName == PRIMARY_SPEAKER) {
             return PRIMARY_MMAP;
         } else if (routeFlag == AUDIO_OUTPUT_FLAG_FAST && defaultSinkPortName == BLUETOOTH_SPEAKER) {
             return BLUETOOTH_A2DP_FAST;

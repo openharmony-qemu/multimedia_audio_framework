@@ -46,6 +46,13 @@ namespace OHOS {
 namespace AudioStandard {
 static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
 static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
+
+static const std::set<std::string> ULTRA_FAST_DEVICE_CLASSES = {
+    "ultra_fast",
+    "true_ultra_fast",
+    "usb_arm_ultra_fast",
+    "usb_arm_true_ultra_fast",
+};
 constexpr const char *APP_INDIVIDUAL_VOLUME_ENABLE = "app_individual_volume_enable";
 constexpr const char *CLONE_STATE_TIME = "clone_state_time";
 constexpr const int32_t CLONE_STATE_CLONING = 1;
@@ -2461,7 +2468,7 @@ void AudioAdapterManager::FillSinkLatencyAttr(IAudioSinkAttr &attr,
 void AudioAdapterManager::FillUltraFastPeriod(IAudioSinkAttr &attr,
     const AudioModuleInfo &audioModuleInfo) const
 {
-    if (audioModuleInfo.className.find("ultra_fast") != std::string::npos) {
+    if (ULTRA_FAST_DEVICE_CLASSES.count(audioModuleInfo.className) > 0) {
         uint32_t formatByteSize = GetFormatByteSize(attr.format);
         attr.period = static_cast<uint32_t>(
             static_cast<float>(attr.sampleRate * attr.channel * formatByteSize) *

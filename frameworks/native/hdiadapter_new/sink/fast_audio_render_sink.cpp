@@ -85,19 +85,24 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     return SUCCESS;
 }
 
+uint32_t FastAudioRenderSink::GetRenderOffset() const
+{
+    if (attr_.isUltraFast) {
+        return HDI_RENDER_OFFSET_ULTRA_FAST;
+    }
+    if (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) {
+        return HDI_RENDER_OFFSET_VOIP_FAST;
+    }
+    return HDI_RENDER_OFFSET_FAST;
+}
+
 void FastAudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices)
 {
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN(deviceManager != nullptr);
-    uint32_t offset = HDI_RENDER_OFFSET_FAST;
-    if (attr_.isUltraFast) {
-        offset = HDI_RENDER_OFFSET_ULTRA_FAST;
-    } else if (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) {
-        offset = HDI_RENDER_OFFSET_VOIP_FAST;
-    }
     int32_t ret = deviceManager->SetOutputRoute(attr_.adapterName, outputDevices,
-        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, offset));
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, GetRenderOffset()));
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "update route fail, ret: %{public}d", ret);
 }
 
@@ -567,16 +572,7 @@ void FastAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &para
 {
     param.channelCount = AUDIO_CHANNELCOUNT;
     param.interleaved = true;
-    if (attr_.isUltraFast) {
-        param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE,
-            HDI_RENDER_OFFSET_ULTRA_FAST));
-    } else if (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) {
-        param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE,
-            HDI_RENDER_OFFSET_VOIP_FAST));
-    } else {
-        param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE,
-            HDI_RENDER_OFFSET_FAST));
-    }
+    param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, GetRenderOffset()));
     param.period = attr_.period == 0 ? DEEP_BUFFER_RENDER_PERIOD_SIZE : attr_.period;
     param.isBigEndian = false;
     param.isSignedData = true;
@@ -673,13 +669,7 @@ int32_t FastAudioRenderSink::CreateRender(void)
 // must be called with sinkMutex_ held
 void FastAudioRenderSink::UpdateSinkState(bool started)
 {
-    uint32_t offset = HDI_RENDER_OFFSET_FAST;
-    if (attr_.isUltraFast) {
-        offset = HDI_RENDER_OFFSET_ULTRA_FAST;
-    } else if (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) {
-        offset = HDI_RENDER_OFFSET_VOIP_FAST;
-    }
-    callback_.OnRenderSinkStateChange(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, offset), started);
+    callback_.OnRenderSinkStateChange(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, GetRenderOffset()), started);
 }
 
 void FastAudioRenderSink::EnableSyncInfo(const int32_t syncInfoSize)
@@ -828,14 +818,8 @@ int32_t FastAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputD
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
-    uint32_t routeOffset = HDI_RENDER_OFFSET_FAST;
-    if (attr_.isUltraFast) {
-        routeOffset = HDI_RENDER_OFFSET_ULTRA_FAST;
-    } else if (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) {
-        routeOffset = HDI_RENDER_OFFSET_VOIP_FAST;
-    }
     int32_t ret = deviceManager->SetOutputRoute(attr_.adapterName, outputDevices,
-        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, routeOffset));
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, GetRenderOffset()));
     return ret;
 }
 

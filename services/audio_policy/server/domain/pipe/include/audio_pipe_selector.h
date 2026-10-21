@@ -150,6 +150,8 @@ private:
         const std::shared_ptr<AudioStreamDescriptor> &newStreamDesc);
     void HandleFastStreamLimitAndNearLinkState(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    void HandleUltraFastStreamLimit(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        int32_t &fastOutputNum, int32_t &ultraFastOutputNum);
     void HandleSpecialStreamLimitOnMultiDevice(
         const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &cmpStream);

@@ -1444,8 +1444,7 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
         AUDIO_INFO_LOG("SetPendingSpanSize: sessionId:%{public}u spanSize:%{public}zu engineSize:%{public}zu "
             "routeFlag:%{public}u isLowLatency:%{public}d",
             streamIndex_, newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag,
-            rendererFlags == AUDIO_FLAG_MMAP ||
-            rendererFlags == AUDIO_FLAG_VOIP_FAST ||
+            rendererFlags == AUDIO_FLAG_MMAP || rendererFlags == AUDIO_FLAG_VOIP_FAST ||
             rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST);
         audioServerBuffer_->SetPendingSpanSize(newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag);
     }

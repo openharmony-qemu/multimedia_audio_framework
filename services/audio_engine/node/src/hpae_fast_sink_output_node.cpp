@@ -59,7 +59,7 @@ HpaeFastSinkOutputNode::HpaeFastSinkOutputNode(HpaeNodeInfo &nodeInfo)
     writeTimeModel_.ConfigSampleRate(sampleRate);
     logUtilsTag_ = "HpaeFastSinkOutputNode::" +
         (nodeInfo.deviceClass.empty() ? std::string("Fast") : nodeInfo.deviceClass);
-    isUltraFast_ = (nodeInfo.deviceClass.find("ultra_fast") != std::string::npos);
+    isUltraFast_ = (ULTRA_FAST_DEVICE_CLASSES.count(nodeInfo.deviceClass) > 0);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeFastSinkOutputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {

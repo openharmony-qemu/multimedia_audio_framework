@@ -1047,57 +1047,113 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
 {
     IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
     if (flag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
-        rendererInfo_.originalFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
-        rendererInfo_.rendererFlags = AUDIO_FLAG_TRUE_ULTRA_FAST;
-        rendererInfo_.pipeType = PIPE_TYPE_OUT_ULTRA_FAST;
+        SetRendererInfoForUltraFast();
         ret = IAudioStream::StreamClass::FAST_STREAM;
     } else if (flag & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_3DA_DIRECT;
     } else if (flag & AUDIO_OUTPUT_FLAG_FAST) {
         if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
-            rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_FAST;
-            rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-            rendererInfo_.pipeType = PIPE_TYPE_OUT_LOWLATENCY;
+            SetRendererInfoForFastVoip();
             ret = IAudioStream::StreamClass::VOIP_STREAM;
         } else {
-            rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
-            rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
-            rendererInfo_.pipeType = PIPE_TYPE_OUT_LOWLATENCY;
+            SetRendererInfoForFastMmap();
             ret = IAudioStream::StreamClass::FAST_STREAM;
         }
     } else if (flag & AUDIO_OUTPUT_FLAG_DIRECT) {
         if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
-            rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_DIRECT;
-            rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
-            rendererInfo_.pipeType = PIPE_TYPE_OUT_VOIP;
+            SetRendererInfoForDirectVoip();
         } else {
-            rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
-            rendererInfo_.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
+            SetRendererInfoForDirect();
         }
     } else if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
-        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_OUT_OFFLOAD;
+        SetRendererInfoForLowPower();
     } else if (flag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
-        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
+        SetRendererInfoForMultichannel();
     } else if (flag & AUDIO_OUTPUT_FLAG_HWDECODING) {
-        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_OUT_HWDECODING;
+        SetRendererInfoForHwDecoding();
     } else if (flag & AUDIO_OUTPUT_FLAG_INTERPHONE) {
-        rendererInfo_.rendererFlags = AUDIO_FLAG_INTERPHONE_VOIP;
-        rendererInfo_.pipeType = PIPE_TYPE_OUT_INTERPHONE;
+        SetRendererInfoForInterphone();
     } else if (flag & AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT) {
-        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT;
+        SetRendererInfoForVoiceCallAssistant();
     } else {
-        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
+        SetRendererInfoForNormal();
     }
     HILOG_COMM_INFO("[DecideStreamClassAndUpdateRendererInfo]Route flag: %{public}u, streamClass: %{public}d, "\
         "rendererFlag: %{public}d, pipeType: %{public}d",
         flag, ret, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
     return ret;
+}
+
+void AudioRendererPrivate::SetRendererInfoForUltraFast()
+{
+    rendererInfo_.originalFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
+    rendererInfo_.rendererFlags = AUDIO_FLAG_TRUE_ULTRA_FAST;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_ULTRA_FAST;
+}
+
+void AudioRendererPrivate::SetRendererInfoForFastVoip()
+{
+    rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_FAST;
+    rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_LOWLATENCY;
+}
+
+void AudioRendererPrivate::SetRendererInfoForFastMmap()
+{
+    rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
+    rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_LOWLATENCY;
+}
+
+void AudioRendererPrivate::SetRendererInfoForDirectVoip()
+{
+    rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_DIRECT;
+    rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_VOIP;
+}
+
+void AudioRendererPrivate::SetRendererInfoForDirect()
+{
+    rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
+}
+
+void AudioRendererPrivate::SetRendererInfoForLowPower()
+{
+    rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_OFFLOAD;
+}
+
+void AudioRendererPrivate::SetRendererInfoForMultichannel()
+{
+    rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
+}
+
+void AudioRendererPrivate::SetRendererInfoForHwDecoding()
+{
+    rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_HWDECODING;
+}
+
+void AudioRendererPrivate::SetRendererInfoForInterphone()
+{
+    rendererInfo_.rendererFlags = AUDIO_FLAG_INTERPHONE_VOIP;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_INTERPHONE;
+}
+
+void AudioRendererPrivate::SetRendererInfoForVoiceCallAssistant()
+{
+    rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT;
+}
+
+void AudioRendererPrivate::SetRendererInfoForNormal()
+{
+    rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
+}
 }
 
 int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
