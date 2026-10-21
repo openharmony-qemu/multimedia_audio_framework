@@ -569,5 +569,55 @@ HWTEST_F(AudioDeviceStatusExtendedTest, CheckNeedExclude_001, TestSize.Level4)
     EXPECT_EQ(updatedDesc.visibleMode_, GLOBAL_VISIBLE);
 }
 
+/**
+ * @tc.name  : Test AudioDeviceManager::IsScoConnected.
+ * @tc.number: IsScoConnected_001
+ * @tc.desc  : IsScoConnected returns true only for an enabled, connected SCO OUTPUT device with
+ *             a matching MAC address; returns false for mismatched mac, input role, disabled,
+ *             non-connected, or non-SCO device types, and for an empty device list.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, IsScoConnected_001, TestSize.Level4)
+{
+    auto &deviceManager = audioDeviceStatus_->audioDeviceManager_;
+    auto saved = deviceManager.connectedDevices_;
+    auto makeSco = [](DeviceRole role, bool enable, ConnectState state, const std::string &mac) {
+        auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, role);
+        desc->macAddress_ = mac;
+        desc->isEnable_ = enable;
+        desc->connectState_ = state;
+        return desc;
+    };
+
+    deviceManager.connectedDevices_.clear();
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:00"));
+
+    auto scoOut = makeSco(OUTPUT_DEVICE, true, CONNECTED, "00:11:22:33:44:01");
+    deviceManager.connectedDevices_.push_back(scoOut);
+    EXPECT_TRUE(deviceManager.IsScoConnected("00:11:22:33:44:01"));
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:99"));
+
+    deviceManager.connectedDevices_.push_back(makeSco(INPUT_DEVICE, true, CONNECTED, "00:11:22:33:44:02"));
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:02"));
+
+    deviceManager.connectedDevices_.push_back(makeSco(OUTPUT_DEVICE, false, CONNECTED, "00:11:22:33:44:03"));
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:03"));
+
+    deviceManager.connectedDevices_.push_back(
+        makeSco(OUTPUT_DEVICE, true, VIRTUAL_CONNECTED, "00:11:22:33:44:04"));
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:04"));
+
+    auto a2dp = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    a2dp->macAddress_ = "00:11:22:33:44:05";
+    a2dp->isEnable_ = true;
+    a2dp->connectState_ = CONNECTED;
+    deviceManager.connectedDevices_.push_back(a2dp);
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:05"));
+
+    deviceManager.connectedDevices_.push_back(nullptr);
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:01"));
+
+    deviceManager.connectedDevices_ = saved;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

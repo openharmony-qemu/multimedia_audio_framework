@@ -405,6 +405,20 @@ bool AudioDeviceManager::IsConnectedDevices(const std::shared_ptr<AudioDeviceDes
     return isConnectedDevice;
 }
 
+bool AudioDeviceManager::IsScoConnected(const std::string &macAddress)
+{
+    auto pred = [&macAddress](const shared_ptr<AudioDeviceDescriptor> &item) {
+        return item &&
+            item->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+            item->deviceRole_ == OUTPUT_DEVICE &&
+            item->isEnable_ &&
+            item->connectState_ == CONNECTED &&
+            item->macAddress_ == macAddress;
+    };
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    return find_if(connectedDevices_.begin(), connectedDevices_.end(), pred) != connectedDevices_.end();
+}
+
 bool AudioDeviceManager::HasConnectedA2dp()
 {
     auto isPresent = [](const shared_ptr<AudioDeviceDescriptor> &desc) {

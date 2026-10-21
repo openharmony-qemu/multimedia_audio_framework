@@ -626,6 +626,72 @@ HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_SkipsSameDeviceId, TestS
 }
 
 /**
+ * @tc.name  : SetSelectionRollback_A2dpSkipsWhenScoConnected
+ * @tc.type  : FUNC
+ * @tc.desc  : 强选MEDIA_OUTPUT A2DP设备时,若同MAC的SCO已连接(通话进行中),应跳过记录回滚.
+ */
+HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_A2dpSkipsWhenScoConnected, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:B0");
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto scoDev = AddConnectedDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:B0");
+    auto a2dpDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:B0", SUSPEND_CONNECTED);
+    ASSERT_TRUE(AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(scoDev->macAddress_));
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, a2dpDev);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), a2dpDev->deviceId_);
+    EXPECT_FALSE(HasSelectionRollback(a2dpDev->deviceId_));
+}
+
+/**
+ * @tc.name  : SetSelectionRollback_A2dpProceedsWhenScoDifferentMac
+ * @tc.type  : FUNC
+ * @tc.desc  : 强选MEDIA_OUTPUT A2DP设备时,已连接SCO的MAC不同,SCO保护不生效,应正常记录回滚.
+ */
+HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_A2dpProceedsWhenScoDifferentMac, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:B1");
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto scoDev = AddConnectedDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:D1");
+    auto a2dpDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:B1", SUSPEND_CONNECTED);
+    ASSERT_TRUE(AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(scoDev->macAddress_));
+    ASSERT_FALSE(AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(a2dpDev->macAddress_));
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, a2dpDev);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), a2dpDev->deviceId_);
+    EXPECT_TRUE(HasSelectionRollback(a2dpDev->deviceId_));
+}
+
+/**
+ * @tc.name  : SetSelectionRollback_CallOutputA2dpProceedsWhenScoConnected
+ * @tc.type  : FUNC
+ * @tc.desc  : 强选CALL_OUTPUT A2DP设备时,即使同MAC的SCO已连接,SCO保护不生效(仅MEDIA_OUTPUT受保护),
+ *             应正常记录回滚.
+ */
+HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_CallOutputA2dpProceedsWhenScoConnected,
+    TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:B2");
+    AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, oldDev, "ut");
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::CALL_OUTPUT), oldDev->deviceId_);
+
+    auto scoDev = AddConnectedDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:B2");
+    auto a2dpDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:B2", SUSPEND_CONNECTED);
+    ASSERT_TRUE(AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(scoDev->macAddress_));
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, a2dpDev, "ut");
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::CALL_OUTPUT), a2dpDev->deviceId_);
+    EXPECT_TRUE(HasSelectionRollback(a2dpDev->deviceId_));
+}
+
+/**
  * @tc.name  : RollbackSelection_DeactiveConnected
  * @tc.type  : FUNC
  * @tc.desc  : RollbackSelection restores a DEACTIVE_CONNECTED device and notifies BT.
