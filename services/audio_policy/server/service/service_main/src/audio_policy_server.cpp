@@ -2609,7 +2609,7 @@ int32_t AudioPolicyServer::IsUltraFastPlaybackSupported(const AudioStreamInfo &s
             continue;
         }
         auto it = ULTRA_FAST_DEVICE_TO_ADAPTER.find(deviceDesc->deviceType_);
-        if (it == ultraFastDeviceToAdapter.end()) {
+        if (it == ULTRA_FAST_DEVICE_TO_ADAPTER.end()) {
             continue;
         }
         if (audioConfigManager_.GetUltraFastFlag(it->second, PIPE_ROLE_OUTPUT)) {
