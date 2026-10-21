@@ -266,6 +266,7 @@ public:
         void ReloadSourceForEffect(const AudioEffectPropertyArray oldPropertyArray,
             const AudioEffectPropertyArray newPropertyArray);
         void OnVehiclePriorityChanged(bool enable);
+        void MutePrimarySinkByCollaborative(int32_t duration);
         // Trigger reload for VoIP priority change due to mute callback
         void TriggerVoipPriorityReload(uint32_t sessionId, bool lowered);
         int32_t GetActiveStreamRendererInfosForDevice(
@@ -920,6 +921,7 @@ private:
         SessionOperationMsg opMsg);
     void CheckNeedPreRemoveUnusedPipe(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos);
     bool IsUltraFastSupportedForDevice(DeviceType deviceType);
+    void MutePrimarySinkByCollaborative(int32_t duration);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;

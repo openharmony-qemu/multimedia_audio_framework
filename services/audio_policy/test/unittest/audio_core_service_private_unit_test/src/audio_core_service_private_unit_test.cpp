@@ -5760,5 +5760,15 @@ HWTEST_F(AudioCoreServicePrivateTest, HasRingerOrAlarmStreamRunning_001, TestSiz
     audioCoreService->pipeManager_->RemoveAudioPipeInfo(pipeInfo);
 }
 
+/**
+ * @tc.name  : Test AudioCoreService::MutePrimarySinkByCollaborative
+ * @tc.number: MutePrimarySinkByCollaborative_001
+ * @tc.desc  : Test MutePrimarySinkByCollaborative mutes the primary speaker sink port.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, MutePrimarySinkByCollaborative_001, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    EXPECT_NO_THROW(testCoreService_->MutePrimarySinkByCollaborative(200000));
+}
 } // namespace AudioStandard
 } // namespace OHOS
