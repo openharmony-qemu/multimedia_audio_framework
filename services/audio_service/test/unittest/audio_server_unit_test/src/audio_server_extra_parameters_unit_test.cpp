@@ -398,5 +398,47 @@ HWTEST_F(AudioServerUnitTest, TrySetAudioEffectParameterToRemote_002, TestSize.L
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
     EXPECT_EQ(newPair.size(), 2);
 }
+class RouteTrackingCaptureSource : public TestAudioCaptureSource {
+public:
+    bool IsInited() override { return initialized_; }
+    int32_t UpdateActiveDevice(DeviceType device) override
+    {
+        devices_.push_back(device);
+        return SUCCESS;
+    }
+
+    bool initialized_ = true;
+    std::vector<DeviceType> devices_;
+};
+
+/** @tc.desc: Legacy input routing updates the existing Primary ultra-fast source after headset removal. */
+HWTEST_F(AudioServerUnitTest, UltraFastInputDeviceSwitch_001, TestSize.Level1)
+{
+    ASSERT_NE(audioServer, nullptr);
+    auto &manager = HdiAdapterManager::GetInstance();
+    uint32_t ultraId = manager.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_DEFAULT);
+    uint32_t usbId = manager.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_USB);
+    auto savedUltra = manager.captureSources_[ultraId].source_;
+    auto savedUsb = manager.captureSources_[usbId].source_;
+    auto ultra = std::make_shared<RouteTrackingCaptureSource>();
+    auto usb = std::make_shared<RouteTrackingCaptureSource>();
+    manager.captureSources_[ultraId].source_ = ultra;
+    manager.captureSources_[usbId].source_ = usb;
+    const std::vector<DeviceType> devices = {DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_MIC, DEVICE_TYPE_USB_HEADSET};
+    for (DeviceType device : devices) {
+        EXPECT_EQ(audioServer->SetIORoutes(device, INPUT_DEVICES_FLAG, {device}), SUCCESS);
+    }
+    EXPECT_EQ(ultra->devices_, devices);
+    EXPECT_TRUE(usb->devices_.empty());
+    ultra->initialized_ = false;
+    EXPECT_EQ(audioServer->SetIORoutes(DEVICE_TYPE_MIC, INPUT_DEVICES_FLAG, {DEVICE_TYPE_MIC}), SUCCESS);
+    EXPECT_EQ(ultra->devices_, devices);
+    manager.captureSources_[ultraId].source_ = nullptr;
+    EXPECT_EQ(audioServer->SetIORoutes(DEVICE_TYPE_MIC, INPUT_DEVICES_FLAG, {DEVICE_TYPE_MIC}), SUCCESS);
+    EXPECT_EQ(manager.captureSources_[ultraId].source_, nullptr);
+    manager.captureSources_[ultraId].source_ = savedUltra;
+    manager.captureSources_[usbId].source_ = savedUsb;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
