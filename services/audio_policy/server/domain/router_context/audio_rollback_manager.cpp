@@ -288,6 +288,9 @@ void AudioRollbackManager::SetSelectionRollback(int32_t uid, SelectDeviceType ty
     selectionRollbacks_.erase(remove_if(
         selectionRollbacks_.begin(), selectionRollbacks_.end(), pred), selectionRollbacks_.end());
     CHECK_AND_RETURN(!connectedSet_.contains(deviceId) && IsNearlinkBtOutput(desc));
+    if (type == SelectDeviceType::MEDIA_OUTPUT && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        CHECK_AND_RETURN(!AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(desc.macAddress_));
+    }
     AUDIO_INFO_LOG("uid=%{public}d, sType=%{public}d, stream=%{public}d, id=%{public}d, type=%{public}d",
         uid, type, streamId, deviceId, desc.deviceType_);
     bool needRollback = false;
