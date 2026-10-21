@@ -1138,7 +1138,7 @@ void CapturerInClientInner::InitCallbackLoop()
     cbThreadReleased_ = false;
     auto weakRef = weak_from_this();
 
-    // OS_AudioWriteCB
+    // OS_AudioReadCb
     ResetCallbackLoopTid();
     callbackLoop_ = std::thread([weakRef] {
         bool keepRunning = true;
@@ -1147,6 +1147,9 @@ void CapturerInClientInner::InitCallbackLoop()
             strongRef->SetCallbackLoopTid(gettid());
             if (strongRef->capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST) {
                 BindBigAndMidCore();
+                if (strongRef->SetupFastStreamThreadPriority() == SUCCESS) {
+                    strongRef->needSetThreadPriority_ = false;
+                }
             }
             strongRef->cbThreadCv_.notify_one();
             AUDIO_INFO_LOG("Thread start, sessionID :%{public}d", strongRef->sessionId_);
@@ -1168,6 +1171,20 @@ void CapturerInClientInner::InitCallbackLoop()
         }
     });
     pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioReadCb");
+}
+
+int32_t CapturerInClientInner::SetupFastStreamThreadPriority()
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream_ is null");
+    ThreadPriorityConfig threadPriority = THREAD_PRIORITY_QOS_7;
+    if (capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST) {
+        threadPriority = THREAD_PRIORITY_ULTRA_FAST;
+    }
+    const int32_t ret = ipcStream_->RegisterThreadPriority(gettid(),
+        AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ, threadPriority);
+    AUDIO_INFO_LOG("SetupFastStreamThreadPriority: tid:%{public}d originalFlag:%{public}d "
+        "priority:%{public}u ret:%{public}d", gettid(), capturerInfo_.originalFlag, threadPriority, ret);
+    return ret;
 }
 
 int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
@@ -1966,10 +1983,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 RECORD_SEND_DATA_ILLEGAL_STATE, "ipcStream_ is null", true), "ipcStream_ is null");
-        ipcStream_->RegisterThreadPriority(gettid(),
-            AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid),
-            METHOD_WRITE_OR_READ, capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST ?
-            THREAD_PRIORITY_ULTRA_FAST : THREAD_PRIORITY_QOS_7);
+        (void)SetupFastStreamThreadPriority();
         needSetThreadPriority_ = false;
     }
 

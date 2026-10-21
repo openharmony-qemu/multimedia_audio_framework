@@ -286,6 +286,7 @@ private:
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
+    int32_t SetupFastStreamThreadPriority();
     bool ReadCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();

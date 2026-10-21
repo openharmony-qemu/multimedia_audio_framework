@@ -257,7 +257,6 @@ namespace AudioStandard {
 namespace {
 static constexpr unsigned int WAIT_TIMEOUT_SECONDS = 5;
 static constexpr int32_t ULTRA_FAST_CLIENT_PRIORITY = 54;
-static constexpr int32_t ULTRA_FAST_RENDERER_PRIORITY = 4;
 const static std::set<std::string> USE_PRIORITY_4_BUNDLE_SET = {
 };
 }
@@ -292,14 +291,13 @@ AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPrio
             AUDIO_ERR_LOG("Set VIP priority failed, ret=%{public}d", ret);
         }
         fclose(fp);
-    } else if (threadPriority == THREAD_PRIORITY_ULTRA_FAST || threadPriority == THREAD_PRIORITY_ULTRA_FAST_4) {
+    } else if (threadPriority == THREAD_PRIORITY_ULTRA_FAST) {
         struct sched_param param = {0};
         previousPolicy_ = sched_getscheduler(tid);
         int32_t ret = sched_getparam(tid, &param);
         CHECK_AND_RETURN_LOG(previousPolicy_ >= 0 && ret == 0, "Cannot read thread scheduler");
         previousPriority_ = param.sched_priority;
-        param.sched_priority = threadPriority == THREAD_PRIORITY_ULTRA_FAST_4 ?
-            ULTRA_FAST_RENDERER_PRIORITY : ULTRA_FAST_CLIENT_PRIORITY;
+        param.sched_priority = ULTRA_FAST_CLIENT_PRIORITY;
         ret = sched_setscheduler(tid, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
         if (ret == 0) {
             restoreScheduler_ = true;
