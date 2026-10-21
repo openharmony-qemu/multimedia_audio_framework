@@ -551,8 +551,6 @@ int32_t IpcStreamInServer::RegisterThreadPriority(int32_t tid, const std::string
             config_.appInfo.appUid == IPCSkeleton::GetCallingUid() &&
             PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION, IPCSkeleton::GetCallingTokenID()),
             ERR_PERMISSION_DENIED);
-        const std::string threadPath = "/proc/" + std::to_string(pid) + "/task/" + std::to_string(tid);
-        CHECK_AND_RETURN_RET(tid > 0 && access(threadPath.c_str(), F_OK) == 0, ERR_INVALID_PARAM);
     }
     auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), threadPriority, bundleName);
     std::lock_guard lock(scheduleGuardsMutex_);

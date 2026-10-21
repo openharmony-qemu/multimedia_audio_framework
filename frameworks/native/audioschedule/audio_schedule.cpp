@@ -55,7 +55,6 @@ constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS
 constexpr int64_t g_value = 0;
 constexpr uint32_t g_procType = OHOS::ResourceSchedule::ResType::RES_TYPE_PROCESS_QOS_CHANGE;
 constexpr int32_t AUDIO_PROC_QOS_TABLE = 7;
-constexpr int32_t SCHED_PRIORITY_NUM_4 = 4;
 std::atomic<bool> g_audioServerAuthQosFinish = false;
 constexpr int32_t RES_VALUE_PROCESS_QOS_ENABLE = 0;
 constexpr int32_t RES_VALUE_PROCESS_QOS_DISABLE = 1;
@@ -256,7 +255,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 static constexpr unsigned int WAIT_TIMEOUT_SECONDS = 5;
-static constexpr int32_t ULTRA_FAST_CLIENT_PRIORITY = 54;
+static constexpr int32_t SCHED_PRIORITY_NUM_4 = 4;
 const static std::set<std::string> USE_PRIORITY_4_BUNDLE_SET = {
 };
 }
@@ -293,17 +292,9 @@ AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPrio
         fclose(fp);
     } else if (threadPriority == THREAD_PRIORITY_ULTRA_FAST) {
         struct sched_param param = {0};
-        previousPolicy_ = sched_getscheduler(tid);
-        int32_t ret = sched_getparam(tid, &param);
-        CHECK_AND_RETURN_LOG(previousPolicy_ >= 0 && ret == 0, "Cannot read thread scheduler");
-        previousPriority_ = param.sched_priority;
-        param.sched_priority = ULTRA_FAST_CLIENT_PRIORITY;
-        ret = sched_setscheduler(tid, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
-        if (ret == 0) {
-            restoreScheduler_ = true;
-            return;
-        }
-        AUDIO_WARNING_LOG("Cannot set ultra fast thread priority: %{public}d", ret);
+        param.sched_priority = SCHED_PRIORITY_NUM_4;
+        int32_t ret = sched_setscheduler(tid, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
+        CHECK_AND_RETURN_LOG(ret == 0, "Set thread ultra fast priority 4 fail, ret=%{public}d", ret);
     } else if (USE_PRIORITY_4_BUNDLE_SET.find(bundleName) != USE_PRIORITY_4_BUNDLE_SET.end() &&
         threadPriority == THREAD_PRIORITY_4) {
         struct sched_param param = {0};
