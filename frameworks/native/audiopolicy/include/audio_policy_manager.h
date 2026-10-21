@@ -748,7 +748,7 @@ public:
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);
     std::vector<AudioDevicePair> GetLoopbackSupportedDevicePairs();
-    AudioDevicePair GetLoopbackPreferredDevicePair();
+    AudioDevicePair GetLoopbackPreferredDevicePair(bool isInterCall);
     bool IsSupportInnerCaptureOffload();
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
     bool SetKaraokeParameters(DeviceType deviceType, KaraokeParamType paramType, int32_t value);

@@ -625,7 +625,7 @@ AudioLoopbackErrorType AudioLoopbackPrivate::CheckDeviceSupport()
 {
     // Delegate to the server encapsulation: it validates each device against HDI
     // in real time and matches the pair against the supported-pair whitelist.
-    AudioDevicePair devicePair = AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair();
+    AudioDevicePair devicePair = AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair(ture);
     CHECK_AND_RETURN_RET_LOG(devicePair.first != nullptr && devicePair.second != nullptr,
         ERROR_DEVICE_NOT_SUPPORT, "No supported loopback device pair");
     activeInputDevice_ = devicePair.first->deviceType_;
@@ -745,7 +745,7 @@ void AudioLoopbackPrivate::CapturerCallbackImpl::OnStateChange(const CapturerSta
 void AudioLoopbackPrivate::CapturerCallbackImpl::OnStateChange(const AudioDeviceDescriptor &deviceInfo)
 {
     AUDIO_INFO_LOG("CapturerCallback device change to %{public}d", deviceInfo.deviceType_);
-    AudioDevicePair devicePair = AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair();
+    AudioDevicePair devicePair = AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair(true);
     parent_.isCapturerUsb_ = (devicePair.first != nullptr && devicePair.second != nullptr) &&
         parent_.activeInputDevice_ == devicePair.first->deviceType_;
     parent_.UpdateStatus();
