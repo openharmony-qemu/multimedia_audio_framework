@@ -108,6 +108,34 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, ArmUsbUltraFastRecordProfile_001, TestS
     EXPECT_EQ(result->bufferSize_, 960);
 }
 
+/** @tc.desc: HAL source_chans reaches the ultra fast profile instead of becoming zero channels. */
+HWTEST_F(AudioCoreConfigManagerAiutTest, ArmUsbUltraFastParsedInputChannels_001, TestSize.Level1)
+{
+    auto &manager = AudioCoreConfigManager::GetInstance();
+    auto pipe = std::make_shared<AdapterPipeInfo>();
+    auto xmlProp = std::make_shared<PipeStreamPropInfo>();
+    xmlProp->sampleRate_ = SAMPLE_RATE_48000;
+    xmlProp->channels_ = STEREO;
+    xmlProp->channelLayout_ = CH_LAYOUT_STEREO;
+    xmlProp->format_ = SAMPLE_S16LE;
+    xmlProp->bufferSize_ = 960;
+    xmlProp->pipeInfo_ = pipe;
+    pipe->streamPropInfos_ = {xmlProp};
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE);
+    for (uint32_t count : {1u, 2u, 4u}) {
+        device->UpdateDeviceInfoByAudioParameters("source_rate:16000;source_format:AUDIO_FORMAT_PCM_16_BIT;"
+            "source_chans:" + std::to_string(count));
+        auto prop = manager.GetArmUsbUltraFastRecordProp(device, pipe);
+        ASSERT_NE(prop, nullptr) << count;
+        EXPECT_EQ(prop->sampleRate_, SAMPLE_RATE_16000);
+        EXPECT_EQ(prop->format_, SAMPLE_S16LE);
+        EXPECT_EQ(prop->channels_, count);
+        EXPECT_EQ(prop->bufferSize_, 40 * count * sizeof(int16_t));
+        EXPECT_EQ(xmlProp->sampleRate_, SAMPLE_RATE_48000);
+        EXPECT_EQ(xmlProp->bufferSize_, 960);
+    }
+}
+
 /** @tc.desc: Missing or invalid ARM USB capabilities cannot create an ultra fast profile. */
 HWTEST_F(AudioCoreConfigManagerAiutTest, ArmUsbUltraFastRecordProfile_002, TestSize.Level1)
 {

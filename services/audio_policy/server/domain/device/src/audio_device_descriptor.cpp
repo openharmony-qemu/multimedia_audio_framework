@@ -433,6 +433,9 @@ void AudioDeviceDescriptor::UpdateDeviceInfoByAudioParameters(const std::string 
         ConvertToUint32(it->second, channels);
         AudioChannelLayout channelLayout = static_cast<AudioChannel>(channels) == CHANNEL_4 ?
             CH_LAYOUT_4POINT0 : CH_LAYOUT_UNKNOWN;
+        if (getRole() == INPUT_DEVICE && (channels == MONO || channels == STEREO)) {
+            channelLayout = ConvertAudioChannelToLayout(static_cast<AudioChannel>(channels));
+        }
         streamInfo.channelLayout.insert(channelLayout);
     }
     audioStreamInfo_.clear();

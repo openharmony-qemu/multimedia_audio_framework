@@ -780,7 +780,11 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetArmUsbUltraFastRe
     const uint64_t spanFrames = sampleRate * 2500 / AUDIO_US_PER_S;
     CHECK_AND_RETURN_RET_LOG(layout != CH_LAYOUT_UNKNOWN && channels > CHANNEL_UNKNOW && bytesPerSample > 0 &&
         spanFrames > 0 && spanFrames * AUDIO_US_PER_S == sampleRate * 2500,
-        nullptr, "Invalid ARM USB ultra fast stream info");
+        nullptr, "Invalid ARM USB ultra fast stream info: rate=%{public}" PRIu64
+        ", format=%{public}u, channels=%{public}u, layout=%{public}" PRIu64
+        ", sampleBytes=%{public}u, spanFrames=%{public}" PRIu64,
+        sampleRate, static_cast<uint32_t>(deviceInfo.format), static_cast<uint32_t>(channels),
+        static_cast<uint64_t>(layout), bytesPerSample, spanFrames);
     auto prop = GetAvailableStreamPropInfoForDevice(pipe->streamPropInfos_, device->deviceType_);
     CHECK_AND_RETURN_RET_LOG(prop != nullptr, nullptr, "ARM USB ultra fast stream prop is empty");
     auto result = std::make_shared<PipeStreamPropInfo>(*prop);
