@@ -8633,6 +8633,20 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
         EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL) << source;
         stream->streamInfo_.samplingRate = SAMPLE_RATE_48000;
     }
+    // A MIC associated with the ultra-fast pipe must still fall back; HIFI can restore the request.
+    device->name_ = "Builtin_Mic_In";
+    device->type_ = DEVICE_TYPE_MIC;
+    desc->deviceType_ = DEVICE_TYPE_MIC;
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
+    config.deviceInfoMap[{DEVICE_TYPE_MIC, INPUT_DEVICE}] = {device};
+    stream->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_NE(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
+    device->name_ = "Hifi_Headset_In";
+    device->type_ = DEVICE_TYPE_USB_HEADSET;
+    desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
     adapter->adapterName = "usb";
     pipe->name_ = "usb_ultra_fast_input";
     config.adapterInfoMap[AudioAdapterType::TYPE_USB] = adapter;

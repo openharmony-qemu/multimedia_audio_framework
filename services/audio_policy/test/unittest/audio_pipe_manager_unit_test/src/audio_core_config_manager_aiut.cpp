@@ -1100,6 +1100,7 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, UltraFastRecordingCapability_001, TestS
     auto adapter = std::make_shared<PolicyAdapterInfo>();
     adapter->adapterName = "primary";
     auto device = std::make_shared<AdapterDeviceInfo>();
+    device->name_ = "Hifi_Headset_In";
     device->type_ = DEVICE_TYPE_USB_HEADSET;
     device->role_ = INPUT_DEVICE;
     device->adapterInfo_ = adapter;
@@ -1180,6 +1181,10 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, UltraFastRecordingCapability_001, TestS
     adapter->adapterName = "usb";
     pipe->name_ = "usb_ultra_fast_input";
     config.adapterInfoMap[AudioAdapterType::TYPE_USB] = adapter;
+    device->type_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    config.deviceInfoMap.clear();
+    config.deviceInfoMap[{DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE}] = {device};
     EXPECT_TRUE(manager.IsUltraFastRecordingSupported({desc}));
     config.deviceInfoMap.clear();
     EXPECT_FALSE(manager.IsUltraFastRecordingSupported({desc}));
@@ -1187,7 +1192,7 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, UltraFastRecordingCapability_001, TestS
     config.deviceInfoMap = std::move(savedDevices);
 }
 
-/** @tc.desc: Device-only query applies the Primary caller allowlist without checking stream profiles. */
+/** @tc.desc: Query and routing only accept HIFI on Primary, regardless of caller identity or stream profiles. */
 HWTEST_F(AudioCoreConfigManagerAiutTest, UltraFastRecordingDeviceQuery_001, TestSize.Level1)
 {
     auto &manager = AudioCoreConfigManager::GetInstance();
@@ -1214,79 +1219,79 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, UltraFastRecordingDeviceQuery_001, Test
     auto desc = std::make_shared<AudioDeviceDescriptor>();
     desc->deviceRole_ = INPUT_DEVICE;
     desc->networkId_ = LOCAL_NETWORK_ID;
-    const std::vector<std::pair<std::string, DeviceType>> supportedSystemDevices = {
-        {"Builtin_Mic_In", DEVICE_TYPE_MIC},
+    const std::vector<std::pair<std::string, DeviceType>> supportedDevices = {
         {"Hifi_Headset_In", DEVICE_TYPE_USB_HEADSET}
     };
-    const std::vector<std::pair<std::string, DeviceType>> unsupportedSystemDevices = {
+    const std::vector<std::pair<std::string, DeviceType>> unsupportedDevices = {
+        {"Builtin_Mic_In", DEVICE_TYPE_MIC},
         {"Wired_Headset_In", DEVICE_TYPE_WIRED_HEADSET},
         {"Bt_SCO_In", DEVICE_TYPE_BLUETOOTH_SCO},
         {"Nearlink_In", DEVICE_TYPE_NEARLINK_IN}
     };
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({}, true));
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({nullptr}, true));
-    for (const auto &[name, type] : supportedSystemDevices) {
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({}));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({nullptr}));
+    for (const auto &[name, type] : supportedDevices) {
         device->name_ = name;
         device->type_ = type;
         desc->deviceType_ = type;
         config.deviceInfoMap.clear();
         config.deviceInfoMap[{type, INPUT_DEVICE}] = {device};
         // No profile is required for the device-only query.
-        EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported({nullptr, desc}, true)) << name;
-        EXPECT_EQ(manager.IsUltraFastRecordingDeviceSupported({desc}, false), name == "Hifi_Headset_In");
+        EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported({nullptr, desc})) << name;
+        EXPECT_TRUE(manager.IsUltraFastRecordingSupported({desc})) << name;
     }
-    for (const auto &[name, type] : unsupportedSystemDevices) {
+    for (const auto &[name, type] : unsupportedDevices) {
         device->name_ = name;
         device->type_ = type;
         desc->deviceType_ = type;
         config.deviceInfoMap.clear();
         config.deviceInfoMap[{type, INPUT_DEVICE}] = {device};
-        EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true)) << name;
-        EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, false)) << name;
+        EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc})) << name;
+        EXPECT_FALSE(manager.IsUltraFastRecordingSupported({desc})) << name;
     }
 
     device->name_ = "Unlisted_In";
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     device->name_ = "Hifi_Headset_In";
     device->type_ = DEVICE_TYPE_USB_HEADSET;
     desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
     config.deviceInfoMap.clear();
     config.deviceInfoMap[{DEVICE_TYPE_USB_HEADSET, INPUT_DEVICE}] = {device};
-    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported({desc}, false));
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     auto prop = std::make_shared<PipeStreamPropInfo>();
     prop->format_ = SAMPLE_S32LE;
     prop->sampleRate_ = SAMPLE_RATE_44100;
     prop->bufferSize_ = 0;
     pipe->streamPropInfos_ = {prop};
-    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported({desc}, false));
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     device->isSimulated_ = true;
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     device->isSimulated_ = false;
     desc->networkId_ = "remote";
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     desc->networkId_ = LOCAL_NETWORK_ID;
     desc->deviceRole_ = OUTPUT_DEVICE;
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     desc->deviceRole_ = INPUT_DEVICE;
     pipe->role_ = PIPE_ROLE_OUTPUT;
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     pipe->role_ = PIPE_ROLE_INPUT;
     pipe->name_ = "fast_input";
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     pipe->name_ = "primary_ultra_fast_input";
     device->supportPipeMap_.clear();
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = nullptr;
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
     adapter->pipeInfos.clear();
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     adapter->pipeInfos = {pipe};
     device->adapterInfo_.reset();
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     device->adapterInfo_ = adapter;
 
-    // USB ARM support uses the independent USB pipe for both application types.
+    // USB ARM support continues to use the independent USB pipe.
     config.adapterInfoMap.clear();
     adapter->adapterName = "usb";
     config.adapterInfoMap[PolicyAdapterInfo::GetAdapterType("usb")] = adapter;
@@ -1296,17 +1301,17 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, UltraFastRecordingDeviceQuery_001, Test
     desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     config.deviceInfoMap.clear();
     config.deviceInfoMap[{DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE}] = {device};
-    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported({desc}, false));
-    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported({desc}));
+    EXPECT_TRUE(manager.IsUltraFastRecordingSupported({desc}));
     pipe->name_ = "primary_ultra_fast_input";
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     pipe->name_ = "usb_ultra_fast_input";
     device->type_ = DEVICE_TYPE_MIC;
     desc->deviceType_ = DEVICE_TYPE_MIC;
     config.deviceInfoMap[{DEVICE_TYPE_MIC, INPUT_DEVICE}] = {device};
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     config.deviceInfoMap.clear();
-    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}, true));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported({desc}));
     config.adapterInfoMap = std::move(savedAdapters);
     config.deviceInfoMap = std::move(savedDevices);
 }

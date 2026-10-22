@@ -2588,11 +2588,10 @@ int32_t AudioPolicyServer::IsUltraFastRecordingSupported(const AudioStreamInfo &
     IsUltraFastRecordingPlatformSupported(platformSupported);
     CHECK_AND_RETURN_RET(platformSupported, SUCCESS);
     CHECK_AND_RETURN_RET(source > SOURCE_TYPE_INVALID && source <= SOURCE_TYPE_MAX, SUCCESS);
-    const bool isSystemApp = PermissionUtil::VerifyIsSystemAppWithoutRoot();
     AudioCapturerInfo info(static_cast<SourceType>(source), AUDIO_FLAG_ULTRA_FAST);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     CHECK_AND_RETURN_RET(GetPreferredInputDeviceDescriptors(info, devices) == SUCCESS, SUCCESS);
-    support = audioConfigManager_.IsUltraFastRecordingDeviceSupported(devices, isSystemApp);
+    support = audioConfigManager_.IsUltraFastRecordingDeviceSupported(devices);
     return SUCCESS;
 }
 
