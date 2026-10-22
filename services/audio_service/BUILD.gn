@@ -110,7 +110,7 @@ ohos_shared_library("audio_common") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
-    "../audio_engine:audio_engine_plugins",
+    "../audio_engine:audio_common_algorithm",
   ]
 
   external_deps = [
@@ -682,7 +682,7 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_engine:hpae_engine_manager",
-    "../audio_engine:audio_engine_plugins",
+    "../audio_engine:audio_common_algorithm",
     "../audio_engine:audio_engine_utils",
     "../audio_policy:audio_foundation",
   ]

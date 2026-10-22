@@ -75,7 +75,7 @@ if (audio_framework_feature_audiosuite_support) {
       "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
       "${audio_framework_root}/services/audio_service:audio_common",
       "${audio_framework_root}/services/audio_suite:audio_suite",
-      "${audio_framework_root}/services/audio_engine:audio_engine_plugins",
+      "${audio_framework_root}/services/audio_engine:audio_common_algorithm",
       "${audio_framework_root}/services/audio_engine:audio_engine_utils",
     ]
 
