@@ -4532,11 +4532,16 @@ int32_t AudioAdapterManager::RestoreSystemAppVolumeLevel()
         std::string bundleName;
         int32_t appIndex = 0;
         AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
-        bool isInstall = true;
-        AudioBundleManager::IsBundleInstalled(bundleName, userId, appIndex, isInstall);
-        if (!isInstall) continue;
-        int32_t uid = AudioBundleManager::GetUidByBundleName(bundleName, userId, appIndex);
-        CHECK_AND_CONTINUE_LOG(uid >= SUCCESS, "GetUidByBundleName failed");
+        int32_t uid = -1;
+        if (appIndex == 0) {
+            AppExecFwk::BundleInfo bundleInfo;
+            int32_t infoRet = AudioBundleManager::GetBundleInfoV9(bundleName, userId, bundleInfo);
+            if (infoRet != SUCCESS) continue;
+            uid = bundleInfo.uid;
+        } else {
+            uid = AudioBundleManager::GetUidByBundleName(bundleName, userId, appIndex);
+        }
+        CHECK_AND_CONTINUE_LOG(uid >= SUCCESS, "invalid uid");
         auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(uid);
         CHECK_AND_CONTINUE_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
         SetSystemAppVolumeLevel(uid, level, deviceDesc->deviceType_);
