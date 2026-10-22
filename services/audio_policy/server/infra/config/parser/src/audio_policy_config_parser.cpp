@@ -367,6 +367,7 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
         int32_t maxBitrate = 0;
         if (StrToInt(attributeInfo.value_, maxBitrate)) {
             globalConfigs_.hwEncodingTypeMaxBitrate = std::max(maxBitrate, 0);
+            AUDIO_INFO_LOG("max_bitrate parsed: %{public}d", globalConfigs_.hwEncodingTypeMaxBitrate);
         }
     }
 }
