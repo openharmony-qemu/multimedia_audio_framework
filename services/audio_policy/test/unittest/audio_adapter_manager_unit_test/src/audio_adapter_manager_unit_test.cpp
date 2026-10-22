@@ -2411,5 +2411,124 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsAppVolumeMute_Aggregate_NotOwned_001, Te
     AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, false);
 }
 
+/**
+ * @tc.name: IsDualToneStreamType_WearDetection_001
+ * @tc.desc: Test IsDualToneStreamType returns false when isSupportWearDetection is true
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsDualToneStreamType_WearDetection_001, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(false);
+    bool result = Util::IsDualToneStreamType(STREAM_RING, true);
+    EXPECT_FALSE(result);
+    result = Util::IsDualToneStreamType(STREAM_VOICE_RING, true);
+    EXPECT_FALSE(result);
+    result = Util::IsDualToneStreamType(STREAM_RING, false);
+    EXPECT_TRUE(result);
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_BluetoothSingleRing_001
+ * @tc.desc: Test GetDeviceCategory returns BLUETOOTH_NEARLINK_VOLUME_TYPE for BT_A2DP + STREAM_RING
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_BluetoothSingleRing_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_RING);
+    EXPECT_EQ(result, BLUETOOTH_NEARLINK_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_BluetoothSingleRing_002
+ * @tc.desc: Test GetDeviceCategory returns BLUETOOTH_NEARLINK_VOLUME_TYPE for BT_SCO + STREAM_VOICE_RING
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_BluetoothSingleRing_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_BLUETOOTH_SCO, STREAM_VOICE_RING);
+    EXPECT_EQ(result, BLUETOOTH_NEARLINK_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_NearlinkSingleRing_001
+ * @tc.desc: Test GetDeviceCategory returns BLUETOOTH_NEARLINK_VOLUME_TYPE for NEARLINK + STREAM_RING
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_NearlinkSingleRing_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_NEARLINK, STREAM_RING);
+    EXPECT_EQ(result, BLUETOOTH_NEARLINK_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_DualTone_001
+ * @tc.desc: Test GetDeviceCategory returns HEADSET_VOLUME_TYPE for BT_A2DP + STREAM_MUSIC (non-ring)
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_DualTone_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
+    EXPECT_EQ(result, HEADSET_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_WiredHeadset_001
+ * @tc.desc: Test GetDeviceCategory returns HEADSET_VOLUME_TYPE for WIRED_HEADSET + STREAM_RING
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_WiredHeadset_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_WIRED_HEADSET, STREAM_RING);
+    EXPECT_EQ(result, HEADSET_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_UsbHeadset_001
+ * @tc.desc: Test GetDeviceCategory returns HEADSET_VOLUME_TYPE for USB_HEADSET + STREAM_RING
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_UsbHeadset_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_USB_HEADSET, STREAM_RING);
+    EXPECT_EQ(result, HEADSET_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_BluetoothMusic_001
+ * @tc.desc: Test GetDeviceCategory returns HEADSET_VOLUME_TYPE for BT_A2DP + STREAM_MUSIC
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_BluetoothMusic_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
+    EXPECT_EQ(result, HEADSET_VOLUME_TYPE);
+    result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_VOICE_CALL);
+    EXPECT_EQ(result, HEADSET_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetVolumePoints_BluetoothNearlinkMissing_001
+ * @tc.desc: Test CalculateVolumeDbNonlinear returns 1.0f fallback when bluetooth_nearlink curve not found
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetVolumePoints_BluetoothNearlinkMissing_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    VolumeUtils::SetPCVolumeEnable(false);
+    float result = audioAdapterManager->CalculateVolumeDbNonlinear(STREAM_RING, DEVICE_TYPE_BLUETOOTH_A2DP,
+        7, true);
+    // When streamVolumeInfos_ has no bluetooth_nearlink curve for STREAM_RING,
+    // GetVolumePoints returns empty, CalculateVolumeDbNonlinear returns 1.0f
+    EXPECT_EQ(result, 1.0f);
+    VolumeUtils::SetPCVolumeEnable(false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

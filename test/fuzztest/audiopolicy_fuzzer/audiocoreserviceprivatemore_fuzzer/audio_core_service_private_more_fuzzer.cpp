@@ -433,7 +433,6 @@ void AudioCoreServicePrivateSetVoiceCallMuteForSwitchDeviceFuzzTest(FuzzedDataPr
     audioCoreService->audioSceneManager_.SetAudioScenePre(ConsumeEnum<AudioScene>(fdp));
     audioCoreService->SetVoiceCallMuteForSwitchDevice();
     audioCoreService->GetDisableFastStreamParam();
-    audioCoreService->IsSceneRequireMuteAndSleep();
 }
 
 void AudioCoreServicePrivateMuteSinkPortLogicFuzzTest(FuzzedDataProvider& fdp)

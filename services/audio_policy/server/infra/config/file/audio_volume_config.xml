@@ -21,7 +21,7 @@
             <point idx="66"  decibel="-900"/>
             <point idx="100" decibel="-0"/>
         </volumecurve>
-        <volumecurve deviceClass="speaker">    
+        <volumecurve deviceClass="speaker">
             <point idx="0"   decibel="-2700"/>
             <point idx="33"  decibel="-1800"/>
             <point idx="66"  decibel="-900"/>
@@ -73,6 +73,12 @@
             <point idx="66"  decibel="-900"/>
             <point idx="100" decibel="-0"/>
         </volumecurve>
+        <volumecurve deviceClass="bluetooth_nearlink">
+            <point idx="0"   decibel="-2700"/>
+            <point idx="33"  decibel="-1800"/>
+            <point idx="66"  decibel="-900"/>
+            <point idx="100" decibel="-0"/>
+        </volumecurve>
     </volume_type>
     <volume_type type="VOICE_ASSISTANT" minidx="0" maxidx="15" defaultidx="7">
         <volumecurve deviceClass="earpiece">
@@ -113,7 +119,7 @@
             <point idx="66"  decibel="-900"/>
             <point idx="100" decibel="-0"/>
         </volumecurve>
-    </volume_type>    
+    </volume_type>
     <volume_type type="ACCESSIBILITY" minidx="1" maxidx="15" defaultidx="7">
         <volumecurve deviceClass="earpiece">
             <point idx="0"   decibel="-2700"/>
@@ -133,7 +139,7 @@
             <point idx="66"  decibel="-900"/>
             <point idx="100" decibel="-0"/>
         </volumecurve>
-    </volume_type>     
+    </volume_type>
     <volume_type type="ULTRASONIC" minidx="0" maxidx="15" defaultidx="15">
         <volumecurve deviceClass="earpiece">
             <point idx="0"   decibel="-2700"/>
@@ -162,7 +168,7 @@
             <point idx="60"  decibel="-1200"/>
             <point idx="100" decibel="-0"/>
         </volumecurve>
-        <volumecurve deviceClass="speaker">    
+        <volumecurve deviceClass="speaker">
             <point idx="0"   decibel="-6000"/>
             <point idx="15"  decibel="-4800"/>
             <point idx="35"  decibel="-2400"/>

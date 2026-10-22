@@ -317,7 +317,7 @@ public:
         DeviceType deviceType) = 0;
 
     virtual float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType,
-        int32_t volumeLevel) = 0;
+        int32_t volumeLevel, bool isSupportWearDetection = false) = 0;
 
     virtual void AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) = 0;
@@ -357,8 +357,8 @@ public:
     virtual int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType) = 0;
     virtual void SetPrimarySinkExist(bool isPrimarySinkExist) = 0;
     virtual int32_t StopAudioPort(std::string oldSinkName) = 0;
-    virtual float CalculateVolumeDbByDegree(DeviceType deviceType,
-        AudioStreamType streamType, int32_t volumeDegree) = 0;
+    virtual float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType,
+        int32_t volumeDegree, bool isSupportWearDetection = false) = 0;
     virtual int32_t UpdateCollaborativeProductId(const std::string &productId) = 0;
     virtual int32_t UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled) = 0;
     virtual int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) = 0;

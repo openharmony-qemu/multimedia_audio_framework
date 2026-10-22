@@ -994,7 +994,8 @@ int32_t AudioAdapterManager::SetSystemVolumeToEffect(std::shared_ptr<AudioDevice
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is null");
     // audio volume
     int32_t volumeLevelTemp = GetSystemVolumeForEffect(device->deviceType_, streamType);
-    float volumeDbTemp = CalculateVolumeDbNonlinear(streamType, device->deviceType_, volumeLevelTemp);
+    float volumeDbTemp = CalculateVolumeDbNonlinear(streamType, device->deviceType_, volumeLevelTemp,
+        device->isSupportWearDetectionEnable_);
     AUDIO_INFO_LOG("SetSystemVolumeToEffect streamType: %{public}d, volumeDb: %{public}f, device:%{public}s",
         streamType, volumeDbTemp, device->GetName().c_str());
 
@@ -2622,7 +2623,7 @@ AudioStreamType AudioAdapterManager::GetStreamIDByType(std::string streamType)
     return stream;
 }
 
-DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
+DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType, AudioStreamType streamType)
 {
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
@@ -2634,13 +2635,19 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_ACCESSORY:
         case DEVICE_TYPE_LINE_DIGITAL:
             return SPEAKER_VOLUME_TYPE;
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_NEARLINK:
+            if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING) {
+                // If you want to use the BLUETOOTH_NEARLINK volume curve for other stream types,
+                // just need to remove this condition check.
+                return BLUETOOTH_NEARLINK_VOLUME_TYPE;
+            }
+            return HEADSET_VOLUME_TYPE;
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_NEARLINK:
             return HEADSET_VOLUME_TYPE;
         default:
             return SPEAKER_VOLUME_TYPE;
@@ -3463,12 +3470,12 @@ uint32_t AudioAdapterManager::GetPositionInVolumePoints(std::vector<VolumePoint>
 }
 
 float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType,
-    DeviceType deviceType, int32_t volumeLevel)
+    DeviceType deviceType, int32_t volumeLevel, bool isSupportWearDetection)
 {
     AUDIO_DEBUG_LOG("CalculateVolumeDbNonlinear for stream: %{public}d devicetype:%{public}d volumeLevel:%{public}d",
         streamType, deviceType, volumeLevel);
     AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(streamType, isSupportWearDetection)) {
         deviceType = DEVICE_TYPE_SPEAKER;
     }
     int32_t minVolIndex = GetMinVolumeLevel(streamAlias, deviceType);
@@ -3479,7 +3486,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     volumeLevel = volumeLevel < minVolIndex ? minVolIndex : volumeLevel;
     volumeLevel = volumeLevel > maxVolIndex ? maxVolIndex : volumeLevel;
 
-    DeviceVolumeType deviceCategory = GetDeviceCategory(deviceType);
+    DeviceVolumeType deviceCategory = GetDeviceCategory(deviceType, streamType);
     std::vector<VolumePoint> volumePoints;
     GetVolumePoints(streamAlias, deviceCategory, volumePoints);
     uint32_t pointSize = volumePoints.size();
@@ -3521,11 +3528,11 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
 }
 
 float AudioAdapterManager::CalculateVolumeDbByDegree(DeviceType deviceType,
-    AudioStreamType streamType, int32_t volumeDegree)
+    AudioStreamType streamType, int32_t volumeDegree, bool isSupportWearDetection)
 {
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
-        volumeDb = CalculateVolumeDbNonlinearExt(streamType, deviceType, volumeDegree);
+        volumeDb = CalculateVolumeDbNonlinearExt(streamType, deviceType, volumeDegree, isSupportWearDetection);
     } else {
         volumeDb = CalculateVolumeDbExt(volumeDegree);
     }
@@ -3534,7 +3541,7 @@ float AudioAdapterManager::CalculateVolumeDbByDegree(DeviceType deviceType,
 }
 
 float AudioAdapterManager::CalculateVolumeDbNonlinearExt(AudioStreamType streamType,
-    DeviceType deviceType, int32_t volumeDegree)
+    DeviceType deviceType, int32_t volumeDegree, bool isSupportWearDetection)
 {
     float dbValue = 0.0f;
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
@@ -3550,9 +3557,9 @@ float AudioAdapterManager::CalculateVolumeDbNonlinearExt(AudioStreamType streamT
     int32_t preVolumeLevel = std::max(volumeLevel - 1, volumeLevelMin);
     int32_t nextVolumeLevel = std::min(volumeLevel + 1, volumeLevelMax);
 
-    float curDbFactor = CalculateVolumeDbNonlinear(streamType, deviceType, volumeLevel);
-    float preDbFactor = CalculateVolumeDbNonlinear(streamType, deviceType, preVolumeLevel);
-    float nextDbFactor = CalculateVolumeDbNonlinear(streamType, deviceType, nextVolumeLevel);
+    float curDbFactor = CalculateVolumeDbNonlinear(streamType, deviceType, volumeLevel, isSupportWearDetection);
+    float preDbFactor = CalculateVolumeDbNonlinear(streamType, deviceType, preVolumeLevel, isSupportWearDetection);
+    float nextDbFactor = CalculateVolumeDbNonlinear(streamType, deviceType, nextVolumeLevel, isSupportWearDetection);
 
     int32_t curDegreeBase = VolumeUtils::VolumeLevelToDegree(volumeLevel, volumeLevelMax);
     int32_t preDegreeCeiling = VolumeUtils::GetVolumeLevelMaxDegree(preVolumeLevel, volumeLevelMax);
@@ -3643,8 +3650,10 @@ void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolu
     }
     auto deviceVolInfo = streamVolInfo->second->deviceVolumeInfos.find(deviceType);
     if (deviceVolInfo == streamVolInfo->second->deviceVolumeInfos.end()) {
-        AUDIO_ERR_LOG("Cannot find device type %{public}d", deviceType);
-        return;
+        AUDIO_WARNING_LOG("Cannot find device type %{public}d. Use the volume config of speaker.", deviceType);
+        deviceVolInfo = streamVolInfo->second->deviceVolumeInfos.find(SPEAKER_VOLUME_TYPE);
+        CHECK_AND_RETURN_LOG(deviceVolInfo != streamVolInfo->second->deviceVolumeInfos.end(),
+            "Cannot find the alternative configuration!");
     }
     volumePoints = deviceVolInfo->second->volumePoints;
 }
@@ -4687,12 +4696,13 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
     int32_t volumeLevel = GetStreamVolumeInternal(device, volumeType, zoneId) * (isMuted ? 0 : 1);
     SaveSystemVolumeForSwitchDevice(device, volumeType, volumeLevel);
 
-    bool useSpeaker = Util::IsDualToneStreamType(volumeType);
+    bool useSpeaker = Util::IsDualToneStreamType(volumeType, device->isSupportWearDetectionEnable_);
     DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : device->deviceType_;
     int32_t volumeDegree = GetStreamVolumeDegreeInternal(device, volumeType, zoneId) * (isMuted ? 0 : 1);
 
-    float volumeDb = volumeAdjustZoneId_ == 0 ? CalculateVolumeDbByDegree(deviceType, volumeType, volumeDegree) :
-        CalculateVolumeDbNonlinear(volumeType, deviceType, volumeLevel);
+    float volumeDb = (volumeAdjustZoneId_ == 0) ?
+        CalculateVolumeDbByDegree(deviceType, volumeType, volumeDegree, device->isSupportWearDetectionEnable_) :
+        CalculateVolumeDbNonlinear(volumeType, deviceType, volumeLevel, device->isSupportWearDetectionEnable_);
 
     AjustVolumeForSpecialType(volumeType, volumeDb);
     DepressVolume(volumeDb, volumeLevel, volumeType, device);
