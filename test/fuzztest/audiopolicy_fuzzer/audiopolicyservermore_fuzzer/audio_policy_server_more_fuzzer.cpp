@@ -615,6 +615,15 @@ void FuzzIsPlaybackSupported()
     server->SetDeviceActive(GetData<int32_t>(), GetData<int32_t>() % MAXVALUE == 1, GetData<int32_t>());
 }
 
+// GetHwEncodingTypeMaxBitrate
+void FuzzGetHwEncodingTypeMaxBitrate()
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    int32_t maxBitrate = 0;
+    server->GetHwEncodingTypeMaxBitrate(maxBitrate);
+}
+
 // Lines 2432-2474: IsDeviceActive, GetActiveOutputDevice, GetDmDeviceType, GetActiveInputDevice
 void FuzzIsDeviceActive()
 {
@@ -1398,6 +1407,7 @@ TestFuncs g_testFuncs[] = {
     FuzzSetClientCallbacks,
     FuzzIsStreamActiveByStreamUsage,
     FuzzIsPlaybackSupported,
+    FuzzGetHwEncodingTypeMaxBitrate,
     FuzzIsDeviceActive,
     FuzzSetRingerModeInner,
     FuzzInitMicrophoneMute,

@@ -434,6 +434,11 @@ void AudioCoreConfigManager::GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs
     globalConfigs = globalConfigs_;
 }
 
+int32_t AudioCoreConfigManager::GetHwEncodingTypeMaxBitrate()
+{
+    return globalConfigs_.hwEncodingTypeMaxBitrate;
+}
+
 bool AudioCoreConfigManager::GetVoipConfig()
 {
     return enableFastVoip_;

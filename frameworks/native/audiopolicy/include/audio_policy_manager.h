@@ -131,6 +131,8 @@ public:
 
     bool IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
 
+    int32_t GetHwEncodingTypeMaxBitrate();
+
     bool IsEnhancedRoutingSupported();
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,

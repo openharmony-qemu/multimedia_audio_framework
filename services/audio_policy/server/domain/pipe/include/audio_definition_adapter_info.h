@@ -224,6 +224,7 @@ struct PolicyGlobalConfigs {
     PolicyGlobalPaConfigs globalPaConfigs_;
     int32_t primaryEffectLatency = LATENCY_UNCONFIG;
     int32_t primaryWarmupLatency = LATENCY_UNCONFIG;
+    int32_t hwEncodingTypeMaxBitrate = 0;
 };
 
 class AudioPolicyConfigData {

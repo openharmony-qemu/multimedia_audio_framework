@@ -179,6 +179,8 @@ public:
     int32_t IsOffloadPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t streamUsage,
         bool &support) override;
 
+    int32_t GetHwEncodingTypeMaxBitrate(int32_t &maxBitrate) override;
+
     int32_t IsVolumeUnadjustable(bool &unadjustable) override;
 
     int32_t AdjustVolumeByStep(int32_t adjustType) override;

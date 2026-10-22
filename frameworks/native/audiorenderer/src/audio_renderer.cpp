@@ -73,6 +73,8 @@ static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static constexpr int32_t SWITCH_WAIT_TIME_MS = 20; //20ms
 constexpr int32_t DEFAULT_ZONE_ID = 0;
+static constexpr float BITRATE_EFFECT_THRESHOLD_RATIO = 0.8;
+std::atomic<int32_t> AudioRenderer::maxBitrate_{INT32_MIN};
 
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
@@ -680,6 +682,59 @@ bool AudioRenderer::CheckSupportedSamplingRates(uint32_t rates)
 {
     return (rates >= SAMPLE_RATE_8000 && rates <= SAMPLE_RATE_384000 && rates % SAMPLE_RATE_RESOLUTION_10 == 0) ||
         rates == SAMPLE_RATE_11025;
+}
+
+AudioRendererParamsSupport AudioRenderer::CheckAudioRendererParamsSupport(
+    const AudioRendererParams &params, int32_t bitrate)
+{
+    AUDIO_INFO_LOG("CheckAudioRendererParamsSupport: format %{public}d, rate %{public}d, channel %{public}d, "
+        "encoding %{public}d, bitrate %{public}d, channelLayout %{public}" PRIu64, params.sampleFormat,
+        params.sampleRate, params.channelCount, params.encodingType, bitrate,
+        static_cast<uint64_t>(params.channelLayout));
+    bool encodingValid = std::find(AUDIO_SUPPORTED_ENCODING_TYPES.begin(), AUDIO_SUPPORTED_ENCODING_TYPES.end(),
+        params.encodingType) != AUDIO_SUPPORTED_ENCODING_TYPES.end();
+    CHECK_AND_RETURN_RET_LOG(encodingValid, PARAMS_NOT_SUPPORTED, "Encoding type not supported");
+    bool rateValid = std::find(AUDIO_SUPPORTED_SAMPLING_RATES.begin(), AUDIO_SUPPORTED_SAMPLING_RATES.end(),
+        params.sampleRate) != AUDIO_SUPPORTED_SAMPLING_RATES.end();
+    CHECK_AND_RETURN_RET_LOG(rateValid, PARAMS_NOT_SUPPORTED, "Sampling rate not supported");
+    bool channelValid = std::find(RENDERER_SUPPORTED_CHANNELS.begin(), RENDERER_SUPPORTED_CHANNELS.end(),
+        params.channelCount) != RENDERER_SUPPORTED_CHANNELS.end();
+    CHECK_AND_RETURN_RET_LOG(channelValid, PARAMS_NOT_SUPPORTED, "Channel count not supported");
+    bool formatValid = std::find(AUDIO_SUPPORTED_FORMATS.begin(), AUDIO_SUPPORTED_FORMATS.end(),
+        params.sampleFormat) != AUDIO_SUPPORTED_FORMATS.end();
+    CHECK_AND_RETURN_RET_LOG(formatValid, PARAMS_NOT_SUPPORTED, "Sample format not supported");
+    bool layoutValid = std::find(RENDERER_SUPPORTED_CHANNELLAYOUTS.begin(),
+        RENDERER_SUPPORTED_CHANNELLAYOUTS.end(), params.channelLayout)
+        != RENDERER_SUPPORTED_CHANNELLAYOUTS.end();
+    CHECK_AND_RETURN_RET_LOG(layoutValid, PARAMS_NOT_SUPPORTED, "Channel layout not supported");
+    bool layoutMatched = IAudioStream::IsChannelLayoutMatchedWithChannel(
+        static_cast<uint8_t>(params.channelCount),
+        static_cast<uint64_t>(params.channelLayout),
+        static_cast<uint8_t>(params.encodingType));
+    CHECK_AND_RETURN_RET_LOG(layoutMatched, PARAMS_NOT_SUPPORTED,
+        "Channel layout not matched with channel count");
+
+    if (!IsHWDecodingType(params.encodingType) || bitrate == -1) {
+        return PARAMS_SUPPORTED;
+    }
+    CHECK_AND_RETURN_RET_LOG(bitrate > 0, PARAMS_NOT_SUPPORTED,
+        "bitrate max be greater than 0 or equal to -1(skip check)");
+    int32_t maxBitrate = maxBitrate_.load();
+    if (maxBitrate < 0) {
+        maxBitrate = AudioPolicyManager::GetInstance().GetHwEncodingTypeMaxBitrate();
+        maxBitrate_.store(maxBitrate);
+    }
+    CHECK_AND_RETURN_RET_LOG(maxBitrate > 0, PARAMS_NOT_SUPPORTED, "Max bitrate not configured");
+    AudioRendererParamsSupport ret = PARAMS_NOT_SUPPORTED;
+    if (bitrate > 0 && static_cast<float>(bitrate) < static_cast<float>(maxBitrate) * BITRATE_EFFECT_THRESHOLD_RATIO) {
+        ret = PARAMS_SUPPORTED;
+    } else if (bitrate > maxBitrate) {
+        AUDIO_ERR_LOG("Bitrate exceeds max bitrate %{public}d, not supported", maxBitrate);
+        ret = PARAMS_NOT_SUPPORTED;
+    } else {
+        ret = PARAMS_SUPPORTED_BUT_EFFECT_NOT_GUARANTEED;
+    }
+    return ret;
 }
 
 // Inner function. Must be called with AudioRendererPrivate::rendererMutex_

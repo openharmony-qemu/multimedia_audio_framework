@@ -2607,6 +2607,12 @@ int32_t AudioPolicyServer::IsOffloadPlaybackSupported(const AudioStreamInfo &str
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::GetHwEncodingTypeMaxBitrate(int32_t &maxBitrate)
+{
+    maxBitrate = audioConfigManager_.GetHwEncodingTypeMaxBitrate();
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetDeviceActive(int32_t deviceType, bool active, int32_t uid)
 {
     if (uid != INVALID_UID) {
