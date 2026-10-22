@@ -336,14 +336,14 @@ AudioScene AudioSystemManager::GetAudioScene() const
 
 int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag, const int32_t clientUid) const
 {
-    int32_t uid = clientUid == -1 ? getuid() : clientUid;
     if (!IsActiveDeviceType(deviceType)) {
         AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
         return ERR_NOT_SUPPORTED;
     }
 
     /* Call Audio Policy SetDeviceActive */
-    return (AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag, uid));
+    return (AudioPolicyManager::GetInstance().SetDeviceActive(
+        static_cast<InternalDeviceType>(deviceType), flag, clientUid));
 }
 
 bool AudioSystemManager::IsDeviceActive(DeviceType deviceType) const
