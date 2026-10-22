@@ -55,6 +55,7 @@ AudioVolumeParser::AudioVolumeParser()
         {"earpiece", EARPIECE_VOLUME_TYPE},
         {"speaker", SPEAKER_VOLUME_TYPE},
         {"headset", HEADSET_VOLUME_TYPE},
+        {"bluetooth_nearlink", BLUETOOTH_NEARLINK_VOLUME_TYPE},
     };
 }
 

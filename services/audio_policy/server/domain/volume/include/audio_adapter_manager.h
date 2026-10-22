@@ -216,11 +216,12 @@ public:
 
     bool IsVolumeUnadjustable();
 
-    float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType, int32_t volumeLevel);
+    float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType,
+        int32_t volumeLevel, bool isSupportWearDetection = false);
 
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
 
-    DeviceVolumeType GetDeviceCategory(DeviceType deviceType);
+    DeviceVolumeType GetDeviceCategory(DeviceType deviceType, AudioStreamType streamType = STREAM_MUSIC);
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
@@ -379,7 +380,8 @@ public:
     float GetSystemVolumeInDbByDegree(AudioVolumeType volumeType,
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc, bool mute);
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
-    float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
+    float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType,
+        int32_t volumeDegree, bool isSupportWearDetection = false);
     int32_t UpdateCollaborativeProductId(const std::string &productId);
     bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage);
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length);
@@ -534,7 +536,8 @@ private:
     int32_t SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t zoneId = 0);
     float CalculateVolumeDbExt(int32_t volumeInt, int32_t limit = MAX_VOLUME_DEGREE);
-    float CalculateVolumeDbNonlinearExt(AudioStreamType streamType, DeviceType deviceType, int32_t volumeDegree);
+    float CalculateVolumeDbNonlinearExt(AudioStreamType streamType, DeviceType deviceType,
+        int32_t volumeDegree, bool isSupportWearDetection = false);
     void SaveVolumeData(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType,
         int32_t volumeLevel, bool updateDb = false, bool updateMem = false, int32_t zoneId = 0);
     int32_t GetStreamVolumeDegreeInternal(std::shared_ptr<AudioDeviceDescriptor> &device,

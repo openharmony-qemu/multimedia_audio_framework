@@ -780,7 +780,6 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     bool IsHeadsetToSpkOrEp(const std::shared_ptr<AudioDeviceDescriptor> &oldDesc,
         const std::shared_ptr<AudioDeviceDescriptor> &newDesc);
-    bool IsSceneRequireMuteAndSleep();
     void SetVoiceCallMuteForSwitchDevice();
     void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason,

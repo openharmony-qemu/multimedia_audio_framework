@@ -3267,7 +3267,6 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
     std::string oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(oldDesc, streamDesc->sessionId_);
     bool isOldDeviceUnavailable = reason.IsOldDeviceUnavaliable() || reason.IsOldDeviceUnavaliableExt();
     bool isHeadsetToSpkOrEp = IsHeadsetToSpkOrEp(oldDesc, newDesc);
-    bool isSleepScene = IsSceneRequireMuteAndSleep();
 
     struct SleepStrategy {
         std::function<bool()> condition;
@@ -3285,11 +3284,11 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
             {BASE_DEVICE_SWITCH_SLEEP_US, DISTRIBUTED_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US}
         },
         {
-            [&]() { return isOldDeviceUnavailable && isSleepScene && isHeadsetToSpkOrEp; },
+            [&]() { return isOldDeviceUnavailable && isHeadsetToSpkOrEp; },
             {BASE_DEVICE_SWITCH_SLEEP_US, OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US, HEADSET_TO_SPK_EP_EXTRA_SLEEP_US}
         },
         {
-            [&]() { return isOldDeviceUnavailable && isSleepScene; },
+            [&]() { return isOldDeviceUnavailable; },
             {BASE_DEVICE_SWITCH_SLEEP_US, OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US}
         },
         {
@@ -3318,19 +3317,6 @@ bool AudioCoreService::IsHeadsetToSpkOrEp(const std::shared_ptr<AudioDeviceDescr
     DeviceType newDeviceType = newDesc->deviceType_;
     return (oldDeviceType == DEVICE_TYPE_USB_HEADSET || oldDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) &&
         (newDeviceType == DEVICE_TYPE_SPEAKER || newDeviceType == DEVICE_TYPE_EARPIECE);
-}
-
-/**
- * Check whether the current audio scene requires mute and sleep handling.
- * This function is only used in audio switching logic when disconnecting a device,
- * specifically within MuteSinkPortForSwitchDevice and SleepForSwitchDevice.
-*/
-bool AudioCoreService::IsSceneRequireMuteAndSleep()
-{
-    AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
-    AudioScene scene = audioSceneManager_.GetAudioScene(true);
-    return (scene == AUDIO_SCENE_DEFAULT) || (scene == AUDIO_SCENE_PHONE_CHAT) ||
-        ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) && ringerMode != RINGER_MODE_NORMAL);
 }
 
 void AudioCoreService::SetVoiceCallMuteForSwitchDevice()
@@ -3385,14 +3371,10 @@ void AudioCoreService::MuteSinkPortLogic(const std::string &oldSinkName, const s
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
     if (reason.IsDistributedDeviceUnavailable()) {
         audioIOHandleMap_.MuteSinkPort(newSinkName, DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS, true, false);
-    } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
-        ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
-         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
+    } else if (reason.IsOldDeviceUnavaliable()) {
         MutePrimaryOrOffloadSink(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS);
         audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true, false);
-    } else if (reason.IsOldDeviceUnavaliableExt() && ((scene == AUDIO_SCENE_DEFAULT) ||
-        ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
-         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
+    } else if (reason.IsOldDeviceUnavaliableExt()) {
         audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS, true, false);
     } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
         oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
