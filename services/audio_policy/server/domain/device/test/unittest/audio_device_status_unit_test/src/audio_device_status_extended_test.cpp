@@ -614,7 +614,7 @@ HWTEST_F(AudioDeviceStatusExtendedTest, IsScoConnected_001, TestSize.Level4)
     EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:05"));
 
     deviceManager.connectedDevices_.push_back(nullptr);
-    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:01"));
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:06"));
 
     deviceManager.connectedDevices_ = saved;
 }
