@@ -765,8 +765,8 @@ void AudioPipeSelector::AdjustFastRouteForUltraFastIfNeeded(std::shared_ptr<Audi
         streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
     }
     if (streamDesc->GetRoute() == AUDIO_OUTPUT_FLAG_ULTRA_FAST &&
-        !pipeManager_->IsUltraFastSupportedDevice(deviceType)) {
-        AUDIO_INFO_LOG("Device does not support ultra fast, downgrade stream %{public}u to FAST",
+        !pipeManager_->IsTrueUltraFastSupportedDevice(deviceType)) {
+        AUDIO_INFO_LOG("Device does not support true ultra fast, downgrade stream %{public}u to FAST",
             streamDesc->sessionId_);
         streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
     }

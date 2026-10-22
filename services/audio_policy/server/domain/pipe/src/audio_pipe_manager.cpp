@@ -1737,6 +1737,11 @@ bool AudioPipeManager::IsUltraFastSupportedDevice(DeviceType deviceType)
     return g_ultraFastDevicesSet.find(deviceType) != g_ultraFastDevicesSet.end();
 }
 
+bool AudioPipeManager::IsTrueUltraFastSupportedDevice(DeviceType deviceType)
+{
+    return g_trueUltraFastDevicesSet.find(deviceType) != g_trueUltraFastDevicesSet.end();
+}
+
 uint32_t AudioPipeManager::GetUltraFastStreamCount()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
