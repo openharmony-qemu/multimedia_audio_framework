@@ -424,13 +424,14 @@ HWTEST_F(AudioStreamCollectorUnitTest, UpdateCapturerDeviceInfo_003, TestSize.Le
     auto outputDeviceInfo2 = std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::DEVICE_INFO);
     outputDeviceInfo2->deviceType_ = DEVICE_TYPE_MAX;
     auto capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    capturerChangeInfo->sessionId = 1001;
     collector.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
-    EXPECT_EQ(collector.UpdateCapturerDeviceInfo(outputDeviceInfo1), SUCCESS);
-    EXPECT_EQ(collector.UpdateCapturerDeviceInfo(outputDeviceInfo2), SUCCESS);
+    EXPECT_EQ(collector.UpdateCapturerDeviceInfo(1001, outputDeviceInfo1), SUCCESS);
+    EXPECT_EQ(collector.UpdateCapturerDeviceInfo(1001, outputDeviceInfo2), SUCCESS);
 
     collector.audioPolicyServerHandler_.reset();
-    EXPECT_EQ(collector.UpdateCapturerDeviceInfo(outputDeviceInfo1), SUCCESS);
-    EXPECT_EQ(collector.UpdateCapturerDeviceInfo(outputDeviceInfo2), SUCCESS);
+    EXPECT_EQ(collector.UpdateCapturerDeviceInfo(1001, outputDeviceInfo1), SUCCESS);
+    EXPECT_EQ(collector.UpdateCapturerDeviceInfo(1001, outputDeviceInfo2), SUCCESS);
 }
 
 /**

@@ -686,6 +686,10 @@ private:
         bool hasSystemPermission);
     static void UpdateCapturerInfoWhenNoPermission(const shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
         bool hasSystemPermission);
+    void UpdateCapturerDeviceInfoByActiveDevice(
+        vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
+        vector<shared_ptr<AudioDeviceDescriptor>> &inputDevices,
+        bool hasBTPermission, bool hasSystemPermission);
     void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     void UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);

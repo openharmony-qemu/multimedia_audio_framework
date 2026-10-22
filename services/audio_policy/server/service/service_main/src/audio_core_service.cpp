@@ -1549,7 +1549,7 @@ int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     CheckAndSetCurrentInputDevice(deviceDesc, GetRealUid(streamDesc));
     audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
         pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), deviceDesc->networkId_);
-    streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
+    streamCollector_.UpdateCapturerDeviceInfo(sessionId, deviceDesc);
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     if (deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP || curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
@@ -2317,10 +2317,36 @@ int32_t AudioCoreService::GetCurrentCapturerChangeInfos(
         }
     }
 #else
+    UpdateCapturerDeviceInfoByActiveDevice(audioCapturerChangeInfos, inputDevices,
+        hasBTPermission, hasSystemPermission);
+#endif
+    return status;
+}
+
+void AudioCoreService::UpdateCapturerDeviceInfoByActiveDevice(
+    vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
+    vector<shared_ptr<AudioDeviceDescriptor>> &inputDevices,
+    bool hasBTPermission, bool hasSystemPermission)
+{
     DeviceType activeDeviceType = audioActiveDevice_.GetCurrentInputDeviceType();
     DeviceRole activeDeviceRole = INPUT_DEVICE;
-    for (std::shared_ptr<AudioDeviceDescriptor> desc : inputDevices) {
-        if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
+    if (Util::IsEnhancedRoutingSupported()) {
+        for (std::shared_ptr<AudioDeviceDescriptor> desc : inputDevices) {
+            if ((desc->deviceType_ != activeDeviceType) || (desc->deviceRole_ != activeDeviceRole)) {
+                continue;
+            }
+            size_t capturerInfosSize = audioCapturerChangeInfos.size();
+            for (size_t i = 0; i < capturerInfosSize; i++) {
+                CHECK_AND_CONTINUE(audioCapturerChangeInfos[i] != nullptr);
+                UpdateCapturerInfoWhenNoPermission(audioCapturerChangeInfos[i], hasSystemPermission);
+            }
+            break;
+        }
+    } else {
+        for (std::shared_ptr<AudioDeviceDescriptor> desc : inputDevices) {
+            if ((desc->deviceType_ != activeDeviceType) || (desc->deviceRole_ != activeDeviceRole)) {
+                continue;
+            }
             size_t capturerInfosSize = audioCapturerChangeInfos.size();
             for (size_t i = 0; i < capturerInfosSize; i++) {
                 CHECK_AND_CONTINUE(audioCapturerChangeInfos[i] != nullptr);
@@ -2333,8 +2359,6 @@ int32_t AudioCoreService::GetCurrentCapturerChangeInfos(
             break;
         }
     }
-#endif
-    return status;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetExcludedDevices(
