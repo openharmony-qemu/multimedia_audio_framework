@@ -2318,11 +2318,8 @@ int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
 
 FastStatus RendererInClientInner::GetFastStatus()
 {
-    if (IsUltraFastStream()) {
-        return FASTSTATUS_ULTRA_FAST;
-    }
     if (JudgeFastStreamByRendererAttr()) {
-        return FASTSTATUS_FAST;
+        return rendererInfo_.rendererFlags == AUDIO_FLAG_MMAP ? FASTSTATUS_FAST : FASTSTATUS_ULTRA_FAST;
     }
     return FASTSTATUS_NORMAL;
 }
