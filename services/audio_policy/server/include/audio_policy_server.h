@@ -588,6 +588,7 @@ private:
         const DeviceType &deviceType = DEVICE_TYPE_NONE);
     bool GetStreamMuteInternal(AudioStreamType streamType);
     bool IsVolumeTypeValid(AudioStreamType streamType);
+    bool IsPublicVolumeType(AudioVolumeType volumeType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
     bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
 

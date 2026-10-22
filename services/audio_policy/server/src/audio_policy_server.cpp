@@ -540,6 +540,22 @@ bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
     return result;
 }
 
+bool AudioPolicyServer::IsPublicVolumeType(AudioVolumeType volumeType)
+{
+    switch (volumeType) {
+        case STREAM_VOICE_CALL:
+        case STREAM_RING:
+        case STREAM_MUSIC:
+        case STREAM_ALARM:
+        case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_ASSISTANT:
+            return true;
+        default:
+            AUDIO_ERR_LOG("IsPublicVolumeType: volumeType[%{public}d] is not public", volumeType);
+            return false;
+    }
+}
+
 bool AudioPolicyServer::IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel)
 {
     bool result = true;
@@ -1044,6 +1060,11 @@ float AudioPolicyServer::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t
 // deprecated since api 9.
 int32_t AudioPolicyServer::SetStreamMuteLegacy(AudioStreamType streamType, bool mute, const DeviceType &deviceType)
 {
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (!IsPublicVolumeType(volumeType)) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+            ERR_SYSTEM_PERMISSION_DENIED, "No system permission for volumeType[%{public}d]", volumeType);
+    }
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetStreamMuteInternal(streamType, mute, false, deviceType);
 }
@@ -1608,7 +1629,14 @@ bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
 
 int32_t AudioPolicyServer::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
-    return audioPolicyService_.SetDeviceActive(deviceType, active, uid);
+    int32_t callingUid = uid;
+    if (uid != INVALID_UID) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+            ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    } else {
+        callingUid = static_cast<int32_t>(IPCSkeleton::GetCallingUid());
+    }
+    return audioPolicyService_.SetDeviceActive(deviceType, active, callingUid);
 }
 
 bool AudioPolicyServer::IsDeviceActive(InternalDeviceType deviceType)
