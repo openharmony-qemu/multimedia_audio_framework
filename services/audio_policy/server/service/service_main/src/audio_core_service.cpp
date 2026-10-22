@@ -1190,7 +1190,7 @@ void AudioCoreService::HandleTrueUltraFastFlag(std::shared_ptr<AudioStreamDescri
         return;
     }
     streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_ULTRA_FAST;
-    streamDesc->SetUltraFastRequested(true);
+    streamDesc->SetTrueUltraFastRequested(true);
 }
 
 void AudioCoreService::HandleLegacyUltraFastFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,

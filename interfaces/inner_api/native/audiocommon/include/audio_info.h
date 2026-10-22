@@ -1796,6 +1796,7 @@ struct AudioProcessConfig : public Parcelable {
     DeviceType deviceType = DEVICE_TYPE_INVALID;
 
     uint32_t ultraFastFlag = false;
+    uint32_t trueUltraFastFlag = ULTRA_NONE;
 
     bool isInnerCapturer = false;
 
@@ -1855,6 +1856,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // Renderer only
         parcel.WriteUint32(ultraFastFlag);
+        parcel.WriteUint32(trueUltraFastFlag);
 
         // Recorder only
         parcel.WriteBool(isInnerCapturer);
@@ -1918,6 +1920,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // Renderer only
         config->ultraFastFlag = parcel.ReadUint32();
+        config->trueUltraFastFlag = parcel.ReadUint32();
 
         // Recorder only
         config->isInnerCapturer = parcel.ReadBool();

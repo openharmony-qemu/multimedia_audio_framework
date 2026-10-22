@@ -276,13 +276,12 @@ public:
 
     bool IsUltraFastStream() const
     {
-        return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED) ||
-            rendererInfo_.rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST;
+        return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
     }
 
     bool IsTrueUltraFastStream() const
     {
-        return rendererInfo_.rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST;
+        return clientConfig_.trueUltraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
     }
 
     bool IsUltraFastStreamRequested() const;

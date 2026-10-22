@@ -3865,6 +3865,7 @@ void AudioRendererPrivate::UpdateAudioStreamParamsByStreamDescriptor(AudioStream
     audioStreamParams.remoteChannelLayout =
         static_cast<uint64_t>(*streamDesc->newDeviceDescs_.front()->audioStreamInfo_.front().channelLayout.begin());
     audioStreamParams.ultraFastFlag = streamDesc->GetUltraFastFlag();
+    audioStreamParams.trueUltraFastFlag = streamDesc->GetTrueUltraFastFlag();
 }
 
 void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,
