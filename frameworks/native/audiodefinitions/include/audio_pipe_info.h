@@ -191,10 +191,6 @@ public:
 
     bool GetUltraFastFlag() const;
 
-    void SetTrueUltraFastFlag(bool flag) { trueUltraFastPipe_ = flag; }
-
-    bool GetTrueUltraFastFlag() const { return trueUltraFastPipe_; }
-
     bool HasStream();
 
     bool HasRunningStream();
@@ -217,8 +213,6 @@ private:
     void DumpInputAttrs(std::string &dumpString);
 
     bool ultraFastPipe_ = false;
-
-    bool trueUltraFastPipe_ = false;
 
     bool hasMoveStream_ = false;
 };

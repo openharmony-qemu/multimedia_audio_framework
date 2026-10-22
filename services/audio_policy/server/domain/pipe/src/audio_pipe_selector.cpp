@@ -765,8 +765,8 @@ void AudioPipeSelector::AdjustFastRouteForUltraFastIfNeeded(std::shared_ptr<Audi
         streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
     }
     if (streamDesc->GetRoute() == AUDIO_OUTPUT_FLAG_ULTRA_FAST &&
-        !pipeManager_->IsTrueUltraFastSupportedDevice(deviceType)) {
-        AUDIO_INFO_LOG("Device does not support true ultra fast, downgrade stream %{public}u to FAST",
+        !pipeManager_->IsUltraFastSupportedDevice(deviceType)) {
+        AUDIO_INFO_LOG("Device does not support ultra fast, downgrade stream %{public}u to FAST",
             streamDesc->sessionId_);
         streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
     }
@@ -2022,7 +2022,7 @@ static void FillSpecialPipeInfoExtOther(AudioPipeInfo &info, std::shared_ptr<Ada
         info.moduleInfo_.name = "UltraFastV2UsbArmRendererSink";
         info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
         info.moduleInfo_.role = "sink";
-        info.SetTrueUltraFastFlag(true);
+        info.SetUltraFastFlag(true);
     } else if (pipeInfoPtr->name_ == "tts_out") {
         info.moduleInfo_.className = "primary_voice_call_assistant";
         info.moduleInfo_.fileName = "tts_dump_file";
@@ -2120,7 +2120,7 @@ static void FillPrimaryUltraFastOutputPipeInfo(AudioPipeInfo &info)
     info.moduleInfo_.name = "UltraFastV2RendererSink";
     info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
     info.moduleInfo_.role = "sink";
-    info.SetTrueUltraFastFlag(true);
+    info.SetUltraFastFlag(true);
 }
 
 static void FillVoipFastOutputPipeInfo(AudioPipeInfo &info)
@@ -2270,13 +2270,9 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         UpdateModuleInfoWithDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
 
-    if (streamDesc->IsTrueUltraFastRequested()) {
-        info.SetTrueUltraFastFlag(true);
-        streamDesc->SetTrueUltraFastImplemented(true);
-    }
-
     if (streamDesc->IsUltraFastRequested()) {
-        if (!AudioPipeManager::GetPipeManager()->HasRunningStream(streamDesc->sessionId_)) {
+        if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_ULTRA_FAST ||
+            !AudioPipeManager::GetPipeManager()->HasRunningStream(streamDesc->sessionId_)) {
             info.SetUltraFastFlag(true);
             streamDesc->SetUltraFastImplemented(true);
         }
@@ -2474,7 +2470,6 @@ void AudioPipeSelector::MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> 
     CHECK_AND_RETURN(streamDesc != nullptr && pipeInfo != nullptr, "streamDesc or pipeInfo is nullptr");
     CHECK_AND_RETURN(pipeInfo->GetRoute() & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST));
     streamDesc->SetUltraFastImplemented(pipeInfo->GetUltraFastFlag());
-    streamDesc->SetTrueUltraFastImplemented(pipeInfo->GetTrueUltraFastFlag());
 }
 
 void AudioPipeSelector::MatchFastArmusbPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,

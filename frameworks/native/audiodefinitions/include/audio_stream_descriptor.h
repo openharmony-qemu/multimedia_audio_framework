@@ -503,50 +503,6 @@ public:
         return (ultraFastFlag_ & ULTRA_IMPLEMENTED);
     }
 
-    uint32_t GetTrueUltraFastFlag()
-    {
-        std::shared_lock<std::shared_mutex> lock(trueUltraFastFlagLock_);
-        return trueUltraFastFlag_;
-    }
-
-    void ResetTrueUltraFastFlag()
-    {
-        std::lock_guard<std::shared_mutex> lock(trueUltraFastFlagLock_);
-        trueUltraFastFlag_ = ULTRA_NONE;
-    }
-
-    void SetTrueUltraFastRequested(bool requested)
-    {
-        std::lock_guard<std::shared_mutex> lock(trueUltraFastFlagLock_);
-        if (requested) {
-            trueUltraFastFlag_ |= ULTRA_REQUESTED;
-        } else {
-            trueUltraFastFlag_ &= ~ULTRA_REQUESTED;
-        }
-    }
-
-    bool IsTrueUltraFastRequested()
-    {
-        std::shared_lock<std::shared_mutex> lock(trueUltraFastFlagLock_);
-        return (trueUltraFastFlag_ & ULTRA_REQUESTED);
-    }
-
-    void SetTrueUltraFastImplemented(bool implemented)
-    {
-        std::lock_guard<std::shared_mutex> lock(trueUltraFastFlagLock_);
-        if (implemented) {
-            trueUltraFastFlag_ |= ULTRA_IMPLEMENTED;
-        } else {
-            trueUltraFastFlag_ &= ~ULTRA_IMPLEMENTED;
-        }
-    }
-
-    bool IsTrueUltraFastImplemented()
-    {
-        std::shared_lock<std::shared_mutex> lock(trueUltraFastFlagLock_);
-        return (trueUltraFastFlag_ & ULTRA_IMPLEMENTED);
-    }
-
     void SetFastStreamForcedNormalFlag(bool isForcedNormal)
     {
         forcedNormalFlag_ = isForcedNormal;
@@ -592,8 +548,6 @@ private:
     mutable std::mutex lock_;
     std::shared_mutex ultraFastFlagLock_;
     uint32_t ultraFastFlag_ = ULTRA_NONE;
-    std::shared_mutex trueUltraFastFlagLock_;
-    uint32_t trueUltraFastFlag_ = ULTRA_NONE;
     std::atomic<bool> forcedNormalFlag_ = false;
     std::atomic<bool> routeSelectRejectedFlag_ = false;
 };

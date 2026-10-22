@@ -42,13 +42,6 @@ static const std::unordered_set<DeviceType> g_ultraFastDevicesSet = {
     DEVICE_TYPE_USB_ARM_HEADSET
 };
 
-static const std::unordered_set<DeviceType> g_trueUltraFastDevicesSet = {
-    DEVICE_TYPE_SPEAKER,
-    DEVICE_TYPE_EARPIECE,
-    DEVICE_TYPE_USB_HEADSET,
-    DEVICE_TYPE_USB_ARM_HEADSET
-};
-
 class AudioPipeManager {
 public:
     using RequiredPipesReadyCallback = std::function<void()>;
@@ -215,7 +208,6 @@ public:
     StreamUsage GetLastestRunningCallStreamUsage();
     bool HasUltraFastPipe();
     bool IsUltraFastSupportedDevice(DeviceType deviceType);
-    bool IsTrueUltraFastSupportedDevice(DeviceType deviceType);
     uint32_t GetUltraFastStreamCount();
     bool IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::vector<std::string> GetNoRunningPipeModuleName();
