@@ -76,6 +76,11 @@ bool AudioPipeManager::GetArmUsbUltraFastFlag()
     return audioConfigManager_.GetArmUsbUltraFastFlag();
 }
 
+bool AudioPipeManager::GetTrueUltraFastFlag()
+{
+    return audioConfigManager_.GetTrueUltraFastFlag();
+}
+
 bool AudioPipeManager::PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc)
 {
     return audioConfigManager_.PreferMultiChannelPipe(desc);

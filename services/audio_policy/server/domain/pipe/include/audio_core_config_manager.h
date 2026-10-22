@@ -109,6 +109,7 @@ public:
     bool GetUltraFastFlag();
     bool GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role);
     bool GetArmUsbUltraFastFlag();
+    bool GetTrueUltraFastFlag();
     bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool GetFastStreamSupport(AudioStreamInfo &streamInfo, std::shared_ptr<AdapterDeviceInfo> &deviceInfo);
@@ -202,6 +203,7 @@ private:
     bool supportMultSupMode_ = false;
     bool supportUltraFast_ = false;
     bool supportArmUsbUltraFast_ = false;
+    bool supportTrueUltraFast_ = false;
     bool isSupportIndependentPipe_ = false;
 
     std::atomic<bool> isAdapterInfoMap_ = false;

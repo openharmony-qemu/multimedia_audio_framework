@@ -111,6 +111,17 @@ void AudioCoreConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
         "Parse audio policy xml failed, received data is empty");
 
     audioPolicyConfig_.Reorganize();
+    supportTrueUltraFast_ = false;
+    for (auto &adapterIt : audioPolicyConfig_.adapterInfoMap) {
+        for (auto &pipeInfo : adapterIt.second->pipeInfos) {
+            if (pipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+                supportTrueUltraFast_ = true;
+                break;
+            }
+        }
+        if (supportTrueUltraFast_) { break; }
+    }
+    AUDIO_INFO_LOG("supportTrueUltraFast_ = %{public}d", supportTrueUltraFast_);
 
     isAdapterInfoMap_.store(true);
 }
@@ -529,6 +540,11 @@ bool AudioCoreConfigManager::GetHasEarpiece()
 bool AudioCoreConfigManager::GetUltraFastFlag()
 {
     return supportUltraFast_;
+}
+
+bool AudioCoreConfigManager::GetTrueUltraFastFlag()
+{
+    return supportTrueUltraFast_;
 }
 
 bool AudioCoreConfigManager::GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role)
