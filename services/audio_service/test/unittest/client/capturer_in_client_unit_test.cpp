@@ -3040,6 +3040,30 @@ HWTEST_F(CapturerInClientUnitTest, UltraFastCallbackDeviceSwitch_001, TestSize.L
     EXPECT_EQ(client->cbBufferSize_, 960);
 }
 
+/** @tc.desc: Callback blocks follow the client rate and format independently of the USB source profile. */
+HWTEST_F(CapturerInClientUnitTest, UltraFastUsbCallbackProfile_001, TestSize.Level1)
+{
+    auto client = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, 20001);
+    client->capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
+    client->streamParams_.encoding = ENCODING_PCM;
+    client->streamParams_.format = SAMPLE_S32LE;
+    client->streamParams_.channels = CHANNEL_4;
+    client->sizePerFrameInByte_ = 16;
+    for (auto rate : {SAMPLE_RATE_16000, SAMPLE_RATE_32000, SAMPLE_RATE_48000, SAMPLE_RATE_96000}) {
+        client->streamParams_.samplingRate = rate;
+        client->InitCallbackBuffer(20000);
+        EXPECT_EQ(client->cbBufferSize_, static_cast<uint64_t>(rate) * 2500 / AUDIO_US_PER_S * 16);
+    }
+    client->streamParams_.samplingRate = SAMPLE_RATE_16000;
+    client->streamParams_.encoding = ENCODING_AUDIOVIVID;
+    client->InitCallbackBuffer(2500);
+    EXPECT_EQ(client->cbBufferSize_, 4096 * 16);
+    client->streamParams_.encoding = ENCODING_PCM;
+    client->streamParams_.samplingRate = 0;
+    client->InitCallbackBuffer(2500);
+    EXPECT_EQ(client->cbBufferSize_, 4096 * 16);
+}
+
 /** @tc.desc: Only a capturer with an original ultra-fast request selects ultra-fast scheduling. */
 HWTEST_F(CapturerInClientUnitTest, SetupFastStreamThreadPriority_001, TestSize.Level1)
 {

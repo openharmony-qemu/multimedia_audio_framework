@@ -55,6 +55,96 @@ public:
     void TearDown(void) {}
 };
 
+/** @tc.desc: ARM USB uses the reported PCM profile and derives a 2.5 ms source buffer. */
+HWTEST_F(AudioCoreConfigManagerAiutTest, ArmUsbUltraFastRecordProfile_001, TestSize.Level1)
+{
+    auto &manager = AudioCoreConfigManager::GetInstance();
+    auto pipe = std::make_shared<AdapterPipeInfo>();
+    auto xmlProp = std::make_shared<PipeStreamPropInfo>();
+    xmlProp->sampleRate_ = SAMPLE_RATE_48000;
+    xmlProp->format_ = SAMPLE_S16LE;
+    xmlProp->channels_ = STEREO;
+    xmlProp->channelLayout_ = CH_LAYOUT_STEREO;
+    xmlProp->bufferSize_ = 960;
+    xmlProp->pipeInfo_ = pipe;
+    pipe->streamPropInfos_ = {xmlProp};
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    DeviceStreamInfo reported;
+    reported.samplingRate = {SAMPLE_RATE_16000};
+    reported.format = SAMPLE_S32LE;
+    reported.channelLayout = {CH_LAYOUT_MONO};
+    device->audioStreamInfo_ = {reported};
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->audioMode_ = AUDIO_MODE_RECORD;
+    stream->routeFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+    stream->newDeviceDescs_ = {device};
+    stream->streamInfo_ = AudioStreamInfo(SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO);
+    auto result = std::make_shared<PipeStreamPropInfo>();
+    manager.GetStreamPropInfoForRecord(stream, pipe, result, stream->streamInfo_);
+    EXPECT_EQ(stream->routeFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
+    EXPECT_EQ(result->sampleRate_, SAMPLE_RATE_16000);
+    EXPECT_EQ(result->format_, SAMPLE_S32LE);
+    EXPECT_EQ(result->channels_, MONO);
+    EXPECT_EQ(result->channelLayout_, CH_LAYOUT_MONO);
+    EXPECT_EQ(result->bufferSize_, 160);
+    EXPECT_EQ(result->pipeInfo_.lock(), pipe);
+    EXPECT_EQ(xmlProp->sampleRate_, SAMPLE_RATE_48000);
+    EXPECT_EQ(xmlProp->bufferSize_, 960);
+
+    reported.samplingRate = {SAMPLE_RATE_96000};
+    reported.format = SAMPLE_S16LE;
+    reported.channelLayout = {CH_LAYOUT_STEREO};
+    device->audioStreamInfo_ = {reported};
+    result = manager.GetArmUsbUltraFastRecordProp(device, pipe);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->sampleRate_, SAMPLE_RATE_96000);
+    EXPECT_EQ(result->bufferSize_, 960);
+
+    device->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    stream->streamInfo_ = AudioStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO);
+    manager.GetStreamPropInfoForRecord(stream, pipe, result, stream->streamInfo_);
+    EXPECT_EQ(result->sampleRate_, SAMPLE_RATE_48000);
+    EXPECT_EQ(result->bufferSize_, 960);
+}
+
+/** @tc.desc: Missing or invalid ARM USB capabilities cannot create an ultra fast profile. */
+HWTEST_F(AudioCoreConfigManagerAiutTest, ArmUsbUltraFastRecordProfile_002, TestSize.Level1)
+{
+    auto &manager = AudioCoreConfigManager::GetInstance();
+    auto pipe = std::make_shared<AdapterPipeInfo>();
+    pipe->streamPropInfos_ = {std::make_shared<PipeStreamPropInfo>()};
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    device->audioStreamInfo_.clear();
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+    DeviceStreamInfo reported;
+    reported.samplingRate.clear();
+    reported.format = SAMPLE_S16LE;
+    reported.channelLayout = {CH_LAYOUT_MONO};
+    device->audioStreamInfo_ = {reported};
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+    reported.samplingRate = {SAMPLE_RATE_16000};
+    reported.format = INVALID_WIDTH;
+    device->audioStreamInfo_ = {reported};
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+    reported.format = SAMPLE_S16LE;
+    reported.channelLayout = {CH_LAYOUT_UNKNOWN};
+    device->audioStreamInfo_ = {reported};
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+    reported.channelLayout = {CH_LAYOUT_MONO};
+    reported.samplingRate = {SAMPLE_RATE_44100};
+    device->audioStreamInfo_ = {reported};
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+    reported.samplingRate = {static_cast<AudioSamplingRate>(0)};
+    device->audioStreamInfo_ = {reported};
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+    reported.samplingRate = {SAMPLE_RATE_16000};
+    device->audioStreamInfo_ = {reported};
+    pipe->streamPropInfos_.clear();
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+}
+
 /**
  * @tc.name: AudioCoreConfigManager_SetEcEnableState_001
  * @tc.number: AudioCoreConfigManager_SetEcEnableState_001

@@ -8586,6 +8586,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
 
     auto &config = AudioPolicyConfigData::GetInstance();
     auto savedDevices = config.deviceInfoMap;
+    auto savedAdapters = config.adapterInfoMap;
     config.deviceInfoMap.clear();
     auto adapter = std::make_shared<PolicyAdapterInfo>();
     adapter->adapterName = "primary";
@@ -8597,6 +8598,8 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     auto pipe = std::make_shared<AdapterPipeInfo>();
     pipe->name_ = "primary_ultra_fast_input";
     pipe->role_ = PIPE_ROLE_INPUT;
+    adapter->pipeInfos = {pipe};
+    config.adapterInfoMap[AudioAdapterType::TYPE_PRIMARY] = adapter;
     auto prop = CreatePipeStreamPropInfoForDevice(DEVICE_TYPE_USB_HEADSET, STEREO);
     prop->bufferSize_ = ULTRA_FAST_CAPTURE_FRAMES * STEREO * sizeof(int16_t);
     pipe->streamPropInfos_ = {prop};
@@ -8630,7 +8633,33 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
         EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL) << source;
         stream->streamInfo_.samplingRate = SAMPLE_RATE_48000;
     }
+    adapter->adapterName = "usb";
+    pipe->name_ = "usb_ultra_fast_input";
+    config.adapterInfoMap[AudioAdapterType::TYPE_USB] = adapter;
+    device->type_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
+    config.deviceInfoMap[{DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE}] = {device};
+    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    stream->streamInfo_ = AudioStreamInfo(SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, MONO, CH_LAYOUT_MONO);
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
+    stream->streamInfo_.format = SAMPLE_S32LE;
+    stream->streamInfo_.channels = CHANNEL_4;
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
+    stream->streamInfo_.encoding = ENCODING_AUDIOVIVID;
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
+    stream->streamInfo_.encoding = ENCODING_PCM;
+    stream->capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
+    stream->capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
+    stream->appInfo_.appTokenId = 0;
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
     config.deviceInfoMap = savedDevices;
+    config.adapterInfoMap = savedAdapters;
     SetSelfTokenID(savedToken);
     OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
 }

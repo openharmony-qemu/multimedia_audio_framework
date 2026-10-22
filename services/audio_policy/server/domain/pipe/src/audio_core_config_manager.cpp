@@ -764,6 +764,34 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetAvailableStreamPr
     return streamPropInfos.front();
 }
 
+std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetArmUsbUltraFastRecordProp(
+    const std::shared_ptr<AudioDeviceDescriptor> &device, const std::shared_ptr<AdapterPipeInfo> &pipe)
+{
+    const auto &streamInfos = device->GetAudioStreamInfo();
+    CHECK_AND_RETURN_RET_LOG(!streamInfos.empty(), nullptr, "ARM USB stream info is empty");
+    auto deviceInfo = streamInfos.back();
+    CHECK_AND_RETURN_RET_LOG(!deviceInfo.samplingRate.empty(), nullptr, "ARM USB sampling rate is empty");
+    const uint64_t sampleRate = *deviceInfo.samplingRate.begin();
+    const auto layout = deviceInfo.GetMainChannelLayout();
+    const auto channels = ConvertLayoutToAudioChannel(layout);
+    CHECK_AND_RETURN_RET_LOG(AudioDefinitionPolicyUtils::enumToFormatStr.count(deviceInfo.format) != 0,
+        nullptr, "Invalid ARM USB sample format");
+    const auto bytesPerSample = AudioPolicyUtils::GetInstance().PcmFormatToBytes(deviceInfo.format);
+    const uint64_t spanFrames = sampleRate * 2500 / AUDIO_US_PER_S;
+    CHECK_AND_RETURN_RET_LOG(layout != CH_LAYOUT_UNKNOWN && channels > CHANNEL_UNKNOW && bytesPerSample > 0 &&
+        spanFrames > 0 && spanFrames * AUDIO_US_PER_S == sampleRate * 2500,
+        nullptr, "Invalid ARM USB ultra fast stream info");
+    auto prop = GetAvailableStreamPropInfoForDevice(pipe->streamPropInfos_, device->deviceType_);
+    CHECK_AND_RETURN_RET_LOG(prop != nullptr, nullptr, "ARM USB ultra fast stream prop is empty");
+    auto result = std::make_shared<PipeStreamPropInfo>(*prop);
+    result->sampleRate_ = static_cast<uint32_t>(sampleRate);
+    result->format_ = deviceInfo.format;
+    result->channelLayout_ = layout;
+    result->channels_ = channels;
+    result->bufferSize_ = spanFrames * channels * bytesPerSample;
+    return result;
+}
+
 void AudioCoreConfigManager::GetStreamPropInfoForRecord(
     std::shared_ptr<AudioStreamDescriptor> desc, std::shared_ptr<AdapterPipeInfo> adapterPipeInfo,
     std::shared_ptr<PipeStreamPropInfo> &info, const AudioStreamInfo &streamInfo)
@@ -772,7 +800,11 @@ void AudioCoreConfigManager::GetStreamPropInfoForRecord(
     CHECK_AND_RETURN_LOG(adapterPipeInfo != nullptr, "adapterPipeInfo is nullptr");
     if (desc->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST)) {
         AudioStreamInfo temp(streamInfo.samplingRate, ENCODING_PCM, desc->streamInfo_.format, streamInfo.channels);
-        auto fastStreamPropinfo = GetStreamPropInfoFromPipe(adapterPipeInfo, temp);
+        const bool isArmUsbUltraFast = desc->routeFlag_ == AUDIO_INPUT_FLAG_ULTRA_FAST &&
+            desc->GetMainNewDeviceType() == DEVICE_TYPE_USB_ARM_HEADSET;
+        auto fastStreamPropinfo = isArmUsbUltraFast ?
+            GetArmUsbUltraFastRecordProp(desc->newDeviceDescs_.front(), adapterPipeInfo) :
+            GetStreamPropInfoFromPipe(adapterPipeInfo, temp);
         if (fastStreamPropinfo != nullptr) {
             AUDIO_INFO_LOG("Find fast streamPropInfo from %{public}s", adapterPipeInfo->name_.c_str());
             // Use *ptr to get copy and avoid modify the source data from XML

@@ -775,6 +775,11 @@ void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
         return;
     }
     std::shared_ptr<AudioDeviceDescriptor> temp = streamDesc->newDeviceDescs_.front();
+    if (streamDesc->routeFlag_ == AUDIO_INPUT_FLAG_ULTRA_FAST &&
+        temp->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        // Keep the hardware-reported profiles for ARM USB source configuration.
+        return;
+    }
     DeviceStreamInfo streamInfo;
     streamInfo.format = streamPropInfo->format_;
     streamInfo.samplingRate = {static_cast<AudioSamplingRate>(streamPropInfo->sampleRate_)};
@@ -2237,11 +2242,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         UpdateModuleInfoWithDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
     if (streamDesc->routeFlag_ == AUDIO_INPUT_FLAG_ULTRA_FAST) {
-        // USB device descriptors can contain several formats. Keep the selected XML 2.5 ms profile.
-        info.moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
-        info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
-        info.moduleInfo_.channels = std::to_string(streamPropInfo->channels_);
-        info.moduleInfo_.channelLayout = std::to_string(streamPropInfo->channelLayout_);
+        // ARM USB parameters come from the device; use the resolved 2.5 ms buffer size.
         info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
     }
 
@@ -2500,6 +2501,9 @@ void AudioPipeSelector::UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStream
     info.isCollaborationEnable_ = streamPropInfo->isCollaborationEnable_;
     if (!streamDesc->newDeviceDescs_.empty()) {
         UpdateModuleInfoWithDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
+    }
+    if (streamDesc->routeFlag_ == AUDIO_INPUT_FLAG_ULTRA_FAST) {
+        info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
     }
 
     AUDIO_INFO_LOG("Pipe name: %{public}s, channels: %{public}s, channelLayout: %{public}s",

@@ -167,6 +167,8 @@ private:
     void GetStreamPropInfoForRecord(std::shared_ptr<AudioStreamDescriptor> desc,
         std::shared_ptr<AdapterPipeInfo> adapterPipeInfo, std::shared_ptr<PipeStreamPropInfo> &info,
         const AudioStreamInfo &streamInfo);
+    std::shared_ptr<PipeStreamPropInfo> GetArmUsbUltraFastRecordProp(
+        const std::shared_ptr<AudioDeviceDescriptor> &device, const std::shared_ptr<AdapterPipeInfo> &pipe);
     std::shared_ptr<AdapterPipeInfo> GetNormalRecordAdapterInfo(std::shared_ptr<AudioStreamDescriptor> desc);
     std::list<std::shared_ptr<PipeStreamPropInfo>> SelectStreamPropInfo(
         std::list<std::shared_ptr<PipeStreamPropInfo>> &streamPropInfos,

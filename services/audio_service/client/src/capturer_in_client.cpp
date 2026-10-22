@@ -1118,10 +1118,10 @@ void CapturerInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
         sizePerFrameInByte_;
     if (capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST) {
         // The application block size is independent of the hardware span after a device switch.
-        const bool supportedFormat = streamParams_.samplingRate == SAMPLE_RATE_48000 &&
-            streamParams_.encoding == ENCODING_PCM && streamParams_.format == SAMPLE_S16LE &&
-            (streamParams_.channels == MONO || streamParams_.channels == STEREO);
-        const size_t frames = supportedFormat ? ULTRA_FAST_CAPTURE_FRAMES : 4096;
+        const uint64_t spanFrames = static_cast<uint64_t>(streamParams_.samplingRate) * 2500 / AUDIO_US_PER_S;
+        const bool supportedFormat = streamParams_.encoding == ENCODING_PCM && spanFrames > 0 &&
+            spanFrames * AUDIO_US_PER_S == static_cast<uint64_t>(streamParams_.samplingRate) * 2500;
+        const size_t frames = supportedFormat ? spanFrames : 4096;
         cbBufferSize_ = frames * sizePerFrameInByte_;
     }
     AUDIO_INFO_LOG("InitCallbackBuffer with duration %{public}" PRIu64", size: %{public}zu", bufferDurationInUs,
