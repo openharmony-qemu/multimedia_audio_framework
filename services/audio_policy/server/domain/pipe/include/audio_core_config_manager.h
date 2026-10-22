@@ -110,6 +110,7 @@ public:
     bool GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role);
     bool GetArmUsbUltraFastFlag();
     bool GetTrueUltraFastFlag();
+    void CheckTrueUltraFastPipe();
     bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool GetFastStreamSupport(AudioStreamInfo &streamInfo, std::shared_ptr<AdapterDeviceInfo> &deviceInfo);

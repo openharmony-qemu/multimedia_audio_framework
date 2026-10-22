@@ -111,6 +111,12 @@ void AudioCoreConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
         "Parse audio policy xml failed, received data is empty");
 
     audioPolicyConfig_.Reorganize();
+    CheckTrueUltraFastPipe();
+    isAdapterInfoMap_.store(true);
+}
+
+void AudioCoreConfigManager::CheckTrueUltraFastPipe()
+{
     supportTrueUltraFast_ = false;
     for (auto &adapterIt : audioPolicyConfig_.adapterInfoMap) {
         for (auto &pipeInfo : adapterIt.second->pipeInfos) {
@@ -122,8 +128,6 @@ void AudioCoreConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
         if (supportTrueUltraFast_) { break; }
     }
     AUDIO_INFO_LOG("supportTrueUltraFast_ = %{public}d", supportTrueUltraFast_);
-
-    isAdapterInfoMap_.store(true);
 }
 
 void AudioCoreConfigManager::OnXmlParsingCompleted(
