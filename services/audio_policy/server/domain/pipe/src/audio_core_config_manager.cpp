@@ -538,12 +538,6 @@ bool AudioCoreConfigManager::IsUltraFastRecordingDeviceSupported(
     return false;
 }
 
-bool AudioCoreConfigManager::IsUltraFastRecordingSupported(
-    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
-{
-    return IsUltraFastRecordingDeviceSupported(devices);
-}
-
 bool AudioCoreConfigManager::IsFastStreamSupported(AudioStreamInfo &streamInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {

@@ -1254,7 +1254,7 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
         CHECK_AND_RETURN(info.encoding == ENCODING_PCM && (isArmUsb ||
             (info.format == SAMPLE_S16LE && info.samplingRate == SAMPLE_RATE_48000 &&
             (info.channels == MONO || info.channels == STEREO))));
-        if (AudioCoreConfigManager::GetInstance().IsUltraFastRecordingSupported(streamDesc->newDeviceDescs_)) {
+        if (AudioCoreConfigManager::GetInstance().IsUltraFastRecordingDeviceSupported(streamDesc->newDeviceDescs_)) {
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
         } else if (IsStreamSupportMmap(streamDesc)) {
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
