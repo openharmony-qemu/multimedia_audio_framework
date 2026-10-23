@@ -18,6 +18,7 @@
 #include <vector>
 #include "securec.h"
 #include "mixer_utils.h"
+#include "audio_proresampler.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -1206,5 +1207,60 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerF32_001, TestSize.Level0)
     const float *out = reinterpret_cast<const float *>(result.outData);
     EXPECT_GT(out[0], 0.19f);
     EXPECT_LT(out[0], 0.31f);
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerResampleMix_001
+ * @tc.number: AudioMixerResampleMix_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerResampleMix_001, TestSize.Level0)
+{
+    // Full BT composition: resample a 48k S16 stream to 44.1k through the float pipeline,
+    // convert back to S16, then mix it with a native 44.1k S16 stream.
+    using OHOS::AudioStandard::HPAE::ProResampler;
+    using OHOS::AudioStandard::HPAE::QUALITY_FAST;
+    constexpr int32_t inRate = 48000;
+    constexpr int32_t mixRate = 44100;
+    constexpr int32_t channels = 2;
+    constexpr int32_t inFrames = 320; // 320 * 44100 / 48000 = 294 exactly
+    constexpr int32_t mixFrames = inFrames * mixRate / inRate; // 294, 294 * 2 divisible by 4
+    const int16_t amplitude = 0x2000; // 0.25 per leg, sum 0.5 stays below the limiter threshold
+
+    ProResampler resampler(inRate, mixRate, channels, QUALITY_FAST);
+    AudioMixHandle handle = AudioMixerCreate(mixRate, channels, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<int16_t> inBlock = MakeS16Block(inFrames, channels, amplitude);
+    std::vector<int16_t> nativeBlock = MakeS16Block(mixFrames, channels, amplitude);
+    std::vector<float> floatIn(static_cast<size_t>(inFrames) * channels);
+    std::vector<float> floatOut(static_cast<size_t>(mixFrames) * channels);
+    std::vector<int16_t> resampled(static_cast<size_t>(mixFrames) * channels);
+
+    struct AudioMixStream streams[2] = {};
+    streams[0].data = resampled.data();
+    streams[0].sampleCount = mixFrames;
+    streams[0].volume = 1.0f;
+    streams[1].data = nativeBlock.data();
+    streams[1].sampleCount = mixFrames;
+    streams[1].volume = 1.0f;
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        ASSERT_EQ(ConvertPcmToFloat(AUDIO_PCM_S16_LE, inBlock.data(), inFrames * channels,
+            floatIn.data()), AUDIO_PCM_ALGO_SUCCESS);
+        ASSERT_EQ(resampler.Process(floatIn.data(), inFrames, floatOut.data(), mixFrames), 0);
+        ASSERT_EQ(ConvertFloatToPcm(AUDIO_PCM_S16_LE, floatOut.data(), mixFrames * channels,
+            resampled.data()), AUDIO_PCM_ALGO_SUCCESS);
+        result = AudioMixerProcess(handle, streams, 2);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+        ASSERT_EQ(result.outSampleCount, mixFrames);
+    }
+    // steady state: resampled leg (~0.25) + native leg (0.25) ~= 0.5; a broken resample leg
+    // would drop the level back to ~0.25 and fail the lower bound
+    const int16_t *out = reinterpret_cast<const int16_t *>(result.outData);
+    double level = MeanAbs(out, static_cast<size_t>(mixFrames) * channels);
+    EXPECT_GT(level, 0.3 * 32767);
+    EXPECT_LT(level, 0.7 * 32767);
     AudioMixerDestroy(handle);
 }
