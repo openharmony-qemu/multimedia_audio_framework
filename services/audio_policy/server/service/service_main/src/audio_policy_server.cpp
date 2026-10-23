@@ -1600,8 +1600,13 @@ int32_t AudioPolicyServer::GetSystemVolumeInDb(int32_t volumeTypeIn,
 // deprecated since api 9.
 int32_t AudioPolicyServer::SetStreamMuteLegacy(int32_t streamTypeIn, bool mute, int32_t deviceTypeIn)
 {
-    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (!AudioVolumeUtils::GetInstance().IsPublicVolumeType(volumeType)) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+            ERR_SYSTEM_PERMISSION_DENIED, "No system permission for volumeType[%{public}d]", volumeType);
+    }
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     DeviceType deviceType = static_cast<DeviceType>(deviceTypeIn);
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
     return SetStreamMuteInternal(streamType, mute, false, deviceType, zoneId);
@@ -2351,6 +2356,12 @@ int32_t AudioPolicyServer::IsOffloadPlaybackSupported(const AudioStreamInfo &str
 
 int32_t AudioPolicyServer::SetDeviceActive(int32_t deviceType, bool active, int32_t uid)
 {
+    if (uid != INVALID_UID) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+            ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    } else {
+        uid = static_cast<int32_t>(IPCSkeleton::GetCallingUid());
+    }
     return eventEntry_->SetDeviceActive(static_cast<InternalDeviceType>(deviceType), active, uid);
 }
 
