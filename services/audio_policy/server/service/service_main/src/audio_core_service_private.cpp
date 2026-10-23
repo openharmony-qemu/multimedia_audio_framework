@@ -893,6 +893,29 @@ int32_t AudioCoreService::SetSplitModeReady()
     return SUCCESS;
 }
 
+int32_t AudioCoreService::SetSupportReload(bool isSupportReload, const std::string &networkId)
+{
+    CHECK_AND_RETURN_RET_LOG(!networkId.empty(), ERR_INVALID_PARAM, "cannot find device without valid networkId");
+
+    AUDIO_INFO_LOG("SetSupportReload: %{public}d, networkId [%{public}s]", isSupportReload,
+        GetEncryptStr(networkId).c_str());
+    {
+        std::lock_guard<std::mutex> lock(isSupportReloadMutex_);
+        isSupportReloadMap_[networkId] = isSupportReload;
+    }
+    auto device = audioConnectedDevice_.GetConnectedDeviceByType(networkId, DEVICE_TYPE_MIC, INPUT_DEVICE);
+    if (device != nullptr) {
+        device->isSupportReload_ = isSupportReload;
+        AUDIO_INFO_LOG("set connected device");
+    }
+    auto dmDevice = audioDeviceManager_.GetRemoteDeviceByNetworkId(networkId, DEVICE_TYPE_MIC, INPUT_DEVICE);
+    CHECK_AND_RETURN_RET_LOG(dmDevice != nullptr, ERR_INVALID_PARAM, "device not found for networkId [%{public}s]",
+        GetEncryptStr(networkId).c_str());
+    dmDevice->isSupportReload_ = isSupportReload;
+    AUDIO_INFO_LOG("set audio device");
+    return SUCCESS;
+}
+
 int32_t AudioCoreService::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
 {
     AUDIO_INFO_LOG("[ADeviceEvent] Start split args: %{public}s", splitArgs.c_str());

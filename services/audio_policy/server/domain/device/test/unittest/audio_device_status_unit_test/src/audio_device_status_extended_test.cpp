@@ -619,5 +619,54 @@ HWTEST_F(AudioDeviceStatusExtendedTest, IsScoConnected_001, TestSize.Level4)
     deviceManager.connectedDevices_ = saved;
 }
 
+/**
+ * @tc.name  : Test AudioDeviceStatus.
+ * @tc.number: AudioDeviceStatus_076
+ * @tc.desc  : Test HandleDistributedDeviceDisConnected with input device (INPUT_DEVICE branch).
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_076, TestSize.Level4)
+{
+    DStatusInfo statusInfo = {};
+    strncpy_s(statusInfo.networkId, NETWORK_ID_SIZE, "test_076", NETWORK_ID_SIZE - 1);
+    statusInfo.hdiPin = AudioPin::AUDIO_PIN_IN_DAUDIO_DEFAULT;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
+    AudioStreamDeviceChangeReasonExt reason;
+    AudioDeviceDescriptor deviceDesc(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    audioDeviceStatus_->HandleDistributedDeviceDisConnected(statusInfo, descForCb, reason, deviceDesc);
+    EXPECT_FALSE(audioDeviceStatus_->remoteCapturerSwitch_);
+}
+
+/**
+ * @tc.name  : Test AudioDeviceStatus.
+ * @tc.number: AudioDeviceStatus_077
+ * @tc.desc  : Test HandleDistributedDeviceDisConnected with output device (not INPUT_DEVICE branch).
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_077, TestSize.Level4)
+{
+    DStatusInfo statusInfo = {};
+    strncpy_s(statusInfo.networkId, NETWORK_ID_SIZE, "test_077", NETWORK_ID_SIZE - 1);
+    statusInfo.hdiPin = AudioPin::AUDIO_PIN_OUT_SPEAKER;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
+    AudioStreamDeviceChangeReasonExt reason;
+    AudioDeviceDescriptor deviceDesc(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    audioDeviceStatus_->HandleDistributedDeviceDisConnected(statusInfo, descForCb, reason, deviceDesc);
+    EXPECT_FALSE(audioDeviceStatus_->remoteCapturerSwitch_);
+}
+
+/**
+ * @tc.name  : Test AudioDeviceStatus.
+ * @tc.number: AudioDeviceStatus_078
+ * @tc.desc  : Test HandleOfflineDistributedDevice with output device (not INPUT_DEVICE branch).
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_078, TestSize.Level4)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->networkId_ = "test_078";
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioDeviceStatus_->audioConnectedDevice_.connectedDevices_ = { desc };
+    audioDeviceStatus_->HandleOfflineDistributedDevice();
+    EXPECT_FALSE(audioDeviceStatus_->remoteCapturerSwitch_);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
