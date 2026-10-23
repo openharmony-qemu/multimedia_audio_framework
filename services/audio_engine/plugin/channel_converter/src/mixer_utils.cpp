@@ -24,6 +24,9 @@
 #include <new>
 #include "audio_engine_log.h"
 #include "securec.h"
+// USE_ARM_NEON for the PcmLimiter NEON paths below is defined by architecture in this
+// header (also pulled in by mixer_utils.h; included directly to keep the dependency explicit).
+#include "audio_proresampler_process.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -1078,7 +1081,8 @@ extern "C" struct AudioMixResult AudioMixerProcess(AudioMixHandle handle, const 
             AUDIO_ERR_LOG("AudioMixerProcess stream[%{public}d] invalid", i);
             return MakeMixResult(nullptr, 0, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
         }
-        if (streams[i].volume < MIXER_VOLUME_MIN || streams[i].volume > MIXER_VOLUME_MAX) {
+        // inverted comparison: NaN fails both ordered comparisons, so !(...) rejects NaN too
+        if (!(streams[i].volume >= MIXER_VOLUME_MIN && streams[i].volume <= MIXER_VOLUME_MAX)) {
             AUDIO_ERR_LOG("AudioMixerProcess stream[%{public}d] volume out of range", i);
             return MakeMixResult(nullptr, 0, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
         }

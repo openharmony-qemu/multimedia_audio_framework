@@ -55,9 +55,10 @@ bool CheckIsHOA(AudioChannelLayout layout);
 } // AudioStandard
 } // OHOS
 
-// C mixer facade for direct callers (e.g. chipset SDK consumers): mixes equal-length
+// C-linkage mixer facade for C++ callers (e.g. chipset SDK consumers): mixes equal-length
 // same-format streams in the float domain with a limiter (anti-overflow), and returns
 // an internally allocated buffer which stays valid until the next call or Destroy.
+// Note: this header is not includable from a pure C translation unit (C++ constructs above).
 #ifdef __cplusplus
 extern "C" {
 #endif

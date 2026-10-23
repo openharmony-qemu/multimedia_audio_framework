@@ -14,6 +14,8 @@
 */
 
 #include <gtest/gtest.h>
+#include <limits>
+#include <vector>
 #include "securec.h"
 #include "mixer_utils.h"
 
@@ -1096,5 +1098,113 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerInvalid_001, TestSize.Level0)
     streams[1].sampleCount = MIXER_TEST_FRAMES / 2;
     EXPECT_EQ(AudioMixerProcess(handle, streams, 2).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
 
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerNanVolume_001
+ * @tc.number: AudioMixerNanVolume_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerNanVolume_001, TestSize.Level0)
+{
+    // NaN must be rejected: NaN >= x and NaN <= x are both false under IEEE754
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<int16_t> block = MakeS16Block(MIXER_TEST_FRAMES, 2, 0x2000);
+    struct AudioMixStream stream = {};
+    stream.data = block.data();
+    stream.sampleCount = MIXER_TEST_FRAMES;
+    stream.volume = std::numeric_limits<float>::quiet_NaN();
+    EXPECT_EQ(AudioMixerProcess(handle, &stream, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerS24_001
+ * @tc.number: AudioMixerS24_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerS24_001, TestSize.Level0)
+{
+    // 0.25 amplitude as S24 little endian {0x00, 0x00, 0x20} = 0x200000
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_S24_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<uint8_t> block(static_cast<size_t>(MIXER_TEST_FRAMES) * 2 * 3, 0);
+    for (size_t i = 0; i + 2 < block.size(); i += 3) {
+        block[i] = 0x00;
+        block[i + 1] = 0x00;
+        block[i + 2] = 0x20;
+    }
+    struct AudioMixStream stream = {};
+    stream.data = block.data();
+    stream.sampleCount = MIXER_TEST_FRAMES;
+    stream.volume = 1.0f;
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, &stream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    // steady output around 0.25 amplitude: 24-bit value 0x200000 = 2097152
+    const uint8_t *out = result.outData;
+    uint32_t sample = (static_cast<uint32_t>(out[2]) << 16) | (static_cast<uint32_t>(out[1]) << 8) |
+        static_cast<uint32_t>(out[0]);
+    EXPECT_GT(sample, 1600000u); // ~0.19 * 2^23
+    EXPECT_LT(sample, 2600000u); // ~0.31 * 2^23
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerS32_001
+ * @tc.number: AudioMixerS32_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerS32_001, TestSize.Level0)
+{
+    // 0.25 amplitude as S32: 0x20000000 = 536870912
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_S32_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<int32_t> block(static_cast<size_t>(MIXER_TEST_FRAMES) * 2, 0x20000000);
+    struct AudioMixStream stream = {};
+    stream.data = block.data();
+    stream.sampleCount = MIXER_TEST_FRAMES;
+    stream.volume = 1.0f;
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, &stream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    const int32_t *out = reinterpret_cast<const int32_t *>(result.outData);
+    EXPECT_GT(out[0], 406000000); // ~0.19 * 2^31
+    EXPECT_LT(out[0], 666000000); // ~0.31 * 2^31
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerF32_001
+ * @tc.number: AudioMixerF32_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerF32_001, TestSize.Level0)
+{
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_F32_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<float> block(static_cast<size_t>(MIXER_TEST_FRAMES) * 2, 0.25f);
+    struct AudioMixStream stream = {};
+    stream.data = block.data();
+    stream.sampleCount = MIXER_TEST_FRAMES;
+    stream.volume = 1.0f;
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, &stream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    const float *out = reinterpret_cast<const float *>(result.outData);
+    EXPECT_GT(out[0], 0.19f);
+    EXPECT_LT(out[0], 0.31f);
     AudioMixerDestroy(handle);
 }
