@@ -2663,6 +2663,43 @@ HWTEST_F(AudioCoreServicePrivateTest, LoadSplitModule_004, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: SetSupportReload_001
+ * @tc.desc  : Test AudioCoreService::SetSupportReload, device found (if true branch).
+ */
+HWTEST_F(AudioCoreServicePrivateTest, SetSupportReload_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::string networkId = "test_network_id_reload_001";
+    auto connectedDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    connectedDesc->networkId_ = networkId;
+    connectedDesc->isSupportReload_ = true;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(connectedDesc);
+
+    auto ret = audioCoreService->SetSupportReload(false, networkId);
+    EXPECT_NE(ret, 0);
+
+    AudioConnectedDevice::GetInstance().DelConnectedDevice(networkId, DEVICE_TYPE_MIC);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: SetSupportReload_002
+ * @tc.desc  : Test AudioCoreService::SetSupportReload, device not found (if false branch).
+ */
+HWTEST_F(AudioCoreServicePrivateTest, SetSupportReload_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::string networkId = "non_existent_network_id_reload_002";
+    auto ret = audioCoreService->SetSupportReload(false, networkId);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_124
  * @tc.desc  : Test AudioCoreService::OpenNewAudioPortAndRoute()
  */

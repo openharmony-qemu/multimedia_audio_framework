@@ -5924,6 +5924,15 @@ int32_t AudioPolicyServer::SetSplitModeReady()
     return eventEntry_->SetSplitModeReady();
 }
 
+int32_t AudioPolicyServer::SetSupportReload(bool isSupportReload, const std::string &networkId)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_UNKNOWN, "eventEntry_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_CAR_DISTRIBUTED_ENGINE_SA, ERR_PERMISSION_DENIED,
+        "callerUid %{public}d is not allow SetSupportReload", callerUid);
+    return eventEntry_->SetSupportReload(isSupportReload, networkId);
+}
+
 int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
