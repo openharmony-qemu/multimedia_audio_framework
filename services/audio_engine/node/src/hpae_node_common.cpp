@@ -533,7 +533,9 @@ void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSess
                 .privacyType = sessionInfo.streamInfo.privacyType,
                 .config = config,
                 .state = sessionInfo.state,
-                .startTime = sessionInfo.startTime
+                .startTime = sessionInfo.startTime,
+                .pipeType = sessionInfo.streamInfo.pipeType,
+                .spanSizeInFrame = static_cast<uint32_t>(sessionInfo.streamInfo.frameLen)
             };
         });
 }

@@ -261,6 +261,7 @@ public:
     void ReportExceptionForInterval();
     void ReportPreferredFrameSizeOutOfRange(int32_t frameSize, size_t minByte, size_t maxByte);
     void CheckAndReportTimestamp();
+    void ReportUltraFastUsage();
 
     bool IsFastStream() const
     {
@@ -419,6 +420,7 @@ private:
     uint64_t fullTokenId_ = 0;
     int64_t lastTriggerTime_ = 0;
     bool logStopCallCount_ = false;
+    int64_t streamStartTime_ = 0;
 
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 

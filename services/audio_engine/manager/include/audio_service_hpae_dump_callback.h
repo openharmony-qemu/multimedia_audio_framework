@@ -36,6 +36,10 @@ typedef struct {
     std::string config;
     HPAE::HpaeSessionState state;
     uint64_t startTime;
+    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+    uint32_t routeFlag = 0;
+    uint32_t spanSizeInFrame = 0;
+    uint32_t underflowCount = 0;
 } HpaeInputOutputInfo;
 
 typedef struct {

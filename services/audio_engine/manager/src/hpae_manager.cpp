@@ -682,6 +682,11 @@ void HpaeManager::DumpSinkInputsInfo()
         AUDIO_INFO_LOG("DumpSinkInputsInfo");
         std::vector<HpaeInputOutputInfo> sinkInputs;
         TransStreamInfoToStreamDumpInfo(rendererIdStreamInfoMap_, sinkInputs);
+        for (auto &info : sinkInputs) {
+            uint32_t routeFlag = 0;
+            GetStreamRouteFlag(HPAE_STREAM_CLASS_TYPE_PLAY, info.sessionId, routeFlag);
+            info.routeFlag = routeFlag;
+        }
         if (auto callback = dumpCallback_.lock()) {
             callback->OnDumpSinkInputsInfoCb(sinkInputs, SUCCESS);
         }
@@ -695,6 +700,11 @@ void HpaeManager::DumpSourceOutputsInfo()
         AUDIO_INFO_LOG("DumpSourceOutputsInfo");
         std::vector<HpaeInputOutputInfo> sourceOutputs;
         TransStreamInfoToStreamDumpInfo(capturerIdStreamInfoMap_, sourceOutputs);
+        for (auto &info : sourceOutputs) {
+            uint32_t routeFlag = 0;
+            GetStreamRouteFlag(HPAE_STREAM_CLASS_TYPE_RECORD, info.sessionId, routeFlag);
+            info.routeFlag = routeFlag;
+        }
         if (auto callback = dumpCallback_.lock()) {
             callback->OnDumpSourceOutputsInfoCb(sourceOutputs, SUCCESS);
         }

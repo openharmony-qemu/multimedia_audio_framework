@@ -1437,6 +1437,8 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
 
     HILOG_COMM_INFO("[StartAudioStream]Start SUCCESS, sessionId: %{public}d, uid: %{public}d",
         sessionId_, clientUid_);
+    streamStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
     UpdateTracker("RUNNING");
     FlushBeforeStart();
     offloadStartReadPos_ = 0;
@@ -1538,6 +1540,35 @@ void RendererInClientInner::ReportExceptionForInterval()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
+void RendererInClientInner::ReportUltraFastUsage()
+{
+    int64_t stopTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    int32_t durationMs = streamStartTime_ > 0 ? static_cast<int32_t>(stopTime - streamStartTime_) : 0;
+    std::string adapterName = (defaultOutputDevice_ == DEVICE_TYPE_USB_ARM_HEADSET) ? "usb" : "primary";
+
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::UNDERRUN_ISSUE,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("ISSUE_TYPE", TYPE_ULTRA_FAST_USAGE);
+    bean->Add("STREAM_INFO_1", std::to_string(sessionId_));
+    bean->Add("STREAM_INFO_2", std::to_string(clientUid_));
+    bean->Add("STREAM_INFO_3", 1);
+    bean->Add("STREAM_INFO_4", static_cast<int32_t>(defaultOutputDevice_));
+    bean->Add("APP_INFO_1", adapterName);
+    bean->Add("APP_INFO_2", std::to_string(rendererInfo_.originalFlag));
+    bean->Add("APP_INFO_3", static_cast<int32_t>(fastStatus_.load()));
+    bean->Add("EXCEPTION_INFO_1", std::to_string(rendererInfo_.audioFlag));
+    bean->Add("EXCEPTION_INFO_2", std::to_string(static_cast<int32_t>(rendererInfo_.pipeType)));
+    bean->Add("EXCEPTION_INFO_3", DFX_INVALID_EXCEPTION_INFO);
+    bean->Add("EXCEPTION_INFO_4", static_cast<int32_t>(GetUnderflowCount()));
+    bean->Add("DEVICE_INFO_1", std::to_string(GetOverflowCount()));
+    bean->Add("DEVICE_INFO_2", durationMs);
+    bean->Add("SYSTEM_INFO_1", static_cast<int32_t>(streamStartTime_ / 1000));
+    bean->Add("SYSTEM_INFO_2", static_cast<int32_t>(stopTime / 1000));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 void RendererInClientInner::ReportPreferredFrameSizeOutOfRange(int32_t frameSize, size_t minByte, size_t maxByte)
 {
     std::string appName = AppBundleManager::GetSelfBundleName();
@@ -1562,6 +1593,9 @@ void RendererInClientInner::HandleStopSuccess()
     if (logStopCallCount_) {
         ReportExceptionForInterval();
         logStopCallCount_ = false;
+    }
+    if (IsTrueUltraFastStream()) {
+        ReportUltraFastUsage();
     }
 }
 
