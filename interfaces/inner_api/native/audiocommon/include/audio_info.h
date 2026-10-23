@@ -91,7 +91,6 @@ constexpr uint64_t AUDIO_US_PER_S = 1000000;
 constexpr uint64_t AUDIO_MS_PER_S = 1000;
 
 constexpr uint64_t DEFAULT_FAST_CBBUF_IN_USEC = 5000;
-constexpr uint32_t ULTRA_FAST_CAPTURE_FRAMES = 120;
 constexpr uint32_t MAX_ULTRA_FAST_CAPTURE_STREAMS = 2;
 constexpr uint64_t MAX_CBBUF_IN_USEC = 100000;
 constexpr uint64_t MIN_CBBUF_IN_USEC = 20000;
@@ -105,7 +104,7 @@ const float MIN_FLOAT_VOLUME = 0.0f;
 const float MAX_FLOAT_VOLUME = 1.0f;
 
 const char* MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
-const char* USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION = "ohos.permission.USE_ULTRA_FAST_AUDIO_STREAM";
+inline constexpr const char* USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION = "ohos.permission.USE_ULTRA_FAST_AUDIO_STREAM";
 const char* MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
 const char* ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";

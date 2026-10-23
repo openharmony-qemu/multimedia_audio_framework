@@ -645,12 +645,14 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
     CHECK_AND_RETURN_RET_LOG(capturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "Error, capturer is nullptr");
     *capturer = nullptr;
+    int32_t capturerFlags = latencyMode_;
     if (latencyMode_ == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST) {
-        CHECK_AND_RETURN_RET(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
             static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID())),
-            AUDIOSTREAM_ERROR_PERMISSION_DENIED_ULTRA_FAST);
-        CHECK_AND_RETURN_RET(AudioPolicyManager::GetInstance().IsUltraFastRecordingPlatformSupported(),
-            AUDIOSTREAM_ERROR_UNSUPPORTED_ULTRA_FAST);
+            AUDIOSTREAM_ERROR_PERMISSION_DENIED_ULTRA_FAST, "Ultra fast recording permission denied");
+        CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().IsUltraFastRecordingPlatformSupported(),
+            AUDIOSTREAM_ERROR_UNSUPPORTED_ULTRA_FAST, "Ultra fast recording is not supported on this platform");
+        capturerFlags = AUDIO_FLAG_ULTRA_FAST;
     }
     if (sourceType_ == SOURCE_TYPE_VOICE_DOWNLINK) {
         CHECK_AND_RETURN_RET_LOG(sensitiveRecordPermitCallback_ != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
@@ -666,7 +668,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
 
     AudioCapturerInfo capturerInfo = {
         sourceType_,
-        latencyMode_ == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST ? AUDIO_FLAG_ULTRA_FAST : latencyMode_
+        capturerFlags
     };
     capturerInfo.loopBackEffectEnabled = loopBackEffectEnabled_;
 

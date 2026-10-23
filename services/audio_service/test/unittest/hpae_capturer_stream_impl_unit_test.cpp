@@ -442,14 +442,17 @@ HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_UltraFastSpanSize_001, T
     AudioProcessConfig config = GetInnerCapConfig();
     config.capturerInfo.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
     config.isInnerCapturer = false;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    HpaeCapturerStreamImpl stream(config);
     size_t frames = 0;
-    stream.GetSpanSizePerFrame(frames);
-    EXPECT_EQ(frames, ULTRA_FAST_CAPTURE_FRAMES);
-    EXPECT_EQ(stream.GetRouteFlag(), AUDIO_INPUT_FLAG_ULTRA_FAST);
+    for (AudioSamplingRate rate : {SAMPLE_RATE_16000, SAMPLE_RATE_48000, SAMPLE_RATE_96000}) {
+        config.streamInfo.samplingRate = rate;
+        HpaeCapturerStreamImpl stream(config);
+        stream.GetSpanSizePerFrame(frames);
+        EXPECT_EQ(frames, static_cast<uint64_t>(rate) * MIN_FAST_CBBUF_IN_USEC / AUDIO_US_PER_S);
+        EXPECT_EQ(stream.GetRouteFlag(), AUDIO_INPUT_FLAG_ULTRA_FAST);
+    }
 
     config.isInnerCapturer = true;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
     HpaeCapturerStreamImpl innerStream(config);
     innerStream.GetSpanSizePerFrame(frames);
     EXPECT_EQ(frames, 960);
