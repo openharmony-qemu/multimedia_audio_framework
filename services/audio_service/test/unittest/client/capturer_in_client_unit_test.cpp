@@ -3006,7 +3006,7 @@ HWTEST_F(CapturerInClientUnitTest, UltraFastStatus_001, TestSize.Level1)
     EXPECT_EQ(client->GetFastStatus(), FASTSTATUS_FAST);
 }
 
-/** @tc.desc: Device periods change while the application still receives 120 frame blocks. */
+/** @tc.desc: Callback buffers are reinitialized from the actual service span after a device switch. */
 HWTEST_F(CapturerInClientUnitTest, UltraFastCallbackDeviceSwitch_001, TestSize.Level1)
 {
     auto client = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, 20001);
@@ -3025,22 +3025,25 @@ HWTEST_F(CapturerInClientUnitTest, UltraFastCallbackDeviceSwitch_001, TestSize.L
         CapturerAttrInfo{120, 960, AUDIO_INPUT_FLAG_ULTRA_FAST}}) {
         client->RefreshCapturerAttrInfoFromSpan(attr);
         client->CheckRefreshCbBuffer();
-        EXPECT_EQ(client->cbBufferSize_, 480);
+        EXPECT_EQ(client->cbBufferSize_, attr.spanSizeInFrame * client->sizePerFrameInByte_);
         EXPECT_EQ(client->spanSizeInFrame_, attr.spanSizeInFrame);
+        EXPECT_FALSE(client->isNeedRefreshCbBuffer_);
     }
     EXPECT_EQ(client->GetFastStatus(), FASTSTATUS_ULTRA_FAST);
     client->RefreshCapturerAttrInfoFromSpan({240, 1920, AUDIO_INPUT_FLAG_ULTRA_FAST});
     EXPECT_EQ(client->GetFastStatus(), FASTSTATUS_NORMAL);
+    client->CheckRefreshCbBuffer();
+    EXPECT_EQ(client->cbBufferSize_, 960);
     client->streamParams_.samplingRate = SAMPLE_RATE_44100;
     client->InitCallbackBuffer(20000);
-    EXPECT_EQ(client->cbBufferSize_, 4096 * 4);
+    EXPECT_EQ(client->cbBufferSize_, 882 * 4);
     client->capturerInfo_.originalFlag = AUDIO_FLAG_MMAP;
     client->streamParams_.samplingRate = SAMPLE_RATE_48000;
     client->InitCallbackBuffer(5000);
     EXPECT_EQ(client->cbBufferSize_, 960);
 }
 
-/** @tc.desc: Callback blocks follow the client rate and format independently of the USB source profile. */
+/** @tc.desc: All requested capture modes use the supplied duration to size callback buffers. */
 HWTEST_F(CapturerInClientUnitTest, UltraFastUsbCallbackProfile_001, TestSize.Level1)
 {
     auto client = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, 20001);
@@ -3051,18 +3054,42 @@ HWTEST_F(CapturerInClientUnitTest, UltraFastUsbCallbackProfile_001, TestSize.Lev
     client->sizePerFrameInByte_ = 16;
     for (auto rate : {SAMPLE_RATE_16000, SAMPLE_RATE_32000, SAMPLE_RATE_48000, SAMPLE_RATE_96000}) {
         client->streamParams_.samplingRate = rate;
-        client->InitCallbackBuffer(20000);
-        EXPECT_EQ(client->cbBufferSize_,
-            static_cast<uint64_t>(rate) * ULTRA_FAST_CAPTURE_PERIOD_US / AUDIO_US_PER_S * 16);
+        for (uint64_t duration : {ULTRA_FAST_CAPTURE_PERIOD_US, uint64_t(5000), uint64_t(20000)}) {
+            client->InitCallbackBuffer(duration);
+            EXPECT_EQ(client->cbBufferSize_, static_cast<uint64_t>(rate) * duration / AUDIO_US_PER_S * 16);
+        }
     }
     client->streamParams_.samplingRate = SAMPLE_RATE_16000;
     client->streamParams_.encoding = ENCODING_AUDIOVIVID;
     client->InitCallbackBuffer(ULTRA_FAST_CAPTURE_PERIOD_US);
-    EXPECT_EQ(client->cbBufferSize_, 4096 * 16);
+    EXPECT_EQ(client->cbBufferSize_, 40 * 16);
     client->streamParams_.encoding = ENCODING_PCM;
     client->streamParams_.samplingRate = 0;
     client->InitCallbackBuffer(ULTRA_FAST_CAPTURE_PERIOD_US);
-    EXPECT_EQ(client->cbBufferSize_, 4096 * 16);
+    EXPECT_EQ(client->cbBufferSize_, 0);
+}
+
+/** @tc.desc: Ultra-fast requests retain common duration limits and reinitialize only on a refresh request. */
+HWTEST_F(CapturerInClientUnitTest, UltraFastCallbackDurationLimit_001, TestSize.Level1)
+{
+    auto client = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, 20001);
+    client->capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
+    client->streamParams_.samplingRate = SAMPLE_RATE_48000;
+    client->sizePerFrameInByte_ = 4;
+    client->InitCallbackBuffer(2000000);
+    EXPECT_EQ(client->cbBufferSize_, 384000);
+    client->InitCallbackBuffer(2000001);
+    EXPECT_EQ(client->cbBufferSize_, 3840);
+    client->InitCallbackBuffer(ULTRA_FAST_CAPTURE_PERIOD_US);
+    EXPECT_EQ(client->cbBufferSize_, 480);
+    client->spanSizeInFrame_ = 240;
+    client->isNeedRefreshCbBuffer_ = false;
+    client->CheckRefreshCbBuffer();
+    EXPECT_EQ(client->cbBufferSize_, 480);
+    client->isNeedRefreshCbBuffer_ = true;
+    client->CheckRefreshCbBuffer();
+    EXPECT_EQ(client->cbBufferSize_, 960);
+    EXPECT_FALSE(client->isNeedRefreshCbBuffer_);
 }
 
 /** @tc.desc: Only a capturer with an original ultra-fast request selects ultra-fast scheduling. */

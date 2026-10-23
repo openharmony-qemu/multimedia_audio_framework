@@ -1250,11 +1250,12 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
             streamDesc->appInfo_.appTokenId));
         const auto &info = streamDesc->streamInfo_;
         CHECK_AND_RETURN(info.encoding == ENCODING_PCM);
+        if (IsStreamSupportMmap(streamDesc)) {
+            streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
+        }
         if (AudioCoreConfigManager::GetInstance().IsUltraFastRecordingDeviceSupported(
             streamDesc->streamInfo_, streamDesc->newDeviceDescs_)) {
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
-        } else if (IsStreamSupportMmap(streamDesc)) {
-            streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
         }
         return;
     }

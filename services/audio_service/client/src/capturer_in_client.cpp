@@ -1116,16 +1116,6 @@ void CapturerInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     // Calculate buffer size based on duration.
     cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * streamParams_.samplingRate / AUDIO_US_PER_S) *
         sizePerFrameInByte_;
-    if (capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST) {
-        // The application block size is independent of the hardware span after a device switch.
-        const uint64_t spanFrames = static_cast<uint64_t>(streamParams_.samplingRate) *
-            ULTRA_FAST_CAPTURE_PERIOD_US / AUDIO_US_PER_S;
-        const bool supportedFormat = streamParams_.encoding == ENCODING_PCM && spanFrames > 0 &&
-            spanFrames * AUDIO_US_PER_S == static_cast<uint64_t>(streamParams_.samplingRate) *
-            ULTRA_FAST_CAPTURE_PERIOD_US;
-        const size_t frames = supportedFormat ? spanFrames : 4096;
-        cbBufferSize_ = frames * sizePerFrameInByte_;
-    }
     AUDIO_INFO_LOG("InitCallbackBuffer with duration %{public}" PRIu64", size: %{public}zu", bufferDurationInUs,
         cbBufferSize_);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
@@ -1283,10 +1273,6 @@ bool CapturerInClientInner::WaitForRunning()
 void CapturerInClientInner::CheckRefreshCbBuffer()
 {
     CHECK_AND_RETURN(isNeedRefreshCbBuffer_);
-    if (capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST) {
-        isNeedRefreshCbBuffer_ = false;
-        return;
-    }
     uint64_t bufferDurationInUs = spanSizeInFrame_ * AUDIO_US_PER_S / streamParams_.samplingRate;
     InitCallbackBuffer(bufferDurationInUs);
     isNeedRefreshCbBuffer_ = false;

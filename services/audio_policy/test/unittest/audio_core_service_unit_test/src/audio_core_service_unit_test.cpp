@@ -8649,6 +8649,21 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
     coreService->UpdateRecordStreamInfo(stream);
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
+    stream->streamInfo_.format = SAMPLE_S32LE;
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_FAST);
+    prop->format_ = SAMPLE_S32LE;
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
+    // XML can declare an ultra-fast profile outside the legacy mmap client specifications.
+    stream->streamInfo_.samplingRate = SAMPLE_RATE_16000;
+    prop->sampleRate_ = SAMPLE_RATE_16000;
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
+    stream->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+    stream->streamInfo_.format = SAMPLE_S16LE;
+    prop->sampleRate_ = SAMPLE_RATE_48000;
+    prop->format_ = SAMPLE_S16LE;
     adapter->adapterName = "usb";
     pipe->name_ = "usb_ultra_fast_input";
     config.adapterInfoMap[AudioAdapterType::TYPE_USB] = adapter;
