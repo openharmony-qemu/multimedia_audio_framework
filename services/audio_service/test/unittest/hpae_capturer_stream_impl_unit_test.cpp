@@ -447,7 +447,7 @@ HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_UltraFastSpanSize_001, T
         config.streamInfo.samplingRate = rate;
         HpaeCapturerStreamImpl stream(config);
         stream.GetSpanSizePerFrame(frames);
-        EXPECT_EQ(frames, static_cast<uint64_t>(rate) * MIN_FAST_CBBUF_IN_USEC / AUDIO_US_PER_S);
+        EXPECT_EQ(frames, static_cast<uint64_t>(rate) * ULTRA_FAST_CAPTURE_PERIOD_US / AUDIO_US_PER_S);
         EXPECT_EQ(stream.GetRouteFlag(), AUDIO_INPUT_FLAG_ULTRA_FAST);
     }
 

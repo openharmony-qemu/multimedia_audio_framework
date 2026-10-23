@@ -338,14 +338,11 @@ HWTEST(OHAudioStreamManagerUnitTest, UltraFastRecordingInvalidQuery_001, TestSiz
     EXPECT_FALSE(OH_AudioStreamManager_IsUltraFastRecordingSupported(manager, nullptr, AUDIOSTREAM_SOURCE_TYPE_MIC));
     EXPECT_FALSE(OH_AudioStreamManager_IsUltraFastRecordingSupported(manager, &info,
         static_cast<OH_AudioStream_SourceType>(-1)));
-    const bool supportedWithEmptyFormat = OH_AudioStreamManager_IsUltraFastRecordingSupported(
-        manager, &info, AUDIOSTREAM_SOURCE_TYPE_MIC);
     info.samplingRate = 44100;
     info.sampleFormat = AUDIOSTREAM_SAMPLE_S32LE;
-    info.encodingType = AUDIOSTREAM_ENCODING_TYPE_RAW;
+    info.encodingType = AUDIOSTREAM_ENCODING_TYPE_AUDIOVIVID;
     info.channelLayout = CH_LAYOUT_STEREO;
-    EXPECT_EQ(OH_AudioStreamManager_IsUltraFastRecordingSupported(manager, &info, AUDIOSTREAM_SOURCE_TYPE_MIC),
-        supportedWithEmptyFormat);
+    EXPECT_FALSE(OH_AudioStreamManager_IsUltraFastRecordingSupported(manager, &info, AUDIOSTREAM_SOURCE_TYPE_MIC));
 }
 
 } // namespace AudioStandard

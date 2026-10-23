@@ -104,8 +104,8 @@ public:
     bool GetUltraFastFlag();
     bool GetArmUsbUltraFastFlag();
     bool GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role);
-    // The caller validates the stream format; this checks the device and its configured input pipe.
-    bool IsUltraFastRecordingDeviceSupported(
+    // Check the client format and configured device pipe; ARM USB uses device source parameters.
+    bool IsUltraFastRecordingDeviceSupported(const AudioStreamInfo &streamInfo,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
     bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);

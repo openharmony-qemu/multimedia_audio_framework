@@ -2581,8 +2581,7 @@ int32_t AudioPolicyServer::IsUltraFastRecordingPlatformSupported(bool &support)
 int32_t AudioPolicyServer::IsUltraFastRecordingSupported(const AudioStreamInfo &streamInfo, int32_t source,
     bool &support)
 {
-    // Keep the IPC/API signature; this query describes devices, not format or available stream slots.
-    (void)streamInfo;
+    // Device and client format checks are shared with routing; stream slots are not reserved by this query.
     support = false;
     bool platformSupported = false;
     IsUltraFastRecordingPlatformSupported(platformSupported);
@@ -2591,7 +2590,7 @@ int32_t AudioPolicyServer::IsUltraFastRecordingSupported(const AudioStreamInfo &
     AudioCapturerInfo info(static_cast<SourceType>(source), AUDIO_FLAG_ULTRA_FAST);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     CHECK_AND_RETURN_RET(GetPreferredInputDeviceDescriptors(info, devices) == SUCCESS, SUCCESS);
-    support = audioConfigManager_.IsUltraFastRecordingDeviceSupported(devices);
+    support = audioConfigManager_.IsUltraFastRecordingDeviceSupported(streamInfo, devices);
     return SUCCESS;
 }
 

@@ -3018,7 +3018,7 @@ HWTEST_F(CapturerInClientUnitTest, UltraFastCallbackDeviceSwitch_001, TestSize.L
     client->streamParams_.encoding = ENCODING_PCM;
     client->sizePerFrameInByte_ = 4;
     client->clientBuffer_ = OHAudioBuffer::CreateFromLocal(7680, 120, 4);
-    client->InitCallbackBuffer(2500);
+    client->InitCallbackBuffer(ULTRA_FAST_CAPTURE_PERIOD_US);
     EXPECT_EQ(client->cbBufferSize_, 480);
     for (const auto &attr : {CapturerAttrInfo{240, 1920, AUDIO_INPUT_FLAG_FAST},
         CapturerAttrInfo{960, 7680, AUDIO_INPUT_FLAG_NORMAL},
@@ -3052,15 +3052,16 @@ HWTEST_F(CapturerInClientUnitTest, UltraFastUsbCallbackProfile_001, TestSize.Lev
     for (auto rate : {SAMPLE_RATE_16000, SAMPLE_RATE_32000, SAMPLE_RATE_48000, SAMPLE_RATE_96000}) {
         client->streamParams_.samplingRate = rate;
         client->InitCallbackBuffer(20000);
-        EXPECT_EQ(client->cbBufferSize_, static_cast<uint64_t>(rate) * 2500 / AUDIO_US_PER_S * 16);
+        EXPECT_EQ(client->cbBufferSize_,
+            static_cast<uint64_t>(rate) * ULTRA_FAST_CAPTURE_PERIOD_US / AUDIO_US_PER_S * 16);
     }
     client->streamParams_.samplingRate = SAMPLE_RATE_16000;
     client->streamParams_.encoding = ENCODING_AUDIOVIVID;
-    client->InitCallbackBuffer(2500);
+    client->InitCallbackBuffer(ULTRA_FAST_CAPTURE_PERIOD_US);
     EXPECT_EQ(client->cbBufferSize_, 4096 * 16);
     client->streamParams_.encoding = ENCODING_PCM;
     client->streamParams_.samplingRate = 0;
-    client->InitCallbackBuffer(2500);
+    client->InitCallbackBuffer(ULTRA_FAST_CAPTURE_PERIOD_US);
     EXPECT_EQ(client->cbBufferSize_, 4096 * 16);
 }
 

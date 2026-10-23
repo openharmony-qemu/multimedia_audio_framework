@@ -39,7 +39,8 @@ HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
     processConfig_ = processConfig;
     spanSizeInFrame_ = FRAME_LEN_20MS * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
     if (processConfig_.capturerInfo.capturerFlags == AUDIO_FLAG_ULTRA_FAST && !processConfig_.isInnerCapturer) {
-        spanSizeInFrame_ = static_cast<uint64_t>(processConfig.streamInfo.samplingRate) * 2500 / AUDIO_US_PER_S;
+        spanSizeInFrame_ = static_cast<uint64_t>(processConfig.streamInfo.samplingRate) *
+            ULTRA_FAST_CAPTURE_PERIOD_US / AUDIO_US_PER_S;
     } else if (processConfig_.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP &&
         processConfig_.isInnerCapturer == false) {
         spanSizeInFrame_ = FRAME_LEN_5MS * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;

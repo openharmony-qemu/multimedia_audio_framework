@@ -510,9 +510,10 @@ bool AudioCoreConfigManager::GetUltraFastFlag(const std::string &adapterName, Au
     return false;
 }
 
-bool AudioCoreConfigManager::IsUltraFastRecordingDeviceSupported(
+bool AudioCoreConfigManager::IsUltraFastRecordingDeviceSupported(const AudioStreamInfo &streamInfo,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
 {
+    CHECK_AND_RETURN_RET(streamInfo.encoding == ENCODING_PCM, false);
     for (const auto &device : devices) {
         CHECK_AND_CONTINUE(device != nullptr && device->deviceRole_ == INPUT_DEVICE &&
             device->networkId_ == LOCAL_NETWORK_ID);
@@ -528,6 +529,8 @@ bool AudioCoreConfigManager::IsUltraFastRecordingDeviceSupported(
             "primary_ultra_fast_input" : "usb_ultra_fast_input";
         CHECK_AND_CONTINUE(pipe->second->name_ == expectedPipeName);
         if (adapter->adapterName == "primary") {
+            CHECK_AND_CONTINUE(streamInfo.format == SAMPLE_S16LE && streamInfo.samplingRate == SAMPLE_RATE_48000 &&
+                (streamInfo.channels == MONO || streamInfo.channels == STEREO));
             if (deviceInfo->name_ == "Hifi_Headset_In") {
                 return true;
             }
@@ -751,9 +754,9 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetArmUsbUltraFastRe
     CHECK_AND_RETURN_RET_LOG(AudioDefinitionPolicyUtils::enumToFormatStr.count(deviceInfo.format) != 0,
         nullptr, "Invalid ARM USB sample format");
     const auto bytesPerSample = AudioPolicyUtils::GetInstance().PcmFormatToBytes(deviceInfo.format);
-    const uint64_t spanFrames = sampleRate * 2500 / AUDIO_US_PER_S;
+    const uint64_t spanFrames = sampleRate * ULTRA_FAST_CAPTURE_PERIOD_US / AUDIO_US_PER_S;
     CHECK_AND_RETURN_RET_LOG(layout != CH_LAYOUT_UNKNOWN && channels > CHANNEL_UNKNOW && bytesPerSample > 0 &&
-        spanFrames > 0 && spanFrames * AUDIO_US_PER_S == sampleRate * 2500,
+        spanFrames > 0 && spanFrames * AUDIO_US_PER_S == sampleRate * ULTRA_FAST_CAPTURE_PERIOD_US,
         nullptr, "Invalid ARM USB ultra fast stream info: rate=%{public}" PRIu64
         ", format=%{public}u, channels=%{public}u, layout=%{public}" PRIu64
         ", sampleBytes=%{public}u, spanFrames=%{public}" PRIu64,

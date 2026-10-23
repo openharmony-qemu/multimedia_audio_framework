@@ -365,7 +365,8 @@ void CapturerInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStr
     uint32_t newRouteFlag = stream_->GetRouteFlag();
     int32_t capturerFlags = GetCapturerFlagsByRoute(newRouteFlag);
     if (capturerFlags == AUDIO_FLAG_ULTRA_FAST &&
-        newSpanSizeInFrame * AUDIO_US_PER_S != static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) * 2500) {
+        newSpanSizeInFrame * AUDIO_US_PER_S != static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) *
+        ULTRA_FAST_CAPTURE_PERIOD_US) {
         capturerFlags = AUDIO_FLAG_NORMAL;
     }
 

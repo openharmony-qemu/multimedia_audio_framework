@@ -196,7 +196,7 @@ int32_t HpaeFastCapturerManager::InitCapturerManager()
     CHECK_AND_RETURN_RET(checkRet == SUCCESS, checkRet);
     if (sourceInfo_.isUltraFast) {
         CHECK_AND_RETURN_RET(sourceInfo_.frameLen * AUDIO_US_PER_S ==
-            static_cast<uint64_t>(sourceInfo_.samplingRate) * 2500, ERR_INVALID_PARAM);
+            static_cast<uint64_t>(sourceInfo_.samplingRate) * ULTRA_FAST_CAPTURE_PERIOD_US, ERR_INVALID_PARAM);
     }
 
     HpaeNodeInfo nodeInfo;

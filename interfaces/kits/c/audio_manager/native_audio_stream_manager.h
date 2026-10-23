@@ -139,7 +139,8 @@ bool OH_AudioStreamManager_IsFastRecordingSupported(
 /**
  * @brief Queries independent 2.5 ms recording support for the current input device.
  * @param streamManager Handle returned by OH_AudioManager_GetAudioStreamManager.
- * @param streamInfo Non-null stream information, retained for compatibility; format fields are not checked.
+ * @param streamInfo Non-null client stream information. PCM encoding is required; Primary also requires
+ * S16LE, 48 kHz and one or two channels. USB ARM source parameters follow the device profile.
  * @param source Recording source used to select the current input device.
  * @return true if the device is supported; otherwise false.
  * Primary supports Hifi_Headset_In for both system and third-party apps without distinction.

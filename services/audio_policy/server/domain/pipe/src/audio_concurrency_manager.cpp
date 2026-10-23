@@ -81,11 +81,6 @@ ConcurrencyAction AudioConcurrencyManager::GetConcurrencyAction(
     const AudioPipeType existingPipe, const AudioPipeType commingPipe)
 {
     auto target = std::make_pair(existingPipe, commingPipe);
-    // Products may override ultra fast rules; otherwise inherit the existing 5 ms policy.
-    if (concurrencyConfigMap_.find(target) == concurrencyConfigMap_.end()) {
-        target.first = existingPipe == PIPE_TYPE_IN_ULTRA_FAST ? PIPE_TYPE_IN_LOWLATENCY : existingPipe;
-        target.second = commingPipe == PIPE_TYPE_IN_ULTRA_FAST ? PIPE_TYPE_IN_LOWLATENCY : commingPipe;
-    }
     if (concurrencyConfigMap_.find(target) == concurrencyConfigMap_.end()) {
         AUDIO_ERR_LOG("Can not find matching action for existingPipe %{public}d and commingPipe %{public}d",
             existingPipe, commingPipe);

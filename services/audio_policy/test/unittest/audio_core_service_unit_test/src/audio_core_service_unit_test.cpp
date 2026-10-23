@@ -8601,7 +8601,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     adapter->pipeInfos = {pipe};
     config.adapterInfoMap[AudioAdapterType::TYPE_PRIMARY] = adapter;
     auto prop = CreatePipeStreamPropInfoForDevice(DEVICE_TYPE_USB_HEADSET, STEREO);
-    prop->bufferSize_ = SAMPLE_RATE_48000 * MIN_FAST_CBBUF_IN_USEC / AUDIO_US_PER_S * STEREO * sizeof(int16_t);
+    prop->bufferSize_ = SAMPLE_RATE_48000 * ULTRA_FAST_CAPTURE_PERIOD_US / AUDIO_US_PER_S * STEREO * sizeof(int16_t);
     pipe->streamPropInfos_ = {prop};
     device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
     config.deviceInfoMap[{DEVICE_TYPE_USB_HEADSET, INPUT_DEVICE}] = {device};

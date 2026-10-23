@@ -923,7 +923,7 @@ HWTEST_F(HpaeFastCapturerManagerTest, UltraFastSourceAttr_001, TestSize.Level1)
     for (const std::string &adapter : {std::string("primary"), std::string("usb")}) {
         auto info = CreateFastSourceInfo(AUDIO_INPUT_FLAG_ULTRA_FAST);
         info.adapterName = adapter;
-        info.frameLen = static_cast<uint64_t>(info.samplingRate) * MIN_FAST_CBBUF_IN_USEC / AUDIO_US_PER_S;
+        info.frameLen = static_cast<uint64_t>(info.samplingRate) * ULTRA_FAST_CAPTURE_PERIOD_US / AUDIO_US_PER_S;
         info.isUltraFast = true;
         auto manager = std::make_shared<HpaeFastCapturerManager>(info);
         IAudioSourceAttr attr;
