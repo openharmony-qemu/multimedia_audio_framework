@@ -57,8 +57,9 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("Init with format:%{public}d, period:%{public}d", attr.format, attr.period);
     attr_ = attr;
+    halName_ = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? "voip" : "primary";
     auto it = streamFlagToHalName.find(attr_.audioStreamFlag);
-    halName_ = (it != streamFlagToHalName.end()) ? it->second : "primary";
+    logTag_ = (it != streamFlagToHalName.end()) ? it->second : "primary";
     int32_t ret = CreateRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
     // Route must be set after CreateRender (HDI needs the stream to exist first) and
@@ -429,13 +430,13 @@ void FastAudioRenderSink::SetAudioBalanceValue(float audioBalance)
 int32_t FastAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 {
     std::lock_guard<std::mutex> lock(switchDeviceMutex_);
-    AUDIO_INFO_LOG("set fast_%{public}s mute %{public}d", halName_.c_str(), mute);
+    AUDIO_INFO_LOG("set fast_%{public}s mute %{public}d", logTag_.c_str(), mute);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
 
     if (mute) {
         muteCount_++;
         if (switchDeviceMute_) {
-            AUDIO_INFO_LOG("fast_%{public}s already muted", halName_.c_str());
+            AUDIO_INFO_LOG("fast_%{public}s already muted", logTag_.c_str());
             return SUCCESS;
         }
         switchDeviceMute_ = true;
@@ -445,7 +446,7 @@ int32_t FastAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     } else {
         muteCount_--;
         if (muteCount_ > 0) {
-            AUDIO_WARNING_LOG("fast_%{public}s not all unmuted", halName_.c_str());
+            AUDIO_WARNING_LOG("fast_%{public}s not all unmuted", logTag_.c_str());
             return SUCCESS;
         }
         switchDeviceMute_ = false;
@@ -746,7 +747,7 @@ int32_t FastAudioRenderSink::CheckPositionTime(void)
     uint64_t frames = 0;
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
-    int64_t maxHandleTime = (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST || attr_.isUltraFast) ?
+    int64_t maxHandleTime = (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) ?
         VOIP_MAX_GET_POSITION_HANDLE_TIME : GENERAL_MAX_GET_POSITION_HANDLE_TIME;
     while (tryCount-- > 0) {
         ClockTime::RelativeSleep(MAX_GET_POSITION_WAIT_TIME);

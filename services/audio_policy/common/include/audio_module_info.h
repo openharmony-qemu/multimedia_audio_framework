@@ -85,6 +85,7 @@ static const char* PORT_NONE = "none";
 static const char* PRIMARY_DIRECT_VOIP = "direct_voip";
 static const char* PRIMARY_MMAP_VOIP = "mmap_voip";
 static const char* PRIMARY_MMAP = "mmap";
+static const char* TRUE_ULTRA_FAST_SPEAKER = "true_ultra_fast_speaker";
 static const char* PRIMARY_DIRECT = "direct";
 static const char* ACCESSORY_SOURCE = "accessory_mic";
 static const char* VIRTUAL_AUDIO = "virtual_audio";

@@ -243,17 +243,7 @@ private:
     std::shared_ptr<AudioStreamDescriptor> GenerateStreamDesc(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
     IAudioStream::StreamClass DecideStreamClassAndUpdateRendererInfo(uint32_t flag);
-    void SetRendererInfoForUltraFast();
-    void SetRendererInfoForFastVoip();
-    void SetRendererInfoForFastMmap();
-    void SetRendererInfoForDirectVoip();
-    void SetRendererInfoForDirect();
-    void SetRendererInfoForLowPower();
-    void SetRendererInfoForMultichannel();
-    void SetRendererInfoForHwDecoding();
-    void SetRendererInfoForInterphone();
-    void SetRendererInfoForVoiceCallAssistant();
-    void SetRendererInfoForNormal();
+    IAudioStream::StreamClass DecideStreamClassAndUpdateRendererInfoExt(uint32_t flag);
     int32_t InitAudioInterruptCallback(bool isRestoreAudio = false);
     int32_t InitOutputDeviceChangeCallback();
     void InitAudioRouteCallback();
