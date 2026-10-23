@@ -313,26 +313,32 @@ HWTEST_F(HpaeFastSourceInputNodeTest, CapturerSourceInitRejectsInvalidInputs, Te
 }
 
 /**
- * @tc.name  : CapturerSourceInitReleasesSourceOnFailure
+ * @tc.name  : CapturerSourceInitRetainsSourceOnFailure
  * @tc.type  : FUNC
  * @tc.number: HpaeFastSourceInputNodeTest_032
- * @tc.desc  : Test CapturerSourceInit releases source and captureId_ when Init fails.
+ * @tc.desc  : Test failed Init retains the source and id until explicit lifecycle cleanup.
  */
-HWTEST_F(HpaeFastSourceInputNodeTest, CapturerSourceInitReleasesSourceOnFailure, TestSize.Level1)
+HWTEST_F(HpaeFastSourceInputNodeTest, CapturerSourceInitRetainsSourceOnFailure, TestSize.Level1)
 {
     IAudioSourceAttr attr;
     InitAudioSourceAttr(attr);
 
-    auto fastNode = CreateFastNode();
-    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
-    AttachMockSource(fastNode, mockSource);
-    EXPECT_CALL(*mockSource, IsInited()).WillOnce(Return(false)).WillRepeatedly(Return(false));
-    EXPECT_CALL(*mockSource, Init(_)).WillOnce(Return(ERROR));
+    for (int32_t flag : {AUDIO_FLAG_ULTRA_FAST, AUDIO_FLAG_MMAP, AUDIO_FLAG_VOIP_FAST}) {
+        attr.audioStreamFlag = flag;
+        auto fastNode = CreateFastNode();
+        auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+        AttachMockSource(fastNode, mockSource);
+        EXPECT_CALL(*mockSource, IsInited()).WillRepeatedly(Return(false));
+        EXPECT_CALL(*mockSource, Init(_)).WillOnce(Return(ERROR));
+        EXPECT_CALL(*mockSource, DeInit()).Times(0);
 
-    EXPECT_NE(fastNode->CapturerSourceInit(attr), SUCCESS);
-    EXPECT_EQ(fastNode->audioCapturerSource_, nullptr);
-    EXPECT_EQ(fastNode->captureId_, HDI_INVALID_ID);
-    EXPECT_EQ(fastNode->CapturerSourceDeInit(), SUCCESS);
+        EXPECT_NE(fastNode->CapturerSourceInit(attr), SUCCESS);
+        EXPECT_EQ(fastNode->audioCapturerSource_, mockSource);
+        EXPECT_EQ(fastNode->captureId_, FAST_CAPTURE_ID);
+        EXPECT_EQ(fastNode->CapturerSourceDeInit(), SUCCESS);
+        EXPECT_EQ(fastNode->audioCapturerSource_, nullptr);
+        EXPECT_EQ(fastNode->captureId_, HDI_INVALID_ID);
+    }
 }
 
 /**

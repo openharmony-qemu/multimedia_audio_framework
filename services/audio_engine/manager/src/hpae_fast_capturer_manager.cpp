@@ -221,22 +221,11 @@ int32_t HpaeFastCapturerManager::InitCapturerManager()
     IAudioSourceAttr attr;
     CreateSourceAttr(attr);
     ret = sourceInputNode_->CapturerSourceInit(attr);
-    if (ret != SUCCESS) {
-        if (sourceInfo_.isUltraFast) {
-            sourceInputNode_->CapturerSourceDeInit();
-        }
-        AUDIO_ERR_LOG("CapturerSourceInit failed: %{public}d", ret);
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CapturerSourceInit failed: %{public}d", ret);
     isInit_.store(true);
     mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     mixerNode_->Connect(sourceInputNode_);
-    ret = WarmUpCapturer();
-    if (sourceInfo_.isUltraFast && ret != SUCCESS) {
-        isInit_.store(false);
-        sourceInputNode_->CapturerSourceDeInit();
-        return ret;
-    }
+    WarmUpCapturer();
     return SUCCESS;
 }
 

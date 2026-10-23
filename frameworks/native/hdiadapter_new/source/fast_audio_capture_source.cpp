@@ -45,10 +45,6 @@ int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
         AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
     }
     ret = PrepareMmapBuffer();
-    if (ret != SUCCESS && attr_.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST) {
-        DeInit();
-        return ret;
-    }
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
         HILOG_COMM_ERROR("[Init]prepare mmap buffer fail"));
     sourceInited_ = true;

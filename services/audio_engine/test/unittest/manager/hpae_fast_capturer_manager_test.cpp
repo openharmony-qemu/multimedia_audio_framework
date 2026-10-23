@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "audio_errors.h"
+#include "audio_shared_memory.h"
 #include "audio_stream_enum.h"
 #include "hpae_fast_capturer_manager.h"
 #include "hpae_mocks.h"
@@ -263,6 +264,47 @@ HWTEST_F(HpaeFastCapturerManagerTest, InitCapturerManagerInvalidFrameLen, TestSi
     sourceInfo.frameLen = 50000;
     manager = std::make_shared<HpaeFastCapturerManager>(sourceInfo);
     EXPECT_NE(manager->InitCapturerManager(), SUCCESS);
+}
+
+/** @tc.desc: Init and warm-up failures do not actively deinitialize an ultra fast source. */
+HWTEST_F(HpaeFastCapturerManagerTest, UltraFastInitFailureDoesNotDeInit_001, TestSize.Level1)
+{
+    auto memory = AudioSharedMemory::CreateFromLocal(960 * 4, "ultra_fast_failure_test");
+    ASSERT_NE(memory, nullptr);
+    auto &hdiManager = HdiAdapterManager::GetInstance();
+    uint32_t captureId = hdiManager.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_DEFAULT, true);
+    auto savedSource = hdiManager.captureSources_[captureId].source_;
+    for (bool warmUpFailure : {false, true}) {
+        auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+        hdiManager.captureSources_[captureId].source_ = mockSource;
+        EXPECT_CALL(*mockSource, DeInit()).Times(0);
+        EXPECT_CALL(*mockSource, IsInited()).WillRepeatedly(Return(warmUpFailure));
+        if (warmUpFailure) {
+            EXPECT_CALL(*mockSource, GetMmapBufferInfo(_, _, _, _, _))
+                .WillOnce(DoAll(SetArgReferee<0>(memory->GetFd()), SetArgReferee<1>(960),
+                    SetArgReferee<2>(120), SetArgReferee<3>(4), SetArgReferee<4>(0), Return(SUCCESS)));
+            EXPECT_CALL(*mockSource, Start()).WillOnce(Return(ERROR));
+            EXPECT_CALL(*mockSource, Stop()).WillOnce(Return(SUCCESS));
+        } else {
+            EXPECT_CALL(*mockSource, Init(_)).WillOnce(Return(ERROR));
+        }
+        HpaeSourceInfo info = CreateFastSourceInfo(AUDIO_INPUT_FLAG_ULTRA_FAST);
+        info.deviceClass = "primary_ultra_fast";
+        info.deviceType = DEVICE_TYPE_USB_HEADSET;
+        info.frameLen = 120;
+        info.isUltraFast = true;
+        auto manager = std::make_shared<HpaeFastCapturerManager>(info);
+        EXPECT_EQ(manager->InitCapturerManager(), warmUpFailure ? SUCCESS : ERROR);
+        EXPECT_EQ(manager->IsInit(), warmUpFailure);
+        EXPECT_EQ(manager->sourceInputNode_->audioCapturerSource_, mockSource);
+        EXPECT_EQ(manager->sourceInputNode_->GetCaptureId(), captureId);
+        Mock::VerifyAndClearExpectations(mockSource.get());
+        EXPECT_CALL(*mockSource, IsInited()).WillRepeatedly(Return(warmUpFailure));
+        EXPECT_CALL(*mockSource, DeInit()).Times(warmUpFailure ? 1 : 0);
+        EXPECT_EQ(manager->DeInit(false), SUCCESS);
+    }
+    hdiManager.captureSources_[captureId].source_ = savedSource;
+    hdiManager.ReleaseId(captureId);
 }
 
 /**

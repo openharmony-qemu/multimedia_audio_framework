@@ -3777,13 +3777,7 @@ int32_t AudioServer::CreateSourcePort(uint32_t idBase, uint32_t idType, const st
         return SUCCESS;
     }
     if (!source->IsInited()) {
-        int32_t ret = source->Init(attr);
-        if (attr.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST && ret != SUCCESS) {
-            source->DeInit();
-            HdiAdapterManager::GetInstance().ReleaseId(captureId);
-            captureId = HDI_INVALID_ID;
-            return ret;
-        }
+        source->Init(attr);
     }
     return SUCCESS;
 }
@@ -3807,13 +3801,7 @@ int32_t AudioServer::CreateHdiSourcePort(const std::string &deviceClass, const s
         return SUCCESS;
     }
     if (!source->IsInited()) {
-        int32_t ret = source->Init(attr);
-        if (attr.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST && ret != SUCCESS) {
-            source->DeInit();
-            HdiAdapterManager::GetInstance().ReleaseId(captureId);
-            captureId = HDI_INVALID_ID;
-            return ret;
-        }
+        source->Init(attr);
     }
     return SUCCESS;
 }

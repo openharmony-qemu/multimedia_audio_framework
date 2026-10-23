@@ -291,6 +291,42 @@ HWTEST_F(FastAudioCaptureSourceUnitTest, CaptureMmapType_001, TestSize.Level1)
     EXPECT_EQ(sampleAttr.period, 0);
 }
 
+/** @tc.desc: Failed mmap setup retains the HDI capture until an explicit DeInit. */
+HWTEST_F(FastAudioCaptureSourceUnitTest, CaptureMmapFailureDoesNotDestroy_001, TestSize.Level1)
+{
+    auto &manager = HdiAdapterManager::GetInstance();
+    auto savedManager = manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL];
+    auto mock = std::make_shared<testing::NiceMock<MockIDeviceManager>>();
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL] = mock;
+    for (int32_t flag : {AUDIO_FLAG_ULTRA_FAST, AUDIO_FLAG_MMAP}) {
+        IAudioCapture capture = {};
+        capture.ReqMmapBuffer = [](auto *, auto, auto *) -> int32_t { return ERR_OPERATION_FAILED; };
+        const uint32_t captureId = 7;
+        EXPECT_CALL(*mock, CreateCapture("primary", testing::_, testing::_, testing::_))
+            .WillOnce(testing::DoAll(testing::SetArgReferee<3>(captureId),
+                testing::Return(static_cast<void *>(&capture))));
+        EXPECT_CALL(*mock, DestroyCapture(testing::_, testing::_)).Times(0);
+        FastAudioCaptureSource source;
+        IAudioSourceAttr attr = {};
+        attr.adapterName = "primary";
+        attr.audioStreamFlag = flag;
+        attr.sampleRate = SAMPLE_RATE_48000;
+        attr.format = SAMPLE_S16LE;
+        attr.channel = STEREO;
+        attr.deviceType = DEVICE_TYPE_USB_HEADSET;
+        attr.sourceType = SOURCE_TYPE_MIC;
+        EXPECT_EQ(source.Init(attr), ERR_NOT_STARTED);
+        EXPECT_EQ(source.audioCapture_, &capture);
+        EXPECT_FALSE(source.IsInited());
+        testing::Mock::VerifyAndClearExpectations(mock.get());
+        EXPECT_CALL(*mock, DestroyCapture("primary", captureId)).Times(1);
+        source.DeInit();
+        EXPECT_EQ(source.audioCapture_, nullptr);
+        testing::Mock::VerifyAndClearExpectations(mock.get());
+    }
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL] = savedManager;
+}
+
 /** @tc.desc: Ultra fast and fast capture creation and routing use separate, consistent stream IDs. */
 HWTEST_F(FastAudioCaptureSourceUnitTest, CaptureRouteStreamId_001, TestSize.Level1)
 {

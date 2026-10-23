@@ -26,8 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 namespace {
-constexpr uint32_t INPUT_FAST_FLAG_MASK = AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP_FAST |
-    AUDIO_INPUT_FLAG_ULTRA_FAST;
+constexpr uint32_t INPUT_FAST_FLAG_MASK = AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP_FAST;
 }
 
 std::shared_ptr<IHpaeCapturerManager> IHpaeCapturerManager::CreateCapturerManager(HpaeSourceInfo &sourceInfo)
