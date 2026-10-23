@@ -1846,7 +1846,7 @@ void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> s
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
         streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_);
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
-    streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
+    streamCollector_.UpdateCapturerDeviceInfo(streamDesc->sessionId_, streamDesc->newDeviceDescs_.front());
 }
 
 void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -1885,7 +1885,7 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
     }
 
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
-    streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
+    streamCollector_.UpdateCapturerDeviceInfo(streamDesc->sessionId_, streamDesc->newDeviceDescs_.front());
 }
 
 int32_t AudioCoreService::MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,

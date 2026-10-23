@@ -21,6 +21,7 @@
 #include "audio_client_tracker_callback_service.h"
 #include "audio_spatialization_service.h"
 #include "audio_volume_manager.h"
+#include "audio_utils.h"
 
 #include "media_monitor_manager.h"
 #include "audio_zone_service.h"
@@ -670,17 +671,32 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(AudioDeviceDescriptor &in
     return SUCCESS;
 }
 
-int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> inputDeviceInfo)
+int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(uint32_t sessionId,
+    std::shared_ptr<AudioDeviceDescriptor> inputDeviceInfo)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     bool deviceInfoUpdated = false;
 
-    for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
-        if (!(*it)->inputDeviceInfo.IsSameDeviceDescPtr(inputDeviceInfo)) {
-            AUDIO_DEBUG_LOG("UpdateCapturerDeviceInfo: old device: %{public}d new device: %{public}d",
-                (*it)->inputDeviceInfo.deviceType_, inputDeviceInfo->deviceType_);
-            (*it)->inputDeviceInfo = inputDeviceInfo;
-            deviceInfoUpdated = true;
+    if (Util::IsEnhancedRoutingSupported()) {
+        for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
+            if ((*it)->sessionId != static_cast<int32_t>(sessionId)) {
+                continue;
+            }
+            if (!(*it)->inputDeviceInfo.IsSameDeviceDescPtr(inputDeviceInfo)) {
+                AUDIO_INFO_LOG("sessionId %{public}d old device: %{public}d new device: %{public}d",
+                    (*it)->sessionId, (*it)->inputDeviceInfo.deviceType_, inputDeviceInfo->deviceType_);
+                (*it)->inputDeviceInfo = inputDeviceInfo;
+                deviceInfoUpdated = true;
+            }
+        }
+    } else {
+        for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
+            if (!(*it)->inputDeviceInfo.IsSameDeviceDescPtr(inputDeviceInfo)) {
+                AUDIO_DEBUG_LOG("UpdateCapturerDeviceInfo: old device: %{public}d new device: %{public}d",
+                    (*it)->inputDeviceInfo.deviceType_, inputDeviceInfo->deviceType_);
+                (*it)->inputDeviceInfo = inputDeviceInfo;
+                deviceInfoUpdated = true;
+            }
         }
     }
 
