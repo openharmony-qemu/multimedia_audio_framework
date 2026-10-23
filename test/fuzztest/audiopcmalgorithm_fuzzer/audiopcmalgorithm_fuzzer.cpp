@@ -39,6 +39,11 @@ static const vector<int32_t> TEST_CHANNELS = {1, 2, 0, 3};
 constexpr int32_t MAX_FUZZ_SAMPLE_COUNT = 2000;
 constexpr int32_t MAX_FUZZ_STREAM_COUNT = 8;
 constexpr int32_t MIXER_LOOP_COUNT = 4;
+constexpr int64_t MAX_FUZZ_BUFFER_BYTES = 4096 * 1024; // keep fuzz allocations bounded
+constexpr int32_t FUZZ_BRANCH_MOD = 2; // splits fuzz inputs between two branches
+constexpr int32_t MIXER_MAX_BLOCK_MS = 60; // process contract: block no longer than 60ms
+constexpr int32_t MS_PER_SECOND = 1000;
+constexpr int32_t MIXER_ALIGN_DIVISOR = 4; // process contract: sampleCount*channels divisible by 4
 
 template<class T>
 T GetData()
@@ -54,21 +59,6 @@ T GetData()
     }
     g_pos += objectSize;
     return object;
-}
-
-static int32_t GetFormatBytes(AudioPcmFormat format)
-{
-    switch (format) {
-        case AUDIO_PCM_S16_LE:
-            return 2;
-        case AUDIO_PCM_S24_LE:
-            return 3;
-        case AUDIO_PCM_S32_LE:
-        case AUDIO_PCM_F32_LE:
-            return 4;
-        default:
-            return 0;
-    }
 }
 
 // Fill dst with fuzz bytes (cyclically when the input is shorter than dst).
@@ -92,14 +82,14 @@ static void ConvertFuzz(const uint8_t *data, size_t size)
     int32_t channels = TEST_CHANNELS[GetData<uint32_t>() % TEST_CHANNELS.size()];
     int32_t sampleCount = static_cast<int32_t>(GetData<uint32_t>() % MAX_FUZZ_SAMPLE_COUNT);
     AudioPcmFormat format = static_cast<AudioPcmFormat>(fmt);
-    int32_t bytesPerSample = GetFormatBytes(format);
-    if (bytesPerSample == 0 || channels <= 0 || sampleCount <= 0) {
+    int32_t bytesPerSample = AudioFormatCalcMemLength(format, 1, 1); // 1 frame * 1 channel = bytes per sample
+    if (bytesPerSample <= 0 || channels <= 0 || sampleCount <= 0) {
         (void)ConvertPcmToFloat(format, data, sampleCount, nullptr);
         (void)AudioFormatCalcMemLength(format, channels, sampleCount);
         return;
     }
     int64_t byteLen = static_cast<int64_t>(sampleCount) * bytesPerSample;
-    if (byteLen > 4096 * 1024) { // keep fuzz allocations bounded
+    if (byteLen > MAX_FUZZ_BUFFER_BYTES) {
         return;
     }
     vector<uint8_t> pcm(static_cast<size_t>(byteLen), 0);
@@ -112,6 +102,43 @@ static void ConvertFuzz(const uint8_t *data, size_t size)
     vector<uint8_t> back(static_cast<size_t>(byteLen), 0);
     (void)ConvertFloatToPcm(format, floats.data(), sampleCount, back.data());
     (void)AudioFormatCalcMemLength(format, channels, sampleCount);
+}
+
+// Prepares fuzz streams and drives AudioMixerProcess; extracted to keep the nesting
+// of MixerFuzz within the codecheck limit. Consumes fuzz data in a fixed order.
+static void MixerProcessFuzz(AudioMixHandle handle, int32_t rate, int32_t channels,
+    int32_t bytesPerSample, int32_t sampleCount)
+{
+    if (bytesPerSample <= 0 || channels <= 0) {
+        return;
+    }
+    // half of the cases align to the process contract to reach the mix+limiter path
+    if (GetData<uint8_t>() % FUZZ_BRANCH_MOD == 0) {
+        int32_t maxCount = rate * MIXER_MAX_BLOCK_MS / MS_PER_SECOND;
+        if (sampleCount > maxCount) {
+            sampleCount = maxCount;
+        }
+        sampleCount = (sampleCount / MIXER_ALIGN_DIVISOR) * MIXER_ALIGN_DIVISOR / channels * channels;
+    }
+    int64_t byteLen = static_cast<int64_t>(sampleCount) * channels * bytesPerSample;
+    if (sampleCount <= 0 || byteLen > MAX_FUZZ_BUFFER_BYTES) {
+        return;
+    }
+    vector<uint8_t> pcm(static_cast<size_t>(byteLen), 0);
+    FillBuffer(pcm.data(), pcm.size());
+    int32_t streamCount = static_cast<int32_t>(GetData<uint8_t>() % MAX_FUZZ_STREAM_COUNT) + 1;
+    vector<AudioMixStream> streams(static_cast<size_t>(streamCount));
+    for (int32_t i = 0; i < streamCount; ++i) {
+        streams[i].data = pcm.data();
+        streams[i].sampleCount = sampleCount;
+        streams[i].volume = GetData<float>();
+    }
+    for (int32_t i = 0; i < MIXER_LOOP_COUNT; ++i) {
+        struct AudioMixResult result = AudioMixerProcess(handle, streams.data(), streamCount);
+        if (result.errCode != AUDIO_PCM_ALGO_SUCCESS) {
+            break;
+        }
+    }
 }
 
 static void MixerFuzz(const uint8_t *data, size_t size)
@@ -128,36 +155,9 @@ static void MixerFuzz(const uint8_t *data, size_t size)
         return;
     }
 
-    int32_t bytesPerSample = GetFormatBytes(format);
+    int32_t bytesPerSample = AudioFormatCalcMemLength(format, 1, 1); // 1 frame * 1 channel = bytes per sample
     int32_t sampleCount = static_cast<int32_t>(GetData<uint32_t>() % MAX_FUZZ_SAMPLE_COUNT);
-    if (bytesPerSample > 0 && channels > 0) {
-        // half of the cases align to the process contract to reach the mix+limiter path
-        if (GetData<uint8_t>() % 2 == 0) {
-            int32_t maxCount = rate * 60 / 1000; // process contract: block no longer than 60ms
-            if (sampleCount > maxCount) {
-                sampleCount = maxCount;
-            }
-            sampleCount = (sampleCount / 4) * 4 / channels * channels; // sampleCount*channels divisible by 4
-        }
-        int64_t byteLen = static_cast<int64_t>(sampleCount) * channels * bytesPerSample;
-        if (sampleCount > 0 && byteLen <= 4096 * 1024) {
-            vector<uint8_t> pcm(static_cast<size_t>(byteLen), 0);
-            FillBuffer(pcm.data(), pcm.size());
-            int32_t streamCount = static_cast<int32_t>(GetData<uint8_t>() % MAX_FUZZ_STREAM_COUNT) + 1;
-            vector<AudioMixStream> streams(static_cast<size_t>(streamCount));
-            for (int32_t i = 0; i < streamCount; ++i) {
-                streams[i].data = pcm.data();
-                streams[i].sampleCount = sampleCount;
-                streams[i].volume = GetData<float>();
-            }
-            for (int32_t i = 0; i < MIXER_LOOP_COUNT; ++i) {
-                struct AudioMixResult result = AudioMixerProcess(handle, streams.data(), streamCount);
-                if (result.errCode != AUDIO_PCM_ALGO_SUCCESS) {
-                    break;
-                }
-            }
-        }
-    }
+    MixerProcessFuzz(handle, rate, channels, bytesPerSample, sampleCount);
     (void)AudioMixerProcess(handle, nullptr, 1);
     AudioMixerDestroy(handle);
     AudioMixerDestroy(nullptr);
@@ -172,7 +172,7 @@ void FuzzTest(const uint8_t *data, size_t size)
     g_dataSize = size;
     g_pos = 0;
     uint32_t select = GetData<uint32_t>();
-    switch (select % 2) {
+    switch (select % FUZZ_BRANCH_MOD) {
         case 0:
             ConvertFuzz(data, size);
             break;

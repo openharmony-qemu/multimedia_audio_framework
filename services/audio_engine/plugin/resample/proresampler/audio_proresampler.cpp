@@ -284,6 +284,9 @@ constexpr int PCM_OFFSET_BIT_24 = 3;
 constexpr int PCM_BIT_8 = 8;
 constexpr int PCM_BIT_16 = 16;
 constexpr int PCM_BIT_32 = 32;
+constexpr int PCM_BYTES_S16 = 2;
+constexpr int PCM_BYTES_S24 = 3;
+constexpr int PCM_BYTES_S32 = 4;
 
 uint32_t Read24Bit(const void *pcm)
 {
@@ -325,12 +328,12 @@ int32_t GetPcmFormatBytes(AudioPcmFormat format)
 {
     switch (format) {
         case AUDIO_PCM_S16_LE:
-            return 2;
+            return PCM_BYTES_S16;
         case AUDIO_PCM_S24_LE:
-            return 3;
+            return PCM_BYTES_S24;
         case AUDIO_PCM_S32_LE:
         case AUDIO_PCM_F32_LE:
-            return 4;
+            return PCM_BYTES_S32;
         default:
             return 0;
     }

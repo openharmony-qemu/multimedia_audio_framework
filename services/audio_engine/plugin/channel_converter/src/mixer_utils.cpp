@@ -762,8 +762,8 @@ int32_t PcmLimiter::SetConfig(int32_t inputFrameBytes, int32_t bytePerSample, in
 
 int32_t PcmLimiter::Process(int32_t inputSampleCount, float *inBuffer, float *outBuffer)
 {
-    CHECK_AND_RETURN_RET_LOG(
-        inBuffer != nullptr && outBuffer != nullptr, MIX_ERR_INVALID_ARG, "PcmLimiter Process Error, buffer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr && outBuffer != nullptr,
+        MIX_ERR_INVALID_ARG, "PcmLimiter Process Error, buffer is nullptr");
 
     CHECK_AND_RETURN_RET_LOG(algoFrameLen_ > 0 && bufHis_.capacity() > static_cast<size_t>(algoFrameLen_),
         MIX_ERR_INVALID_ARG,
@@ -995,21 +995,6 @@ constexpr int32_t MIXER_LIMITER_DIVISOR = 4; // limiter processes input in 4 chu
 constexpr float MIXER_VOLUME_MIN = 0.0f;
 constexpr float MIXER_VOLUME_MAX = 1.0f;
 
-int32_t GetMixerFormatBytes(AudioPcmFormat format)
-{
-    switch (format) {
-        case AUDIO_PCM_S16_LE:
-            return 2;
-        case AUDIO_PCM_S24_LE:
-            return 3;
-        case AUDIO_PCM_S32_LE:
-        case AUDIO_PCM_F32_LE:
-            return 4;
-        default:
-            return 0;
-    }
-}
-
 struct MixerContext {
     std::mutex mutex;
     int32_t sampleRate = 0;
@@ -1134,7 +1119,8 @@ extern "C" AudioMixHandle AudioMixerCreate(int32_t sampleRate, int32_t channel, 
         AUDIO_ERR_LOG("AudioMixerCreate unsupported channel: %{public}d", channel);
         return nullptr;
     }
-    if (GetMixerFormatBytes(format) == 0) {
+    int32_t bytesPerSample = AudioFormatCalcMemLength(format, 1, 1); // 1 frame * 1 channel = bytes per sample
+    if (bytesPerSample <= 0) {
         AUDIO_ERR_LOG("AudioMixerCreate unsupported format: %{public}d", static_cast<int32_t>(format));
         return nullptr;
     }
@@ -1146,7 +1132,7 @@ extern "C" AudioMixHandle AudioMixerCreate(int32_t sampleRate, int32_t channel, 
     }
     ctx->sampleRate = sampleRate;
     ctx->channels = channel;
-    ctx->bytesPerSample = GetMixerFormatBytes(format);
+    ctx->bytesPerSample = bytesPerSample;
     ctx->format = format;
     AUDIO_INFO_LOG("AudioMixerCreate success, rate: %{public}d, channels: %{public}d, bytesPerSample: %{public}d",
         ctx->sampleRate, ctx->channels, ctx->bytesPerSample);
