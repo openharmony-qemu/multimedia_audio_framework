@@ -31,7 +31,7 @@ constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t MAX_CHANNELS = 16;
 constexpr uint32_t MAX_SAMPLE_RATE = 5644800; // plugin capability for audio editing; framework API stays 384000
 constexpr uint32_t MIN_SAMPLE_RATE = SAMPLE_RATE_8000;
-constexpr uint32_t MAX_FRAME_LEN = SAMPLE_RATE_384000 * 10; // frame length guard, covers 100ms at 5644800
+constexpr uint32_t MAX_FRAME_LEN = SAMPLE_RATE_384000 * 10; // per-call frame guard: 10s at 384k, ~0.68s at 5.6448M
 constexpr uint32_t MAX_QUALITY = 10;
 }
 // Unified Process: accepts arbitrary input frame counts, outputs resampled data in one call.
@@ -73,7 +73,7 @@ int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameLen, float 
     CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "resampler state is invalid");
     CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr, RESAMPLER_ERR_INVALID_ARG, "in buffer ptr is nullptr");
     CHECK_AND_RETURN_RET_LOG((inFrameLen <= MAX_FRAME_LEN) && (outFrameLen <= MAX_FRAME_LEN),
-        RESAMPLER_ERR_ALLOC_FAILED,
+        RESAMPLER_ERR_INVALID_ARG,
         "inFrameLen %{public}d or outFrameLen %{public}d out of valid range",
         inFrameLen,
         outFrameLen);

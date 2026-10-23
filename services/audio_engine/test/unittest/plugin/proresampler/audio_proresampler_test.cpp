@@ -47,6 +47,7 @@ constexpr uint32_t FRAME_LEN_100MS = (100 * SOURCE_PERIOD_SIZE); // used for tes
 
 constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t SAMPLE_RATE_48010 = 48010;
+constexpr uint32_t SAMPLE_RATE_5644800 = 5644800;
 constexpr uint32_t INVALID_SAMPLE_RATE = 2;
 constexpr uint32_t INVALID_CHANNELS = 100;
 constexpr uint32_t INVALID_CHANNELS2 = 0;
@@ -718,7 +719,6 @@ HWTEST_F(AudioProResamplerTest, GetDelayFramesTest_007, TestSize.Level1)
  */
 HWTEST_F(AudioProResamplerTest, InitTest_002, TestSize.Level0)
 {
-    constexpr uint32_t SAMPLE_RATE_5644800 = 5644800;
     constexpr uint32_t SAMPLE_RATE_OVER_MAX = 5644801;
     constexpr uint32_t SAMPLE_RATE_UNDER_MIN = 7999;
 
@@ -755,8 +755,6 @@ HWTEST_F(AudioProResamplerTest, InitTest_002, TestSize.Level0)
  */
 HWTEST_F(AudioProResamplerTest, ProcessTest_005, TestSize.Level0)
 {
-    constexpr uint32_t SAMPLE_RATE_5644800 = 5644800;
-
     // upsample 44100 -> 5644800 (1:128)
     ProResampler upExact(SAMPLE_RATE_44100, SAMPLE_RATE_5644800, STEREO, QUALITY_ONE);
     EXPECT_NE(upExact.state_, nullptr);
@@ -790,7 +788,6 @@ HWTEST_F(AudioProResamplerTest, ProcessTest_005, TestSize.Level0)
  */
 HWTEST_F(AudioProResamplerTest, UpdateRatesTest_007, TestSize.Level0)
 {
-    constexpr uint32_t SAMPLE_RATE_5644800 = 5644800;
     constexpr uint32_t SAMPLE_RATE_OVER_MAX = 5644801;
 
     ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_5644800, STEREO, QUALITY_ONE);
