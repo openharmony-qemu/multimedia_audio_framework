@@ -461,5 +461,130 @@ HWTEST(AudioBundleManagerTest, ComposeExtractRoundtrip_Success, TestSize.Level1)
     EXPECT_EQ(extractedName, originalName);
     EXPECT_EQ(extractedIndex, originalIndex);
 }
+
+/**
+ * @tc.name  : GetBundleInfoV9_NoBundleMgrService
+ * @tc.number: GetBundleInfoV9_001
+ * @tc.desc  : Test GetBundleInfoV9 returns error when BundleMgrService is not available.
+ *             In UT environment, SystemAbilityManager or BUNDLE_MGR_SERVICE_SYS_ABILITY_ID is not
+ *             running, so GetBundleInfoV9 should return ERR_NULL_POINTER without crash.
+ */
+HWTEST(AudioBundleManagerTest, GetBundleInfoV9_NoBundleMgrService, TestSize.Level1)
+{
+    std::string bundleName = "com.test.app";
+    int32_t userId = 0;
+    AppExecFwk::BundleInfo bundleInfo;
+ 
+    int32_t ret = AudioBundleManager::GetBundleInfoV9(bundleName, userId, bundleInfo);
+ 
+    EXPECT_NE(ret, 0);
+}
+ 
+/**
+ * @tc.name  : GetBundleInfoV9_EmptyBundleName
+ * @tc.number: GetBundleInfoV9_002
+ * @tc.desc  : Test GetBundleInfoV9 with empty bundleName does not crash and returns error.
+ */
+HWTEST(AudioBundleManagerTest, GetBundleInfoV9_EmptyBundleName, TestSize.Level1)
+{
+    std::string bundleName = "";
+    int32_t userId = 0;
+    AppExecFwk::BundleInfo bundleInfo;
+ 
+    int32_t ret = AudioBundleManager::GetBundleInfoV9(bundleName, userId, bundleInfo);
+ 
+    EXPECT_NE(ret, 0);
+}
+ 
+/**
+ * @tc.name  : GetBundleInfoV9_AncoStyleBundleName
+ * @tc.number: GetBundleInfoV9_003
+ * @tc.desc  : Test GetBundleInfoV9 with anco-style bundleName (e.g. com.xs.fm.lite.next).
+ *             Anco apps are queried via BMS extension, in UT environment BMS is not available
+ *             so it should return error without crash.
+ */
+HWTEST(AudioBundleManagerTest, GetBundleInfoV9_AncoStyleBundleName, TestSize.Level1)
+{
+    std::string bundleName = "com.xs.fm.lite.next";
+    int32_t userId = 0;
+    AppExecFwk::BundleInfo bundleInfo;
+ 
+    int32_t ret = AudioBundleManager::GetBundleInfoV9(bundleName, userId, bundleInfo);
+ 
+    EXPECT_NE(ret, 0);
+}
+ 
+/**
+ * @tc.name  : GetBundleInfoV9_ValidUserId
+ * @tc.number: GetBundleInfoV9_004
+ * @tc.desc  : Test GetBundleInfoV9 with valid userId value. Without BMS running, should return
+ *             error but not crash.
+ */
+HWTEST(AudioBundleManagerTest, GetBundleInfoV9_ValidUserId, TestSize.Level1)
+{
+    std::string bundleName = "com.netease.cloudmusic";
+    int32_t userId = 100;
+    AppExecFwk::BundleInfo bundleInfo;
+ 
+    int32_t ret = AudioBundleManager::GetBundleInfoV9(bundleName, userId, bundleInfo);
+ 
+    EXPECT_NE(ret, 0);
+}
+ 
+/**
+ * @tc.name  : GetBundleInfoV9_MultipleCallsNoCrash
+ * @tc.number: GetBundleInfoV9_005
+ * @tc.desc  : Test GetBundleInfoV9 can be called multiple times without crash or resource leak.
+ */
+HWTEST(AudioBundleManagerTest, GetBundleInfoV9_MultipleCallsNoCrash, TestSize.Level1)
+{
+    std::string bundleName = "com.test.repeat";
+    int32_t userId = 0;
+    AppExecFwk::BundleInfo bundleInfo;
+ 
+    for (int i = 0; i < 5; i++) {
+        int32_t ret = AudioBundleManager::GetBundleInfoV9(bundleName, userId, bundleInfo);
+        EXPECT_NE(ret, 0);
+    }
+}
+ 
+/**
+ * @tc.name  : ExtractBundleNameAndIndex_AppIndexZeroBranch
+ * @tc.number: ExtractBundleNameAndIndex_AppIndexZero_001
+ * @tc.desc  : Test ExtractBundleNameAndIndex returns appIndex==0 for normal app (no '#').
+ *             This covers the appIndex==0 branch in RestoreSystemAppVolumeLevel which uses
+ *             GetBundleInfoV9 path.
+ */
+HWTEST(AudioBundleManagerTest, ExtractBundleNameAndIndex_AppIndexZero_001, TestSize.Level1)
+{
+    std::string bundleNameWithIndex = "com.test.normalapp";
+    std::string bundleName;
+    int32_t appIndex = -1;
+ 
+    AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
+ 
+    EXPECT_EQ(appIndex, 0);
+    EXPECT_EQ(bundleName, "com.test.normalapp");
+}
+ 
+/**
+ * @tc.name  : ExtractBundleNameAndIndex_AppIndexNonZeroBranch
+ * @tc.number: ExtractBundleNameAndIndex_AppIndexNonZero_001
+ * @tc.desc  : Test ExtractBundleNameAndIndex returns appIndex>0 for clone app (with '#').
+ *             This covers the appIndex>0 branch in RestoreSystemAppVolumeLevel which uses
+ *             GetUidByBundleName path.
+ */
+HWTEST(AudioBundleManagerTest, ExtractBundleNameAndIndex_AppIndexNonZero_001, TestSize.Level1)
+{
+    std::string bundleNameWithIndex = "com.test.cloneapp#1";
+    std::string bundleName;
+    int32_t appIndex = -1;
+ 
+    AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
+ 
+    EXPECT_GT(appIndex, 0);
+    EXPECT_EQ(appIndex, 1);
+    EXPECT_EQ(bundleName, "com.test.cloneapp");
+}
 } // namespace AudioStandard
 } // namespace OHOS

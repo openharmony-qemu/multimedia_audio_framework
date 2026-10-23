@@ -117,6 +117,12 @@ int32_t AudioBundleManager::IsBundleInstalled(
     return GetInstance().IsBundleInstalledImpl(bundleName, userId, appIndex, isInstalled);
 }
 
+int32_t AudioBundleManager::GetBundleInfoV9(
+    const std::string &bundleName, int32_t userId, AppExecFwk::BundleInfo &bundleInfo)
+{
+    return GetInstance().GetBundleInfoV9Impl(bundleName, userId, bundleInfo);
+}
+
 int32_t AudioBundleManager::GetNameAndIndexForUid(int32_t uid, std::string &bundleName, int32_t &appIndex)
 {
     return GetInstance().GetNameAndIndexForUidImpl(uid, bundleName, appIndex);
@@ -280,6 +286,29 @@ int32_t AudioBundleManager::IsBundleInstalledImpl(
 
     WatchTimeout reguard("bundleMgrProxy->IsBundleInstalled:IsBundleInstalled");
     int32_t ret = bundleMgrProxy->IsBundleInstalled(bundleName, userId, appIndex, isInstalled);
+    reguard.CheckCurrTimeout();
+    return ret;
+}
+
+int32_t AudioBundleManager::GetBundleInfoV9Impl(
+    const std::string &bundleName, int32_t userId, AppExecFwk::BundleInfo &bundleInfo)
+{
+    AudioXCollie audioXCollie("AudioBundleManager::GetBundleInfoV9",
+        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    WatchTimeout guard("AudioBundleManager:GetBundleInfoV9");
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, ERR_NULL_POINTER, "systemAbilityManager is nullptr");
+    guard.CheckCurrTimeout();
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_PRELOG(remoteObject != nullptr, ERR_NULL_POINTER, "remoteObject is nullptr");
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, ERR_NULL_POINTER, "bundleMgrProxy is nullptr");
+
+    WatchTimeout reguard("bundleMgrProxy->GetBundleInfoV9:GetBundleInfoV9");
+    ErrCode ret = bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT,
+        bundleInfo, userId);
     reguard.CheckCurrTimeout();
     return ret;
 }
