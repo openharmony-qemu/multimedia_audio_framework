@@ -34,6 +34,12 @@ public:
 private:
     void UpdateArmModuleInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         AudioModuleInfo &moduleInfo);
+    void DetermineArmUsbFormat(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceStreamInfo &deviceStreamInfo,
+        std::string &rate, std::string &format, AudioChannelLayout &layout, std::string &channels);
+    void ApplyFormatToModuleInfo(AudioModuleInfo &moduleInfo, const std::string &rate,
+        const std::string &format, AudioChannelLayout layout, const std::string &channels,
+        uint32_t buffCalcMs, const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     int32_t ReloadArmAudioPort(const AudioModuleInfo &moduleInfo);
     int32_t ProcessModuleActivation(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         AudioModuleInfo &moduleInfo, DeviceRole role, bool isEcFeatureEnable);

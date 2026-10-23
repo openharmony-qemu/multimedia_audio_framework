@@ -49,7 +49,7 @@ struct DeviceStreamInfo {
         return channels;
     }
 
-    AudioChannelLayout GetMainChannelLayout()
+    AudioChannelLayout GetMainChannelLayout() const
     {
         return !channelLayout.empty() ? *channelLayout.begin() : CH_LAYOUT_UNKNOWN;
     }
@@ -68,7 +68,8 @@ struct DeviceStreamInfo {
         return parcel.WriteInt32(static_cast<int32_t>(encoding))
             && parcel.WriteInt32(static_cast<int32_t>(format))
             && MarshallingSetInt32(samplingRate, parcel)
-            && MarshallingSetInt64(channelLayout, parcel);
+            && MarshallingSetInt64(channelLayout, parcel)
+            && MarshallingSetInt32(formats, parcel);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -76,6 +77,7 @@ struct DeviceStreamInfo {
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         samplingRate = UnmarshallingSetInt32<AudioSamplingRate>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
         channelLayout = UnmarshallingSetInt64<AudioChannelLayout>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
+        formats = UnmarshallingSetInt32<AudioSampleFormat>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
     }
 
     static std::string SerializeList(const std::list<DeviceStreamInfo> &streamInfoList)

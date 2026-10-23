@@ -396,6 +396,43 @@ std::unordered_map<std::string, std::string> AudioDeviceDescriptor::ParseAudioPa
     return ret;
 }
 
+static void ParseRateValues(const std::string &value, DeviceStreamInfo &streamInfo)
+{
+    for (const auto &rateStr : Util::SplitString(value, '|')) {
+        uint32_t samplingRate = 0;
+        ConvertToUint32(rateStr, samplingRate);
+        if (samplingRate == 0) {
+            AUDIO_WARNING_LOG("invalid sampling rate string: %{public}s", rateStr.c_str());
+            continue;
+        }
+        streamInfo.samplingRate.insert(static_cast<AudioSamplingRate>(samplingRate));
+    }
+}
+
+static void ParseFormatValues(const std::string &value, DeviceStreamInfo &streamInfo)
+{
+    bool isFirst = true;
+    for (const auto &formatStr : Util::SplitString(value, '|')) {
+        AudioSampleFormat fmt = g_formatStrToEnum[ParseAudioFormat(formatStr)];
+        streamInfo.formats.insert(fmt);
+        if (isFirst) {
+            streamInfo.format = fmt;
+            isFirst = false;
+        }
+    }
+}
+
+static void ParseChannelValues(const std::string &value, DeviceStreamInfo &streamInfo)
+{
+    for (const auto &chanStr : Util::SplitString(value, '|')) {
+        uint32_t channels = 0;
+        ConvertToUint32(chanStr, channels);
+        AudioChannelLayout layout = static_cast<AudioChannel>(channels) == CHANNEL_4 ?
+            CH_LAYOUT_4POINT0 : CH_LAYOUT_UNKNOWN;
+        streamInfo.channelLayout.insert(layout);
+    }
+}
+
 void AudioDeviceDescriptor::UpdateDeviceInfoByAudioParameters(const std::string &audioParameters)
 {
     auto parameters = ParseAudioParameters(audioParameters);
@@ -404,51 +441,27 @@ void AudioDeviceDescriptor::UpdateDeviceInfoByAudioParameters(const std::string 
     if (it != parameters.end()) {
         deviceName_ = it->second;
     }
-
     key = getRole() == DeviceRole::OUTPUT_DEVICE ? "sink_mmap" : "source_mmap";
     it = parameters.find(key);
     if (it != parameters.end()) {
         ConvertToUint32(it->second, deviceSupportMmap_);
     }
-
+    bool isOutput = getRole() == DeviceRole::OUTPUT_DEVICE;
     DeviceStreamInfo streamInfo = {};
-    key = getRole() == DeviceRole::OUTPUT_DEVICE ? "sink_rate" : "source_rate";
+    key = isOutput ? "sink_rate" : "source_rate";
     it = parameters.find(key);
     if (it != parameters.end()) {
-        auto rateList = Util::SplitString(it->second, '|');
-        for (const auto &rateStr : rateList) {
-            uint32_t samplingRate = 0;
-            ConvertToUint32(rateStr, samplingRate);
-            streamInfo.samplingRate.insert(static_cast<AudioSamplingRate>(samplingRate));
-        }
+        ParseRateValues(it->second, streamInfo);
     }
-
-    key = getRole() == DeviceRole::OUTPUT_DEVICE ? "sink_format" : "source_format";
+    key = isOutput ? "sink_format" : "source_format";
     it = parameters.find(key);
     if (it != parameters.end()) {
-        auto formatList = Util::SplitString(it->second, '|');
-        bool isFirst = true;
-        for (const auto &formatStr : formatList) {
-            AudioSampleFormat fmt = g_formatStrToEnum[ParseAudioFormat(formatStr)];
-            streamInfo.formats.insert(fmt);
-            if (isFirst) {
-                streamInfo.format = fmt;
-                isFirst = false;
-            }
-        }
+        ParseFormatValues(it->second, streamInfo);
     }
-
-    key = getRole() == DeviceRole::OUTPUT_DEVICE ? "sink_chans" : "source_chans";
+    key = isOutput ? "sink_chans" : "source_chans";
     it = parameters.find(key);
     if (it != parameters.end()) {
-        auto chanList = Util::SplitString(it->second, '|');
-        for (const auto &chanStr : chanList) {
-            uint32_t channels = 0;
-            ConvertToUint32(chanStr, channels);
-            AudioChannelLayout channelLayout = static_cast<AudioChannel>(channels) == CHANNEL_4 ?
-                CH_LAYOUT_4POINT0 : CH_LAYOUT_UNKNOWN;
-            streamInfo.channelLayout.insert(channelLayout);
-        }
+        ParseChannelValues(it->second, streamInfo);
     }
     audioStreamInfo_.clear();
     audioStreamInfo_.push_back(streamInfo);

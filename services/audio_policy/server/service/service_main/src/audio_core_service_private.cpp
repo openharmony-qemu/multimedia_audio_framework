@@ -1277,8 +1277,7 @@ void AudioCoreService::RemoveAndCloseUnusedPipeInternal(const std::vector<std::s
                 isPrimaryExtraInReleaseMap_[pipeInfo->name_] = false;
                 primaryExtraCloseCondition_.notify_all();
             }
-            AUDIO_INFO_LOG("primary_extra %{public}s close immediately (old device unavailable)",
-                pipeInfo->name_.c_str());
+            AUDIO_INFO_LOG("primary_extra %{public}s close (old device unavailable)", pipeInfo->name_.c_str());
         } else if (pipeInfo->moduleInfo_.deviceType ==
             std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET)) && !isOldDeviceUnavailable) {
             DelayReloadArmPipe(pipeInfo);
@@ -3073,6 +3072,18 @@ void AudioCoreService::UpdateFastState(std::shared_ptr<AudioPipeInfo> pipeInfo)
     fastCloseCondition_.notify_all();
 }
 
+static AudioModuleInfo BuildDefaultArmModuleInfo(const AudioModuleInfo &src)
+{
+    AudioModuleInfo info = src;
+    info.rate = std::to_string(SAMPLE_RATE_48000);
+    info.format = "s16le";
+    info.channels = "2";
+    info.channelLayout = std::to_string(CH_LAYOUT_STEREO);
+    info.bufferSize = std::to_string(static_cast<uint32_t>(SAMPLE_RATE_48000) * STEREO *
+        AudioPolicyUtils::GetInstance().PcmFormatToBytes(SAMPLE_S16LE) * DEFAULT_PERIOD_IN_MS / AUDIO_MS_PER_SECOND);
+    return info;
+}
+
 void AudioCoreService::DelayReloadArmPipe(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
     CHECK_AND_RETURN(pipeInfo != nullptr);
@@ -3081,21 +3092,11 @@ void AudioCoreService::DelayReloadArmPipe(std::shared_ptr<AudioPipeInfo> pipeInf
     AUDIO_INFO_LOG("DelayReloadArmPipe id:%{public}u, module:%{public}s", id, moduleName.c_str());
     {
         std::lock_guard<std::mutex> lock(armReloadMutex_);
-        CHECK_AND_RETURN_LOG(!isArmReloadPendingMap_[moduleName], "%{public}s already pending reload",
-            moduleName.c_str());
+        CHECK_AND_RETURN_LOG(!isArmReloadPendingMap_[moduleName], "already pending");
         isArmReloadPendingMap_[moduleName] = true;
         isArmReopenedMap_[moduleName] = false;
     }
-    AudioModuleInfo moduleInfo = pipeInfo->moduleInfo_;
-    moduleInfo.rate = std::to_string(SAMPLE_RATE_48000);
-    auto fmtIt = AudioDefinitionPolicyUtils::enumToFormatStr.find(SAMPLE_S16LE);
-    moduleInfo.format = (fmtIt != AudioDefinitionPolicyUtils::enumToFormatStr.end()) ? fmtIt->second : "s16le";
-    moduleInfo.channels = "2";
-    moduleInfo.channelLayout = std::to_string(CH_LAYOUT_STEREO);
-    uint32_t bufferSize = 48000 * 2 *
-        AudioPolicyUtils::GetInstance().PcmFormatToBytes(SAMPLE_S16LE) * 20 / 1000;
-    moduleInfo.bufferSize = std::to_string(bufferSize);
-
+    AudioModuleInfo moduleInfo = BuildDefaultArmModuleInfo(pipeInfo->moduleInfo_);
     auto reloadFunc = [this, id, moduleName, moduleInfo] {
         {
             std::unique_lock<std::mutex> lock(armReloadMutex_);
@@ -3105,18 +3106,16 @@ void AudioCoreService::DelayReloadArmPipe(std::shared_ptr<AudioPipeInfo> pipeInf
         if (isArmReopenedMap_[moduleName]) {
             std::lock_guard<std::mutex> lock(armReloadMutex_);
             isArmReloadPendingMap_[moduleName] = false;
-            AUDIO_INFO_LOG("ArmUsb pipe %{public}s re-opened, cancel reload", moduleName.c_str());
             return;
         }
         uint32_t paIndex = HDI_INVALID_ID;
         audioPolicyManager_.ReloadAudioPort(moduleInfo, paIndex);
         if (paIndex != HDI_INVALID_ID) {
-            auto pipeInfo = pipeManager_->GetPipeinfoById(id);
-            if (pipeInfo != nullptr) {
-                pipeInfo->moduleInfo_ = moduleInfo;
-                pipeInfo->paIndex_ = paIndex;
-                pipeInfo->InitAudioStreamInfo();
-                AUDIO_INFO_LOG("ArmUsb pipe %{public}s reloaded to 48k", moduleName.c_str());
+            auto pipe = pipeManager_->GetPipeinfoById(id);
+            if (pipe != nullptr) {
+                pipe->moduleInfo_ = moduleInfo;
+                pipe->paIndex_ = paIndex;
+                pipe->InitAudioStreamInfo();
             }
         }
         std::lock_guard<std::mutex> lock(armReloadMutex_);

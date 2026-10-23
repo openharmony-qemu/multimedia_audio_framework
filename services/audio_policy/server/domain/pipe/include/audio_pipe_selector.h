@@ -143,6 +143,10 @@ private:
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchArmUsbFormatPipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         const std::shared_ptr<AudioPipeInfo> &pipeInfo, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    SelectedDeviceFormat SelectArmUsbFormat(
+        const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        bool &isVoip, bool &hasVoip);
     void UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
     bool IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
