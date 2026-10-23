@@ -1553,6 +1553,7 @@ int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     if (deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP || curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
+        CHECK_AND_RETURN_RET_LOG(!isRingDualToneOnPrimarySpeaker_, SUCCESS, "using speaker, skip active output route");
         audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
             pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), deviceDesc->networkId_);
     }
