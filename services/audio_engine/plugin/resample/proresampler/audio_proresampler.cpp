@@ -287,20 +287,25 @@ constexpr int PCM_BIT_32 = 32;
 constexpr int PCM_BYTES_S16 = 2;
 constexpr int PCM_BYTES_S24 = 3;
 constexpr int PCM_BYTES_S32 = 4;
+// byte indexes of a little-endian 24-bit sample: LSB first, MSB last
+constexpr int PCM_S24_BYTE_LSB = 0;
+constexpr int PCM_S24_BYTE_MID = 1;
+constexpr int PCM_S24_BYTE_MSB = 2;
 
 uint32_t Read24Bit(const void *pcm)
 {
     const uint8_t *p = static_cast<const uint8_t *>(pcm);
-    return (static_cast<uint32_t>(p[2]) << PCM_BIT_16) | (static_cast<uint32_t>(p[1]) << PCM_BIT_8) |
-        static_cast<uint32_t>(p[0]);
+    return (static_cast<uint32_t>(p[PCM_S24_BYTE_MSB]) << PCM_BIT_16) |
+        (static_cast<uint32_t>(p[PCM_S24_BYTE_MID]) << PCM_BIT_8) |
+        static_cast<uint32_t>(p[PCM_S24_BYTE_LSB]);
 }
 
 void Write24Bit(void *pcm, uint32_t u)
 {
     uint8_t *p = static_cast<uint8_t *>(pcm);
-    p[2] = static_cast<uint8_t>(u >> PCM_BIT_16);
-    p[1] = static_cast<uint8_t>(u >> PCM_BIT_8);
-    p[0] = static_cast<uint8_t>(u);
+    p[PCM_S24_BYTE_MSB] = static_cast<uint8_t>(u >> PCM_BIT_16);
+    p[PCM_S24_BYTE_MID] = static_cast<uint8_t>(u >> PCM_BIT_8);
+    p[PCM_S24_BYTE_LSB] = static_cast<uint8_t>(u);
 }
 
 float CapMax(float v)

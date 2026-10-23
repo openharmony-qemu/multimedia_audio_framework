@@ -118,7 +118,9 @@ static void MixerProcessFuzz(AudioMixHandle handle, int32_t rate, int32_t channe
         if (sampleCount > maxCount) {
             sampleCount = maxCount;
         }
-        sampleCount = (sampleCount / MIXER_ALIGN_DIVISOR) * MIXER_ALIGN_DIVISOR / channels * channels;
+        // round down to a multiple of 4; channels is 1 or 2 here (mixer gate), so
+        // sampleCount * channels stays divisible by 4 without further adjustment
+        sampleCount = (sampleCount / MIXER_ALIGN_DIVISOR) * MIXER_ALIGN_DIVISOR;
     }
     int64_t byteLen = static_cast<int64_t>(sampleCount) * channels * bytesPerSample;
     if (sampleCount <= 0 || byteLen > MAX_FUZZ_BUFFER_BYTES) {

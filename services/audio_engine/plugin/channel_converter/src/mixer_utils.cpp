@@ -696,7 +696,8 @@ PcmLimiter::PcmLimiter()
 int32_t PcmLimiter::ValidateConfigParams(int32_t inputFrameBytes, int32_t bytePerSample, int32_t sampleRate,
     int32_t channels, int32_t &newAlgoFrameLen)
 {
-    CHECK_AND_RETURN_RET_LOG(inputFrameBytes > 0 && sampleRate > 0 &&
+    // bytePerSample > 0 is implied by the equality below but kept explicit to guard the divisions
+    CHECK_AND_RETURN_RET_LOG(inputFrameBytes > 0 && sampleRate > 0 && bytePerSample > 0 &&
                                  (channels == 1 || channels == PCM_LMT_ALGO_CHANNEL) &&
                                  bytePerSample == PCM_LMT_BYTE_PER_SAMPLE,
         MIX_ERR_INVALID_ARG,
