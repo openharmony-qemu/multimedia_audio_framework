@@ -500,10 +500,8 @@ bool AudioCoreConfigManager::GetUltraFastFlag(const std::string &adapterName, Au
     CHECK_AND_RETURN_RET(role == PIPE_ROLE_INPUT && (adapterName == "primary" || adapterName == "usb"), false);
     auto adapter = audioPolicyConfig_.GetAdapterInfo(PolicyAdapterInfo::GetAdapterType(adapterName));
     CHECK_AND_RETURN_RET(adapter != nullptr, false);
-    const std::string expectedPipeName = adapterName == "primary" ?
-        "primary_ultra_fast_input" : "usb_ultra_fast_input";
     for (const auto &pipe : adapter->pipeInfos) {
-        if (pipe != nullptr && pipe->role_ == role && pipe->name_ == expectedPipeName) {
+        if (pipe != nullptr && pipe->role_ == role && pipe->supportFlags_ == AUDIO_INPUT_FLAG_ULTRA_FAST) {
             return true;
         }
     }
@@ -520,22 +518,21 @@ bool AudioCoreConfigManager::IsUltraFastRecordingDeviceSupported(const AudioStre
         auto deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(device->deviceType_, INPUT_DEVICE,
             device->networkId_, AUDIO_INPUT_FLAG_ULTRA_FAST, 0, "", device->isUnidirectional_);
         CHECK_AND_CONTINUE(deviceInfo != nullptr && !deviceInfo->isSimulated_);
-        auto adapter = deviceInfo->adapterInfo_.lock();
-        CHECK_AND_CONTINUE(adapter != nullptr && GetUltraFastFlag(adapter->adapterName, PIPE_ROLE_INPUT));
         auto pipe = deviceInfo->supportPipeMap_.find(AUDIO_INPUT_FLAG_ULTRA_FAST);
         CHECK_AND_CONTINUE(pipe != deviceInfo->supportPipeMap_.end() && pipe->second != nullptr &&
-            pipe->second->role_ == PIPE_ROLE_INPUT);
-        const std::string expectedPipeName = adapter->adapterName == "primary" ?
-            "primary_ultra_fast_input" : "usb_ultra_fast_input";
-        CHECK_AND_CONTINUE(pipe->second->name_ == expectedPipeName);
-        if (adapter->adapterName == "primary") {
-            CHECK_AND_CONTINUE(streamInfo.format == SAMPLE_S16LE && streamInfo.samplingRate == SAMPLE_RATE_48000 &&
-                (streamInfo.channels == MONO || streamInfo.channels == STEREO));
-            if (deviceInfo->name_ == "Hifi_Headset_In") {
+            pipe->second->role_ == PIPE_ROLE_INPUT &&
+            pipe->second->supportFlags_ == AUDIO_INPUT_FLAG_ULTRA_FAST);
+        if (device->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+            // ARM USB source parameters are reported by the device and negotiated when opening the pipe.
+            return true;
+        }
+        const auto layout = streamInfo.channelLayout == CH_LAYOUT_MONO ? CH_LAYOUT_STEREO : streamInfo.channelLayout;
+        for (const auto &prop : pipe->second->streamPropInfos_) {
+            CHECK_AND_CONTINUE(prop != nullptr);
+            if (prop->format_ == streamInfo.format && prop->sampleRate_ == streamInfo.samplingRate &&
+                prop->channelLayout_ == layout) {
                 return true;
             }
-        } else if (device->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            return true;
         }
     }
     return false;

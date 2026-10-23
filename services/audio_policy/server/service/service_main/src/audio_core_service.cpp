@@ -1249,11 +1249,7 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
         CHECK_AND_RETURN(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
             streamDesc->appInfo_.appTokenId));
         const auto &info = streamDesc->streamInfo_;
-        const bool isArmUsb = streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_USB_ARM_HEADSET;
-        // ARM USB source parameters come from the device; HPAE converts them to the client format.
-        CHECK_AND_RETURN(info.encoding == ENCODING_PCM && (isArmUsb ||
-            (info.format == SAMPLE_S16LE && info.samplingRate == SAMPLE_RATE_48000 &&
-            (info.channels == MONO || info.channels == STEREO))));
+        CHECK_AND_RETURN(info.encoding == ENCODING_PCM);
         if (AudioCoreConfigManager::GetInstance().IsUltraFastRecordingDeviceSupported(
             streamDesc->streamInfo_, streamDesc->newDeviceDescs_)) {
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;

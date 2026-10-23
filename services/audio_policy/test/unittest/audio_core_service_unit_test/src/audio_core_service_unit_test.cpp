@@ -8598,6 +8598,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     auto pipe = std::make_shared<AdapterPipeInfo>();
     pipe->name_ = "primary_ultra_fast_input";
     pipe->role_ = PIPE_ROLE_INPUT;
+    pipe->supportFlags_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
     adapter->pipeInfos = {pipe};
     config.adapterInfoMap[AudioAdapterType::TYPE_PRIMARY] = adapter;
     auto prop = CreatePipeStreamPropInfoForDevice(DEVICE_TYPE_USB_HEADSET, STEREO);
@@ -8633,11 +8634,11 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
         EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL) << source;
         stream->streamInfo_.samplingRate = SAMPLE_RATE_48000;
     }
-    // A MIC associated with the ultra-fast pipe must still fall back; HIFI can restore the request.
+    // A MIC without an ultra-fast XML association falls back; HIFI can restore the request.
     device->name_ = "Builtin_Mic_In";
     device->type_ = DEVICE_TYPE_MIC;
     desc->deviceType_ = DEVICE_TYPE_MIC;
-    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
+    device->supportPipeMap_.clear();
     config.deviceInfoMap[{DEVICE_TYPE_MIC, INPUT_DEVICE}] = {device};
     stream->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
     coreService->UpdateRecordStreamInfo(stream);
@@ -8645,6 +8646,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     device->name_ = "Hifi_Headset_In";
     device->type_ = DEVICE_TYPE_USB_HEADSET;
     desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
     coreService->UpdateRecordStreamInfo(stream);
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
     adapter->adapterName = "usb";

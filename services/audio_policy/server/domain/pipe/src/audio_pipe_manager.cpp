@@ -1399,8 +1399,8 @@ int32_t AudioPipeManager::IsCaptureVoipCall()
                 audioInjectorPolicy.SetVoipType(NORMAL_VOIP);
                 audioInjectorPolicy.SetCapturePortIdx(pipe->paIndex_);
                 type = NORMAL_VOIP;
-            } else if (stream->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST |
-                AUDIO_INPUT_FLAG_VOIP)) {
+            } else if (stream->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+                (stream->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST | AUDIO_INPUT_FLAG_VOIP))) {
                 audioInjectorPolicy.SetVoipType(FAST_VOIP);
                 audioInjectorPolicy.SetCapturePortIdx(pipe->paIndex_);
                 return FAST_VOIP;
