@@ -1871,7 +1871,6 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_003, TestSize.Level1)
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     desc->streamStatus_ = STREAM_STATUS_STARTED;
     desc->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
-    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     pipe1->streamDescriptors_.push_back(desc);
 
     audioPipeManager->AddAudioPipeInfo(pipe1);
@@ -1881,7 +1880,7 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_003, TestSize.Level1)
     EXPECT_EQ(ret, 2);
 }
 
-/** @tc.desc: Only running voice-communication recording streams are classified as VoIP. */
+/** @tc.desc: Ultra-fast recording is excluded from the existing FAST/VOIP low-latency classification. */
 HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_UltraFastSource_001, TestSize.Level1)
 {
     auto manager = AudioPipeManager::GetPipeManager();
@@ -1893,16 +1892,26 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_UltraFastSource_001, TestSi
     pipe->paIndex_ = 123;
     pipe->streamDescriptors_ = {nullptr, stream};
     manager->curPipeList_ = {nullptr, pipe};
-    const uint32_t flags[] = {AUDIO_INPUT_FLAG_NORMAL, AUDIO_INPUT_FLAG_FAST, AUDIO_INPUT_FLAG_ULTRA_FAST,
-        AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP, AUDIO_INPUT_FLAG_VOIP};
+    struct RouteCase {
+        uint32_t flag;
+        int32_t otherSourceResult;
+        int32_t voiceSourceResult;
+    };
+    const RouteCase cases[] = {
+        {AUDIO_INPUT_FLAG_NORMAL, NO_VOIP, NORMAL_VOIP},
+        {AUDIO_INPUT_FLAG_FAST, FAST_VOIP, FAST_VOIP},
+        {AUDIO_INPUT_FLAG_ULTRA_FAST, NO_VOIP, NO_VOIP},
+        {AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP, FAST_VOIP, FAST_VOIP},
+        {AUDIO_INPUT_FLAG_VOIP, FAST_VOIP, FAST_VOIP}
+    };
     for (auto source : {SOURCE_TYPE_MIC, SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_VOICE_COMMUNICATION}) {
         stream->capturerInfo_.sourceType = source;
-        for (auto flag : flags) {
-            stream->routeFlag_ = flag;
+        for (const auto &testCase : cases) {
+            stream->routeFlag_ = testCase.flag;
             stream->streamStatus_ = STREAM_STATUS_STARTED;
-            const int32_t expected = source != SOURCE_TYPE_VOICE_COMMUNICATION ? NO_VOIP :
-                (flag == AUDIO_INPUT_FLAG_NORMAL ? NORMAL_VOIP : FAST_VOIP);
-            EXPECT_EQ(manager->IsCaptureVoipCall(), expected) << source << ", " << flag;
+            const int32_t expected = source == SOURCE_TYPE_VOICE_COMMUNICATION ?
+                testCase.voiceSourceResult : testCase.otherSourceResult;
+            EXPECT_EQ(manager->IsCaptureVoipCall(), expected) << source << ", " << testCase.flag;
             stream->streamStatus_ = STREAM_STATUS_STOPPED;
             EXPECT_EQ(manager->IsCaptureVoipCall(), NO_VOIP);
         }

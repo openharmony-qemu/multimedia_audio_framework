@@ -69,11 +69,6 @@ static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
 };
 
 namespace {
-const std::unordered_map<std::string, std::string> FAST_CAPTURE_ID_INFO_MAP = {
-    {"primary", HDI_ID_INFO_DEFAULT},
-    {"usb", HDI_ID_INFO_USB},
-};
-
 const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP = {
     {DEVICE_TYPE_SPEAKER, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS, REMOTE_CLASS, MMAP_CLASS, MMAP_VOIP_CLASS,
         DIRECT_VOIP_CLASS}},
@@ -1874,22 +1869,18 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
 void AudioAdapterManager::GetSourceIdInfoAndIdType(
     std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType)
 {
-    if (pipeInfo->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST)) {
-        auto adapter = FAST_CAPTURE_ID_INFO_MAP.find(pipeInfo->adapterName_);
-        if (adapter != FAST_CAPTURE_ID_INFO_MAP.end()) {
-            const bool isUltraFast = (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_ULTRA_FAST) != 0;
-            idType = isUltraFast ? HDI_ID_TYPE_ULTRA_FAST : HDI_ID_TYPE_FAST;
-            if (isUltraFast || adapter->second != HDI_ID_INFO_DEFAULT) {
-                idInfo = adapter->second;
-            } else if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) {
-                idInfo = HDI_ID_INFO_VOIP;
-            }
-            if (isUltraFast) {
-                return;
-            }
-        }
+    if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_ULTRA_FAST) {
+        idType = HDI_ID_TYPE_ULTRA_FAST;
+        idInfo = pipeInfo->adapterName_ == "usb" ? HDI_ID_INFO_USB : HDI_ID_INFO_DEFAULT;
+        return;
     }
     if (pipeInfo->adapterName_ == "primary") {
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
+            idType = HDI_ID_TYPE_FAST;
+            if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) {
+                idInfo = HDI_ID_INFO_VOIP;
+            }
+        }
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_AI) {
             idType = HDI_ID_TYPE_AI;
         }
@@ -1928,6 +1919,11 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
     } else if (pipeInfo->adapterName_ == "primary_extra_capturer") {
         idType = HDI_ID_TYPE_PRIMARY;
         idInfo = pipeInfo->moduleInfo_.name;
+    } else if (pipeInfo->adapterName_ == "usb") {
+        if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+            idType = HDI_ID_TYPE_FAST;
+            idInfo = HDI_ID_INFO_USB;
+        }
     }
 }
 

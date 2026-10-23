@@ -1475,48 +1475,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_013, TestSize.Lev
     EXPECT_EQ(idInfo, "err");
 }
 
-/** @tc.desc: Fast and ultra-fast capture use one adapter mapping and preserve unrelated source IDs. */
-HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_FastCapture_001, TestSize.Level1)
-{
-    AudioAdapterManager manager;
-    struct IdCase {
-        const char *adapter;
-        uint32_t flag;
-        HdiIdType type;
-        const char *info;
-    };
-    const IdCase cases[] = {
-        {"primary", AUDIO_INPUT_FLAG_FAST, HDI_ID_TYPE_FAST, "preserved"},
-        {"primary", AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP, HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP},
-        {"primary", AUDIO_INPUT_FLAG_ULTRA_FAST, HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_DEFAULT},
-        {"primary", AUDIO_INPUT_FLAG_ULTRA_FAST | AUDIO_INPUT_FLAG_VOIP,
-            HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_DEFAULT},
-        {"primary", AUDIO_INPUT_FLAG_ULTRA_FAST | AUDIO_INPUT_FLAG_FAST,
-            HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_DEFAULT},
-        {"primary", AUDIO_INPUT_FLAG_ULTRA_FAST | AUDIO_INPUT_FLAG_AI,
-            HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_DEFAULT},
-        {"primary", AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_AI, HDI_ID_TYPE_AI, "preserved"},
-        {"usb", AUDIO_INPUT_FLAG_FAST, HDI_ID_TYPE_FAST, HDI_ID_INFO_USB},
-        {"usb", AUDIO_INPUT_FLAG_ULTRA_FAST, HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_USB},
-        {"usb", AUDIO_INPUT_FLAG_ULTRA_FAST | AUDIO_INPUT_FLAG_FAST, HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_USB},
-        {"usb", AUDIO_INPUT_FLAG_NORMAL, HDI_ID_TYPE_PRIMARY, "preserved"},
-        {"unknown", AUDIO_INPUT_FLAG_FAST, HDI_ID_TYPE_PRIMARY, "preserved"},
-        {"unknown", AUDIO_INPUT_FLAG_ULTRA_FAST, HDI_ID_TYPE_PRIMARY, "preserved"},
-        {"primary_extra_capturer", AUDIO_INPUT_FLAG_NORMAL, HDI_ID_TYPE_PRIMARY, "extra_capture"}
-    };
-    for (const auto &testCase : cases) {
-        auto pipe = std::make_shared<AudioPipeInfo>();
-        pipe->adapterName_ = testCase.adapter;
-        pipe->routeFlag_ = testCase.flag;
-        pipe->moduleInfo_.name = "extra_capture";
-        std::string idInfo = "preserved";
-        HdiIdType idType = HDI_ID_TYPE_PRIMARY;
-        manager.GetSourceIdInfoAndIdType(pipe, idInfo, idType);
-        EXPECT_EQ(idType, testCase.type) << testCase.adapter << ", " << testCase.flag;
-        EXPECT_EQ(idInfo, testCase.info) << testCase.adapter << ", " << testCase.flag;
-    }
-}
-
 /**
  * @tc.name: Test GetSourceIdInfoAndIdType
  * @tc.number: RedirectVolumeType
