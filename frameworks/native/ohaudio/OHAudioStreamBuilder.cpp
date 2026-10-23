@@ -21,7 +21,6 @@
 #include "OHAudioStreamBuilder.h"
 #include "OHAudioCapturer.h"
 #include "audio_utils.h"
-#include "audio_policy_manager.h"
 #include "ipc_skeleton.h"
 
 #undef LOG_DOMAIN
@@ -650,8 +649,6 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
             static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID())),
             AUDIOSTREAM_ERROR_PERMISSION_DENIED_ULTRA_FAST, "Ultra fast recording permission denied");
-        CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().IsUltraFastRecordingPlatformSupported(),
-            AUDIOSTREAM_ERROR_UNSUPPORTED_ULTRA_FAST, "Ultra fast recording is not supported on this platform");
         capturerFlags = AUDIO_FLAG_ULTRA_FAST;
     }
     if (sourceType_ == SOURCE_TYPE_VOICE_DOWNLINK) {
