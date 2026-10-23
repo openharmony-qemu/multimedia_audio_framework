@@ -131,7 +131,7 @@ public:
 
     bool IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
 
-    int32_t GetHwEncodingTypeMaxBitrate();
+    int32_t CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo, bool &support);
 
     bool IsEnhancedRoutingSupported();
 

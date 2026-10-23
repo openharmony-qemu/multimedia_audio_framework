@@ -763,14 +763,14 @@ bool AudioPolicyManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo,
     return support;
 }
 
-int32_t AudioPolicyManager::GetHwEncodingTypeMaxBitrate()
+int32_t AudioPolicyManager::CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo, bool &support)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET(gsp != nullptr, 0);
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_OPERATION_FAILED);
 
-    int32_t maxBitrate = 0;
-    gsp->GetHwEncodingTypeMaxBitrate(maxBitrate);
-    return maxBitrate;
+    support = false;
+    gsp->CheckAudioRendererStreamInfoSupport(streamInfo, support);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,

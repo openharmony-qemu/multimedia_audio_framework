@@ -2607,9 +2607,10 @@ int32_t AudioPolicyServer::IsOffloadPlaybackSupported(const AudioStreamInfo &str
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::GetHwEncodingTypeMaxBitrate(int32_t &maxBitrate)
+int32_t AudioPolicyServer::CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo,
+    bool &support)
 {
-    maxBitrate = audioConfigManager_.GetHwEncodingTypeMaxBitrate();
+    support = audioConfigManager_.CheckAudioRendererStreamInfoSupport(streamInfo);
     return SUCCESS;
 }
 

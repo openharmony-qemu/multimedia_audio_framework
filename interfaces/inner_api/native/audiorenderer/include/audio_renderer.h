@@ -22,7 +22,6 @@
 #include <memory>
 #include <cstring>
 #include <string>
-#include <atomic>
 #include <timestamp.h>
 #include <mutex>
 #include "audio_effect.h"
@@ -52,16 +51,6 @@ struct AudioRendererParams {
     AudioEncodingType encodingType = ENCODING_PCM;
     /** Channel Layout */
     AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
-};
-
-enum AudioRendererParamsSupport {
-    /** The params combination is not supported. */
-    PARAMS_NOT_SUPPORTED = 0,
-    /** The params combination is supported. */
-    PARAMS_SUPPORTED,
-    /** The params combination is supported, but the playback effect is not guaranteed,
-     *  typically because it depends on hardware decoding capability of the device. */
-    PARAMS_SUPPORTED_BUT_EFFECT_NOT_GUARANTEED,
 };
 
 class AudioRendererCallback {
@@ -1268,26 +1257,20 @@ public:
     static bool CheckSupportedSamplingRates(uint32_t rates);
 
     /**
-     * @brief Checks the support level of an audio renderer params combination.
+     * @brief Checks whether an audio stream info combination is supported.
      *
-     * The renderer supports bit-width conversion, channel conversion and resampling, so a params
-     * combination whose sample format, channel count and sampling rate are within the supported
+     * The renderer supports bit-width conversion, channel conversion and resampling, so a stream
+     * info combination whose sample format, channel count and sampling rate are within the supported
      * lists is considered supported even when conversion is required. For hardware-decoding
-     * encoding types, the playback effect is not guaranteed because decoding quality depends on
-     * the decoding capability of the actual device.
+     * encoding types, the bitrate field in {@link AudioStreamInfo} is validated against the
+     * configured max bitrate: a bitrate exceeding the max is not supported. Use -1 to skip
+     * bitrate validation.
      *
-     * @param params Indicates the params combination to check. For details, see
-     * {@link AudioRendererParams}.
-     * @param bitrate Bit rate in bits per second. Use -1 to skip bitrate validation. Bitrate is
-     * only validated for hardware-decoding encoding types against the configured max bitrate:
-     * below 80% of max is supported, above max is not supported, and between 80% and 100% is
-     * supported but with effect not guaranteed.
-     * @return Returns {@link PARAMS_SUPPORTED} if the combination is supported,
-     * {@link PARAMS_SUPPORTED_BUT_EFFECT_NOT_GUARANTEED} if supported but effect is not guaranteed,
-     * or {@link PARAMS_NOT_SUPPORTED} if not supported.
+     * @param streamInfo Indicates the stream info to check. For details, see
+     * {@link AudioStreamInfo}.
+     * @return Returns true if the combination is supported, false otherwise.
      */
-    static AudioRendererParamsSupport CheckAudioRendererParamsSupport(
-        const AudioRendererParams &params, int32_t bitrate = -1);
+    static bool CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo);
 
     /**
      * @brief Set the render target
@@ -1409,7 +1392,6 @@ private:
         const AudioRendererOptions &rendererOptions,
         std::shared_ptr<StaticBufferEventCallback> callback);
     static std::mutex createRendererMutex_;
-    static std::atomic<int32_t> maxBitrate_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
