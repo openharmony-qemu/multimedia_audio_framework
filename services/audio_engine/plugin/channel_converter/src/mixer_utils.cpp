@@ -1033,6 +1033,95 @@ AudioMixResult MakeMixResult(uint8_t *data, int32_t count, int32_t errCode)
     result.errCode = errCode;
     return result;
 }
+
+// Validates mixer params and per-stream fields (data, equal sampleCount, volume range);
+// outputs the first stream's sampleCount. Runs before the context lock is taken.
+int32_t ValidateMixInputs(AudioMixHandle handle, const AudioMixStream *streams, int32_t streamCount,
+    int32_t &firstCount)
+{
+    if (handle == nullptr || streams == nullptr || streamCount <= 0 || streamCount > MIXER_MAX_STREAM_COUNT) {
+        AUDIO_ERR_LOG("AudioMixerProcess invalid params, streamCount: %{public}d", streamCount);
+        return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+    }
+    firstCount = streams[0].sampleCount;
+    if (firstCount <= 0) {
+        AUDIO_ERR_LOG("AudioMixerProcess invalid sampleCount: %{public}d", firstCount);
+        return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+    }
+    for (int32_t i = 0; i < streamCount; ++i) {
+        if (streams[i].data == nullptr || streams[i].sampleCount != firstCount) {
+            AUDIO_ERR_LOG("AudioMixerProcess stream[%{public}d] invalid", i);
+            return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+        }
+        // inverted comparison: NaN fails both ordered comparisons, so !(...) rejects NaN too
+        if (!(streams[i].volume >= MIXER_VOLUME_MIN && streams[i].volume <= MIXER_VOLUME_MAX)) {
+            AUDIO_ERR_LOG("AudioMixerProcess stream[%{public}d] volume out of range", i);
+            return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+        }
+    }
+    return AUDIO_PCM_ALGO_SUCCESS;
+}
+
+// Validates block geometry (alignment, 60ms cap, locked sampleCount) and prepares the
+// limiter and work buffers on the first successful call. Caller must hold ctx->mutex.
+int32_t EnsureMixBlock(MixerContext *ctx, int32_t firstCount, int32_t &totalSamples)
+{
+    totalSamples = firstCount * ctx->channels;
+    if (totalSamples % MIXER_LIMITER_DIVISOR != 0) {
+        AUDIO_ERR_LOG("AudioMixerProcess sampleCount*channel must be divisible by 4, total: %{public}d", totalSamples);
+        return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+    }
+    if (firstCount > ctx->sampleRate * MIXER_DATA_MAX_MS / MIXER_MS_PER_SECOND) {
+        AUDIO_ERR_LOG("AudioMixerProcess sampleCount exceeds 60ms: %{public}d", firstCount);
+        return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+    }
+    if (ctx->blockLocked && firstCount != ctx->lockedSampleCount) {
+        AUDIO_ERR_LOG("AudioMixerProcess sampleCount changed, locked: %{public}d, new: %{public}d",
+            ctx->lockedSampleCount, firstCount);
+        return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+    }
+    if (!ctx->blockLocked) {
+        int32_t ret = ctx->limiter.SetConfig(totalSamples * static_cast<int32_t>(sizeof(float)),
+            static_cast<int32_t>(sizeof(float)), ctx->sampleRate, ctx->channels);
+        if (ret != 0) { // PcmLimiter returns HPAE MIX_ERR_* codes, 0 on success
+            AUDIO_ERR_LOG("AudioMixerProcess limiter SetConfig failed, ret: %{public}d", ret);
+            return AUDIO_PCM_ALGO_ERR_OPERATION_FAILED;
+        }
+        ctx->streamBuf.resize(totalSamples);
+        ctx->limitBuf.resize(totalSamples);
+        ctx->outBuf.resize(static_cast<size_t>(totalSamples) * static_cast<size_t>(ctx->bytesPerSample));
+        ctx->blockLocked = true;
+        ctx->lockedSampleCount = firstCount;
+    }
+    return AUDIO_PCM_ALGO_SUCCESS;
+}
+
+// Converts each stream to float and accumulates it into mixBuf with its per-stream volume.
+// Caller must hold ctx->mutex and zero mixBuf beforehand.
+int32_t AccumulateMixStreams(MixerContext *ctx, const AudioMixStream *streams, int32_t streamCount,
+    int32_t totalSamples)
+{
+    for (int32_t i = 0; i < streamCount; ++i) {
+        int32_t ret = ConvertPcmToFloat(ctx->format, streams[i].data, totalSamples, ctx->streamBuf.data());
+        if (ret != AUDIO_PCM_ALGO_SUCCESS) {
+            AUDIO_ERR_LOG("AudioMixerProcess convert stream[%{public}d] failed, ret: %{public}d", i, ret);
+            return ret;
+        }
+        float volume = streams[i].volume;
+        const float *in = ctx->streamBuf.data();
+        float *mix = ctx->mixBuf.data();
+        if (volume == 1.0f) {
+            for (int32_t j = 0; j < totalSamples; ++j) {
+                mix[j] += in[j];
+            }
+        } else {
+            for (int32_t j = 0; j < totalSamples; ++j) {
+                mix[j] += in[j] * volume;
+            }
+        }
+    }
+    return AUDIO_PCM_ALGO_SUCCESS;
+}
 } // namespace
 
 extern "C" AudioMixHandle AudioMixerCreate(int32_t sampleRate, int32_t channel, AudioPcmFormat format)
@@ -1067,81 +1156,28 @@ extern "C" AudioMixHandle AudioMixerCreate(int32_t sampleRate, int32_t channel, 
 extern "C" struct AudioMixResult AudioMixerProcess(AudioMixHandle handle, const struct AudioMixStream *streams,
     int32_t streamCount)
 {
-    if (handle == nullptr || streams == nullptr || streamCount <= 0 || streamCount > MIXER_MAX_STREAM_COUNT) {
-        AUDIO_ERR_LOG("AudioMixerProcess invalid params, streamCount: %{public}d", streamCount);
-        return MakeMixResult(nullptr, 0, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-    }
-    int32_t firstCount = streams[0].sampleCount;
-    if (firstCount <= 0) {
-        AUDIO_ERR_LOG("AudioMixerProcess invalid sampleCount: %{public}d", firstCount);
-        return MakeMixResult(nullptr, 0, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-    }
-    for (int32_t i = 0; i < streamCount; ++i) {
-        if (streams[i].data == nullptr || streams[i].sampleCount != firstCount) {
-            AUDIO_ERR_LOG("AudioMixerProcess stream[%{public}d] invalid", i);
-            return MakeMixResult(nullptr, 0, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-        }
-        // inverted comparison: NaN fails both ordered comparisons, so !(...) rejects NaN too
-        if (!(streams[i].volume >= MIXER_VOLUME_MIN && streams[i].volume <= MIXER_VOLUME_MAX)) {
-            AUDIO_ERR_LOG("AudioMixerProcess stream[%{public}d] volume out of range", i);
-            return MakeMixResult(nullptr, 0, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-        }
+    int32_t firstCount = 0;
+    int32_t ret = ValidateMixInputs(handle, streams, streamCount, firstCount);
+    if (ret != AUDIO_PCM_ALGO_SUCCESS) {
+        return MakeMixResult(nullptr, 0, ret);
     }
 
     MixerContext *ctx = static_cast<MixerContext *>(handle);
     std::lock_guard<std::mutex> lock(ctx->mutex);
 
-    int32_t totalSamples = firstCount * ctx->channels;
-    if (totalSamples % MIXER_LIMITER_DIVISOR != 0) {
-        AUDIO_ERR_LOG("AudioMixerProcess sampleCount*channel must be divisible by 4, total: %{public}d", totalSamples);
-        return MakeMixResult(nullptr, 0, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-    }
-    if (firstCount > ctx->sampleRate * MIXER_DATA_MAX_MS / MIXER_MS_PER_SECOND) {
-        AUDIO_ERR_LOG("AudioMixerProcess sampleCount exceeds 60ms: %{public}d", firstCount);
-        return MakeMixResult(nullptr, 0, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-    }
-    if (ctx->blockLocked && firstCount != ctx->lockedSampleCount) {
-        AUDIO_ERR_LOG("AudioMixerProcess sampleCount changed, locked: %{public}d, new: %{public}d",
-            ctx->lockedSampleCount, firstCount);
-        return MakeMixResult(nullptr, 0, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-    }
-
-    if (!ctx->blockLocked) {
-        int32_t ret = ctx->limiter.SetConfig(totalSamples * static_cast<int32_t>(sizeof(float)),
-            static_cast<int32_t>(sizeof(float)), ctx->sampleRate, ctx->channels);
-        if (ret != 0) { // PcmLimiter returns HPAE MIX_ERR_* codes, 0 on success
-            AUDIO_ERR_LOG("AudioMixerProcess limiter SetConfig failed, ret: %{public}d", ret);
-            return MakeMixResult(nullptr, 0, AUDIO_PCM_ALGO_ERR_OPERATION_FAILED);
-        }
-        ctx->streamBuf.resize(totalSamples);
-        ctx->limitBuf.resize(totalSamples);
-        ctx->outBuf.resize(static_cast<size_t>(totalSamples) * static_cast<size_t>(ctx->bytesPerSample));
-        ctx->blockLocked = true;
-        ctx->lockedSampleCount = firstCount;
+    int32_t totalSamples = 0;
+    ret = EnsureMixBlock(ctx, firstCount, totalSamples);
+    if (ret != AUDIO_PCM_ALGO_SUCCESS) {
+        return MakeMixResult(nullptr, 0, ret);
     }
     ctx->mixBuf.assign(totalSamples, 0.0f);
 
-    for (int32_t i = 0; i < streamCount; ++i) {
-        int32_t ret = ConvertPcmToFloat(ctx->format, streams[i].data, totalSamples, ctx->streamBuf.data());
-        if (ret != AUDIO_PCM_ALGO_SUCCESS) {
-            AUDIO_ERR_LOG("AudioMixerProcess convert stream[%{public}d] failed, ret: %{public}d", i, ret);
-            return MakeMixResult(nullptr, 0, ret);
-        }
-        float volume = streams[i].volume;
-        const float *in = ctx->streamBuf.data();
-        float *mix = ctx->mixBuf.data();
-        if (volume == 1.0f) {
-            for (int32_t j = 0; j < totalSamples; ++j) {
-                mix[j] += in[j];
-            }
-        } else {
-            for (int32_t j = 0; j < totalSamples; ++j) {
-                mix[j] += in[j] * volume;
-            }
-        }
+    ret = AccumulateMixStreams(ctx, streams, streamCount, totalSamples);
+    if (ret != AUDIO_PCM_ALGO_SUCCESS) {
+        return MakeMixResult(nullptr, 0, ret);
     }
 
-    int32_t ret = ctx->limiter.Process(totalSamples, ctx->mixBuf.data(), ctx->limitBuf.data());
+    ret = ctx->limiter.Process(totalSamples, ctx->mixBuf.data(), ctx->limitBuf.data());
     if (ret != 0) { // PcmLimiter returns HPAE MIX_ERR_* codes, 0 on success
         AUDIO_ERR_LOG("AudioMixerProcess limiter failed, ret: %{public}d", ret);
         return MakeMixResult(nullptr, 0, AUDIO_PCM_ALGO_ERR_OPERATION_FAILED);
