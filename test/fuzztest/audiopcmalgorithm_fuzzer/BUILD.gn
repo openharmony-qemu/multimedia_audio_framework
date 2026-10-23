@@ -22,6 +22,7 @@ ohos_fuzztest("AudioPcmAlgorithmFuzzTest") {
   include_dirs = [
     "../../../services/audio_engine/plugin/resample/include",
     "../../../services/audio_engine/plugin/channel_converter/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
   cflags = [
@@ -42,6 +43,7 @@ ohos_fuzztest("AudioPcmAlgorithmFuzzTest") {
   ]
   external_deps = [
     "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
     "hilog:libhilog",
   ]
 
