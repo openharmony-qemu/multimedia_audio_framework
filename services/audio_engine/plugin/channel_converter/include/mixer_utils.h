@@ -58,7 +58,8 @@ bool CheckIsHOA(AudioChannelLayout layout);
 // C-linkage mixer facade for C++ callers (e.g. chipset SDK consumers): mixes equal-length
 // same-format streams in the float domain with a limiter (anti-overflow), and returns
 // an internally allocated buffer which stays valid until the next call or Destroy.
-// Note: this header is not includable from a pure C translation unit (C++ constructs above).
+// Note: this header is not includable from a pure C translation unit (C++ constructs above);
+// include it at file scope and do not wrap this include in an extern "C" block.
 #ifdef __cplusplus
 extern "C" {
 #endif
