@@ -19,6 +19,7 @@
 #include "audio_stream_info.h"
 #include "securec.h"
 #include "audio_engine_log.h"
+#include <cinttypes>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -274,3 +275,159 @@ int32_t ProResampler::ConfigBufferSizeAndExpectedInFrameLen()
 } // HPAE
 } // AudioStandard
 } // OHOS
+
+// PCM <-> float conversion and memory length helpers for direct callers,
+// declared in audio_proresampler_process.h.
+namespace {
+constexpr float PCM_FLOAT_EPS = 1e-6f;
+constexpr int PCM_OFFSET_BIT_24 = 3;
+constexpr int PCM_BIT_8 = 8;
+constexpr int PCM_BIT_16 = 16;
+constexpr int PCM_BIT_32 = 32;
+
+uint32_t Read24Bit(const void *pcm)
+{
+    const uint8_t *p = static_cast<const uint8_t *>(pcm);
+    return (static_cast<uint32_t>(p[2]) << PCM_BIT_16) | (static_cast<uint32_t>(p[1]) << PCM_BIT_8) |
+        static_cast<uint32_t>(p[0]);
+}
+
+void Write24Bit(void *pcm, uint32_t u)
+{
+    uint8_t *p = static_cast<uint8_t *>(pcm);
+    p[2] = static_cast<uint8_t>(u >> PCM_BIT_16);
+    p[1] = static_cast<uint8_t>(u >> PCM_BIT_8);
+    p[0] = static_cast<uint8_t>(u);
+}
+
+float CapMax(float v)
+{
+    if (v < -1.0f + PCM_FLOAT_EPS) {
+        return -1.0f + PCM_FLOAT_EPS;
+    }
+    if (v > 1.0f - PCM_FLOAT_EPS) {
+        return 1.0f - PCM_FLOAT_EPS;
+    }
+    return v;
+}
+
+void CopyFloat(int32_t n, const float *src, float *dst)
+{
+    errno_t ret = memcpy_s(dst, static_cast<size_t>(n) * sizeof(float), src, static_cast<size_t>(n) * sizeof(float));
+    if (ret != 0) {
+        for (int32_t i = 0; i < n; i++) {
+            dst[i] = src[i];
+        }
+    }
+}
+
+int32_t GetPcmFormatBytes(AudioPcmFormat format)
+{
+    switch (format) {
+        case AUDIO_PCM_S16_LE:
+            return 2;
+        case AUDIO_PCM_S24_LE:
+            return 3;
+        case AUDIO_PCM_S32_LE:
+        case AUDIO_PCM_F32_LE:
+            return 4;
+        default:
+            return 0;
+    }
+}
+} // namespace
+
+extern "C" int32_t ConvertPcmToFloat(AudioPcmFormat format, const void *pcmData, int32_t sampleCount, float *outData)
+{
+    if (pcmData == nullptr || outData == nullptr || sampleCount <= 0) {
+        AUDIO_ERR_LOG("ConvertPcmToFloat invalid params, sampleCount: %{public}d", sampleCount);
+        return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+    }
+
+    switch (format) {
+        case AUDIO_PCM_S16_LE: {
+            const int16_t *in = static_cast<const int16_t *>(pcmData);
+            for (int32_t i = 0; i < sampleCount; i++) {
+                outData[i] = in[i] * (1.0f / (1 << (PCM_BIT_16 - 1)));
+            }
+            return AUDIO_PCM_ALGO_SUCCESS;
+        }
+        case AUDIO_PCM_S24_LE: {
+            const uint8_t *in = static_cast<const uint8_t *>(pcmData);
+            for (int32_t i = 0; i < sampleCount; i++) {
+                int32_t s = static_cast<int32_t>(Read24Bit(in + i * PCM_OFFSET_BIT_24)) << PCM_BIT_8;
+                outData[i] = s * (1.0f / (1U << (PCM_BIT_32 - 1)));
+            }
+            return AUDIO_PCM_ALGO_SUCCESS;
+        }
+        case AUDIO_PCM_S32_LE: {
+            const int32_t *in = static_cast<const int32_t *>(pcmData);
+            for (int32_t i = 0; i < sampleCount; i++) {
+                outData[i] = in[i] * (1.0f / (1U << (PCM_BIT_32 - 1)));
+            }
+            return AUDIO_PCM_ALGO_SUCCESS;
+        }
+        case AUDIO_PCM_F32_LE:
+            CopyFloat(sampleCount, static_cast<const float *>(pcmData), outData);
+            return AUDIO_PCM_ALGO_SUCCESS;
+        default:
+            AUDIO_ERR_LOG("ConvertPcmToFloat unsupported format: %{public}d", static_cast<int32_t>(format));
+            return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+    }
+}
+
+extern "C" int32_t ConvertFloatToPcm(AudioPcmFormat format, const float *inData, int32_t sampleCount, void *outPcm)
+{
+    if (inData == nullptr || outPcm == nullptr || sampleCount <= 0) {
+        AUDIO_ERR_LOG("ConvertFloatToPcm invalid params, sampleCount: %{public}d", sampleCount);
+        return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+    }
+
+    switch (format) {
+        case AUDIO_PCM_S16_LE: {
+            int16_t *out = static_cast<int16_t *>(outPcm);
+            for (int32_t i = 0; i < sampleCount; i++) {
+                out[i] = static_cast<int16_t>(CapMax(inData[i]) * (1 << (PCM_BIT_16 - 1)));
+            }
+            return AUDIO_PCM_ALGO_SUCCESS;
+        }
+        case AUDIO_PCM_S24_LE: {
+            uint8_t *out = static_cast<uint8_t *>(outPcm);
+            for (int32_t i = 0; i < sampleCount; i++) {
+                float v = CapMax(inData[i]) * (1U << (PCM_BIT_32 - 1));
+                Write24Bit(out + i * PCM_OFFSET_BIT_24, static_cast<uint32_t>(static_cast<int32_t>(v)) >> PCM_BIT_8);
+            }
+            return AUDIO_PCM_ALGO_SUCCESS;
+        }
+        case AUDIO_PCM_S32_LE: {
+            int32_t *out = static_cast<int32_t *>(outPcm);
+            for (int32_t i = 0; i < sampleCount; i++) {
+                out[i] = static_cast<int32_t>(CapMax(inData[i]) * (1U << (PCM_BIT_32 - 1)));
+            }
+            return AUDIO_PCM_ALGO_SUCCESS;
+        }
+        case AUDIO_PCM_F32_LE:
+            CopyFloat(sampleCount, inData, static_cast<float *>(outPcm));
+            return AUDIO_PCM_ALGO_SUCCESS;
+        default:
+            AUDIO_ERR_LOG("ConvertFloatToPcm unsupported format: %{public}d", static_cast<int32_t>(format));
+            return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+    }
+}
+
+extern "C" int32_t AudioFormatCalcMemLength(AudioPcmFormat format, int32_t channels, int32_t sampleCount)
+{
+    if (channels <= 0 || sampleCount < 0) {
+        return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+    }
+    int32_t bytesPerSample = GetPcmFormatBytes(format);
+    if (bytesPerSample == 0) {
+        return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+    }
+    int64_t length = static_cast<int64_t>(sampleCount) * channels * bytesPerSample;
+    if (length > INT32_MAX) {
+        AUDIO_ERR_LOG("AudioFormatCalcMemLength overflow, length: %{public}" PRId64, length);
+        return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
+    }
+    return static_cast<int32_t>(length);
+}

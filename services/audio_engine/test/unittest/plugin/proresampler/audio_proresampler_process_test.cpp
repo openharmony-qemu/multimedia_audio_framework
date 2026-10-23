@@ -1005,3 +1005,86 @@ HWTEST_F(AudioProResamplerProcessTest, MultiChannel_16_001, TestSize.Level0)
         SingleStagePolyphaseResamplerFree(state);
     }
 }
+
+using namespace testing::ext;
+
+class AudioPcmConvertTest : public testing::Test {
+public:
+    void SetUp() {}
+    void TearDown() {}
+};
+
+/**
+ * @tc.name: AudioFormatCalcMemLength_001
+ * @tc.number: AudioFormatCalcMemLength_001
+ */
+HWTEST_F(AudioPcmConvertTest, AudioFormatCalcMemLength_001, TestSize.Level0)
+{
+    EXPECT_EQ(AudioFormatCalcMemLength(AUDIO_PCM_S16_LE, 2, 960), 3840);
+    EXPECT_EQ(AudioFormatCalcMemLength(AUDIO_PCM_F32_LE, 1, 480), 1920);
+    EXPECT_EQ(AudioFormatCalcMemLength(AUDIO_PCM_S24_LE, 2, 240), 1440);
+    EXPECT_EQ(AudioFormatCalcMemLength(AUDIO_PCM_S16_LE, 2, 0), 0);
+}
+
+/**
+ * @tc.name: AudioFormatCalcMemLength_002
+ * @tc.number: AudioFormatCalcMemLength_002
+ */
+HWTEST_F(AudioPcmConvertTest, AudioFormatCalcMemLength_002, TestSize.Level0)
+{
+    EXPECT_EQ(AudioFormatCalcMemLength(AUDIO_PCM_S16_LE, 0, 960), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(AudioFormatCalcMemLength(AUDIO_PCM_S16_LE, 2, -1), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(AudioFormatCalcMemLength(static_cast<AudioPcmFormat>(20), 2, 960), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(AudioFormatCalcMemLength(AUDIO_PCM_S32_LE, 2, 1000000000), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name: ConvertPcmToFloat_001
+ * @tc.number: ConvertPcmToFloat_001
+ */
+HWTEST_F(AudioPcmConvertTest, ConvertPcmToFloat_001, TestSize.Level0)
+{
+    float out[3] = {0.0f};
+    int16_t in[3] = {0x4000, static_cast<int16_t>(0x8000), 0};
+    ASSERT_EQ(ConvertPcmToFloat(AUDIO_PCM_S16_LE, in, 3, out), AUDIO_PCM_ALGO_SUCCESS);
+    EXPECT_NEAR(out[0], 0.5, 2e-3); // 16384/32767
+    EXPECT_NEAR(out[1], -1.0, 1e-6);
+    EXPECT_EQ(out[2], 0.0f);
+
+    // S24 little endian {0x00, 0x00, 0x40} reads as 0x400000, scaled by 1/2^31 after <<8
+    uint8_t in24[3] = {0x00, 0x00, 0x40};
+    float out24 = 0.0f;
+    ASSERT_EQ(ConvertPcmToFloat(AUDIO_PCM_S24_LE, in24, 1, &out24), AUDIO_PCM_ALGO_SUCCESS);
+    EXPECT_NEAR(out24, 0.5, 2e-3);
+}
+
+/**
+ * @tc.name: ConvertRoundTrip_001
+ * @tc.number: ConvertRoundTrip_001
+ */
+HWTEST_F(AudioPcmConvertTest, ConvertRoundTrip_001, TestSize.Level0)
+{
+    const int16_t values[] = {1, -1, 123, -4567, 16384, -16384, 32767, -32768};
+    for (int16_t v : values) {
+        float f = 0.0f;
+        ASSERT_EQ(ConvertPcmToFloat(AUDIO_PCM_S16_LE, &v, 1, &f), AUDIO_PCM_ALGO_SUCCESS);
+        int16_t back = 0;
+        ASSERT_EQ(ConvertFloatToPcm(AUDIO_PCM_S16_LE, &f, 1, &back), AUDIO_PCM_ALGO_SUCCESS);
+        EXPECT_LE(std::abs(static_cast<int32_t>(back) - static_cast<int32_t>(v)), 1);
+    }
+}
+
+/**
+ * @tc.name: ConvertInvalid_001
+ * @tc.number: ConvertInvalid_001
+ */
+HWTEST_F(AudioPcmConvertTest, ConvertInvalid_001, TestSize.Level0)
+{
+    float f = 0.0f;
+    int16_t v = 1;
+    EXPECT_EQ(ConvertPcmToFloat(AUDIO_PCM_S16_LE, nullptr, 1, &f), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(ConvertPcmToFloat(AUDIO_PCM_S16_LE, &v, 0, &f), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(ConvertPcmToFloat(static_cast<AudioPcmFormat>(20), &v, 1, &f), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(ConvertFloatToPcm(AUDIO_PCM_S16_LE, nullptr, 1, &f), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(ConvertFloatToPcm(static_cast<AudioPcmFormat>(20), &f, 1, &v), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+}
