@@ -1909,5 +1909,94 @@ HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_002, TestS
 
     EXPECT_TRUE(streamInfo.channelLayout.empty());
 }
+
+/**
+* @tc.name  : Test UpdateDeviceInfoByAudioParameters.
+* @tc.number: UpdateDeviceInfoByAudioParameters_003
+* @tc.desc  : Test multi-value rate parsing.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_003, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+
+    std::string audioParameters = "sink_rate:48000|96000|192000;";
+    audioParameters += "sink_format:AUDIO_FORMAT_PCM_16_BIT;";
+    audioParameters += "sink_chans:2;sink_mmap:1";
+    deviceDesc->UpdateDeviceInfoByAudioParameters(audioParameters);
+
+    EXPECT_FALSE(deviceDesc->audioStreamInfo_.empty());
+    auto &streamInfo = *(deviceDesc->audioStreamInfo_.begin());
+    EXPECT_EQ(streamInfo.samplingRate.size(), 3);
+    EXPECT_TRUE(streamInfo.samplingRate.find(SAMPLE_RATE_48000) != streamInfo.samplingRate.end());
+    EXPECT_TRUE(streamInfo.samplingRate.find(SAMPLE_RATE_96000) != streamInfo.samplingRate.end());
+    EXPECT_TRUE(streamInfo.samplingRate.find(SAMPLE_RATE_192000) != streamInfo.samplingRate.end());
+    EXPECT_EQ(streamInfo.format, SAMPLE_S16LE);
+}
+
+/**
+* @tc.name  : Test UpdateDeviceInfoByAudioParameters.
+* @tc.number: UpdateDeviceInfoByAudioParameters_004
+* @tc.desc  : Test multi-value format parsing with formats set.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_004, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+
+    std::string audioParameters = "sink_rate:48000;";
+    audioParameters += "sink_format:AUDIO_FORMAT_PCM_16_BIT|AUDIO_FORMAT_PCM_24_BIT|AUDIO_FORMAT_PCM_32_BIT;";
+    audioParameters += "sink_chans:2";
+    deviceDesc->UpdateDeviceInfoByAudioParameters(audioParameters);
+
+    auto &streamInfo = *(deviceDesc->audioStreamInfo_.begin());
+    EXPECT_EQ(streamInfo.formats.size(), 3);
+    EXPECT_TRUE(streamInfo.formats.find(SAMPLE_S16LE) != streamInfo.formats.end());
+    EXPECT_TRUE(streamInfo.formats.find(SAMPLE_S24LE) != streamInfo.formats.end());
+    EXPECT_TRUE(streamInfo.formats.find(SAMPLE_S32LE) != streamInfo.formats.end());
+    EXPECT_EQ(streamInfo.format, SAMPLE_S16LE);
+}
+
+/**
+* @tc.name  : Test UpdateDeviceInfoByAudioParameters.
+* @tc.number: UpdateDeviceInfoByAudioParameters_005
+* @tc.desc  : Test multi-value channel parsing.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_005, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+
+    std::string audioParameters = "sink_rate:48000;sink_format:AUDIO_FORMAT_PCM_16_BIT;sink_chans:2|4";
+    deviceDesc->UpdateDeviceInfoByAudioParameters(audioParameters);
+
+    auto &streamInfo = *(deviceDesc->audioStreamInfo_.begin());
+    EXPECT_EQ(streamInfo.channelLayout.size(), 2);
+    EXPECT_TRUE(streamInfo.channelLayout.find(CH_LAYOUT_UNKNOWN) != streamInfo.channelLayout.end()
+        || streamInfo.channelLayout.find(CH_LAYOUT_4POINT0) != streamInfo.channelLayout.end());
+}
+
+/**
+* @tc.name  : Test UpdateDeviceInfoByAudioParameters.
+* @tc.number: UpdateDeviceInfoByAudioParameters_006
+* @tc.desc  : Test single-value backward compat (no pipe separator).
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_006, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+
+    std::string audioParameters = "sink_rate:48000;sink_format:AUDIO_FORMAT_PCM_16_BIT;sink_chans:2";
+    deviceDesc->UpdateDeviceInfoByAudioParameters(audioParameters);
+
+    auto &streamInfo = *(deviceDesc->audioStreamInfo_.begin());
+    EXPECT_EQ(streamInfo.samplingRate.size(), 1);
+    EXPECT_EQ(streamInfo.formats.size(), 1);
+    EXPECT_EQ(streamInfo.format, SAMPLE_S16LE);
+}
 } // namespace AudioStandard
 } // namespace OHOS
