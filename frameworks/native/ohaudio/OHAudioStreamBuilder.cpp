@@ -518,12 +518,6 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetMuteWhenInterrupted(bool muteWhen
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetLatencyMode(int32_t latencyMode)
 {
-    if (latencyMode == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST && streamType_ != CAPTURER_TYPE) {
-        return AUDIOSTREAM_ERROR_INVALID_PARAM;
-    }
-    CHECK_AND_RETURN_RET(latencyMode == AUDIOSTREAM_LATENCY_MODE_NORMAL ||
-        latencyMode == AUDIOSTREAM_LATENCY_MODE_FAST || latencyMode == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST,
-        AUDIOSTREAM_ERROR_INVALID_PARAM);
     latencyMode_ = latencyMode;
     return AUDIOSTREAM_SUCCESS;
 }

@@ -2383,7 +2383,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_
     result = OH_AudioStreamBuilder_Destroy(builder);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
-/** @tc.desc: Ultra fast is accepted without checking permissions until Generate. Invalid modes are rejected. */
+/** @tc.desc: Setter stores latency values without introducing new compatibility restrictions. */
 HWTEST(OHAudioStreamBuilderUnitTest, UltraFastLatencyMode_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder *builder = nullptr;
@@ -2391,19 +2391,23 @@ HWTEST(OHAudioStreamBuilderUnitTest, UltraFastLatencyMode_001, TestSize.Level0)
     EXPECT_EQ(static_cast<int32_t>(AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST), 2);
     EXPECT_EQ(OH_AudioStreamBuilder_SetLatencyMode(builder, AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST), AUDIOSTREAM_SUCCESS);
     EXPECT_EQ(OH_AudioStreamBuilder_SetLatencyMode(builder, static_cast<OH_AudioStream_LatencyMode>(-1)),
-        AUDIOSTREAM_ERROR_INVALID_PARAM);
+        AUDIOSTREAM_SUCCESS);
     EXPECT_EQ(OH_AudioStreamBuilder_SetLatencyMode(builder, static_cast<OH_AudioStream_LatencyMode>(3)),
-        AUDIOSTREAM_ERROR_INVALID_PARAM);
+        AUDIOSTREAM_SUCCESS);
     EXPECT_EQ(OH_AudioStreamBuilder_SetLatencyMode(builder, AUDIOSTREAM_LATENCY_MODE_FAST), AUDIOSTREAM_SUCCESS);
     EXPECT_EQ(OH_AudioStreamBuilder_Destroy(builder), AUDIOSTREAM_SUCCESS);
 }
 
-/** @tc.desc: Ultra fast latency is a capturer-only mode. */
-HWTEST(OHAudioStreamBuilderUnitTest, UltraFastLatencyModeRendererRejected_001, TestSize.Level1)
+/** @tc.desc: Renderer setter retains its permissive behavior for ultra-fast and legacy values. */
+HWTEST(OHAudioStreamBuilderUnitTest, UltraFastLatencyModeRendererAccepted_001, TestSize.Level1)
 {
     OH_AudioStreamBuilder *builder = nullptr;
     ASSERT_EQ(OH_AudioStreamBuilder_Create(&builder, AUDIOSTREAM_TYPE_RENDERER), AUDIOSTREAM_SUCCESS);
     EXPECT_EQ(OH_AudioStreamBuilder_SetLatencyMode(builder, AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST),
+        AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(OH_AudioStreamBuilder_SetLatencyMode(builder, static_cast<OH_AudioStream_LatencyMode>(3)),
+        AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(OH_AudioStreamBuilder_SetLatencyMode(nullptr, AUDIOSTREAM_LATENCY_MODE_NORMAL),
         AUDIOSTREAM_ERROR_INVALID_PARAM);
     EXPECT_EQ(OH_AudioStreamBuilder_Destroy(builder), AUDIOSTREAM_SUCCESS);
 }

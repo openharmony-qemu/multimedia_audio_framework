@@ -107,6 +107,7 @@ public:
 class AudioTypeUtils {
 public:
     static StreamUsage GetStreamUsageByStreamType(AudioStreamType streamType);
+    // Convert a HAL adapter name, retaining the Primary fallback for unknown names.
     static HdiAdapterType HalNameToType(std::string halName);
 };
 

@@ -128,7 +128,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     nodeInfo.sourceType = sourceInfo_.sourceType;
     nodeInfo.routeFlag = sourceInfo_.routeFlag;
     nodeInfo.deviceType = sourceInfo_.deviceType;
-    nodeInfo.captureAdapterType = sourceInfo_.adapterName == "usb" ? HDI_ADAPTER_TYPE_USB : HDI_ADAPTER_TYPE_PRIMARY;
+    nodeInfo.captureAdapterType = AudioTypeUtils::HalNameToType(sourceInfo_.adapterName);
     nodeInfo.micInChannels = sourceInfo_.micInChannels;
     nodeInfo.appMicInChannelCount = streamInfo.appMicInChannelCount;
     if (streamInfo.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE) {
@@ -1173,7 +1173,7 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     nodeInfo.sourceType = sourceInfo_.sourceType;
     nodeInfo.routeFlag = sourceInfo_.routeFlag;
     nodeInfo.deviceType = sourceInfo_.deviceType;
-    nodeInfo.captureAdapterType = sourceInfo_.adapterName == "usb" ? HDI_ADAPTER_TYPE_USB : HDI_ADAPTER_TYPE_PRIMARY;
+    nodeInfo.captureAdapterType = AudioTypeUtils::HalNameToType(sourceInfo_.adapterName);
     nodeInfo.micInChannels = sourceInfo_.micInChannels;
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;

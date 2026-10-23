@@ -526,6 +526,41 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetParameter_001, TestSize.Level
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
+/** @tc.desc: Native capture flags map explicitly to public latency modes, including VOIP_FAST. */
+HWTEST(OHAudioCaptureUnitTest, GetLatencyModeExplicitFlags_001, TestSize.Level1)
+{
+    struct LatencyCase {
+        int32_t originalFlag;
+        int32_t currentFlag;
+        OH_AudioStream_LatencyMode expected;
+    };
+    const std::vector<LatencyCase> cases = {
+        {AUDIO_FLAG_NORMAL, AUDIO_FLAG_NORMAL, AUDIOSTREAM_LATENCY_MODE_NORMAL},
+        {AUDIO_FLAG_NORMAL, AUDIO_FLAG_FORCED_NORMAL, AUDIOSTREAM_LATENCY_MODE_NORMAL},
+        {AUDIO_FLAG_MMAP, AUDIO_FLAG_MMAP, AUDIOSTREAM_LATENCY_MODE_FAST},
+        {AUDIO_FLAG_VOIP_FAST, AUDIO_FLAG_VOIP_FAST, AUDIOSTREAM_LATENCY_MODE_FAST},
+        {AUDIO_FLAG_NORMAL, AUDIO_FLAG_ULTRA_FAST, AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST},
+        {AUDIO_FLAG_ULTRA_FAST, AUDIO_FLAG_ULTRA_FAST, AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST},
+        {AUDIO_FLAG_ULTRA_FAST, AUDIO_FLAG_MMAP, AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST},
+        {AUDIO_FLAG_ULTRA_FAST, AUDIO_FLAG_NORMAL, AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST},
+        {AUDIO_FLAG_NORMAL, 99, AUDIOSTREAM_LATENCY_MODE_NORMAL}
+    };
+    OHAudioCapturer wrapper;
+    auto nativeCapturer = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, AppInfo {}, false);
+    wrapper.audioCapturer_ = nativeCapturer;
+    auto *capturer = reinterpret_cast<OH_AudioCapturer *>(&wrapper);
+    for (const auto &testCase : cases) {
+        nativeCapturer->capturerInfo_.originalFlag = testCase.originalFlag;
+        nativeCapturer->capturerInfo_.capturerFlags = testCase.currentFlag;
+        OH_AudioStream_LatencyMode mode = AUDIOSTREAM_LATENCY_MODE_NORMAL;
+        EXPECT_EQ(OH_AudioCapturer_GetLatencyMode(capturer, &mode), AUDIOSTREAM_SUCCESS);
+        EXPECT_EQ(mode, testCase.expected) << testCase.originalFlag << ", " << testCase.currentFlag;
+    }
+    EXPECT_EQ(OH_AudioCapturer_GetLatencyMode(capturer, nullptr), AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioStream_LatencyMode mode = AUDIOSTREAM_LATENCY_MODE_NORMAL;
+    EXPECT_EQ(OH_AudioCapturer_GetLatencyMode(nullptr, &mode), AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+
 /**
 * @tc.name  : Test OH_AudioCapturer_GetCurrentState API via legal state.
 * @tc.number: OH_AudioCapturer_GetCurrentState_001

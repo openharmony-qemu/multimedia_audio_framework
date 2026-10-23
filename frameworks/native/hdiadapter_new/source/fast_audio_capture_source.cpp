@@ -48,7 +48,7 @@ int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
         HILOG_COMM_ERROR("[Init]prepare mmap buffer fail"));
     sourceInited_ = true;
-    InitPipeInfo(hdiCaptureId_, attr_.adapterName == "usb" ? HDI_ADAPTER_TYPE_USB : HDI_ADAPTER_TYPE_PRIMARY,
+    InitPipeInfo(hdiCaptureId_, AudioTypeUtils::HalNameToType(attr_.adapterName),
         attr_.audioStreamFlag == AUDIO_FLAG_ULTRA_FAST ? AUDIO_INPUT_FLAG_ULTRA_FAST : AUDIO_INPUT_FLAG_FAST,
         { static_cast<DeviceType>(attr_.deviceType) });
     return SUCCESS;

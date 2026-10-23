@@ -68,7 +68,7 @@ int32_t HpaeFastCapturerManager::CreateSessionNodes(const HpaeStreamInfo &stream
     nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
     nodeInfo.routeFlag = sourceInfo_.routeFlag;
     nodeInfo.deviceType = sourceInfo_.deviceType;
-    nodeInfo.captureAdapterType = sourceInfo_.adapterName == "usb" ? HDI_ADAPTER_TYPE_USB : HDI_ADAPTER_TYPE_PRIMARY;
+    nodeInfo.captureAdapterType = AudioTypeUtils::HalNameToType(sourceInfo_.adapterName);
     auto sourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     sourceOutputNode->SetAppUid(streamInfo.uid);
     sourceOutputNodeMap_[streamInfo.sessionId] = sourceOutputNode;
@@ -602,7 +602,7 @@ void HpaeFastCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &m
     nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
     nodeInfo.routeFlag = sourceInfo_.routeFlag;
     nodeInfo.deviceType = sourceInfo_.deviceType;
-    nodeInfo.captureAdapterType = sourceInfo_.adapterName == "usb" ? HDI_ADAPTER_TYPE_USB : HDI_ADAPTER_TYPE_PRIMARY;
+    nodeInfo.captureAdapterType = AudioTypeUtils::HalNameToType(sourceInfo_.adapterName);
     HpaeNodeInfo inNodeInfo;
     inNodeInfo.frameLen = sourceInputNode_->GetNodeInfo().frameLen;
     inNodeInfo.samplingRate = sourceInputNode_->GetNodeInfo().samplingRate;

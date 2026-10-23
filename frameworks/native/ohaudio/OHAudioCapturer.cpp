@@ -282,8 +282,22 @@ OH_AudioStream_Result OH_AudioCapturer_GetLatencyMode(OH_AudioCapturer* capturer
     OHOS::AudioStandard::AudioCapturerInfo capturerInfo;
     audioCapturer->GetCapturerInfo(capturerInfo);
     CHECK_AND_RETURN_RET(latencyMode != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM);
-    *latencyMode = capturerInfo.originalFlag == OHOS::AudioStandard::AUDIO_FLAG_ULTRA_FAST ?
-        AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST : static_cast<OH_AudioStream_LatencyMode>(capturerInfo.capturerFlags);
+    if (capturerInfo.originalFlag == OHOS::AudioStandard::AUDIO_FLAG_ULTRA_FAST) {
+        *latencyMode = AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST;
+        return AUDIOSTREAM_SUCCESS;
+    }
+    switch (capturerInfo.capturerFlags) {
+        case OHOS::AudioStandard::AUDIO_FLAG_MMAP:
+        case OHOS::AudioStandard::AUDIO_FLAG_VOIP_FAST:
+            *latencyMode = AUDIOSTREAM_LATENCY_MODE_FAST;
+            break;
+        case OHOS::AudioStandard::AUDIO_FLAG_ULTRA_FAST:
+            *latencyMode = AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST;
+            break;
+        default:
+            *latencyMode = AUDIOSTREAM_LATENCY_MODE_NORMAL;
+            break;
+    }
     return AUDIOSTREAM_SUCCESS;
 }
 
