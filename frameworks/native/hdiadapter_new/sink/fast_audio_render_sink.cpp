@@ -59,12 +59,11 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     attr_ = attr;
     auto it = streamFlagToHalName.find(attr_.audioStreamFlag);
     halName_ = (it != streamFlagToHalName.end()) ? it->second : "primary";
-    bool isUltraFast = attr_.isUltraFast;
     int32_t ret = CreateRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
     // Route must be set after CreateRender (HDI needs the stream to exist first) and
     // before PrepareMmapBuffer (route must be active when buffers are prepared).
-    if (isUltraFast) {
+    if (attr_.isUltraFast) {
         AUDIO_INFO_LOG("SetOutputRoute for ultra fast, device: %{public}d", attr_.deviceType);
         std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)};
         DoSetOutputRoute(devices);

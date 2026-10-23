@@ -28,13 +28,6 @@ namespace AudioStandard {
 namespace HPAE {
 static constexpr uint32_t BASE_TEN = 10;
 
-static const std::set<std::string> ULTRA_FAST_DEVICE_CLASSES = {
-    "ultra_fast",
-    "true_ultra_fast",
-    "usb_arm_ultra_fast",
-    "usb_arm_true_ultra_fast",
-};
-
 bool CheckHpaeNodeInfoIsSame(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &curNodeInfo);
 HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType);
 HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene);

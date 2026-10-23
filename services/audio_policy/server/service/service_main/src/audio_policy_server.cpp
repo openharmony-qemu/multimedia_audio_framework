@@ -78,13 +78,6 @@ const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
     STREAM_NOTIFICATION
 };
 
-const std::unordered_map<DeviceType, std::string> ULTRA_FAST_DEVICE_TO_ADAPTER = {
-    {DEVICE_TYPE_SPEAKER, "primary"},
-    {DEVICE_TYPE_EARPIECE, "primary"},
-    {DEVICE_TYPE_USB_HEADSET, "primary"},
-    {DEVICE_TYPE_USB_ARM_HEADSET, "usb"},
-};
-
 const size_t ADD_VOL_RECORD_LIMIT = 3;
 constexpr int64_t ADD_VOL_DURATION_LIMIT = 800 * 1000 * 1000; // 800ms
 const int64_t SILENT_FRAME_LIMIT = -50;
@@ -2608,11 +2601,12 @@ int32_t AudioPolicyServer::IsUltraFastPlaybackSupported(const AudioStreamInfo &s
         if (deviceDesc == nullptr) {
             continue;
         }
-        auto it = ULTRA_FAST_DEVICE_TO_ADAPTER.find(deviceDesc->deviceType_);
-        if (it == ULTRA_FAST_DEVICE_TO_ADAPTER.end()) {
+        std::string adapterName = coreService_->GetPipeManager()->GetTrueUltraFastAdapterName(
+            deviceDesc->deviceType_);
+        if (adapterName.empty()) {
             continue;
         }
-        if (audioConfigManager_.GetUltraFastFlag(it->second, PIPE_ROLE_OUTPUT)) {
+        if (audioConfigManager_.GetUltraFastFlag(adapterName, PIPE_ROLE_OUTPUT)) {
             support = true;
             break;
         }

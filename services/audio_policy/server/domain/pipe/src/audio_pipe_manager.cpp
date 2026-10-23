@@ -1744,7 +1744,13 @@ bool AudioPipeManager::IsUltraFastSupportedDevice(DeviceType deviceType)
 
 bool AudioPipeManager::IsTrueUltraFastSupportedDevice(DeviceType deviceType)
 {
-    return g_trueUltraFastDevicesSet.find(deviceType) != g_trueUltraFastDevicesSet.end();
+    return g_trueUltraFastDeviceToAdapter.find(deviceType) != g_trueUltraFastDeviceToAdapter.end();
+}
+
+std::string AudioPipeManager::GetTrueUltraFastAdapterName(DeviceType deviceType)
+{
+    auto it = g_trueUltraFastDeviceToAdapter.find(deviceType);
+    return it != g_trueUltraFastDeviceToAdapter.end() ? it->second : "";
 }
 
 uint32_t AudioPipeManager::GetUltraFastStreamCount()

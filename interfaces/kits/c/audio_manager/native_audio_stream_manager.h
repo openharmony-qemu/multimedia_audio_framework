@@ -130,7 +130,7 @@ bool OH_AudioStreamManager_IsFastPlaybackSupported(
  * @param streamInfo The pointer to {@link OH_AudioStreamInfo}, indicates the audio stream info.
  * @param usage The {@link OH_AudioStream_Usage}, indicates the audio stream usage.
  * @return Returns <b>true</b> if the ultra fast playback is supported; returns <b>false</b> otherwise.
- * @since 21
+ * @since 26.1.0
  */
 bool OH_AudioStreamManager_IsUltraFastPlaybackSupported(OH_AudioStreamManager *streamManager,
     OH_AudioStreamInfo *streamInfo, OH_AudioStream_Usage usage);

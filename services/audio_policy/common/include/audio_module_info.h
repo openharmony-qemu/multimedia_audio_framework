@@ -51,6 +51,13 @@ static const char* MMAP_CLASS = "primary_mmap";
 static const char* DIRECT_CLASS = "primary_direct";
 static const char* A2DP_FAST_CLASS = "a2dp_fast";
 static const char* ULTRA_FAST_CLASS = "ultra_fast";
+static const char* TRUE_ULTRA_FAST_CLASS = "true_ultra_fast";
+static const std::set<std::string> ULTRA_FAST_DEVICE_CLASSES = {
+    "ultra_fast",
+    "true_ultra_fast",
+    "usb_arm_ultra_fast",
+    "usb_arm_true_ultra_fast",
+};
 static const char* INTERPHONE_CLASS = "interphone";
 static const char* BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const char* BLUETOOTH_A2DP_FAST = "bt_a2dp_fast";

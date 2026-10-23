@@ -22,6 +22,7 @@
 #include <shared_mutex>
 #include <set>
 #include <unordered_set>
+#include <unordered_map>
 #include <vector>
 
 #include "audio_stream_descriptor.h"
@@ -42,11 +43,11 @@ static const std::unordered_set<DeviceType> g_ultraFastDevicesSet = {
     DEVICE_TYPE_USB_ARM_HEADSET
 };
 
-static const std::unordered_set<DeviceType> g_trueUltraFastDevicesSet = {
-    DEVICE_TYPE_SPEAKER,
-    DEVICE_TYPE_EARPIECE,
-    DEVICE_TYPE_USB_HEADSET,
-    DEVICE_TYPE_USB_ARM_HEADSET
+static const std::unordered_map<DeviceType, std::string> g_trueUltraFastDeviceToAdapter = {
+    {DEVICE_TYPE_SPEAKER, "primary"},
+    {DEVICE_TYPE_EARPIECE, "primary"},
+    {DEVICE_TYPE_USB_HEADSET, "primary"},
+    {DEVICE_TYPE_USB_ARM_HEADSET, "usb"},
 };
 
 class AudioPipeManager {
@@ -217,6 +218,7 @@ public:
     bool HasUltraFastPipe();
     bool IsUltraFastSupportedDevice(DeviceType deviceType);
     bool IsTrueUltraFastSupportedDevice(DeviceType deviceType);
+    std::string GetTrueUltraFastAdapterName(DeviceType deviceType);
     uint32_t GetUltraFastStreamCount();
     bool IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::vector<std::string> GetNoRunningPipeModuleName();

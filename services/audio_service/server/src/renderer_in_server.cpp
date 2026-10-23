@@ -1412,6 +1412,17 @@ int32_t RendererInServer::GetRendererFlagsByRoute(uint32_t routeFlag)
     return AUDIO_FLAG_NORMAL;
 }
 
+FastStatus RendererInServer::GetFastStatusFromRendererFlags(int32_t rendererFlags)
+{
+    if (rendererFlags == AUDIO_FLAG_NORMAL) {
+        return FASTSTATUS_NORMAL;
+    }
+    if (rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST) {
+        return FASTSTATUS_ULTRA_FAST;
+    }
+    return FASTSTATUS_FAST;
+}
+
 int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener)
 {
     std::lock_guard<std::mutex> lock(writeLock_);
@@ -1453,9 +1464,8 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
         AUDIO_INFO_LOG("Update processConfig_.rendererInfo.rendererFlags from %{public}u to %{public}u",
             processConfig_.rendererInfo.rendererFlags, rendererFlags);
         processConfig_.rendererInfo.rendererFlags = rendererFlags;
-        stateListener->OnOperationHandled(UPDATE_SPANSIZE, rendererFlags == AUDIO_FLAG_NORMAL ?
-            FASTSTATUS_NORMAL : (rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST ?
-            FASTSTATUS_ULTRA_FAST : FASTSTATUS_FAST));
+        stateListener->OnOperationHandled(UPDATE_SPANSIZE,
+            GetFastStatusFromRendererFlags(rendererFlags));
     }
 
     spanSizeInFrame_ = newSpanSizeInFrame;
