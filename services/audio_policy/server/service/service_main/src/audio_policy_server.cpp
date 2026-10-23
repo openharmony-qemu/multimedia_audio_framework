@@ -3471,6 +3471,7 @@ void AudioPolicyServer::InitPolicyDumpMap()
     dumpFuncMap[u"-ap"] = &AudioPolicyServer::AudioPipeManagerDump;
     dumpFuncMap[u"-sd"] = &AudioPolicyServer::SelectDeviceDump;
     dumpFuncMap[u"-boot"] = &AudioPolicyServer::AudioPolicyBootDump;
+    dumpFuncMap[u"-ih"] = &AudioPolicyServer::IdHandlerInfoDump;
 }
 
 void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
@@ -3487,6 +3488,7 @@ void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
     MicrophoneMuteInfoDump(dumpString);
     AudioPipeManagerDump(dumpString);
     SelectDeviceDump(dumpString);
+    IdHandlerInfoDump(dumpString);
 }
 
 void AudioPolicyServer::AudioDevicesDump(std::string &dumpString)
@@ -3537,6 +3539,11 @@ void AudioPolicyServer::MicrophoneMuteInfoDump(std::string &dumpString)
 void AudioPolicyServer::AudioPolicyBootDump(std::string &dumpString)
 {
     audioPolicyDump_.AudioPolicyBootDump(dumpString);
+}
+
+void AudioPolicyServer::IdHandlerInfoDump(std::string &dumpString)
+{
+    audioPolicyDump_.IdHandlerInfoDump(dumpString);
 }
 
 void AudioPolicyServer::RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime)
@@ -3609,6 +3616,7 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -as\t\t\t|dump audio session info\n");
     AppendFormat(dumpString, "  -ap\t\t\t|dump audio pipe manager info\n");
     AppendFormat(dumpString, "  -boot\t\t\t|dump audio policy boot info\n");
+    AppendFormat(dumpString, "  -ih\t\t\t|dump id handler info\n");
 }
 
 int32_t AudioPolicyServer::CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,

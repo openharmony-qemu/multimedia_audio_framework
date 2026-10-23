@@ -59,6 +59,8 @@ public:
     bool IsRemoteType(HdiIdType type);
     bool IsRemoteClass(const std::string &deviceClass);
 
+    void Dump(std::string &dumpString);
+
 private:
     IdHandler() = default;
     ~IdHandler() = default;

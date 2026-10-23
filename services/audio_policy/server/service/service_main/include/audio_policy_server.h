@@ -828,6 +828,7 @@ public:
     void AudioPipeManagerDump(std::string &dumpString);
     void SelectDeviceDump(std::string &dumpString);
     void AudioPolicyBootDump(std::string &dumpString);
+    void IdHandlerInfoDump(std::string &dumpString);
     void RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime);
     void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
     int32_t RecordBootAnimationClientStateTime(const BootAnimationInfo &info) override;

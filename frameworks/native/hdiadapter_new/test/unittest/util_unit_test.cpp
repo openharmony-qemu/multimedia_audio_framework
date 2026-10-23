@@ -726,5 +726,63 @@ HWTEST_F(UtilUnitTest, AudioHdiVersionManagerUnitTest_006, TestSize.Level1)
     EXPECT_FALSE(AudioHdiVersionManager::GetInstance().IsV61OrAbove());
 }
 
+/**
+ * @tc.name   : Test IdHandler Dump
+ * @tc.number : IdHandlerDumpUnitTest_001
+ * @tc.desc   : Test Dump with empty useIdSet, single useId and multiple useIds
+ */
+HWTEST_F(UtilUnitTest, IdHandlerDumpUnitTest_001, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    uint32_t id1 = idHandler.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, "dump_test_empty");
+    EXPECT_NE(id1, HDI_INVALID_ID);
+
+    std::string dumpStr;
+    idHandler.Dump(dumpStr);
+    EXPECT_TRUE(dumpStr.find("du*********empty") != std::string::npos);
+    EXPECT_TRUE(dumpStr.find("useCount: 0, useIds: []") != std::string::npos);
+
+    idHandler.IncInfoIdUseCount(id1);
+    dumpStr.clear();
+    idHandler.Dump(dumpStr);
+    EXPECT_TRUE(dumpStr.find("useCount: 1, useIds: [") != std::string::npos);
+    EXPECT_TRUE(dumpStr.find(std::to_string(id1)) != std::string::npos);
+
+    uint32_t id2 = idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, "dump_test_empty");
+    idHandler.IncInfoIdUseCount(id2);
+    dumpStr.clear();
+    idHandler.Dump(dumpStr);
+    EXPECT_TRUE(dumpStr.find("useCount: 2, useIds: [") != std::string::npos);
+    EXPECT_TRUE(dumpStr.find(std::to_string(id2)) != std::string::npos);
+
+    idHandler.DecInfoIdUseCount(id1);
+    idHandler.DecInfoIdUseCount(id2);
+}
+
+/**
+ * @tc.name   : Test IdHandler Dump
+ * @tc.number : IdHandlerDumpUnitTest_002
+ * @tc.desc   : Test Dump with freeInfoIdSet entries
+ */
+HWTEST_F(UtilUnitTest, IdHandlerDumpUnitTest_002, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    uint32_t id1 = idHandler.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, "dump_test_free1");
+    uint32_t id2 = idHandler.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, "dump_test_free2");
+    EXPECT_NE(id1, HDI_INVALID_ID);
+    EXPECT_NE(id2, HDI_INVALID_ID);
+    idHandler.IncInfoIdUseCount(id1);
+    idHandler.IncInfoIdUseCount(id2);
+    idHandler.DecInfoIdUseCount(id1);
+    idHandler.DecInfoIdUseCount(id2);
+
+    std::string dumpStr;
+    idHandler.Dump(dumpStr);
+    EXPECT_TRUE(dumpStr.find("freeInfoIds: [") != std::string::npos);
+    EXPECT_FALSE(dumpStr.find("freeInfoIdSet size: 0") != std::string::npos);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
