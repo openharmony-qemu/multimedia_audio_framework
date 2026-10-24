@@ -2111,6 +2111,12 @@ int32_t HpaeManager::RegisterStatusCallback(HpaeStreamClassType streamClassType,
     return SUCCESS;
 }
 
+// Thread constraint: the stream maps read below are owned by the HpaeManagerThread. Current
+// callers (OnStatusUpdate via the HandleUpdateSpanSize/HandleUpdateStatus handler chain) run on
+// that thread, so the unlocked reads are safe. Do not add IPC-thread callers: reading these maps
+// off the owner thread races with queued writes, and calling SendRequestSync from manager-thread
+// callbacks would self-wait until timeout. Route new cross-thread queries like
+// IsSessionHdiSpeedSupported does below.
 int32_t HpaeManager::GetStreamSpanSize(HpaeStreamClassType streamClassType, uint32_t sessionId,
     uint32_t &spanSizeInFrame)
 {
@@ -2158,14 +2164,15 @@ int32_t HpaeManager::GetStreamRouteFlag(HpaeStreamClassType streamClassType, uin
 bool HpaeManager::IsSessionHdiSpeedSupported(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
-        if (rendererIdSinkNameMap_.find(sessionId) == rendererIdSinkNameMap_.end()) {
+        auto idIt = rendererIdSinkNameMap_.find(sessionId);
+        if (idIt == rendererIdSinkNameMap_.end()) {
             return false;
         }
-        const std::string &sinkName = rendererIdSinkNameMap_[sessionId];
-        if (rendererManagerMap_.find(sinkName) == rendererManagerMap_.end()) {
+        auto managerIt = rendererManagerMap_.find(idIt->second);
+        if (managerIt == rendererManagerMap_.end()) {
             return false;
         }
-        return rendererManagerMap_[sinkName]->IsHdiSpeedSupported();
+        return managerIt->second->IsHdiSpeedSupported();
     };
     return SendRequestSync<bool>(std::move(request), __func__, false);
 }

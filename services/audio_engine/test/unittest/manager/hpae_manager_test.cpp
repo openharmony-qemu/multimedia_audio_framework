@@ -27,6 +27,7 @@
 #include "hpae_manager.h"
 #include "hpae_fast_renderer_manager.h"
 #include "hpae_fast_capturer_manager.h"
+#include "hpae_offload_renderer_manager.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -2397,6 +2398,27 @@ HWTEST_F(HpaeManagerUnitTest, IsSessionHdiSpeedSupported_001, TestSize.Level1)
     // Sink manager missing from the map keeps the conservative false answer.
     hpaeManager_->rendererManagerMap_.erase(sinkName);
     EXPECT_FALSE(hpaeManager_->IsSessionHdiSpeedSupported(playSessionId));
+}
+
+/**
+ * @tc.name  : Test IsSessionHdiSpeedSupported true path via the sync result chain
+ * @tc.type  : FUNC
+ * @tc.number: IsSessionHdiSpeedSupported_002
+ * @tc.desc  : Offload manager chain reports HDI speed capability through SendRequestSync.
+ */
+HWTEST_F(HpaeManagerUnitTest, IsSessionHdiSpeedSupported_002, TestSize.Level1)
+{
+    PrepareCoverageManager(hpaeManager_);
+
+    const uint32_t playSessionId = TEST_STREAM_SESSION_ID + 124;
+    const std::string sinkName = "Speaker_Offload";
+    HpaeSinkInfo sinkInfo;
+    hpaeManager_->rendererManagerMap_[sinkName] = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    hpaeManager_->rendererIdSinkNameMap_[playSessionId] = sinkName;
+
+    // Only the promise/future result path can deliver true (the timeout fallback returns
+    // false), so this also proves the request was executed and answered on the manager thread.
+    EXPECT_TRUE(hpaeManager_->IsSessionHdiSpeedSupported(playSessionId));
 }
 
 HWTEST_F(HpaeManagerUnitTest, StopAudioPort001, TestSize.Level4)
