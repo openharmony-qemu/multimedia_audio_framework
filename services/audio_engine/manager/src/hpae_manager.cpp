@@ -2149,19 +2149,25 @@ int32_t HpaeManager::GetStreamRouteFlag(HpaeStreamClassType streamClassType, uin
     return ERR_INVALID_OPERATION;
 }
 
-// Sync map read mirroring GetStreamRouteFlag above: called from the IPC thread by
-// HpaeRendererStreamImpl::SetSpeed to decide whether speed can be delegated to the engine
-// (offload chain forwards it to HDI) or must be rejected so the client keeps local sonic speed.
+// Session HDI speed capability query for the IPC thread (HpaeRendererStreamImpl::SetSpeed):
+// it decides whether speed can be delegated to the engine (offload chain forwards it to HDI)
+// or must be rejected so the client keeps local sonic speed. The id/manager maps are owned by
+// the HpaeManagerThread (every write is queued via SendRequest), so the lookup runs on that
+// thread through SendRequestSync; reading them directly here would race with map writes.
+// On timeout keep the conservative false answer: the client falls back to local sonic speed.
 bool HpaeManager::IsSessionHdiSpeedSupported(uint32_t sessionId)
 {
-    if (rendererIdSinkNameMap_.find(sessionId) == rendererIdSinkNameMap_.end()) {
-        return false;
-    }
-    const std::string &sinkName = rendererIdSinkNameMap_[sessionId];
-    if (rendererManagerMap_.find(sinkName) == rendererManagerMap_.end()) {
-        return false;
-    }
-    return rendererManagerMap_[sinkName]->IsHdiSpeedSupported();
+    auto request = [this, sessionId]() {
+        if (rendererIdSinkNameMap_.find(sessionId) == rendererIdSinkNameMap_.end()) {
+            return false;
+        }
+        const std::string &sinkName = rendererIdSinkNameMap_[sessionId];
+        if (rendererManagerMap_.find(sinkName) == rendererManagerMap_.end()) {
+            return false;
+        }
+        return rendererManagerMap_[sinkName]->IsHdiSpeedSupported();
+    };
+    return SendRequestSync<bool>(std::move(request), __func__, false);
 }
 
 // record stream interface
