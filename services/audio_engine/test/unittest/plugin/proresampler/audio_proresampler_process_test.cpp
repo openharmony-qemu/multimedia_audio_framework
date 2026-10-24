@@ -1088,3 +1088,37 @@ HWTEST_F(AudioPcmConvertTest, ConvertInvalid_001, TestSize.Level0)
     EXPECT_EQ(ConvertFloatToPcm(AUDIO_PCM_S16_LE, nullptr, 1, &f), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
     EXPECT_EQ(ConvertFloatToPcm(static_cast<AudioPcmFormat>(20), &f, 1, &v), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
 }
+
+/**
+ * @tc.name: ConvertSaturate_001
+ * @tc.number: ConvertSaturate_001
+ */
+HWTEST_F(AudioPcmConvertTest, ConvertSaturate_001, TestSize.Level0)
+{
+    // values beyond +-1.0 clamp to +-(1.0 - eps) before quantization, covering both
+    // CapMax clamp directions on the S16/S32/S24 quantizers
+    constexpr int32_t SATURATE_SAMPLE_COUNT = 2; // one overdriven positive, one negative
+    constexpr int32_t S24_SAMPLE_BYTES = 3;
+    constexpr int32_t S24_MSB_INDEX = 2; // little-endian 24-bit: LSB first, MSB last
+    constexpr float OVERDRIVE_LEVEL = 2.0f;
+    constexpr int32_t S16_NEAR_FULL_SCALE = 32000;
+    constexpr int32_t S32_NEAR_FULL_SCALE = 2147418112; // 2^31 * (1 - 3e-6)
+    constexpr uint8_t S24_TOP_BYTE_CLAMPED = 0x7F;
+
+    float loud[SATURATE_SAMPLE_COUNT] = {OVERDRIVE_LEVEL, -OVERDRIVE_LEVEL};
+    int16_t s16[SATURATE_SAMPLE_COUNT] = {0};
+    ASSERT_EQ(ConvertFloatToPcm(AUDIO_PCM_S16_LE, loud, SATURATE_SAMPLE_COUNT, s16),
+        AUDIO_PCM_ALGO_SUCCESS);
+    EXPECT_GT(s16[0], S16_NEAR_FULL_SCALE);
+    EXPECT_LT(s16[1], -S16_NEAR_FULL_SCALE);
+
+    int32_t s32[SATURATE_SAMPLE_COUNT] = {0};
+    ASSERT_EQ(ConvertFloatToPcm(AUDIO_PCM_S32_LE, loud, SATURATE_SAMPLE_COUNT, s32),
+        AUDIO_PCM_ALGO_SUCCESS);
+    EXPECT_GT(s32[0], S32_NEAR_FULL_SCALE);
+    EXPECT_LT(s32[1], -S32_NEAR_FULL_SCALE);
+
+    uint8_t s24[S24_SAMPLE_BYTES] = {0};
+    ASSERT_EQ(ConvertFloatToPcm(AUDIO_PCM_S24_LE, loud, 1, s24), AUDIO_PCM_ALGO_SUCCESS);
+    EXPECT_EQ(s24[S24_MSB_INDEX], S24_TOP_BYTE_CLAMPED);
+}
