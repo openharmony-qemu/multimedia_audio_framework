@@ -363,7 +363,9 @@ extern "C" int32_t ConvertPcmToFloat(AudioPcmFormat format, const void *pcmData,
         case AUDIO_PCM_S24_LE: {
             const uint8_t *in = static_cast<const uint8_t *>(pcmData);
             for (int32_t i = 0; i < sampleCount; i++) {
-                int32_t s = static_cast<int32_t>(Read24Bit(in + i * PCM_OFFSET_BIT_24)) << PCM_BIT_8;
+                // shift in the unsigned domain: a signed left shift that overflows int32_t
+                // is undefined behavior; the cast keeps the same 32-bit pattern
+                int32_t s = static_cast<int32_t>(Read24Bit(in + i * PCM_OFFSET_BIT_24) << PCM_BIT_8);
                 outData[i] = s * (1.0f / (1U << (PCM_BIT_32 - 1)));
             }
             return AUDIO_PCM_ALGO_SUCCESS;
