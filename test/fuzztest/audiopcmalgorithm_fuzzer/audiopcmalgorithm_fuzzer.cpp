@@ -129,7 +129,7 @@ static void MixerProcessFuzz(AudioMixHandle handle, int32_t rate, int32_t channe
     vector<uint8_t> pcm(static_cast<size_t>(byteLen), 0);
     FillBuffer(pcm.data(), pcm.size());
     int32_t streamCount = static_cast<int32_t>(GetData<uint8_t>() % MAX_FUZZ_STREAM_COUNT) + 1;
-    vector<AudioMixStream> streams(static_cast<size_t>(streamCount));
+    vector<AudioPcmMixStream> streams(static_cast<size_t>(streamCount));
     for (int32_t i = 0; i < streamCount; ++i) {
         streams[i].data = pcm.data();
         streams[i].sampleCount = sampleCount;

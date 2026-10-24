@@ -67,7 +67,9 @@ extern "C" {
 // One input stream. sampleCount is frames per channel and must be the same for all
 // streams of one AudioMixerProcess call; volume is a linear gain in [0.0, 1.0]
 // applied to this stream before accumulation.
-struct AudioMixStream {
+// Prefixed AudioPcm* (not AudioMixStream): a bare AudioMixStream would be ambiguous
+// with OHOS::AudioStandard::AudioSuite::AudioMixStream in TUs that include both headers.
+struct AudioPcmMixStream {
     const void* data;
     int32_t sampleCount;
     float volume;
@@ -88,7 +90,7 @@ typedef void* AudioMixHandle;
 // 60ms; stream count in [1, 1024].
 AudioMixHandle AudioMixerCreate(int32_t sampleRate, int32_t channel, AudioPcmFormat format);
 
-struct AudioMixResult AudioMixerProcess(AudioMixHandle handle, const struct AudioMixStream* streams,
+struct AudioMixResult AudioMixerProcess(AudioMixHandle handle, const struct AudioPcmMixStream* streams,
     int32_t streamCount);
 
 // Destroy the mixer and release the internally allocated buffers.

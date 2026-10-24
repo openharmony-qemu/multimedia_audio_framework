@@ -1022,7 +1022,7 @@ AudioMixResult MakeMixResult(uint8_t *data, int32_t count, int32_t errCode)
 
 // Validates mixer params and per-stream fields (data, equal sampleCount, volume range);
 // outputs the first stream's sampleCount. Runs before the context lock is taken.
-int32_t ValidateMixInputs(AudioMixHandle handle, const AudioMixStream *streams, int32_t streamCount,
+int32_t ValidateMixInputs(AudioMixHandle handle, const AudioPcmMixStream *streams, int32_t streamCount,
     int32_t &firstCount)
 {
     if (handle == nullptr || streams == nullptr || streamCount <= 0 || streamCount > MIXER_MAX_STREAM_COUNT) {
@@ -1084,7 +1084,7 @@ int32_t EnsureMixBlock(MixerContext *ctx, int32_t firstCount, int32_t &totalSamp
 
 // Converts each stream to float and accumulates it into mixBuf with its per-stream volume.
 // Caller must hold ctx->mutex and zero mixBuf beforehand.
-int32_t AccumulateMixStreams(MixerContext *ctx, const AudioMixStream *streams, int32_t streamCount,
+int32_t AccumulateMixStreams(MixerContext *ctx, const AudioPcmMixStream *streams, int32_t streamCount,
     int32_t totalSamples)
 {
     for (int32_t i = 0; i < streamCount; ++i) {
@@ -1140,8 +1140,8 @@ extern "C" AudioMixHandle AudioMixerCreate(int32_t sampleRate, int32_t channel, 
     return static_cast<AudioMixHandle>(ctx);
 }
 
-extern "C" struct AudioMixResult AudioMixerProcess(AudioMixHandle handle, const struct AudioMixStream *streams,
-    int32_t streamCount)
+extern "C" struct AudioMixResult AudioMixerProcess(AudioMixHandle handle,
+    const struct AudioPcmMixStream *streams, int32_t streamCount)
 {
     int32_t firstCount = 0;
     int32_t ret = ValidateMixInputs(handle, streams, streamCount, firstCount);

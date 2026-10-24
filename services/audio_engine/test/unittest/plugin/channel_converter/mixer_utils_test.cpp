@@ -950,7 +950,7 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerProcess_001, TestSize.Level0)
 
     std::vector<int16_t> blockA = MakeS16Block(MIXER_TEST_FRAMES, 2, 0x2000); // 0.25
     std::vector<int16_t> blockB = MakeS16Block(MIXER_TEST_FRAMES, 2, -0x2000);
-    struct AudioMixStream streams[2] = {};
+    struct AudioPcmMixStream streams[2] = {};
     streams[0].data = blockA.data();
     streams[0].sampleCount = MIXER_TEST_FRAMES;
     streams[0].volume = 1.0f;
@@ -983,7 +983,7 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerVolume_001, TestSize.Level0)
     ASSERT_NE(handle, nullptr);
 
     std::vector<int16_t> block = MakeS16Block(MIXER_TEST_FRAMES, 2, 0x2000);
-    struct AudioMixStream stream = {};
+    struct AudioPcmMixStream stream = {};
     stream.data = block.data();
     stream.sampleCount = MIXER_TEST_FRAMES;
     stream.volume = 0.0f;
@@ -1013,7 +1013,7 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerVolume_002, TestSize.Level0)
     for (int32_t v = 0; v < 2; ++v) {
         AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_S16_LE);
         ASSERT_NE(handle, nullptr);
-        struct AudioMixStream stream = {};
+        struct AudioPcmMixStream stream = {};
         stream.data = block.data();
         stream.sampleCount = MIXER_TEST_FRAMES;
         stream.volume = volumes[v];
@@ -1042,7 +1042,7 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerMono_001, TestSize.Level0)
     ASSERT_NE(handle, nullptr);
 
     std::vector<int16_t> block = MakeS16Block(MIXER_TEST_FRAMES, 1, 0x2000);
-    struct AudioMixStream streams[2] = {};
+    struct AudioPcmMixStream streams[2] = {};
     streams[0].data = block.data();
     streams[0].sampleCount = MIXER_TEST_FRAMES;
     streams[0].volume = 1.0f;
@@ -1074,7 +1074,7 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerInvalid_001, TestSize.Level0)
     ASSERT_NE(handle, nullptr);
 
     std::vector<int16_t> block = MakeS16Block(MIXER_TEST_FRAMES, 2, 0x2000);
-    struct AudioMixStream streams[2] = {};
+    struct AudioPcmMixStream streams[2] = {};
     streams[0].data = block.data();
     streams[0].sampleCount = MIXER_TEST_FRAMES;
     streams[0].volume = 1.0f;
@@ -1113,7 +1113,7 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerNanVolume_001, TestSize.Level0)
     ASSERT_NE(handle, nullptr);
 
     std::vector<int16_t> block = MakeS16Block(MIXER_TEST_FRAMES, 2, 0x2000);
-    struct AudioMixStream stream = {};
+    struct AudioPcmMixStream stream = {};
     stream.data = block.data();
     stream.sampleCount = MIXER_TEST_FRAMES;
     stream.volume = std::numeric_limits<float>::quiet_NaN();
@@ -1138,7 +1138,7 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerS24_001, TestSize.Level0)
         block[i + 1] = 0x00;
         block[i + 2] = 0x20;
     }
-    struct AudioMixStream stream = {};
+    struct AudioPcmMixStream stream = {};
     stream.data = block.data();
     stream.sampleCount = MIXER_TEST_FRAMES;
     stream.volume = 1.0f;
@@ -1168,7 +1168,7 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerS32_001, TestSize.Level0)
     ASSERT_NE(handle, nullptr);
 
     std::vector<int32_t> block(static_cast<size_t>(MIXER_TEST_FRAMES) * 2, 0x20000000);
-    struct AudioMixStream stream = {};
+    struct AudioPcmMixStream stream = {};
     stream.data = block.data();
     stream.sampleCount = MIXER_TEST_FRAMES;
     stream.volume = 1.0f;
@@ -1194,7 +1194,7 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerF32_001, TestSize.Level0)
     ASSERT_NE(handle, nullptr);
 
     std::vector<float> block(static_cast<size_t>(MIXER_TEST_FRAMES) * 2, 0.25f);
-    struct AudioMixStream stream = {};
+    struct AudioPcmMixStream stream = {};
     stream.data = block.data();
     stream.sampleCount = MIXER_TEST_FRAMES;
     stream.volume = 1.0f;
@@ -1237,7 +1237,7 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerResampleMix_001, TestSize.Level0)
     std::vector<float> floatOut(static_cast<size_t>(mixFrames) * channels);
     std::vector<int16_t> resampled(static_cast<size_t>(mixFrames) * channels);
 
-    struct AudioMixStream streams[2] = {};
+    struct AudioPcmMixStream streams[2] = {};
     streams[0].data = resampled.data();
     streams[0].sampleCount = mixFrames;
     streams[0].volume = 1.0f;
