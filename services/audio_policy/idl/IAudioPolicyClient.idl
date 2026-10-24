@@ -106,6 +106,7 @@ interface IAudioPolicyClient {
         [in] boolean enabled);
     void OnPersonalizedSpatializationEnabledChangeForAnyDevice([in] sharedptr<AudioDeviceDescriptor> deviceDescriptor,
         [in] boolean enabled);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnSpatialAudioSourceTypeChange([in] int mode);
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnAudioSeparationEffectEnabledChange([in] boolean enabled);

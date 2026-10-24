@@ -21,13 +21,16 @@
 #include "audio_policy_service.h"
 #include "inner_event.h"
 #include "event_handler.h"
+#include "audio_policy_server_handler.h"
 #include "audio_policy_client_holder.h"
+#include "mock_audio_policy_client.h"
 
 #include <thread>
 #include <memory>
 #include <vector>
 
 using namespace testing::ext;
+using testing::_;
 using namespace OHOS::AppExecFwk;
 
 namespace OHOS {
@@ -2102,6 +2105,69 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HasVolumeKeyEventCallbacks_WithVolumeKe
     EXPECT_TRUE(result);
 
     handler->clientCallbacksMap_.clear();
+}
+
+/**
+ * @tc.name  : Test HandleSpatialAudioSourceTypeChange dispatches outside the lock
+ * @tc.type  : FUNC
+ * @tc.number: HandleSpatialAudioSourceTypeChange_001
+ * @tc.desc  : Callback must be invoked after handleMapMutex_ is released (lock-free dispatch).
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleSpatialAudioSourceTypeChange_001, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    sptr<MockAudioPolicyClient> client = new MockAudioPolicyClient();
+    auto holder = std::make_shared<AudioPolicyClientHolder>(client);
+    int32_t clientPid = 1000;
+    handler->audioPolicyClientProxyAPSCbsMap_[clientPid] = holder;
+    handler->clientCallbacksMap_[clientPid][CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE] = true;
+
+    bool lockFreeAtCallback = false;
+    EXPECT_CALL(*client, OnSpatialAudioSourceTypeChange(_))
+        .WillOnce(testing::Invoke([&handler, &lockFreeAtCallback](int32_t mode) {
+            lockFreeAtCallback = handler->handleMapMutex_.try_lock();
+            if (lockFreeAtCallback) {
+                handler->handleMapMutex_.unlock();
+            }
+            return ERR_OK;
+        }));
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    eventContextObj->mode = SPATIAL_AUDIO_SOURCE_TYPE_MULTI_CHANNEL;
+    auto event = InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::EFFECT_MODE_CHANGE_FOR_ANY_DEVICE, eventContextObj);
+    handler->HandleSpatialAudioSourceTypeChange(event);
+
+    EXPECT_TRUE(lockFreeAtCallback);
+    handler->clientCallbacksMap_.clear();
+    handler->audioPolicyClientProxyAPSCbsMap_.clear();
+}
+
+/**
+ * @tc.name  : Test HandleSpatialAudioSourceTypeChange skips clients without callback enabled
+ * @tc.type  : FUNC
+ * @tc.number: HandleSpatialAudioSourceTypeChange_002
+ * @tc.desc  : Callback must not be sent when CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE is disabled.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleSpatialAudioSourceTypeChange_002, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    sptr<MockAudioPolicyClient> client = new MockAudioPolicyClient();
+    auto holder = std::make_shared<AudioPolicyClientHolder>(client);
+    int32_t clientPid = 1001;
+    handler->audioPolicyClientProxyAPSCbsMap_[clientPid] = holder;
+    handler->clientCallbacksMap_[clientPid][CALLBACK_SET_VOLUME_KEY_EVENT] = true;
+
+    EXPECT_CALL(*client, OnSpatialAudioSourceTypeChange(_)).Times(0);
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    eventContextObj->mode = SPATIAL_AUDIO_SOURCE_TYPE_STEREO;
+    auto event = InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::EFFECT_MODE_CHANGE_FOR_ANY_DEVICE, eventContextObj);
+    handler->HandleSpatialAudioSourceTypeChange(event);
+
+    handler->clientCallbacksMap_.clear();
+    handler->audioPolicyClientProxyAPSCbsMap_.clear();
 }
 
 } // namespace AudioStandard
