@@ -121,6 +121,12 @@ public:
         return routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT;
     }
 
+    bool IsDirectOutputPipe() const
+    {
+        return pipeRole_ == PIPE_ROLE_OUTPUT &&
+            routeFlag_ == (AUDIO_OUTPUT_FLAG_HD | AUDIO_OUTPUT_FLAG_DIRECT);
+    }
+
     bool IsRenderPipeNeedMoveToNormal() const
     {
         return ((routeFlag_ & AUDIO_OUTPUT_FLAG_MULTICHANNEL) || (routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER));

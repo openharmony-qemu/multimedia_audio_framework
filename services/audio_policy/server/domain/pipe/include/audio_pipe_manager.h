@@ -103,6 +103,7 @@ public:
         const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedRecordPipe();
     std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string adapterName, const uint32_t routeFlag);
+    std::shared_ptr<AudioPipeInfo> FindDirectOutputPipe();
     std::shared_ptr<AudioPipeInfo> GetPipeinfoById(AudioIOHandle id);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     std::string GetModuleNameBySessionId(uint32_t sessionId);

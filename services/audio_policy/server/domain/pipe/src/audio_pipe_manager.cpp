@@ -551,7 +551,7 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT) ||
         (routeFlag & AUDIO_INPUT_FLAG_CAMCORDER) ||
         (routeFlag & AUDIO_INPUT_FLAG_VOICE_MESSAGE) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_HD)) {
+        (routeFlag & AUDIO_OUTPUT_FLAG_DIRECT)) {
         AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
         return true;
     }
@@ -579,6 +579,17 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeinfoByNameAndFlag(
         }
     }
     AUDIO_ERR_LOG("Can not find pipe %{public}s", adapterName.c_str());
+    return nullptr;
+}
+
+std::shared_ptr<AudioPipeInfo> AudioPipeManager::FindDirectOutputPipe()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (const auto &pipe : curPipeList_) {
+        if (pipe != nullptr && pipe->IsDirectOutputPipe()) {
+            return pipe;
+        }
+    }
     return nullptr;
 }
 
