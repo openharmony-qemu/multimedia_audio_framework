@@ -2125,6 +2125,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleSpatialAudioSourceTypeChange_001,
     bool lockFreeAtCallback = false;
     EXPECT_CALL(*client, OnSpatialAudioSourceTypeChange(_))
         .WillOnce(testing::Invoke([&handler, &lockFreeAtCallback](int32_t mode) {
+            EXPECT_EQ(mode, SPATIAL_AUDIO_SOURCE_TYPE_MULTI_CHANNEL);
             lockFreeAtCallback = handler->handleMapMutex_.try_lock();
             if (lockFreeAtCallback) {
                 handler->handleMapMutex_.unlock();
