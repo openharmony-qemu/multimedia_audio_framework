@@ -241,7 +241,7 @@ interface IAudioPolicy {
     void GetStreamInFocusByUid([in]  int uid, [in] int zoneId, [out] int retStreamType); /* zoneID default value: 0 -- local device */
     void SetPreferredDevice([in] int preferredType, [in] sharedptr<AudioDeviceDescriptor> desc, [in] int uid);
     void SetDeviceVolumeBehavior([in] String networkId, [in] int deviceType, [in] VolumeBehavior volumeBehavior);
-    void SetVirtualCall([in] boolean isVirtual);
+    void SetVirtualCall([in] boolean isVirtual, [in] int uid);
     void SetDeviceConnectionStatus([in] sharedptr<AudioDeviceDescriptor> desc, [in] boolean isConnected);
     void ExcludeOutputDevices([in] int audioDevUsage, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     void UnexcludeOutputDevices([in] int audioDevUsage, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
@@ -326,7 +326,7 @@ interface IAudioPolicy {
     void SetActiveHfpDevice([in] String macAddress);
     void RestoreDistributedDeviceInfo();
     void SetSleVoiceStatusFlag([in] boolean isSleVoiceStatus);
-    void GetVirtualCall([out] boolean isVirtualCall);
+    void GetVirtualCall([in] int uid, [out] boolean isVirtualCall);
     void AddUidUsagesToAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
     void RemoveUidUsagesFromAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
     void EnableMuteSuggestionWhenMixWithOthers([in] boolean enable);

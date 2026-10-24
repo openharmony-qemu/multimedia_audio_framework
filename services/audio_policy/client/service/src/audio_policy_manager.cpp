@@ -3454,23 +3454,19 @@ int32_t AudioPolicyManager::SetVoiceRingtoneMute(bool isMute)
     return gsp->SetVoiceRingtoneMute(isMute);
 }
 
-int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual)
+int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual, int32_t uid)
 {
-    bool ret = PermissionUtil::VerifySelfPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, -1);
-    return gsp->SetVirtualCall(isVirtual);
+    return gsp->SetVirtualCall(isVirtual, uid);
 }
 
-bool AudioPolicyManager::GetVirtualCall()
+bool AudioPolicyManager::GetVirtualCall(int32_t uid)
 {
     bool isVirtualCall = true;
-    bool ret = PermissionUtil::VerifySelfPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, isVirtualCall, "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, isVirtualCall);
-    gsp->GetVirtualCall(isVirtualCall);
+    gsp->GetVirtualCall(uid, isVirtualCall);
     return isVirtualCall;
 }
 
