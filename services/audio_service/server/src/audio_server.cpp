@@ -3652,14 +3652,14 @@ int32_t AudioServer::UnloadHdiAdapter(uint32_t devMgrType, const std::string &ad
 }
 
 int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std::string &idInfo,
-    const IAudioSinkAttr &attr, uint32_t &renderId)
+    const IAudioSinkAttr &attr, bool isResident, uint32_t &renderId)
 {
     renderId = HDI_INVALID_ID;
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), SUCCESS,
         "refused for %{public}d", callingUid);
 
-    renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, true, true,
+    renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, isResident, true,
         attr.routeFlag);
     CHECK_AND_RETURN_RET(renderId != HDI_INVALID_ID, SUCCESS);
     CHECK_AND_RETURN_RET(deviceClass != "Virtual_Injector", SUCCESS);
@@ -3783,7 +3783,7 @@ int32_t AudioServer::CreateSourcePort(uint32_t idBase, uint32_t idType, const st
 }
 
 int32_t AudioServer::CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
-    const IAudioSourceAttr &attr, uint32_t &captureId)
+    const IAudioSourceAttr &attr, bool isResident, uint32_t &captureId)
 {
     captureId = HDI_INVALID_ID;
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -3791,7 +3791,7 @@ int32_t AudioServer::CreateHdiSourcePort(const std::string &deviceClass, const s
         "refused for %{public}d", callingUid);
 
     captureId = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(deviceClass,
-        static_cast<SourceType>(attr.sourceType), idInfo, true, attr.routeFlag);
+        static_cast<SourceType>(attr.sourceType), idInfo, isResident, attr.routeFlag);
     CHECK_AND_RETURN_RET(captureId != HDI_INVALID_ID, SUCCESS);
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(captureId, true);
     if (source == nullptr) {

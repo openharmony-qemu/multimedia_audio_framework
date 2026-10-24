@@ -27,6 +27,9 @@ const std::string TAIHE_ERR_UNSUPPORTED_INFO = "unsupported option";
 const std::string TAIHE_ERR_TIMEOUT_INFO = "time out";
 const std::string TAIHE_ERR_STREAM_LIMIT_INFO = "stream number limited";
 const std::string TAIHE_ERR_SYSTEM_INFO = "system error";
+const std::string TAIHE_ERR_SERVICE_DIED_INFO = "system service process terminated";
+const std::string TAIHE_ERR_NETWORK_CONDITION_NOT_MET_INFO = "required network conditions not met";
+const std::string TAIHE_ERR_STORAGE_NOT_ENOUGH_INFO = "insufficient storage space";
 const std::string TAIHE_ERR_NO_PERMISSION_INFO = "permission denied";
 
 void TaiheAudioError::ThrowError(int32_t code)
@@ -56,6 +59,21 @@ void TaiheAudioError::ThrowErrorAndReturn(int32_t errCode, const std::string &er
 {
     AUDIO_ERR_LOG("errCode: %{public}d, errMsg: %{public}s", errCode, errMessage.c_str());
     ThrowError(errCode, errMessage);
+}
+
+static std::string GetExtendedErrorMessage(int32_t &code)
+{
+    switch (code) {
+        case TAIHE_ERR_SERVICE_DIED:
+            return TAIHE_ERR_SERVICE_DIED_INFO;
+        case TAIHE_ERR_NETWORK_CONDITION_NOT_MET:
+            return TAIHE_ERR_NETWORK_CONDITION_NOT_MET_INFO;
+        case TAIHE_ERR_STORAGE_NOT_ENOUGH:
+            return TAIHE_ERR_STORAGE_NOT_ENOUGH_INFO;
+        default:
+            code = TAIHE_ERR_SYSTEM;
+            return TAIHE_ERR_SYSTEM_INFO;
+    }
 }
 
 std::string TaiheAudioError::GetMessageByCode(int32_t &code)
@@ -101,8 +119,7 @@ std::string TaiheAudioError::GetMessageByCode(int32_t &code)
             code = TAIHE_ERR_NO_PERMISSION;
             break;
         default:
-            errMessage = TAIHE_ERR_SYSTEM_INFO;
-            code = TAIHE_ERR_SYSTEM;
+            errMessage = GetExtendedErrorMessage(code);
             break;
     }
     return errMessage;

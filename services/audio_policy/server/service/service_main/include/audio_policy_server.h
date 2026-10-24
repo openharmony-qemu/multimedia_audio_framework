@@ -693,6 +693,8 @@ public:
 
     int32_t SetSplitModeReady() override;
 
+    int32_t SetSupportReload(bool isSupportReload, const std::string &networkId) override;
+
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
     int32_t IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t sessionId, int32_t streamUsageIn, bool &isAllowed,
@@ -708,9 +710,9 @@ public:
 
     int32_t NotifyProcessBackgroundState(int32_t uid, int32_t pid) override;
 
-    int32_t SetVirtualCall(bool isVirtual) override;
+    int32_t SetVirtualCall(bool isVirtual, int32_t uid) override;
 
-    int32_t GetVirtualCall(bool &isVirtual) override;
+    int32_t GetVirtualCall(int32_t uid, bool &isVirtual) override;
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, bool isConnected) override;
 
@@ -828,6 +830,7 @@ public:
     void AudioPipeManagerDump(std::string &dumpString);
     void SelectDeviceDump(std::string &dumpString);
     void AudioPolicyBootDump(std::string &dumpString);
+    void IdHandlerInfoDump(std::string &dumpString);
     void RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime);
     void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
     int32_t RecordBootAnimationClientStateTime(const BootAnimationInfo &info) override;
@@ -988,6 +991,7 @@ private:
     void InfoDumpHelp(std::string &dumpString);
 
     bool IsDeviceSupportLoopback(std::shared_ptr<AudioDeviceDescriptor> device);
+    int32_t SanitizeAndSetClientInfo(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
 
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
     void AddSystemAbilityListeners();

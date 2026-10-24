@@ -302,7 +302,7 @@ if (audio_framework_feature_audiosuite_support) {
       "../../:audio_suite_static",
       "../../../audio_engine:audio_engine_utils",
       "../../../audio_service:audio_common",
-      "../../../audio_engine:audio_engine_plugins",
+      "../../../audio_engine:audio_common_algorithm",
     ]
 
     external_deps = [

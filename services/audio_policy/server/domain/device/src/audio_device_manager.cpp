@@ -405,6 +405,20 @@ bool AudioDeviceManager::IsConnectedDevices(const std::shared_ptr<AudioDeviceDes
     return isConnectedDevice;
 }
 
+bool AudioDeviceManager::IsScoConnected(const std::string &macAddress)
+{
+    auto pred = [&macAddress](const shared_ptr<AudioDeviceDescriptor> &item) {
+        return item &&
+            item->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+            item->deviceRole_ == OUTPUT_DEVICE &&
+            item->isEnable_ &&
+            item->connectState_ == CONNECTED &&
+            item->macAddress_ == macAddress;
+    };
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    return find_if(connectedDevices_.begin(), connectedDevices_.end(), pred) != connectedDevices_.end();
+}
+
 bool AudioDeviceManager::HasConnectedA2dp()
 {
     auto isPresent = [](const shared_ptr<AudioDeviceDescriptor> &desc) {
@@ -943,6 +957,18 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::FindConnectedDeviceById(co
     auto it = std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [deviceId](auto &item) {
         return item->deviceId_ == deviceId;
     });
+    return it == connectedDevices_.cend() ? nullptr : *it;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetRemoteDeviceByNetworkId(const std::string &networkId,
+    DeviceType deviceType, DeviceRole deviceRole)
+{
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    auto it = std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(),
+        [&networkId, &deviceType, &deviceRole](auto &desc) {
+            return desc != nullptr && desc->networkId_ == networkId && desc->deviceType_ == deviceType &&
+                desc->deviceRole_ == deviceRole;
+        });
     return it == connectedDevices_.cend() ? nullptr : *it;
 }
 

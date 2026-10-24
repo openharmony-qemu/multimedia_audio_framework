@@ -1027,6 +1027,33 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_VolumeMapKey_001, Test
     EXPECT_TRUE(mapKey.find("100000") == std::string::npos);
     EXPECT_TRUE(mapKey.find("zone__") != std::string::npos || mapKey.find("deviceGroup_") != std::string::npos);
 }
+
+/**
+ * @tc.name  : GetDeviceGroupTypeByDeviceType_BuiltIn
+ * @tc.number: GetDeviceGroupTypeByDeviceType_001
+ * @tc.desc  : Test GetDeviceGroupTypeByDeviceType returns BUILT_IN for DEVICE_TYPE_SPEAKER.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetDeviceGroupTypeByDeviceType_BuiltIn, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    EXPECT_EQ(DeviceGroupType::BUILT_IN, vd->GetDeviceGroupTypeByDeviceType(DEVICE_TYPE_SPEAKER));
+}
+
+/**
+ * @tc.name  : GetDeviceGroupTypeByDeviceType_InvalidDevice
+ * @tc.number: GetDeviceGroupTypeByDeviceType_100
+ * @tc.desc  : Test GetDeviceGroupTypeByDeviceType returns INVALID for devices absent from the group map.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetDeviceGroupTypeByDeviceType_InvalidDevice, TestSize.Level2)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    EXPECT_EQ(DeviceGroupType::INVALID, vd->GetDeviceGroupTypeByDeviceType(DEVICE_TYPE_NONE));
+    EXPECT_EQ(DeviceGroupType::INVALID, vd->GetDeviceGroupTypeByDeviceType(DEVICE_TYPE_MIC));
+    EXPECT_EQ(DeviceGroupType::INVALID, vd->GetDeviceGroupTypeByDeviceType(DEVICE_TYPE_INVALID));
+}
+
 /* ==================== SetAppVolumeMuteAndHideVolumeBar tests ==================== */
 
 /**

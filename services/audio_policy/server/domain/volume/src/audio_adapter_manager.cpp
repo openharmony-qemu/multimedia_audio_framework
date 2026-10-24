@@ -59,6 +59,16 @@ static const std::vector<DeviceType> VOLUME_GROUP_TYPE_LIST = {
     DEVICE_TYPE_WIRED_HEADSET
 };
 
+static const std::vector<DeviceType> PC_VOLUME_GROUP_TYPE_LIST = {
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_USB_ARM_HEADSET
+};
+
 static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
     // all keys for system sound uri
     "ringtone_for_sim_card_0",
@@ -984,7 +994,8 @@ int32_t AudioAdapterManager::SetSystemVolumeToEffect(std::shared_ptr<AudioDevice
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is null");
     // audio volume
     int32_t volumeLevelTemp = GetSystemVolumeForEffect(device->deviceType_, streamType);
-    float volumeDbTemp = CalculateVolumeDbNonlinear(streamType, device->deviceType_, volumeLevelTemp);
+    float volumeDbTemp = CalculateVolumeDbNonlinear(streamType, device->deviceType_, volumeLevelTemp,
+        device->isSupportWearDetectionEnable_);
     AUDIO_INFO_LOG("SetSystemVolumeToEffect streamType: %{public}d, volumeDb: %{public}f, device:%{public}s",
         streamType, volumeDbTemp, device->GetName().c_str());
 
@@ -1701,7 +1712,7 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
                 Match3daBusToken(pipeInfo->moduleInfo_.busAddress)) {
                 ConvergeTo3daSink(pipeInfo->moduleInfo_, deviceClass, idInfo);
             }
-            result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, ioHandle);
+            result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, true, ioHandle);
         }
     } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
         std::string idInfo = GetHdiSourceIdInfo(pipeInfo->moduleInfo_);
@@ -1720,7 +1731,7 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
         attr.routeFlag = pipeInfo->routeFlag_;
         pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
         attr.sourceName = pipeInfo->moduleInfo_.name;
-        result = audioServerProxy_->CreateHdiSourcePort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
+        result = audioServerProxy_->CreateHdiSourcePort(pipeInfo->moduleInfo_.className, idInfo, attr, true, ioHandle);
     }
     IPCSkeleton::SetCallingIdentity(identity);
     return result;
@@ -1953,6 +1964,9 @@ AudioIOHandle AudioAdapterManager::ReloadA2dpAudioPort(const AudioModuleInfo &au
     CHECK_AND_RETURN_RET_LOG(audioServerProxy_ != nullptr, ioHandle, "audioServerProxy_ null");
     curActiveCount_++;
 
+    int32_t ret = audioServiceAdapter_->ReloadAudioPort(audioModuleInfo.lib, audioModuleInfo);
+    paIndex = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
+
     int32_t result = SUCCESS;
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     if (audioModuleInfo.lib == "libmodule-inner-capturer-sink.z.so") {
@@ -1963,17 +1977,15 @@ AudioIOHandle AudioAdapterManager::ReloadA2dpAudioPort(const AudioModuleInfo &au
         if (audioModuleInfo.role == HDI_AUDIO_PORT_SINK_ROLE) {
             std::string idInfo = GetHdiSinkIdInfo(audioModuleInfo);
             IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
-            result = audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr, ioHandle);
+            result = audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr, false, ioHandle);
         } else if (audioModuleInfo.role == HDI_AUDIO_PORT_SOURCE_ROLE) {
             std::string idInfo = GetHdiSourceIdInfo(audioModuleInfo);
             IAudioSourceAttr attr = GetAudioSourceAttr(audioModuleInfo);
-            result = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr, ioHandle);
+            result = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr, false, ioHandle);
         }
     }
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ioHandle, "Call audioServer open port failed:%{public}d", result);
-    int32_t ret = audioServiceAdapter_->ReloadAudioPort(audioModuleInfo.lib, audioModuleInfo);
-    paIndex = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
 
     HILOG_COMM_INFO("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end", ioHandle, paIndex);
     return ioHandle;
@@ -2003,11 +2015,11 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
                 ConvergeTo3daSink(audioModuleInfo, deviceClass, idInfo);
             }
             IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
-            result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, ioHandle);
+            result = audioServerProxy_->CreateHdiSinkPort(deviceClass, idInfo, attr, true, ioHandle);
         } else if (audioModuleInfo.role == HDI_AUDIO_PORT_SOURCE_ROLE) {
             std::string idInfo = GetHdiSourceIdInfo(audioModuleInfo);
             IAudioSourceAttr attr = GetAudioSourceAttr(audioModuleInfo);
-            result = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr, ioHandle);
+            result = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr, true, ioHandle);
         }
     }
     IPCSkeleton::SetCallingIdentity(identity);
@@ -2626,7 +2638,7 @@ AudioStreamType AudioAdapterManager::GetStreamIDByType(std::string streamType)
     return stream;
 }
 
-DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
+DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType, AudioStreamType streamType)
 {
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
@@ -2638,13 +2650,19 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_ACCESSORY:
         case DEVICE_TYPE_LINE_DIGITAL:
             return SPEAKER_VOLUME_TYPE;
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_NEARLINK:
+            if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING) {
+                // If you want to use the BLUETOOTH_NEARLINK volume curve for other stream types,
+                // just need to remove this condition check.
+                return BLUETOOTH_NEARLINK_VOLUME_TYPE;
+            }
+            return HEADSET_VOLUME_TYPE;
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_NEARLINK:
             return HEADSET_VOLUME_TYPE;
         default:
             return SPEAKER_VOLUME_TYPE;
@@ -2828,7 +2846,9 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
     }
     bool resetFirstFlag = false;
     AUDIO_INFO_LOG("InitVolumeMap: Write defalut stream volumes to database");
-    for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
+    const std::vector<DeviceType> &volumeGroupTypeList = VolumeUtils::IsPCVolumeEnable() ?
+        PC_VOLUME_GROUP_TYPE_LIST : VOLUME_GROUP_TYPE_LIST;
+    for (auto &deviceType : volumeGroupTypeList) {
         auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
         for (auto &streamType : defaultVolumeTypeList_) {
             CHECK_AND_CONTINUE(volumeDataMaintainer_.CheckVolumeState(desc, streamType) != SUCCESS);
@@ -2880,7 +2900,9 @@ void AudioAdapterManager::CloneVolumeMap(void)
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "clone volumemap failed, audioPolicyKvStore_nullptr");
     // read volume from private Kvstore
     AUDIO_INFO_LOG("Copy Volume from private database to shareDatabase");
-    for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
+    const std::vector<DeviceType> &volumeGroupTypeList = VolumeUtils::IsPCVolumeEnable() ?
+        PC_VOLUME_GROUP_TYPE_LIST : VOLUME_GROUP_TYPE_LIST;
+    for (auto &deviceType : volumeGroupTypeList) {
         auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
         for (auto &streamType : defaultVolumeTypeList_) {
             std::string volumeKey = GetVolumeKeyForKvStore(deviceType, streamType);
@@ -2932,7 +2954,9 @@ void AudioAdapterManager::TransferMuteStatus(void)
 void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
 {
     if (isFirstBoot) {
-        for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
+        const std::vector<DeviceType> &volumeGroupTypeList = VolumeUtils::IsPCVolumeEnable() ?
+            PC_VOLUME_GROUP_TYPE_LIST : VOLUME_GROUP_TYPE_LIST;
+        for (auto &deviceType : volumeGroupTypeList) {
             for (auto &streamType : defaultVolumeTypeList_) {
                 CheckAndDealMuteStatus(deviceType, streamType);
             }
@@ -2979,7 +3003,9 @@ void AudioAdapterManager::CloneMuteStatusMap(void)
     // read mute status from private Kvstore
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "clone mute status failed, audioPolicyKvStore_ nullptr");
     AUDIO_INFO_LOG("Copy mute from private database to shareDatabase");
-    for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
+    const std::vector<DeviceType> &volumeGroupTypeList = VolumeUtils::IsPCVolumeEnable() ?
+        PC_VOLUME_GROUP_TYPE_LIST : VOLUME_GROUP_TYPE_LIST;
+    for (auto &deviceType : volumeGroupTypeList) {
         for (auto &streamType : defaultVolumeTypeList_) {
             std::string muteKey = GetMuteKeyForKvStore(deviceType, streamType);
             Key key = muteKey;
@@ -3459,12 +3485,12 @@ uint32_t AudioAdapterManager::GetPositionInVolumePoints(std::vector<VolumePoint>
 }
 
 float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType,
-    DeviceType deviceType, int32_t volumeLevel)
+    DeviceType deviceType, int32_t volumeLevel, bool isSupportWearDetection)
 {
     AUDIO_DEBUG_LOG("CalculateVolumeDbNonlinear for stream: %{public}d devicetype:%{public}d volumeLevel:%{public}d",
         streamType, deviceType, volumeLevel);
     AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(streamType, isSupportWearDetection)) {
         deviceType = DEVICE_TYPE_SPEAKER;
     }
     int32_t minVolIndex = GetMinVolumeLevel(streamAlias, deviceType);
@@ -3475,7 +3501,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     volumeLevel = volumeLevel < minVolIndex ? minVolIndex : volumeLevel;
     volumeLevel = volumeLevel > maxVolIndex ? maxVolIndex : volumeLevel;
 
-    DeviceVolumeType deviceCategory = GetDeviceCategory(deviceType);
+    DeviceVolumeType deviceCategory = GetDeviceCategory(deviceType, streamType);
     std::vector<VolumePoint> volumePoints;
     GetVolumePoints(streamAlias, deviceCategory, volumePoints);
     uint32_t pointSize = volumePoints.size();
@@ -3517,11 +3543,11 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
 }
 
 float AudioAdapterManager::CalculateVolumeDbByDegree(DeviceType deviceType,
-    AudioStreamType streamType, int32_t volumeDegree)
+    AudioStreamType streamType, int32_t volumeDegree, bool isSupportWearDetection)
 {
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
-        volumeDb = CalculateVolumeDbNonlinearExt(streamType, deviceType, volumeDegree);
+        volumeDb = CalculateVolumeDbNonlinearExt(streamType, deviceType, volumeDegree, isSupportWearDetection);
     } else {
         volumeDb = CalculateVolumeDbExt(volumeDegree);
     }
@@ -3530,7 +3556,7 @@ float AudioAdapterManager::CalculateVolumeDbByDegree(DeviceType deviceType,
 }
 
 float AudioAdapterManager::CalculateVolumeDbNonlinearExt(AudioStreamType streamType,
-    DeviceType deviceType, int32_t volumeDegree)
+    DeviceType deviceType, int32_t volumeDegree, bool isSupportWearDetection)
 {
     float dbValue = 0.0f;
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
@@ -3546,9 +3572,9 @@ float AudioAdapterManager::CalculateVolumeDbNonlinearExt(AudioStreamType streamT
     int32_t preVolumeLevel = std::max(volumeLevel - 1, volumeLevelMin);
     int32_t nextVolumeLevel = std::min(volumeLevel + 1, volumeLevelMax);
 
-    float curDbFactor = CalculateVolumeDbNonlinear(streamType, deviceType, volumeLevel);
-    float preDbFactor = CalculateVolumeDbNonlinear(streamType, deviceType, preVolumeLevel);
-    float nextDbFactor = CalculateVolumeDbNonlinear(streamType, deviceType, nextVolumeLevel);
+    float curDbFactor = CalculateVolumeDbNonlinear(streamType, deviceType, volumeLevel, isSupportWearDetection);
+    float preDbFactor = CalculateVolumeDbNonlinear(streamType, deviceType, preVolumeLevel, isSupportWearDetection);
+    float nextDbFactor = CalculateVolumeDbNonlinear(streamType, deviceType, nextVolumeLevel, isSupportWearDetection);
 
     int32_t curDegreeBase = VolumeUtils::VolumeLevelToDegree(volumeLevel, volumeLevelMax);
     int32_t preDegreeCeiling = VolumeUtils::GetVolumeLevelMaxDegree(preVolumeLevel, volumeLevelMax);
@@ -3639,8 +3665,10 @@ void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolu
     }
     auto deviceVolInfo = streamVolInfo->second->deviceVolumeInfos.find(deviceType);
     if (deviceVolInfo == streamVolInfo->second->deviceVolumeInfos.end()) {
-        AUDIO_ERR_LOG("Cannot find device type %{public}d", deviceType);
-        return;
+        AUDIO_WARNING_LOG("Cannot find device type %{public}d. Use the volume config of speaker.", deviceType);
+        deviceVolInfo = streamVolInfo->second->deviceVolumeInfos.find(SPEAKER_VOLUME_TYPE);
+        CHECK_AND_RETURN_LOG(deviceVolInfo != streamVolInfo->second->deviceVolumeInfos.end(),
+            "Cannot find the alternative configuration!");
     }
     volumePoints = deviceVolInfo->second->volumePoints;
 }
@@ -4519,11 +4547,16 @@ int32_t AudioAdapterManager::RestoreSystemAppVolumeLevel()
         std::string bundleName;
         int32_t appIndex = 0;
         AudioBundleManager::ExtractBundleNameAndIndex(bundleNameWithIndex, bundleName, appIndex);
-        bool isInstall = true;
-        AudioBundleManager::IsBundleInstalled(bundleName, userId, appIndex, isInstall);
-        if (!isInstall) continue;
-        int32_t uid = AudioBundleManager::GetUidByBundleName(bundleName, userId, appIndex);
-        CHECK_AND_CONTINUE_LOG(uid >= SUCCESS, "GetUidByBundleName failed");
+        int32_t uid = -1;
+        if (appIndex == 0) {
+            AppExecFwk::BundleInfo bundleInfo;
+            int32_t infoRet = AudioBundleManager::GetBundleInfoV9(bundleName, userId, bundleInfo);
+            if (infoRet != SUCCESS) continue;
+            uid = bundleInfo.uid;
+        } else {
+            uid = AudioBundleManager::GetUidByBundleName(bundleName, userId, appIndex);
+        }
+        CHECK_AND_CONTINUE_LOG(uid >= SUCCESS, "invalid uid");
         auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(uid);
         CHECK_AND_CONTINUE_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
         SetSystemAppVolumeLevel(uid, level, deviceDesc->deviceType_);
@@ -4683,12 +4716,13 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
     int32_t volumeLevel = GetStreamVolumeInternal(device, volumeType, zoneId) * (isMuted ? 0 : 1);
     SaveSystemVolumeForSwitchDevice(device, volumeType, volumeLevel);
 
-    bool useSpeaker = Util::IsDualToneStreamType(volumeType);
+    bool useSpeaker = Util::IsDualToneStreamType(volumeType, device->isSupportWearDetectionEnable_);
     DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : device->deviceType_;
     int32_t volumeDegree = GetStreamVolumeDegreeInternal(device, volumeType, zoneId) * (isMuted ? 0 : 1);
 
-    float volumeDb = volumeAdjustZoneId_ == 0 ? CalculateVolumeDbByDegree(deviceType, volumeType, volumeDegree) :
-        CalculateVolumeDbNonlinear(volumeType, deviceType, volumeLevel);
+    float volumeDb = (volumeAdjustZoneId_ == 0) ?
+        CalculateVolumeDbByDegree(deviceType, volumeType, volumeDegree, device->isSupportWearDetectionEnable_) :
+        CalculateVolumeDbNonlinear(volumeType, deviceType, volumeLevel, device->isSupportWearDetectionEnable_);
 
     AjustVolumeForSpecialType(volumeType, volumeDb);
     DepressVolume(volumeDb, volumeLevel, volumeType, device);

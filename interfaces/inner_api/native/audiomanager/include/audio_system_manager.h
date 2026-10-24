@@ -1456,9 +1456,9 @@ public:
         uint32_t clientUid, const int32_t zoneID);
     int32_t UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t sessionId);
 
-    int32_t SetVirtualCall(const bool isVirtual);
+    int32_t SetVirtualCall(const bool isVirtual, int32_t uid = 0);
 
-    bool GetVirtualCall();
+    bool GetVirtualCall(int32_t uid = 0);
 
     int32_t OnVoiceWakeupState(bool state);
 

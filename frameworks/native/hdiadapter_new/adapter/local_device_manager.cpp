@@ -412,8 +412,8 @@ static void AudioHostOnRemoteDied(struct HdfDeathRecipient *recipent, struct Hdf
 void LocalDeviceManager::InitAudioManager(void)
 {
     CHECK_AND_RETURN_LOG(audioManager_ == nullptr, "audio manager already inited");
-    AUDIO_INFO_LOG("init audio manager 6.1.");
-    audioManager_ = IAudioManagerGetV6_1(false);
+    AUDIO_INFO_LOG("init audio manager 6.2.");
+    audioManager_ = IAudioManagerGetV6_2(false);
     if (audioManager_ == NULL) {
         AUDIO_INFO_LOG("init audio manager.");
         audioManager_ = IAudioManagerGet(false);

@@ -59,6 +59,7 @@ ohos_unittest("audio_session_new_unit_test") {
     "data_share:datashare_common",
     "data_share:datashare_consumer",
     "drivers_interface_audio:libaudio_proxy_6.1",
+    "drivers_interface_audio:libaudio_proxy_6.2",
     "googletest:gmock",
     "hilog:libhilog",
     "init:libbegetutil",

@@ -1852,6 +1852,16 @@ void AudioPipeManager::ProcessPipeForVolumeInfo(std::vector<PipeDeviceVolumeGrou
         AUDIO_INFO_LOG("pipeName:%{public}s, ioHandle:%{public}u, sessionId:%{public}u, device:%{public}s",
             pipeInfo->name_.c_str(), pipeInfo->id_, streamDesc->sessionId_, firstDevice->GetName().c_str());
 
+        if (volumeType == STREAM_RING) {
+            // Determine whether the ringtone is played only through the headphones
+            auto deviceType = firstDevice->getType();
+            if ((deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceType == DEVICE_TYPE_NEARLINK) &&
+                firstDevice->isSupportWearDetectionEnable_) {
+                // The ringtone will be played only through the headphones. No need to set pipe volume for speaker.
+                break;
+            }
+        }
+
         for (size_t i = 1; i < streamDesc->newDeviceDescs_.size(); i++) {
             auto device = streamDesc->newDeviceDescs_[i];
             CHECK_AND_CONTINUE(device != nullptr);

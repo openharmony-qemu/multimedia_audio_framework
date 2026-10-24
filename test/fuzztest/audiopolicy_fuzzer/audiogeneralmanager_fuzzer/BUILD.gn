@@ -56,6 +56,7 @@ ohos_fuzztest("AudioGeneralManagerFuzzTest") {
     "data_share:datashare_consumer",
     "drivers_interface_audio:libaudio_proxy_6.0",
     "drivers_interface_audio:libaudio_proxy_6.1",
+    "drivers_interface_audio:libaudio_proxy_6.2",
     "googletest:gmock",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",

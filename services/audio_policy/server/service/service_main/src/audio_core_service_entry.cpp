@@ -246,6 +246,13 @@ int32_t AudioCoreService::EventEntry::SetSplitModeReady()
     return coreService_->SetSplitModeReady();
 }
 
+int32_t AudioCoreService::EventEntry::SetSupportReload(bool isSupportReload, const std::string &networkId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_UNKNOWN, "coreService_ is nullptr");
+    return coreService_->SetSupportReload(isSupportReload, networkId);
+}
+
 int32_t AudioCoreService::EventEntry::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
@@ -979,6 +986,13 @@ int32_t AudioCoreService::EventEntry::GetActiveStreamRendererInfosForDevice(
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
     return coreService_->GetActiveStreamRendererInfosForDevice(deviceDesc, rendererInfos);
+}
+
+void AudioCoreService::EventEntry::MutePrimarySinkByCollaborative(int32_t duration)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->MutePrimarySinkByCollaborative(duration);
 }
 }
 }

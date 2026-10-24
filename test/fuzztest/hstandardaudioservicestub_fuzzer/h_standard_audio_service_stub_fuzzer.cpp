@@ -573,7 +573,7 @@ void CreateHdiSinkPort(FuzzedDataProvider &provider)
     std::string idInfo = provider.ConsumeRandomLengthString();
     uint32_t renderId = provider.ConsumeIntegral<uint32_t>();
     IAudioSinkAttr attr;
-    audioServer->CreateHdiSinkPort(deviceClass, idInfo, attr, renderId);
+    audioServer->CreateHdiSinkPort(deviceClass, idInfo, attr, true, renderId);
 }
 
 void CreateSinkPort(FuzzedDataProvider &provider)
@@ -595,7 +595,7 @@ void CreateHdiSourcePort(FuzzedDataProvider &provider)
     std::string idInfo = provider.ConsumeRandomLengthString();
     uint32_t captureId = provider.ConsumeIntegral<uint32_t>();
     IAudioSourceAttr attr;
-    audioServer->CreateHdiSourcePort(deviceClass, idInfo, attr, captureId);
+    audioServer->CreateHdiSourcePort(deviceClass, idInfo, attr, true, captureId);
 }
 
 void CreateSourcePort(FuzzedDataProvider &provider)

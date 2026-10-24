@@ -144,7 +144,7 @@ public:
     static int32_t UpdateAudioScene(AudioStandard::AudioScene scene, bool isRecognitionScene, bool isScoSelected);
     static bool IsRecognitionStatus();
     static int32_t SetVirtualCall(pid_t uid, const bool isVirtual);
-    static bool IsVirtualCall();
+    static bool IsVirtualCall(pid_t uid);
     static bool IsAudioScoStateConnect();
     static std::string GetAudioScoDeviceMac();
     static ScoCategory GetScoCategory();

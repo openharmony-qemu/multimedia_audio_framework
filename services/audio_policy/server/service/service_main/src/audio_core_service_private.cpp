@@ -893,6 +893,29 @@ int32_t AudioCoreService::SetSplitModeReady()
     return SUCCESS;
 }
 
+int32_t AudioCoreService::SetSupportReload(bool isSupportReload, const std::string &networkId)
+{
+    CHECK_AND_RETURN_RET_LOG(!networkId.empty(), ERR_INVALID_PARAM, "cannot find device without valid networkId");
+
+    AUDIO_INFO_LOG("SetSupportReload: %{public}d, networkId [%{public}s]", isSupportReload,
+        GetEncryptStr(networkId).c_str());
+    {
+        std::lock_guard<std::mutex> lock(isSupportReloadMutex_);
+        isSupportReloadMap_[networkId] = isSupportReload;
+    }
+    auto device = audioConnectedDevice_.GetConnectedDeviceByType(networkId, DEVICE_TYPE_MIC, INPUT_DEVICE);
+    if (device != nullptr) {
+        device->isSupportReload_ = isSupportReload;
+        AUDIO_INFO_LOG("set connected device");
+    }
+    auto dmDevice = audioDeviceManager_.GetRemoteDeviceByNetworkId(networkId, DEVICE_TYPE_MIC, INPUT_DEVICE);
+    CHECK_AND_RETURN_RET_LOG(dmDevice != nullptr, ERR_INVALID_PARAM, "device not found for networkId [%{public}s]",
+        GetEncryptStr(networkId).c_str());
+    dmDevice->isSupportReload_ = isSupportReload;
+    AUDIO_INFO_LOG("set audio device");
+    return SUCCESS;
+}
+
 int32_t AudioCoreService::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
 {
     AUDIO_INFO_LOG("[ADeviceEvent] Start split args: %{public}s", splitArgs.c_str());
@@ -1311,6 +1334,12 @@ void AudioCoreService::RemoveAndCloseUnusedCapturerPipe(std::vector<std::shared_
     CHECK_AND_RETURN_LOG(Util::IsEnhancedRoutingSupported(), "enhanced routing is not supported");
     auto unusedPipes = pipeManager_->GetUnusedPipeForCapturer(pipeInfos);
     RemoveAndCloseUnusedPipeInternal(unusedPipes, reason);
+    // The closed unused pipes are no longer valid, remove them from pipeInfos to avoid
+    // processing them again in the subsequent pipe execution loop.
+    pipeInfos.erase(std::remove_if(pipeInfos.begin(), pipeInfos.end(),
+        [&unusedPipes](const std::shared_ptr<AudioPipeInfo> &pipeInfo) {
+            return std::find(unusedPipes.begin(), unusedPipes.end(), pipeInfo) != unusedPipes.end();
+        }), pipeInfos.end());
 }
 
 void AudioCoreService::RemoveUnusedRecordPipe()
@@ -1855,7 +1884,7 @@ void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> s
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
         streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_);
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
-    streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
+    streamCollector_.UpdateCapturerDeviceInfo(streamDesc->sessionId_, streamDesc->newDeviceDescs_.front());
 }
 
 void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -1894,7 +1923,7 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
     }
 
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
-    streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
+    streamCollector_.UpdateCapturerDeviceInfo(streamDesc->sessionId_, streamDesc->newDeviceDescs_.front());
 }
 
 int32_t AudioCoreService::MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
@@ -2118,7 +2147,7 @@ void AudioCoreService::HandleRingerOrAlarmerRoute(std::shared_ptr<AudioStreamDes
     InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage)
 {
     if (!streamDesc->newDeviceDescs_.front()->isSupportWearDetectionEnable_ ||
-        (streamUsage == STREAM_USAGE_ALARM && !audioSceneManager_.IsRingScene())) {
+        streamUsage == STREAM_USAGE_ALARM) {
         UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, pipeId);
         return;
     }
@@ -3276,7 +3305,6 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
     std::string oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(oldDesc, streamDesc->sessionId_);
     bool isOldDeviceUnavailable = reason.IsOldDeviceUnavaliable() || reason.IsOldDeviceUnavaliableExt();
     bool isHeadsetToSpkOrEp = IsHeadsetToSpkOrEp(oldDesc, newDesc);
-    bool isSleepScene = IsSceneRequireMuteAndSleep();
 
     struct SleepStrategy {
         std::function<bool()> condition;
@@ -3294,11 +3322,11 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
             {BASE_DEVICE_SWITCH_SLEEP_US, DISTRIBUTED_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US}
         },
         {
-            [&]() { return isOldDeviceUnavailable && isSleepScene && isHeadsetToSpkOrEp; },
+            [&]() { return isOldDeviceUnavailable && isHeadsetToSpkOrEp; },
             {BASE_DEVICE_SWITCH_SLEEP_US, OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US, HEADSET_TO_SPK_EP_EXTRA_SLEEP_US}
         },
         {
-            [&]() { return isOldDeviceUnavailable && isSleepScene; },
+            [&]() { return isOldDeviceUnavailable; },
             {BASE_DEVICE_SWITCH_SLEEP_US, OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US}
         },
         {
@@ -3327,19 +3355,6 @@ bool AudioCoreService::IsHeadsetToSpkOrEp(const std::shared_ptr<AudioDeviceDescr
     DeviceType newDeviceType = newDesc->deviceType_;
     return (oldDeviceType == DEVICE_TYPE_USB_HEADSET || oldDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) &&
         (newDeviceType == DEVICE_TYPE_SPEAKER || newDeviceType == DEVICE_TYPE_EARPIECE);
-}
-
-/**
- * Check whether the current audio scene requires mute and sleep handling.
- * This function is only used in audio switching logic when disconnecting a device,
- * specifically within MuteSinkPortForSwitchDevice and SleepForSwitchDevice.
-*/
-bool AudioCoreService::IsSceneRequireMuteAndSleep()
-{
-    AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
-    AudioScene scene = audioSceneManager_.GetAudioScene(true);
-    return (scene == AUDIO_SCENE_DEFAULT) || (scene == AUDIO_SCENE_PHONE_CHAT) ||
-        ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) && ringerMode != RINGER_MODE_NORMAL);
 }
 
 void AudioCoreService::SetVoiceCallMuteForSwitchDevice()
@@ -3394,14 +3409,10 @@ void AudioCoreService::MuteSinkPortLogic(const std::string &oldSinkName, const s
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
     if (reason.IsDistributedDeviceUnavailable()) {
         audioIOHandleMap_.MuteSinkPort(newSinkName, DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS, true, false);
-    } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
-        ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
-         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
+    } else if (reason.IsOldDeviceUnavaliable()) {
         MutePrimaryOrOffloadSink(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS);
         audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true, false);
-    } else if (reason.IsOldDeviceUnavaliableExt() && ((scene == AUDIO_SCENE_DEFAULT) ||
-        ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
-         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
+    } else if (reason.IsOldDeviceUnavaliableExt()) {
         audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS, true, false);
     } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
         oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
@@ -4119,6 +4130,11 @@ void AudioCoreService::UpdateNearLinkCollaborativeState(bool nearLinkCollaborati
 bool AudioCoreService::IsUltraFastSupportedForDevice(DeviceType deviceType)
 {
     return (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) ? isSupportArmUsbUltraFast_ : isSupportUltraFast_;
+}
+
+void AudioCoreService::MutePrimarySinkByCollaborative(int32_t duration)
+{
+    audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, duration, true, true);
 }
 } // namespace AudioStandard
 } // namespace OHOS

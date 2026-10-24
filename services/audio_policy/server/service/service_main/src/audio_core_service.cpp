@@ -47,7 +47,7 @@
 #include "audio_record_controller.h"
 
 namespace {
-    #include "v6_1/iaudio_manager.h"
+    #include "v6_2/iaudio_manager.h"
 }
 
 namespace OHOS {
@@ -641,6 +641,21 @@ bool AudioCoreService::GetEcFeatureEnable()
 bool AudioCoreService::GetMicRefFeatureEnable()
 {
     return isMicRefFeatureEnable_;
+}
+
+bool AudioCoreService::GetSupportReload(const std::string &networkId)
+{
+    std::lock_guard<std::mutex> lock(isSupportReloadMutex_);
+    auto it = isSupportReloadMap_.find(networkId);
+    return it != isSupportReloadMap_.end() ? it->second : true;
+}
+
+void AudioCoreService::RemoveSupportReload(const std::string &networkId)
+{
+    std::lock_guard<std::mutex> lock(isSupportReloadMutex_);
+    isSupportReloadMap_.erase(networkId);
+    AUDIO_INFO_LOG("networkId [%{public}s], map size %{public}zu", GetEncryptStr(networkId).c_str(),
+        isSupportReloadMap_.size());
 }
 
 uint64_t AudioCoreService::GetOpenedNormalSourceSessionId()
@@ -1577,10 +1592,11 @@ int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     CheckAndSetCurrentInputDevice(deviceDesc, GetRealUid(streamDesc));
     audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
         pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), deviceDesc->networkId_);
-    streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
+    streamCollector_.UpdateCapturerDeviceInfo(sessionId, deviceDesc);
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     if (deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP || curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
+        CHECK_AND_RETURN_RET_LOG(!isRingDualToneOnPrimarySpeaker_, SUCCESS, "using speaker, skip active output route");
         audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
             pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), deviceDesc->networkId_);
     }
@@ -2345,10 +2361,36 @@ int32_t AudioCoreService::GetCurrentCapturerChangeInfos(
         }
     }
 #else
+    UpdateCapturerDeviceInfoByActiveDevice(audioCapturerChangeInfos, inputDevices,
+        hasBTPermission, hasSystemPermission);
+#endif
+    return status;
+}
+
+void AudioCoreService::UpdateCapturerDeviceInfoByActiveDevice(
+    vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
+    vector<shared_ptr<AudioDeviceDescriptor>> &inputDevices,
+    bool hasBTPermission, bool hasSystemPermission)
+{
     DeviceType activeDeviceType = audioActiveDevice_.GetCurrentInputDeviceType();
     DeviceRole activeDeviceRole = INPUT_DEVICE;
-    for (std::shared_ptr<AudioDeviceDescriptor> desc : inputDevices) {
-        if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
+    if (Util::IsEnhancedRoutingSupported()) {
+        for (std::shared_ptr<AudioDeviceDescriptor> desc : inputDevices) {
+            if ((desc->deviceType_ != activeDeviceType) || (desc->deviceRole_ != activeDeviceRole)) {
+                continue;
+            }
+            size_t capturerInfosSize = audioCapturerChangeInfos.size();
+            for (size_t i = 0; i < capturerInfosSize; i++) {
+                CHECK_AND_CONTINUE(audioCapturerChangeInfos[i] != nullptr);
+                UpdateCapturerInfoWhenNoPermission(audioCapturerChangeInfos[i], hasSystemPermission);
+            }
+            break;
+        }
+    } else {
+        for (std::shared_ptr<AudioDeviceDescriptor> desc : inputDevices) {
+            if ((desc->deviceType_ != activeDeviceType) || (desc->deviceRole_ != activeDeviceRole)) {
+                continue;
+            }
             size_t capturerInfosSize = audioCapturerChangeInfos.size();
             for (size_t i = 0; i < capturerInfosSize; i++) {
                 CHECK_AND_CONTINUE(audioCapturerChangeInfos[i] != nullptr);
@@ -2361,8 +2403,6 @@ int32_t AudioCoreService::GetCurrentCapturerChangeInfos(
             break;
         }
     }
-#endif
-    return status;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetExcludedDevices(

@@ -30,6 +30,7 @@
 #include "audio_converter_parser.h"
 #include "audio_bundle_manager.h"
 #include "boot_animation_state_info.h"
+#include "util/id_handler.h"
 
 namespace {
 const std::string CALLER_NAME = "audio_server";
@@ -698,6 +699,11 @@ void AudioPolicyDump::MicrophoneMuteInfoDump(string &dumpString)
     AppendFormat(dumpString, "  - persistent microphone isMuted: %d \n",
         audioMicrophoneDescriptor_.GetMicrophoneMutePersistent());
     dumpString += "\n";
+}
+
+void AudioPolicyDump::IdHandlerInfoDump(std::string &dumpString)
+{
+    IdHandler::GetInstance().Dump(dumpString);
 }
 
 std::string AudioPolicyDump::GetRingerModeType(AudioRingerMode ringerMode)

@@ -769,6 +769,8 @@ public:
 
     int32_t SetSplitModeReady();
 
+    int32_t SetSupportReload(bool isSupportReload, const std::string &networkId);
+
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, const uint32_t sessionId,
@@ -786,9 +788,9 @@ public:
 
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
-    int32_t SetVirtualCall(const bool isVirtual);
+    int32_t SetVirtualCall(const bool isVirtual, int32_t uid = 0);
 
-    bool GetVirtualCall();
+    bool GetVirtualCall(int32_t uid = 0);
 
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionId,
         const SourceType sourceType, bool isRunning);
