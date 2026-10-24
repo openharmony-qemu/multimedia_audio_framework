@@ -147,7 +147,7 @@ HWTEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest, TestSize.Level0
     EXPECT_EQ(hpaeOutputCluster->GetConverterNodeCount(), NUM_TWO);
     EXPECT_EQ(hpaeOutputCluster->GetPreOutNum(), NUM_TWO);
 
-    EXPECT_EQ(hpaeOutputCluster->GetInstance(g_deviceClass, g_deviceNetId), 0);
+    EXPECT_EQ(hpaeOutputCluster->GetInstance(HdiIdInfoParam{g_deviceClass, "", g_deviceNetId}), 0);
     EXPECT_EQ(musicSinkInputNode.use_count(), NUM_TWO);
     EXPECT_EQ(ringSinkInputNode.use_count(), NUM_TWO);
     EXPECT_EQ(muiscProcessCluster.use_count(), 1);

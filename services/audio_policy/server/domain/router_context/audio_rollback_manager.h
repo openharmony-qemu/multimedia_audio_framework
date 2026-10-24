@@ -15,6 +15,14 @@
 #ifndef AUDIO_ROLLBACK_MANAGER_H
 #define AUDIO_ROLLBACK_MANAGER_H
 
+#include <condition_variable>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <utility>
+#include <vector>
 #include "audio_router_infra.h"
 
 namespace OHOS {
@@ -36,6 +44,27 @@ struct SelectionRollback {
     Selection selection;
 };
 
+class StepTimer {
+public:
+    StepTimer() = default;
+    StepTimer(const StepTimer&) = delete;
+    StepTimer& operator=(const StepTimer&) = delete;
+    StepTimer(StepTimer&&) = delete;
+    StepTimer& operator=(StepTimer&&) = delete;
+    ~StepTimer();
+
+    void SetTimeout(uint32_t timeoutMs, std::function<void()> fn);
+private:
+    void WorkLoop();
+    std::vector<std::function<void()>> PickTasks(int64_t &now);
+
+    std::mutex mutex_;
+    bool running_{false};
+    std::thread worker_;
+    std::vector<std::pair<int64_t, std::function<void()>>> tasks_;
+    std::condition_variable cv_;
+};
+
 class AudioRollbackManager {
 public:
     static AudioRollbackManager& GetInstance();
@@ -43,6 +72,8 @@ public:
     void OnDeviceNewConnect(const AudioDeviceDescriptor &desc);
     void OnDeviceDisconnect(const AudioDeviceDescriptor &desc);
     void OnConnectStateUpdate(const AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
+    void OnAppDied(int32_t uid);
+    void ExcludeSelection(SelectDeviceType type, const AudioDeviceDescriptor &desc);
 
     void SetMediaInputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);
@@ -60,14 +91,26 @@ private:
     AudioRollbackManager& operator=(AudioRollbackManager &&src) = delete;
 
     void SetSelectionRollback(int32_t uid, SelectDeviceType type,
-        uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor> &device);
-    void SetConnectLostRollback(const std::shared_ptr<AudioDeviceDescriptor> &device);
-    void RollbackSelection(const Selection &selection);
-    bool RollbackSelections(int32_t deviceId, RollbackType type);
+        uint32_t streamId, const AudioDeviceDescriptor &desc);
+    void SetConnectLostRollback(const AudioDeviceDescriptor &desc);
+    void ContinueSetDevice(const AudioDeviceDescriptor &desc);
+    void RemoveSelection(std::function<bool(Selection&)> &&pred);
+    void HandleConnectLost(const AudioDeviceDescriptor &desc);
+
+    bool RollbackSelection(const Selection &selection);
+    bool RollbackNewConnect(int32_t deviceId, RollbackType type);
+    bool RollbackSetDevice(int32_t uid, SelectDeviceType type, uint32_t streamId, int32_t deviceId);
+    bool HandleVirtualConnected(int32_t uid, SelectDeviceType type,
+        uint32_t streamId, const AudioDeviceDescriptor &desc);
+    bool FilterSetDevice(int32_t uid, SelectDeviceType type, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceDescriptor> &device);
 
     std::mutex mutex_;
     std::vector<SelectionRollback> selectionRollbacks_;
     std::unique_ptr<RollbackInfo> rollbackInfo_;
+    std::vector<Selection> virtualSelectDevices_;
+    std::set<int32_t> connectedSet_;
+    StepTimer timer_;
 };
 
 }

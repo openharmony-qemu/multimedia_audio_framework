@@ -293,6 +293,7 @@ const std::shared_ptr<AudioZoneDescriptor> AudioZone::GetDescriptorNoLock()
     descriptor->initMode_ = static_cast<int32_t>(context_.initMode_);
     descriptor->supportType_ = static_cast<int32_t>(context_.supportType_);
     descriptor->preferDevice_ = preferDevice_;
+    descriptor->userId_ = context_.userId_;
     AUDIO_INFO_LOG("zone %{public}d init mode %{public}d", zoneId_, descriptor->initMode_);
 
     for (const auto &key : keys_) {

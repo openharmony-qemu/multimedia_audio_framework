@@ -75,8 +75,8 @@ public:
     void SetSinkMuteForSwitchDeviceProxy(const std::string &deviceClass, int32_t durationUs, bool mute,
         const std::string &networkId = LOCAL_NETWORK_ID);
     int32_t SetMicrophoneMuteProxy(bool isMute);
-    void SuspendRenderSinkProxy(const std::string &sinkName);
-    void RestoreRenderSinkProxy(const std::string &sinkName);
+    void SuspendRenderSinkProxy(const std::string &sinkName, const std::string &macAddress);
+    void RestoreRenderSinkProxy(const std::string &sinkName, const std::string &macAddress);
     void LoadHdiEffectModelProxy();
     void NotifyDeviceInfoProxy(std::string networkId, bool connected);
     void NotifyTaskIdInfoProxy(std::string &taskId, bool connected);
@@ -109,9 +109,9 @@ public:
     int32_t LoadHdiAdapterProxy(uint32_t devMgrType, const std::string &adapterName);
     void UnloadHdiAdapterProxy(uint32_t devMgrType, const std::string &adapterName, bool force);
     uint32_t CreateHdiSinkPortProxy(const std::string &deviceClass, const std::string &idInfo,
-        const IAudioSinkAttr &attr);
+        const IAudioSinkAttr &attr, bool isResident = true);
     uint32_t CreateHdiSourcePortProxy(const std::string &deviceClass, const std::string &idInfo,
-        const IAudioSourceAttr &attr);
+        const IAudioSourceAttr &attr, bool isResident = true);
     void DestroyHdiPortProxy(uint32_t id);
     void SetDeviceConnectedFlag(bool flag);
     void NotifySettingsDataReady();

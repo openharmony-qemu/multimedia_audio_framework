@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/test.gni")
+import("../../../../../../../config.gni")
 
 ohos_unittest("adapter_manager_aiut") {
   testonly = true
@@ -57,6 +58,10 @@ ohos_unittest("adapter_manager_aiut") {
 
   defines = [ "FEATURE_DISTRIBUTE_AUDIO" ]
 
+  if (audio_framework_feature_multi_user_zone) {
+    defines += [ "MULTI_USER_ZONE" ]
+  }
+
   deps = [
     "../../../..:hdiadapter_new",
     "../../../../../audioclock:audio_clock",
@@ -72,6 +77,7 @@ ohos_unittest("adapter_manager_aiut") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "drivers_interface_audio:libaudio_proxy_6.1",
+    "drivers_interface_audio:libaudio_proxy_6.2",
     "drivers_interface_bluetooth:hdi_audio_bluetooth_header",
     "hdf_core:libhdf_ipc_adapter",
     "drivers_interface_distributed_audio:libdaudio_proxy_2.0",

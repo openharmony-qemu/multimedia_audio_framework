@@ -39,6 +39,11 @@
             "name": "audioConversion",
             "pageSourceFile": "src/main/ets/pages/AudioConversion.ets",
             "buildFunction": "AudioConversionBuilder"
+        },
+        {
+            "name": "cloudRomDownload",
+            "pageSourceFile": "src/main/ets/pages/CloudRomDownload.ets",
+            "buildFunction": "CloudRomDownloadBuilder"
         }
     ]
 }

@@ -80,6 +80,30 @@ HWTEST_F(HpaeSinkOutputNodeTest, constructHpaeSinkOutputNode, TestSize.Level0)
     EXPECT_EQ(retNi.sessionId, nodeInfo.sessionId);
 }
 
+/**
+ * @tc.name: BuildIdInfoParam_FieldMapping
+ * @tc.type: FUNC
+ * @tc.number: BuildIdInfoParam_FieldMapping
+ * @tc.desc: Test BuildIdInfoParam maps nodeInfo identity fields in HdiIdInfoParam order
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, BuildIdInfoParam_FieldMapping, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.deviceClass = "primary_extra";
+    nodeInfo.deviceName = "Typec_Speaker";
+    nodeInfo.deviceNetId = "LocalDevice";
+    nodeInfo.macAddress = "11:22:33:44:55:66";
+    nodeInfo.busAddress = "bus10_out";
+    auto node = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    HdiIdInfoParam param = node->BuildIdInfoParam();
+    EXPECT_EQ(param.deviceClass, "primary_extra");
+    EXPECT_EQ(param.name, "Typec_Speaker");
+    EXPECT_EQ(param.networkId, "LocalDevice");
+    EXPECT_EQ(param.macAddress, "11:22:33:44:55:66");
+    EXPECT_EQ(param.busAddress, "bus10_out");
+}
+
 static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
     for (int32_t i = 0; i < len / SAMPLE_F32LE; i++) {
@@ -101,7 +125,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode, TestSize.Level0)
     hpaeSinkInputNode->RegisterWriteCallback(writeIncDataCb);
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_NEW, true);
     IAudioSinkAttr attr;
     attr.adapterName = "file_io";
@@ -148,7 +172,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote, TestSize.Leve
     hpaeSinkOutputNode->Connect(hpaeSinkInputNode);
     std::shared_ptr<WriteIncDataCb> writeIncDataCb = std::make_shared<WriteIncDataCb>(SAMPLE_F32LE);
     hpaeSinkInputNode->RegisterWriteCallback(writeIncDataCb);
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_NEW, true);
     IAudioSinkAttr attr;
     attr.adapterName = "file_io";
@@ -197,7 +221,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper, TestSize.Leve
     std::shared_ptr<WriteIncDataCb> writeIncDataCb = std::make_shared<WriteIncDataCb>(SAMPLE_F32LE);
     hpaeSinkInputNode->RegisterWriteCallback(writeIncDataCb);
 
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), SUCCESS);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_NEW, true);
 
     IAudioSinkAttr attr;
@@ -233,7 +257,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandleHapticParam, TestSize.Leve
     hpaeSinkInputNode->RegisterWriteCallback(writeIncDataCb);
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_NEW, true);
     IAudioSinkAttr attr;
     attr.adapterName = "file_io";
@@ -2755,6 +2779,33 @@ HWTEST_F(HpaeSinkOutputNodeTest, FaultCode_RenderSinkInit_SinkInitFail, TestSize
 }
 
 /**
+ * @tc.name  : FaultCode_RenderSinkInit_SinkInitFailReleasesSink
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkInit releases audioRendererSink_ and renderId_ when Init fails.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, FaultCode_RenderSinkInit_SinkInitFailReleasesSink, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+    hpaeSinkOutputNode->renderId_ = 1;
+
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(false));
+    EXPECT_CALL(*mockSink, Init(_)).WillOnce(Return(ERR_OPERATION_FAILED));
+
+    IAudioSinkAttr attr;
+    attr.adapterName = "primary";
+    int32_t result = hpaeSinkOutputNode->RenderSinkInit(attr);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+    EXPECT_EQ(hpaeSinkOutputNode->audioRendererSink_, nullptr);
+    EXPECT_EQ(hpaeSinkOutputNode->renderId_, HDI_INVALID_ID);
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkDeInit(), ERROR);
+}
+
+/**
  * @tc.name  : FaultCode_UpdateAppsUid_NullSink
  * @tc.type  : FUNC
  * @tc.desc  : Test UpdateAppsUid returns ERROR when audioRendererSink_ is nullptr,
@@ -2929,10 +2980,11 @@ HWTEST_F(HpaeSinkOutputNodeTest, SetCollaborationState_NearLink_001, TestSize.Le
  * @tc.name  : GetRenderSinkInstance_WithMacAddress
  * @tc.type  : FUNC
  * @tc.desc  : Test GetRenderSinkInstance with a non-empty macAddress parameter returns success.
- * @tc.note  : file_io ignores the info/macAddress key in IdHandler (always uses HDI_ID_INFO_DEFAULT),
- *             so this case only verifies the code path does not crash and produces a valid renderId.
- *             Truly asserting that different macAddress values select different sinks requires an
- *             HdiAdapterManager mock and a deviceClass that consumes info (e.g. primary_extra/remote).
+ * @tc.note  : Info selection is class-dispatched (IdHandler::SelectIdInfo): file_io always maps to
+ *             HDI_ID_INFO_DEFAULT, so macAddress does not participate for non-a2dp classes. This case
+ *             only verifies the code path returns success with a valid renderId; asserting that
+ *             macAddress selects different sinks needs an a2dp class built with MULTI_USER_ZONE
+ *             (remote* classes key by networkId, not macAddress).
  */
 HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_WithMacAddress, TestSize.Level0)
 {
@@ -2942,25 +2994,26 @@ HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_WithMacAddress, TestSize.
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
     std::string macAddress = "AA:BB:CC:DD:EE:FF";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId, macAddress), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(
+        HdiIdInfoParam{deviceClass, "", deviceNetId, macAddress}), SUCCESS);
     EXPECT_NE(hpaeSinkOutputNode->GetRenderId(), HDI_INVALID_ID);
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
 
 /**
- * @tc.name  : GetRenderSinkInstance_MacAddressFallback
+ * @tc.name  : GetRenderSinkInstance_EmptyMacAddress
  * @tc.type  : FUNC
- * @tc.desc  : Test GetRenderSinkInstance falls back to deviceNetId/default when macAddress is empty.
+ * @tc.desc  : Test GetRenderSinkInstance with an empty macAddress parameter returns success.
  */
-HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_MacAddressFallback, TestSize.Level0)
+HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_EmptyMacAddress, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     PrepareNodeInfo(nodeInfo);
     std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    // Empty macAddress: selection priority falls back to deviceNetId, then HDI_ID_INFO_DEFAULT.
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId, ""), SUCCESS);
+    // Empty macAddress: class-dispatched selection maps file_io to HDI_ID_INFO_DEFAULT.
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), SUCCESS);
     EXPECT_NE(hpaeSinkOutputNode->GetRenderId(), HDI_INVALID_ID);
     hpaeSinkOutputNode->RenderSinkDeInit();
 }

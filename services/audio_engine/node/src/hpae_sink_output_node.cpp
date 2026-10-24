@@ -74,6 +74,23 @@ HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeSinkOutputNode::OnTraceInfoChanged()
+{
+    RebuildTraceName();
+}
+
+void HpaeSinkOutputNode::RebuildTraceName()
+{
+    processTraceName_ = "HpaeSinkOutputNode::DoProcess " + GetTraceInfo();
+}
+
+void HpaeSinkOutputNode::RebuildAuxTraceName()
+{
+    auxTraceName_ = "HpaeSinkOutputNode::RenderFrameForAuxiliarySink sinkName:" + sinkOutAttr_.sinkName +
+        " isEnabled:" + std::to_string(auxSinkEnable_) + " state:" + std::to_string(auxSinkState_);
 }
 
 HpaeSinkOutputNode::~HpaeSinkOutputNode()
@@ -103,7 +120,7 @@ void HpaeSinkOutputNode::HandleRemoteTiming()
 
 void HpaeSinkOutputNode::DoProcess()
 {
-    Trace trace("HpaeSinkOutputNode::DoProcess " + GetTraceInfo());
+    Trace trace(processTraceName_);
     if (audioRendererSink_ == nullptr) {
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
         return;
@@ -160,8 +177,7 @@ void HpaeSinkOutputNode::RenderFrameForAuxiliarySink()
         sinkOutAttr_.sinkName.c_str(), auxSinkEnable_ ? "true" : "false", auxSinkState_);
     CHECK_AND_RETURN(auxSinkEnable_ && auxSinkState_ == STREAM_MANAGER_RUNNING &&
         AUXILIARY_SPEAKER_LIST.count(sinkOutAttr_.sinkName) > 0);
-    Trace trace("HpaeSinkOutputNode::RenderFrameForAuxiliarySink sinkName:" + sinkOutAttr_.sinkName +
-       " isEnabled:" + std::to_string(auxSinkEnable_) + " state:" + std::to_string(auxSinkState_));
+    Trace trace(auxTraceName_);
 
     CHECK_AND_RETURN_LOG(auxiliarySink_ != nullptr, "auxiliarySink_ is null");
     uint64_t writeLen = 0;
@@ -225,23 +241,22 @@ void HpaeSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
 #endif
 }
 
-int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId,
-    const std::string &macAddress)
+int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const HdiIdInfoParam &param)
 {
-    // macAddress has highest priority for device selection, then deviceNetId, then default
-    const std::string &info = IdHandler::SelectIdInfo(macAddress, deviceNetId);
-    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info, true,
-        true, GetNodeInfo().routeFlag);
+    // Single priority source shared with policy port creation (IdHandler::SelectIdInfo)
+    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(param.deviceClass,
+        IdHandler::SelectIdInfo(param), true, true, GetNodeInfo().routeFlag);
 
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
-        // Do not print macAddress (sensitive); indicate the actual selection source instead.
-        AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, selectByMac: %{public}d, netIdLen: %{public}zu, "
-            "renderId_: %{public}u", deviceClass.c_str(), !macAddress.empty(), deviceNetId.size(), renderId_);
+        // Do not print macAddress (sensitive); indicate the selection sources instead.
+        AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, busLen: %{public}zu, macLen: %{public}zu, "
+            "netIdLen: %{public}zu, renderId_: %{public}u", param.deviceClass.c_str(), param.busAddress.size(),
+            param.macAddress.size(), param.networkId.size(), renderId_);
         HdiAdapterManager::GetInstance().ReleaseId(renderId_);
         return ERROR;
     }
-    GetAuxiliarySink(deviceClass);
+    GetAuxiliarySink(param.deviceClass);
     return SUCCESS;
 }
 
@@ -284,6 +299,7 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 
     sinkOutAttr_ = attr;
     auxSinkEnable_ = attr.auxSinkEnable;
+    RebuildAuxTraceName();
     if (audioRendererSink_->IsInited()) {
         AUDIO_WARNING_LOG("audioRenderSink already inited");
         SetSinkState(STREAM_MANAGER_IDLE);
@@ -295,12 +311,17 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     timer.Start();
 #endif
     int32_t ret = audioRendererSink_->Init(attr);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("audioRendererSink_ init failed, errCode is %{public}d", ret);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::CREATE, ERR_OPERATION_FAILED),
-            "audioRendererSink_ init failed", false),
-        "audioRendererSink_ init failed, errCode is %{public}d", ret);
+            "audioRendererSink_ init failed", false);
+        // Release the sink reference on init failure to avoid leaking renderId_.
+        audioRendererSink_ = nullptr;
+        HdiAdapterManager::GetInstance().ReleaseId(renderId_);
+        return ret;
+    }
     SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
@@ -570,6 +591,7 @@ void HpaeSinkOutputNode::UpdateAuxiliarySinkState(StreamChangeType change,
         " state:%{public}d usage:%{public}d", ConvertStreamManagerState2Str(auxSinkState_).c_str(),
         ConvertStreamManagerState2Str(auxState).c_str(), sessionId, change, state, usage);
     auxSinkState_ = auxState;
+    RebuildAuxTraceName();
 }
 
 void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
@@ -690,6 +712,7 @@ int32_t HpaeSinkOutputNode::SetAuxiliarySinkEnable(bool isEnabled)
     AUDIO_INFO_LOG("set to isEnabled:%{public}s for sinkName:%{public}s",
         isEnabled ? "true" : "false", sinkOutAttr_.sinkName.c_str());
     auxSinkEnable_ = isEnabled;
+    RebuildAuxTraceName();
     if (auxSinkEnable_) {
         if (auxiliarySink_ == nullptr) {
             AUDIO_ERR_LOG("auxiliarySink_ is null, need get auxiliarySink");

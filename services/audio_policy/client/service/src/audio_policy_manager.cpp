@@ -384,6 +384,23 @@ int32_t AudioPolicyManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
     return gsp->SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
 
+int32_t AudioPolicyManager::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    sptr<IRemoteObject> callerObj;
+    {
+        std::unique_lock<std::mutex> lock(registerCallbackMutex_);
+        if (audioPolicyClientStubCB_ == nullptr) {
+            audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+        }
+        if (audioPolicyClientStubCB_ != nullptr) {
+            callerObj = audioPolicyClientStubCB_->AsObject();
+        }
+    }
+    return gsp->SetAppVolumeMuteAndHideVolumeBar(appUid, muted, callerObj);
+}
+
 int32_t AudioPolicyManager::SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -1303,6 +1320,13 @@ int32_t AudioPolicyManager::SetAncoSourceOutputStreamMute(int32_t uid, bool setM
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetAncoSourceOutputStreamMute(uid, setMute);
+}
+
+int32_t AudioPolicyManager::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
+    return gsp->SetAncoPlaybackInfo(ancoPlaybackInfos);
 }
 
 int32_t AudioPolicyManager::SetQueryBundleNameListCallback(
@@ -3392,6 +3416,13 @@ int32_t AudioPolicyManager::InjectInterruption(const std::string networkId, Inte
     return gsp->InjectInterruption(networkId, event);
 }
 
+int32_t AudioPolicyManager::SetSupportReload(bool isSupportReload, const std::string &networkId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
+    return gsp->SetSupportReload(isSupportReload, networkId);
+}
+
 int32_t AudioPolicyManager::SetSplitModeReady()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -3423,23 +3454,19 @@ int32_t AudioPolicyManager::SetVoiceRingtoneMute(bool isMute)
     return gsp->SetVoiceRingtoneMute(isMute);
 }
 
-int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual)
+int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual, int32_t uid)
 {
-    bool ret = PermissionUtil::VerifySelfPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, -1);
-    return gsp->SetVirtualCall(isVirtual);
+    return gsp->SetVirtualCall(isVirtual, uid);
 }
 
-bool AudioPolicyManager::GetVirtualCall()
+bool AudioPolicyManager::GetVirtualCall(int32_t uid)
 {
     bool isVirtualCall = true;
-    bool ret = PermissionUtil::VerifySelfPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, isVirtualCall, "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, isVirtualCall);
-    gsp->GetVirtualCall(isVirtualCall);
+    gsp->GetVirtualCall(uid, isVirtualCall);
     return isVirtualCall;
 }
 

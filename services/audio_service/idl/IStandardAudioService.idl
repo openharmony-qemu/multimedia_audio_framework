@@ -88,8 +88,8 @@ interface IStandardAudioService {
     void GetEffectOffloadEnabled([out] boolean isEffectOffloadEnabled);
     void GetAudioEffectProperty([out] AudioEffectPropertyArray propertyArray, [in] int deviceType);
     void SetAudioEffectProperty([in] AudioEffectPropertyArray propertyArray, [in] int deviceType);
-    void SuspendRenderSink([in] String sinkName);
-    void RestoreRenderSink([in] String sinkName);
+    void SuspendRenderSink([in] String sinkName, [in] String macAddress);
+    void RestoreRenderSink([in] String sinkName, [in] String macAddress);
     void LoadHdiEffectModel();
     void UpdateEffectBtOffloadSupported([in] boolean isSupported);
     void SetSinkMuteForSwitchDevice([in] String deviceClass, [in] int durationUs, [in] boolean mute, [in] String networkId);
@@ -109,9 +109,9 @@ interface IStandardAudioService {
     void UnloadHdiAdapter([in] unsigned int devMgrType, [in] String adapterName, [in] boolean force);
     void CheckCaptureLimit([in] AudioPlaybackCaptureConfig config, [out] int innerCapId);
     void ReleaseCaptureLimit([in] int innerCapId);
-    void CreateHdiSinkPort([in] String deviceClass, [in] String idInfo, [in] IAudioSinkAttr attr, [out] unsigned int renderId);
+    void CreateHdiSinkPort([in] String deviceClass, [in] String idInfo, [in] IAudioSinkAttr attr, [in] boolean isResident, [out] unsigned int renderId);
     void CreateSinkPort([in] unsigned int idBase, [in] unsigned int idType, [in] String idInfo, [in] IAudioSinkAttr attr, [out] unsigned int renderId);
-    void CreateHdiSourcePort([in] String deviceClass, [in] String idInfo, [in] IAudioSourceAttr attr, [out] unsigned int captureId);
+    void CreateHdiSourcePort([in] String deviceClass, [in] String idInfo, [in] IAudioSourceAttr attr, [in] boolean isResident, [out] unsigned int captureId);
     void CreateSourcePort([in] unsigned int idBase, [in] unsigned int idType, [in] String idInfo, [in] IAudioSourceAttr attr, [out] unsigned int captureId);
     void RegisterVADeviceController([in] String macAddress, [in] IRemoteObject controller);
     void UnregisterVADeviceController([in] String macAddress);

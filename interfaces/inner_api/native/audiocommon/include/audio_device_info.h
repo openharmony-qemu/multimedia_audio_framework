@@ -304,6 +304,7 @@ enum DeviceVolumeType {
     EARPIECE_VOLUME_TYPE = 0,
     SPEAKER_VOLUME_TYPE = 1,
     HEADSET_VOLUME_TYPE = 2,
+    BLUETOOTH_NEARLINK_VOLUME_TYPE = 3,
 };
 
 inline const std::unordered_set<DeviceType> ACTIVE_DEVICE_TYPE_SET = {

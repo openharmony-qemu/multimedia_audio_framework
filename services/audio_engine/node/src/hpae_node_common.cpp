@@ -348,6 +348,7 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.format = static_cast<AudioSampleFormat>(TransFormatFromStringToEnum(audioModuleInfo.format));
     sinkInfo.channels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.channels));
     sinkInfo.macAddress = audioModuleInfo.macAddress;
+    sinkInfo.busAddress = audioModuleInfo.busAddress;
     int32_t bufferSize = static_cast<int32_t>(StringToNum(audioModuleInfo.bufferSize));
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sinkInfo.channels != CHANNEL_UNKNOW && sinkInfo.format != INVALID_WIDTH, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -614,6 +615,8 @@ void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<I
     nodeInfo.deviceNetId = sinkInfo.deviceNetId;
     nodeInfo.deviceClass = sinkInfo.deviceClass;
     nodeInfo.macAddress = sinkInfo.macAddress;
+    nodeInfo.deviceName = sinkInfo.deviceName;
+    nodeInfo.busAddress = sinkInfo.busAddress;
     nodeInfo.statusCallback = statusCallback;
 }
 

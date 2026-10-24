@@ -114,6 +114,7 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> preferDevice_;
     int32_t initMode_;
     int32_t supportType_ = static_cast<int32_t>(AudioZoneSupportType::PLAY_AND_RECORD);
+    int32_t userId_ = -1;
 
     AudioZoneDescriptor() = default;
 
@@ -123,6 +124,7 @@ public:
         result &= parcel.WriteString(name_);
         result &= parcel.WriteInt32(initMode_);
         result &= parcel.WriteInt32(supportType_);
+        result &= parcel.WriteInt32(userId_);
         result &= MarshallingSetInt32(uids_, parcel);
         result &= MarshallingSetUInt32(streamIds_, parcel);
         if (!result) {
@@ -150,6 +152,7 @@ public:
         name_ = parcel.ReadString();
         initMode_ = parcel.ReadInt32();
         supportType_ = parcel.ReadInt32();
+        userId_ = parcel.ReadInt32();
         uids_ = UnmarshallingSetInt32<int32_t>(parcel);
         streamIds_ = UnmarshallingSetUInt32<uint32_t>(parcel);
 

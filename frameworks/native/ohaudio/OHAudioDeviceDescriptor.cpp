@@ -196,14 +196,21 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetUsbHeadsetType(OH_AudioDevice_
         *usbHeadsetType = AUDIO_DEVICE_USB_HEADSET_TYPE_INVALID;
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
-    int32_t type = AUDIO_DEVICE_USB_HEADSET_TYPE_INVALID;
+    int32_t internalType = 0;
     int32_t ret = AudioPolicyManager::GetInstance().GetUsbHeadsetType(
-        audioDeviceDescriptor_->macAddress_, audioDeviceDescriptor_->deviceRole_, type);
-    if (ret != SUCCESS) {
+        audioDeviceDescriptor_->macAddress_, audioDeviceDescriptor_->deviceRole_, internalType);
+    if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
         *usbHeadsetType = AUDIO_DEVICE_USB_HEADSET_TYPE_INVALID;
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
-    *usbHeadsetType = static_cast<OH_AudioDevice_UsbHeadsetType>(type);
+    if (internalType == static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET)) {
+        *usbHeadsetType = AUDIO_DEVICE_USB_HEADSET_TYPE_ARM;
+    } else if (internalType == static_cast<int32_t>(DEVICE_TYPE_USB_HEADSET)) {
+        *usbHeadsetType = AUDIO_DEVICE_USB_HEADSET_TYPE_HIFI;
+    } else {
+        *usbHeadsetType = AUDIO_DEVICE_USB_HEADSET_TYPE_INVALID;
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 

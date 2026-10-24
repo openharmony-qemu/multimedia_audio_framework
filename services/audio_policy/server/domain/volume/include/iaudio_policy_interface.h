@@ -31,6 +31,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -81,6 +82,12 @@ public:
     virtual int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, DeviceType deviceType) = 0;
 
     virtual int32_t SetAppVolumeMuted(int32_t appUid, bool muted) = 0;
+
+    virtual int32_t SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted) = 0;
+
+    virtual bool IsAppMuteAndHideVolumeBar(int32_t appUid) = 0;
+
+    virtual int32_t ClearAppMuteAndHideByOwnerUid(int32_t callerUid) = 0;
 
     virtual int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) = 0;
 
@@ -310,7 +317,7 @@ public:
         DeviceType deviceType) = 0;
 
     virtual float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType,
-        int32_t volumeLevel) = 0;
+        int32_t volumeLevel, bool isSupportWearDetection = false) = 0;
 
     virtual void AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) = 0;
@@ -350,8 +357,8 @@ public:
     virtual int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType) = 0;
     virtual void SetPrimarySinkExist(bool isPrimarySinkExist) = 0;
     virtual int32_t StopAudioPort(std::string oldSinkName) = 0;
-    virtual float CalculateVolumeDbByDegree(DeviceType deviceType,
-        AudioStreamType streamType, int32_t volumeDegree) = 0;
+    virtual float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType,
+        int32_t volumeDegree, bool isSupportWearDetection = false) = 0;
     virtual int32_t UpdateCollaborativeProductId(const std::string &productId) = 0;
     virtual int32_t UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled) = 0;
     virtual int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) = 0;

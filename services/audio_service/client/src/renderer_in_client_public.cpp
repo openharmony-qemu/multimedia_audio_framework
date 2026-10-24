@@ -1081,6 +1081,8 @@ void RendererInClientInner::SetupFastStreamThreadPriority()
     if (IsUltraFastStream()) {
         BindBigAndMidCore();
         threadPriority = THREAD_PRIORITY_4;
+    } else {
+        threadPriority = THREAD_PRIORITY_VIP_10;
     }
 
     if (ipcStream_ != nullptr) {
@@ -1512,13 +1514,24 @@ void RendererInClientInner::ReportExceptionForInterval()
 {
     std::string appName = AppBundleManager::GetSelfBundleName();
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::UNDERRUN_ISSUE,
         Media::MediaMonitor::FAULT_EVENT);
-    bean->Add("APP_NAME", appName);
-    bean->Add("STREAM_TYPE", eStreamType_);
-    bean->Add("TYPE", TYPE_GET_TIMESTAMP_TOO_FREQUENTLY);
-    AUDIO_ERR_LOG("ReportExceptionForInterval: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
-        appName.c_str(), eStreamType_, TYPE_GET_TIMESTAMP_TOO_FREQUENTLY);
+    bean->Add("ISSUE_TYPE", TYPE_GET_TIMESTAMP_TOO_FREQUENTLY);
+    bean->Add("STREAM_INFO_1", std::to_string(DFX_INVALID_STREAM_INFO));
+    bean->Add("STREAM_INFO_2", std::to_string(DFX_INVALID_STREAM_INFO));
+    bean->Add("STREAM_INFO_3", eStreamType_);
+    bean->Add("STREAM_INFO_4", DFX_INVALID_STREAM_INFO);
+    bean->Add("APP_INFO_1", appName);
+    bean->Add("APP_INFO_2", std::to_string(DFX_INVALID_APP_INFO));
+    bean->Add("APP_INFO_3", DFX_INVALID_APP_INFO);
+    bean->Add("EXCEPTION_INFO_1", std::to_string(DFX_INVALID_EXCEPTION_INFO));
+    bean->Add("EXCEPTION_INFO_2", std::to_string(DFX_INVALID_EXCEPTION_INFO));
+    bean->Add("EXCEPTION_INFO_3", DFX_INVALID_EXCEPTION_INFO);
+    bean->Add("EXCEPTION_INFO_4", DFX_INVALID_EXCEPTION_INFO);
+    bean->Add("DEVICE_INFO_1", std::to_string(DFX_INVALID_DEVICE_INFO));
+    bean->Add("DEVICE_INFO_2", DFX_INVALID_DEVICE_INFO);
+    bean->Add("SYSTEM_INFO_1", DFX_INVALID_SYSTEM_INFO);
+    bean->Add("SYSTEM_INFO_2", DFX_INVALID_SYSTEM_INFO);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -1526,11 +1539,11 @@ void RendererInClientInner::ReportPreferredFrameSizeOutOfRange(int32_t frameSize
 {
     std::string appName = AppBundleManager::GetSelfBundleName();
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::UNDERRUN_ISSUE,
         Media::MediaMonitor::FAULT_EVENT);
-    bean->Add("APP_NAME", appName);
-    bean->Add("STREAM_TYPE", eStreamType_);
-    bean->Add("TYPE", TYPE_FAST_PREFERRED_FRAME_SIZE_OUT_OF_RANGE);
+    bean->Add("APP_INFO_1", appName);
+    bean->Add("STREAM_INFO_3", eStreamType_);
+    bean->Add("ISSUE_TYPE", TYPE_FAST_PREFERRED_FRAME_SIZE_OUT_OF_RANGE);
     AUDIO_ERR_LOG("ReportPreferredFrameSizeOutOfRange: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, "
         "frameSize:%{public}d, minByte:%{public}zu, maxByte:%{public}zu",
         appName.c_str(), eStreamType_, frameSize, minByte, maxByte);

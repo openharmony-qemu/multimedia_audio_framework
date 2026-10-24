@@ -39,6 +39,18 @@ HpaePluginNode::HpaePluginNode(HpaeNodeInfo& nodeInfo)
     silenceData_.SetSplitStreamType(nodeInfo.GetSplitStreamType());
     silenceData_.SetAudioStreamType(nodeInfo.streamType);
     silenceData_.SetAudioStreamUsage(nodeInfo.effectInfo.streamUsage);
+    RebuildSilenceTraceName();
+}
+
+void HpaePluginNode::OnTraceInfoChanged()
+{
+    RebuildSilenceTraceName();
+}
+
+void HpaePluginNode::RebuildSilenceTraceName()
+{
+    silenceTraceName_ = "[sceneType:" + std::to_string(GetSceneType()) + "]" + GetNodeName()
+        + "::DoProcess is_silence";
 }
 
 void HpaePluginNode::DoProcess()
@@ -59,7 +71,7 @@ void HpaePluginNode::DoProcess()
         outputStream_.WriteDataToOutput(tempOut);
         return;
     }
-    Trace trace("[sceneType:" + std::to_string(GetSceneType()) + "]" + GetNodeName() + "::DoProcess is_silence");
+    Trace trace(silenceTraceName_);
     outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
 }
 

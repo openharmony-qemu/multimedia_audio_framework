@@ -75,6 +75,7 @@ public:
 
     // Stream notification
     void NotifyOpenInputStream(std::shared_ptr<VAInputStreamCallback> callback);
+    void NotifyStartStreamFailed();
 
     // Getters
     std::string GetMacAddress() const { return macAddress_; }

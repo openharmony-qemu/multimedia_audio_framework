@@ -47,7 +47,7 @@
 #include "audio_record_controller.h"
 
 namespace {
-    #include "v6_1/iaudio_manager.h"
+    #include "v6_2/iaudio_manager.h"
 }
 
 namespace OHOS {
@@ -641,6 +641,21 @@ bool AudioCoreService::GetEcFeatureEnable()
 bool AudioCoreService::GetMicRefFeatureEnable()
 {
     return isMicRefFeatureEnable_;
+}
+
+bool AudioCoreService::GetSupportReload(const std::string &networkId)
+{
+    std::lock_guard<std::mutex> lock(isSupportReloadMutex_);
+    auto it = isSupportReloadMap_.find(networkId);
+    return it != isSupportReloadMap_.end() ? it->second : true;
+}
+
+void AudioCoreService::RemoveSupportReload(const std::string &networkId)
+{
+    std::lock_guard<std::mutex> lock(isSupportReloadMutex_);
+    isSupportReloadMap_.erase(networkId);
+    AUDIO_INFO_LOG("networkId [%{public}s], map size %{public}zu", GetEncryptStr(networkId).c_str(),
+        isSupportReloadMap_.size());
 }
 
 uint64_t AudioCoreService::GetOpenedNormalSourceSessionId()
@@ -1549,10 +1564,11 @@ int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     CheckAndSetCurrentInputDevice(deviceDesc, GetRealUid(streamDesc));
     audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
         pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), deviceDesc->networkId_);
-    streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
+    streamCollector_.UpdateCapturerDeviceInfo(sessionId, deviceDesc);
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     if (deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP || curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
+        CHECK_AND_RETURN_RET_LOG(!isRingDualToneOnPrimarySpeaker_, SUCCESS, "using speaker, skip active output route");
         audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
             pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), deviceDesc->networkId_);
     }
@@ -2317,10 +2333,36 @@ int32_t AudioCoreService::GetCurrentCapturerChangeInfos(
         }
     }
 #else
+    UpdateCapturerDeviceInfoByActiveDevice(audioCapturerChangeInfos, inputDevices,
+        hasBTPermission, hasSystemPermission);
+#endif
+    return status;
+}
+
+void AudioCoreService::UpdateCapturerDeviceInfoByActiveDevice(
+    vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
+    vector<shared_ptr<AudioDeviceDescriptor>> &inputDevices,
+    bool hasBTPermission, bool hasSystemPermission)
+{
     DeviceType activeDeviceType = audioActiveDevice_.GetCurrentInputDeviceType();
     DeviceRole activeDeviceRole = INPUT_DEVICE;
-    for (std::shared_ptr<AudioDeviceDescriptor> desc : inputDevices) {
-        if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
+    if (Util::IsEnhancedRoutingSupported()) {
+        for (std::shared_ptr<AudioDeviceDescriptor> desc : inputDevices) {
+            if ((desc->deviceType_ != activeDeviceType) || (desc->deviceRole_ != activeDeviceRole)) {
+                continue;
+            }
+            size_t capturerInfosSize = audioCapturerChangeInfos.size();
+            for (size_t i = 0; i < capturerInfosSize; i++) {
+                CHECK_AND_CONTINUE(audioCapturerChangeInfos[i] != nullptr);
+                UpdateCapturerInfoWhenNoPermission(audioCapturerChangeInfos[i], hasSystemPermission);
+            }
+            break;
+        }
+    } else {
+        for (std::shared_ptr<AudioDeviceDescriptor> desc : inputDevices) {
+            if ((desc->deviceType_ != activeDeviceType) || (desc->deviceRole_ != activeDeviceRole)) {
+                continue;
+            }
             size_t capturerInfosSize = audioCapturerChangeInfos.size();
             for (size_t i = 0; i < capturerInfosSize; i++) {
                 CHECK_AND_CONTINUE(audioCapturerChangeInfos[i] != nullptr);
@@ -2333,8 +2375,6 @@ int32_t AudioCoreService::GetCurrentCapturerChangeInfos(
             break;
         }
     }
-#endif
-    return status;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetExcludedDevices(
@@ -2882,37 +2922,45 @@ std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::Pre
     return previewResults;
 }
 
-bool AudioCoreService::HandleA2dpSuspendWhenLoad()
+bool AudioCoreService::HandleA2dpSuspendWhenLoad(const std::string &macAddress)
 {
-    if (a2dpNeedSuspend_.load(std::memory_order_acquire)) {
-        std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
-        if (a2dpNeedSuspend_) {
-            AUDIO_INFO_LOG("keep suspend a2dp");
-            AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp");
-            return true;
-        }
-    }
+    CHECK_AND_RETURN_RET_LOG(!macAddress.empty(), false, "macAddress is empty");
+    std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
 
+    auto it = a2dpSuspendStates_.find(macAddress);
+    if (it != a2dpSuspendStates_.end() && it->second.needSuspend) {
+        AUDIO_INFO_LOG("keep suspend a2dp, macAddress: %{public}s", GetEncryptAddr(macAddress).c_str());
+        AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp", macAddress);
+        return true;
+    }
     return false;
 }
 
-void AudioCoreService::HandleA2dpRestore()
+void AudioCoreService::HandleA2dpRestore(const std::string &macAddress)
 {
+    CHECK_AND_RETURN_LOG(!macAddress.empty(), "macAddress is empty");
     std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
 
-    if (!a2dpNeedSuspend_) {
+    auto it = a2dpSuspendStates_.find(macAddress);
+    if (it == a2dpSuspendStates_.end() || !it->second.needSuspend) {
         return;
     }
 
-    if (std::chrono::steady_clock::now() < a2dpSuspendUntil_) {
+    if (std::chrono::steady_clock::now() < it->second.suspendUntil) {
         return;
     }
 
-    a2dpNeedSuspend_ = false;
-    AUDIO_INFO_LOG("restore a2dp");
+    a2dpSuspendStates_.erase(it);
+    AUDIO_INFO_LOG("restore a2dp, macAddress: %{public}s", GetEncryptAddr(macAddress).c_str());
     if (!audioDeviceManager_.GetScoState()) {
-        AudioServerProxy::GetInstance().RestoreRenderSinkProxy("a2dp");
+        AudioServerProxy::GetInstance().RestoreRenderSinkProxy("a2dp", macAddress);
     }
+}
+
+void AudioCoreService::EraseA2dpSuspendState(const std::string &macAddress)
+{
+    std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
+    a2dpSuspendStates_.erase(macAddress);
 }
 
 void AudioCoreService::PrepareInputFetchInfos(
@@ -4297,6 +4345,12 @@ void AudioCoreService::GetTargetSourceTypeAndMatchingFlag(SourceType source,
             targetSource = SOURCE_TYPE_UNPROCESSED;
             useMatchingPropInfo = true;
             break;
+#ifdef MULTI_BUS_ENABLE
+        case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
+            targetSource = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
+            useMatchingPropInfo = true;
+            break;
+#endif
         case SOURCE_TYPE_LIVE:
             targetSource = SOURCE_TYPE_LIVE;
             break;

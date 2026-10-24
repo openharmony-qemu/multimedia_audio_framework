@@ -52,6 +52,11 @@ public:
     virtual int32_t SetAppsEnhanceMuteState(bool isMute);
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
+    void OnTraceInfoChanged() override;
+    void RebuildTraceName();
+public:
+    void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
+    void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
 private:
     void GetCaptureEffectMicChannelLayout(uint32_t channels, AudioChannelLayout &channelLayout);
     void SetCapturerEffectConfig(const AudioBufferConfig micConfig, const AudioBufferConfig ecConfig,
@@ -61,6 +66,9 @@ private:
     std::string sceneType_ = "";
     std::unique_ptr<HpaePcmBuffer> outPcmBuffer_ { nullptr };
     std::unordered_map<HpaeSourceBufferType, HpaeNodeInfo> capturerEffectConfigMap_;
+
+    // Cached SignalProcess trace name; rebuilt in ctor and when input count changes
+    std::string traceName_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

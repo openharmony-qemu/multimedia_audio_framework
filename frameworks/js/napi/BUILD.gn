@@ -148,6 +148,10 @@ ohos_shared_library("audio") {
     defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
   }
 
+  if (audio_framework_feature_input_independent_routing_rule) {
+    defines += [ "INPUT_FEATURE_INDEPENDENT_MODE" ]
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",

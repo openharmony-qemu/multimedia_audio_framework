@@ -66,6 +66,18 @@ HpaeInnerCapSinkNode::HpaeInnerCapSinkNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeInnerCapSinkNode::OnTraceInfoChanged()
+{
+    RebuildTraceName();
+}
+
+void HpaeInnerCapSinkNode::RebuildTraceName()
+{
+    processTraceName_ = "[" + std::to_string(GetSessionId()) + "]HpaeInnerCapSinkNode::DoProcess "
+        + GetTraceInfo();
 }
 
 HpaeInnerCapSinkNode::~HpaeInnerCapSinkNode()
@@ -81,7 +93,7 @@ HpaeInnerCapSinkNode::~HpaeInnerCapSinkNode()
 
 void HpaeInnerCapSinkNode::DoProcess()
 {
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeInnerCapSinkNode::DoProcess " + GetTraceInfo());
+    Trace trace(processTraceName_);
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     if (outputVec.empty() || outputVec[0] == nullptr || isMute_ == true) {
         outputStream_.WriteDataToOutput(&silenceData_);

@@ -23,6 +23,7 @@
 
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
+#include "util/id_handler.h"
 #include "audio_volume.h"
 #include "audio_common_utils.h"
 #include "stream_dfx_manager.h"
@@ -169,9 +170,11 @@ void HpaeOffloadSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<Hpae
 int32_t HpaeOffloadSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass,
     const std::string &deviceNetworkId)
 {
-    std::string info = deviceNetworkId == "LocalDevice" ? HDI_ID_INFO_DEFAULT : deviceNetworkId;
-    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
-        deviceClass, info, true);
+    // Local offload falls to default; remote_offload keys by the distributed networkId.
+    // The old "LocalDevice"->default special case is superseded by class dispatch.
+    HdiIdInfoParam param = {.deviceClass = deviceClass, .networkId = deviceNetworkId};
+    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
+        IdHandler::SelectIdInfo(param), true);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
         AUDIO_ERR_LOG("get offload sink fail, deviceClass: %{public}s, renderId_: %{public}u",
@@ -212,12 +215,17 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     timer.Start();
 #endif
     int32_t ret = audioRendererSink_->Init(attr);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("audioRendererSink_ init failed, errCode is %{public}d", ret);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::CREATE, ERR_OPERATION_FAILED),
-            "audioRendererSink_ init failed", false),
-        "audioRendererSink_ init failed, errCode is %{public}d", ret);
+            "audioRendererSink_ init failed", false);
+        // Release the sink reference on init failure to avoid leaking renderId_.
+        audioRendererSink_ = nullptr;
+        HdiAdapterManager::GetInstance().ReleaseId(renderId_);
+        return ret;
+    }
     SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();

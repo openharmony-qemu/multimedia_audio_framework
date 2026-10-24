@@ -196,6 +196,26 @@ HWTEST_F(HpaeFastSinkOutputNodeTest, renderSinkInit_InitFailed_001, TestSize.Lev
 }
 
 /**
+ * @tc.name  : renderSinkInit_InitFailedReleasesSink_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_204
+ * @tc.desc  : Test RenderSinkInit releases audioRendererSink_ and renderId_ when Init fails
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, renderSinkInit_InitFailedReleasesSink_001, TestSize.Level0)
+{
+    EXPECT_CALL(*mockSink_, IsInited()).WillOnce(Return(false));
+    EXPECT_CALL(*mockSink_, Init(_)).WillOnce(Return(ERROR));
+    fastNode_->renderId_ = 1;
+
+    IAudioSinkAttr attr;
+    int32_t ret = fastNode_->RenderSinkInit(attr);
+    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(fastNode_->audioRendererSink_, nullptr);
+    EXPECT_EQ(fastNode_->renderId_, HDI_INVALID_ID);
+    EXPECT_EQ(fastNode_->RenderSinkDeInit(), ERR_ILLEGAL_STATE);
+}
+
+/**
  * @tc.name  : renderSinkInit_MmapBufferFailed_001
  * @tc.type  : FUNC
  * @tc.number: HpaeFastSinkOutputNodeTest_009

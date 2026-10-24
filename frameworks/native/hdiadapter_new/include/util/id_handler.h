@@ -44,8 +44,9 @@ public:
     uint32_t GetCaptureIdByDeviceClassExt(const std::string &deviceClass, const SourceType sourceType,
         const std::string &info = HDI_ID_INFO_DEFAULT, uint32_t routeFlag = 0);
 
-    // Select id info by priority: non-empty macAddress, then non-empty deviceNetId, then default
-    static const std::string &SelectIdInfo(const std::string &macAddress, const std::string &deviceNetId);
+    // Single priority source shared by policy port creation and engine renderId selection:
+    // busAddress > remote* networkId > primary_extra name > (MULTI_USER_ZONE) a2dp mac > default
+    static std::string SelectIdInfo(const HdiIdInfoParam &param);
 
     void IncInfoIdUseCount(uint32_t id);
     void DecInfoIdUseCount(uint32_t id);
@@ -57,6 +58,8 @@ public:
     std::string ParseInfo(uint32_t id);
     bool IsRemoteType(HdiIdType type);
     bool IsRemoteClass(const std::string &deviceClass);
+
+    void Dump(std::string &dumpString);
 
 private:
     IdHandler() = default;

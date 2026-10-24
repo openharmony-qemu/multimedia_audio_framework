@@ -202,6 +202,7 @@ void AudioInterruptDfx::RecordInterruptEvent(const InterruptEventInternal &inter
     const AudioInterrupt &activeInterrupt, const AudioInterrupt &incomingInterrupt)
 {
     RecordMediaInterruptEvent(interruptEvent, activeInterrupt, incomingInterrupt);
+    BackgroundInterruptEvent(interruptEvent, activeInterrupt, incomingInterrupt);
 }
 
 bool AudioInterruptDfx::IsCheckDfxStream(AudioStreamType audioStreamType)
@@ -484,6 +485,25 @@ void AudioInterruptDfx::GetBehaviorUsageEvent(const AudioInterrupt &audioInterru
             WriteAudioInterruptErrorEvent(interruptEvent);
         }
     }
+}
+
+void AudioInterruptDfx::BackgroundInterruptEvent(const InterruptEventInternal &interruptEvent,
+    const AudioInterrupt &activeInterrupt, const AudioInterrupt &incomingInterrupt)
+{
+    CHECK_AND_RETURN(AudioInterruptUtils::IsMediaStream(activeInterrupt.audioFocusType.streamType) &&
+        AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType));
+    CHECK_AND_RETURN(!AudioInterruptUtils::GetWindowState(incomingInterrupt));
+
+    AudioFocusErrorEvent interruptErrorEvent;
+    interruptErrorEvent.errorInfo = "BackgroundInterrupt";
+    interruptErrorEvent.appName = AudioInterruptUtils::GetAudioInterruptBundleName(incomingInterrupt);
+    interruptErrorEvent.hintType = interruptEvent.hintType;
+    interruptErrorEvent.rendererInfo = GetInterruptRendererInfo(incomingInterrupt);
+    interruptErrorEvent.audiosessionInfo = GetInterruptSessionInfo(incomingInterrupt);
+    interruptErrorEvent.interruptedAppName = AudioInterruptUtils::GetAudioInterruptBundleName(activeInterrupt);
+    interruptErrorEvent.interruptedRendererInfo = GetInterruptRendererInfo(activeInterrupt);
+    interruptErrorEvent.interruptedAudiosessionInfo = GetInterruptSessionInfo(activeInterrupt);
+    WriteAudioInterruptErrorEvent(interruptErrorEvent);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -57,7 +57,10 @@ using namespace OHOS::AudioStandard::HPAE;
 //     queue / unsynchronized maps and race the worker.
 //   - IsRunning / GetMsgCount are exceptions: PURE ATOMIC reads (no queue/map
 //     access), safe from the main thread. Contrast IsMsgProcessing, which reads
-//     the lock-free queue and must NOT be called here.
+//     the lock-free queue and must NOT be called here -- EXCEPT in AtExitCleanup
+//     (bounded drain before DeInit: IsFinishProcess() is a single atomic load
+//     and DeInit()'s join provides the ordering guarantee; do not "fix" the
+//     drain back out, verified safe 2026-10).
 //   - Session Effect: only Post* (async) variants, never the sync trio.
 //   - -fno-access-control reaches private members for (a) the cleanup guard
 //     body and (b) OnCallbackOpenOrReloadFailed (non-worker-only: synchronous
@@ -383,8 +386,15 @@ shared_ptr<HpaeSinkInputNode> MakeSinkInputNode()
 
 // Cleanup guard body (run by ~HpaeFuzzCleanupGuard before the manager's own
 // static destruction): stop residual sub-manager workers.
-// Calls DeactivateThread (not DeInit) to avoid the join deadlock that would
-// occur if the worker is parked in condition_.wait during static teardown.
+// Quiesce the TOP-level HpaeManager worker first: an in-flight OpenAudioPort
+// -> CreateRendererManager inserts into rendererManagerMap_ BEFORE Init()
+// completes, so tearing the maps down concurrently races Init's
+// hpaeSignalProcessThread_ setup against DeactivateThread's reset
+// (heap-use-after-free) and mutates the maps during iteration. Bounded drain,
+// then DeInit() stops + joins the worker; Run() checks running_ only after
+// HandleMsg() returns, so the join deterministically waits out any in-flight
+// request. The old join-deadlock concern only bites when the worker is stuck
+// in a synchronous HDI IPC (unreachable with the file_io fixture).
 // -fno-access-control lets us reach the private maps for cleanup only.
 void AtExitCleanup()
 {
@@ -392,6 +402,11 @@ void AtExitCleanup()
     if (mgr == nullptr) {
         return;
     }
+    for (int32_t i = 0; i < MAX_INIT_WAIT_LOOPS && mgr->IsMsgProcessing(); i++) {
+        this_thread::sleep_for(chrono::milliseconds(INIT_WAIT_SLEEP_MS));
+    }
+    this_thread::sleep_for(chrono::milliseconds(INIT_SETTLE_SLEEP_MS));
+    mgr->DeInit();
     for (auto &[name, rendererMgr] : mgr->rendererManagerMap_) {
         if (rendererMgr != nullptr) {
             rendererMgr->DeactivateThread();

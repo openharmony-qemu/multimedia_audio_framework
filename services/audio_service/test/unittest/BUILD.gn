@@ -1163,7 +1163,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../../services/audio_engine:hpae_engine_manager",
-    "../../../../services/audio_engine:audio_engine_plugins",
+    "../../../../services/audio_engine:audio_common_algorithm",
     "../../../../services/audio_engine:audio_engine_utils",
     "../../../../services/audio_policy:audio_policy_client",
     "../../../../services/audio_policy:audio_policy_service",

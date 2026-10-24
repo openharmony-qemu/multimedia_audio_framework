@@ -351,7 +351,7 @@ private:
     bool BuildStateChangedEvent(InterruptHint hintType, float &duckVolume,
         AudioSessionStateChangedEvent &stateChangedEvent);
     void ValidatePreferredOutputDeviceCallback(int32_t clientPid,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+        StreamUsage streamUsage, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
     bool CheckCallbackTokenId(
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors, uint32_t callbackTokenId);
     void CheckVolumeKeyEventForRSS(int32_t pid, VolumeEvent &volumeEvent);

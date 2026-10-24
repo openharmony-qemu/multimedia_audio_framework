@@ -87,6 +87,7 @@ public:
     std::vector<int32_t> FindAudioZoneByDeviceForExtZone(const std::shared_ptr<AudioDeviceDescriptor> &device);
     std::vector<int32_t> FindAudioZoneByMacAddress(const std::string &macAddress);
     void RemoveDeviceToGlobalFromZones(const std::shared_ptr<AudioDeviceDescriptor> &device);
+    bool HasConnectedA2dpInExtZone();
 #endif
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, DeviceType deviceType, bool enable);

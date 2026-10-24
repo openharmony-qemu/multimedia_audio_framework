@@ -335,6 +335,8 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
         }
     } else if (attributeInfo.name_ == "need_uid_check") {
         pipeInfo->needUidCheck_ = (attributeInfo.value_ == "true");
+    } else if (attributeInfo.name_ == "hal_latency") {
+        ParseHalLatency(attributeInfo, pipeInfo);
     } else if (attributeInfo.name_ == "support_ultra_fast") {
         AUDIO_INFO_LOG("Support ultra fast and arm usb ultra fast");
         supportUltraFast_ = (attributeInfo.value_ == "true");
@@ -377,6 +379,22 @@ void AudioPolicyConfigParser::ParseFlagAttribute(AttributeInfo &attributeInfo,
     if (pipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_VOIP) {
         AUDIO_INFO_LOG("Use fast voip");
         configManager_.OnVoipConfigParsed(true);
+    }
+}
+
+bool AudioPolicyConfigParser::ParseUint32Attr(const std::string &str, uint32_t &value)
+{
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
+    return ec == std::errc{} && ptr == str.data() + str.size();
+}
+
+void AudioPolicyConfigParser::ParseHalLatency(AttributeInfo &attributeInfo,
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo)
+{
+    uint32_t latency = 0;
+    if (ParseUint32Attr(attributeInfo.value_, latency)) {
+        pipeInfo->halLatency_ = static_cast<int32_t>(latency);
+        AUDIO_INFO_LOG("hal_latency parsed: %{public}u", latency);
     }
 }
 
@@ -600,6 +618,10 @@ void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> c
             } else if (configInfo.name_ == "ttsOutSupport") {
                 AUDIO_INFO_LOG("independent pipe support: %{public}s", configInfo.value_.c_str());
                 configManager_.OnIsSupportIndependentPipe(configInfo.value_ == "true");
+            } else if (configInfo.name_ == "primary_effect_latency") {
+                HandleEffectLatencyParsed(configInfo.value_);
+            } else if (configInfo.name_ == "primary_warmup_latency") {
+                HandleWarmupLatencyParsed(configInfo.value_);
             }
         }
         curNode->MoveToNext();
@@ -633,6 +655,24 @@ void AudioPolicyConfigParser::HandleEncodingEac3SupportParsed(std::shared_ptr<Ad
     if (value == ENCODING_EAC3_NAME) {
         pipeInfo->supportEncodingEac3_ = true;
         configManager_.OnUpdateEac3Support(true);
+    }
+}
+
+void AudioPolicyConfigParser::HandleEffectLatencyParsed(const std::string &value)
+{
+    uint32_t latency = 0;
+    if (ParseUint32Attr(value, latency)) {
+        globalConfigs_.primaryEffectLatency = static_cast<int32_t>(latency);
+        AUDIO_INFO_LOG("primary_effect_latency parsed: %{public}u", latency);
+    }
+}
+
+void AudioPolicyConfigParser::HandleWarmupLatencyParsed(const std::string &value)
+{
+    uint32_t latency = 0;
+    if (ParseUint32Attr(value, latency)) {
+        globalConfigs_.primaryWarmupLatency = static_cast<int32_t>(latency);
+        AUDIO_INFO_LOG("primary_warmup_latency parsed: %{public}u", latency);
     }
 }
 
@@ -748,6 +788,8 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo()
                 audioModuleInfo.className = FILE_CLASS;
             }
             audioModuleInfo.sinkLatency = globalConfigs_.globalPaConfigs_.sinkLatency_;
+            audioModuleInfo.effectLatency = globalConfigs_.primaryEffectLatency;
+            audioModuleInfo.warmupLatency = globalConfigs_.primaryWarmupLatency;
 
             audioModuleInfo.OpenMicSpeaker = shouldOpenMicSpeaker_ ? "1" : "0";
             if (adapterInfoIt.first == AudioAdapterType::TYPE_PRIMARY &&
@@ -812,6 +854,7 @@ void AudioPolicyConfigParser::GetCommontAudioModuleInfo(std::shared_ptr<AdapterP
     audioModuleInfo.suspendIdleTimeout = pipeInfo->suspendIdleTimeout_;
     audioModuleInfo.allUsbDeviceDisable_ = pipeInfo->allUsbDeviceDisable_;
     audioModuleInfo.disableUsbDeviceSet_ = pipeInfo->disableUsbDeviceSet_;
+    audioModuleInfo.halLatency = pipeInfo->halLatency_;
 }
 
 std::string AudioPolicyConfigParser::GetAudioModuleInfoName(std::string &pipeInfoName,

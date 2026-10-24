@@ -264,6 +264,11 @@ std::string AudioSystemClientPolicyManager::GetSystemSoundUri(const std::string 
     return AudioPolicyManager::GetInstance().GetSystemSoundUri(key);
 }
 
+int32_t AudioSystemClientPolicyManager::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    return AudioPolicyManager::GetInstance().SetAncoPlaybackInfo(ancoPlaybackInfos);
+}
+
 std::string AudioSystemClientPolicyManager::GetSystemSoundPath(int32_t systemSoundType)
 {
     std::string systemSoundPath = AudioPolicyManager::GetInstance().GetSystemSoundPath(systemSoundType);
@@ -346,14 +351,14 @@ int32_t AudioSystemClientPolicyManager::LoadSplitModule(const std::string &split
     return AudioPolicyManager::GetInstance().LoadSplitModule(splitArgs, networkId);
 }
 
-int32_t AudioSystemClientPolicyManager::SetVirtualCall(bool isVirtual)
+int32_t AudioSystemClientPolicyManager::SetVirtualCall(bool isVirtual, int32_t uid)
 {
-    return AudioPolicyManager::GetInstance().SetVirtualCall(isVirtual);
+    return AudioPolicyManager::GetInstance().SetVirtualCall(isVirtual, uid);
 }
 
-bool AudioSystemClientPolicyManager::GetVirtualCall()
+bool AudioSystemClientPolicyManager::GetVirtualCall(int32_t uid)
 {
-    return AudioPolicyManager::GetInstance().GetVirtualCall();
+    return AudioPolicyManager::GetInstance().GetVirtualCall(uid);
 }
 
 int32_t AudioSystemClientPolicyManager::SetQueryAllowedPlaybackCallback(

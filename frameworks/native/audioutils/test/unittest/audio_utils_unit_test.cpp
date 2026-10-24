@@ -1337,6 +1337,20 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceVolumeTypeName_004, TestS
     EXPECT_EQ(deviceTypeName, "UNKNOWN");
 }
 
+/**
+* @tc.name  : Test AudioInfoDumpUtils::GetDeviceVolumeTypeName  API
+* @tc.type  : FUNC
+* @tc.number: AudioInfoDumpUtils_GetDeviceVolumeTypeName_005
+* @tc.desc  : Test AudioInfoDumpUtils GetDeviceVolumeTypeName API,Return BLUETOOTH_NEARLINK
+*             when deviceType is BLUETOOTH_NEARLINK_VOLUME_TYPE
+*/
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceVolumeTypeName_005, TestSize.Level0)
+{
+    DeviceVolumeType deviceType = BLUETOOTH_NEARLINK_VOLUME_TYPE;
+    const std::string deviceTypeName = AudioInfoDumpUtils::GetDeviceVolumeTypeName(deviceType);
+    EXPECT_EQ(deviceTypeName, "BLUETOOTH_NEARLINK");
+}
+
 
 /**
 * @tc.name  : Test GetEncryptStr  API

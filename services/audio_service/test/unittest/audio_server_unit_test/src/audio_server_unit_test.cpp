@@ -206,7 +206,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSuspendRenderSink_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    int32_t ret = audioServer->SuspendRenderSink("primary");
+    int32_t ret = audioServer->SuspendRenderSink("primary", "");
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -784,6 +784,68 @@ HWTEST_F(AudioServerUnitTest, AudioServerPermissionChecker_003, TestSize.Level1)
     config.audioMode = AUDIO_MODE_RECORD;
     bool ret = audioServer->PermissionChecker(config);
     EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckAndApplyActualUsingToken API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCheckAndApplyActualUsingToken_001
+ * @tc.desc  : Non-proxy path (actualUsingTokenId == INVALID): returns true and does not modify
+ *             effectivePrivacyTokenId (the entry-level default assignment owns this field).
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCheckAndApplyActualUsingToken_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config = {};
+    config.appInfo.appTokenId = 1234;
+    config.actualUsingTokenId = INVALID_ACTUAL_USING_TOKEN_ID;
+    config.effectivePrivacyTokenId = 1234u; // pre-set by CreateAudioProcessInner entry
+    bool ret = audioServer->CheckAndApplyActualUsingToken(config);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(config.effectivePrivacyTokenId, 1234u);
+    EXPECT_EQ(config.appInfo.appTokenId, 1234u);
+}
+
+/**
+ * @tc.name  : Test CheckAndApplyActualUsingToken API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCheckAndApplyActualUsingToken_002
+ * @tc.desc  : Proxy path without AUDIO_USER_MICROPHONE_INDICATOR permission: returns false and
+ *             does not modify effectivePrivacyTokenId.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCheckAndApplyActualUsingToken_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config = {};
+    config.appInfo.appTokenId = 1234;
+    config.actualUsingTokenId = 5678;
+    config.effectivePrivacyTokenId = 0;
+    bool ret = audioServer->CheckAndApplyActualUsingToken(config);
+    EXPECT_FALSE(ret);
+    // effectivePrivacyTokenId must NOT be populated on permission failure.
+    EXPECT_EQ(config.effectivePrivacyTokenId, 0u);
+    // appInfo.appTokenId must remain unchanged.
+    EXPECT_EQ(config.appInfo.appTokenId, 1234u);
+}
+
+/**
+ * @tc.name  : Test CheckAndApplyActualUsingToken API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCheckAndApplyActualUsingToken_003
+ * @tc.desc  : Proxy path with a zero tokenId is treated as non-proxy (INVALID_ACTUAL_USING_TOKEN_ID),
+ *             returns true and does not modify effectivePrivacyTokenId.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCheckAndApplyActualUsingToken_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config = {};
+    config.appInfo.appTokenId = 9999;
+    config.actualUsingTokenId = INVALID_ACTUAL_USING_TOKEN_ID;
+    config.effectivePrivacyTokenId = 9999u; // pre-set by CreateAudioProcessInner entry
+    bool ret = audioServer->CheckAndApplyActualUsingToken(config);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(config.effectivePrivacyTokenId, 9999u);
+    EXPECT_EQ(config.appInfo.appTokenId, 9999u);
 }
 
 #ifdef TEMP_DISABLE
@@ -2452,7 +2514,7 @@ HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     uint32_t renderId = 0;
-    int32_t result = audioServer->CreateHdiSinkPort("deviceClass", "idInfo", IAudioSinkAttr(), renderId);
+    int32_t result = audioServer->CreateHdiSinkPort("deviceClass", "idInfo", IAudioSinkAttr(), true, renderId);
     EXPECT_EQ(result, 0);
 }
 
@@ -2540,7 +2602,7 @@ HWTEST_F(AudioServerUnitTest, CreateHdiSourcePort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     uint32_t captureId = 0;
-    int32_t result = audioServer->CreateHdiSourcePort("deviceClass", "idInfo", IAudioSourceAttr(), captureId);
+    int32_t result = audioServer->CreateHdiSourcePort("deviceClass", "idInfo", IAudioSourceAttr(), true, captureId);
     EXPECT_EQ(result, 0);
 }
 
@@ -2767,7 +2829,7 @@ HWTEST_F(AudioServerUnitTest, RestoreRenderSink_001, TestSize.Level4)
 {
     EXPECT_NE(nullptr, audioServer);
     std::string sinkName = "primary";
-    int32_t ret = audioServer->RestoreRenderSink(sinkName);
+    int32_t ret = audioServer->RestoreRenderSink(sinkName, "");
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -3431,13 +3493,13 @@ HWTEST_F(AudioServerUnitTest, AudioServerSuspendRenderSink_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    int32_t ret = audioServer->SuspendRenderSink("usb");
+    int32_t ret = audioServer->SuspendRenderSink("usb", "");
     EXPECT_NE(SUCCESS, ret);
 
-    ret = audioServer->SuspendRenderSink("a2dp");
+    ret = audioServer->SuspendRenderSink("a2dp", "");
     EXPECT_NE(SUCCESS, ret);
 
-    ret = audioServer->SuspendRenderSink("offload");
+    ret = audioServer->SuspendRenderSink("offload", "");
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -3451,10 +3513,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerRestoreRenderSink_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    int32_t ret = audioServer->RestoreRenderSink("primary");
+    int32_t ret = audioServer->RestoreRenderSink("primary", "");
     EXPECT_NE(SUCCESS, ret);
 
-    ret = audioServer->RestoreRenderSink("usb");
+    ret = audioServer->RestoreRenderSink("usb", "");
     EXPECT_NE(SUCCESS, ret);
 }
 

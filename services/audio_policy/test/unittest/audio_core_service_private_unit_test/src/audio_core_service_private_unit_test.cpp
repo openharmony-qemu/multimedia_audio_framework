@@ -2663,6 +2663,43 @@ HWTEST_F(AudioCoreServicePrivateTest, LoadSplitModule_004, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: SetSupportReload_001
+ * @tc.desc  : Test AudioCoreService::SetSupportReload, device found (if true branch).
+ */
+HWTEST_F(AudioCoreServicePrivateTest, SetSupportReload_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::string networkId = "test_network_id_reload_001";
+    auto connectedDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    connectedDesc->networkId_ = networkId;
+    connectedDesc->isSupportReload_ = true;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(connectedDesc);
+
+    auto ret = audioCoreService->SetSupportReload(false, networkId);
+    EXPECT_NE(ret, 0);
+
+    AudioConnectedDevice::GetInstance().DelConnectedDevice(networkId, DEVICE_TYPE_MIC);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: SetSupportReload_002
+ * @tc.desc  : Test AudioCoreService::SetSupportReload, device not found (if false branch).
+ */
+HWTEST_F(AudioCoreServicePrivateTest, SetSupportReload_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::string networkId = "non_existent_network_id_reload_002";
+    auto ret = audioCoreService->SetSupportReload(false, networkId);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_124
  * @tc.desc  : Test AudioCoreService::OpenNewAudioPortAndRoute()
  */
@@ -4180,7 +4217,6 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_008, TestSize.L
     stream->streamStatus_ = STREAM_STATUS_STARTED;
     stream->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
     streams.emplace_back(stream);
-    audioCoreService->a2dpNeedSuspend_ = true;
     EXPECT_TRUE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
 }
 
@@ -4206,7 +4242,6 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_009, TestSize.L
     streamB->streamStatus_ = STREAM_STATUS_STARTED;
     streamB->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
     streams.emplace_back(streamB);
-    audioCoreService->a2dpNeedSuspend_ = true;
     EXPECT_TRUE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
 }
 
@@ -4232,7 +4267,6 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_010, TestSize.L
     streamB->streamStatus_ = STREAM_STATUS_STARTED;
     streamB->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
     streams.emplace_back(streamB);
-    audioCoreService->a2dpNeedSuspend_ = true;
     EXPECT_TRUE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
 }
 
@@ -4258,7 +4292,6 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_011, TestSize.L
     streamB->streamStatus_ = STREAM_STATUS_STARTED;
     streamB->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_DP, OUTPUT_DEVICE));
     streams.emplace_back(streamB);
-    audioCoreService->a2dpNeedSuspend_ = true;
     EXPECT_TRUE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
 }
 
@@ -4273,9 +4306,9 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_001, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->Init();
 
-    audioCoreService->a2dpNeedSuspend_ = true;
-    audioCoreService->HandleA2dpSuspend();
-    EXPECT_TRUE(audioCoreService->a2dpNeedSuspend_);
+    audioCoreService->a2dpSuspendStates_["test_mac"].needSuspend = true;
+    audioCoreService->HandleA2dpSuspend("test_mac");
+    EXPECT_TRUE(audioCoreService->a2dpSuspendStates_["test_mac"].needSuspend);
 }
 
 /**
@@ -4289,13 +4322,13 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_003, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
     audioCoreService->Init();
 
-    audioCoreService->a2dpNeedSuspend_ = true;
-    audioCoreService->HandleA2dpSuspend();
-    EXPECT_TRUE(audioCoreService->a2dpNeedSuspend_);
+    audioCoreService->a2dpSuspendStates_["test_mac"].needSuspend = true;
+    audioCoreService->HandleA2dpSuspend("test_mac");
+    EXPECT_TRUE(audioCoreService->a2dpSuspendStates_["test_mac"].needSuspend);
     const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
     usleep(1000*OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
-    audioCoreService->HandleA2dpRestore();
-    EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
+    audioCoreService->HandleA2dpRestore("test_mac");
+    EXPECT_EQ(audioCoreService->a2dpSuspendStates_.count("test_mac"), 0);
 }
 
 /**
@@ -5764,5 +5797,15 @@ HWTEST_F(AudioCoreServicePrivateTest, HasRingerOrAlarmStreamRunning_001, TestSiz
     audioCoreService->pipeManager_->RemoveAudioPipeInfo(pipeInfo);
 }
 
+/**
+ * @tc.name  : Test AudioCoreService::MutePrimarySinkByCollaborative
+ * @tc.number: MutePrimarySinkByCollaborative_001
+ * @tc.desc  : Test MutePrimarySinkByCollaborative mutes the primary speaker sink port.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, MutePrimarySinkByCollaborative_001, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    EXPECT_NO_THROW(testCoreService_->MutePrimarySinkByCollaborative(200000));
+}
 } // namespace AudioStandard
 } // namespace OHOS

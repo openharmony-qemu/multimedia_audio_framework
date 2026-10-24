@@ -55,7 +55,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerSuspendRenderSink_001, TestSize.L
 {
     EXPECT_NE(nullptr, audioServer);
     
-    int32_t ret = audioServer->SuspendRenderSink("test_sink");
+    int32_t ret = audioServer->SuspendRenderSink("test_sink", "");
     EXPECT_NE(SUCCESS, ret); // Should fail with invalid sink name
 }
 
@@ -69,7 +69,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerRestoreRenderSink_001, TestSize.L
 {
     EXPECT_NE(nullptr, audioServer);
     
-    int32_t ret = audioServer->RestoreRenderSink("test_sink");
+    int32_t ret = audioServer->RestoreRenderSink("test_sink", "");
     EXPECT_NE(SUCCESS, ret); // Should fail with invalid sink name
 }
 
@@ -241,7 +241,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerSuspendRenderSink_002, TestSize.L
     EXPECT_NE(nullptr, audioServer);
     
     // Test with invalid sink name to cover error branch
-    int32_t ret = audioServer->SuspendRenderSink("invalid_sink_name");
+    int32_t ret = audioServer->SuspendRenderSink("invalid_sink_name", "");
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -256,7 +256,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerRestoreRenderSink_002, TestSize.L
     EXPECT_NE(nullptr, audioServer);
     
     // Test with invalid sink name to cover error branch
-    int32_t ret = audioServer->RestoreRenderSink("invalid_sink_name");
+    int32_t ret = audioServer->RestoreRenderSink("invalid_sink_name", "");
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -651,7 +651,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerCreateHdiSinkPort_001, TestSize.L
     
     IAudioSinkAttr attr;
     uint32_t renderId = 0;
-    int32_t ret = audioServer->CreateHdiSinkPort("speaker", "test_info", attr, renderId);
+    int32_t ret = audioServer->CreateHdiSinkPort("speaker", "test_info", attr, true, renderId);
     EXPECT_EQ(SUCCESS, ret); // Should fail without proper setup
 }
 
@@ -683,7 +683,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerCreateHdiSourcePort_001, TestSize
     
     IAudioSourceAttr attr;
     uint32_t captureId = 0;
-    int32_t ret = audioServer->CreateHdiSourcePort("mic", "test_info", attr, captureId);
+    int32_t ret = audioServer->CreateHdiSourcePort("mic", "test_info", attr, true, captureId);
     EXPECT_EQ(SUCCESS, ret); // Should fail without proper setup
 }
 

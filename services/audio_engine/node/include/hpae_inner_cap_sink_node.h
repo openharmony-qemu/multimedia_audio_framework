@@ -52,6 +52,8 @@ public:
     int32_t SetSinkState(StreamManagerState sinkState);
     void SetMute(bool isMute);
 private:
+    void OnTraceInfoChanged() override;
+    void RebuildTraceName();
     OutputPort<HpaePcmBuffer*> outputStream_;
     InputPort<HpaePcmBuffer*> inputStream_;
     PcmBufferInfo pcmBufferInfo_;
@@ -63,6 +65,9 @@ private:
     std::chrono::nanoseconds sleepTime_;
     std::chrono::nanoseconds tickDuration_;
     std::atomic<bool> isMute_ = false;
+
+    // Cached DoProcess trace name; rebuilt in ctor and whenever node info changes
+    std::string processTraceName_;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif

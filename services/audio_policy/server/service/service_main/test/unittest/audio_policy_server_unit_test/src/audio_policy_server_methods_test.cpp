@@ -26,6 +26,7 @@
 #include "audio_policy_server_handler.h"
 #include "stream_flag_info.h"
 #include "audio_policy_server.h"
+#include "input_manager.h"
 
 using namespace testing::ext;
 
@@ -130,6 +131,61 @@ HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_001, Te
     audioPolicyServer_->hasSubscribedVolumeKeyEvents_.store(false);
     audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
     EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
+}
+#endif
+
+/**
+ * @tc.name  : SubscribeVolumeKeyEventsRetryFunc_002
+ * @tc.desc  : Test retry exhaustion with volume up key
+ */
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_002, TestSize.Level2)
+{
+    audioPolicyServer_->failedVolumeKeyEvents_.clear();
+    audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
+    audioPolicyServer_->hasSubscribedVolumeKeyEvents_.store(false);
+    audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
+    EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
+    EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.count(
+        OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP), 1u);
+    audioPolicyServer_->failedVolumeKeyEvents_.clear();
+}
+#endif
+
+/**
+ * @tc.name  : SubscribeVolumeKeyEventsRetryFunc_003
+ * @tc.desc  : Test retry exhaustion with mute key
+ */
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_003, TestSize.Level2)
+{
+    audioPolicyServer_->failedVolumeKeyEvents_.clear();
+    audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_MUTE);
+    audioPolicyServer_->hasSubscribedVolumeKeyEvents_.store(false);
+    audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
+    EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
+    EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.count(
+        OHOS::MMI::KeyEvent::KEYCODE_MUTE), 1u);
+    audioPolicyServer_->failedVolumeKeyEvents_.clear();
+}
+#endif
+
+/**
+ * @tc.name  : SubscribeVolumeKeyEventsRetryFunc_004
+ * @tc.desc  : Test retry exhaustion with multiple failed keys
+ */
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_004, TestSize.Level2)
+{
+    audioPolicyServer_->failedVolumeKeyEvents_.clear();
+    audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
+    audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
+    audioPolicyServer_->failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_MUTE);
+    audioPolicyServer_->hasSubscribedVolumeKeyEvents_.store(false);
+    audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
+    EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
+    EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.size(), 3u);
+    audioPolicyServer_->failedVolumeKeyEvents_.clear();
 }
 #endif
 
@@ -1150,6 +1206,249 @@ HWTEST_F(AudioPolicyServerMethodsTest, RemoveUnmuteWhitelistDeathRecipient_003, 
     int32_t ret = audioPolicyServer_->RemoveUnmuteWhitelistDeathRecipient(88884);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(audioPolicyServer_->unmuteWhitelistDeathRecipients_.size(), 0u);
+}
+
+/**
+ * @tc.name  : GetAncoActiveStreamsVolumeInfo_Empty
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo with no AncoPlaybackInfo set
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_Empty, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
+    audioPolicyServer_->coreService_->streamCollector_.audioRendererChangeInfos_.clear();
+
+    std::vector<AncoPlaybackInfo> emptyAncoInfos;
+    audioPolicyServer_->SetAncoPlaybackInfo(emptyAncoInfos);
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioPolicyServer_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+
+    audioPolicyServer_->SetAncoPlaybackInfo(emptyAncoInfos);
+}
+
+/**
+ * @tc.name  : GetAncoActiveStreamsVolumeInfo_SingleMedia
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo with single media usage AncoPlaybackInfo
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_SingleMedia, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
+    audioPolicyServer_->coreService_->streamCollector_.audioRendererChangeInfos_.clear();
+
+    AncoPlaybackInfo ancoInfo;
+    ancoInfo.SetUid(2001);
+    ancoInfo.SetUsage(static_cast<int32_t>(STREAM_USAGE_MEDIA));
+    ancoInfo.SetPlaybackState(ANCO_PLAYBACK_STATE_PLAYING);
+    std::vector<AncoPlaybackInfo> ancoInfos = { ancoInfo };
+    audioPolicyServer_->SetAncoPlaybackInfo(ancoInfos);
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioPolicyServer_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+
+    auto it = std::find_if(activeStreamsVolumeInfo.begin(), activeStreamsVolumeInfo.end(),
+        [](const ActiveStreamVolumeInfo &info) { return info.clientUid_ == 2001; });
+    EXPECT_NE(it, activeStreamsVolumeInfo.end());
+    if (it != activeStreamsVolumeInfo.end()) {
+        EXPECT_EQ(STREAM_MUSIC, it->volumeType_);
+    }
+
+    std::vector<AncoPlaybackInfo> emptyAncoInfos;
+    audioPolicyServer_->SetAncoPlaybackInfo(emptyAncoInfos);
+}
+
+/**
+ * @tc.name  : GetAncoActiveStreamsVolumeInfo_NonPlayingState
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo excludes non-PLAYING AncoPlaybackInfo
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_NonPlayingState, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
+    audioPolicyServer_->coreService_->streamCollector_.audioRendererChangeInfos_.clear();
+
+    AncoPlaybackInfo ancoInfo;
+    ancoInfo.SetUid(4001);
+    ancoInfo.SetUsage(static_cast<int32_t>(STREAM_USAGE_MEDIA));
+    ancoInfo.SetPlaybackState(ANCO_PLAYBACK_STATE_PAUSED);
+    std::vector<AncoPlaybackInfo> ancoInfos = { ancoInfo };
+    audioPolicyServer_->SetAncoPlaybackInfo(ancoInfos);
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioPolicyServer_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+
+    auto it = std::find_if(activeStreamsVolumeInfo.begin(), activeStreamsVolumeInfo.end(),
+        [](const ActiveStreamVolumeInfo &info) { return info.clientUid_ == 4001; });
+    EXPECT_EQ(it, activeStreamsVolumeInfo.end());
+
+    std::vector<AncoPlaybackInfo> emptyAncoInfos;
+    audioPolicyServer_->SetAncoPlaybackInfo(emptyAncoInfos);
+}
+
+/**
+ * @tc.name  : GetAncoActiveStreamsVolumeInfo_Duplicate
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo deduplicates same uid and volumeType
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, GetAncoActiveStreamsVolumeInfo_Duplicate, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
+    audioPolicyServer_->coreService_->streamCollector_.audioRendererChangeInfos_.clear();
+
+    AncoPlaybackInfo ancoInfo1;
+    ancoInfo1.SetUid(3001);
+    ancoInfo1.SetUsage(static_cast<int32_t>(STREAM_USAGE_MEDIA));
+    ancoInfo1.SetPlaybackState(ANCO_PLAYBACK_STATE_PLAYING);
+    AncoPlaybackInfo ancoInfo2;
+    ancoInfo2.SetUid(3001);
+    ancoInfo2.SetUsage(static_cast<int32_t>(STREAM_USAGE_MEDIA));
+    ancoInfo2.SetPlaybackState(ANCO_PLAYBACK_STATE_PLAYING);
+    std::vector<AncoPlaybackInfo> ancoInfos = { ancoInfo1, ancoInfo2 };
+    audioPolicyServer_->SetAncoPlaybackInfo(ancoInfos);
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioPolicyServer_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+
+    auto count = std::count_if(activeStreamsVolumeInfo.begin(), activeStreamsVolumeInfo.end(),
+        [](const ActiveStreamVolumeInfo &info) { return info.clientUid_ == 3001; });
+    EXPECT_EQ(1, static_cast<int32_t>(count));
+
+    std::vector<AncoPlaybackInfo> emptyAncoInfos;
+    audioPolicyServer_->SetAncoPlaybackInfo(emptyAncoInfos);
+}
+
+/**
+ * @tc.name  : SetAppVolumeMuteAndHideVolumeBar_001
+ * @tc.desc  : Test with system permission. Should return SUCCESS.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, SetAppVolumeMuteAndHideVolumeBar_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 3001;
+    sptr<RemoteObjectTestStub> callerObj = new RemoteObjectTestStub();
+    callerObj->addDeathResult_ = true;
+    int32_t ret = audioPolicyServer_->SetAppVolumeMuteAndHideVolumeBar(
+        TEST_APP_UID, true, callerObj);
+    EXPECT_EQ(ret, SUCCESS);
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+}
+
+/**
+ * @tc.name  : SetAppVolumeMuteAndHideVolumeBar_002
+ * @tc.desc  : Test with muted=false. Should return SUCCESS.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, SetAppVolumeMuteAndHideVolumeBar_002, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 3002;
+    sptr<RemoteObjectTestStub> callerObj = new RemoteObjectTestStub();
+    callerObj->addDeathResult_ = true;
+    audioPolicyServer_->SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true, callerObj);
+    int32_t ret = audioPolicyServer_->SetAppVolumeMuteAndHideVolumeBar(
+        TEST_APP_UID, false, callerObj);
+    EXPECT_EQ(ret, SUCCESS);
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+}
+
+/* ==================== RegisterAppVolumeMuteAndHideDeathRecipient tests ==================== */
+
+/**
+ * @tc.name  : RegisterAppVolumeMuteAndHideDeathRecipient_001
+ * @tc.desc  : Test with null callerObj. Should skip registration.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RegisterAppVolumeMuteAndHideDeathRecipient_001,
+    TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID = 4001;
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+    audioPolicyServer_->RegisterAppVolumeMuteAndHideDeathRecipient(TEST_CALLER_UID, nullptr);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 0u);
+}
+
+/**
+ * @tc.name  : RegisterAppVolumeMuteAndHideDeathRecipient_002
+ * @tc.desc  : Test registering twice for same callerUid. Second should be skipped.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RegisterAppVolumeMuteAndHideDeathRecipient_002,
+    TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID = 4002;
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = true;
+    audioPolicyServer_->RegisterAppVolumeMuteAndHideDeathRecipient(TEST_CALLER_UID, obj);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 1u);
+    audioPolicyServer_->RegisterAppVolumeMuteAndHideDeathRecipient(TEST_CALLER_UID, obj);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 1u);
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+}
+
+/**
+ * @tc.name  : RegisterAppVolumeMuteAndHideDeathRecipient_003
+ * @tc.desc  : Test successful new registration with AddDeathRecipient=true.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RegisterAppVolumeMuteAndHideDeathRecipient_003,
+    TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID = 4003;
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = true;
+    audioPolicyServer_->RegisterAppVolumeMuteAndHideDeathRecipient(TEST_CALLER_UID, obj);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 1u);
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+}
+
+/**
+ * @tc.name  : RegisterAppVolumeMuteAndHideDeathRecipient_004
+ * @tc.desc  : Test when AddDeathRecipient returns false. Should not register.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, RegisterAppVolumeMuteAndHideDeathRecipient_004,
+    TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID = 4004;
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = false;
+    audioPolicyServer_->RegisterAppVolumeMuteAndHideDeathRecipient(TEST_CALLER_UID, obj);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 0u);
+}
+
+/* ==================== OnAppVolumeMuteAndHideCallerDied tests ==================== */
+
+/**
+ * @tc.name  : OnAppVolumeMuteAndHideCallerDied_001
+ * @tc.desc  : Test when callerUid is registered. Should clear and remove entry.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, OnAppVolumeMuteAndHideCallerDied_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID = 4005;
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+    sptr<RemoteObjectTestStub> obj = new RemoteObjectTestStub();
+    obj->addDeathResult_ = true;
+    audioPolicyServer_->RegisterAppVolumeMuteAndHideDeathRecipient(TEST_CALLER_UID, obj);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 1u);
+    audioPolicyServer_->OnAppVolumeMuteAndHideCallerDied(TEST_CALLER_UID);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 0u);
+}
+
+/**
+ * @tc.name  : OnAppVolumeMuteAndHideCallerDied_002
+ * @tc.desc  : Test when callerUid is not in map. Should be no-op.
+ */
+HWTEST_F(AudioPolicyServerMethodsTest, OnAppVolumeMuteAndHideCallerDied_002, TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID_NOT_FOUND = 9999;
+    audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.clear();
+    audioPolicyServer_->OnAppVolumeMuteAndHideCallerDied(TEST_CALLER_UID_NOT_FOUND);
+    EXPECT_EQ(audioPolicyServer_->appVolumeMuteAndHideDeathRecipients_.size(), 0u);
 }
 } // namespace AudioStandard
 } // namespace OHOS

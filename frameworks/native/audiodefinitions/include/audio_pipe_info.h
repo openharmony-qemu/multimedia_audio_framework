@@ -141,6 +141,11 @@ public:
         return moduleInfo_.networkId == targetNetworkId;
     }
 
+    bool IsSameMacAddress(const std::string &targetMacAddress) const
+    {
+        return moduleInfo_.macAddress == targetMacAddress;
+    }
+
     bool IsSameUsbDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc) const
     {
         bool isPipeUsbDevice = moduleInfo_.deviceType == std::to_string(DEVICE_TYPE_USB_HEADSET) ||

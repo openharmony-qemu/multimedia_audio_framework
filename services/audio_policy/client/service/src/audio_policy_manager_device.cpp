@@ -889,6 +889,16 @@ int32_t AudioPolicyManager::GetUsbHeadsetType(const std::string &macAddress, int
     gsp->GetUsbHeadsetType(macAddress, deviceRole, usbHeadsetType);
     return SUCCESS;
 }
+
+int32_t AudioPolicyManager::SetVADeviceExceptionFlag(const std::string &macAddress, bool exceptionFlag)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is null");
+    gsp->SetVADeviceExceptionFlag(macAddress, exceptionFlag);
+    return SUCCESS;
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::FetchOutputDevicesByFilter(
     StreamUsage usage, RouterType bypass)
 {
     std::vector<shared_ptr<AudioDeviceDescriptor>> descs;

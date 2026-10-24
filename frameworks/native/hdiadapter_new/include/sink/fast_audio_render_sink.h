@@ -20,7 +20,7 @@
 #include <iostream>
 #include <cstring>
 #include <mutex>
-#include "v6_1/iaudio_manager.h"
+#include "v6_2/iaudio_manager.h"
 #ifdef MULTI_BUS_ENABLE
 #include "util/audio_playing_app_manager.h"
 #endif

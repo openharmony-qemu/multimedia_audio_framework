@@ -81,5 +81,12 @@ int32_t VAInputStreamStubImpl::GetCapturePosition(uint64_t &attr_1, uint64_t &at
     vaInputStreamCallback_->GetCapturePosition(attr_1, attr_2);
     return SUCCESS;
 }
+
+int32_t VAInputStreamStubImpl::NotifyStartStreamFailed()
+{
+    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERR_ILLEGAL_STATE, "vaInputStreamCallback_ is nullptr");
+    vaInputStreamCallback_->NotifyStartStreamFailed();
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

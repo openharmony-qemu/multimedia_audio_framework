@@ -53,6 +53,12 @@ private:
     FILE *dumpMix_ = nullptr;
     std::string dumpMixName_ = "";
     CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
+
+    void OnTraceInfoChanged() override;
+    void RebuildTraceName();
+
+    // Cached SignalProcess trace name; rebuilt in ctor and whenever node info changes
+    std::string processTraceName_;
 };
 
 }  // namespace HPAE

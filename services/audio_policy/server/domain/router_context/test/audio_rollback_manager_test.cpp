@@ -14,7 +14,10 @@
  */
 
 #include <unistd.h>
+#include <atomic>
 #include <chrono>
+#include <condition_variable>
+#include <future>
 #include <mutex>
 #include <thread>
 #include "audio_router_context_test_base.h"
@@ -49,6 +52,8 @@ public:
     bool HasSelectionRollback(int32_t targetId);
     bool HasRollbackInfo();
     int32_t RollbackDeviceId();
+    bool HasVirtualSelect(int32_t deviceId);
+    int32_t VirtualSelectDeviceId(int32_t uid, SelectDeviceType type, uint32_t streamId);
     std::shared_ptr<AudioDeviceSimpleDescriptor> ToSimple(
         const std::shared_ptr<AudioDeviceDescriptor> &device);
     bool ContainsSelection(const std::vector<Selection> &sels, int32_t deviceId);
@@ -66,6 +71,8 @@ void AudioRollbackManagerTest::ClearRollbackState()
     std::lock_guard<std::mutex> lg(rb.mutex_);
     rb.selectionRollbacks_.clear();
     rb.rollbackInfo_.reset();
+    rb.virtualSelectDevices_.clear();
+    rb.connectedSet_.clear();
 }
 
 bool AudioRollbackManagerTest::HasSelectionRollback(int32_t targetId)
@@ -92,6 +99,30 @@ int32_t AudioRollbackManagerTest::RollbackDeviceId()
     auto &rb = AudioRollbackManager::GetInstance();
     std::lock_guard<std::mutex> lg(rb.mutex_);
     return rb.rollbackInfo_ ? rb.rollbackInfo_->deviceId : -1;
+}
+
+bool AudioRollbackManagerTest::HasVirtualSelect(int32_t deviceId)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+    std::lock_guard<std::mutex> lg(rb.mutex_);
+    for (auto &item : rb.virtualSelectDevices_) {
+        if (item.deviceId == deviceId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int32_t AudioRollbackManagerTest::VirtualSelectDeviceId(int32_t uid, SelectDeviceType type, uint32_t streamId)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+    std::lock_guard<std::mutex> lg(rb.mutex_);
+    for (auto &item : rb.virtualSelectDevices_) {
+        if (item.uid == uid && item.type == type && item.streamId == streamId) {
+            return item.deviceId;
+        }
+    }
+    return -1;
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRollbackManagerTest::AddConnectedDevice(DeviceType type,
@@ -131,14 +162,14 @@ void AudioRollbackManagerTest::SetOutputBaseline(const std::shared_ptr<AudioDevi
 }
 
 /**
- * @tc.name  : Scenario1_ForceSelectUnconnected_NoConnectIn2s_Rollback
+ * @tc.name  : Scenario1_ForceSelectSuspend_NoConnectIn2s_Rollback
  * @tc.type  : FUNC
- * @tc.desc  : 强选未连接设备(立即生效)-2s内未连接成功-应回滚到旧设备
+ * @tc.desc  : 强选SUSPEND设备(立即生效)-2s内未连接成功-应回滚到旧设备
  */
-HWTEST_F(AudioRollbackManagerTest, Scenario1_ForceSelectUnconnected_NoConnectIn2s_Rollback, TestSize.Level1)
+HWTEST_F(AudioRollbackManagerTest, Scenario1_ForceSelectSuspend_NoConnectIn2s_Rollback, TestSize.Level1)
 {
     auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:01");
-    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:01", VIRTUAL_CONNECTED);
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:01", SUSPEND_CONNECTED);
     SetOutputBaseline(oldDev);
     ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
 
@@ -153,14 +184,14 @@ HWTEST_F(AudioRollbackManagerTest, Scenario1_ForceSelectUnconnected_NoConnectIn2
 }
 
 /**
- * @tc.name  : Scenario2_ForceSelectUnconnected_ConnectIn2s_NoRollback
+ * @tc.name  : Scenario2_ForceSelectSuspend_ConnectIn2s_NoRollback
  * @tc.type  : FUNC
- * @tc.desc  : 强选未连接设备(立即生效)-2s内连接成功-应保持新设备(不回滚)
+ * @tc.desc  : 强选SUSPEND设备(立即生效)-2s内连接成功-应保持新设备(不回滚)
  */
-HWTEST_F(AudioRollbackManagerTest, Scenario2_ForceSelectUnconnected_ConnectIn2s_NoRollback, TestSize.Level1)
+HWTEST_F(AudioRollbackManagerTest, Scenario2_ForceSelectSuspend_ConnectIn2s_NoRollback, TestSize.Level1)
 {
     auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:02");
-    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:02", VIRTUAL_CONNECTED);
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:02", SUSPEND_CONNECTED);
     SetOutputBaseline(oldDev);
 
     auto &rollback = AudioRollbackManager::GetInstance();
@@ -169,7 +200,7 @@ HWTEST_F(AudioRollbackManagerTest, Scenario2_ForceSelectUnconnected_ConnectIn2s_
     EXPECT_TRUE(HasSelectionRollback(newDev->deviceId_));
 
     newDev->connectState_ = CONNECTED;
-    rollback.SetConnectLostRollback(newDev);
+    rollback.SetConnectLostRollback(*newDev);
     EXPECT_FALSE(HasSelectionRollback(newDev->deviceId_));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(MS_OVER_2SEC));
@@ -177,13 +208,13 @@ HWTEST_F(AudioRollbackManagerTest, Scenario2_ForceSelectUnconnected_ConnectIn2s_
 }
 
 /**
- * @tc.name  : Scenario3_ForceSelectUnconnected_NoCurrentSelect_NoRollback
+ * @tc.name  : Scenario3_ForceSelectSuspend_NoCurrentSelect_NoRollback
  * @tc.type  : FUNC
- * @tc.desc  : 强选未连接设备(当前无强选)-无旧选择可回滚-应保持新设备
+ * @tc.desc  : 强选SUSPEND设备(当前无强选)-无旧选择可回滚-应保持新设备
  */
-HWTEST_F(AudioRollbackManagerTest, Scenario3_ForceSelectUnconnected_NoCurrentSelect_NoRollback, TestSize.Level1)
+HWTEST_F(AudioRollbackManagerTest, Scenario3_ForceSelectSuspend_NoCurrentSelect_NoRollback, TestSize.Level1)
 {
-    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:03", VIRTUAL_CONNECTED);
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:03", SUSPEND_CONNECTED);
     auto &rollback = AudioRollbackManager::GetInstance();
 
     rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, newDev);
@@ -195,17 +226,17 @@ HWTEST_F(AudioRollbackManagerTest, Scenario3_ForceSelectUnconnected_NoCurrentSel
 }
 
 /**
- * @tc.name  : Scenario4_ForceSelectUnconnected_CallOutput_NoConnectIn2s_Rollback
+ * @tc.name  : Scenario4_ForceSelectSuspend_CallOutput_NoConnectIn2s_Rollback
  * @tc.type  : FUNC
- * @tc.desc  : 强选未连接CALL_OUTPUT设备-2s内未连接成功-应回滚到旧设备
+ * @tc.desc  : 强选SUSPEND CALL_OUTPUT设备-2s内未连接成功-应回滚到旧设备
  */
-HWTEST_F(AudioRollbackManagerTest, Scenario4_ForceSelectUnconnected_CallOutput_NoConnectIn2s_Rollback,
+HWTEST_F(AudioRollbackManagerTest, Scenario4_ForceSelectSuspend_CallOutput_NoConnectIn2s_Rollback,
     TestSize.Level1)
 {
     auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:04");
     AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, oldDev, "ut");
     ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::CALL_OUTPUT), oldDev->deviceId_);
-    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:04", VIRTUAL_CONNECTED);
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:04", SUSPEND_CONNECTED);
 
     auto &rollback = AudioRollbackManager::GetInstance();
     rollback.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, newDev, "ut");
@@ -256,8 +287,8 @@ HWTEST_F(AudioRollbackManagerTest, Scenario6_NewDeviceOnline_ConnectIn2s_LostIn1
     EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), newDev->deviceId_);
 
     newDev->connectState_ = CONNECTED;
-    rollback.SetConnectLostRollback(newDev);
-    EXPECT_TRUE(rollback.RollbackSelections(newDev->deviceId_, CONNECT_LOST_ROLLBACK));
+    rollback.SetConnectLostRollback(*newDev);
+    EXPECT_TRUE(rollback.RollbackNewConnect(newDev->deviceId_, CONNECT_LOST_ROLLBACK));
     EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
 }
 
@@ -278,6 +309,9 @@ HWTEST_F(AudioRollbackManagerTest, OnDeviceNewConnect_InvalidAndReuse, TestSize.
     inputDev->connectState_ = VIRTUAL_CONNECTED;
     rollback.OnDeviceNewConnect(*inputDev);
     EXPECT_FALSE(HasRollbackInfo());
+
+    auto baseline = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:40");
+    SetOutputBaseline(baseline);
 
     auto suspendDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:44", SUSPEND_CONNECTED);
     rollback.OnDeviceNewConnect(*suspendDev);
@@ -303,22 +337,23 @@ HWTEST_F(AudioRollbackManagerTest, OnDeviceNewConnect_InvalidAndReuse, TestSize.
 /**
  * @tc.name  : SetConnectLostRollback_InvalidAndAlreadyLost
  * @tc.type  : FUNC
- * @tc.desc  : SetConnectLostRollback ignores null/non-connected device and duplicate CONNECT_LOST.
+ * @tc.desc  : SetConnectLostRollback ignores non-connected device without selections and duplicate CONNECT_LOST.
  */
 HWTEST_F(AudioRollbackManagerTest, SetConnectLostRollback_InvalidAndAlreadyLost, TestSize.Level1)
 {
     auto &rollback = AudioRollbackManager::GetInstance();
-    rollback.SetConnectLostRollback(nullptr);
-    EXPECT_FALSE(HasRollbackInfo());
     auto nonConn = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:50", VIRTUAL_CONNECTED);
-    rollback.SetConnectLostRollback(nonConn);
+    rollback.SetConnectLostRollback(*nonConn);
     EXPECT_FALSE(HasRollbackInfo());
 
+    auto baseline = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:50");
+    SetOutputBaseline(baseline);
+
     auto dev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:51", CONNECTED);
-    rollback.SetConnectLostRollback(dev);
+    rollback.SetConnectLostRollback(*dev);
     EXPECT_TRUE(HasRollbackInfo());
     EXPECT_EQ(RollbackDeviceId(), dev->deviceId_);
-    rollback.SetConnectLostRollback(dev);
+    rollback.SetConnectLostRollback(*dev);
     EXPECT_EQ(RollbackDeviceId(), dev->deviceId_);
 }
 
@@ -330,7 +365,7 @@ HWTEST_F(AudioRollbackManagerTest, SetConnectLostRollback_InvalidAndAlreadyLost,
 HWTEST_F(AudioRollbackManagerTest, SetConnectLostRollback_ClearsSelectionRollbacks, TestSize.Level1)
 {
     auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:70");
-    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:70", VIRTUAL_CONNECTED);
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:70", SUSPEND_CONNECTED);
     SetOutputBaseline(oldDev);
     auto &rollback = AudioRollbackManager::GetInstance();
 
@@ -338,16 +373,16 @@ HWTEST_F(AudioRollbackManagerTest, SetConnectLostRollback_ClearsSelectionRollbac
     EXPECT_TRUE(HasSelectionRollback(newDev->deviceId_));
 
     newDev->connectState_ = CONNECTED;
-    rollback.SetConnectLostRollback(newDev);
+    rollback.SetConnectLostRollback(*newDev);
     EXPECT_FALSE(HasSelectionRollback(newDev->deviceId_));
 }
 
 /**
- * @tc.name  : RollbackSelections_MismatchAndSkipNotConnected
+ * @tc.name  : RollbackNewConnect_MismatchAndSkipNotConnected
  * @tc.type  : FUNC
- * @tc.desc  : RollbackSelections returns on mismatch and skips snapshot items not connected.
+ * @tc.desc  : RollbackNewConnect returns on mismatch and skips snapshot items not connected.
  */
-HWTEST_F(AudioRollbackManagerTest, RollbackSelections_MismatchAndSkipNotConnected, TestSize.Level1)
+HWTEST_F(AudioRollbackManagerTest, RollbackNewConnect_MismatchAndSkipNotConnected, TestSize.Level1)
 {
     auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:60");
     auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:60", VIRTUAL_CONNECTED);
@@ -356,9 +391,9 @@ HWTEST_F(AudioRollbackManagerTest, RollbackSelections_MismatchAndSkipNotConnecte
 
     rollback.OnDeviceNewConnect(*newDev);
     EXPECT_EQ(RollbackDeviceId(), newDev->deviceId_);
-    EXPECT_FALSE(rollback.RollbackSelections(oldDev->deviceId_, NEW_CONNECT_ROLLBACK));
+    EXPECT_FALSE(rollback.RollbackNewConnect(oldDev->deviceId_, NEW_CONNECT_ROLLBACK));
     EXPECT_TRUE(HasRollbackInfo());
-    EXPECT_FALSE(rollback.RollbackSelections(newDev->deviceId_, CONNECT_LOST_ROLLBACK));
+    EXPECT_FALSE(rollback.RollbackNewConnect(newDev->deviceId_, CONNECT_LOST_ROLLBACK));
     EXPECT_TRUE(HasRollbackInfo());
 
     AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, newDev);
@@ -370,11 +405,11 @@ HWTEST_F(AudioRollbackManagerTest, RollbackSelections_MismatchAndSkipNotConnecte
 }
 
 /**
- * @tc.name  : RollbackSelections_ReturnsTrueOnSuccess
+ * @tc.name  : RollbackNewConnect_ReturnsTrueOnSuccess
  * @tc.type  : FUNC
- * @tc.desc  : RollbackSelections returns true when rollback happens with non-empty selections.
+ * @tc.desc  : RollbackNewConnect returns true when rollback happens with non-empty selections.
  */
-HWTEST_F(AudioRollbackManagerTest, RollbackSelections_ReturnsTrueOnSuccess, TestSize.Level1)
+HWTEST_F(AudioRollbackManagerTest, RollbackNewConnect_ReturnsTrueOnSuccess, TestSize.Level1)
 {
     auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:93");
     auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:93", VIRTUAL_CONNECTED);
@@ -384,44 +419,44 @@ HWTEST_F(AudioRollbackManagerTest, RollbackSelections_ReturnsTrueOnSuccess, Test
     rollback.OnDeviceNewConnect(*newDev);
     EXPECT_TRUE(HasRollbackInfo());
 
-    bool result = rollback.RollbackSelections(newDev->deviceId_, NEW_CONNECT_ROLLBACK);
+    bool result = rollback.RollbackNewConnect(newDev->deviceId_, NEW_CONNECT_ROLLBACK);
     EXPECT_TRUE(result);
     EXPECT_FALSE(HasRollbackInfo());
     EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
 }
 
 /**
- * @tc.name  : RollbackSelections_ReturnsFalseOnEmpty
+ * @tc.name  : RollbackNewConnect_ReturnsFalseOnEmpty
  * @tc.type  : FUNC
- * @tc.desc  : RollbackSelections returns false when selections are empty (no original selection to
+ * @tc.desc  : RollbackNewConnect returns false when selections are empty (no original selection to
  *             roll back to, e.g. no prior force-select existed).
  */
-HWTEST_F(AudioRollbackManagerTest, RollbackSelections_ReturnsFalseOnEmpty, TestSize.Level1)
+HWTEST_F(AudioRollbackManagerTest, RollbackNewConnect_ReturnsFalseOnEmpty, TestSize.Level1)
 {
     auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:94", VIRTUAL_CONNECTED);
     auto &rollback = AudioRollbackManager::GetInstance();
 
     rollback.OnDeviceNewConnect(*newDev);
-    EXPECT_TRUE(HasRollbackInfo());
+    EXPECT_FALSE(HasRollbackInfo());
 
-    bool result = rollback.RollbackSelections(newDev->deviceId_, NEW_CONNECT_ROLLBACK);
+    bool result = rollback.RollbackNewConnect(newDev->deviceId_, NEW_CONNECT_ROLLBACK);
     EXPECT_FALSE(result);
     EXPECT_FALSE(HasRollbackInfo());
 }
 
 /**
- * @tc.name  : SetDevice_Wrappers_AppliedForUnconnected
+ * @tc.name  : SetDevice_Wrappers_AppliedForSuspend
  * @tc.type  : FUNC
- * @tc.desc  : Set{Media,Call}{Input,Output}Device apply immediately for unconnected devices.
+ * @tc.desc  : Set{Media,Call}{Input,Output}Device apply immediately for SUSPEND_CONNECTED devices.
  */
-HWTEST_F(AudioRollbackManagerTest, SetDevice_Wrappers_AppliedForUnconnected, TestSize.Level1)
+HWTEST_F(AudioRollbackManagerTest, SetDevice_Wrappers_AppliedForSuspend, TestSize.Level1)
 {
     auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:30");
     SetOutputBaseline(oldDev);
     AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(SYSTEM_UID, INVALID_STREAM_ID, oldDev);
     AudioRouterSelectStrategy::GetInstance().SetCallInputDevice(SYSTEM_UID, INVALID_STREAM_ID, oldDev);
     AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, oldDev, "ut");
-    auto unDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:30", VIRTUAL_CONNECTED);
+    auto unDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:30", SUSPEND_CONNECTED);
     auto &rollback = AudioRollbackManager::GetInstance();
 
     rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, unDev);
@@ -445,6 +480,7 @@ HWTEST_F(AudioRollbackManagerTest, SetDevice_Wrappers_AppliedForConnected, TestS
 {
     auto connDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:31", CONNECTED);
     auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.OnDeviceNewConnect(*connDev);
 
     rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, connDev);
     EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), connDev->deviceId_);
@@ -466,7 +502,7 @@ HWTEST_F(AudioRollbackManagerTest, SetDevice_Wrappers_AppliedForConnected, TestS
 HWTEST_F(AudioRollbackManagerTest, OnDeviceDisconnect_RollsBackSelectionRollbacks, TestSize.Level1)
 {
     auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:80");
-    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:80", VIRTUAL_CONNECTED);
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:80", SUSPEND_CONNECTED);
     SetOutputBaseline(oldDev);
     ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
 
@@ -497,7 +533,7 @@ HWTEST_F(AudioRollbackManagerTest, OnDeviceDisconnect_RollsBackConnectLost, Test
     EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), newDev->deviceId_);
 
     newDev->connectState_ = CONNECTED;
-    rollback.SetConnectLostRollback(newDev);
+    rollback.SetConnectLostRollback(*newDev);
     rollback.OnDeviceDisconnect(*newDev);
     EXPECT_FALSE(HasRollbackInfo());
     EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
@@ -511,7 +547,7 @@ HWTEST_F(AudioRollbackManagerTest, OnDeviceDisconnect_RollsBackConnectLost, Test
 HWTEST_F(AudioRollbackManagerTest, OnDeviceDisconnect_NoMatch, TestSize.Level1)
 {
     auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:82");
-    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:82", VIRTUAL_CONNECTED);
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:82", SUSPEND_CONNECTED);
     SetOutputBaseline(oldDev);
     auto &rollback = AudioRollbackManager::GetInstance();
 
@@ -549,32 +585,26 @@ HWTEST_F(AudioRollbackManagerTest, OnDeviceDisconnect_NewConnectRollback_Rollbac
 }
 
 /**
- * @tc.name  : OnConnectStateUpdate_ForceSelectNotConnected_Rollback
+ * @tc.name  : OnDeviceDisconnect_ForceSelectSuspend_Rollback
  * @tc.type  : FUNC
- * @tc.desc  : OnConnectStateUpdate with non-CONNECTED device triggers immediate
- *             rollback of force-select entries (A2DP/SCO failure scenario).
+ * @tc.desc  : OnDeviceDisconnect triggers rollback of force-select entries for SUSPEND device.
  */
-HWTEST_F(AudioRollbackManagerTest, OnConnectStateUpdate_ForceSelectNotConnected_Rollback, TestSize.Level1)
+HWTEST_F(AudioRollbackManagerTest, OnDeviceDisconnect_ForceSelectSuspend_Rollback, TestSize.Level1)
 {
     auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:84");
     SetOutputBaseline(oldDev);
     ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
 
-    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "AA:BB:CC:DD:EE:F2", VIRTUAL_CONNECTED);
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "AA:BB:CC:DD:EE:F2", SUSPEND_CONNECTED);
     newDev->networkId_ = LOCAL_NETWORK_ID;
     auto &rollback = AudioRollbackManager::GetInstance();
     rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, newDev);
     EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), newDev->deviceId_);
     EXPECT_TRUE(HasSelectionRollback(newDev->deviceId_));
 
-    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(newDev);
-    EXPECT_NO_THROW(rollback.OnConnectStateUpdate(*newDev, CONNECTSTATE_UPDATE));
+    rollback.OnDeviceDisconnect(*newDev);
     EXPECT_FALSE(HasSelectionRollback(newDev->deviceId_));
     EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
-
-    newDev->connectState_ = VIRTUAL_CONNECTED;
-    AudioDeviceManager::GetAudioDeviceManager().RemoveConnectedDevices(newDev);
-    std::this_thread::sleep_for(std::chrono::milliseconds(MS_OVER_2SEC));
 }
 
 /**
@@ -589,10 +619,76 @@ HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_SkipsSameDeviceId, TestS
     SetOutputBaseline(oldDev);
     ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
 
-    oldDev->connectState_ = VIRTUAL_CONNECTED;
+    oldDev->connectState_ = SUSPEND_CONNECTED;
     auto &rollback = AudioRollbackManager::GetInstance();
     rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, oldDev);
     EXPECT_FALSE(HasSelectionRollback(oldDev->deviceId_));
+}
+
+/**
+ * @tc.name  : SetSelectionRollback_A2dpSkipsWhenScoConnected
+ * @tc.type  : FUNC
+ * @tc.desc  : 强选MEDIA_OUTPUT A2DP设备时,若同MAC的SCO已连接(通话进行中),应跳过记录回滚.
+ */
+HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_A2dpSkipsWhenScoConnected, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:B0");
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto scoDev = AddConnectedDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:B0");
+    auto a2dpDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:B0", SUSPEND_CONNECTED);
+    ASSERT_TRUE(AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(scoDev->macAddress_));
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, a2dpDev);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), a2dpDev->deviceId_);
+    EXPECT_FALSE(HasSelectionRollback(a2dpDev->deviceId_));
+}
+
+/**
+ * @tc.name  : SetSelectionRollback_A2dpProceedsWhenScoDifferentMac
+ * @tc.type  : FUNC
+ * @tc.desc  : 强选MEDIA_OUTPUT A2DP设备时,已连接SCO的MAC不同,SCO保护不生效,应正常记录回滚.
+ */
+HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_A2dpProceedsWhenScoDifferentMac, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:B1");
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto scoDev = AddConnectedDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:D1");
+    auto a2dpDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:B1", SUSPEND_CONNECTED);
+    ASSERT_TRUE(AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(scoDev->macAddress_));
+    ASSERT_FALSE(AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(a2dpDev->macAddress_));
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, a2dpDev);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), a2dpDev->deviceId_);
+    EXPECT_TRUE(HasSelectionRollback(a2dpDev->deviceId_));
+}
+
+/**
+ * @tc.name  : SetSelectionRollback_CallOutputA2dpProceedsWhenScoConnected
+ * @tc.type  : FUNC
+ * @tc.desc  : 强选CALL_OUTPUT A2DP设备时,即使同MAC的SCO已连接,SCO保护不生效(仅MEDIA_OUTPUT受保护),
+ *             应正常记录回滚.
+ */
+HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_CallOutputA2dpProceedsWhenScoConnected,
+    TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:B2");
+    AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, oldDev, "ut");
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::CALL_OUTPUT), oldDev->deviceId_);
+
+    auto scoDev = AddConnectedDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:B2");
+    auto a2dpDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:B2", SUSPEND_CONNECTED);
+    ASSERT_TRUE(AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(scoDev->macAddress_));
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, a2dpDev, "ut");
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::CALL_OUTPUT), a2dpDev->deviceId_);
+    EXPECT_TRUE(HasSelectionRollback(a2dpDev->deviceId_));
 }
 
 /**
@@ -603,7 +699,7 @@ HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_SkipsSameDeviceId, TestS
 HWTEST_F(AudioRollbackManagerTest, RollbackSelection_DeactiveConnected, TestSize.Level1)
 {
     auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:91");
-    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:91", VIRTUAL_CONNECTED);
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:91", SUSPEND_CONNECTED);
     SetOutputBaseline(oldDev);
     auto &rollback = AudioRollbackManager::GetInstance();
 
@@ -629,7 +725,12 @@ HWTEST_F(AudioRollbackManagerTest, OnConnectStateUpdate_001, TestSize.Level4)
         std::lock_guard<std::mutex> lg(rb.mutex_);
         rb.selectionRollbacks_.clear();
         rb.rollbackInfo_.reset();
+        rb.virtualSelectDevices_.clear();
+        rb.connectedSet_.clear();
     }
+
+    auto baseline = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:61");
+    SetOutputBaseline(baseline);
 
     AudioDeviceDescriptor nonConnCmd(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
     nonConnCmd.macAddress_ = "AA:BB:CC:DD:EE:F1";
@@ -772,6 +873,339 @@ HWTEST_F(AudioRollbackManagerTest, HasValidSelectDevice_Branches, TestSize.Level
     auto validDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:76", CONNECTED);
     AudioSelectDeviceInfo validInfo{ToSimple(validDev), 0};
     EXPECT_TRUE(infra.HasValidSelectDevice(validInfo));
+}
+
+/**
+ * @tc.name  : VirtualSelect_ConnectSuccess
+ * @tc.type  : FUNC
+ * @tc.desc  : 虚强选-建连成功:虚连接设备强选后延迟切换,建连成功后转为正式强选触发路由切换
+ */
+HWTEST_F(AudioRollbackManagerTest, VirtualSelect_ConnectSuccess, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:C1");
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:C1", VIRTUAL_CONNECTED);
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, newDev);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+    EXPECT_TRUE(HasVirtualSelect(newDev->deviceId_));
+
+    newDev->connectState_ = CONNECTED;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(newDev);
+    EXPECT_NO_THROW(rollback.OnConnectStateUpdate(*newDev, CONNECTSTATE_UPDATE));
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), newDev->deviceId_);
+    EXPECT_FALSE(HasVirtualSelect(newDev->deviceId_));
+
+    AudioDeviceManager::GetAudioDeviceManager().RemoveConnectedDevices(newDev);
+    std::this_thread::sleep_for(std::chrono::milliseconds(MS_OVER_2SEC));
+}
+
+/**
+ * @tc.name  : VirtualSelect_ConnectTimeout_KeepOriginal
+ * @tc.type  : FUNC
+ * @tc.desc  : 虚强选-建连超时:2s内未建立实际连接,路由不切换,原设备继续出声
+ */
+HWTEST_F(AudioRollbackManagerTest, VirtualSelect_ConnectTimeout_KeepOriginal, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:C2");
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:C2", VIRTUAL_CONNECTED);
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, newDev);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+    EXPECT_TRUE(HasVirtualSelect(newDev->deviceId_));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(MS_OVER_2SEC));
+    EXPECT_FALSE(HasVirtualSelect(newDev->deviceId_));
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+}
+
+/**
+ * @tc.name  : VirtualSelect_NewSelectOverrides
+ * @tc.type  : FUNC
+ * @tc.desc  : 虚强选-新强选覆盖:相同维度新强选不同设备,清除旧虚强选记录只保留新的
+ */
+HWTEST_F(AudioRollbackManagerTest, VirtualSelect_NewSelectOverrides, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:C3");
+    auto devB = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:C3", VIRTUAL_CONNECTED);
+    auto devC = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:C4", VIRTUAL_CONNECTED);
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, devB);
+    EXPECT_TRUE(HasVirtualSelect(devB->deviceId_));
+    EXPECT_EQ(VirtualSelectDeviceId(SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, INVALID_STREAM_ID),
+        devB->deviceId_);
+
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, devC);
+    EXPECT_FALSE(HasVirtualSelect(devB->deviceId_));
+    EXPECT_TRUE(HasVirtualSelect(devC->deviceId_));
+    EXPECT_EQ(VirtualSelectDeviceId(SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, INVALID_STREAM_ID),
+        devC->deviceId_);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+}
+
+/**
+ * @tc.name  : VirtualSelect_ExcludeClears
+ * @tc.type  : FUNC
+ * @tc.desc  : 虚强选-Exclude清除:排除虚连接设备,该设备相关虚强选记录立即清除
+ */
+HWTEST_F(AudioRollbackManagerTest, VirtualSelect_ExcludeClears, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:C4");
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:C5", VIRTUAL_CONNECTED);
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, newDev);
+    EXPECT_TRUE(HasVirtualSelect(newDev->deviceId_));
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = {newDev};
+    AudioRouterSelectStrategy::GetInstance().ExcludeDevices(devices, MEDIA_OUTPUT_DEVICES);
+    EXPECT_FALSE(HasVirtualSelect(newDev->deviceId_));
+
+    AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(devices, D_ALL_DEVICES);
+    std::this_thread::sleep_for(std::chrono::milliseconds(MS_OVER_2SEC));
+}
+
+/**
+ * @tc.name  : VirtualSelect_AppExitClears
+ * @tc.type  : FUNC
+ * @tc.desc  : 虚强选-应用退出清除:应用退出后与该应用相关的虚强选记录从上下文清除
+ */
+HWTEST_F(AudioRollbackManagerTest, VirtualSelect_AppExitClears, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:C5");
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:C6", VIRTUAL_CONNECTED);
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(TEST_APP_UID_10001, INVALID_STREAM_ID, newDev);
+    EXPECT_TRUE(HasVirtualSelect(newDev->deviceId_));
+    EXPECT_EQ(VirtualSelectDeviceId(TEST_APP_UID_10001, SelectDeviceType::MEDIA_OUTPUT, INVALID_STREAM_ID),
+        newDev->deviceId_);
+
+    AudioRouterSelectStrategy::GetInstance().OnAppDied(TEST_APP_UID_10001);
+    EXPECT_FALSE(HasVirtualSelect(newDev->deviceId_));
+}
+
+// ---------------------------------------------------------------------------
+// StepTimer unit tests
+// ---------------------------------------------------------------------------
+
+struct WaitCounter {
+    explicit WaitCounter(int target) : target_(target) {}
+    void Done()
+    {
+        std::lock_guard<std::mutex> lg(mutex_);
+        if (++count_ >= target_) {
+            cv_.notify_all();
+        }
+    }
+    bool Wait(int32_t timeoutMs)
+    {
+        std::unique_lock<std::mutex> lk(mutex_);
+        return cv_.wait_for(lk, std::chrono::milliseconds(timeoutMs),
+            [this] { return count_ >= target_; });
+    }
+    int Count()
+    {
+        std::lock_guard<std::mutex> lg(mutex_);
+        return count_;
+    }
+private:
+    std::mutex mutex_;
+    std::condition_variable cv_;
+    int count_{0};
+    int target_;
+};
+
+class StepTimerTest : public testing::Test {
+public:
+    void SetUp() override {}
+    void TearDown() override
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SETTLE_MS));
+    }
+
+    static constexpr int32_t TEST_SETTLE_MS = 50;
+    static constexpr int32_t TEST_SHORT_MS = 50;
+    static constexpr int32_t TEST_LONG_MS = 500;
+    static constexpr int32_t TEST_TIMEOUT_MS = 2000;
+};
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_SingleTask_Fires
+ * @tc.type  : FUNC
+ * @tc.desc  : A single delayed task fires exactly once after the specified delay.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_SingleTask_Fires, TestSize.Level1)
+{
+    StepTimer timer;
+    std::promise<void> done;
+    auto fut = done.get_future();
+    timer.SetTimeout(TEST_SHORT_MS, [&done]() { done.set_value(); });
+    EXPECT_EQ(fut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
+}
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_MultipleTasks_AllFireByDelay
+ * @tc.type  : FUNC
+ * @tc.desc  : Tasks with different delays all fire; the earliest-deadline task fires first
+ *             because it becomes due before the others, not because the timer sorts by deadline.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_MultipleTasks_AllFireByDelay, TestSize.Level1)
+{
+    StepTimer timer;
+    std::vector<int> order;
+    std::mutex orderMutex;
+    WaitCounter wc(3);
+    auto record = [&order, &orderMutex, &wc](int id) {
+        std::lock_guard<std::mutex> lg(orderMutex);
+        order.push_back(id);
+        wc.Done();
+    };
+    timer.SetTimeout(300, [&]() { record(3); });
+    timer.SetTimeout(100, [&]() { record(1); });
+    timer.SetTimeout(200, [&]() { record(2); });
+    EXPECT_TRUE(wc.Wait(TEST_TIMEOUT_MS));
+    ASSERT_EQ(order.size(), 3u);
+    EXPECT_EQ(order[0], 1);
+    EXPECT_EQ(order[1], 2);
+    EXPECT_EQ(order[2], 3);
+}
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_SameDeadline_AllFire
+ * @tc.type  : FUNC
+ * @tc.desc  : Multiple tasks with the same deadline all fire.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_SameDeadline_AllFire, TestSize.Level1)
+{
+    StepTimer timer;
+    WaitCounter wc(3);
+    timer.SetTimeout(100, [&wc]() { wc.Done(); });
+    timer.SetTimeout(100, [&wc]() { wc.Done(); });
+    timer.SetTimeout(100, [&wc]() { wc.Done(); });
+    EXPECT_TRUE(wc.Wait(TEST_TIMEOUT_MS));
+    EXPECT_EQ(wc.Count(), 3);
+}
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_ZeroDelay_Fires
+ * @tc.type  : FUNC
+ * @tc.desc  : A task with zero delay fires promptly.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_ZeroDelay_Fires, TestSize.Level1)
+{
+    StepTimer timer;
+    std::promise<void> done;
+    auto fut = done.get_future();
+    timer.SetTimeout(0, [&done]() { done.set_value(); });
+    EXPECT_EQ(fut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
+}
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_ConcurrentCalls_AllFire
+ * @tc.type  : FUNC
+ * @tc.desc  : Concurrent SetTimeout calls from multiple threads all deliver their callbacks.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_ConcurrentCalls_AllFire, TestSize.Level1)
+{
+    StepTimer timer;
+    constexpr int N = 20;
+    WaitCounter wc(N);
+    std::vector<std::thread> threads;
+    for (int i = 0; i < N; i++) {
+        threads.emplace_back([&timer, &wc]() {
+            timer.SetTimeout(TEST_SHORT_MS, [&wc]() { wc.Done(); });
+        });
+    }
+    for (auto &t : threads) {
+        t.join();
+    }
+    EXPECT_TRUE(wc.Wait(TEST_TIMEOUT_MS));
+    EXPECT_EQ(wc.Count(), N);
+}
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_CallbackAddsNewTask
+ * @tc.type  : FUNC
+ * @tc.desc  : A callback that schedules a new task via SetTimeout is delivered.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_CallbackAddsNewTask, TestSize.Level1)
+{
+    StepTimer timer;
+    std::promise<void> done;
+    auto fut = done.get_future();
+    timer.SetTimeout(TEST_SHORT_MS, [&timer, &done]() {
+        timer.SetTimeout(TEST_SHORT_MS, [&done]() { done.set_value(); });
+    });
+    EXPECT_EQ(fut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
+}
+
+/**
+ * @tc.name  : StepTimer_WorkerExitsWhenIdle
+ * @tc.type  : FUNC
+ * @tc.desc  : After all tasks complete the worker thread exits and internal state is empty.
+ */
+HWTEST_F(StepTimerTest, WorkerExitsWhenIdle, TestSize.Level1)
+{
+    StepTimer timer;
+    std::promise<void> done;
+    auto fut = done.get_future();
+    timer.SetTimeout(TEST_SHORT_MS, [&done]() { done.set_value(); });
+    ASSERT_EQ(fut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SETTLE_MS));
+    EXPECT_FALSE(timer.running_);
+    EXPECT_TRUE(timer.tasks_.empty());
+}
+
+/**
+ * @tc.name  : StepTimer_TaskAddedWhileWaiting_FiresPromptly
+ * @tc.type  : FUNC
+ * @tc.desc  : A short-delay task added while the worker is waiting for a long-delay task
+ *             fires well before the long-delay deadline.
+ */
+HWTEST_F(StepTimerTest, TaskAddedWhileWaiting_FiresPromptly, TestSize.Level1)
+{
+    StepTimer timer;
+    std::promise<void> longDone;
+    std::promise<void> shortDone;
+    auto longFut = longDone.get_future();
+    auto shortFut = shortDone.get_future();
+    timer.SetTimeout(TEST_LONG_MS, [&longDone]() { longDone.set_value(); });
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SETTLE_MS));
+    timer.SetTimeout(TEST_SHORT_MS, [&shortDone]() { shortDone.set_value(); });
+    EXPECT_EQ(shortFut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
+    EXPECT_NE(longFut.wait_for(std::chrono::milliseconds(0)), std::future_status::ready);
+    EXPECT_EQ(longFut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
+}
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_OverwriteWhileRunning
+ * @tc.type  : FUNC
+ * @tc.desc  : Adding multiple tasks with different delays while the worker is running
+ *             delivers all callbacks.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_OverwriteWhileRunning, TestSize.Level1)
+{
+    StepTimer timer;
+    WaitCounter wc(3);
+    timer.SetTimeout(200, [&wc]() { wc.Done(); });
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SETTLE_MS));
+    timer.SetTimeout(TEST_SHORT_MS, [&wc]() { wc.Done(); });
+    timer.SetTimeout(150, [&wc]() { wc.Done(); });
+    EXPECT_TRUE(wc.Wait(TEST_TIMEOUT_MS));
+    EXPECT_EQ(wc.Count(), 3);
 }
 
 }

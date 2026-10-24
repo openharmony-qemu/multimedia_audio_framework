@@ -53,7 +53,7 @@ ohos_fuzztest("HpaeChannelConverterFuzzTest") {
     "../../../services/audio_engine:hpae_engine_manager",
     "../../../services/audio_engine:audio_engine_node",
     "../../../services/audio_engine:audio_engine_utils",
-    "../../../services/audio_engine:audio_engine_plugins",
+    "../../../services/audio_engine:audio_common_algorithm",
   ]
   external_deps = [
     "bounds_checking_function:libsec_shared",
