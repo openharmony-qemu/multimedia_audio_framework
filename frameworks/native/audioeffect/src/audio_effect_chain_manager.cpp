@@ -1085,6 +1085,9 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
     SensorAction sensorAction = SensorAction::SENSOR_ACTION_NONE;
     bool useDspEngine = false;
     int32_t ret;
+    // Hold sensorMutex_ from state computation through action application so the commit
+    // order of headTrackingEnabled_ matches the sensor execution order (no reorder race).
+    std::lock_guard<std::mutex> sensorLock(sensorMutex_);
     {
         std::lock_guard<std::mutex> lock(dynamicMutex_);
         ret = UpdateSpatializationStateInner(spatializationState, sensorAction);
@@ -1092,7 +1095,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
     }
     // Sensor binder calls must stay outside dynamicMutex_: blocking here would freeze all
     // effect operations and stall the HpaeManager FIFO (sceneboard appfreeze, 2026-10-24).
-    ApplySensorAction(sensorAction, useDspEngine);
+    ApplySensorActionLocked(sensorAction, useDspEngine);
     return ret;
 }
 
@@ -1211,12 +1214,11 @@ SensorAction AudioEffectChainManager::UpdateSensorStateLocked()
     return SensorAction::SENSOR_ACTION_DEACTIVATE;
 }
 
-void AudioEffectChainManager::ApplySensorAction(SensorAction action, bool useDspEngine)
+void AudioEffectChainManager::ApplySensorActionLocked(SensorAction action, bool useDspEngine)
 {
     if (action == SensorAction::SENSOR_ACTION_NONE) {
         return;
     }
-    std::lock_guard<std::mutex> sensorLock(sensorMutex_);
     if (action == SensorAction::SENSOR_ACTION_ACTIVATE) {
         ActivateHeadTracking(useDspEngine);
         return;
@@ -2073,6 +2075,8 @@ void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSuppo
     Trace trace("AudioEffectChainManager::UpdateEffectBtOffloadSupported: " + std::to_string(isSupported));
     SensorAction sensorAction = SensorAction::SENSOR_ACTION_NONE;
     bool useDspEngine = false;
+    // sensorMutex_ first, then dynamicMutex_: keeps decide+apply atomic (see sensorMutex_).
+    std::lock_guard<std::mutex> sensorLock(sensorMutex_);
     {
         std::lock_guard<std::mutex> lock(dynamicMutex_);
         if (isSupported == btOffloadSupported_) {
@@ -2102,7 +2106,7 @@ void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSuppo
         }
         useDspEngine = btOffloadEnabled_;
     }
-    ApplySensorAction(sensorAction, useDspEngine);
+    ApplySensorActionLocked(sensorAction, useDspEngine);
 }
 
 void AudioEffectChainManager::SetPersonalizedSpatializationStateResultCallback(
@@ -2766,6 +2770,8 @@ void AudioEffectChainManager::SetBypassSpatializationForStereo(bool bypass)
 {
     SensorAction sensorAction = SensorAction::SENSOR_ACTION_NONE;
     bool useDspEngine = false;
+    // sensorMutex_ first, then dynamicMutex_: keeps decide+apply atomic (see sensorMutex_).
+    std::lock_guard<std::mutex> sensorLock(sensorMutex_);
     {
         std::lock_guard<std::mutex> lock(dynamicMutex_);
         CHECK_AND_RETURN_LOG(bypassSpatializationForStereo_ != bypass,
@@ -2788,7 +2794,7 @@ void AudioEffectChainManager::SetBypassSpatializationForStereo(bool bypass)
         }
         useDspEngine = btOffloadEnabled_;
     }
-    ApplySensorAction(sensorAction, useDspEngine);
+    ApplySensorActionLocked(sensorAction, useDspEngine);
 }
 
 int32_t AudioEffectChainManager::ReturnEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels,

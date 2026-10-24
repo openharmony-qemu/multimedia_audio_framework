@@ -214,12 +214,12 @@ private:
         SENSOR_ACTION_DEACTIVATE,
     };
     // Caller must hold dynamicMutex_. Only updates HDI head mode and returns the pending
-    // sensor action; the action itself must be applied via ApplySensorAction outside
+    // sensor action; the action itself must be applied via ApplySensorActionLocked outside
     // dynamicMutex_ (sensor service binder may block indefinitely).
     SensorAction UpdateSensorStateLocked();
-    // Must be called WITHOUT dynamicMutex_ held. Executes sensor-service binder calls
-    // (serialized by sensorMutex_) and re-acquires dynamicMutex_ only for chain updates.
-    void ApplySensorAction(SensorAction action, bool useDspEngine);
+    // Caller must hold sensorMutex_ and must NOT hold dynamicMutex_. Executes the
+    // sensor-service binder calls and re-acquires dynamicMutex_ only for chain updates.
+    void ApplySensorActionLocked(SensorAction action, bool useDspEngine);
     void DeleteAllChains();
     void RecoverAllChains();
     int32_t EffectDspVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
@@ -357,8 +357,11 @@ private:
     std::string stereoEnhancementMode_ = "0";
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
-    // Serializes sensor-service binder calls; never acquired while holding dynamicMutex_
-    // (ApplySensorAction is the only user and runs outside it).
+    // Serializes the decide+apply sequence of sensor actions across the three public
+    // entries (UpdateSpatializationState / UpdateEffectBtOffloadSupported /
+    // SetBypassSpatializationForStereo) so the commit order of headTrackingEnabled_
+    // matches the sensor execution order. Lock order is sensorMutex_ -> dynamicMutex_
+    // (one-way); never call those entries while holding dynamicMutex_.
     std::mutex sensorMutex_;
     std::atomic<bool> spatializationEnabled_ = false;
     bool headTrackingEnabled_ = false;

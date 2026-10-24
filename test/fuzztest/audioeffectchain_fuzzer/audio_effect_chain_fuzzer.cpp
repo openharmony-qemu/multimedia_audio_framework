@@ -531,8 +531,9 @@ void AudioEffectChainUpdateSensorStateFuzzTest()
     audioEffectChainManager->btOffloadEnabled_ = GetData<bool>();
     audioEffectChainManager->btOffloadEnabled_ = GetData<bool>();
     bool useDspEngine = audioEffectChainManager->btOffloadEnabled_;
+    std::lock_guard<std::mutex> sensorLock(audioEffectChainManager->sensorMutex_);
     auto sensorAction = audioEffectChainManager->UpdateSensorStateLocked();
-    audioEffectChainManager->ApplySensorAction(sensorAction, useDspEngine);
+    audioEffectChainManager->ApplySensorActionLocked(sensorAction, useDspEngine);
     audioEffectChainManager->ResetInfo();
 }
 
