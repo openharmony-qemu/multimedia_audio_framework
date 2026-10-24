@@ -23,6 +23,7 @@
 #include "audio_policy_config_parser.h"
 #include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
+#include "audio_device_utils.h"
 #include "audio_core_service.h"
 #include "audio_bus_selector.h"
 
@@ -526,13 +527,18 @@ bool AudioCoreConfigManager::IsUltraFastRecordingDeviceSupported(const AudioStre
             // ARM USB source parameters are reported by the device and negotiated when opening the pipe.
             return true;
         }
-        const auto layout = streamInfo.channelLayout == CH_LAYOUT_MONO ? CH_LAYOUT_STEREO : streamInfo.channelLayout;
+        AudioSampleFormat tempFormat = streamInfo.format;
+        CHECK_AND_RETURN_RET(tempFormat == SAMPLE_S16LE, false);
+        AudioChannelLayout tempLayout = streamInfo.channelLayout;
+        if (tempLayout == CH_LAYOUT_UNKNOWN) {
+            tempLayout = ConvertAudioChannelToLayout(streamInfo.channels);
+        }
+        CHECK_AND_CONTINUE(tempLayout != CH_LAYOUT_UNKNOWN);
+        tempLayout = (tempLayout == CH_LAYOUT_MONO) ? CH_LAYOUT_STEREO : tempLayout;
         for (const auto &prop : pipe->second->streamPropInfos_) {
             CHECK_AND_CONTINUE(prop != nullptr);
-            if (prop->format_ == streamInfo.format && prop->sampleRate_ == streamInfo.samplingRate &&
-                prop->channelLayout_ == layout) {
-                return true;
-            }
+            CHECK_AND_CONTINUE(prop->sampleRate_ == streamInfo.samplingRate && prop->channelLayout_ == tempLayout);
+            return true;
         }
     }
     return false;

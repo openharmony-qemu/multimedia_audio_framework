@@ -1131,6 +1131,14 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, UltraFastRecordingCapability_001, TestS
     EXPECT_FALSE(manager.GetUltraFastFlag("primary", PIPE_ROLE_OUTPUT));
     EXPECT_FALSE(manager.GetUltraFastFlag("remote", PIPE_ROLE_INPUT));
     EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {nullptr, desc}));
+    prop->format_ = SAMPLE_S32LE;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    for (auto format : {SAMPLE_S24LE, SAMPLE_S32LE, SAMPLE_F32LE}) {
+        streamInfo.format = format;
+        EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    }
+    streamInfo.format = SAMPLE_S16LE;
+    prop->format_ = SAMPLE_S16LE;
     EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {}));
     EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {nullptr}));
     prop->bufferSize_ = 960;
@@ -1288,6 +1296,28 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, UltraFastRecordingDeviceQuery_001, Test
     streamInfo.channels = MONO;
     streamInfo.channelLayout = CH_LAYOUT_MONO;
     EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.channelLayout = CH_LAYOUT_UNKNOWN;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    EXPECT_EQ(streamInfo.channelLayout, CH_LAYOUT_UNKNOWN);
+    streamInfo.channels = STEREO;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.channels = CHANNEL_4;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.channels = CHANNEL_UNKNOW;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.channels = CHANNEL_16;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.channels = STEREO;
+    validProp->format_ = SAMPLE_S32LE;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.format = SAMPLE_S32LE;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.format = SAMPLE_S16LE;
+    streamInfo.channels = MONO;
+    streamInfo.channelLayout = CH_LAYOUT_MONO;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.format = SAMPLE_S16LE;
+    validProp->format_ = SAMPLE_S16LE;
     streamInfo.channels = STEREO;
     streamInfo.channelLayout = CH_LAYOUT_STEREO;
     auto prop = std::make_shared<PipeStreamPropInfo>();
@@ -1331,7 +1361,7 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, UltraFastRecordingDeviceQuery_001, Test
     EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
     validProp->sampleRate_ = SAMPLE_RATE_16000;
     validProp->format_ = SAMPLE_S32LE;
-    streamInfo = AudioStreamInfo(SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S32LE, STEREO, CH_LAYOUT_STEREO);
+    streamInfo = AudioStreamInfo(SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO);
     EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
     validProp->sampleRate_ = SAMPLE_RATE_48000;
     validProp->format_ = SAMPLE_S16LE;
