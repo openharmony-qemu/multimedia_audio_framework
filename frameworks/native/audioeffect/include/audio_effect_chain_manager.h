@@ -208,7 +208,18 @@ private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode,
         DeviceType deviceType, uint32_t renderId);
-    void UpdateSensorState();
+    enum class SensorAction {
+        SENSOR_ACTION_NONE,
+        SENSOR_ACTION_ACTIVATE,
+        SENSOR_ACTION_DEACTIVATE,
+    };
+    // Caller must hold dynamicMutex_. Only updates HDI head mode and returns the pending
+    // sensor action; the action itself must be applied via ApplySensorAction outside
+    // dynamicMutex_ (sensor service binder may block indefinitely).
+    SensorAction UpdateSensorStateLocked();
+    // Must be called WITHOUT dynamicMutex_ held. Executes sensor-service binder calls
+    // (serialized by sensorMutex_) and re-acquires dynamicMutex_ only for chain updates.
+    void ApplySensorAction(SensorAction action, bool useDspEngine);
     void DeleteAllChains();
     void RecoverAllChains();
     int32_t EffectDspVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
@@ -282,7 +293,10 @@ private:
     // same AudioEffectChain instance (shared-chain equivalence class). Returns false when the chain for
     // `key` has not been created yet (defensive: override must not apply to a non-existent chain).
     bool ConsultChannelOverrideByKey(const std::string &key, uint32_t &channels, uint64_t &channelLayout);
-    int32_t UpdateSpatializationStateInner(AudioSpatializationState spatializationState);
+    // Caller must hold dynamicMutex_. Reports the pending sensor action via sensorAction;
+    // the caller applies it outside the lock through ApplySensorAction.
+    int32_t UpdateSpatializationStateInner(AudioSpatializationState spatializationState,
+        SensorAction &sensorAction);
     int32_t SetHdiParam(const AudioEffectScene &sceneType);
     int32_t ReturnEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
     int32_t ReturnEffectChannelInfoInner(const std::string &sceneType, DeviceType deviceType,
@@ -297,8 +311,12 @@ private:
     void WaitAndReleaseEffectChain(const std::string &sceneType, const std::string &sceneTypeAndDeviceKey,
         const std::string &defaultSceneTypeAndDeviceKey, int32_t ret);
     bool IsDeviceTypeSupportingSpatialization();
-    void ActivateHeadTracking();
-    void DeactivateHeadTracking();
+    // Pure sensor-service calls, no dynamicMutex_-protected members touched; must run
+    // outside dynamicMutex_ under sensorMutex_ (see ApplySensorAction).
+    void ActivateHeadTracking(bool useDspEngine);
+    void DeactivateHeadTrackingSensor();
+    // Caller must hold dynamicMutex_.
+    void DisableHeadTrackingOnChainsLocked();
     std::string GetEffectChainByMode(std::string effectChainKey);
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;
@@ -339,6 +357,9 @@ private:
     std::string stereoEnhancementMode_ = "0";
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
+    // Serializes sensor-service binder calls; never acquired while holding dynamicMutex_
+    // (ApplySensorAction is the only user and runs outside it).
+    std::mutex sensorMutex_;
     std::atomic<bool> spatializationEnabled_ = false;
     bool headTrackingEnabled_ = false;
     bool btOffloadEnabled_ = false;

@@ -530,7 +530,9 @@ void AudioEffectChainUpdateSensorStateFuzzTest()
     audioEffectChainManager->headTrackingEnabled_ = GetData<bool>();
     audioEffectChainManager->btOffloadEnabled_ = GetData<bool>();
     audioEffectChainManager->btOffloadEnabled_ = GetData<bool>();
-    audioEffectChainManager->UpdateSensorState();
+    bool useDspEngine = audioEffectChainManager->btOffloadEnabled_;
+    auto sensorAction = audioEffectChainManager->UpdateSensorStateLocked();
+    audioEffectChainManager->ApplySensorAction(sensorAction, useDspEngine);
     audioEffectChainManager->ResetInfo();
 }
 
