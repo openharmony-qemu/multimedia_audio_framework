@@ -699,7 +699,6 @@ audio_ohos_library("audio_process_service") {
     "hdf_core:libhdf_utils",
     "hicollie:libhicollie",
     "hilog:libhilog",
-    "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",

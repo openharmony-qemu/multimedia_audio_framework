@@ -2533,7 +2533,6 @@ enum ThreadPriorityConfig : uint32_t {
     THREAD_PRIORITY_QOS_7 = 0,
     THREAD_PRIORITY_4,
     THREAD_PRIORITY_VIP_10,
-    THREAD_PRIORITY_ULTRA_FAST,
 };
 
 enum XperfEventId : int32_t {

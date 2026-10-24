@@ -116,7 +116,6 @@ private:
     int32_t GetCapturerFlagsByRoute(uint32_t routeFlag);
     bool CheckVoiceDownlinkPermission();
     int32_t StartStream();
-    void ReportUltraFastUsage();
     const char *GetUltraFastFallbackReason() const;
 
     std::mutex statusLock_;
@@ -183,8 +182,6 @@ private:
     std::atomic<int32_t> actualDeviceType_{DEVICE_TYPE_INVALID};
     std::atomic<uint32_t> actualAdapterType_{HDI_ADAPTER_TYPE_UNKNOWN};
     std::atomic<FastStatus> actualFastStatus_{FASTSTATUS_NORMAL};
-    std::atomic<bool> ultraFastUsageActive_{false};
-    int64_t ultraFastStartTimeNs_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -546,12 +546,6 @@ int32_t IpcStreamInServer::RegisterThreadPriority(int32_t tid, const std::string
 {
     pid_t pid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
-    if (threadPriority == THREAD_PRIORITY_ULTRA_FAST) {
-        CHECK_AND_RETURN_RET(mode_ == AUDIO_MODE_RECORD && config_.capturerInfo.originalFlag == AUDIO_FLAG_ULTRA_FAST &&
-            config_.appInfo.appUid == IPCSkeleton::GetCallingUid() &&
-            PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION, IPCSkeleton::GetCallingTokenID()),
-            ERR_PERMISSION_DENIED);
-    }
     auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), threadPriority, bundleName);
     std::lock_guard lock(scheduleGuardsMutex_);
     scheduleGuards_[method].swap(sharedGuard);

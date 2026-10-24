@@ -13,24 +13,6 @@
 
 domain: AUDIO
 
-AUDIO_ULTRA_FAST_USAGE:
-  __BASE: {type: BEHAVIOR, level: MINOR, desc: ultra fast audio stream usage}
-  SESSIONID: {type: UINT32, desc: audio session id}
-  UID: {type: INT32, desc: application uid}
-  IS_PLAYBACK: {type: BOOL, desc: whether this is playback}
-  DEVICE_TYPE: {type: INT32, desc: actual input device type}
-  ADAPTER_NAME: {type: STRING, desc: input adapter category}
-  REQUESTED_LATENCY_MODE: {type: INT32, desc: requested latency mode}
-  RUNTIME_FAST_STATUS: {type: INT32, desc: actual fast status}
-  ROUTE_FLAG: {type: UINT32, desc: actual route flag}
-  PIPE_TYPE: {type: INT32, desc: actual pipe type}
-  START_TIME: {type: INT64, desc: interval start time in milliseconds}
-  STOP_TIME: {type: INT64, desc: interval stop time in milliseconds}
-  DURATION_MS: {type: INT64, desc: monotonic interval duration in milliseconds}
-  FALLBACK_REASON: {type: STRING, desc: fallback category}
-  UNDERFLOW_COUNT: {type: INT32, desc: session underflow count}
-  OVERFLOW_COUNT: {type: INT32, desc: session overflow count}
-
 DEVICE_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: audio output device}
   ISOUTPUT: {type: INT32, desc: is output device}

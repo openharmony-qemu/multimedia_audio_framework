@@ -27,7 +27,6 @@
 #include "audio_capturer_log.h"
 #include "audio_service.h"
 #include "audio_process_config.h"
-#include "hisysevent.h"
 #include "i_stream_manager.h"
 #include "audio_policy_manager.h"
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -296,8 +295,6 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
             status_ = I_STATUS_STARTED;
             lastStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
-            ultraFastStartTimeNs_ = ClockTime::GetCurNano();
-            ultraFastUsageActive_.store(processConfig_.capturerInfo.originalFlag == AUDIO_FLAG_ULTRA_FAST);
             stateListener->OnOperationHandled(START_STREAM, 0);
             break;
         case OPERATION_PAUSED:
@@ -426,7 +423,6 @@ void CapturerInServer::HandleOperationStopped(CapturerStage stage)
         std::chrono::system_clock::now().time_since_epoch()).count();
     recorderDfx_->WriteDfxStopMsg(streamIndex_, stage,
         GetLastAudioDuration(), processConfig_);
-    ReportUltraFastUsage();
 }
 
 void CapturerInServer::OnCaptureRouteChanged(uint32_t routeFlag, int32_t deviceType, uint32_t adapterType)
@@ -447,27 +443,6 @@ const char *CapturerInServer::GetUltraFastFallbackReason() const
         return "STATIC_FORMAT";
     }
     return "ROUTE_OR_CONCURRENCY";
-}
-
-void CapturerInServer::ReportUltraFastUsage()
-{
-    CHECK_AND_RETURN(ultraFastUsageActive_.exchange(false));
-    const uint32_t route = actualRouteFlag_.load();
-    const FastStatus status = actualFastStatus_.load();
-    const AudioPipeType pipe = status == FASTSTATUS_ULTRA_FAST ? PIPE_TYPE_IN_ULTRA_FAST :
-        (status == FASTSTATUS_FAST ? PIPE_TYPE_IN_LOWLATENCY : PIPE_TYPE_IN_NORMAL);
-    const char *adapter = actualAdapterType_.load() == HDI_ADAPTER_TYPE_USB ? "usb" :
-        (actualAdapterType_.load() == HDI_ADAPTER_TYPE_PRIMARY ? "primary" : "other");
-    const int64_t durationMs = std::max<int64_t>(0,
-        (ClockTime::GetCurNano() - ultraFastStartTimeNs_) / (AUDIO_NS_PER_US * AUDIO_US_PER_MS));
-    HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::AUDIO, "AUDIO_ULTRA_FAST_USAGE",
-        OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "SESSIONID", streamIndex_, "UID", processConfig_.appInfo.appUid, "IS_PLAYBACK", false,
-        "DEVICE_TYPE", actualDeviceType_.load(), "ADAPTER_NAME", adapter, "REQUESTED_LATENCY_MODE", 2,
-        "RUNTIME_FAST_STATUS", static_cast<int32_t>(status), "ROUTE_FLAG", route, "PIPE_TYPE", static_cast<int32_t>(pipe),
-        "START_TIME", lastStartTime_, "STOP_TIME", lastStopTime_, "DURATION_MS", durationMs,
-        "FALLBACK_REASON", GetUltraFastFallbackReason(), "UNDERFLOW_COUNT", underflowCount,
-        "OVERFLOW_COUNT", overFlowLogFlag_);
 }
 
 void CapturerInServer::Dump(std::string &dumpString)
