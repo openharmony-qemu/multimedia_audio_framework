@@ -469,14 +469,19 @@ HWTEST_F(AudioServerUnitTest, UltraFastInputDeviceSwitch_001, TestSize.Level1)
     manager.captureSources_[ultraId].source_ = ultra;
     manager.captureSources_[usbId].source_ = usb;
     const std::vector<DeviceType> devices = {DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_MIC, DEVICE_TYPE_USB_HEADSET};
+#ifdef SUPPORT_LOW_LATENCY
+    const auto expectedDevices = devices;
+#else
+    const std::vector<DeviceType> expectedDevices = {};
+#endif
     for (DeviceType device : devices) {
         EXPECT_EQ(audioServer->SetIORoutes(device, INPUT_DEVICES_FLAG, {device}), SUCCESS);
     }
-    EXPECT_EQ(ultra->devices_, devices);
+    EXPECT_EQ(ultra->devices_, expectedDevices);
     EXPECT_TRUE(usb->devices_.empty());
     ultra->initialized_ = false;
     EXPECT_EQ(audioServer->SetIORoutes(DEVICE_TYPE_MIC, INPUT_DEVICES_FLAG, {DEVICE_TYPE_MIC}), SUCCESS);
-    EXPECT_EQ(ultra->devices_, devices);
+    EXPECT_EQ(ultra->devices_, expectedDevices);
     manager.captureSources_[ultraId].source_ = nullptr;
     EXPECT_EQ(audioServer->SetIORoutes(DEVICE_TYPE_MIC, INPUT_DEVICES_FLAG, {DEVICE_TYPE_MIC}), SUCCESS);
     EXPECT_EQ(manager.captureSources_[ultraId].source_, nullptr);

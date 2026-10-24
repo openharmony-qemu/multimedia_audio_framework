@@ -229,13 +229,12 @@ int32_t HpaeFastCapturerManager::InitCapturerManager()
     return SUCCESS;
 }
 
-int32_t HpaeFastCapturerManager::WarmUpCapturer()
+void HpaeFastCapturerManager::WarmUpCapturer()
 {
     // Creating without Start/Stop will result in residual mmap buffer (affecting other recording channels)
     // and power consumption issues.
-    int32_t ret = sourceInputNode_->CapturerSourceStart();
-    int32_t stopRet = sourceInputNode_->CapturerSourceStop();
-    return ret == SUCCESS ? stopRet : ret;
+    sourceInputNode_->CapturerSourceStart();
+    sourceInputNode_->CapturerSourceStop();
 }
 
 int32_t HpaeFastCapturerManager::Init(bool isReload)

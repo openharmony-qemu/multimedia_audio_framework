@@ -405,11 +405,11 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
     if (fastVoipSource != nullptr && fastVoipSource->IsInited()) {
         fastVoipSource->UpdateActiveDevice(type);
     }
-#endif
     auto ultraFastSource = GetSourceByProp(HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_DEFAULT);
     if (ultraFastSource != nullptr && ultraFastSource->IsInited()) {
         ultraFastSource->UpdateActiveDevice(type);
     }
+#endif
     std::shared_ptr<IAudioCaptureSource> aiSource = GetSourceByProp(HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
     if (aiSource != nullptr && aiSource->IsInited()) {
         aiSource->UpdateActiveDevice(type);

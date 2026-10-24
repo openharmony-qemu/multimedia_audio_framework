@@ -266,6 +266,34 @@ HWTEST_F(HpaeFastCapturerManagerTest, InitCapturerManagerInvalidFrameLen, TestSi
     EXPECT_NE(manager->InitCapturerManager(), SUCCESS);
 }
 
+/** @tc.desc: Warm-up calls Start then Stop for both fast modes, including Start and Stop failures. */
+HWTEST_F(HpaeFastCapturerManagerTest, WarmUpCapturerStartStop_001, TestSize.Level1)
+{
+    for (auto routeFlag : {AUDIO_INPUT_FLAG_FAST, AUDIO_INPUT_FLAG_ULTRA_FAST}) {
+        for (int32_t startResult : {SUCCESS, ERROR}) {
+            for (int32_t stopResult : {SUCCESS, ERROR}) {
+                HpaeSourceInfo sourceInfo = CreateFastSourceInfo(routeFlag);
+                sourceInfo.isUltraFast = routeFlag == AUDIO_INPUT_FLAG_ULTRA_FAST;
+                auto manager = std::make_shared<HpaeFastCapturerManager>(sourceInfo);
+                auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+                manager->sourceInputNode_ = CreateFastSourceInputNode(sourceInfo, mockSource);
+                EXPECT_CALL(*mockSource, IsInited()).WillRepeatedly(Return(true));
+                EXPECT_CALL(*mockSource, DeInit()).Times(0);
+                {
+                    InSequence sequence;
+                    EXPECT_CALL(*mockSource, Start()).WillOnce(Return(startResult));
+                    EXPECT_CALL(*mockSource, Stop()).WillOnce(Return(stopResult));
+                }
+                manager->WarmUpCapturer();
+                EXPECT_EQ(manager->sourceInputNode_->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+                Mock::VerifyAndClearExpectations(mockSource.get());
+                manager->sourceInputNode_->audioCapturerSource_ = nullptr;
+                manager->sourceInputNode_->captureId_ = HDI_INVALID_ID;
+            }
+        }
+    }
+}
+
 /** @tc.desc: Init and warm-up failures do not actively deinitialize an ultra fast source. */
 HWTEST_F(HpaeFastCapturerManagerTest, UltraFastInitFailureDoesNotDeInit_001, TestSize.Level1)
 {

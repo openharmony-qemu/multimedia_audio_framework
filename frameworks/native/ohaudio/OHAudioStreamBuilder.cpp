@@ -643,7 +643,6 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         "Error, invalid type input");
     CHECK_AND_RETURN_RET_LOG(capturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "Error, capturer is nullptr");
-    *capturer = nullptr;
     int32_t capturerFlags = latencyMode_;
     if (latencyMode_ == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST) {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,

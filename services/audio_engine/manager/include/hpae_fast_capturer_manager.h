@@ -93,7 +93,7 @@ public:
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t InitCapturerManager();
-    int32_t WarmUpCapturer();
+    void WarmUpCapturer();
     void CreateSourceAttr(IAudioSourceAttr &attr);
     int32_t CreateOutputSession(const HpaeStreamInfo &streamInfo);
     int32_t CreateSessionNodes(const HpaeStreamInfo &streamInfo);
