@@ -43,14 +43,32 @@ struct CheckerParam {
     DataTransferStateChangeType lastStatus = DATA_TRANS_RESUME;
 };
 
+// Value snapshot of an outbound monitor callback, collected under checkLock_ and
+// dispatched after the lock is released. Kept as plain values so it stays valid
+// once the lock is dropped.
+struct PendingMonitorCallback {
+    int32_t pid = 0;
+    int32_t callbackId = 0;
+    AudioRendererDataTransferStateChangeInfo callbackInfo;
+};
+
+// Value snapshot of an outbound mute-state callback, same lifecycle as PendingMonitorCallback.
+struct PendingMuteCallback {
+    int32_t pid = 0;
+    int32_t callbackId = 0;
+    bool isMute = false;
+};
+
 class AudioStreamChecker : public std::enable_shared_from_this<AudioStreamChecker> {
 public:
     AudioStreamChecker(AudioProcessConfig cfg);
     ~AudioStreamChecker();
-    void MonitorCheckFrameSub(CheckerParam &para);
+    void MonitorCheckFrameSub(CheckerParam &para,
+        std::vector<PendingMonitorCallback> *pendingCallbacks = nullptr);
     void MonitorCheckFrame();
     void CleanRecordData(CheckerParam &para);
-    void MonitorOnCallback(DataTransferStateChangeType type, bool isNeedCallback, CheckerParam &para);
+    void MonitorOnCallback(DataTransferStateChangeType type, bool isNeedCallback, CheckerParam &para,
+        std::vector<PendingMonitorCallback> *pendingCallbacks = nullptr);
     void MonitorOnAllCallback(DataTransferStateChangeType type, bool isStandby);
     int32_t GetAppUid();
     void InitChecker(DataTransferMonitorParam para, const int32_t pid, const int32_t callbackId);
@@ -75,7 +93,8 @@ private:
     bool IsMonitorMuteFrame(const CheckerParam &para);
     bool IsMonitorNoDataFrame(const CheckerParam &para);
     void InitCallbackInfo(DataTransferStateChangeType type, AudioRendererDataTransferStateChangeInfo &callbackInfo);
-    void MonitorCheckFrameAction(CheckerParam &para, int64_t abnormalFrameNum, float badFrameRatio);
+    void MonitorCheckFrameAction(CheckerParam &para, int64_t abnormalFrameNum, float badFrameRatio,
+        std::vector<PendingMonitorCallback> *pendingCallbacks = nullptr);
     void CalculateFrameAfterStandby(CheckerParam &para, int64_t &abnormalFrameNum);
     void CalculateFrameAfterOverflow(CheckerParam &para, int64_t &abnormalFrameNum);
 
