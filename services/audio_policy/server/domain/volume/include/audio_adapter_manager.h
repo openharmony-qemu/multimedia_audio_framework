@@ -532,7 +532,7 @@ private:
     void SaveVolumeToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, const VolumeScale &volume, int32_t zoneId = 0);
     void SaveMuteToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
-        AudioStreamType streamType, bool mute);
+        AudioStreamType streamType, bool mute, int32_t zoneId = 0);
     int32_t SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t zoneId = 0);
     float CalculateVolumeDbExt(int32_t volumeInt, int32_t limit = MAX_VOLUME_DEGREE);

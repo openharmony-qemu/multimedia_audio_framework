@@ -1284,7 +1284,7 @@ void VolumeDataMaintainer::LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDe
 
     bool loadFlag = true;
     for (size_t i = 0; i < volumeList.size(); i++) {
-        SaveMuteToMap(device, volumeList[i], infos[i].value);
+        SaveMuteToMap(device, volumeList[i], infos[i].value, zoneId);
         loadFlag = loadFlag && infos[i].loadFlag;
     }
     SaveLoadFlagToMap(device, VolumeKeyType::MUTE, loadFlag, zoneId);

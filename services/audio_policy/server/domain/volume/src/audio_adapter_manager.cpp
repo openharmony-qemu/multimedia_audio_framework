@@ -852,15 +852,15 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, co
         AUDIO_ERR_LOG("this type can not set mute");
         return SUCCESS;
     }
-    int32_t minRet = GetMinVolumeLevel(streamType, desc->deviceType_);
-    int32_t maxRet = GetMaxVolumeLevel(streamType, desc->deviceType_);
+    int32_t minRet = GetMinVolumeLevel(streamType, desc->deviceType_, zoneId);
+    int32_t maxRet = GetMaxVolumeLevel(streamType, desc->deviceType_, zoneId);
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= minRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope,minRet:%{public}d maxRet:%{public}d", minRet, maxRet);
     VolumeScale buffedVolume = volume;
-    volumeDataMaintainer_.SaveVolumeToMap(desc, streamType, buffedVolume);
+    volumeDataMaintainer_.SaveVolumeToMap(desc, streamType, buffedVolume, zoneId);
 
     // Save the volume to database
-    SaveVolumeToDbAsync(desc, streamType, buffedVolume);
+    SaveVolumeToDbAsync(desc, streamType, buffedVolume, zoneId);
     SetRemoteVolumeForPassThroughDevice(desc, volumeLevel);
     if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(zoneId, desc->deviceType_)) {
         AUDIO_INFO_LOG("Set system volume for proxy device, zoneId: %{public}d, device: %{public}s",
@@ -1207,7 +1207,7 @@ bool AudioAdapterManager::GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescr
     AudioStreamType streamType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
-    return volumeDataMaintainer_.LoadMuteFromMap(device, streamType);
+    return volumeDataMaintainer_.LoadMuteFromMap(device, streamType, zoneId);
 }
 
 bool AudioAdapterManager::GetStreamMuteForVolumeSet(std::shared_ptr<AudioDeviceDescriptor> device,
@@ -1238,8 +1238,8 @@ int32_t AudioAdapterManager::SetStreamMute(std::shared_ptr<AudioDeviceDescriptor
         return SUCCESS;
     }
 
-    volumeDataMaintainer_.SaveMuteToMap(device, streamType, mute);
-    SaveMuteToDbAsync(device, streamType, mute);
+    volumeDataMaintainer_.SaveMuteToMap(device, streamType, mute, zoneId);
+    SaveMuteToDbAsync(device, streamType, mute, zoneId);
     if (device->volumeBehavior_.controlMode == PASS_THROUGH_MODE) {
         AudioServerProxy::GetInstance().SetRemoteAudioParameterProxy(device->networkId_, false, mute);
         AUDIO_INFO_LOG("set remote mute: %{public}d", mute);
@@ -1258,7 +1258,7 @@ int32_t AudioAdapterManager::SetStreamMute(std::shared_ptr<AudioDeviceDescriptor
             volume);
         return SUCCESS;
     }
-    return SetVolumeDbForDeviceInPipe(device, streamType, zoneId);
+    return SetVolumeDbForDeviceInPipe(device, streamType);
 }
 
 // LCOV_EXCL_START
@@ -4277,10 +4277,10 @@ void AudioAdapterManager::SaveVolumeToDbAsync(std::shared_ptr<AudioDeviceDescrip
 }
 
 void AudioAdapterManager::SaveMuteToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
-    AudioStreamType streamType, bool mute)
+    AudioStreamType streamType, bool mute, int32_t zoneId)
 {
-    std::thread([this, desc, streamType, mute]() {
-        volumeDataMaintainer_.SaveMuteToDb(desc, streamType, mute);
+    std::thread([this, desc, streamType, mute, zoneId]() {
+        volumeDataMaintainer_.SaveMuteToDb(desc, streamType, mute, zoneId);
     }).detach();
 }
 

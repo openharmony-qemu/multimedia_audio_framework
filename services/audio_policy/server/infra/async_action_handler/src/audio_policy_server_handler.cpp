@@ -1233,6 +1233,9 @@ void AudioPolicyServerHandler::HandleVolumeDegreeEvent(const AppExecFwk::InnerEv
             AUDIO_DEBUG_LOG("Non system applications do not send system callbacks");
             continue;
         }
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+        CHECK_AND_CONTINUE(IsTargetZoneForVolumeKeyEvent(it->first, eventContextObj->zoneId));
+#endif
         AUDIO_PRERELEASE_LOGI("clientPid : %{public}d, volumeType : %{public}d," \
             " volumeDegree : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
             it->first,
