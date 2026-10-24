@@ -87,7 +87,7 @@ audio_ohos_library("audio_suite") {
 
   deps = [
     "../audio_engine:audio_engine_utils",
-    "../audio_engine:audio_engine_plugins",
+    "../audio_engine:audio_common_algorithm",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/offlineaudioeffect:offline_audio_effect",
@@ -246,7 +246,7 @@ audio_ohos_library("audio_pcm_process") {
 
     deps = [
       ":audio_suite",
-      "../audio_engine:audio_engine_plugins",
+      "../audio_engine:audio_common_algorithm",
       "../../frameworks/native/audioutils:audio_utils",
       "../audio_service:audio_common",
     ]

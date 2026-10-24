@@ -324,5 +324,40 @@ bool IdHandler::IsRemoteClass(const std::string &deviceClass)
     return deviceClass == "remote";
 }
 
+void IdHandler::Dump(std::string &dumpString)
+{
+    dumpString += "\n==== IdHandler INFO ====\n";
+    {
+        std::lock_guard<std::mutex> infoIdLock(infoIdMtx_);
+        AppendFormat(dumpString, "- infoIdMap size: %zu\n", infoIdMap_.size());
+        for (auto &entry : infoIdMap_) {
+            AppendFormat(dumpString, "  - infoId: %u, info: %s, useCount: %zu, useIds: [",
+                entry.first, GetEncryptStr(entry.second.info_).c_str(), entry.second.useIdSet_.size());
+            bool first = true;
+            for (auto useId : entry.second.useIdSet_) {
+                if (!first) {
+                    dumpString += ", ";
+                }
+                AppendFormat(dumpString, "%u", useId);
+                first = false;
+            }
+            dumpString += "]\n";
+        }
+    }
+
+    std::lock_guard<std::mutex> freeLock(freeInfoIdMtx_);
+    AppendFormat(dumpString, "- freeInfoIdSet size: %zu, freeInfoIds: [",
+        freeInfoIdSet_.size());
+    bool first = true;
+    for (auto freeId : freeInfoIdSet_) {
+        if (!first) {
+            dumpString += ", ";
+        }
+        AppendFormat(dumpString, "%u", freeId);
+        first = false;
+    }
+    dumpString += "]\n";
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -934,7 +934,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_SetMicrophoneMutePersisten
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
         bool isMutePersistentFirst = audioGroupMngr_->GetPersistentMicMuteState();
         ret = audioGroupMngr_->SetMicrophoneMutePersistent(!isMutePersistentFirst, PolicyType::PRIVACY_POLCIY_TYPE);
-        EXPECT_EQ(SUCCESS, ret);
+        EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
         bool isMutePersistentSecond = audioGroupMngr_->GetPersistentMicMuteState();
         EXPECT_EQ(isMutePersistentFirst, !isMutePersistentSecond);
     }
@@ -955,7 +955,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetPersistentMicMuteState_
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
         ret = audioGroupMngr_->SetMicrophoneMutePersistent(true, PolicyType::PRIVACY_POLCIY_TYPE);
-        EXPECT_EQ(SUCCESS, ret);
+        EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
         bool isMutePersistent = audioGroupMngr_->GetPersistentMicMuteState();
         EXPECT_EQ(isMutePersistent, true);
     }

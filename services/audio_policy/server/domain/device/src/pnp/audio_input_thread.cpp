@@ -84,16 +84,5 @@ int32_t AudioInputThread::AudioPnpInputOpen()
 
     return (fdNum == 0) ? ERROR : SUCCESS;
 }
-
-void AudioInputThread::AudioPnpInputClose()
-{
-    for (int32_t i = 0; i < g_inputDevCnt && i < INPUT_EVT_MAX_CNT; i++) {
-        if (g_fdSets[i].fd >= 0) {
-            close(g_fdSets[i].fd);
-            g_fdSets[i].fd = -1;
-        }
-    }
-    g_inputDevCnt = 0;
-}
 } // namespace AudioStandard
 } // namespace OHOS

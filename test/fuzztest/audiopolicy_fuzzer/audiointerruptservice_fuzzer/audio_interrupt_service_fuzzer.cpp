@@ -992,7 +992,12 @@ void AudioInterruptServiceHandleLowPriorityEventFuzzTest(const uint8_t *rawData,
         return;
     }
     int32_t pid = *reinterpret_cast<const int32_t *>(rawData);
-    int32_t streamId = *reinterpret_cast<const int32_t *>(rawData);
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
+    audioInterrupt.streamId = *reinterpret_cast<const uint32_t *>(rawData);
+    audioInterrupt.isAudioSessionInterrupt = *reinterpret_cast<const bool *>(rawData);
+    audioInterrupt.audioFocusType.sourceType = *reinterpret_cast<const SourceType *>(rawData);
+    std::shared_ptr<AudioInterruptZone> audioInterruptZone = make_shared<AudioInterruptZone>();
     interruptService->SetAudioSessionScene(pid, *reinterpret_cast<const AudioSessionScene *>(rawData));
     if (interruptService->sessionService_.sessionMap_[pid] == nullptr) {
         return;
@@ -1001,7 +1006,7 @@ void AudioInterruptServiceHandleLowPriorityEventFuzzTest(const uint8_t *rawData,
         *reinterpret_cast<const AudioSessionScene *>(rawData);
     interruptService->sessionService_.sessionMap_[pid]->state_ = *reinterpret_cast<const AudioSessionState *>(rawData);
     interruptService->handler_ = make_shared<AudioPolicyServerHandler>();
-    interruptService->HandleLowPriorityEvent(pid, streamId);
+    interruptService->HandleLowPriorityEvent(pid, audioInterrupt, audioInterruptZone);
 }
 
 void AudioInterruptServiceAudioFocusInfoListRemovalConditionFuzzTest(const uint8_t *rawData, size_t size)

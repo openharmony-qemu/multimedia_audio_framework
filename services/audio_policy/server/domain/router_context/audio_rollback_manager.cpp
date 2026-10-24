@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioRollbackManager"
 #endif
 
-#include <thread>
+#include <chrono>
 #include "audio_rollback_manager.h"
 #include "audio_policy_log.h"
 #include "audio_device_common.h"
@@ -28,8 +28,8 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-constexpr int32_t CONTINUE_TIMEOUT_SEC = 2;
-constexpr int32_t ROLLBACK_TIMEOUT_SEC = 1;
+constexpr uint32_t CONTINUE_TIMEOUT_MS = 2000;
+constexpr uint32_t ROLLBACK_TIMEOUT_MS = 1000;
 
 static bool IsConnected(const AudioDeviceDescriptor &desc)
 {
@@ -69,11 +69,10 @@ void AudioRollbackManager::OnDeviceNewConnect(const AudioDeviceDescriptor &desc)
     rollbackInfo_->selections = AudioRouterInfra::GetInstance().GetSelections(
         {SelectDeviceType::CALL_OUTPUT, SelectDeviceType::MEDIA_OUTPUT});
     CHECK_AND_CALL_FUNC_RETURN(!rollbackInfo_->selections.empty(), rollbackInfo_.reset());
-    thread([deviceId, this]() {
-        this_thread::sleep_for(chrono::seconds(CONTINUE_TIMEOUT_SEC));
+    timer_.SetTimeout(CONTINUE_TIMEOUT_MS, [deviceId, this]() {
         CHECK_AND_RETURN(RollbackNewConnect(deviceId, NEW_CONNECT_ROLLBACK));
         AudioDeviceCommon::FetchAndRoute("RollbackNewConnect");
-    }).detach();
+    });
 }
 
 void AudioRollbackManager::SetConnectLostRollback(const AudioDeviceDescriptor &desc)
@@ -93,13 +92,12 @@ void AudioRollbackManager::SetConnectLostRollback(const AudioDeviceDescriptor &d
     }
     rollbackInfo_->type = CONNECT_LOST_ROLLBACK;
     CHECK_AND_CALL_FUNC_RETURN(!rollbackInfo_->selections.empty(), rollbackInfo_.reset());
-    thread([deviceId, this]() {
-        this_thread::sleep_for(chrono::seconds(ROLLBACK_TIMEOUT_SEC));
+    timer_.SetTimeout(ROLLBACK_TIMEOUT_MS, [deviceId, this]() {
         std::lock_guard lg(mutex_);
         if (rollbackInfo_ && rollbackInfo_->deviceId == deviceId && rollbackInfo_->type == CONNECT_LOST_ROLLBACK) {
             rollbackInfo_.reset();
         }
-    }).detach();
+    });
 }
 
 void AudioRollbackManager::ContinueSetDevice(const AudioDeviceDescriptor &desc)
@@ -265,14 +263,13 @@ bool AudioRollbackManager::HandleVirtualConnected(int32_t uid, SelectDeviceType 
     }
     AUDIO_INFO_LOG("uid=%{public}d, sType=%{public}d, stream=%{public}d, id=%{public}d, type=%{public}d",
         uid, type, streamId, deviceId, desc.deviceType_);
-    thread([uid, type, streamId, deviceId, this]() {
-        this_thread::sleep_for(chrono::seconds(CONTINUE_TIMEOUT_SEC));
+    timer_.SetTimeout(CONTINUE_TIMEOUT_MS, [uid, type, streamId, deviceId, this]() {
         std::lock_guard lg(mutex_);
         virtualSelectDevices_.erase(remove_if(virtualSelectDevices_.begin(), virtualSelectDevices_.end(),
             [uid, type, streamId, deviceId] (Selection &e) {
                 return e.uid == uid && e.type == type && e.streamId == streamId && e.deviceId == deviceId;
             }), virtualSelectDevices_.end());
-    }).detach();
+    });
     return true;
 }
 
@@ -291,6 +288,9 @@ void AudioRollbackManager::SetSelectionRollback(int32_t uid, SelectDeviceType ty
     selectionRollbacks_.erase(remove_if(
         selectionRollbacks_.begin(), selectionRollbacks_.end(), pred), selectionRollbacks_.end());
     CHECK_AND_RETURN(!connectedSet_.contains(deviceId) && IsNearlinkBtOutput(desc));
+    if (type == SelectDeviceType::MEDIA_OUTPUT && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        CHECK_AND_RETURN(!AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(desc.macAddress_));
+    }
     AUDIO_INFO_LOG("uid=%{public}d, sType=%{public}d, stream=%{public}d, id=%{public}d, type=%{public}d",
         uid, type, streamId, deviceId, desc.deviceType_);
     bool needRollback = false;
@@ -300,11 +300,10 @@ void AudioRollbackManager::SetSelectionRollback(int32_t uid, SelectDeviceType ty
         needRollback = true;
     }
     CHECK_AND_RETURN(needRollback);
-    thread([deviceId, uid, type, streamId, this]() {
-        this_thread::sleep_for(chrono::seconds(CONTINUE_TIMEOUT_SEC));
+    timer_.SetTimeout(CONTINUE_TIMEOUT_MS, [deviceId, uid, type, streamId, this]() {
         CHECK_AND_RETURN(RollbackSetDevice(uid, type, streamId, deviceId));
         AudioDeviceCommon::FetchAndRoute("RollbackSetDevice");
-    }).detach();
+    });
 }
 
 bool AudioRollbackManager::RollbackSelection(const Selection &selection)
@@ -365,6 +364,77 @@ void AudioRollbackManager::RemoveSelection(std::function<bool(Selection&)> &&pre
     CHECK_AND_RETURN(rollbackInfo_);
     rollbackInfo_->selections.erase(remove_if(rollbackInfo_->selections.begin(),
         rollbackInfo_->selections.end(), pred), rollbackInfo_->selections.end());
+}
+
+StepTimer::~StepTimer()
+{
+    {
+        unique_lock lk(mutex_);
+        tasks_.clear();
+        cv_.notify_all();
+    }
+    if (worker_.joinable()) {
+        worker_.join();
+    }
+}
+
+void StepTimer::SetTimeout(uint32_t timeoutMs, std::function<void()> fn)
+{
+    int64_t now = chrono::duration_cast<chrono::milliseconds>(
+        chrono::steady_clock::now().time_since_epoch()).count();
+    unique_lock lk(mutex_);
+    tasks_.push_back({now + timeoutMs, std::move(fn)});
+    if (running_) {
+        cv_.notify_one();
+        return;
+    }
+    running_ = true;
+    if (worker_.joinable()) {
+        lk.unlock();
+        worker_.join();
+        lk.lock();
+    }
+    worker_ = std::thread(&StepTimer::WorkLoop, this);
+}
+
+std::vector<std::function<void()>> StepTimer::PickTasks(int64_t &now)
+{
+    now = chrono::duration_cast<chrono::milliseconds>(
+        chrono::steady_clock::now().time_since_epoch()).count();
+    std::vector<std::function<void()>> funcs;
+    unique_lock lk(mutex_);
+    for (auto it = tasks_.begin(); it != tasks_.end();) {
+        if (it->first <= now) {
+            funcs.push_back(std::move(it->second));
+            it = tasks_.erase(it);
+        } else {
+            it++;
+        }
+    }
+    return funcs;
+}
+
+void StepTimer::WorkLoop()
+{
+    while (true) {
+        int64_t now = 0;
+        for (auto tasks = PickTasks(now); !tasks.empty(); tasks = PickTasks(now)) {
+            for (auto &task : tasks) {
+                task();
+            }
+        }
+        unique_lock lk(mutex_);
+        if (tasks_.empty()) {
+            running_ = false;
+            return;
+        }
+        int64_t next = INT64_MAX;
+        for (auto &t : tasks_) {
+            int64_t delta = t.first - now;
+            next = (delta < next) ? ((delta > 0) ? delta : 0) : next;
+        }
+        cv_.wait_for(lk, chrono::milliseconds(next));
+    }
 }
 
 }

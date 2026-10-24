@@ -151,6 +151,7 @@ public:
         int32_t SetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
         int32_t UnsetAudioRouteSelectorCallback();
         int32_t SetSplitModeReady();
+        int32_t SetSupportReload(bool isSupportReload, const std::string &networkId);
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
         void OnCheckActiveMusicTime(const std::string &reason) override;
         int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute) override;
@@ -266,6 +267,7 @@ public:
         void ReloadSourceForEffect(const AudioEffectPropertyArray oldPropertyArray,
             const AudioEffectPropertyArray newPropertyArray);
         void OnVehiclePriorityChanged(bool enable);
+        void MutePrimarySinkByCollaborative(int32_t duration);
         // Trigger reload for VoIP priority change due to mute callback
         void TriggerVoipPriorityReload(uint32_t sessionId, bool lowered);
         int32_t GetActiveStreamRendererInfosForDevice(
@@ -393,6 +395,7 @@ public:
     int32_t SetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
     int32_t UnsetAudioRouteSelectorCallback();
     int32_t SetSplitModeReady();
+    int32_t SetSupportReload(bool isSupportReload, const std::string &networkId);
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
     void OnCheckActiveMusicTime(const std::string &reason);
 
@@ -561,6 +564,8 @@ public:
     int32_t GetActiveStreamRendererInfosForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         std::vector<AudioRendererInfo> &rendererInfos);
+    bool GetSupportReload(const std::string &networkId);
+    void RemoveSupportReload(const std::string &networkId);
 
 private:
     void UpdateEnhanceEffectState(SourceType source);
@@ -686,6 +691,10 @@ private:
         bool hasSystemPermission);
     static void UpdateCapturerInfoWhenNoPermission(const shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
         bool hasSystemPermission);
+    void UpdateCapturerDeviceInfoByActiveDevice(
+        vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
+        vector<shared_ptr<AudioDeviceDescriptor>> &inputDevices,
+        bool hasBTPermission, bool hasSystemPermission);
     void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     void UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
@@ -779,7 +788,6 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     bool IsHeadsetToSpkOrEp(const std::shared_ptr<AudioDeviceDescriptor> &oldDesc,
         const std::shared_ptr<AudioDeviceDescriptor> &newDesc);
-    bool IsSceneRequireMuteAndSleep();
     void SetVoiceCallMuteForSwitchDevice();
     void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason,
@@ -920,6 +928,7 @@ private:
         SessionOperationMsg opMsg);
     void CheckNeedPreRemoveUnusedPipe(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos);
     bool IsUltraFastSupportedForDevice(DeviceType deviceType);
+    void MutePrimarySinkByCollaborative(int32_t duration);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
@@ -959,6 +968,8 @@ private:
 
     bool hearingAidCallFlag_ = false;
     bool hearingAidReloadFlag_ = false;
+    std::map<std::string, bool> isSupportReloadMap_;
+    std::mutex isSupportReloadMutex_;
     bool callTransferCreated_ = false;
     std::shared_ptr<HPAE::IHpaeSoftLink> softLink_ = nullptr;
 

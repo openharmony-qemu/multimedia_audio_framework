@@ -387,5 +387,6 @@ interface IAudioPolicy {
     void SetUnmuteWhitelist([in] List<int> uids, [in] IRemoteObject callerObj);
     void ClearUnmuteWhitelist();
     void SetAppVolumeMuteAndHideVolumeBar([in] int appUid, [in] boolean muted, [in] IRemoteObject callerObj);
+    void SetSupportReload([in] boolean isSupportReload, [in] String networkId);
     void CheckAudioRendererStreamInfoSupport([in] AudioStreamInfo streamInfo, [out] boolean support);
 }

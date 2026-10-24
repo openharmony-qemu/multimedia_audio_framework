@@ -3426,6 +3426,13 @@ int32_t AudioPolicyManager::InjectInterruption(const std::string networkId, Inte
     return gsp->InjectInterruption(networkId, event);
 }
 
+int32_t AudioPolicyManager::SetSupportReload(bool isSupportReload, const std::string &networkId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
+    return gsp->SetSupportReload(isSupportReload, networkId);
+}
+
 int32_t AudioPolicyManager::SetSplitModeReady()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

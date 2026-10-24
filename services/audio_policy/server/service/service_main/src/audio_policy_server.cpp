@@ -2407,6 +2407,33 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SanitizeAndSetClientInfo(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
+{
+    bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
+    if (!hasBTPermission) {
+        audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
+    }
+
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
+    AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
+    for (auto &desc : deviceDescs) {
+        CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        clientInfo.isSupportedDevice_ = audioPolicyUtils_.IsSupportedDevice(AudioBundleManager::GetBundleName(),
+            desc->deviceType_, hasSystemPermission);
+        desc->SetClientInfo(clientInfo);
+        desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
+        if (desc->IsAudioDeviceDescriptor()) {
+            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
+        }
+        if (!hasSystemPermission && desc->deviceType_ == DEVICE_TYPE_BT_SPP) {
+            desc->deviceType_ = DEVICE_TYPE_SYSTEM_PRIVATE;
+        }
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapturerInfo &captureInfoIn,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
@@ -3451,6 +3478,7 @@ void AudioPolicyServer::InitPolicyDumpMap()
     dumpFuncMap[u"-ap"] = &AudioPolicyServer::AudioPipeManagerDump;
     dumpFuncMap[u"-sd"] = &AudioPolicyServer::SelectDeviceDump;
     dumpFuncMap[u"-boot"] = &AudioPolicyServer::AudioPolicyBootDump;
+    dumpFuncMap[u"-ih"] = &AudioPolicyServer::IdHandlerInfoDump;
 }
 
 void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
@@ -3467,6 +3495,7 @@ void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
     MicrophoneMuteInfoDump(dumpString);
     AudioPipeManagerDump(dumpString);
     SelectDeviceDump(dumpString);
+    IdHandlerInfoDump(dumpString);
 }
 
 void AudioPolicyServer::AudioDevicesDump(std::string &dumpString)
@@ -3517,6 +3546,11 @@ void AudioPolicyServer::MicrophoneMuteInfoDump(std::string &dumpString)
 void AudioPolicyServer::AudioPolicyBootDump(std::string &dumpString)
 {
     audioPolicyDump_.AudioPolicyBootDump(dumpString);
+}
+
+void AudioPolicyServer::IdHandlerInfoDump(std::string &dumpString)
+{
+    audioPolicyDump_.IdHandlerInfoDump(dumpString);
 }
 
 void AudioPolicyServer::RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime)
@@ -3589,6 +3623,7 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -as\t\t\t|dump audio session info\n");
     AppendFormat(dumpString, "  -ap\t\t\t|dump audio pipe manager info\n");
     AppendFormat(dumpString, "  -boot\t\t\t|dump audio policy boot info\n");
+    AppendFormat(dumpString, "  -ih\t\t\t|dump id handler info\n");
 }
 
 int32_t AudioPolicyServer::CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -5904,6 +5939,15 @@ int32_t AudioPolicyServer::SetSplitModeReady()
     return eventEntry_->SetSplitModeReady();
 }
 
+int32_t AudioPolicyServer::SetSupportReload(bool isSupportReload, const std::string &networkId)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_UNKNOWN, "eventEntry_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_CAR_DISTRIBUTED_ENGINE_SA, ERR_PERMISSION_DENIED,
+        "callerUid %{public}d is not allow SetSupportReload", callerUid);
+    return eventEntry_->SetSupportReload(isSupportReload, networkId);
+}
+
 int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
@@ -6269,8 +6313,7 @@ bool AudioPolicyServer::IsDeviceSupportLoopback(std::shared_ptr<AudioDeviceDescr
 {
     DeviceType type = device->getType();
     if (type == DEVICE_TYPE_USB_ARM_HEADSET || type == DEVICE_TYPE_USB_HEADSET) {
-        static bool ret = AudioServerProxy::GetInstance().IsAudioLoopbackSupported(LOOPBACK_HARDWARE, type);
-        return ret;
+        return AudioServerProxy::GetInstance().IsAudioLoopbackSupported(LOOPBACK_HARDWARE, type);
     }
 
     CHECK_AND_RETURN_RET(type == DEVICE_TYPE_NEARLINK, false);
@@ -6340,11 +6383,24 @@ int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioD
     rendererInfo.rendererFlags = STREAM_FLAG_FAST;
     rendererInfo.isLoopback = true;
     rendererInfo.loopbackMode = LOOPBACK_HARDWARE;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> tempOutputDevices;
-    int32_t result = GetPreferredOutputDeviceDescriptors(rendererInfo, true, tempOutputDevices);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !tempOutputDevices.empty(), SUCCESS, "No suppprted output device.");
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> tempOutputDevices = eventEntry_->
+        GetPreferredOutputDeviceDescriptors(rendererInfo, IPCSkeleton::GetCallingUid(), LOCAL_NETWORK_ID);
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, SUCCESS, "AudioCoreService is null");
+    coreService->UpdateSinkLatencyForOutputDevices(rendererInfo, INVALID_STREAM_ID, tempOutputDevices);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(tempOutputDevices);
+    CHECK_AND_RETURN_RET_LOG(!tempOutputDevices.empty(), SUCCESS, "No suppprted output device.");
+    auto rawOutput = tempOutputDevices.front();
+    CHECK_AND_RETURN_RET_LOG(rawOutput != nullptr, SUCCESS, "OutputDevice is nullptr");
+    // The check must run before SanitizeAndSetClientInfo clears macAddress_: it queries SLE with the
+    // descriptor's own mac, so the judged device is exactly the preferred device being returned.
+    CHECK_AND_RETURN_RET_LOG(IsDeviceSupportLoopback(rawOutput), SUCCESS, "not supported OutputDevice: %{public}s",
+        AudioInfoDumpUtils::GetDeviceTypeName(rawOutput->getType()).c_str());
+    int32_t result = SanitizeAndSetClientInfo(tempOutputDevices);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "SanitizeAndSetClientInfo failed");
+    // Re-take the front element: sanitizing replaced it with a copy whose macAddress_ is cleared.
     outputDevice = tempOutputDevices.front();
-    CHECK_AND_RETURN_RET(outputDevice != nullptr && IsDeviceSupportLoopback(outputDevice), SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(outputDevice != nullptr, SUCCESS, "OutputDevice is nullptr");
 
     AudioCapturerInfo capturerInfo;
     capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
@@ -6355,8 +6411,11 @@ int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioD
     result = GetPreferredInputDeviceDescriptors(capturerInfo, tempInputDevices);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !tempInputDevices.empty(), SUCCESS, "No suppprted input device.");
     inputDevice = tempInputDevices.front();
-    CHECK_AND_RETURN_RET(inputDevice != nullptr &&
-        g_maySupportedDevicePairSet.count({inputDevice->getType(), outputDevice->getType()}), SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(inputDevice != nullptr, SUCCESS, "InputDevice is nullptr");
+    CHECK_AND_RETURN_RET_LOG(g_maySupportedDevicePairSet.count({inputDevice->getType(), outputDevice->getType()}),
+        SUCCESS, "not supported device pair, inputDevice: %{public}s, OutputDevice: %{public}s",
+        AudioInfoDumpUtils::GetDeviceTypeName(inputDevice->getType()).c_str(),
+        AudioInfoDumpUtils::GetDeviceTypeName(outputDevice->getType()).c_str());
 
     ret = SUCCESS;
     return SUCCESS;

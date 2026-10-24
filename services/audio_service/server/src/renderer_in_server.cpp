@@ -689,13 +689,24 @@ void RendererInServer::ReportExceptionForOffload()
 {
     std::string appName = AppBundleManager::GetBundleNameFromUid(processConfig_.appInfo.appUid);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::UNDERRUN_ISSUE,
         Media::MediaMonitor::FAULT_EVENT);
-    bean->Add("APP_NAME", appName);
-    bean->Add("STREAM_TYPE", processConfig_.streamType);
-    bean->Add("TYPE", TYPE_OFFLOAD_NOT_ENOUGH_DATA);
-    AUDIO_ERR_LOG("ReportExceptionForFast: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
-        appName.c_str(), processConfig_.streamType, TYPE_OFFLOAD_NOT_ENOUGH_DATA);
+    bean->Add("ISSUE_TYPE", TYPE_OFFLOAD_NOT_ENOUGH_DATA);
+    bean->Add("STREAM_INFO_1", std::to_string(DFX_INVALID_STREAM_INFO));
+    bean->Add("STREAM_INFO_2", std::to_string(DFX_INVALID_STREAM_INFO));
+    bean->Add("STREAM_INFO_3", processConfig_.streamType);
+    bean->Add("STREAM_INFO_4", DFX_INVALID_STREAM_INFO);
+    bean->Add("APP_INFO_1", appName);
+    bean->Add("APP_INFO_2", std::to_string(DFX_INVALID_APP_INFO));
+    bean->Add("APP_INFO_3", DFX_INVALID_APP_INFO);
+    bean->Add("EXCEPTION_INFO_1", std::to_string(DFX_INVALID_EXCEPTION_INFO));
+    bean->Add("EXCEPTION_INFO_2", std::to_string(DFX_INVALID_EXCEPTION_INFO));
+    bean->Add("EXCEPTION_INFO_3", DFX_INVALID_EXCEPTION_INFO);
+    bean->Add("EXCEPTION_INFO_4", DFX_INVALID_EXCEPTION_INFO);
+    bean->Add("DEVICE_INFO_1", std::to_string(DFX_INVALID_DEVICE_INFO));
+    bean->Add("DEVICE_INFO_2", DFX_INVALID_DEVICE_INFO);
+    bean->Add("SYSTEM_INFO_1", DFX_INVALID_SYSTEM_INFO);
+    bean->Add("SYSTEM_INFO_2", DFX_INVALID_SYSTEM_INFO);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -710,13 +721,24 @@ void RendererInServer::ReportExceptionForFast()
     CHECK_AND_RETURN(isTimeout);
     std::string appName = AppBundleManager::GetBundleNameFromUid(processConfig_.appInfo.appUid);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::UNDERRUN_ISSUE,
         Media::MediaMonitor::FAULT_EVENT);
-    bean->Add("APP_NAME", appName);
-    bean->Add("STREAM_TYPE", streamType);
-    bean->Add("TYPE", TYPE_FAST_ABUSE);
-    AUDIO_ERR_LOG("ReportExceptionForFast: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
-        appName.c_str(), streamType, TYPE_FAST_ABUSE);
+    bean->Add("ISSUE_TYPE", TYPE_FAST_ABUSE);
+    bean->Add("STREAM_INFO_1", std::to_string(DFX_INVALID_STREAM_INFO));
+    bean->Add("STREAM_INFO_2", std::to_string(DFX_INVALID_STREAM_INFO));
+    bean->Add("STREAM_INFO_3", streamType);
+    bean->Add("STREAM_INFO_4", DFX_INVALID_STREAM_INFO);
+    bean->Add("APP_INFO_1", appName);
+    bean->Add("APP_INFO_2", std::to_string(DFX_INVALID_APP_INFO));
+    bean->Add("APP_INFO_3", DFX_INVALID_APP_INFO);
+    bean->Add("EXCEPTION_INFO_1", std::to_string(DFX_INVALID_EXCEPTION_INFO));
+    bean->Add("EXCEPTION_INFO_2", std::to_string(DFX_INVALID_EXCEPTION_INFO));
+    bean->Add("EXCEPTION_INFO_3", DFX_INVALID_EXCEPTION_INFO);
+    bean->Add("EXCEPTION_INFO_4", DFX_INVALID_EXCEPTION_INFO);
+    bean->Add("DEVICE_INFO_1", std::to_string(DFX_INVALID_DEVICE_INFO));
+    bean->Add("DEVICE_INFO_2", DFX_INVALID_DEVICE_INFO);
+    bean->Add("SYSTEM_INFO_1", DFX_INVALID_SYSTEM_INFO);
+    bean->Add("SYSTEM_INFO_2", DFX_INVALID_SYSTEM_INFO);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 

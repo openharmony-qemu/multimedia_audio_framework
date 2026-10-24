@@ -46,9 +46,16 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceT
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(id);
     CHECK_AND_RETURN_RET_LOG(desc, make_shared<AudioDeviceDescriptor>(), "desc is nullptr");
     std::shared_ptr<AudioDeviceDescriptor> pairDevice = desc->pairDeviceDescriptor_;
-    bool isScoStateConnect = Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
-    if (pairDevice != nullptr && pairDevice->connectState_ != SUSPEND_CONNECTED && !pairDevice->exceptionFlag_ &&
-        (pairDevice->isEnable_ || isScoStateConnect) && (pairDevice->connectState_ != SIMULATED_CONNECTED)) {
+    CHECK_AND_RETURN_RET(pairDevice, make_shared<AudioDeviceDescriptor>());
+    // SIMULATED_CONNECTED devices are virtual and must not be used for call capture
+    CHECK_AND_RETURN_RET(pairDevice->connectState_ != SIMULATED_CONNECTED, make_shared<AudioDeviceDescriptor>());
+    bool deviceAvailable = pairDevice->connectState_ != SUSPEND_CONNECTED && !pairDevice->exceptionFlag_ &&
+        pairDevice->isEnable_;
+    if (deviceAvailable) {
+        CHECK_AND_RETURN_RET_LOG(pairDevice->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO ||
+            Bluetooth::AudioHfpManager::IsAudioScoStateConnect(),
+            make_shared<AudioDeviceDescriptor>(), "sco is not connected or connecting");
+
         AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
             pairDevice->deviceType_);
         return make_shared<AudioDeviceDescriptor>(*pairDevice);

@@ -226,7 +226,12 @@ bool Util::IsSppSupportSource(const SourceType sourceType)
 
 bool Util::IsDualToneStreamType(const AudioStreamType streamType)
 {
-    if (VolumeUtils::IsPCVolumeEnable()) {
+    return IsDualToneStreamType(streamType, false);
+}
+
+bool Util::IsDualToneStreamType(const AudioStreamType streamType, bool isSupportWearDetection)
+{
+    if (VolumeUtils::IsPCVolumeEnable() || isSupportWearDetection) {
         return false;
     }
     // The notification is not dual tone type. But it always uses the volume of the speaker.
@@ -1883,6 +1888,9 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
             break;
         case HEADSET_VOLUME_TYPE:
             device = "HEADSET";
+            break;
+        case BLUETOOTH_NEARLINK_VOLUME_TYPE:
+            device = "BLUETOOTH_NEARLINK";
             break;
         default:
             device = "UNKNOWN";

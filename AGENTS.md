@@ -33,7 +33,7 @@
 | 修改 Renderer、sink、播放或输出 HDI 适配 | [音频播放.md](docs/knowledge/audio_stream/audio_renderer/音频播放.md)、`frameworks/native/audiorenderer/`、`services/audio_service/`、`frameworks/native/hdiadapter_new/sink/` |
 | 修改 Capturer、source、EC、录制音效链或输入 HDI 适配 | [音频录制.md](docs/knowledge/audio_stream/audio_capturer/音频录制.md)、[安全与隐私.md](docs/knowledge/common/security_privacy/安全与隐私.md)、`services/audio_service/`、`frameworks/native/hdiadapter_new/source/` |
 | 修改 pipe 选择、并发资源协调或通路恢复 | [通路选择.md](docs/knowledge/audio_stream/audio_pipe_selector/通路选择.md)、`services/audio_policy/server/domain/pipe/`、`services/audio_service/` |
-| 修改焦点、中断、闪避或 Audio Session V2 | [音频会话.md](docs/knowledge/audio_policy/audio_session/音频会话.md)、`services/audio_policy/server/domain/interrupt/`、`services/audio_policy/server/domain/session/` |
+| 修改焦点、中断、闪避或 AudioSession | [音频会话.md](docs/knowledge/audio_policy/audio_session/音频会话.md)、[音频焦点管理.md](docs/knowledge/audio_policy/audio_interrupt/音频焦点管理.md)、`services/audio_policy/server/domain/interrupt/`、`services/audio_policy/server/domain/session/` |
 | 修改音量、静音、安全音量或铃声模式 | [音频音量.md](docs/knowledge/audio_policy/audio_volume/音频音量.md)、[音频路由和发声规则.md](docs/knowledge/audio_policy/audio_routing_rules/音频路由和发声规则.md)、`services/audio_policy/server/domain/volume/` |
 | 修改设备发现、蓝牙、USB、有线、分布式或热插拔 | [音频设备管理.md](docs/knowledge/audio_policy/audio_device_manager/音频设备管理.md)、[安全与隐私.md](docs/knowledge/common/security_privacy/安全与隐私.md)、`services/audio_policy/server/domain/device/` |
 | 修改设备选择、场景路由或播放/录制规则 | [音频路由和发声规则.md](docs/knowledge/audio_policy/audio_routing_rules/音频路由和发声规则.md)、`services/audio_policy/server/domain/router/`、`router_context/` |
@@ -133,6 +133,7 @@
 - 不能只修改某一个语言绑定或某一个 IPC 端点；公共接口、代理、Stub、服务实现和测试必须一起核对。
 - 不能因为功能开关默认关闭就跳过关闭路径、依赖缺失和服务恢复验证。
 - 不能把主题文档中的推断、示例链路或当前实现细节直接当作公共 API 保证。
+- 涉及有明确上下层关系的模块时，除回调外应避免反向调用；确需反向调用或回调时必须评估死锁风险，尤其是流执行层回调策略层时。
 
 ## 完成定义
 

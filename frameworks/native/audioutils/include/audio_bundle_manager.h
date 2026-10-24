@@ -35,6 +35,8 @@ public:
     static std::string GetBundleNameByToken(const uint32_t tokenIdNum);
     static int32_t IsBundleInstalled(
         const std::string &bundleName, int32_t userId, int32_t appIndex, bool &isInstalled);
+    static int32_t GetBundleInfoV9(
+        const std::string &bundleName, int32_t userId, AppExecFwk::BundleInfo &bundleInfo);
     static int32_t GetNameAndIndexForUid(int32_t uid, std::string &bundleName, int32_t &appIndex);
     static void ExtractBundleNameAndIndex(const std::string &bundleNameWithIndex,
         std::string &bundleName, int32_t &appIndex);
@@ -61,6 +63,8 @@ private:
     std::string GetBundleNameByTokenImpl(const uint32_t tokenIdNum);
     int32_t IsBundleInstalledImpl(
         const std::string &bundleName, int32_t userId, int32_t appIndex, bool &isInstalled);
+    int32_t GetBundleInfoV9Impl(
+        const std::string &bundleName, int32_t userId, AppExecFwk::BundleInfo &bundleInfo);
     int32_t GetNameAndIndexForUidImpl(int32_t uid, std::string &bundleName, int32_t &appIndex);
 
     std::shared_mutex mapMutex_;

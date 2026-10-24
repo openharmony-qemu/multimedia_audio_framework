@@ -44,6 +44,7 @@ ohos_fuzztest("AudioInputThreadFuzzTest") {
   external_deps = [
     "bounds_checking_function:libsec_shared",
     "drivers_interface_audio:libaudio_proxy_6.1",
+    "drivers_interface_audio:libaudio_proxy_6.2",
     "c_utils:utils",
     "hilog:libhilog",
     "hdf_core:libhdf_ipc_adapter",

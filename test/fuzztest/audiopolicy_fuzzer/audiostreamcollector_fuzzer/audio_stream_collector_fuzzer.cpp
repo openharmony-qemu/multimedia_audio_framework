@@ -550,12 +550,13 @@ void AudioStreamCollectorUpdateCapturerDeviceInfoFuzzTest(const uint8_t *rawData
     inputDeviceInfoPtr->deviceType_ = g_testDeviceTypes[index];
     auto info1 = std::make_unique<AudioCapturerChangeInfo>();
     info1->inputDeviceInfo.deviceType_ = g_testDeviceTypes[index / NUM_2];
+    info1->sessionId = static_cast<int32_t>(index);
     audioStreamCollector_.audioCapturerChangeInfos_.clear();
     audioStreamCollector_.audioCapturerChangeInfos_.push_back(std::move(info1));
     auto info2 = std::make_unique<AudioCapturerChangeInfo>();
     info2->inputDeviceInfo.deviceType_ = g_testDeviceTypes[(index + 1) / NUM_2];
     audioStreamCollector_.audioCapturerChangeInfos_.push_back(std::move(info2));
-    audioStreamCollector_.UpdateCapturerDeviceInfo(inputDeviceInfoPtr);
+    audioStreamCollector_.UpdateCapturerDeviceInfo(index, inputDeviceInfoPtr);
 
     AudioDeviceDescriptor inputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = make_shared<AudioCapturerChangeInfo>();

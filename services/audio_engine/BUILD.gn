@@ -75,12 +75,12 @@ ohos_shared_library("audio_engine_utils") {
   version_script = "libaudio_engine_utils.versionscript"
 }
 
-config("audio_engine_plugins_config") {
+config("audio_common_algorithm_config") {
   include_dirs =
       [ "plugin/resample/include" ]
 }
 
-ohos_shared_library("audio_engine_plugins") {
+ohos_shared_library("audio_common_algorithm") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -104,7 +104,7 @@ ohos_shared_library("audio_engine_plugins") {
     "plugin/channel_converter/include",
   ]
 
-  public_configs = [ ":audio_engine_plugins_config" ]
+  public_configs = [ ":audio_common_algorithm_config" ]
 
   cflags = [
     "-Wall",
@@ -132,7 +132,7 @@ ohos_shared_library("audio_engine_plugins") {
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
-  version_script = "libaudio_engine_plugins.versionscript"
+  version_script = "libaudio_common_algorithm.versionscript"
 }
 
 config("audio_engine_node_config") {
@@ -237,7 +237,7 @@ ohos_shared_library("audio_engine_node") {
   ]
 
   deps = [
-    ":audio_engine_plugins",
+    ":audio_common_algorithm",
     ":audio_engine_utils",
     "../../frameworks/native/audioclock:audio_clock",
     "../../frameworks/native/audioeffect:audio_effect",

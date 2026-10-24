@@ -37,7 +37,6 @@ public:
     int32_t hdPlaybackMode_ = 0;
     uint32_t deviceTokenId_ = 0;
     uint32_t supportDynamicPipes_ = AUDIO_FLAG_NONE;
-    bool isSupportReload_ = true;
 
     void SetSupportDynamicPipes(const std::vector<AudioFlag> &flags);
     bool IsSupportDynamicPipe(AudioFlag flag) const;
