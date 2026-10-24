@@ -6406,6 +6406,17 @@ int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, 
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::GetUsbHeadsetType(const std::string &macAddress, int32_t deviceRole,
+    int32_t &usbHeadsetType)
+{
+    DeviceRole role = static_cast<DeviceRole>(deviceRole);
+    if (audioConnectedDevice_.IsArmDevice(macAddress, role)) {
+        usbHeadsetType = AUDIO_DEVICE_USB_HEADSET_TYPE_ARM;
+    } else {
+        usbHeadsetType = AUDIO_DEVICE_USB_HEADSET_TYPE_HIFI;
+    }
+    return SUCCESS;
+}
 
 int32_t AudioPolicyServer::SelectPrivateDevice(int32_t devType, const std::string &macAddress)
 {

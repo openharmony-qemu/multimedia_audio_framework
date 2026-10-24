@@ -201,6 +201,31 @@ typedef enum {
 } OH_AudioDevice_Type;
 
 /**
+ * @brief Defines the USB headset subtype.
+ *
+ * @since 26.2.0
+ */
+typedef enum {
+    /**
+     * @brief Invalid USB headset subtype.
+     *
+     */
+    AUDIO_DEVICE_USB_HEADSET_TYPE_INVALID = 0,
+
+    /**
+     * @brief HIFI USB headset.
+     *
+     */
+    AUDIO_DEVICE_USB_HEADSET_TYPE_HIFI = 1,
+
+    /**
+     * @brief ARM USB headset.
+     *
+     */
+    AUDIO_DEVICE_USB_HEADSET_TYPE_ARM = 2
+} OH_AudioDevice_UsbHeadsetType;
+
+/**
  * @brief Defines the audio device flag.
  *
  * @since 12
@@ -346,6 +371,22 @@ OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceRole(OH_AudioDeviceDescr
  */
 OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceType(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
     OH_AudioDevice_Type *deviceType);
+
+/**
+ * @brief Query the USB headset subtype of the target audio device descriptor.
+ * <br>The caller should first confirm the device type is {@link AUDIO_DEVICE_TYPE_USB_HEADSET} via
+ * {@link OH_AudioDeviceDescriptor_GetDeviceType}, then call this interface.
+ * <br>When the device type is {@link AUDIO_DEVICE_TYPE_USB_HEADSET}, this interface returns
+ * HIFI USB headset or ARM USB headset, otherwise returns invalid value.
+ *
+ * @param audioDeviceDescriptor The USB headset device descriptor. Obtained via
+ *     {@link OH_AudioRoutingManager_GetDevices} or {@link OH_AudioRoutingManager_OnDeviceChangedCallback}.
+ * @param usbHeadsetType Pointer to the variable that receives the USB headset subtype.
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}.
+ * @since 26.2.0
+ */
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetUsbHeadsetType(
+    OH_AudioDeviceDescriptor *audioDeviceDescriptor, OH_AudioDevice_UsbHeadsetType *usbHeadsetType);
 
 /**
  * @brief Query the device id of the target audio device descriptor.
