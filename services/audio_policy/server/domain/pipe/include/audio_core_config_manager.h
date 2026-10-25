@@ -107,7 +107,7 @@ public:
     bool IsSupportedDeviceTypeByAdapterType(AudioAdapterType adapterType, DeviceType deviceType);
     bool GetHasEarpiece();
     bool GetUltraFastFlag();
-    bool GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role);
+    bool CheckDeviceSupportUltraFast(DeviceType deviceType, AudioPipeRole role);
     bool GetArmUsbUltraFastFlag();
     bool GetTrueUltraFastFlag();
     void CheckTrueUltraFastPipe();

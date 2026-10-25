@@ -121,6 +121,12 @@ const char* DUP_STREAM = "DupStream";
 const char* VIRTUAL_INJECTOR = "Virtual_Injector";
 inline constexpr std::string_view PRIMARY_ZONE_NAME = "primary_zone";
 constexpr int32_t PLAYBACKCAPTURER_RECORD_ALL = -1;
+static const std::unordered_map<DeviceType, std::string> g_trueUltraFastDeviceToAdapter = {
+    {DEVICE_TYPE_SPEAKER, "primary"},
+    {DEVICE_TYPE_EARPIECE, "primary"},
+    {DEVICE_TYPE_USB_HEADSET, "primary"},
+    {DEVICE_TYPE_USB_ARM_HEADSET, "usb"},
+};
 
 // For ipc
 constexpr uint32_t MAX_COMMON_IPC_ARRAY_SIZE = 1000;
@@ -1643,6 +1649,7 @@ enum FastStatus {
     FASTSTATUS_NORMAL,
     /** Fast status */
     FASTSTATUS_FAST,
+    /** Ultra Fast status */
     FASTSTATUS_ULTRA_FAST = 2
 };
 

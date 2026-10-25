@@ -208,7 +208,7 @@ class OHAudioRenderer {
 public:
     OHAudioRenderer();
     ~OHAudioRenderer();
-    static bool IsUltraFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage);
+    static bool IsDeviceSupportUltraFast();
     bool Initialize(AudioRendererOptions &rendererOptions);
     bool Start();
     bool Pause();

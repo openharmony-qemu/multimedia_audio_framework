@@ -66,11 +66,6 @@ bool AudioPipeManager::GetUltraFastFlag()
     return audioConfigManager_.GetUltraFastFlag();
 }
 
-bool AudioPipeManager::GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role)
-{
-    return audioConfigManager_.GetUltraFastFlag(adapterName, role);
-}
-
 bool AudioPipeManager::GetArmUsbUltraFastFlag()
 {
     return audioConfigManager_.GetArmUsbUltraFastFlag();
@@ -1745,12 +1740,6 @@ bool AudioPipeManager::IsUltraFastSupportedDevice(DeviceType deviceType)
 bool AudioPipeManager::IsTrueUltraFastSupportedDevice(DeviceType deviceType)
 {
     return g_trueUltraFastDeviceToAdapter.find(deviceType) != g_trueUltraFastDeviceToAdapter.end();
-}
-
-std::string AudioPipeManager::GetTrueUltraFastAdapterName(DeviceType deviceType)
-{
-    auto it = g_trueUltraFastDeviceToAdapter.find(deviceType);
-    return it != g_trueUltraFastDeviceToAdapter.end() ? it->second : "";
 }
 
 uint32_t AudioPipeManager::GetUltraFastStreamCount()

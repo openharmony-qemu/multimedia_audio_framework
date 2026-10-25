@@ -2601,16 +2601,17 @@ int32_t AudioPolicyServer::IsUltraFastPlaybackSupported(const AudioStreamInfo &s
         if (deviceDesc == nullptr) {
             continue;
         }
-        std::string adapterName = coreService_->GetPipeManager()->GetTrueUltraFastAdapterName(
-            deviceDesc->deviceType_);
-        if (adapterName.empty()) {
-            continue;
-        }
-        if (audioConfigManager_.GetUltraFastFlag(adapterName, PIPE_ROLE_OUTPUT)) {
+        if (audioConfigManager_.CheckDeviceSupportUltraFast(deviceDesc->deviceType_, PIPE_ROLE_OUTPUT)) {
             support = true;
             break;
         }
     }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::IsDeviceSupportUltraFast(bool &support)
+{
+    support = audioConfigManager_.GetTrueUltraFastFlag();
     return SUCCESS;
 }
 

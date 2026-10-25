@@ -469,6 +469,7 @@ void AudioCoreService::Init()
     }
     isSupportUltraFast_ = pipeManager_->GetUltraFastFlag();
     isSupportArmUsbUltraFast_ = pipeManager_->GetArmUsbUltraFastFlag();
+    isSupportTrueUltraFast_ = AudioCoreConfigManager::GetInstance().GetTrueUltraFastFlag();
 }
 
 void AudioCoreService::DeInit()
@@ -1156,7 +1157,7 @@ void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioS
             streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
             return;
         case AUDIO_FLAG_TRUE_ULTRA_FAST:
-            HandleTrueUltraFastFlag(streamDesc);
+            HandleTrueUltraFastFlag(streamDesc, isCreateProcess);
             return;
         case AUDIO_FLAG_ULTRA_FAST:
             HandleLegacyUltraFastFlag(streamDesc, isCreateProcess);
@@ -1169,35 +1170,36 @@ void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioS
     isCreateProcess_ = false;
 }
 
-void AudioCoreService::HandleTrueUltraFastFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+void AudioCoreService::HandleTrueUltraFastFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    bool isCreateProcess)
 {
-    if (!PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
-        IPCSkeleton::GetCallingTokenID())) {
-        AUDIO_INFO_LOG("No ultra fast permission, downgrade to FAST");
-        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-        return;
+    if (isCreateProcess) {
+        if (!PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
+            IPCSkeleton::GetCallingTokenID())) {
+            AUDIO_INFO_LOG("No ultra fast permission, downgrade to FAST");
+            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+            return;
+        }
+        if (!PermissionUtil::VerifyIsSystemApp() &&
+            streamDesc->GetMainNewDeviceType() != DEVICE_TYPE_USB_ARM_HEADSET) {
+            AUDIO_INFO_LOG("Non-system app on non-USB-ARM device, downgrade to FAST");
+            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+            return;
+        }
     }
-    if (!pipeManager_->GetUltraFastFlag("primary", PIPE_ROLE_OUTPUT) &&
-        !pipeManager_->GetUltraFastFlag("usb", PIPE_ROLE_OUTPUT)) {
+
+    if (!isSupportTrueUltraFast_) {
         AUDIO_INFO_LOG("No true ultra-fast pipe, downgrade to FAST");
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
         return;
     }
-    if (!PermissionUtil::VerifyIsSystemApp() &&
-        streamDesc->GetMainNewDeviceType() != DEVICE_TYPE_USB_ARM_HEADSET) {
-        AUDIO_INFO_LOG("Non-system app on non-USB-ARM device, downgrade to FAST");
-        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-        return;
-    }
     streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_ULTRA_FAST;
-    streamDesc->SetUltraFastRequested(true);
 }
 
 void AudioCoreService::HandleLegacyUltraFastFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     bool isCreateProcess)
 {
-    if (pipeManager_->GetUltraFastFlag("primary", PIPE_ROLE_OUTPUT) ||
-        pipeManager_->GetUltraFastFlag("usb", PIPE_ROLE_OUTPUT)) {
+    if (isSupportTrueUltraFast_) {
         AUDIO_INFO_LOG("True ultra-fast pipe exists, downgrade flag=11 to FAST");
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
         return;

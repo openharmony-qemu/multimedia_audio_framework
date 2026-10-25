@@ -508,9 +508,9 @@ std::shared_ptr<AudioRendererPrivate> AudioRenderer::CreateAndInitRendererObject
     return audioRenderer;
 }
 
-bool AudioRenderer::IsUltraFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
+bool AudioRenderer::IsDeviceSupportUltraFast()
 {
-    return AudioPolicyManager::GetInstance().IsUltraFastPlaybackSupported(streamInfo, streamUsage);
+    return AudioPolicyManager::GetInstance().IsDeviceSupportUltraFast();
 }
 
 std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,

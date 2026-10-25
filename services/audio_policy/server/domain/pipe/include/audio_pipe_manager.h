@@ -43,13 +43,6 @@ static const std::unordered_set<DeviceType> g_ultraFastDevicesSet = {
     DEVICE_TYPE_USB_ARM_HEADSET
 };
 
-static const std::unordered_map<DeviceType, std::string> g_trueUltraFastDeviceToAdapter = {
-    {DEVICE_TYPE_SPEAKER, "primary"},
-    {DEVICE_TYPE_EARPIECE, "primary"},
-    {DEVICE_TYPE_USB_HEADSET, "primary"},
-    {DEVICE_TYPE_USB_ARM_HEADSET, "usb"},
-};
-
 class AudioPipeManager {
 public:
     using RequiredPipesReadyCallback = std::function<void()>;
@@ -59,7 +52,6 @@ public:
 
     bool Init();
     bool GetUltraFastFlag();
-    bool GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role);
     bool GetArmUsbUltraFastFlag();
     bool GetTrueUltraFastFlag();
     bool PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc);
@@ -218,7 +210,6 @@ public:
     bool HasUltraFastPipe();
     bool IsUltraFastSupportedDevice(DeviceType deviceType);
     bool IsTrueUltraFastSupportedDevice(DeviceType deviceType);
-    std::string GetTrueUltraFastAdapterName(DeviceType deviceType);
     uint32_t GetUltraFastStreamCount();
     bool IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::vector<std::string> GetNoRunningPipeModuleName();

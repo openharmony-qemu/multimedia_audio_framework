@@ -595,7 +595,7 @@ private:
 
     bool IsHigherPrioritySourceType(SourceType newSource, SourceType currentSource);
     void HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
-    void HandleTrueUltraFastFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void HandleTrueUltraFastFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     void HandleLegacyUltraFastFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     void UpdateAudioFlagForFastStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     static std::string GetEncryptAddr(const std::string &addr);
@@ -1080,6 +1080,7 @@ private:
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     bool isSupportUltraFast_ = 0;
     bool isSupportArmUsbUltraFast_ = 0;
+    bool isSupportTrueUltraFast_ = 0;
 
     MultiConditionNotifier readyConditionNotifier_;
 };

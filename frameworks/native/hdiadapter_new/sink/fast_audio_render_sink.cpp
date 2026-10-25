@@ -60,11 +60,12 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     halName_ = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? "voip" : "primary";
     auto it = streamFlagToHalName.find(attr_.audioStreamFlag);
     logTag_ = (it != streamFlagToHalName.end()) ? it->second : "primary";
+    isSinkUltraMode_ = attr_.isUltraFast || attr_.isTrueUltraFast;
     int32_t ret = CreateRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
     // Route must be set after CreateRender (HDI needs the stream to exist first) and
     // before PrepareMmapBuffer (route must be active when buffers are prepared).
-    if (attr_.isUltraFast) {
+    if (isSinkUltraMode_) {
         AUDIO_INFO_LOG("SetOutputRoute for ultra fast, device: %{public}d", attr_.deviceType);
         std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)};
         DoSetOutputRoute(devices);
@@ -80,14 +81,14 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     RequestQosAuthForAudioHost();
     sinkInited_ = true;
     InitPipeInfo(hdiRenderId_, HDI_ADAPTER_TYPE_PRIMARY,
-        attr_.isUltraFast ? AUDIO_OUTPUT_FLAG_ULTRA_FAST : AUDIO_OUTPUT_FLAG_FAST);
+        isSinkUltraMode_ ? AUDIO_OUTPUT_FLAG_ULTRA_FAST : AUDIO_OUTPUT_FLAG_FAST);
 
     return SUCCESS;
 }
 
 uint32_t FastAudioRenderSink::GetRenderOffset() const
 {
-    if (attr_.isUltraFast) {
+    if (isSinkUltraMode_) {
         return HDI_RENDER_OFFSET_ULTRA_FAST;
     }
     if (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) {
@@ -140,7 +141,7 @@ bool FastAudioRenderSink::IsInited(void)
 
 void FastAudioRenderSink::RequestQosAuthForAudioHost()
 {
-    CHECK_AND_RETURN(attr_.deviceType == DEVICE_TYPE_USB_ARM_HEADSET && attr_.isUltraFast);
+    CHECK_AND_RETURN(attr_.deviceType == DEVICE_TYPE_USB_ARM_HEADSET && isSinkUltraMode_);
     std::string key = "get_audio_host_pid_for_qos#C" + GetField(attr_.address, "card", ';') + "D0";
     AUDIO_INFO_LOG("GetAudioParameterByKey, key: %{public}s", key.c_str());
     std::optional<std::string> value =
@@ -579,7 +580,7 @@ void FastAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &para
     param.stopThreshold = INT_MAX;
     param.silenceThreshold = 0;
 
-    if (attr_.isUltraFast) {
+    if (attr_.isTrueUltraFast) {
         param.type = AUDIO_ULTRA_LOW_LAT;
     } else if (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) {
         param.type = AUDIO_MMAP_VOIP;
@@ -653,16 +654,6 @@ int32_t FastAudioRenderSink::CreateRender(void)
     void *render = deviceManager->CreateRender(attr_.adapterName, &param, &deviceDesc, hdiRenderId_);
     audioRender_ = static_cast<struct IAudioRender *>(render);
     CHECK_AND_RETURN_RET(audioRender_ != nullptr, ERR_NOT_STARTED);
-    if (attr_.isUltraFast) {
-        uint32_t expectedPeriod = static_cast<uint32_t>(
-            static_cast<float>(attr_.sampleRate * attr_.channel * GetFormatByteSize(attr_.format)) *
-            ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
-        if (param.period != expectedPeriod) {
-            AUDIO_ERR_LOG("HAL returned period %{public}u, expected %{public}u for ultra fast",
-                param.period, expectedPeriod);
-            return ERR_NOT_STARTED;
-        }
-    }
     return SUCCESS;
 }
 

@@ -764,12 +764,6 @@ void AudioPipeSelector::AdjustFastRouteForUltraFastIfNeeded(std::shared_ptr<Audi
             streamDesc->sessionId_);
         streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
     }
-    if (streamDesc->GetRoute() == AUDIO_OUTPUT_FLAG_ULTRA_FAST &&
-        !pipeManager_->IsTrueUltraFastSupportedDevice(deviceType)) {
-        AUDIO_INFO_LOG("Device does not support true ultra fast, downgrade stream %{public}u to FAST",
-            streamDesc->sessionId_);
-        streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
-    }
 }
 
 void AudioPipeSelector::AdjustFastRouteForUltraFastIfNeeded(
@@ -824,6 +818,8 @@ void AudioPipeSelector::HandleFastStreamLimitOnCreate(
 {
     CHECK_AND_RETURN_LOG(newStreamDesc != nullptr, "New stream desc is nullptr");
     uint32_t routeFlag = newStreamDesc->GetRoute();
+    CHECK_AND_RETURN(routeFlag == AUDIO_OUTPUT_FLAG_FAST || routeFlag == AUDIO_INPUT_FLAG_FAST ||
+        routeFlag == AUDIO_OUTPUT_FLAG_ULTRA_FAST);
     if (routeFlag == AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
         uint32_t ultraFastCount = pipeManager_->GetUltraFastStreamCount();
         if (ultraFastCount >= MAX_ULTRA_FAST_STREAM_COUNT) {
@@ -833,8 +829,6 @@ void AudioPipeSelector::HandleFastStreamLimitOnCreate(
             routeFlag = AUDIO_OUTPUT_FLAG_FAST;
         }
     }
-    CHECK_AND_RETURN(routeFlag == AUDIO_OUTPUT_FLAG_FAST || routeFlag == AUDIO_INPUT_FLAG_FAST ||
-        routeFlag == AUDIO_OUTPUT_FLAG_ULTRA_FAST);
 
     int32_t fastStreamNum = static_cast<int32_t>(std::count_if(streamDescs.begin(), streamDescs.end(),
         [routeFlag](const std::shared_ptr<AudioStreamDescriptor> &streamDesc) {
@@ -2270,11 +2264,13 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         UpdateModuleInfoWithDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
 
-    if (streamDesc->IsUltraFastRequested()) {
-        if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_ULTRA_FAST ||
-            !AudioPipeManager::GetPipeManager()->HasRunningStream(streamDesc->sessionId_)) {
-            info.SetUltraFastFlag(true);
-            streamDesc->SetUltraFastImplemented(true);
+    if (!pipeManager->GetTrueUltraFastFlag()){
+        if (streamDesc->IsUltraFastRequested()) {
+            if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_ULTRA_FAST ||
+                !AudioPipeManager::GetPipeManager()->HasRunningStream(streamDesc->sessionId_)) {
+                info.SetUltraFastFlag(true);
+                streamDesc->SetUltraFastImplemented(true);
+            }
         }
     }
 
@@ -2468,6 +2464,9 @@ void AudioPipeSelector::MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> 
     std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN(streamDesc != nullptr && pipeInfo != nullptr, "streamDesc or pipeInfo is nullptr");
+    if (AudioCoreConfigManager::GetInstance().GetUltraFastFlag()) {
+        return;
+    }
     CHECK_AND_RETURN(pipeInfo->GetRoute() & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST));
     streamDesc->SetUltraFastImplemented(pipeInfo->GetUltraFastFlag());
 }

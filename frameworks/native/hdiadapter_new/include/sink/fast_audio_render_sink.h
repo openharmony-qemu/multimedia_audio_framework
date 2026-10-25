@@ -105,6 +105,7 @@ private:
 
     std::string halName_ = "";
     std::string logTag_ = "";
+    bool isSinkUltraMode_ = false;
     IAudioSinkAttr attr_ = {};
     bool sinkInited_ = false;
     bool started_ = false;

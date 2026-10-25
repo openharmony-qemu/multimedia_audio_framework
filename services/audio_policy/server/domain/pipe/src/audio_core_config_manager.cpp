@@ -551,10 +551,15 @@ bool AudioCoreConfigManager::GetTrueUltraFastFlag()
     return supportTrueUltraFast_;
 }
 
-bool AudioCoreConfigManager::GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role)
+bool AudioCoreConfigManager::CheckDeviceSupportUltraFast(DeviceType deviceType, AudioPipeRole role)
 {
+    AUDIO_INFO_LOG("Device type: %{public}d", deviceType);
+    auto it = g_trueUltraFastDeviceToAdapter.find(deviceType);
+    if (it == g_trueUltraFastDeviceToAdapter.end()) {
+        return false;
+    }
     for (auto &adapterIt : audioPolicyConfig_.adapterInfoMap) {
-        if (adapterIt.second->adapterName != adapterName) {
+        if (adapterIt.second->adapterName != it->second) {
             continue;
         }
         for (auto &pipeInfo : adapterIt.second->pipeInfos) {

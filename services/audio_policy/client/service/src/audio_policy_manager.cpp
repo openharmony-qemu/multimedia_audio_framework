@@ -733,6 +733,16 @@ bool AudioPolicyManager::IsUltraFastPlaybackSupported(AudioStreamInfo &streamInf
     return support;
 }
 
+bool AudioPolicyManager::IsDeviceSupportUltraFast()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
+
+    bool support = false;
+    gsp->IsDeviceSupportUltraFast();
+    return support;
+}
+
 bool AudioPolicyManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

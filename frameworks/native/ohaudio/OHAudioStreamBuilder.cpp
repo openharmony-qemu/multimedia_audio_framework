@@ -568,8 +568,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
             AUDIO_ERR_LOG("Permission denied for ultra fast playback");
             return AUDIOSTREAM_ERROR_PERMISSION_DENIED_ULTRA_FAST;
         }
-        StreamUsage streamUsage = static_cast<StreamUsage>(usage_);
-        CHECK_AND_RETURN_RET_LOG(OHAudioRenderer::IsUltraFastPlaybackSupported(streamInfo, streamUsage),
+        CHECK_AND_RETURN_RET_LOG(OHAudioRenderer::IsDeviceSupportUltraFast(),
             AUDIOSTREAM_ERROR_UNSUPPORTED_ULTRA_FAST, "Ultra fast playback not supported");
         rendererInfo.originalFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
     }

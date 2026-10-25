@@ -124,6 +124,7 @@ public:
 
     bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
     bool IsUltraFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
+    bool IsDeviceSupportUltraFast();
     bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
 
     bool IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);

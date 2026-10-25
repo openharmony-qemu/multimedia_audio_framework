@@ -2468,7 +2468,11 @@ void AudioAdapterManager::FillUltraFastPeriod(IAudioSinkAttr &attr,
             static_cast<float>(attr.sampleRate * attr.channel * formatByteSize) *
             ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
         AUDIO_INFO_LOG("GetAudioSinkAttr: ultra_fast period=%{public}u (2.5ms latency)", attr.period);
-        attr.isUltraFast = true;
+        if (audioModuleInfo.className.find(TRUE_ULTRA_FAST_CLASS) != std::string::npos) {
+            attr.isTrueUltraFast = true;
+        } else {
+            attr.isUltraFast = true;
+        }
     }
 }
 

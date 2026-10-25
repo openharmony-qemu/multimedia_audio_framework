@@ -1052,8 +1052,9 @@ void RendererInClientInner::InitCallbackLoop()
             
             strongRef->cbThreadCv_.notify_one();
             AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d, IsFastStream:%{public}d, "
-                "IsUltraFastStream:%{public}d", strongRef->sessionId_, strongRef->JudgeFastStreamByRendererAttr(),
-                strongRef->IsUltraFastStream());
+                "IsUltraFastStream:%{public}d, IsTrueUltraFastStream: %{public}d",
+                strongRef->sessionId_, strongRef->JudgeFastStreamByRendererAttr(),
+                strongRef->IsUltraFastStream(), strongRef->IsTrueUltraFastStream());
         } else {
             HILOG_COMM_WARN("[InitCallbackLoop]Strong ref is nullptr, could cause error");
         }
@@ -2352,10 +2353,14 @@ int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
 
 FastStatus RendererInClientInner::GetFastStatus()
 {
-    if (JudgeFastStreamByRendererAttr()) {
-        return rendererInfo_.rendererFlags == AUDIO_FLAG_MMAP ? FASTSTATUS_FAST : FASTSTATUS_ULTRA_FAST;
+    SyncRendererAttrFromSpan();
+    if (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST) {
+        return FASTSTATUS_FAST;
+    } else if (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+        return FASTSTATUS_ULTRA_FAST;
+    } else {
+        return FASTSTATUS_NORMAL;
     }
-    return FASTSTATUS_NORMAL;
 }
 
 void RendererInClientInner::SetFastStatusChangeCallback(const std::function<void(FastStatus)> &callback)
@@ -2394,6 +2399,11 @@ void RendererInClientInner::CheckAndReportTimestamp()
         logStopCallCount_ = true;
     }
     lastTriggerTime_ = currentTime;
+}
+
+bool RendererInClientInner::IsTrueUltraFastStream() const
+{
+    return rendererInfo_.rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST;
 }
 
 bool RendererInClientInner::IsUltraFastStreamRequested() const

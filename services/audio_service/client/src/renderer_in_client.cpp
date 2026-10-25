@@ -315,7 +315,7 @@ bool RendererInClientInner::IsLowLatencyRenderer() const
 uint64_t RendererInClientInner::GetDefaultCallbackBufferDurationInUs() const
 {
     AUDIO_INFO_LOG("Static check flag %{public}x", staticCheckFlag_);
-    if (IsUltraFastStreamRequested() && isSupportUltraFast_) {
+    if ((IsUltraFastStreamRequested() && isSupportUltraFast_) || (staticCheckFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST)) {
         return ULTRA_FAST_BUF_DURATION_IN_USEC;
     } else if (staticCheckFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
         return FAST_BUF_DURATION_IN_USEC;
