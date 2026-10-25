@@ -2634,6 +2634,13 @@ int32_t AudioPolicyServer::IsOffloadPlaybackSupported(const AudioStreamInfo &str
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo,
+    bool &support)
+{
+    support = audioConfigManager_.CheckAudioRendererStreamInfoSupport(streamInfo);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetDeviceActive(int32_t deviceType, bool active, int32_t uid)
 {
     if (uid != INVALID_UID) {

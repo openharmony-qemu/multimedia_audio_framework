@@ -66,6 +66,7 @@ private:
     void ParseStreamProps(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<AdapterPipeInfo> &pipeInfo);
     void ParseAttributes(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<AdapterPipeInfo> &pipeInfo);
     void ParseAttributeByName(AttributeInfo &attributeInfo, std::shared_ptr<AdapterPipeInfo> &pipeInfo);
+    void ParseAttributeByNameExt(AttributeInfo &attributeInfo, std::shared_ptr<AdapterPipeInfo> &pipeInfo);
     void ParseFlagAttribute(AttributeInfo &attributeInfo, std::shared_ptr<AdapterPipeInfo> &pipeInfo);
     void ParseHalLatency(AttributeInfo &attributeInfo, std::shared_ptr<AdapterPipeInfo> &pipeInfo);
     bool ParseUint32Attr(const std::string &str, uint32_t &value);

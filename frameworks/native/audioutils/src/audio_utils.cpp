@@ -2479,6 +2479,104 @@ bool IsHWDecodingType(AudioEncodingType type)
     return HWDECODING_TYPES.count(type);
 }
 
+bool Util::IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t channelLayout, uint8_t encodingType)
+{
+    CHECK_AND_RETURN_RET(encodingType != ENCODING_AUDIOVIVID, true);
+    CHECK_AND_RETURN_RET(channelLayout != CH_LAYOUT_UNKNOWN, true);
+
+    if (((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) == 0) {
+        int32_t channelCount = __builtin_popcountll(channelLayout);
+        CHECK_AND_RETURN_RET_LOG(channelCount == static_cast<int32_t>(channel), false,
+            "Channel count %{public}d not match layout popcount %{public}d", channel, channelCount);
+        return true;
+    }
+
+    uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
+    uint64_t channelCountHoa = (order + 1) * (order + 1);
+    CHECK_AND_RETURN_RET_LOG(channelCountHoa == static_cast<uint64_t>(channel), false,
+        "HOA channel count %{public}" PRIu64 " not match order %{public}" PRIu64,
+        static_cast<uint64_t>(channelCountHoa), static_cast<uint64_t>(order));
+    return true;
+}
+
+bool Util::IsFormatValid(uint8_t format)
+{
+    CHECK_AND_RETURN_RET_LOG(std::find(AUDIO_SUPPORTED_FORMATS.begin(), AUDIO_SUPPORTED_FORMATS.end(), format)
+        != AUDIO_SUPPORTED_FORMATS.end(), false, "Invalid format %{public}d", format);
+    return true;
+}
+
+bool Util::IsEncodingTypeValid(uint8_t encodingType)
+{
+    CHECK_AND_RETURN_RET_LOG(std::find(AUDIO_SUPPORTED_ENCODING_TYPES.begin(), AUDIO_SUPPORTED_ENCODING_TYPES.end(),
+        encodingType) != AUDIO_SUPPORTED_ENCODING_TYPES.end(), false,
+        "Invalid encoding type %{public}d", encodingType);
+    return true;
+}
+
+bool Util::IsSamplingRateValid(uint32_t samplingRate)
+{
+    CHECK_AND_RETURN_RET_LOG(std::find(AUDIO_SUPPORTED_SAMPLING_RATES.begin(), AUDIO_SUPPORTED_SAMPLING_RATES.end(),
+        samplingRate) != AUDIO_SUPPORTED_SAMPLING_RATES.end(), false,
+        "Invalid sampling rate %{public}d", samplingRate);
+    return true;
+}
+
+bool Util::IsRendererChannelValid(uint8_t channel, uint8_t encodingType)
+{
+    CHECK_AND_RETURN_RET(encodingType != ENCODING_AUDIOVIVID, true);
+    CHECK_AND_RETURN_RET_LOG(std::find(RENDERER_SUPPORTED_CHANNELS.begin(), RENDERER_SUPPORTED_CHANNELS.end(),
+        channel) != RENDERER_SUPPORTED_CHANNELS.end(), false,
+        "Invalid renderer channel %{public}d", channel);
+    return true;
+}
+
+bool Util::IsCapturerChannelValid(uint8_t channel)
+{
+    CHECK_AND_RETURN_RET_LOG(std::find(CAPTURER_SUPPORTED_CHANNELS.begin(), CAPTURER_SUPPORTED_CHANNELS.end(),
+        channel) != CAPTURER_SUPPORTED_CHANNELS.end(), false,
+        "Invalid capturer channel %{public}d", channel);
+    return true;
+}
+
+bool Util::IsRendererChannelLayoutValid(uint64_t channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(std::find(RENDERER_SUPPORTED_CHANNELLAYOUTS.begin(),
+        RENDERER_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) != RENDERER_SUPPORTED_CHANNELLAYOUTS.end(),
+        false, "Invalid renderer channel layout %{public}" PRIu64,
+        static_cast<uint64_t>(channelLayout));
+    return true;
+}
+
+bool Util::IsCapturerChannelLayoutValid(uint64_t channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(IsRendererChannelLayoutValid(channelLayout), false,
+        "Invalid capturer channel layout");
+    return true;
+}
+
+bool Util::IsPlaybackChannelRelatedInfoValid(uint8_t encodingType, uint8_t channels, uint64_t channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(IsRendererChannelValid(channels, encodingType), false,
+        "Invalid sink channel %{public}d", channels);
+    CHECK_AND_RETURN_RET_LOG(IsRendererChannelLayoutValid(channelLayout), false,
+        "Invalid sink channel layout");
+    CHECK_AND_RETURN_RET_LOG(IsChannelLayoutMatchedWithChannel(channels, channelLayout, encodingType), false,
+        "Not matched sink channel and channel layout");
+    return true;
+}
+
+bool Util::IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(IsCapturerChannelValid(channels), false,
+        "Invalid source channel %{public}d", channels);
+    CHECK_AND_RETURN_RET_LOG(IsCapturerChannelLayoutValid(channelLayout), false,
+        "Invalid source channel layout");
+    CHECK_AND_RETURN_RET_LOG(IsChannelLayoutMatchedWithChannel(channels, channelLayout), false,
+        "Not matched source channel and channel layout");
+    return true;
+}
+
 const std::unordered_map<AudioEncodingType, std::string> g_EncodingTypeToStringMap = {
     {ENCODING_PCM, "PCM"},
     {ENCODING_AUDIOVIVID, "AUDIOVIVID"},
