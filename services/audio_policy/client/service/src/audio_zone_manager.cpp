@@ -77,6 +77,8 @@ public:
 
     int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId) override;
 
+    int32_t AddDeviceTagToAudioZone(int32_t zoneId, const std::string &deviceTag) override;
+
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
 
     int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
@@ -388,6 +390,18 @@ int32_t AudioZoneManagerInner::AddStreamIdToAudioZone(int32_t zoneId, uint32_t s
     int32_t result = AudioPolicyManager::GetInstance().AddStreamIdToAudioZone(zoneId, streamId);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
         "AddStreamIdToAudioZone result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::AddDeviceTagToAudioZone(int32_t zoneId, const std::string &deviceTag)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId is invalid");
+    CHECK_AND_RETURN_RET_LOG(!deviceTag.empty(), ERR_INVALID_PARAM, "deviceTag is empty");
+
+    int32_t result = AudioPolicyManager::GetInstance().AddDeviceTagToAudioZone(zoneId, deviceTag);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "AddDeviceTagToAudioZone result:%{public}d", result);
     return result;
 }
 

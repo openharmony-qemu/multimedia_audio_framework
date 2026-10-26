@@ -201,6 +201,13 @@ int32_t AudioPolicyManager::AddStreamIdToAudioZone(int32_t zoneId, uint32_t stre
     return gsp->AddStreamIdToAudioZone(zoneId, streamId);
 }
 
+int32_t AudioPolicyManager::AddDeviceTagToAudioZone(int32_t zoneId, const std::string &deviceTag)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
+    return gsp->AddDeviceTagToAudioZone(zoneId, deviceTag);
+}
+
 int32_t AudioPolicyManager::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

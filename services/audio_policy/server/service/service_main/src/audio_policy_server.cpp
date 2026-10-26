@@ -5225,6 +5225,14 @@ int32_t AudioPolicyServer::AddStreamIdToAudioZone(int32_t zoneId, uint32_t strea
     return AudioZoneService::GetInstance().AddStreamIdToAudioZone(zoneId, streamId);
 }
 
+int32_t AudioPolicyServer::AddDeviceTagToAudioZone(int32_t zoneId, const std::string &deviceTag)
+{
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(!deviceTag.empty(), ERR_INVALID_PARAM, "deviceTag is empty");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    return AudioZoneService::GetInstance().AddDeviceTagToAudioZone(zoneId, deviceTag);
+}
+
 int32_t AudioPolicyServer::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
