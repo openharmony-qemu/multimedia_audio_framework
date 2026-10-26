@@ -3632,6 +3632,7 @@ void AudioCoreService::SelectA2dpType(std::shared_ptr<AudioStreamDescriptor> &st
         static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allSessionInfos));
     streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = flag;
     JUDGE_AND_INFO_LOG(isCreateProcess, "A2dp offload flag:%{public}d", flag);
+    AudioServerProxy::GetInstance().UpdateEffectBtOffloadSupportedProxy(flag == A2DP_OFFLOAD);
 #endif
 }
 
