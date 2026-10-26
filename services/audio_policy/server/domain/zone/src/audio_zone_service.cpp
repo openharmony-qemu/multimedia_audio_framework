@@ -677,6 +677,11 @@ int32_t AudioZoneService::AddStreamIdToAudioZone(int32_t zoneId, uint32_t stream
     return AddKeyToAudioZone(zoneId, INVALID_UID, "", streamId, StreamUsage::STREAM_USAGE_INVALID);
 }
 
+int32_t AudioZoneService::AddDeviceTagToAudioZone(int32_t zoneId, const std::string &deviceTag)
+{
+    return AddKeyToAudioZone(zoneId, INVALID_UID, deviceTag, INVALID_STREAM_ID, StreamUsage::STREAM_USAGE_INVALID);
+}
+
 int32_t AudioZoneService::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId)
 {
     return RemoveKeysFromAudioZone(zoneId, {AudioZoneBindKey(streamId)});
