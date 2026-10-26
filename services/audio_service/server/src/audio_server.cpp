@@ -3204,7 +3204,9 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
             return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_USB ||
             info == HDI_ID_INFO_UNPROCESS || info == HDI_ID_INFO_ULTRASONIC ||
             info == HDI_ID_INFO_VOICE_RECOGNITION || info == HDI_ID_INFO_RAW_AI ||
-            info == HDI_ID_INFO_INTERPHONE || info == HDI_ID_INFO_LIVE;
+            info == HDI_ID_INFO_INTERPHONE || info == HDI_ID_INFO_LIVE ||
+            info == HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_TYPEC || info == HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_WIRED ||
+            info == HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_BT_NEARLINK;
         }
 #ifdef SUPPORT_LOW_LATENCY
         if (type == HDI_ID_TYPE_FAST) {
