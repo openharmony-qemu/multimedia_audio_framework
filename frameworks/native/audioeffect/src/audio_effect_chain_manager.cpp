@@ -1193,7 +1193,7 @@ int32_t AudioEffectChainManager::SetHdiParam(const AudioEffectScene &sceneType)
 }
 
 // LCOV_EXCL_START
-SensorAction AudioEffectChainManager::UpdateSensorStateLocked()
+AudioEffectChainManager::SensorAction AudioEffectChainManager::UpdateSensorStateLocked()
 {
     effectHdiInput_[0] = HDI_HEAD_MODE;
     effectHdiInput_[1] = headTrackingEnabled_ == true ? 1 : 0;
