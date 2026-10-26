@@ -23,6 +23,7 @@
 #include "audio_info.h"
 #include "bluetooth_device_utils.h"
 #include "audio_timer.h"
+#include <atomic>
  
 namespace OHOS {
 namespace Bluetooth {
@@ -30,6 +31,7 @@ class BluetoothScoManager {
 public:
     static BluetoothScoManager &GetInstance();
 
+    void Init();
     void UpdateScoState(HfpScoConnectState scoState, const BluetoothRemoteDevice &device, int reason = 0);
     int32_t HandleScoConnect(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
     int32_t HandleScoDisconnect(const BluetoothRemoteDevice &device);
@@ -56,6 +58,7 @@ private:
     std::shared_ptr<ScoCacheRequest> cacheReq_;
     std::shared_ptr<AudioStandard::AudioTimer> scoTimer_;
     std::mutex scoLock_;
+    std::atomic<bool> isInitialized_ = false;
 
     void UpdateScoStateWhenDisconnected(HfpScoConnectState scoState, const BluetoothRemoteDevice &device, int reason);
     void UpdateScoStateWhenConnected(HfpScoConnectState scoState, const BluetoothRemoteDevice &device, int reason);

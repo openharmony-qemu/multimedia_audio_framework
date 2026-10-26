@@ -434,6 +434,7 @@ void AudioHfpManager::RegisterBluetoothScoListener()
 {
     HfpBluetoothDeviceManager::RegisterDisconnectScoFunc(&DisconnectScoForDevice);
     AUDIO_INFO_LOG("AudioHfpManager::RegisterBluetoothScoListener");
+    BluetoothScoManager::GetInstance().Init();
     BluetoothHfpInterface::GetInstance().RegisterObserver(hfpListener_);
 }
 
