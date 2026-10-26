@@ -40,7 +40,7 @@ HWTEST(ClientTypeManagerUnitTest, ClientTypeManagerUnitTest_001, TestSize.Level4
     auto manager = ClientTypeManager::GetInstance();
     EXPECT_NE(nullptr, manager);
     manager->clientTypeMap_.clear();
-    manager->OnClientTypeQueryCompleted(TEST_CLIENT_UID, TEST_CLIENT_TYPE);
+    manager->OnClientTypeQueryCompleted(TEST_CLIENT_UID, TEST_CLIENT_TYPE, TEST_BUNDLE_NAME);
     const int32_t checkSize = 1;
     EXPECT_EQ(checkSize, manager->clientTypeMap_.size());
 
@@ -70,7 +70,7 @@ HWTEST(ClientTypeManagerUnitTest, GetClientTypeByUidSync_001, TestSize.Level4)
     auto manager = ClientTypeManager::GetInstance();
     EXPECT_NE(nullptr, manager);
     manager->clientTypeMap_.clear();
-    manager->OnClientTypeQueryCompleted(TEST_CLIENT_UID, TEST_CLIENT_TYPE);
+    manager->OnClientTypeQueryCompleted(TEST_CLIENT_UID, TEST_CLIENT_TYPE, TEST_BUNDLE_NAME);
     const int32_t checkSize = 1;
     EXPECT_EQ(checkSize, manager->clientTypeMap_.size());
 

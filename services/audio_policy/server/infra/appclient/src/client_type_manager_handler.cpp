@@ -89,10 +89,10 @@ void ClientTypeManagerHandler::HandleGetClientType(const AppExecFwk::InnerEvent:
     callbackLock.unlock();
     if (isGame) {
         AUDIO_INFO_LOG("%{public}u is game type", uid);
-        clientTypeListener_->OnClientTypeQueryCompleted(uid, CLIENT_TYPE_GAME);
+        clientTypeListener_->OnClientTypeQueryCompleted(uid, CLIENT_TYPE_GAME, bundleName);
     } else {
         AUDIO_INFO_LOG("%{public}u not is game type", uid);
-        clientTypeListener_->OnClientTypeQueryCompleted(uid, CLIENT_TYPE_OTHERS);
+        clientTypeListener_->OnClientTypeQueryCompleted(uid, CLIENT_TYPE_OTHERS, bundleName);
     }
 #endif
 }
