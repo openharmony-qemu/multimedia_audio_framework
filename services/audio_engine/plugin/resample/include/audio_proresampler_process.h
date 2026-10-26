@@ -155,6 +155,51 @@ extern "C" {
     int32_t SingleStagePolyphaseResamplerProcess(SingleStagePolyphaseResamplerState* state,
         const float* in, uint32_t* inputLength, float* out, uint32_t* outputLength);
 
+    /* PCM sample formats for the direct-call conversion helpers below.
+       Enum values equal the bit width; AUDIO_PCM_F32_LE is 32-bit float. */
+    typedef enum AudioPcmFormat {
+        AUDIO_PCM_S16_LE = 16,
+        AUDIO_PCM_S24_LE = 24,
+        AUDIO_PCM_S32_LE = 32,
+        AUDIO_PCM_F32_LE = 33
+    } AudioPcmFormat;
+
+    enum {
+        AUDIO_PCM_ALGO_SUCCESS = 0,
+        AUDIO_PCM_ALGO_ERR_INVALID_PARAM = -1,
+        AUDIO_PCM_ALGO_ERR_NO_MEMORY = -2,
+        AUDIO_PCM_ALGO_ERR_OPERATION_FAILED = -3
+    };
+
+    /**
+     * @brief Convert interleaved PCM samples to float samples in [-1.0, 1.0].
+     * @param format PCM sample format.
+     * @param pcmData Input PCM data.
+     * @param sampleCount Total sample count (frames * channels).
+     * @param outData Output float buffer, caller allocated.
+     * @return int32_t AUDIO_PCM_ALGO_SUCCESS on success, negative error code otherwise.
+     */
+    int32_t ConvertPcmToFloat(AudioPcmFormat format, const void* pcmData, int32_t sampleCount, float* outData);
+
+    /**
+     * @brief Convert float samples in [-1.0, 1.0] to interleaved PCM samples.
+     * @param format PCM sample format.
+     * @param inData Input float buffer.
+     * @param sampleCount Total sample count (frames * channels).
+     * @param outPcm Output PCM buffer, caller allocated.
+     * @return int32_t AUDIO_PCM_ALGO_SUCCESS on success, negative error code otherwise.
+     */
+    int32_t ConvertFloatToPcm(AudioPcmFormat format, const float* inData, int32_t sampleCount, void* outPcm);
+
+    /**
+     * @brief Memory length in bytes for sampleCount frames: sampleCount * channels * bytesPerSample.
+     * @param format PCM sample format.
+     * @param channels Channel count.
+     * @param sampleCount Frames per channel.
+     * @return int32_t Byte length, or a negative error code on invalid parameters / int32 overflow.
+     */
+    int32_t AudioFormatCalcMemLength(AudioPcmFormat format, int32_t channels, int32_t sampleCount);
+
 #ifdef __cplusplus
 }
 #endif

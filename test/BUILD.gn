@@ -297,6 +297,7 @@ group("audio_fuzz_test") {
     "fuzztest/hpaemanager_fuzzer:fuzztest",
     "fuzztest/hpaeoffloadrenderermanager_fuzzer:fuzztest",
     "fuzztest/hpaeproresampler_fuzzer:fuzztest",
+    "fuzztest/audiopcmalgorithm_fuzzer:fuzztest",
     # "fuzztest/hpaeaudioformatconverternode_fuzzer:fuzztest",
     # "fuzztest/hpaeinjectorrenderermanager_fuzzer:fuzztest",
     # "fuzztest/hpaemanagerimpl_fuzzer:fuzztest",
