@@ -581,7 +581,7 @@ void FastAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &para
     param.silenceThreshold = 0;
 
     if (attr_.isTrueUltraFast) {
-        param.type = AUDIO_ULTRA_LOW_LAT;
+        param.type = AUDIO_MMAP_NOIRQ; // here should be AUDIO_ULTRA_LOW_LAT
     } else if (attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST) {
         param.type = AUDIO_MMAP_VOIP;
     } else {

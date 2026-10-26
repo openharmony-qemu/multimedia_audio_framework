@@ -25,7 +25,7 @@ typedef struct {
     std::string config;
 } HpaeSinkSourceInfo;
 
-typedef struct {
+struct HpaeInputOutputInfo{
     uint32_t sessionId;
     std::string deviceName;
     int32_t uid;
@@ -40,7 +40,7 @@ typedef struct {
     uint32_t routeFlag = 0;
     uint32_t spanSizeInFrame = 0;
     uint32_t underflowCount = 0;
-} HpaeInputOutputInfo;
+};
 
 typedef struct {
     std::vector<HpaeSinkSourceInfo> sinkInfos;

@@ -739,7 +739,7 @@ bool AudioPolicyManager::IsDeviceSupportUltraFast()
     CHECK_AND_RETURN_RET(gsp != nullptr, false);
 
     bool support = false;
-    gsp->IsDeviceSupportUltraFast();
+    gsp->IsDeviceSupportUltraFast(support);
     return support;
 }
 

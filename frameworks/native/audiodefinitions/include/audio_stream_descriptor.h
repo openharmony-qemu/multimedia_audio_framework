@@ -497,6 +497,12 @@ public:
         }
     }
 
+    bool IsUltraFastImplemented()
+    {
+        std::shared_lock<std::shared_mutex> lock(ultraFastFlagLock_);
+        return (ultraFastFlag_ & ULTRA_IMPLEMENTED);
+    }
+
     void SetFastStreamForcedNormalFlag(bool isForcedNormal)
     {
         forcedNormalFlag_ = isForcedNormal;

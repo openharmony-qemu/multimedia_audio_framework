@@ -157,6 +157,7 @@ config("audio_engine_node_config") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../frameworks/native/audioclock/include",
     "../../frameworks/native/hdiadapter_new/include",
+    "../../frameworks/native/audioschedule/include",
   ]
 
   cflags = [
