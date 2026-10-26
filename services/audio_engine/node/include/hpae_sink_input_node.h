@@ -113,6 +113,7 @@ private:
     bool isDrain_ = false;
     HpaeSessionState state_ = HPAE_SESSION_NEW;
     int32_t appUid_ = -1;
+    bool isSystemApp_ = false;
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
     bool offloadEnable_ = false;
     int32_t offloadType_ = OFFLOAD_DEFAULT;
