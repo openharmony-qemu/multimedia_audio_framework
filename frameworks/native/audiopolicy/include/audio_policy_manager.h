@@ -829,6 +829,7 @@ public:
     int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrapper> &vaBroker);
+    int32_t GetUsbHeadsetType(const std::string &macAddress, int32_t deviceRole, int32_t &usbHeadsetType);
     int32_t SetVADeviceExceptionFlag(const std::string &macAddress, bool exceptionFlag);
     bool IsCollaborativePlaybackSupported();
     bool IsCollaborativePlaybackSupportedForDevice(

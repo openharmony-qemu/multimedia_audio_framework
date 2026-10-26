@@ -751,6 +751,7 @@ public:
     int32_t GetVADeviceBroker(sptr<IRemoteObject> &client) override;
 
     int32_t GetVADeviceController(const std::string &macAddress, sptr<IRemoteObject> &controller) override;
+    int32_t GetUsbHeadsetType(const std::string &macAddress, int32_t deviceRole, int32_t &usbHeadsetType) override;
     int32_t SetVADeviceExceptionFlag(const std::string &macAddress, bool exceptionFlag) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);

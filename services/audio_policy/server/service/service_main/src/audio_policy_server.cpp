@@ -6526,6 +6526,19 @@ int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, 
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::GetUsbHeadsetType(const std::string &macAddress, int32_t deviceRole,
+    int32_t &usbHeadsetType)
+{
+    DeviceRole role = static_cast<DeviceRole>(deviceRole);
+    auto devDesc = audioConnectedDevice_.GetUsbDeviceDescriptor(macAddress, role);
+    if (devDesc != nullptr) {
+        usbHeadsetType = static_cast<int32_t>(devDesc->deviceType_);
+    } else {
+        usbHeadsetType = static_cast<int32_t>(DEVICE_TYPE_INVALID);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetVADeviceExceptionFlag(const std::string& macAddress, bool exceptionFlag)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,

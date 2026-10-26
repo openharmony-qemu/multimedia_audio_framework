@@ -294,6 +294,7 @@ interface IAudioPolicy {
     void SetQueryDeviceVolumeBehaviorCallback([in] IRemoteObject object);
     void GetVADeviceBroker([out] IRemoteObject client);
     void GetVADeviceController([in] String macAddress, [out] IRemoteObject controller);
+    void GetUsbHeadsetType([in] String macAddress, [in] int deviceRole, [out] int usbHeadsetType);
     void SetVADeviceExceptionFlag([in] String macAddress, [in] boolean exceptionFlag);
     void SetAppConcurrencyMode([in] int appUid, [in] int mode);
     void SetAppSilentOnDisplay([in] int displayId);

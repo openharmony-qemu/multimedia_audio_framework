@@ -15,6 +15,8 @@
 
 #include "OHAudioDeviceDescriptor.h"
 
+#include "audio_policy_manager.h"
+
 static OHOS::AudioStandard::OHAudioDeviceDescriptor *convertDeviceDescriptor(
     OH_AudioDeviceDescriptor* deviceDescriptor)
 {
@@ -41,6 +43,17 @@ OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceType(OH_AudioDeviceDescr
     CHECK_AND_RETURN_RET_LOG(deviceType != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "deviceType is nullptr");
     return deviceDescriptor->GetDeviceType(deviceType);
+}
+
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetUsbHeadsetType(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
+    OH_AudioDevice_UsbHeadsetType *usbHeadsetType)
+{
+    OHOS::AudioStandard::OHAudioDeviceDescriptor* deviceDescriptor = convertDeviceDescriptor(audioDeviceDescriptor);
+    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioDeviceDescriptor is nullptr");
+    CHECK_AND_RETURN_RET_LOG(usbHeadsetType != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "usbHeadsetType is nullptr");
+    return deviceDescriptor->GetUsbHeadsetType(usbHeadsetType);
 }
 
 OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceId(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
@@ -168,6 +181,36 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceType(OH_AudioDevice_Type
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         "audioDeviceDescriptor_ is nullptr");
     *deviceType = (OH_AudioDevice_Type)audioDeviceDescriptor_->deviceType_;
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OHAudioDeviceDescriptor::GetUsbHeadsetType(OH_AudioDevice_UsbHeadsetType *usbHeadsetType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        "audioDeviceDescriptor_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(usbHeadsetType != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        "usbHeadsetType is nullptr");
+    if (audioDeviceDescriptor_->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
+        audioDeviceDescriptor_->deviceType_ != DEVICE_TYPE_USB_DEVICE) {
+        AUDIO_ERR_LOG("deviceType is not USB headset: %{public}d", audioDeviceDescriptor_->deviceType_);
+        *usbHeadsetType = AUDIO_DEVICE_USB_HEADSET_TYPE_INVALID;
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    int32_t internalType = 0;
+    int32_t ret = AudioPolicyManager::GetInstance().GetUsbHeadsetType(
+        audioDeviceDescriptor_->macAddress_, audioDeviceDescriptor_->deviceRole_, internalType);
+    if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
+        *usbHeadsetType = AUDIO_DEVICE_USB_HEADSET_TYPE_INVALID;
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    if (internalType == static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET)) {
+        *usbHeadsetType = AUDIO_DEVICE_USB_HEADSET_TYPE_ARM;
+    } else if (internalType == static_cast<int32_t>(DEVICE_TYPE_USB_HEADSET)) {
+        *usbHeadsetType = AUDIO_DEVICE_USB_HEADSET_TYPE_HIFI;
+    } else {
+        *usbHeadsetType = AUDIO_DEVICE_USB_HEADSET_TYPE_INVALID;
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
