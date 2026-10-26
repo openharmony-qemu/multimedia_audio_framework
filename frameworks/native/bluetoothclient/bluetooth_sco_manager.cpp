@@ -39,6 +39,13 @@ BluetoothScoManager &BluetoothScoManager::GetInstance()
 
 BluetoothScoManager::BluetoothScoManager()
 {
+    AUDIO_INFO_LOG("BluetoothScoManager constructed, waiting for Init");
+}
+
+void BluetoothScoManager::Init()
+{
+    std::lock_guard<std::mutex> lock(scoLock_);
+    isInitialized_ = true;
     currentScoDevice_ = BluetoothHfpInterface::GetInstance().GetActiveDevice();
     currentScoState_ = BluetoothHfpInterface::GetInstance().GetScoState(currentScoDevice_);
     CHECK_AND_RETURN_LOG(currentScoState_ != AudioScoState::DISCONNECTED, "sco state is disconnected");
@@ -55,6 +62,7 @@ void BluetoothScoManager::UpdateScoState(HfpScoConnectState scoState,
     const BluetoothRemoteDevice &device, int reason)
 {
     std::unique_lock<std::mutex> stateLock(scoLock_);
+    CHECK_AND_RETURN_LOG(isInitialized_, "BluetoothScoManager not initialized, skip UpdateScoState");
     AUDIO_INFO_LOG("recv sco %{public}s state of %{public}s device and current sco state %{public}d of %{public}s",
         scoState == HfpScoConnectState::SCO_DISCONNECTED ? "diconnect" : "connect",
         GetEncryptAddr(device.GetDeviceAddr()).c_str(), currentScoState_,
@@ -184,6 +192,7 @@ int32_t BluetoothScoManager::HandleScoConnect(ScoCategory scoCategory,
     const BluetoothRemoteDevice &device)
 {
     std::lock_guard<std::mutex> stateLock(scoLock_);
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "BluetoothScoManager not initialized, skip HandleScoConnect");
     return HandleScoConnectNoLock(scoCategory, device);
 }
 
@@ -286,6 +295,7 @@ bool BluetoothScoManager::IsNeedSwitchScoCategory(ScoCategory scoCategory)
 int32_t BluetoothScoManager::HandleScoDisconnect(const BluetoothRemoteDevice &device)
 {
     std::lock_guard<std::mutex> stateLock(scoLock_);
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "BluetoothScoManager not initialized, skip HandleScoDisconnect");
     return HandleScoDisconnectNoLock(device);
 }
 
@@ -445,6 +455,7 @@ void BluetoothScoManager::ResetScoState(const BluetoothRemoteDevice &device)
     }
 
     cacheReq_ = nullptr;
+    isInitialized_ = false;
     SetAudioScoState(AudioScoState::DISCONNECTED);
     currentScoDevice_ = BluetoothRemoteDevice();
 }
