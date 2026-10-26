@@ -95,10 +95,13 @@ public:
     void OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName);
     bool IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptors);
     bool IsConnectedDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+    bool IsScoConnected(const std::string &macAddress);
     bool HasConnectedA2dp();
     bool IsVirtualConnectedDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc);
     int32_t UpdateDeviceDescDeviceId(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     shared_ptr<AudioDeviceDescriptor> GetBuiltinOutputDevice(DeviceType devType);
+    shared_ptr<AudioDeviceDescriptor> GetRemoteDeviceByNetworkId(const std::string &networkId, DeviceType deviceType,
+        DeviceRole deviceRole);
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
     VolumeBehavior GetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType);
     void Dump(std::string &dumpString);

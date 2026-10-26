@@ -283,11 +283,11 @@ public:
     int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) override;
     int32_t UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) override;
     int32_t CreateHdiSinkPort(const std::string &deviceClass, const std::string &idInfo,
-        const IAudioSinkAttr &attr, uint32_t& renderId) override;
+        const IAudioSinkAttr &attr, bool isResident, uint32_t& renderId) override;
     int32_t CreateSinkPort(uint32_t idBase, uint32_t idType, const std::string &idInfo,
         const IAudioSinkAttr &attr, uint32_t& renderId) override;
     int32_t CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
-        const IAudioSourceAttr &attr, uint32_t& captureId) override;
+        const IAudioSourceAttr &attr, bool isResident, uint32_t& captureId) override;
     int32_t CreateSourcePort(uint32_t idBase, uint32_t idType, const std::string &idInfo,
         const IAudioSourceAttr &attr, uint32_t& captureId) override;
     int32_t RegisterVADeviceController(const std::string &macAddress,
@@ -444,7 +444,9 @@ private:
     bool CheckVoiceDownlinkPermission(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
     void RegisterSinkLatencyFetcher(uint32_t renderId);
-    void RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency);
+    void RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency, uint32_t warmupLatency = 0);
+    void RegisterSinkLatencyFetcher(uint32_t renderId, int32_t effectLatency,
+        int32_t halLatency, int32_t warmupLatency);
 
     void ResetRecordConfig(AudioProcessConfig &config,
         const AudioPlaybackCaptureConfig &filterConfig);

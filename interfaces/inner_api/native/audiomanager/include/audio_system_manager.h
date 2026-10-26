@@ -25,6 +25,7 @@
 #include "audio_workgroup_client_manager.h"
 #include "audio_capturer_types.h"
 #include "audio_record_control_manager.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -166,6 +167,8 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     int32_t SetAppVolumeMuted(const int32_t appUid, const bool muted, const int32_t flag = 0);
+
+    int32_t SetAppVolumeMuteAndHideVolumeBar(const int32_t appUid, const bool muted);
 
     /**
      * @brief Set the mute state of the VoIP renderer for the specified uid and streamId.
@@ -1306,6 +1309,7 @@ public:
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);
+    int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
     int32_t SetAudioVKBInfoMgrCallback(const std::shared_ptr<AudioVKBInfoMgrCallback> &callback);
     int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);
@@ -1452,9 +1456,9 @@ public:
         uint32_t clientUid, const int32_t zoneID);
     int32_t UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t sessionId);
 
-    int32_t SetVirtualCall(const bool isVirtual);
+    int32_t SetVirtualCall(const bool isVirtual, int32_t uid = 0);
 
-    bool GetVirtualCall();
+    bool GetVirtualCall(int32_t uid = 0);
 
     int32_t OnVoiceWakeupState(bool state);
 

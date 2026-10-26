@@ -61,8 +61,6 @@ AudioPnpServer::~AudioPnpServer()
     g_socketRunThread = false;
     g_inputRunThread = false;
 
-    AudioInputThread::AudioPnpInputClose();
-
     if (socketThread_ && socketThread_->joinable()) {
         socketThread_->detach();
     }
@@ -75,7 +73,6 @@ AudioPnpServer::~AudioPnpServer()
 bool AudioPnpServer::init(void)
 {
     AUDIO_INFO_LOG("Init");
-    fdsan_set_error_level(FDSAN_ERROR_LEVEL_FATAL);
     g_socketRunThread = true;
     g_inputRunThread = true;
     lock_guard lg(pnpMutex_);

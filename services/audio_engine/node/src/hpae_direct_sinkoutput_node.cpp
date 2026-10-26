@@ -54,6 +54,17 @@ HpaeDirectSinkOutputNode::HpaeDirectSinkOutputNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeDirectSinkOutputNode::OnTraceInfoChanged()
+{
+    RebuildTraceName();
+}
+
+void HpaeDirectSinkOutputNode::RebuildTraceName()
+{
+    processTraceName_ = "HpaeDirectSinkOutputNode::DoProcess " + GetTraceInfo();
 }
 
 HpaeDirectSinkOutputNode::~HpaeDirectSinkOutputNode()
@@ -100,7 +111,7 @@ bool HpaeDirectSinkOutputNode::ReadDataAndConvertFormat()
 
 void HpaeDirectSinkOutputNode::DoProcess()
 {
-    Trace trace("HpaeDirectSinkOutputNode::DoProcess " + GetTraceInfo());
+    Trace trace(processTraceName_);
     if (audioRendererSink_ == nullptr) {
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
         return;
@@ -217,8 +228,13 @@ int32_t HpaeDirectSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     timer.Start();
 #endif
     int32_t ret = audioRendererSink_->Init(attr);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-        "audioRendererSink_ init failed, errCode is %{public}d", ret);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("audioRendererSink_ init failed, errCode is %{public}d", ret);
+        // Release the sink reference on init failure to avoid leaking renderId_.
+        audioRendererSink_ = nullptr;
+        HdiAdapterManager::GetInstance().ReleaseId(renderId_);
+        return ret;
+    }
     audioRendererSink_->SetVolume(volume, volume);
     SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM

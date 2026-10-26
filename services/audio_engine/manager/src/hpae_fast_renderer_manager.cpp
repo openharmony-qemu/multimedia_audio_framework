@@ -983,7 +983,7 @@ HpaeSinkInfo HpaeFastRendererManager::GetSinkInfo()
 
 std::string HpaeFastRendererManager::GetThreadName()
 {
-    return sinkInfo_.deviceName;
+    return ThreadName::FAST_AUDIO_OUT;
 }
 
 int32_t HpaeFastRendererManager::DumpSinkInfo()

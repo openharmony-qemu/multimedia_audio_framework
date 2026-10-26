@@ -38,7 +38,7 @@ ohos_fuzztest("AudioStreamMonitorFuzzTest") {
     "../../../frameworks/native/audioschedule:audio_schedule",
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../services/audio_service:audio_common",
-    "../../../services/audio_engine:audio_engine_plugins",
+    "../../../services/audio_engine:audio_common_algorithm",
   ]
 
   external_deps = [

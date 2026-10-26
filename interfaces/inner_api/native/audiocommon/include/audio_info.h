@@ -452,9 +452,9 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE,
     CALLBACK_SET_VOLUME_KEY_EVENT,
     CALLBACK_SET_DEVICE_CHANGE,
-    CALLBACK_SET_VOLUME_KEY_EVENT,
+    CALLBACK_APP_VOLUME_CHANGE,
+    CALLBACK_SELF_APP_VOLUME_CHANGE,
     CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE,
-    CALLBACK_SET_DEVICE_CHANGE,
     CALLBACK_SET_RINGER_MODE,
     CALLBACK_SET_MIC_STATE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
@@ -1723,14 +1723,6 @@ enum RecordErrorType {
     RECORD_ERROR_TYPE_OVERFLOW,
 };
 
-enum PlayOtherErrorCode {
-    TYPE_BACKGROUND_PLAYBACK,
-    TYPE_OFFLOAD_NOT_ENOUGH_DATA,
-    TYPE_GET_TIMESTAMP_TOO_FREQUENTLY,
-    TYPE_FAST_ABUSE,
-    TYPE_FAST_PREFERRED_FRAME_SIZE_OUT_OF_RANGE,
-};
-
 // LEGACY_INNER_CAP: Called from hap build with api < 12, work normally.
 // LEGACY_MUTE_CAP: Called from hap build with api >= 12, will cap mute data.
 // MODERN_INNER_CAP: Called from SA with inner-cap right, work with filter.
@@ -2526,6 +2518,7 @@ enum BoostTriggerMethod : uint32_t {
 enum ThreadPriorityConfig : uint32_t {
     THREAD_PRIORITY_QOS_7 = 0,
     THREAD_PRIORITY_4,
+    THREAD_PRIORITY_VIP_10,
 };
 
 enum XperfEventId : int32_t {

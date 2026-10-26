@@ -1337,6 +1337,20 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceVolumeTypeName_004, TestS
     EXPECT_EQ(deviceTypeName, "UNKNOWN");
 }
 
+/**
+* @tc.name  : Test AudioInfoDumpUtils::GetDeviceVolumeTypeName  API
+* @tc.type  : FUNC
+* @tc.number: AudioInfoDumpUtils_GetDeviceVolumeTypeName_005
+* @tc.desc  : Test AudioInfoDumpUtils GetDeviceVolumeTypeName API,Return BLUETOOTH_NEARLINK
+*             when deviceType is BLUETOOTH_NEARLINK_VOLUME_TYPE
+*/
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceVolumeTypeName_005, TestSize.Level0)
+{
+    DeviceVolumeType deviceType = BLUETOOTH_NEARLINK_VOLUME_TYPE;
+    const std::string deviceTypeName = AudioInfoDumpUtils::GetDeviceVolumeTypeName(deviceType);
+    EXPECT_EQ(deviceTypeName, "BLUETOOTH_NEARLINK");
+}
+
 
 /**
 * @tc.name  : Test GetEncryptStr  API
@@ -3711,6 +3725,54 @@ HWTEST(AudioUtilsUnitTest, GetEarpieceParam_001, TestSize.Level1)
         bool expected = (strcmp(value, "true") == 0);
         EXPECT_EQ(result, expected);
     }
+}
+
+/**
+ * @tc.name  : Test IsPlaybackChannelRelatedInfoValid
+ * @tc.number: AudioUtils_IsPlaybackChannelRelatedInfoValid_001
+ * @tc.desc  : Test IsPlaybackChannelRelatedInfoValid interface.
+ */
+HWTEST(AudioUtilsUnitTest, AudioUtils_IsPlaybackChannelRelatedInfoValid_001, TestSize.Level1)
+{
+    uint8_t audioChannel = 100;
+    uint64_t channelLayout = 100;
+    EXPECT_FALSE(Util::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 100;
+    EXPECT_FALSE(Util::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 4;
+    EXPECT_FALSE(Util::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 3;
+    EXPECT_TRUE(Util::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
+}
+
+/**
+ * @tc.name  : Test IsRecordChannelRelatedInfoValid
+ * @tc.number: AudioUtils_IsRecordChannelRelatedInfoValid_001
+ * @tc.desc  : Test IsRecordChannelRelatedInfoValid interface.
+ */
+HWTEST(AudioUtilsUnitTest, AudioUtils_IsRecordChannelRelatedInfoValid_001, TestSize.Level1)
+{
+    uint8_t audioChannel = 100;
+    uint64_t channelLayout = 100;
+    EXPECT_FALSE(Util::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 100;
+    EXPECT_FALSE(Util::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 4;
+    EXPECT_FALSE(Util::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 3;
+    EXPECT_TRUE(Util::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
 }
 } // namespace AudioStandard
 } // namespace OHOS

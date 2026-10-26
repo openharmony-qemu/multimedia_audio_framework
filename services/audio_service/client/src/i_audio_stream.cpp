@@ -130,25 +130,25 @@ void IAudioStream::CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>,
 
 int32_t IAudioStream::CheckRendererAudioStreamInfo(const AudioStreamParams info)
 {
-    CHECK_AND_RETURN_RET_LOG(IsFormatValid(info.format) && IsEncodingTypeValid(info.encoding) &&
-        ((info.customSampleRate == 0 && IsSamplingRateValid(info.samplingRate)) ||
+    CHECK_AND_RETURN_RET_LOG(Util::IsFormatValid(info.format) && Util::IsEncodingTypeValid(info.encoding) &&
+        ((info.customSampleRate == 0 && Util::IsSamplingRateValid(info.samplingRate)) ||
         (info.customSampleRate != 0 && Util::IsCustomSampleRateValid(info.customSampleRate))),
         ERR_NOT_SUPPORTED, "Unsupported audio renderer parameter");
-    CHECK_AND_RETURN_RET(IsPlaybackChannelRelatedInfoValid(info.encoding, info.channels, info.channelLayout),
+    CHECK_AND_RETURN_RET(Util::IsPlaybackChannelRelatedInfoValid(info.encoding, info.channels, info.channelLayout),
         ERR_NOT_SUPPORTED);
     return SUCCESS;
 }
 
 int32_t IAudioStream::CheckCapturerAudioStreamInfo(const AudioStreamParams info)
 {
-    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
-        !IsSamplingRateValid(info.samplingRate)) {
+    if (!Util::IsFormatValid(info.format) || !Util::IsEncodingTypeValid(info.encoding) ||
+        !Util::IsSamplingRateValid(info.samplingRate)) {
         AUDIO_ERR_LOG("Unsupported audio capturer parameter");
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CREATE_INVALID_PARAM, "Unsupported audio capturer parameter", true);
         return ERR_NOT_SUPPORTED;
     }
-    CHECK_AND_CALL_FUNC_RETURN_RET(IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout),
+    CHECK_AND_CALL_FUNC_RETURN_RET(Util::IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout),
         ERR_NOT_SUPPORTED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CREATE_INVALID_PARAM, "Invalid record channel info", true));
@@ -320,118 +320,6 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
         return CapturerInClient::GetInstance(eStreamType, appUid);
     }
     return nullptr;
-}
-
-bool IAudioStream::IsFormatValid(uint8_t format)
-{
-    bool isValidFormat = (find(AUDIO_SUPPORTED_FORMATS.begin(), AUDIO_SUPPORTED_FORMATS.end(), format)
-                          != AUDIO_SUPPORTED_FORMATS.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsFormatValid: %{public}s", isValidFormat ? "true" : "false");
-    return isValidFormat;
-}
-
-bool IAudioStream::IsRendererChannelValid(uint8_t channel, uint8_t encodingType)
-{
-    // for audio vivid, no need to check channel
-    CHECK_AND_RETURN_RET(encodingType != ENCODING_AUDIOVIVID, true);
-    bool isValidChannel = (find(RENDERER_SUPPORTED_CHANNELS.begin(), RENDERER_SUPPORTED_CHANNELS.end(), channel)
-                           != RENDERER_SUPPORTED_CHANNELS.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsChannelValid: %{public}s", isValidChannel ? "true" : "false");
-    return isValidChannel;
-}
-
-bool IAudioStream::IsCapturerChannelValid(uint8_t channel)
-{
-    bool isValidChannel = (find(CAPTURER_SUPPORTED_CHANNELS.begin(), CAPTURER_SUPPORTED_CHANNELS.end(), channel)
-                           != CAPTURER_SUPPORTED_CHANNELS.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsChannelValid: %{public}s", isValidChannel ? "true" : "false");
-    return isValidChannel;
-}
-
-bool IAudioStream::IsEncodingTypeValid(uint8_t encodingType)
-{
-    bool isValidEncodingType
-            = (find(AUDIO_SUPPORTED_ENCODING_TYPES.begin(), AUDIO_SUPPORTED_ENCODING_TYPES.end(), encodingType)
-               != AUDIO_SUPPORTED_ENCODING_TYPES.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsEncodingTypeValid: %{public}s", isValidEncodingType ? "true" : "false");
-    return isValidEncodingType;
-}
-
-bool IAudioStream::IsSamplingRateValid(uint32_t samplingRate)
-{
-    bool isValidSamplingRate
-            = (find(AUDIO_SUPPORTED_SAMPLING_RATES.begin(), AUDIO_SUPPORTED_SAMPLING_RATES.end(), samplingRate)
-               != AUDIO_SUPPORTED_SAMPLING_RATES.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsSamplingRateValid: %{public}s", isValidSamplingRate ? "true" : "false");
-    return isValidSamplingRate;
-}
-
-bool IAudioStream::IsRendererChannelLayoutValid(uint64_t channelLayout)
-{
-    bool isValidRendererChannelLayout = (find(RENDERER_SUPPORTED_CHANNELLAYOUTS.begin(),
-        RENDERER_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) != RENDERER_SUPPORTED_CHANNELLAYOUTS.end());
-    AUDIO_DEBUG_LOG("AudioStream: isValidRendererChannelLayout: %{public}s",
-        isValidRendererChannelLayout ? "true" : "false");
-    return isValidRendererChannelLayout;
-}
-
-bool IAudioStream::IsCapturerChannelLayoutValid(uint64_t channelLayout)
-{
-    bool isValidCapturerChannelLayout = IsRendererChannelLayoutValid(channelLayout);
-    AUDIO_DEBUG_LOG("AudioStream: isValidCapturerChannelLayout: %{public}s",
-        isValidCapturerChannelLayout ? "true" : "false");
-    return isValidCapturerChannelLayout;
-}
-
-bool IAudioStream::IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t channelLayout, uint8_t encodingType)
-{
-    // for audio vivid, no need to match channel count with channel layout
-    CHECK_AND_RETURN_RET(encodingType != ENCODING_AUDIOVIVID, true);
-    // unknown channel layout is matched with any channel count
-    CHECK_AND_RETURN_RET(channelLayout != CH_LAYOUT_UNKNOWN, true);
-
-    if (((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) == 0) {
-        int32_t channelCount = __builtin_popcountll(channelLayout);
-        return channelCount == static_cast<int32_t>(channel);
-    }
-
-    uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
-    uint64_t channelCountHoa = (order + 1) * (order + 1);
-    return channelCountHoa == static_cast<uint64_t>(channel);
-}
-
-bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t encodingType, uint8_t channels, uint64_t channelLayout)
-{
-    if (!IsRendererChannelValid(channels, encodingType)) {
-        AUDIO_ERR_LOG("AudioStream: Invalid sink channel %{public}d", channels);
-        return false;
-    }
-    if (!IsRendererChannelLayoutValid(channelLayout)) {
-        AUDIO_ERR_LOG("AudioStream: Invalid sink channel layout");
-        return false;
-    }
-    if (!IsChannelLayoutMatchedWithChannel(channels, channelLayout, encodingType)) {
-        AUDIO_ERR_LOG("AudioStream: not matched sink channel and channel layout");
-        return false;
-    }
-    return true;
-}
-
-bool IAudioStream::IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
-{
-    if (!IsCapturerChannelValid(channels)) {
-        AUDIO_ERR_LOG("AudioStream: Invalid source channel %{public}d", channels);
-        return false;
-    }
-    if (!IsCapturerChannelLayoutValid(channelLayout)) {
-        AUDIO_ERR_LOG("AudioStream: Invalid source channel layout");
-        return false;
-    }
-    if (!IsChannelLayoutMatchedWithChannel(channels, channelLayout)) {
-        AUDIO_ERR_LOG("AudioStream: not matched source channel and channel layout");
-        return false;
-    }
-    return true;
 }
 
 AudioChannelLayout IAudioStream::ConvertChannelsToDefaultChannelLayout(AudioChannel channels,

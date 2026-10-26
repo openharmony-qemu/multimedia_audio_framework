@@ -22,6 +22,7 @@
 #include "media_monitor_manager.h"
 #include "audio_connected_device.h"
 #include "audio_bundle_manager.h"
+#include "audio_common_utils.h"
 #include <nlohmann/json.hpp>
 #include "audio_zone_service.h"
 #include "os_account_subprofile_client.h"
@@ -102,6 +103,47 @@ static const std::map<DeviceGroupType, std::string> DEVICE_GROUP_TYPE_KEY_MAP = 
     {DeviceGroupType::REMOTE_CAST, "_remote_cast"},
     {DeviceGroupType::HEARING_AID, "_hearing_aid"},
     {DeviceGroupType::LINE_DIGITAL, "_line_digital"},
+    {DeviceGroupType::WIRED_HEADSET, "_wired_headset"},
+    {DeviceGroupType::WIRED_HEADPHONES, "_wired_headphones"},
+    {DeviceGroupType::USB_HEADSET, "_usb_headset"},
+    {DeviceGroupType::USB_ARM_HEADSET, "_usb_arm_headset"},
+    {DeviceGroupType::HDMI, "_hdmi"},
+};
+
+static const std::unordered_map<DeviceType, DeviceGroupType> DEFAULT_DEVICE_GROUP_TYPE_MAP = {
+    {DEVICE_TYPE_EARPIECE, DeviceGroupType::EARPIECE},
+    {DEVICE_TYPE_SPEAKER, DeviceGroupType::BUILT_IN},
+    {DEVICE_TYPE_DP, DeviceGroupType::DP},
+    {DEVICE_TYPE_HDMI, DeviceGroupType::DP},
+    {DEVICE_TYPE_REMOTE_DAUDIO, DeviceGroupType::DP},
+    {DEVICE_TYPE_BLUETOOTH_A2DP, DeviceGroupType::WIRELESS},
+    {DEVICE_TYPE_BLUETOOTH_SCO, DeviceGroupType::WIRELESS},
+    {DEVICE_TYPE_NEARLINK, DeviceGroupType::WIRELESS},
+    {DEVICE_TYPE_HEARING_AID, DeviceGroupType::HEARING_AID},
+    {DEVICE_TYPE_WIRED_HEADSET, DeviceGroupType::WIRED},
+    {DEVICE_TYPE_WIRED_HEADPHONES, DeviceGroupType::WIRED},
+    {DEVICE_TYPE_USB_HEADSET, DeviceGroupType::WIRED},
+    {DEVICE_TYPE_USB_ARM_HEADSET, DeviceGroupType::WIRED},
+    {DEVICE_TYPE_REMOTE_CAST, DeviceGroupType::REMOTE_CAST},
+    {DEVICE_TYPE_LINE_DIGITAL, DeviceGroupType::LINE_DIGITAL},
+};
+
+static const std::unordered_map<DeviceType, DeviceGroupType> PC_DEVICE_GROUP_TYPE_MAP = {
+    {DEVICE_TYPE_EARPIECE, DeviceGroupType::EARPIECE},
+    {DEVICE_TYPE_SPEAKER, DeviceGroupType::BUILT_IN},
+    {DEVICE_TYPE_DP, DeviceGroupType::DP},
+    {DEVICE_TYPE_REMOTE_DAUDIO, DeviceGroupType::DP},
+    {DEVICE_TYPE_HDMI, DeviceGroupType::HDMI},
+    {DEVICE_TYPE_BLUETOOTH_A2DP, DeviceGroupType::WIRELESS},
+    {DEVICE_TYPE_BLUETOOTH_SCO, DeviceGroupType::WIRELESS},
+    {DEVICE_TYPE_NEARLINK, DeviceGroupType::WIRELESS},
+    {DEVICE_TYPE_HEARING_AID, DeviceGroupType::HEARING_AID},
+    {DEVICE_TYPE_WIRED_HEADSET, DeviceGroupType::WIRED_HEADSET},
+    {DEVICE_TYPE_WIRED_HEADPHONES, DeviceGroupType::WIRED_HEADPHONES},
+    {DEVICE_TYPE_USB_HEADSET, DeviceGroupType::USB_HEADSET},
+    {DEVICE_TYPE_USB_ARM_HEADSET, DeviceGroupType::USB_ARM_HEADSET},
+    {DEVICE_TYPE_REMOTE_CAST, DeviceGroupType::REMOTE_CAST},
+    {DEVICE_TYPE_LINE_DIGITAL, DeviceGroupType::LINE_DIGITAL},
 };
 
 bool VolumeDataMaintainer::CheckOsAccountReady()
@@ -128,6 +170,69 @@ void VolumeDataMaintainer::SetAppVolumeMuted(int32_t appUid, bool muted)
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     int ownedAppUid = IPCSkeleton::GetCallingUid();
     appMuteStatusMap_[appUid][ownedAppUid] = muted;
+}
+
+void VolumeDataMaintainer::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    int ownedAppUid = IPCSkeleton::GetCallingUid();
+    if (muted) {
+        appMuteAndHideStatusMap_[appUid][ownedAppUid] = muted;
+    } else {
+        auto uidIt = appMuteAndHideStatusMap_.find(appUid);
+        if (uidIt != appMuteAndHideStatusMap_.end()) {
+            uidIt->second.erase(ownedAppUid);
+            if (uidIt->second.empty()) {
+                appMuteAndHideStatusMap_.erase(uidIt);
+            }
+        }
+    }
+}
+
+bool VolumeDataMaintainer::GetAppMuteAndHideVolumeBar(int32_t appUid)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    auto iter = appMuteAndHideStatusMap_.find(appUid);
+    return (iter != appMuteAndHideStatusMap_.end()) && !iter->second.empty();
+}
+
+bool VolumeDataMaintainer::GetAppMuteAndHideOwned(int32_t appUid)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    int ownedAppUid = IPCSkeleton::GetCallingUid();
+    auto iter = appMuteAndHideStatusMap_.find(appUid);
+    return iter != appMuteAndHideStatusMap_.end() && iter->second.count(ownedAppUid) > 0;
+}
+
+bool VolumeDataMaintainer::GetAppMuteAggregate(int32_t appUid)
+{
+    bool isMute = false;
+    GetAppMute(appUid, isMute);
+    return isMute || GetAppMuteAndHideVolumeBar(appUid);
+}
+
+bool VolumeDataMaintainer::GetAppMuteOwnedAggregate(int32_t appUid)
+{
+    bool isMute = false;
+    GetAppMuteOwned(appUid, isMute);
+    return isMute || GetAppMuteAndHideOwned(appUid);
+}
+
+void VolumeDataMaintainer::ClearAppMuteAndHideByOwnerUid(int32_t ownedAppUid,
+    std::vector<int32_t> &affectedAppUids)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    for (auto it = appMuteAndHideStatusMap_.begin(); it != appMuteAndHideStatusMap_.end();) {
+        auto &callerMap = it->second;
+        if (callerMap.erase(ownedAppUid) > 0) {
+            affectedAppUids.push_back(it->first);
+        }
+        if (callerMap.empty()) {
+            it = appMuteAndHideStatusMap_.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 void VolumeDataMaintainer::SetAppStreamMuted(int32_t appUid, AudioStreamType streamType, bool muted)
@@ -655,34 +760,14 @@ bool VolumeDataMaintainer::GetMicMuteState(bool &isMute)
 
 DeviceGroupType VolumeDataMaintainer::GetDeviceGroupTypeByDeviceType(DeviceType deviceType)
 {
-    switch (deviceType) {
-        case DEVICE_TYPE_EARPIECE:
-            return DeviceGroupType::EARPIECE;
-        case DEVICE_TYPE_SPEAKER:
-            return DeviceGroupType::BUILT_IN;
-        case DEVICE_TYPE_DP:
-        case DEVICE_TYPE_HDMI:
-        case DEVICE_TYPE_REMOTE_DAUDIO:
-            return DeviceGroupType::DP;
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-        case DEVICE_TYPE_NEARLINK:
-            return DeviceGroupType::WIRELESS;
-        case DEVICE_TYPE_HEARING_AID:
-            return DeviceGroupType::HEARING_AID;
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_WIRED_HEADPHONES:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            return DeviceGroupType::WIRED;
-        case DEVICE_TYPE_REMOTE_CAST:
-            return DeviceGroupType::REMOTE_CAST;
-        case DEVICE_TYPE_LINE_DIGITAL:
-            return DeviceGroupType::LINE_DIGITAL;
-        default:
-            AUDIO_ERR_LOG("device %{public}d is invalid!", deviceType);
-            return DeviceGroupType::INVALID;
+    const std::unordered_map<DeviceType, DeviceGroupType>& deviceGroupTypeMap =
+        VolumeUtils::IsPCVolumeEnable() ? PC_DEVICE_GROUP_TYPE_MAP : DEFAULT_DEVICE_GROUP_TYPE_MAP;
+    auto it = deviceGroupTypeMap.find(deviceType);
+    if (it == deviceGroupTypeMap.end()) {
+        AUDIO_ERR_LOG("device %{public}d is invalid!", deviceType);
+        return DeviceGroupType::INVALID;
     }
+    return it->second;
 }
 
 std::string VolumeDataMaintainer::GetDeviceGroupTypeKey(DeviceType deviceType)

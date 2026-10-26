@@ -83,7 +83,7 @@ void AudioPolicyServerBasicGapFuzzTest(FuzzedDataProvider &fdp)
     server->TranslateErrorCode(fdp.ConsumeIntegral<int32_t>());
     server->GetApiTargetVersion();
     server->IsPublishCalled();
-    server->GetVirtualCall(retBool);
+    server->GetVirtualCall(fdp.ConsumeIntegral<int32_t>(), retBool);
     server->IsOtherMediaPlaying(retBool);
     server->GetAudioSceneFromAllZones(retInt);
 }

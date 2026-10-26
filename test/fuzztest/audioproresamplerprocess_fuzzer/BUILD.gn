@@ -35,7 +35,7 @@ ohos_fuzztest("AudioProresamplerProcessFuzzTest") {
   sources = [ "audio_proresampler_process_fuzzer.cpp" ]
 
   deps = [
-    "../../../services/audio_engine:audio_engine_plugins",
+    "../../../services/audio_engine:audio_common_algorithm",
   ]
 
   external_deps = [

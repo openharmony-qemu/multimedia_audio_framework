@@ -2340,6 +2340,34 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
     return resetConfig;
 }
 
+// Check capturer channel validity: must be in CAPTURER_SUPPORTED_CHANNELS,
+// and 10/12/16 multichannel requires UNPROCESSED_VOICE_ASSISTANT sourceType + system app.
+static bool IsCapturerChannelAllowed(const AudioProcessConfig &config)
+{
+    AudioChannel channels = config.streamInfo.channels;
+    if (NotContain(CAPTURER_SUPPORTED_CHANNELS, channels)) {
+        return false;
+    }
+    if (IsOverTenChannels(channels)) {
+#ifdef MULTI_BUS_ENABLE
+        if (IsUnprocVoiceAsstMultiChRej(config.capturerInfo.sourceType, channels)) {
+            AUDIO_ERR_LOG("multichannel rejected, channels:%{public}d, sourceType:%{public}d",
+                config.streamInfo.channels, config.capturerInfo.sourceType);
+            return false;
+        }
+        if (!PermissionUtil::VerifyIsSystemApp()) {
+            AUDIO_ERR_LOG("multichannel requires system app, channels:%{public}d", config.streamInfo.channels);
+            return false;
+        }
+#else
+        AUDIO_ERR_LOG("multichannel not allowed without MULTI_BUS_ENABLE, channels:%{public}d",
+            config.streamInfo.channels);
+        return false;
+#endif
+    }
+    return true;
+}
+
 bool AudioServer::CheckStreamInfoFormat(const AudioProcessConfig &config)
 {
     if (NotContain(AUDIO_SUPPORTED_SAMPLING_RATES, config.streamInfo.samplingRate)) {
@@ -2373,8 +2401,9 @@ bool AudioServer::CheckStreamInfoFormat(const AudioProcessConfig &config)
         return false;
     }
 
-    if (config.audioMode == AUDIO_MODE_RECORD && NotContain(CAPTURER_SUPPORTED_CHANNELS, config.streamInfo.channels)) {
-        AUDIO_ERR_LOG("Check format failed invalid capturer channels:%{public}d", config.streamInfo.channels);
+    if (config.audioMode == AUDIO_MODE_RECORD && !IsCapturerChannelAllowed(config)) {
+        AUDIO_ERR_LOG("Check format failed invalid capturer channels:%{public}d, sourceType:%{public}d",
+            config.streamInfo.channels, config.capturerInfo.sourceType);
         return false;
     }
 
@@ -3615,14 +3644,14 @@ int32_t AudioServer::UnloadHdiAdapter(uint32_t devMgrType, const std::string &ad
 }
 
 int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std::string &idInfo,
-    const IAudioSinkAttr &attr, uint32_t &renderId)
+    const IAudioSinkAttr &attr, bool isResident, uint32_t &renderId)
 {
     renderId = HDI_INVALID_ID;
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), SUCCESS,
         "refused for %{public}d", callingUid);
 
-    renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, true, true,
+    renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, isResident, true,
         attr.routeFlag);
     CHECK_AND_RETURN_RET(renderId != HDI_INVALID_ID, SUCCESS);
     CHECK_AND_RETURN_RET(deviceClass != "Virtual_Injector", SUCCESS);
@@ -3646,8 +3675,14 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
         }
     }
 
-    (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?
-        RegisterSinkLatencyFetcher(renderId, PRIMARY_SINK_LATENCY_MS) : RegisterSinkLatencyFetcher(renderId);
+    if (attr.halLatency != LATENCY_UNCONFIG) {
+        RegisterSinkLatencyFetcher(renderId,
+            attr.effectLatency, attr.halLatency, attr.warmupLatency);
+    } else {
+        (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?
+            RegisterSinkLatencyFetcher(renderId, PRIMARY_SINK_LATENCY_MS) :
+            RegisterSinkLatencyFetcher(renderId);
+    }
     return SUCCESS;
 }
 
@@ -3691,7 +3726,12 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
     if (!sink->IsInited()) {
         sink->Init(attr);
     }
-    RegisterSinkLatencyFetcher(renderId);
+    if (attr.halLatency != LATENCY_UNCONFIG) {
+        RegisterSinkLatencyFetcher(renderId,
+            attr.effectLatency, attr.halLatency, attr.warmupLatency);
+    } else {
+        RegisterSinkLatencyFetcher(renderId);
+    }
     return SUCCESS;
 }
 
@@ -3734,7 +3774,7 @@ int32_t AudioServer::CreateSourcePort(uint32_t idBase, uint32_t idType, const st
 }
 
 int32_t AudioServer::CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
-    const IAudioSourceAttr &attr, uint32_t &captureId)
+    const IAudioSourceAttr &attr, bool isResident, uint32_t &captureId)
 {
     captureId = HDI_INVALID_ID;
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -3742,7 +3782,7 @@ int32_t AudioServer::CreateHdiSourcePort(const std::string &deviceClass, const s
         "refused for %{public}d", callingUid);
 
     captureId = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(deviceClass,
-        static_cast<SourceType>(attr.sourceType), idInfo, true, attr.routeFlag);
+        static_cast<SourceType>(attr.sourceType), idInfo, isResident, attr.routeFlag);
     CHECK_AND_RETURN_RET(captureId != HDI_INVALID_ID, SUCCESS);
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(captureId, true);
     if (source == nullptr) {
@@ -3793,14 +3833,28 @@ int32_t AudioServer::DestroyHdiPort(uint32_t id)
     return SUCCESS;
 }
 
-void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency)
+void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency, uint32_t warmupLatency)
 {
+    AUDIO_INFO_LOG("Register fixed sink latency: %{public}u ms, warmup %{public}u ms, renderId %{public}u",
+        sinkLatency, warmupLatency, renderId);
     SinkLatencyFetcherManager::GetInstance().RegisterProvider(renderId,
         [sinkLatency] (uint32_t renderId, uint32_t &latency) -> int32_t {
         latency = sinkLatency;
         return SUCCESS;
-    });
+    }, warmupLatency);
     return;
+}
+
+void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, int32_t effectLatency,
+    int32_t halLatency, int32_t warmupLatency)
+{
+    AUDIO_INFO_LOG("Register sink latency: effect=%{public}d, hal=%{public}d, warmup=%{public}d, renderId=%{public}u",
+        effectLatency, halLatency, warmupLatency, renderId);
+    SinkLatencyFetcherManager::GetInstance().RegisterProvider(renderId,
+        [halLatency] (uint32_t renderId, uint32_t &latency) -> int32_t {
+        latency = static_cast<uint32_t>(halLatency);
+        return SUCCESS;
+    }, halLatency, effectLatency, warmupLatency);
 }
 
 void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId)

@@ -318,11 +318,63 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_015, TestS
 }
 
 /**
-* @tc.name  : Test IsCollaborativePlaybackSupportedForDevice with A2DP device type
+* @tc.name  : Test SetCollaborativePlaybackEnableForDevice with A2DP current device enabled.
 * @tc.number: AudioCollaborativeService_016
-* @tc.desc  : Test IsCollaborativePlaybackSupportedForDevice with DEVICE_TYPE_BLUETOOTH_A2DP when not supported.
+* @tc.desc  : MutePrimarySinkByCollaborative should be triggered when the enabled device is an A2DP
+*             device and it is the current device.
 */
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_016, TestSize.Level0)
+{
+    audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
+    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
+    const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
+    audioDevice->macAddress_ = testAddr1;
+    audioCollaborativeService_.curDeviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioCollaborativeService_.curDeviceAddress_ = testAddr1;
+    int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetCollaborativePlaybackEnableForDevice with A2DP current device disabled.
+* @tc.number: AudioCollaborativeService_017
+* @tc.desc  : MutePrimarySinkByCollaborative should not be triggered when the A2DP device is disabled.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_017, TestSize.Level0)
+{
+    audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
+    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
+    const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
+    audioDevice->macAddress_ = testAddr1;
+    audioCollaborativeService_.curDeviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioCollaborativeService_.curDeviceAddress_ = testAddr1;
+    int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetCollaborativePlaybackEnableForDevice with non-current A2DP device.
+* @tc.number: AudioCollaborativeService_018
+* @tc.desc  : MutePrimarySinkByCollaborative should not be triggered when the A2DP device is current.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_018, TestSize.Level0)
+{
+    audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
+    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
+    const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
+    audioDevice->macAddress_ = testAddr1;
+    audioCollaborativeService_.curDeviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioCollaborativeService_.curDeviceAddress_ = testAddr2;
+    int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test IsCollaborativePlaybackSupportedForDevice with A2DP device type
+* @tc.number: AudioCollaborativeService_019
+* @tc.desc  : Test IsCollaborativePlaybackSupportedForDevice with DEVICE_TYPE_BLUETOOTH_A2DP when not supported.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_019, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
@@ -335,10 +387,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_016, TestS
 
 /**
 * @tc.name  : Test IsCollaborativePlaybackSupportedForDevice with NearLink device type
-* @tc.number: AudioCollaborativeService_017
+* @tc.number: AudioCollaborativeService_020
 * @tc.desc  : Test IsCollaborativePlaybackSupportedForDevice with DEVICE_TYPE_NEARLINK when not supported.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_017, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_020, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
@@ -351,10 +403,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_017, TestS
 
 /**
 * @tc.name  : Test IsCollaborativePlaybackSupportedForDevice with unsupported device type
-* @tc.number: AudioCollaborativeService_018
+* @tc.number: AudioCollaborativeService_021
 * @tc.desc  : Test IsCollaborativePlaybackSupportedForDevice returns false for unsupported device types.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_018, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_021, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
@@ -366,10 +418,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_018, TestS
 
 /**
 * @tc.name  : Test UpdateCurrentDevice with non-Bluetooth device type
-* @tc.number: AudioCollaborativeService_019
+* @tc.number: AudioCollaborativeService_022
 * @tc.desc  : Test UpdateCurrentDevice when device type is not Bluetooth.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_019, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_022, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
     AudioDeviceDescriptor device;
@@ -381,10 +433,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_019, TestS
 
 /**
 * @tc.name  : Test UpdateCollaborativeStateReal when current device not in map and state is CLOSE
-* @tc.number: AudioCollaborativeService_020
+* @tc.number: AudioCollaborativeService_023
 * @tc.desc  : Test UpdateCollaborativeStateReal returns SUCCESS when device not in map and state is already CLOSE.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_020, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_023, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
     audioCollaborativeService_.curDeviceAddress_ = testAddr1;
@@ -396,10 +448,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_020, TestS
 
 /**
 * @tc.name  : Test UpdateCollaborativeStateReal with collaborative enabled and A2DP device
-* @tc.number: AudioCollaborativeService_021
+* @tc.number: AudioCollaborativeService_024
 * @tc.desc  : Test UpdateCollaborativeStateReal sets COLLABORATION_BLUETOOTH_OPEN when A2DP device is enabled.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_021, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_024, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
     audioCollaborativeService_.curDeviceAddress_ = TEST_MAC_ADDR;
@@ -413,10 +465,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_021, TestS
 
 /**
 * @tc.name  : Test UpdateCollaborativeStateReal with collaborative disabled (else branch)
-* @tc.number: AudioCollaborativeService_022
+* @tc.number: AudioCollaborativeService_025
 * @tc.desc  : Test UpdateCollaborativeStateReal sets COLLABORATION_CLOSE when device is not collaborative enabled.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_022, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_025, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
     audioCollaborativeService_.curDeviceAddress_ = TEST_MAC_ADDR;
@@ -429,10 +481,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_022, TestS
 
 /**
 * @tc.name  : Test UpdateCollaborativeStateReal with NearLink device enabled
-* @tc.number: AudioCollaborativeService_023
+* @tc.number: AudioCollaborativeService_026
 * @tc.desc  : Test UpdateCollaborativeStateReal sets COLLABORATION_NEARLINK_OPEN when NearLink device is enabled.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_023, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_026, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
     audioCollaborativeService_.curDeviceAddress_ = TEST_MAC_ADDR;
@@ -445,10 +497,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_023, TestS
 
 /**
 * @tc.name  : Test UpdateCurrentDevice changes state from RESERVED to OPEN
-* @tc.number: AudioCollaborativeService_024
+* @tc.number: AudioCollaborativeService_027
 * @tc.desc  : Test UpdateCurrentDevice when device was RESERVED changes to OPEN.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_024, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_027, TestSize.Level0)
 {
     AudioDeviceDescriptor device1;
     device1.macAddress_ = TEST_MAC_ADDR;
@@ -463,10 +515,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_024, TestS
 
 /**
 * @tc.name  : Test UpdateCurrentDevice with new device address
-* @tc.number: AudioCollaborativeService_025
+* @tc.number: AudioCollaborativeService_028
 * @tc.desc  : Test UpdateCurrentDevice updates curDeviceAddress_ when device address changes.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_025, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_028, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
     audioCollaborativeService_.curDeviceAddress_ = testAddr1;
@@ -479,10 +531,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_025, TestS
 
 /**
 * @tc.name  : Test IsCollaborativePlaybackOpenedOrReservedForDevice with OPEN state
-* @tc.number: AudioCollaborativeService_026
+* @tc.number: AudioCollaborativeService_029
 * @tc.desc  : Test IsCollaborativePlaybackOpenedOrReservedForDevice returns true for OPEN state.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_026, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_029, TestSize.Level0)
 {
     AudioDeviceDescriptor device;
     device.macAddress_ = TEST_MAC_ADDR;
@@ -494,10 +546,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_026, TestS
 
 /**
 * @tc.name  : Test IsCollaborativePlaybackOpenedOrReservedForDevice with RESERVED state
-* @tc.number: AudioCollaborativeService_027
+* @tc.number: AudioCollaborativeService_030
 * @tc.desc  : Test IsCollaborativePlaybackOpenedOrReservedForDevice returns true for RESERVED state.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_027, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_030, TestSize.Level0)
 {
     AudioDeviceDescriptor device;
     device.macAddress_ = TEST_MAC_ADDR;
@@ -509,10 +561,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_027, TestS
 
 /**
 * @tc.name  : Test IsCollaborativePlaybackOpenedOrReservedForDevice with CLOSED state
-* @tc.number: AudioCollaborativeService_028
+* @tc.number: AudioCollaborativeService_031
 * @tc.desc  : Test IsCollaborativePlaybackOpenedOrReservedForDevice returns false for CLOSED state.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_028, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_031, TestSize.Level0)
 {
     AudioDeviceDescriptor device;
     device.macAddress_ = TEST_MAC_ADDR;
@@ -524,10 +576,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_028, TestS
 
 /**
 * @tc.name  : Test IsCollaborativePlaybackOpenedOrReservedForDevice with address not in map
-* @tc.number: AudioCollaborativeService_029
+* @tc.number: AudioCollaborativeService_032
 * @tc.desc  : Test IsCollaborativePlaybackOpenedOrReservedForDevice returns false when address not in map.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_029, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_032, TestSize.Level0)
 {
     AudioDeviceDescriptor device;
     device.macAddress_ = TEST_MAC_ADDR;
@@ -539,11 +591,11 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_029, TestS
 
 /**
 * @tc.name  : Test UpdateCollaborativeStateReal when state does not change
-* @tc.number: AudioCollaborativeService_030
+* @tc.number: AudioCollaborativeService_033
 * @tc.desc  : Test UpdateCollaborativeStateReal returns SUCCESS without calling
 *            UpdateCollaborativeStateToHdi when state unchanged.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_030, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_033, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
     audioCollaborativeService_.curDeviceAddress_ = TEST_MAC_ADDR;
@@ -557,10 +609,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_030, TestS
 
 /**
 * @tc.name  : Test UpdateCurrentDevice when SCO device and address was collaborative opened
-* @tc.number: AudioCollaborativeService_031
+* @tc.number: AudioCollaborativeService_034
 * @tc.desc  : Test UpdateCurrentDevice changes COLLABORATIVE_OPENED to COLLABORATIVE_RESERVED when SCO connected.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_031, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_034, TestSize.Level0)
 {
     AudioDeviceDescriptor device1;
     device1.macAddress_ = TEST_MAC_ADDR;
@@ -579,10 +631,10 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_031, TestS
 
 /**
 * @tc.name  : Test UpdateCollaborativeStateReal with current device in map but state is COLLABORATION_CLOSE
-* @tc.number: AudioCollaborativeService_032
+* @tc.number: AudioCollaborativeService_035
 * @tc.desc  : Test UpdateCollaborativeStateReal handles case where current device is in map but state is CLOSE.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_032, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_035, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
     audioCollaborativeService_.curDeviceAddress_ = TEST_MAC_ADDR;

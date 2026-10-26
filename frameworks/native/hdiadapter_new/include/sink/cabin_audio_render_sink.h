@@ -18,7 +18,7 @@
 
 #include <iostream>
 #include <cstring>
-#include <v6_1/iaudio_manager.h>
+#include <v6_2/iaudio_manager.h>
 #include "audio_utils.h"
 #include "sink/i_audio_render_sink.h"
 #ifdef MULTI_BUS_ENABLE

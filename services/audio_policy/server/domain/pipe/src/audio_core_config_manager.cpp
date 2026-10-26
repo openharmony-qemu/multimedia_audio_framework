@@ -434,6 +434,47 @@ void AudioCoreConfigManager::GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs
     globalConfigs = globalConfigs_;
 }
 
+int32_t AudioCoreConfigManager::GetHwEncodingTypeMaxBitrate()
+{
+    return globalConfigs_.hwEncodingTypeMaxBitrate;
+}
+
+void AudioCoreConfigManager::SetHwEncodingTypeMaxBitrate(int32_t maxBitrate)
+{
+    globalConfigs_.hwEncodingTypeMaxBitrate = maxBitrate;
+}
+
+bool AudioCoreConfigManager::CheckRendererGeneralParamsValid(const AudioStreamInfo &streamInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(Util::IsFormatValid(streamInfo.format) && Util::IsEncodingTypeValid(streamInfo.encoding) &&
+        ((streamInfo.customSampleRate == 0 && Util::IsSamplingRateValid(streamInfo.samplingRate)) ||
+        (streamInfo.customSampleRate != 0 && Util::IsCustomSampleRateValid(streamInfo.customSampleRate))) &&
+        Util::IsPlaybackChannelRelatedInfoValid(streamInfo.encoding, streamInfo.channels, streamInfo.channelLayout),
+        false, "Unsupported audio renderer parameter");
+    return true;
+}
+
+bool AudioCoreConfigManager::CheckHwEncodingBitrateSupport(const AudioStreamInfo &streamInfo)
+{
+    if (!IsHWDecodingType(streamInfo.encoding) || streamInfo.bitrate == -1) {
+        return true;
+    }
+    CHECK_AND_RETURN_RET_LOG(streamInfo.bitrate > 0, false,
+        "bitrate must be greater than 0 or equal to -1(skip check)");
+    int32_t maxBitrate = GetHwEncodingTypeMaxBitrate();
+    CHECK_AND_RETURN_RET_LOG(maxBitrate > 0, false, "Max bitrate not configured");
+    CHECK_AND_RETURN_RET_LOG(streamInfo.bitrate <= maxBitrate, false,
+        "Bitrate %{public}d exceeds max bitrate %{public}d, not supported",
+        streamInfo.bitrate, maxBitrate);
+    return true;
+}
+
+bool AudioCoreConfigManager::CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo)
+{
+    CHECK_AND_RETURN_RET(CheckRendererGeneralParamsValid(streamInfo), false);
+    return CheckHwEncodingBitrateSupport(streamInfo);
+}
+
 bool AudioCoreConfigManager::GetVoipConfig()
 {
     return enableFastVoip_;
@@ -629,6 +670,11 @@ void AudioCoreConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sourc
         case SOURCE_TYPE_UNPROCESSED:
             useMatchingPropInfo = ecEnableState_ ? false : true;
             break;
+#ifdef MULTI_BUS_ENABLE
+        case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
+            useMatchingPropInfo = true;
+            break;
+#endif
         default:
             break;
     }
@@ -711,6 +757,11 @@ void AudioCoreConfigManager::GetStreamPropInfoForRecord(
     auto firstStreamPropInfo = GetAvailableStreamPropInfoForDevice(adapterPipeInfo->streamPropInfos_,
         desc->newDeviceDescs_.front()->deviceType_);
     CHECK_AND_RETURN_LOG(firstStreamPropInfo != nullptr, "Get firstStreamPropInfo for normal capture failed");
+#ifdef MULTI_BUS_ENABLE
+    CHECK_AND_RETURN_LOG(!IsUnprocVoiceAsstMultiChRej(desc->capturerInfo_.sourceType, streamInfo.channels),
+        "multichannel rejected, channels:%{public}d, sourceType:%{public}d",
+        streamInfo.channels, desc->capturerInfo_.sourceType);
+#endif
     // Use *ptr to get copy and avoid modify the source data from XML
     *info = *firstStreamPropInfo;
     bool useMatchingPropInfo = false;

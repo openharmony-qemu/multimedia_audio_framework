@@ -134,6 +134,7 @@ int32_t MultichannelAudioRenderSink::Start(void)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     UpdateSinkState(true);
     ChangePipeStatus(PIPE_STATUS_RUNNING);
+    firstFrameRendered_.store(false);
     started_ = true;
 
     uint64_t frameSize = 0;
@@ -173,6 +174,7 @@ int32_t MultichannelAudioRenderSink::Stop(void)
     int32_t ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
     ChangePipeStatus(PIPE_STATUS_STANDBY);
+    firstFrameRendered_.store(false);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
 #ifdef MULTI_BUS_ENABLE
     playingAppManager_.Stop();
@@ -264,6 +266,7 @@ int32_t MultichannelAudioRenderSink::RenderFrame(char &data, uint64_t len, uint6
     int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t *>(&data), static_cast<uint32_t>(len),
         &writeLen);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
+    firstFrameRendered_.store(true);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_MULTICHANNEL, ClockTime::GetCurNano());
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     if (logMode_) {

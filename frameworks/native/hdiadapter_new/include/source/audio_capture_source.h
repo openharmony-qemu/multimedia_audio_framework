@@ -23,7 +23,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
-#include "v6_1/iaudio_manager.h"
+#include "v6_2/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
 #include "util/ring_buffer_handler.h"

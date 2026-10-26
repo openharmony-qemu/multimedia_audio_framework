@@ -1037,6 +1037,9 @@ void AudioDeviceStatus::HandleDistributedDeviceDisConnected(DStatusInfo &statusI
 {
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
+    if (AudioPolicyUtils::GetInstance().GetDeviceRole(devType) == INPUT_DEVICE) {
+        AudioCoreService::GetCoreService()->RemoveSupportReload(networkId);
+    }
     AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output", networkId);
     AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "multichannel_distributed_output", networkId);
     std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
@@ -1067,6 +1070,8 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
     deviceDesc.SetDeviceCapability(streamInfoList, 0);
     deviceDesc.SetExtraDeviceInfo(statusInfo, PermissionUtil::VerifySystemPermission());
     deviceDesc.BuildCapabilitiesFromDeviceStreamInfo();
+    deviceDesc.isSupportReload_ = devRole == INPUT_DEVICE ?
+        AudioCoreService::GetCoreService()->GetSupportReload(networkId) : true;
     audioVolumeManager_.UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingVolumeId);
     audioVolumeManager_.UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
@@ -1191,11 +1196,6 @@ void AudioDeviceStatus::AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType d
     }
 
     audioDescriptor->deviceId_ = AudioPolicyUtils::startDeviceId++;
-#ifdef MULTI_BUS_ENABLE
-    if (devType == DEVICE_TYPE_SPEAKER) {
-        audioDescriptor->isSupportMultiZone_ = true;
-    }
-#endif
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
@@ -1239,6 +1239,9 @@ void AudioDeviceStatus::AddDevice(const PolicyAdapterInfo &adapterInfo, const Ad
     audioDescriptor->SetDeviceCapability(streamInfos, 0);
 
     audioDescriptor->deviceId_ = AudioPolicyUtils::startDeviceId++;
+    if (deviceInfo.type_ == DEVICE_TYPE_SPEAKER) {
+        audioDescriptor->isSupportMultiZone_ = true;
+    }
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
@@ -1785,6 +1788,9 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
     for (auto deviceDesc : connectedDevices) {
         if (deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID) {
             const std::string networkId = deviceDesc->networkId_;
+            if (AudioPolicyUtils::GetInstance().GetDeviceRole(deviceDesc->deviceType_) == INPUT_DEVICE) {
+                AudioCoreService::GetCoreService()->RemoveSupportReload(networkId);
+            }
             AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output", networkId);
             AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "multichannel_distributed_output",
                 networkId);
@@ -1923,7 +1929,6 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         AUDIO_INFO_LOG("Update tokenId: %{public}u", device.deviceTokenId_);
     }
 
-    device.isSupportReload_ = capability.isSupportReload_;
     AUDIO_INFO_LOG("Update isSupportReload: %{public}d", device.isSupportReload_);
 }
 

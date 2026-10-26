@@ -71,6 +71,9 @@ private:
     void HandlePaPower(HpaePcmBuffer *pcmBuffer);
     void HandleHapticParam(uint64_t syncTime);
     bool ReadDataAndConvertFormat();
+    void OnTraceInfoChanged() override;
+    void RebuildTraceName();
+    void RebuildAuxTraceName();
     InputPort<HpaePcmBuffer *> inputStream_;
     std::vector<char, AlignedAllocator<char, 16>> renderFrameData_; // 16 for alignment in byte
     
@@ -111,6 +114,11 @@ private:
 #endif
     std::atomic<size_t> collRenderFrameFailedCount_ = 0;
     std::atomic<CollaborationState> collaborationState_ = COLLABORATION_CLOSE;
+
+    // Cached DoProcess trace name; rebuilt in ctor and whenever node info changes
+    std::string processTraceName_;
+    // Cached RenderFrameForAuxiliarySink trace name; rebuilt when its inputs change
+    std::string auxTraceName_;
 };
 
 }  // namespace HPAE

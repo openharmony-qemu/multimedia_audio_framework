@@ -28,25 +28,35 @@ namespace AudioStandard {
 
 inline bool IsUsb(DeviceType deviceType)
 {
-    return deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET
-        || deviceType == DEVICE_TYPE_LINE_DIGITAL;
+    return deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET ||
+        deviceType == DEVICE_TYPE_LINE_DIGITAL;
 }
 
 inline bool IsBtDevice(DeviceType deviceType)
 {
-    return deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP
-        || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    return deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+}
+
+inline bool IsBtOrSppDevice(DeviceType deviceType)
+{
+    return IsBtDevice(deviceType) || deviceType == DEVICE_TYPE_BT_SPP;
 }
 
 inline bool IsBtInputDevice(DeviceType deviceType)
 {
-    return deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN
-        || deviceType == DEVICE_TYPE_BT_SPP;
+    return deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN ||
+        deviceType == DEVICE_TYPE_BT_SPP;
 }
 
 inline bool IsNearlinkDevice(DeviceType deviceType)
 {
     return deviceType == DEVICE_TYPE_NEARLINK || deviceType == DEVICE_TYPE_NEARLINK_IN;
+}
+
+inline bool IsNearlinkOrPortDevice(DeviceType deviceType)
+{
+    return IsNearlinkDevice(deviceType) || deviceType == DEVICE_TYPE_NEARLINK_PORT;
 }
 
 inline bool IsNearlinkInputDevice(DeviceType deviceType)
@@ -142,11 +152,19 @@ public:
 
     bool IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
-    bool IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const;
+    bool IsSameDeviceDescPtr(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const;
 
     bool IsSameBtDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
-    bool IsSameBtDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const;
+    bool IsSameBtDeviceDescPtr(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const;
+
+    bool IsSameBtOrSppDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
+
+    bool IsSameBtOrSppDeviceDescPtr(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const;
+
+    bool IsSameNearlinkOrPortDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
+
+    bool IsSameNearlinkOrPortDeviceDescPtr(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const;
 
     bool IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const;
 
@@ -225,6 +243,8 @@ private:
         int32_t apiVersion, bool isSupportedDevice = true) const;
     
     bool MarshallingInnerdata(Parcel &parcel, int32_t devType, const std::list<AudioStreamInfo> &capabilities) const;
+
+    bool MarshallingExt(Parcel &parcel) const;
 public:
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
@@ -247,6 +267,7 @@ public:
     DeviceUsage deviceUsage_ = ALL_USAGE;
     // AudioDeviceDescriptor
     bool exceptionFlag_ = false;
+    // used for priority, is not real connect timestamp
     int64_t connectTimeStamp_ = 0;
     std::shared_ptr<AudioDeviceDescriptor> pairDeviceDescriptor_;
     bool isScoRealConnected_ = false;
@@ -288,6 +309,7 @@ public:
     static constexpr uint32_t WEAR_FIRST = 1;
     static constexpr uint32_t WEAR_AGAIN = 2;
     bool isSilent_ = false;
+    bool isPriorityReduced_ = false;
 
 private:
     uint32_t deviceSupportMmap_ = 0; //only valid on armusb

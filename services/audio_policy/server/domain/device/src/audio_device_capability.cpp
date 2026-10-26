@@ -48,7 +48,6 @@ std::string RemoteDeviceCapability::GetJsonString() const
     cJSON_AddNumberToObject(interface, "hd_play_mode", hdPlaybackMode_);
     cJSON_AddNumberToObject(interface, "tokenId", deviceTokenId_);
     cJSON_AddNumberToObject(interface, "support_dynamic_pipes", supportDynamicPipes_);
-    cJSON_AddBoolToObject(interface, "is_support_reload", isSupportReload_);
     char *pChar = cJSON_PrintUnformatted(interface);
     cJSON_Delete(interface);
     CHECK_AND_RETURN_RET_LOG(pChar != nullptr, "", "pChar is null");
@@ -65,11 +64,6 @@ void RemoteDeviceCapability::FromJsonStringExt(const std::string &jsonString)
     cJSON *supportDynamicPipesObj = cJSON_GetObjectItem(root, "support_dynamic_pipes");
     if (supportDynamicPipesObj && cJSON_IsNumber(supportDynamicPipesObj)) {
         supportDynamicPipes_ = static_cast<uint32_t>(supportDynamicPipesObj->valueint);
-    }
-
-    cJSON *isSupportReloadObj = cJSON_GetObjectItem(root, "is_support_reload");
-    if (isSupportReloadObj && cJSON_IsBool(isSupportReloadObj)) {
-        isSupportReload_ = cJSON_IsTrue(isSupportReloadObj);
     }
 
     cJSON_Delete(root);

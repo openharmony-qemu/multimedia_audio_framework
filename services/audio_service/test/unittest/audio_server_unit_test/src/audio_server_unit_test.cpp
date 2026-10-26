@@ -2514,7 +2514,7 @@ HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     uint32_t renderId = 0;
-    int32_t result = audioServer->CreateHdiSinkPort("deviceClass", "idInfo", IAudioSinkAttr(), renderId);
+    int32_t result = audioServer->CreateHdiSinkPort("deviceClass", "idInfo", IAudioSinkAttr(), true, renderId);
     EXPECT_EQ(result, 0);
 }
 
@@ -2602,7 +2602,7 @@ HWTEST_F(AudioServerUnitTest, CreateHdiSourcePort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     uint32_t captureId = 0;
-    int32_t result = audioServer->CreateHdiSourcePort("deviceClass", "idInfo", IAudioSourceAttr(), captureId);
+    int32_t result = audioServer->CreateHdiSourcePort("deviceClass", "idInfo", IAudioSourceAttr(), true, captureId);
     EXPECT_EQ(result, 0);
 }
 

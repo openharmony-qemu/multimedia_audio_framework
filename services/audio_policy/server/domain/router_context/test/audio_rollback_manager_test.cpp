@@ -14,7 +14,10 @@
  */
 
 #include <unistd.h>
+#include <atomic>
 #include <chrono>
+#include <condition_variable>
+#include <future>
 #include <mutex>
 #include <thread>
 #include "audio_router_context_test_base.h"
@@ -623,6 +626,72 @@ HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_SkipsSameDeviceId, TestS
 }
 
 /**
+ * @tc.name  : SetSelectionRollback_A2dpSkipsWhenScoConnected
+ * @tc.type  : FUNC
+ * @tc.desc  : 强选MEDIA_OUTPUT A2DP设备时,若同MAC的SCO已连接(通话进行中),应跳过记录回滚.
+ */
+HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_A2dpSkipsWhenScoConnected, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:B0");
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto scoDev = AddConnectedDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:B0");
+    auto a2dpDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:B0", SUSPEND_CONNECTED);
+    ASSERT_TRUE(AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(scoDev->macAddress_));
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, a2dpDev);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), a2dpDev->deviceId_);
+    EXPECT_FALSE(HasSelectionRollback(a2dpDev->deviceId_));
+}
+
+/**
+ * @tc.name  : SetSelectionRollback_A2dpProceedsWhenScoDifferentMac
+ * @tc.type  : FUNC
+ * @tc.desc  : 强选MEDIA_OUTPUT A2DP设备时,已连接SCO的MAC不同,SCO保护不生效,应正常记录回滚.
+ */
+HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_A2dpProceedsWhenScoDifferentMac, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:B1");
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto scoDev = AddConnectedDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:D1");
+    auto a2dpDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:B1", SUSPEND_CONNECTED);
+    ASSERT_TRUE(AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(scoDev->macAddress_));
+    ASSERT_FALSE(AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(a2dpDev->macAddress_));
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, a2dpDev);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), a2dpDev->deviceId_);
+    EXPECT_TRUE(HasSelectionRollback(a2dpDev->deviceId_));
+}
+
+/**
+ * @tc.name  : SetSelectionRollback_CallOutputA2dpProceedsWhenScoConnected
+ * @tc.type  : FUNC
+ * @tc.desc  : 强选CALL_OUTPUT A2DP设备时,即使同MAC的SCO已连接,SCO保护不生效(仅MEDIA_OUTPUT受保护),
+ *             应正常记录回滚.
+ */
+HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_CallOutputA2dpProceedsWhenScoConnected,
+    TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:B2");
+    AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, oldDev, "ut");
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::CALL_OUTPUT), oldDev->deviceId_);
+
+    auto scoDev = AddConnectedDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:B2");
+    auto a2dpDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:B2", SUSPEND_CONNECTED);
+    ASSERT_TRUE(AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(scoDev->macAddress_));
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, a2dpDev, "ut");
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::CALL_OUTPUT), a2dpDev->deviceId_);
+    EXPECT_TRUE(HasSelectionRollback(a2dpDev->deviceId_));
+}
+
+/**
  * @tc.name  : RollbackSelection_DeactiveConnected
  * @tc.type  : FUNC
  * @tc.desc  : RollbackSelection restores a DEACTIVE_CONNECTED device and notifies BT.
@@ -926,6 +995,217 @@ HWTEST_F(AudioRollbackManagerTest, VirtualSelect_AppExitClears, TestSize.Level1)
 
     AudioRouterSelectStrategy::GetInstance().OnAppDied(TEST_APP_UID_10001);
     EXPECT_FALSE(HasVirtualSelect(newDev->deviceId_));
+}
+
+// ---------------------------------------------------------------------------
+// StepTimer unit tests
+// ---------------------------------------------------------------------------
+
+struct WaitCounter {
+    explicit WaitCounter(int target) : target_(target) {}
+    void Done()
+    {
+        std::lock_guard<std::mutex> lg(mutex_);
+        if (++count_ >= target_) {
+            cv_.notify_all();
+        }
+    }
+    bool Wait(int32_t timeoutMs)
+    {
+        std::unique_lock<std::mutex> lk(mutex_);
+        return cv_.wait_for(lk, std::chrono::milliseconds(timeoutMs),
+            [this] { return count_ >= target_; });
+    }
+    int Count()
+    {
+        std::lock_guard<std::mutex> lg(mutex_);
+        return count_;
+    }
+private:
+    std::mutex mutex_;
+    std::condition_variable cv_;
+    int count_{0};
+    int target_;
+};
+
+class StepTimerTest : public testing::Test {
+public:
+    void SetUp() override {}
+    void TearDown() override
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SETTLE_MS));
+    }
+
+    static constexpr int32_t TEST_SETTLE_MS = 50;
+    static constexpr int32_t TEST_SHORT_MS = 50;
+    static constexpr int32_t TEST_LONG_MS = 500;
+    static constexpr int32_t TEST_TIMEOUT_MS = 2000;
+};
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_SingleTask_Fires
+ * @tc.type  : FUNC
+ * @tc.desc  : A single delayed task fires exactly once after the specified delay.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_SingleTask_Fires, TestSize.Level1)
+{
+    StepTimer timer;
+    std::promise<void> done;
+    auto fut = done.get_future();
+    timer.SetTimeout(TEST_SHORT_MS, [&done]() { done.set_value(); });
+    EXPECT_EQ(fut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
+}
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_MultipleTasks_AllFireByDelay
+ * @tc.type  : FUNC
+ * @tc.desc  : Tasks with different delays all fire; the earliest-deadline task fires first
+ *             because it becomes due before the others, not because the timer sorts by deadline.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_MultipleTasks_AllFireByDelay, TestSize.Level1)
+{
+    StepTimer timer;
+    std::vector<int> order;
+    std::mutex orderMutex;
+    WaitCounter wc(3);
+    auto record = [&order, &orderMutex, &wc](int id) {
+        std::lock_guard<std::mutex> lg(orderMutex);
+        order.push_back(id);
+        wc.Done();
+    };
+    timer.SetTimeout(300, [&]() { record(3); });
+    timer.SetTimeout(100, [&]() { record(1); });
+    timer.SetTimeout(200, [&]() { record(2); });
+    EXPECT_TRUE(wc.Wait(TEST_TIMEOUT_MS));
+    ASSERT_EQ(order.size(), 3u);
+    EXPECT_EQ(order[0], 1);
+    EXPECT_EQ(order[1], 2);
+    EXPECT_EQ(order[2], 3);
+}
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_SameDeadline_AllFire
+ * @tc.type  : FUNC
+ * @tc.desc  : Multiple tasks with the same deadline all fire.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_SameDeadline_AllFire, TestSize.Level1)
+{
+    StepTimer timer;
+    WaitCounter wc(3);
+    timer.SetTimeout(100, [&wc]() { wc.Done(); });
+    timer.SetTimeout(100, [&wc]() { wc.Done(); });
+    timer.SetTimeout(100, [&wc]() { wc.Done(); });
+    EXPECT_TRUE(wc.Wait(TEST_TIMEOUT_MS));
+    EXPECT_EQ(wc.Count(), 3);
+}
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_ZeroDelay_Fires
+ * @tc.type  : FUNC
+ * @tc.desc  : A task with zero delay fires promptly.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_ZeroDelay_Fires, TestSize.Level1)
+{
+    StepTimer timer;
+    std::promise<void> done;
+    auto fut = done.get_future();
+    timer.SetTimeout(0, [&done]() { done.set_value(); });
+    EXPECT_EQ(fut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
+}
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_ConcurrentCalls_AllFire
+ * @tc.type  : FUNC
+ * @tc.desc  : Concurrent SetTimeout calls from multiple threads all deliver their callbacks.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_ConcurrentCalls_AllFire, TestSize.Level1)
+{
+    StepTimer timer;
+    constexpr int N = 20;
+    WaitCounter wc(N);
+    std::vector<std::thread> threads;
+    for (int i = 0; i < N; i++) {
+        threads.emplace_back([&timer, &wc]() {
+            timer.SetTimeout(TEST_SHORT_MS, [&wc]() { wc.Done(); });
+        });
+    }
+    for (auto &t : threads) {
+        t.join();
+    }
+    EXPECT_TRUE(wc.Wait(TEST_TIMEOUT_MS));
+    EXPECT_EQ(wc.Count(), N);
+}
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_CallbackAddsNewTask
+ * @tc.type  : FUNC
+ * @tc.desc  : A callback that schedules a new task via SetTimeout is delivered.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_CallbackAddsNewTask, TestSize.Level1)
+{
+    StepTimer timer;
+    std::promise<void> done;
+    auto fut = done.get_future();
+    timer.SetTimeout(TEST_SHORT_MS, [&timer, &done]() {
+        timer.SetTimeout(TEST_SHORT_MS, [&done]() { done.set_value(); });
+    });
+    EXPECT_EQ(fut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
+}
+
+/**
+ * @tc.name  : StepTimer_WorkerExitsWhenIdle
+ * @tc.type  : FUNC
+ * @tc.desc  : After all tasks complete the worker thread exits and internal state is empty.
+ */
+HWTEST_F(StepTimerTest, WorkerExitsWhenIdle, TestSize.Level1)
+{
+    StepTimer timer;
+    std::promise<void> done;
+    auto fut = done.get_future();
+    timer.SetTimeout(TEST_SHORT_MS, [&done]() { done.set_value(); });
+    ASSERT_EQ(fut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SETTLE_MS));
+    EXPECT_FALSE(timer.running_);
+    EXPECT_TRUE(timer.tasks_.empty());
+}
+
+/**
+ * @tc.name  : StepTimer_TaskAddedWhileWaiting_FiresPromptly
+ * @tc.type  : FUNC
+ * @tc.desc  : A short-delay task added while the worker is waiting for a long-delay task
+ *             fires well before the long-delay deadline.
+ */
+HWTEST_F(StepTimerTest, TaskAddedWhileWaiting_FiresPromptly, TestSize.Level1)
+{
+    StepTimer timer;
+    std::promise<void> longDone;
+    std::promise<void> shortDone;
+    auto longFut = longDone.get_future();
+    auto shortFut = shortDone.get_future();
+    timer.SetTimeout(TEST_LONG_MS, [&longDone]() { longDone.set_value(); });
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SETTLE_MS));
+    timer.SetTimeout(TEST_SHORT_MS, [&shortDone]() { shortDone.set_value(); });
+    EXPECT_EQ(shortFut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
+    EXPECT_NE(longFut.wait_for(std::chrono::milliseconds(0)), std::future_status::ready);
+    EXPECT_EQ(longFut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
+}
+
+/**
+ * @tc.name  : StepTimer_SetTimeout_OverwriteWhileRunning
+ * @tc.type  : FUNC
+ * @tc.desc  : Adding multiple tasks with different delays while the worker is running
+ *             delivers all callbacks.
+ */
+HWTEST_F(StepTimerTest, SetTimeout_OverwriteWhileRunning, TestSize.Level1)
+{
+    StepTimer timer;
+    WaitCounter wc(3);
+    timer.SetTimeout(200, [&wc]() { wc.Done(); });
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SETTLE_MS));
+    timer.SetTimeout(TEST_SHORT_MS, [&wc]() { wc.Done(); });
+    timer.SetTimeout(150, [&wc]() { wc.Done(); });
+    EXPECT_TRUE(wc.Wait(TEST_TIMEOUT_MS));
+    EXPECT_EQ(wc.Count(), 3);
 }
 
 }

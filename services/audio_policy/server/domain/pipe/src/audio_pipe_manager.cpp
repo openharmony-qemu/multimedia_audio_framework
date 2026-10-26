@@ -491,8 +491,21 @@ const std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetPipeList(
 std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe()
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    return GetUnusedPipeInternal(curPipeList_);
+}
+
+std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipeForCapturer(
+    const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    return GetUnusedPipeInternal(pipeInfos);
+}
+
+std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipeInternal(
+    const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
+{
     std::vector<std::shared_ptr<AudioPipeInfo>> newList;
-    for (auto pipe : curPipeList_) {
+    for (auto pipe : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
         if (pipe->streamDescriptors_.empty() && (IsSpecialPipe(pipe->routeFlag_) ||
             (pipe->adapterName_ == ADAPTER_TYPE_VA &&
@@ -1832,6 +1845,16 @@ void AudioPipeManager::ProcessPipeForVolumeInfo(std::vector<PipeDeviceVolumeGrou
         AddOrUpdatePipeDeviceVolumeGroup(result, pipeInfo->id_, firstDevice, volumeType);
         AUDIO_INFO_LOG("pipeName:%{public}s, ioHandle:%{public}u, sessionId:%{public}u, device:%{public}s",
             pipeInfo->name_.c_str(), pipeInfo->id_, streamDesc->sessionId_, firstDevice->GetName().c_str());
+
+        if (volumeType == STREAM_RING) {
+            // Determine whether the ringtone is played only through the headphones
+            auto deviceType = firstDevice->getType();
+            if ((deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceType == DEVICE_TYPE_NEARLINK) &&
+                firstDevice->isSupportWearDetectionEnable_) {
+                // The ringtone will be played only through the headphones. No need to set pipe volume for speaker.
+                break;
+            }
+        }
 
         for (size_t i = 1; i < streamDesc->newDeviceDescs_.size(); i++) {
             auto device = streamDesc->newDeviceDescs_[i];

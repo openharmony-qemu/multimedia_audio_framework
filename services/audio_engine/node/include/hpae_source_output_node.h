@@ -65,6 +65,8 @@ private:
     HpaePcmBuffer *MixInputs(const std::vector<HpaePcmBuffer *> &inputs);
     void ProcessAudioData(HpaePcmBuffer *outputData, bool isMute);
     void WriteDataAndUpdateFrames();
+    void OnTraceInfoChanged() override;
+    void RebuildTraceNames();
 private:
     InputPort<HpaePcmBuffer *> inputStream_;
     std::weak_ptr<ICapturerStreamCallback> readCallback_;
@@ -89,6 +91,10 @@ private:
     HpaePcmBuffer tmpOutput_;
     HpaePcmBuffer silenceData_;
     std::unique_ptr<AudioLimiter> limiter_ = nullptr;
+
+    // Cached DoProcess trace names (mute/unmute); rebuilt in ctor and whenever node info changes
+    std::string muteTraceName_;
+    std::string unmuteTraceName_;
 };
 
 }  // namespace HPAE

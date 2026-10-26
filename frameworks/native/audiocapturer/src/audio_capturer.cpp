@@ -224,8 +224,11 @@ static inline bool IsMicInRequested(const AudioCapturerOptions &capturerOptions)
     return capturerOptions.micInStreamInfo.channels > CHANNEL_UNKNOW;
 }
 
+// UNPROCESSED_VOICE_ASSISTANT is for car multi-MIC arrays (10/12/16 channels).
+// car does not deliver ec; ec validation is skipped when ecChannels is 0.
 static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions &capturerOptions)
 {
+#ifndef MULTI_BUS_ENABLE
     if (sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT &&
         (capturerOptions.ecStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
         capturerOptions.ecStreamInfo.format != capturerOptions.streamInfo.format)) {
@@ -233,7 +236,7 @@ static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions 
             "can only be samplingRate and format same");
         return false;
     }
-
+#endif
     if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION && IsMicInEcRequested(capturerOptions)) {
         if (capturerOptions.micInStreamInfo.channels > CHANNEL_UNKNOW &&
             (capturerOptions.micInStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||

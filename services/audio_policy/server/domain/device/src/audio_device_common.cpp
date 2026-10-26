@@ -879,7 +879,7 @@ int32_t AudioDeviceCommon::SetVirtualCall(pid_t uid, const bool isVirtual)
 
 bool AudioDeviceCommon::GetVirtualCall(pid_t uid)
 {
-    return Bluetooth::AudioHfpManager::IsVirtualCall();
+    return Bluetooth::AudioHfpManager::IsVirtualCall(uid);
 }
 }
 }

@@ -50,6 +50,7 @@
 #include "audio_policy_manager_listener.h"
 #include "audio_device_manager.h"
 #include "audio_policy_dump.h"
+#include "audio_anco_playback_info.h"
 #include "app_state_listener.h"
 #include "audio_core_service.h"
 #include "audio_converter_parser.h"
@@ -122,6 +123,9 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag) override;
 
+    int32_t SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted,
+        const sptr<IRemoteObject> &callerObj) override;
+
     int32_t SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted,
         const sptr<IRemoteObject> &callerObj) override;
 
@@ -173,6 +177,9 @@ public:
     int32_t IsDirectPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t streamUsage,
         bool &support) override;
     int32_t IsOffloadPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t streamUsage,
+        bool &support) override;
+
+    int32_t CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo,
         bool &support) override;
 
     int32_t IsVolumeUnadjustable(bool &unadjustable) override;
@@ -342,6 +349,9 @@ public:
 
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute) override;
 
+    int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos) override;
+    int32_t GetAncoPlaybackInfo(std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
+
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
@@ -392,6 +402,10 @@ public:
     void RegisterVoipMuteDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj);
 
     void OnVoipMuteCallerDied(int32_t callerUid);
+
+    void RegisterAppVolumeMuteAndHideDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj);
+
+    void OnAppVolumeMuteAndHideCallerDied(int32_t callerUid);
 
     int32_t RegisterUnmuteWhitelistDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj);
 
@@ -680,6 +694,8 @@ public:
 
     int32_t SetSplitModeReady() override;
 
+    int32_t SetSupportReload(bool isSupportReload, const std::string &networkId) override;
+
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
     int32_t IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t sessionId, int32_t streamUsageIn, bool &isAllowed,
@@ -695,9 +711,9 @@ public:
 
     int32_t NotifyProcessBackgroundState(int32_t uid, int32_t pid) override;
 
-    int32_t SetVirtualCall(bool isVirtual) override;
+    int32_t SetVirtualCall(bool isVirtual, int32_t uid) override;
 
-    int32_t GetVirtualCall(bool &isVirtual) override;
+    int32_t GetVirtualCall(int32_t uid, bool &isVirtual) override;
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, bool isConnected) override;
 
@@ -735,6 +751,8 @@ public:
     int32_t GetVADeviceBroker(sptr<IRemoteObject> &client) override;
 
     int32_t GetVADeviceController(const std::string &macAddress, sptr<IRemoteObject> &controller) override;
+    int32_t GetUsbHeadsetType(const std::string &macAddress, int32_t deviceRole, int32_t &usbHeadsetType) override;
+    int32_t SetVADeviceExceptionFlag(const std::string &macAddress, bool exceptionFlag) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
     std::set<int32_t> GetStreamIdsForAudioSessionByStreamUsage(
@@ -814,6 +832,7 @@ public:
     void AudioPipeManagerDump(std::string &dumpString);
     void SelectDeviceDump(std::string &dumpString);
     void AudioPolicyBootDump(std::string &dumpString);
+    void IdHandlerInfoDump(std::string &dumpString);
     void RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime);
     void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
     int32_t RecordBootAnimationClientStateTime(const BootAnimationInfo &info) override;
@@ -913,6 +932,7 @@ private:
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
 
+    int32_t GetAncoActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
     bool IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode);
 
     // Permission and privacy
@@ -973,6 +993,7 @@ private:
     void InfoDumpHelp(std::string &dumpString);
 
     bool IsDeviceSupportLoopback(std::shared_ptr<AudioDeviceDescriptor> device);
+    int32_t SanitizeAndSetClientInfo(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
 
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
     void AddSystemAbilityListeners();
@@ -1057,6 +1078,8 @@ private:
     std::mutex clientDiedListenerStateMutex_;
     std::mutex voipMuteMutex_;
     std::unordered_map<int32_t, sptr<IRemoteObject::DeathRecipient>> voipMuteDeathRecipients_;
+    std::mutex appVolumeMuteAndHideMutex_;
+    std::unordered_map<int32_t, sptr<IRemoteObject::DeathRecipient>> appVolumeMuteAndHideDeathRecipients_;
     std::mutex unmuteWhitelistMutex_;
     std::unordered_map<int32_t, sptr<IRemoteObject::DeathRecipient>> unmuteWhitelistDeathRecipients_;
     std::mutex subscribeVolumeKey_;

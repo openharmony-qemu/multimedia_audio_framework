@@ -2272,5 +2272,263 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDe
     EXPECT_EQ(ret, false);
 }
 
+/* ==================== SetAppVolumeMuteAndHideVolumeBar tests ==================== */
+
+/**
+ * @tc.name  : SetAppVolumeMuteAndHideVolumeBar_001
+ * @tc.number: AudioAdapterManager_SetAppVolumeMuteAndHide_001
+ * @tc.desc  : Test SetAppVolumeMuteAndHideVolumeBar with muted=true. Returns SUCCESS.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeMuteAndHideVolumeBar_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2001;
+    int32_t ret = AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(
+        TEST_APP_UID, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : SetAppVolumeMuteAndHideVolumeBar_002
+ * @tc.number: AudioAdapterManager_SetAppVolumeMuteAndHide_002
+ * @tc.desc  : Test SetAppVolumeMuteAndHideVolumeBar with muted=false. Returns SUCCESS.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeMuteAndHideVolumeBar_002, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2002;
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    int32_t ret = AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(
+        TEST_APP_UID, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/* ==================== IsAppMuteAndHideVolumeBar tests ==================== */
+
+/**
+ * @tc.name  : IsAppMuteAndHideVolumeBar_001
+ * @tc.number: AudioAdapterManager_IsAppMuteAndHide_001
+ * @tc.desc  : Test IsAppMuteAndHideVolumeBar after setting mute. Should return true.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsAppMuteAndHideVolumeBar_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2003;
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    bool ret = AudioAdapterManager::GetInstance().IsAppMuteAndHideVolumeBar(TEST_APP_UID);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : IsAppMuteAndHideVolumeBar_002
+ * @tc.number: AudioAdapterManager_IsAppMuteAndHide_002
+ * @tc.desc  : Test IsAppMuteAndHideVolumeBar without setting mute. Should return false.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsAppMuteAndHideVolumeBar_002, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID_NOT_MUTED = 2999;
+    bool ret = AudioAdapterManager::GetInstance().IsAppMuteAndHideVolumeBar(
+        TEST_APP_UID_NOT_MUTED);
+    EXPECT_FALSE(ret);
+}
+
+/* ==================== ClearAppMuteAndHideByOwnerUid tests ==================== */
+
+/**
+ * @tc.name  : ClearAppMuteAndHideByOwnerUid_001
+ * @tc.number: AudioAdapterManager_ClearAppMuteAndHide_001
+ * @tc.desc  : Test ClearAppMuteAndHideByOwnerUid with no affected apps. Returns SUCCESS.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, ClearAppMuteAndHideByOwnerUid_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_CALLER_UID = 5001;
+    int32_t ret = AudioAdapterManager::GetInstance().ClearAppMuteAndHideByOwnerUid(
+        TEST_CALLER_UID);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : ClearAppMuteAndHideByOwnerUid_002
+ * @tc.number: AudioAdapterManager_ClearAppMuteAndHide_002
+ * @tc.desc  : Test ClearAppMuteAndHideByOwnerUid after muting. Affected apps updated.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, ClearAppMuteAndHideByOwnerUid_002, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2004;
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    int32_t ret = AudioAdapterManager::GetInstance().ClearAppMuteAndHideByOwnerUid(callerUid);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(AudioAdapterManager::GetInstance().IsAppMuteAndHideVolumeBar(TEST_APP_UID));
+}
+
+/* ==================== Modified SetAppVolumeMuted aggregate test ==================== */
+
+/**
+ * @tc.name  : SetAppVolumeMuted_Aggregate_001
+ * @tc.number: AudioAdapterManager_SetAppVolumeMuted_Aggregate_001
+ * @tc.desc  : Test SetAppVolumeMuted returns aggregate mute when both regular and hide mute exist.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeMuted_Aggregate_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2005;
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    int32_t ret = AudioAdapterManager::GetInstance().SetAppVolumeMuted(TEST_APP_UID, false);
+    EXPECT_EQ(ret, SUCCESS);
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, false);
+}
+
+/* ==================== Modified IsAppVolumeMute aggregate tests ==================== */
+
+/**
+ * @tc.name  : IsAppVolumeMute_Aggregate_Owned_001
+ * @tc.number: AudioAdapterManager_IsAppVolumeMute_Aggregate_Owned_001
+ * @tc.desc  : Test IsAppVolumeMute with owned=true returns aggregate mute.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsAppVolumeMute_Aggregate_Owned_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2006;
+    bool owned = true;
+    bool isMute = false;
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    int32_t ret = AudioAdapterManager::GetInstance().IsAppVolumeMute(TEST_APP_UID, owned, isMute);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(isMute);
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, false);
+}
+
+/**
+ * @tc.name  : IsAppVolumeMute_Aggregate_NotOwned_001
+ * @tc.number: AudioAdapterManager_IsAppVolumeMute_Aggregate_NotOwned_001
+ * @tc.desc  : Test IsAppVolumeMute with owned=false returns aggregate mute.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsAppVolumeMute_Aggregate_NotOwned_001, TestSize.Level1)
+{
+    constexpr int32_t TEST_APP_UID = 2007;
+    bool owned = false;
+    bool isMute = false;
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, true);
+    int32_t ret = AudioAdapterManager::GetInstance().IsAppVolumeMute(TEST_APP_UID, owned, isMute);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(isMute);
+    AudioAdapterManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(TEST_APP_UID, false);
+}
+
+/**
+ * @tc.name: IsDualToneStreamType_WearDetection_001
+ * @tc.desc: Test IsDualToneStreamType returns false when isSupportWearDetection is true
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsDualToneStreamType_WearDetection_001, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(false);
+    bool result = Util::IsDualToneStreamType(STREAM_RING, true);
+    EXPECT_FALSE(result);
+    result = Util::IsDualToneStreamType(STREAM_VOICE_RING, true);
+    EXPECT_FALSE(result);
+    result = Util::IsDualToneStreamType(STREAM_RING, false);
+    EXPECT_TRUE(result);
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_BluetoothSingleRing_001
+ * @tc.desc: Test GetDeviceCategory returns BLUETOOTH_NEARLINK_VOLUME_TYPE for BT_A2DP + STREAM_RING
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_BluetoothSingleRing_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_RING);
+    EXPECT_EQ(result, BLUETOOTH_NEARLINK_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_BluetoothSingleRing_002
+ * @tc.desc: Test GetDeviceCategory returns BLUETOOTH_NEARLINK_VOLUME_TYPE for BT_SCO + STREAM_VOICE_RING
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_BluetoothSingleRing_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_BLUETOOTH_SCO, STREAM_VOICE_RING);
+    EXPECT_EQ(result, BLUETOOTH_NEARLINK_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_NearlinkSingleRing_001
+ * @tc.desc: Test GetDeviceCategory returns BLUETOOTH_NEARLINK_VOLUME_TYPE for NEARLINK + STREAM_RING
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_NearlinkSingleRing_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_NEARLINK, STREAM_RING);
+    EXPECT_EQ(result, BLUETOOTH_NEARLINK_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_DualTone_001
+ * @tc.desc: Test GetDeviceCategory returns HEADSET_VOLUME_TYPE for BT_A2DP + STREAM_MUSIC (non-ring)
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_DualTone_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
+    EXPECT_EQ(result, HEADSET_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_WiredHeadset_001
+ * @tc.desc: Test GetDeviceCategory returns HEADSET_VOLUME_TYPE for WIRED_HEADSET + STREAM_RING
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_WiredHeadset_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_WIRED_HEADSET, STREAM_RING);
+    EXPECT_EQ(result, HEADSET_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_UsbHeadset_001
+ * @tc.desc: Test GetDeviceCategory returns HEADSET_VOLUME_TYPE for USB_HEADSET + STREAM_RING
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_UsbHeadset_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_USB_HEADSET, STREAM_RING);
+    EXPECT_EQ(result, HEADSET_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetDeviceCategory_BluetoothMusic_001
+ * @tc.desc: Test GetDeviceCategory returns HEADSET_VOLUME_TYPE for BT_A2DP + STREAM_MUSIC
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceCategory_BluetoothMusic_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    DeviceVolumeType result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
+    EXPECT_EQ(result, HEADSET_VOLUME_TYPE);
+    result = audioAdapterManager->GetDeviceCategory(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_VOICE_CALL);
+    EXPECT_EQ(result, HEADSET_VOLUME_TYPE);
+}
+ 
+/**
+ * @tc.name: GetVolumePoints_BluetoothNearlinkMissing_001
+ * @tc.desc: Test CalculateVolumeDbNonlinear returns 1.0f fallback when bluetooth_nearlink curve not found
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetVolumePoints_BluetoothNearlinkMissing_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    VolumeUtils::SetPCVolumeEnable(false);
+    float result = audioAdapterManager->CalculateVolumeDbNonlinear(STREAM_RING, DEVICE_TYPE_BLUETOOTH_A2DP,
+        7, true);
+    // When streamVolumeInfos_ has no bluetooth_nearlink curve for STREAM_RING,
+    // GetVolumePoints returns empty, CalculateVolumeDbNonlinear returns 1.0f
+    EXPECT_EQ(result, 1.0f);
+    VolumeUtils::SetPCVolumeEnable(false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
