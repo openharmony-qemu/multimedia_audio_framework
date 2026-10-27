@@ -298,6 +298,7 @@ public:
     bool isSupportMultiZone_ = false;
     bool isSupportReload_ = true;
     VisibleMode visibleMode_ = GLOBAL_VISIBLE;
+    int32_t isSupportCommunicationSharing_ = 0;
 
     // Raw sink/HDI baseline latency. The value is in milliseconds and is usable
     // only when sinkLatencyValid_ is true. It does not include pipeline latency.
