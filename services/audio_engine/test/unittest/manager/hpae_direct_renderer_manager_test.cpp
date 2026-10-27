@@ -1384,7 +1384,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, onRequestLatencyWithNodes_001, TestSize.
 
     uint64_t latency = 0;
     directManager_->OnRequestLatency(TEST_STREAM_SESSION_ID, latency);
-    // With created nodes, latency should still be 0 (all GetLatency return 0 for gain/converter)
+    // With created nodes, latency should still be 0 (all GetLatency return 0 for gain/converter);
+    // sink/device latency is fetched on the explicit query path in HpaeRendererStreamImpl.
     EXPECT_EQ(latency, 0);
 
     EXPECT_EQ(directManager_->DeInit(), SUCCESS);
@@ -3447,7 +3448,9 @@ HWTEST_F(HpaeDirectRendererManagerTest, onRequestLatencyIncludesLoudnessGainNode
     directManager_->OnRequestLatency(TEST_STREAM_SESSION_ID, latency);
 
     EXPECT_NE(directManager_->loudnessGainNode_, nullptr);
-    EXPECT_EQ(latency, 40000);
+    // loudnessGainNode_ has no DSP handle in UT, so it contributes 0; sink/device latency
+    // is fetched on the explicit query path in HpaeRendererStreamImpl, not accumulated here.
+    EXPECT_EQ(latency, 0);
 
     EXPECT_EQ(directManager_->DeInit(), SUCCESS);
     WaitForMsgProcessing(directManager_);
