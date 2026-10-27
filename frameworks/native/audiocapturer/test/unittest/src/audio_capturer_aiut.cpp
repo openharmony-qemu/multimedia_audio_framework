@@ -306,6 +306,19 @@ HWTEST_F(AudioCapturerStaticAiut, CapturerSetCapturerInfoByOptions_001, TestSize
         "sourceType mismatch");
 }
 
+/**
+ * @tc.name  : Test AudioCapturerOptions actualUsingTokenId default value
+ * @tc.number: CapturerOptionsActualUsingTokenId_001
+ * @tc.desc  : AudioCapturerOptions.actualUsingTokenId defaults to 0 (compat behavior).
+ */
+HWTEST_F(AudioCapturerStaticAiut, CapturerOptionsActualUsingTokenId_001, TestSize.Level0)
+{
+    AIUT_INFO_LOG("entry");
+    AudioCapturerOptions capturerOptions;
+    AIUT_EXPECT_EQ_INFO_LOG(capturerOptions.actualUsingTokenId, 0u,
+        "actualUsingTokenId should default to 0");
+}
+
 // ==================== AudioCapturerFastAiut ====================
 
 void AudioCapturerFastAiut::SetUpTestCase(void) {}

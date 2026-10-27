@@ -43,11 +43,13 @@ public:
      * @param volumeType Enumerates the audio volume type.
      * @param volume The volume to be set for the current stream.
      * @param deviceType The volume to be set for the device.
+     * @param macAddress The volume to be set for the macAddress.
      * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 16
      */
-    int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType);
+    int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType,
+        std::string macAddress = "");
 
     /**
      * @brief Set the system-controlled app volume percentage for the specified UID.
@@ -140,6 +142,8 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     int32_t SetAppVolumeMuted(const int32_t appUid, const bool muted, const int32_t flag = 0);
+
+    int32_t SetAppVolumeMuteAndHideVolumeBar(const int32_t appUid, const bool muted);
 
     /**
      * @brief Set the mute state of the VoIP renderer for the specified uid and streamId.

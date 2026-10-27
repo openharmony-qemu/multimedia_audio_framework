@@ -14,8 +14,11 @@
 */
 
 #include <gtest/gtest.h>
+#include <limits>
+#include <vector>
 #include "securec.h"
 #include "mixer_utils.h"
+#include "audio_proresampler.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -891,3 +894,661 @@ HWTEST_F(AudioMixingUtilsTest, SetDefaultChannelLayout_AllValidChannels, TestSiz
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
+
+namespace {
+constexpr int32_t MIXER_TEST_RATE = 48000;
+constexpr int32_t MIXER_TEST_FRAMES = 960; // 20ms stereo block, 960*2 divisible by 4
+constexpr int32_t MIXER_TEST_BLOCKS = 30;  // let the limiter gain ramp settle
+
+std::vector<int16_t> MakeS16Block(int32_t frames, int32_t channels, int16_t amplitude)
+{
+    return std::vector<int16_t>(static_cast<size_t>(frames) * channels, amplitude);
+}
+
+double MeanAbs(const int16_t *block, size_t count)
+{
+    int64_t sum = 0;
+    size_t n = count < 96 ? count : 96; // head samples are enough on a constant block
+    for (size_t i = 0; i < n; ++i) {
+        sum += block[i] > 0 ? block[i] : -block[i];
+    }
+    return n == 0 ? 0.0 : static_cast<double>(sum) / static_cast<double>(n);
+}
+} // namespace
+
+class AudioMixerFacadeTest : public testing::Test {
+public:
+    void SetUp() {}
+    void TearDown() {}
+};
+
+/**
+ * @tc.name: AudioMixerCreate_001
+ * @tc.number: AudioMixerCreate_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerCreate_001, TestSize.Level0)
+{
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_S16_LE);
+    EXPECT_NE(handle, nullptr);
+    AudioMixerDestroy(handle);
+
+    EXPECT_EQ(AudioMixerCreate(4000, 2, AUDIO_PCM_S16_LE), nullptr);
+    EXPECT_EQ(AudioMixerCreate(384001, 2, AUDIO_PCM_S16_LE), nullptr);
+    EXPECT_EQ(AudioMixerCreate(MIXER_TEST_RATE, 3, AUDIO_PCM_S16_LE), nullptr);
+    EXPECT_EQ(AudioMixerCreate(MIXER_TEST_RATE, 2, static_cast<AudioPcmFormat>(20)), nullptr);
+    AudioMixerDestroy(nullptr);
+}
+
+/**
+ * @tc.name: AudioMixerProcess_001
+ * @tc.number: AudioMixerProcess_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerProcess_001, TestSize.Level0)
+{
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<int16_t> blockA = MakeS16Block(MIXER_TEST_FRAMES, 2, 0x2000); // 0.25
+    std::vector<int16_t> blockB = MakeS16Block(MIXER_TEST_FRAMES, 2, -0x2000);
+    struct AudioPcmMixStream streams[2] = {};
+    streams[0].data = blockA.data();
+    streams[0].sampleCount = MIXER_TEST_FRAMES;
+    streams[0].volume = 1.0f;
+    streams[1].data = blockB.data();
+    streams[1].sampleCount = MIXER_TEST_FRAMES;
+    streams[1].volume = 1.0f;
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, streams, 2);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+        ASSERT_EQ(result.outSampleCount, MIXER_TEST_FRAMES);
+    }
+    // A + B cancels out, output stays silent after the limiter settles
+    const int16_t *out = reinterpret_cast<const int16_t *>(result.outData);
+    for (int32_t i = 0; i < MIXER_TEST_FRAMES * 2; ++i) {
+        EXPECT_EQ(out[i], 0);
+    }
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerVolume_001
+ * @tc.number: AudioMixerVolume_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerVolume_001, TestSize.Level0)
+{
+    // volume 0.0 must mute the single stream exactly
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<int16_t> block = MakeS16Block(MIXER_TEST_FRAMES, 2, 0x2000);
+    struct AudioPcmMixStream stream = {};
+    stream.data = block.data();
+    stream.sampleCount = MIXER_TEST_FRAMES;
+    stream.volume = 0.0f;
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, &stream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    const int16_t *out = reinterpret_cast<const int16_t *>(result.outData);
+    for (int32_t i = 0; i < MIXER_TEST_FRAMES * 2; ++i) {
+        EXPECT_EQ(out[i], 0);
+    }
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerVolume_002
+ * @tc.number: AudioMixerVolume_002
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerVolume_002, TestSize.Level0)
+{
+    // volume 0.5 scales the stream level to about half of volume 1.0
+    std::vector<int16_t> block = MakeS16Block(MIXER_TEST_FRAMES, 2, 9830); // ~0.3, below limiter threshold
+    double levels[2] = {0.0, 0.0};
+    const float volumes[2] = {1.0f, 0.5f};
+    for (int32_t v = 0; v < 2; ++v) {
+        AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_S16_LE);
+        ASSERT_NE(handle, nullptr);
+        struct AudioPcmMixStream stream = {};
+        stream.data = block.data();
+        stream.sampleCount = MIXER_TEST_FRAMES;
+        stream.volume = volumes[v];
+        struct AudioMixResult result = {};
+        for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+            result = AudioMixerProcess(handle, &stream, 1);
+            ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+        }
+        const int16_t *out = reinterpret_cast<const int16_t *>(result.outData);
+        levels[v] = MeanAbs(out, static_cast<size_t>(MIXER_TEST_FRAMES) * 2);
+        AudioMixerDestroy(handle);
+    }
+    EXPECT_GT(levels[0], 0.0);
+    double ratio = levels[1] / levels[0];
+    EXPECT_GT(ratio, 0.3);
+    EXPECT_LT(ratio, 0.7);
+}
+
+/**
+ * @tc.name: AudioMixerMono_001
+ * @tc.number: AudioMixerMono_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerMono_001, TestSize.Level0)
+{
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 1, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<int16_t> block = MakeS16Block(MIXER_TEST_FRAMES, 1, 0x2000);
+    struct AudioPcmMixStream streams[2] = {};
+    streams[0].data = block.data();
+    streams[0].sampleCount = MIXER_TEST_FRAMES;
+    streams[0].volume = 1.0f;
+    streams[1].data = block.data();
+    streams[1].sampleCount = MIXER_TEST_FRAMES;
+    streams[1].volume = 1.0f;
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, streams, 2);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+        ASSERT_EQ(result.outSampleCount, MIXER_TEST_FRAMES);
+    }
+    // 0.25 + 0.25 = 0.5, below limiter threshold: steady output around 0.5 amplitude
+    const int16_t *out = reinterpret_cast<const int16_t *>(result.outData);
+    double level = MeanAbs(out, static_cast<size_t>(MIXER_TEST_FRAMES));
+    EXPECT_GT(level, 0.3 * 32767);
+    EXPECT_LT(level, 0.7 * 32767);
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerInvalid_001
+ * @tc.number: AudioMixerInvalid_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerInvalid_001, TestSize.Level0)
+{
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<int16_t> block = MakeS16Block(MIXER_TEST_FRAMES, 2, 0x2000);
+    struct AudioPcmMixStream streams[2] = {};
+    streams[0].data = block.data();
+    streams[0].sampleCount = MIXER_TEST_FRAMES;
+    streams[0].volume = 1.0f;
+    streams[1] = streams[0];
+
+    EXPECT_EQ(AudioMixerProcess(nullptr, streams, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(AudioMixerProcess(handle, streams, 0).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(AudioMixerProcess(handle, nullptr, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+
+    streams[1].sampleCount = MIXER_TEST_FRAMES / 2; // unequal sampleCount
+    EXPECT_EQ(AudioMixerProcess(handle, streams, 2).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    streams[1].sampleCount = MIXER_TEST_FRAMES;
+
+    streams[1].volume = 1.5f; // volume out of range
+    EXPECT_EQ(AudioMixerProcess(handle, streams, 2).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    streams[1].volume = 1.0f;
+
+    // first successful call locks the block length
+    struct AudioMixResult result = AudioMixerProcess(handle, streams, 2);
+    ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    streams[0].sampleCount = MIXER_TEST_FRAMES / 2;
+    streams[1].sampleCount = MIXER_TEST_FRAMES / 2;
+    EXPECT_EQ(AudioMixerProcess(handle, streams, 2).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerNanVolume_001
+ * @tc.number: AudioMixerNanVolume_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerNanVolume_001, TestSize.Level0)
+{
+    // NaN must be rejected: NaN >= x and NaN <= x are both false under IEEE754
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<int16_t> block = MakeS16Block(MIXER_TEST_FRAMES, 2, 0x2000);
+    struct AudioPcmMixStream stream = {};
+    stream.data = block.data();
+    stream.sampleCount = MIXER_TEST_FRAMES;
+    stream.volume = std::numeric_limits<float>::quiet_NaN();
+    EXPECT_EQ(AudioMixerProcess(handle, &stream, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerS24_001
+ * @tc.number: AudioMixerS24_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerS24_001, TestSize.Level0)
+{
+    // 0.25 amplitude as S24 little endian {0x00, 0x00, 0x20} = 0x200000
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_S24_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<uint8_t> block(static_cast<size_t>(MIXER_TEST_FRAMES) * 2 * 3, 0);
+    for (size_t i = 0; i + 2 < block.size(); i += 3) {
+        block[i] = 0x00;
+        block[i + 1] = 0x00;
+        block[i + 2] = 0x20;
+    }
+    struct AudioPcmMixStream stream = {};
+    stream.data = block.data();
+    stream.sampleCount = MIXER_TEST_FRAMES;
+    stream.volume = 1.0f;
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, &stream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    // steady output around 0.25 amplitude: 24-bit value 0x200000 = 2097152
+    const uint8_t *out = result.outData;
+    uint32_t sample = (static_cast<uint32_t>(out[2]) << 16) | (static_cast<uint32_t>(out[1]) << 8) |
+        static_cast<uint32_t>(out[0]);
+    EXPECT_GT(sample, 1600000u); // ~0.19 * 2^23
+    EXPECT_LT(sample, 2600000u); // ~0.31 * 2^23
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerS32_001
+ * @tc.number: AudioMixerS32_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerS32_001, TestSize.Level0)
+{
+    // 0.25 amplitude as S32: 0x20000000 = 536870912
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_S32_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<int32_t> block(static_cast<size_t>(MIXER_TEST_FRAMES) * 2, 0x20000000);
+    struct AudioPcmMixStream stream = {};
+    stream.data = block.data();
+    stream.sampleCount = MIXER_TEST_FRAMES;
+    stream.volume = 1.0f;
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, &stream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    const int32_t *out = reinterpret_cast<const int32_t *>(result.outData);
+    EXPECT_GT(out[0], 406000000); // ~0.19 * 2^31
+    EXPECT_LT(out[0], 666000000); // ~0.31 * 2^31
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerF32_001
+ * @tc.number: AudioMixerF32_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerF32_001, TestSize.Level0)
+{
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, 2, AUDIO_PCM_F32_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<float> block(static_cast<size_t>(MIXER_TEST_FRAMES) * 2, 0.25f);
+    struct AudioPcmMixStream stream = {};
+    stream.data = block.data();
+    stream.sampleCount = MIXER_TEST_FRAMES;
+    stream.volume = 1.0f;
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, &stream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    const float *out = reinterpret_cast<const float *>(result.outData);
+    EXPECT_GT(out[0], 0.19f);
+    EXPECT_LT(out[0], 0.31f);
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerResampleMix_001
+ * @tc.number: AudioMixerResampleMix_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerResampleMix_001, TestSize.Level0)
+{
+    // Full BT composition: resample a 48k S16 stream to 44.1k through the float pipeline,
+    // convert back to S16, then mix it with a native 44.1k S16 stream.
+    using OHOS::AudioStandard::HPAE::ProResampler;
+    using OHOS::AudioStandard::HPAE::QUALITY_FAST;
+    constexpr int32_t inRate = 48000;
+    constexpr int32_t mixRate = 44100;
+    constexpr int32_t channels = 2;
+    constexpr int32_t inFrames = 320; // 320 * 44100 / 48000 = 294 exactly
+    constexpr int32_t mixFrames = inFrames * mixRate / inRate; // 294, 294 * 2 divisible by 4
+    const int16_t amplitude = 0x2000; // 0.25 per leg, sum 0.5 stays below the limiter threshold
+
+    ProResampler resampler(inRate, mixRate, channels, QUALITY_FAST);
+    AudioMixHandle handle = AudioMixerCreate(mixRate, channels, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<int16_t> inBlock = MakeS16Block(inFrames, channels, amplitude);
+    std::vector<int16_t> nativeBlock = MakeS16Block(mixFrames, channels, amplitude);
+    std::vector<float> floatIn(static_cast<size_t>(inFrames) * channels);
+    std::vector<float> floatOut(static_cast<size_t>(mixFrames) * channels);
+    std::vector<int16_t> resampled(static_cast<size_t>(mixFrames) * channels);
+
+    struct AudioPcmMixStream streams[2] = {};
+    streams[0].data = resampled.data();
+    streams[0].sampleCount = mixFrames;
+    streams[0].volume = 1.0f;
+    streams[1].data = nativeBlock.data();
+    streams[1].sampleCount = mixFrames;
+    streams[1].volume = 1.0f;
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        ASSERT_EQ(ConvertPcmToFloat(AUDIO_PCM_S16_LE, inBlock.data(), inFrames * channels,
+            floatIn.data()), AUDIO_PCM_ALGO_SUCCESS);
+        ASSERT_EQ(resampler.Process(floatIn.data(), inFrames, floatOut.data(), mixFrames), 0);
+        ASSERT_EQ(ConvertFloatToPcm(AUDIO_PCM_S16_LE, floatOut.data(), mixFrames * channels,
+            resampled.data()), AUDIO_PCM_ALGO_SUCCESS);
+        result = AudioMixerProcess(handle, streams, 2);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+        ASSERT_EQ(result.outSampleCount, mixFrames);
+    }
+    // steady state: resampled leg (~0.25) + native leg (0.25) ~= 0.5; a broken resample leg
+    // would drop the level back to ~0.25 and fail the lower bound
+    const int16_t *out = reinterpret_cast<const int16_t *>(result.outData);
+    double level = MeanAbs(out, static_cast<size_t>(mixFrames) * channels);
+    EXPECT_GT(level, 0.3 * 32767);
+    EXPECT_LT(level, 0.7 * 32767);
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerBoundary_001
+ * @tc.number: AudioMixerBoundary_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerBoundary_001, TestSize.Level0)
+{
+    constexpr int32_t mixerMaxStreams = 1024; // facade gate: stream count in [1, 1024]
+    constexpr int32_t max60MsFramesAt48k = 2880; // 48000 Hz * 60 ms block cap
+    constexpr int32_t mixerStereo = 2;
+    constexpr int32_t misalignedMonoFrames = 3; // 3 * 1 not divisible by 4
+    constexpr int16_t mixerTestAmplitude = 0x2000; // ~0.25 full scale, below limiter threshold
+
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, mixerStereo, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+    std::vector<int16_t> block = MakeS16Block(MIXER_TEST_FRAMES, mixerStereo, mixerTestAmplitude);
+    struct AudioPcmMixStream stream = {block.data(), MIXER_TEST_FRAMES, 1.0f};
+
+    // streamCount above the 1024 gate, rejected before any array access
+    EXPECT_EQ(AudioMixerProcess(handle, &stream, mixerMaxStreams + 1).errCode,
+        AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    // first stream sampleCount not positive
+    struct AudioPcmMixStream zeroCount = {block.data(), 0, 1.0f};
+    EXPECT_EQ(AudioMixerProcess(handle, &zeroCount, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    // stream data null
+    struct AudioPcmMixStream nullData = {nullptr, MIXER_TEST_FRAMES, 1.0f};
+    EXPECT_EQ(AudioMixerProcess(handle, &nullData, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    // block longer than 60 ms
+    std::vector<int16_t> overBlock = MakeS16Block(max60MsFramesAt48k + 1, mixerStereo,
+        mixerTestAmplitude);
+    struct AudioPcmMixStream overLen = {overBlock.data(), max60MsFramesAt48k + 1, 1.0f};
+    EXPECT_EQ(AudioMixerProcess(handle, &overLen, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    // sampleCount * channels not divisible by 4: 1 stereo frame gives total 2
+    std::vector<int16_t> misalignBlock = MakeS16Block(1, mixerStereo, mixerTestAmplitude);
+    struct AudioPcmMixStream misalign = {misalignBlock.data(), 1, 1.0f};
+    EXPECT_EQ(AudioMixerProcess(handle, &misalign, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    AudioMixerDestroy(handle);
+
+    // mono misalignment: 3 mono frames give total 3
+    AudioMixHandle mono = AudioMixerCreate(MIXER_TEST_RATE, 1, AUDIO_PCM_S16_LE);
+    ASSERT_NE(mono, nullptr);
+    std::vector<int16_t> monoBlock = MakeS16Block(misalignedMonoFrames, 1, mixerTestAmplitude);
+    struct AudioPcmMixStream misalignMono = {monoBlock.data(), misalignedMonoFrames, 1.0f};
+    EXPECT_EQ(AudioMixerProcess(mono, &misalignMono, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    AudioMixerDestroy(mono);
+}
+
+/**
+ * @tc.name: AudioMixerStereoOddAlgoFrame_001
+ * @tc.number: AudioMixerStereoOddAlgoFrame_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerStereoOddAlgoFrame_001, TestSize.Level0)
+{
+    constexpr int32_t mixerStereo = 2;
+    constexpr int16_t mixerTestAmplitude = 0x2000; // ~0.25 full scale, below limiter threshold
+    // 2 stereo frames: totalSamples = 4 passes the facade gate but the limiter
+    // algoFrameLen = 1 is odd, driving the unaligned-history path of ProcessAlgo
+    constexpr int32_t oddAlgoFrames = 2;
+    // 6 stereo frames: algoFrameLen = 3, exercises the unaligned loop body
+    constexpr int32_t unalignedLoopFrames = 6;
+
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, mixerStereo, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+    std::vector<int16_t> block2 = MakeS16Block(oddAlgoFrames, mixerStereo, mixerTestAmplitude);
+    struct AudioPcmMixStream stream2 = {block2.data(), oddAlgoFrames, 1.0f};
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, &stream2, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+        EXPECT_EQ(result.outSampleCount, oddAlgoFrames);
+    }
+    // limiter output lags input by one algo chunk (a quarter block); a fresh handle starts
+    // from zeroed history, so the non-zero assertion belongs after the loop
+    EXPECT_GT(MeanAbs(reinterpret_cast<const int16_t *>(result.outData),
+        oddAlgoFrames * mixerStereo), 0.0);
+    AudioMixerDestroy(handle);
+
+    // a fresh handle because the first successful call locks the block length
+    AudioMixHandle handle6 = AudioMixerCreate(MIXER_TEST_RATE, mixerStereo, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle6, nullptr);
+    std::vector<int16_t> block6 = MakeS16Block(unalignedLoopFrames, mixerStereo,
+        mixerTestAmplitude);
+    struct AudioPcmMixStream stream6 = {block6.data(), unalignedLoopFrames, 1.0f};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle6, &stream6, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+        EXPECT_EQ(result.outSampleCount, unalignedLoopFrames);
+    }
+    EXPECT_GT(MeanAbs(reinterpret_cast<const int16_t *>(result.outData),
+        unalignedLoopFrames * mixerStereo), 0.0);
+    AudioMixerDestroy(handle6);
+}
+
+/**
+ * @tc.name: AudioMixerLimiterLoud_001
+ * @tc.number: AudioMixerLimiterLoud_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerLimiterLoud_001, TestSize.Level0)
+{
+    // Loud blocks above the limiter threshold drive the envelope attack, gain reduction
+    // and the gain attack step to a louder block; trailing quiet blocks drive the
+    // envelope decay and the release. L/R amplitudes alternate so both std::max(|L|, |R|)
+    // comparison edges are taken.
+    constexpr int32_t mixerStereo = 2;
+    constexpr int16_t loudLeftAmplitude = 0x7A00;  // ~0.953, above the 0.92 limiter threshold
+    constexpr int16_t loudRightAmplitude = 0x6000; // ~0.75, other side of the L/R max
+    constexpr int16_t fullScaleAmplitude = 0x7FFF; // ~1.0: target gain drops below the
+                                                     // settled gain, hitting the gain attack
+    constexpr int16_t quietAmplitude = 0x2000;      // ~0.25, below threshold: decay + release
+    constexpr int32_t stepBlocks = 8;               // blocks per louder / quieter step
+    constexpr double fullScaleS16 = 32767.0;
+    constexpr double limiterHeadroomRatio = 0.98;  // settled loud output is gain-scaled input
+    constexpr double outputSanityRatio = 0.80;     // attenuation must stay moderate
+    constexpr double quietLevelMaxRatio = 0.5;    // released output falls back near 0.25
+
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, mixerStereo, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<int16_t> loudBlock = MakeS16Block(MIXER_TEST_FRAMES, mixerStereo, 0);
+    bool loudOnLeft = true;
+    for (int32_t i = 0; i < MIXER_TEST_FRAMES * mixerStereo; i += mixerStereo) {
+        loudBlock[i] = loudOnLeft ? loudLeftAmplitude : loudRightAmplitude;
+        loudBlock[i + 1] = loudOnLeft ? loudRightAmplitude : loudLeftAmplitude;
+        loudOnLeft = !loudOnLeft;
+    }
+    double loudInputLevel = (loudLeftAmplitude + loudRightAmplitude) * 0.5;
+    std::vector<int16_t> louderBlock = MakeS16Block(MIXER_TEST_FRAMES, mixerStereo,
+        fullScaleAmplitude);
+    std::vector<int16_t> quietBlock = MakeS16Block(MIXER_TEST_FRAMES, mixerStereo,
+        quietAmplitude);
+
+    struct AudioPcmMixStream loudStream = {loudBlock.data(), MIXER_TEST_FRAMES, 1.0f};
+    struct AudioPcmMixStream louderStream = {louderBlock.data(), MIXER_TEST_FRAMES, 1.0f};
+    struct AudioPcmMixStream quietStream = {quietBlock.data(), MIXER_TEST_FRAMES, 1.0f};
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, &loudStream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    // settled: envelope ~0.953, target gain = 0.92 / 0.953, output ~= input * 0.965
+    double loudLevel = MeanAbs(reinterpret_cast<const int16_t *>(result.outData),
+        static_cast<size_t>(MIXER_TEST_FRAMES) * mixerStereo);
+    EXPECT_LT(loudLevel, loudInputLevel * limiterHeadroomRatio);
+    EXPECT_GT(loudLevel, loudInputLevel * outputSanityRatio);
+
+    for (int32_t i = 0; i < stepBlocks; ++i) {
+        result = AudioMixerProcess(handle, &louderStream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    for (int32_t i = 0; i < stepBlocks; ++i) {
+        result = AudioMixerProcess(handle, &quietStream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    // released: quiet history at ~0.25 comes out at roughly unit gain
+    double quietLevel = MeanAbs(reinterpret_cast<const int16_t *>(result.outData),
+        static_cast<size_t>(MIXER_TEST_FRAMES) * mixerStereo);
+    EXPECT_GT(quietLevel, 0.0);
+    EXPECT_LT(quietLevel, fullScaleS16 * quietLevelMaxRatio);
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerLimiterLoudMono_001
+ * @tc.number: AudioMixerLimiterLoudMono_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerLimiterLoudMono_001, TestSize.Level0)
+{
+    // Mono twin of AudioMixerLimiterLoud_001: the mono envelope and gain helpers have
+    // their own attack and decay branches.
+    constexpr int32_t mixerMono = 1;
+    constexpr int16_t loudAmplitude = 0x7A00; // ~0.953, above the 0.92 limiter threshold
+    constexpr int16_t quietAmplitude = 0x2000;
+    constexpr int32_t quietBlocks = 8;
+    constexpr double fullScaleS16 = 32767.0;
+    constexpr double limiterHeadroomRatio = 0.98;
+    constexpr double outputSanityRatio = 0.80;
+    constexpr double quietLevelMaxRatio = 0.5;
+
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, mixerMono, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<int16_t> loudBlock = MakeS16Block(MIXER_TEST_FRAMES, mixerMono, loudAmplitude);
+    std::vector<int16_t> quietBlock = MakeS16Block(MIXER_TEST_FRAMES, mixerMono, quietAmplitude);
+    struct AudioPcmMixStream loudStream = {loudBlock.data(), MIXER_TEST_FRAMES, 1.0f};
+    struct AudioPcmMixStream quietStream = {quietBlock.data(), MIXER_TEST_FRAMES, 1.0f};
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, &loudStream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    double loudLevel = MeanAbs(reinterpret_cast<const int16_t *>(result.outData),
+        static_cast<size_t>(MIXER_TEST_FRAMES) * mixerMono);
+    EXPECT_LT(loudLevel, loudAmplitude * limiterHeadroomRatio);
+    EXPECT_GT(loudLevel, loudAmplitude * outputSanityRatio);
+
+    for (int32_t i = 0; i < quietBlocks; ++i) {
+        result = AudioMixerProcess(handle, &quietStream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    double quietLevel = MeanAbs(reinterpret_cast<const int16_t *>(result.outData),
+        static_cast<size_t>(MIXER_TEST_FRAMES) * mixerMono);
+    EXPECT_GT(quietLevel, 0.0);
+    EXPECT_LT(quietLevel, fullScaleS16 * quietLevelMaxRatio);
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerS24TinySignal_001
+ * @tc.number: AudioMixerS24TinySignal_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerS24TinySignal_001, TestSize.Level0)
+{
+    // 24-bit value 1 converts to ~1.19e-7, below the limiter's 1e-6 epsilon: the
+    // sub-epsilon branch must keep the target gain at 1.0 instead of dividing by it.
+    constexpr int32_t mixerStereo = 2;
+    constexpr int32_t s24BytesPerSample = 3;
+    constexpr int32_t s24MsbIndex = 2;
+    constexpr int32_t s24Bit16 = 16;
+    constexpr int32_t s24Bit8 = 8;
+    constexpr uint8_t s24TinyLsb = 1; // 24-bit value 1 -> ~1.19e-7 float level
+    constexpr uint32_t s24TinyMax = 1; // round trip of a sub-epsilon sample stays 0 or 1
+
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, mixerStereo, AUDIO_PCM_S24_LE);
+    ASSERT_NE(handle, nullptr);
+
+    std::vector<uint8_t> block(static_cast<size_t>(MIXER_TEST_FRAMES) * mixerStereo *
+        s24BytesPerSample, 0);
+    for (size_t i = 0; i < block.size(); i += s24BytesPerSample) {
+        block[i] = s24TinyLsb;
+    }
+    struct AudioPcmMixStream stream = {block.data(), MIXER_TEST_FRAMES, 1.0f};
+
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, &stream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+    }
+    const uint8_t *out = result.outData;
+    uint32_t sample = (static_cast<uint32_t>(out[s24MsbIndex]) << s24Bit16) |
+        (static_cast<uint32_t>(out[1]) << s24Bit8) | static_cast<uint32_t>(out[0]);
+    EXPECT_LE(sample, s24TinyMax);
+    AudioMixerDestroy(handle);
+}
+
+/**
+ * @tc.name: AudioMixerTailLoopGeometry_001
+ * @tc.number: AudioMixerTailLoopGeometry_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerTailLoopGeometry_001, TestSize.Level0)
+{
+    // Block sizes whose algoFrameLen is below one NEON iteration (stereo 6, mono 3
+    // samples) leave the whole chunk to the scalar remainder loops on NEON builds.
+    constexpr int32_t mixerStereo = 2;
+    constexpr int32_t mixerMono = 1;
+    constexpr int32_t stereoTailFrames = 12; // totalSamples 24 -> algoFrameLen 6
+    constexpr int32_t monoTailFrames = 12;   // totalSamples 12 -> algoFrameLen 3
+    constexpr int16_t tailAmplitude = 0x2000;
+
+    AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, mixerStereo, AUDIO_PCM_S16_LE);
+    ASSERT_NE(handle, nullptr);
+    std::vector<int16_t> stereoBlock = MakeS16Block(stereoTailFrames, mixerStereo,
+        tailAmplitude);
+    struct AudioPcmMixStream stereoStream = {stereoBlock.data(), stereoTailFrames, 1.0f};
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(handle, &stereoStream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+        EXPECT_EQ(result.outSampleCount, stereoTailFrames);
+    }
+    EXPECT_GT(MeanAbs(reinterpret_cast<const int16_t *>(result.outData),
+        stereoTailFrames * mixerStereo), 0.0);
+    AudioMixerDestroy(handle);
+
+    AudioMixHandle mono = AudioMixerCreate(MIXER_TEST_RATE, mixerMono, AUDIO_PCM_S16_LE);
+    ASSERT_NE(mono, nullptr);
+    std::vector<int16_t> monoBlock = MakeS16Block(monoTailFrames, mixerMono, tailAmplitude);
+    struct AudioPcmMixStream monoStream = {monoBlock.data(), monoTailFrames, 1.0f};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(mono, &monoStream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+        EXPECT_EQ(result.outSampleCount, monoTailFrames);
+    }
+    EXPECT_GT(MeanAbs(reinterpret_cast<const int16_t *>(result.outData),
+        monoTailFrames * mixerMono), 0.0);
+    AudioMixerDestroy(mono);
+}

@@ -2484,7 +2484,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetSoundFieldType_003, Test
 
     // Test invalid enum value (10) to test deep layer fault interception
     ret = OH_AudioSuiteEngine_SetSoundFieldType(audioNode, static_cast<OH_SoundFieldType>(10));
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_SYSTEM);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 
     ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -2558,13 +2558,13 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetEnvironmentType_003, Tes
 
     // Test environmentType out of range (must be in 0~4)
     ret = OH_AudioSuiteEngine_SetEnvironmentType(envEffectNode, static_cast<OH_EnvironmentType>(-1));
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_SYSTEM);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 
     ret = OH_AudioSuiteEngine_SetEnvironmentType(envEffectNode, static_cast<OH_EnvironmentType>(5));
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_SYSTEM);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 
     ret = OH_AudioSuiteEngine_SetEnvironmentType(envEffectNode, static_cast<OH_EnvironmentType>(10));
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_SYSTEM);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 
     ret = OH_AudioSuiteEngine_DestroyNode(envEffectNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -2638,13 +2638,13 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetVoiceBeautifierType_003,
 
     // Test voiceBeautifierType out of range (must be in 1~4)
     ret = OH_AudioSuiteEngine_SetVoiceBeautifierType(voiceBeautifierNode, static_cast<OH_VoiceBeautifierType>(0));
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_SYSTEM);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 
     ret = OH_AudioSuiteEngine_SetVoiceBeautifierType(voiceBeautifierNode, static_cast<OH_VoiceBeautifierType>(5));
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_SYSTEM);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 
     ret = OH_AudioSuiteEngine_SetVoiceBeautifierType(voiceBeautifierNode, static_cast<OH_VoiceBeautifierType>(10));
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_SYSTEM);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 
     ret = OH_AudioSuiteEngine_DestroyNode(voiceBeautifierNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -3094,15 +3094,15 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetGeneralVoiceChangeType_0
     // Test generalVoiceChangeType out of range (must be in 1~10)
     ret = OH_AudioSuiteEngine_SetGeneralVoiceChangeType(generalVoiceChangeNode,
                                                         static_cast<OH_AudioSuite_GeneralVoiceChangeType>(0));
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_SYSTEM);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 
     ret = OH_AudioSuiteEngine_SetGeneralVoiceChangeType(generalVoiceChangeNode,
                                                         static_cast<OH_AudioSuite_GeneralVoiceChangeType>(11));
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_SYSTEM);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 
     ret = OH_AudioSuiteEngine_SetGeneralVoiceChangeType(generalVoiceChangeNode,
                                                         static_cast<OH_AudioSuite_GeneralVoiceChangeType>(20));
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_SYSTEM);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 
     ret = OH_AudioSuiteEngine_DestroyNode(generalVoiceChangeNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);

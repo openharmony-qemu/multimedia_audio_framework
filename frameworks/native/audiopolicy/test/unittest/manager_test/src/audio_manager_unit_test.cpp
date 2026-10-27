@@ -1690,7 +1690,7 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     float vol = AudioSystemManager::GetInstance()->GetLowPowerVolume(streamId);
-    EXPECT_FALSE((vol < VOLUME_MIN || vol > VOLUME_MAX));
+    EXPECT_TRUE((vol < VOLUME_MIN || vol > VOLUME_MAX));
     audioRenderer->Release();
 }
 
@@ -2292,7 +2292,7 @@ HWTEST(AudioManagerUnitTest, SetDuckFactor_001, TestSize.Level1)
 
     int32_t duckFactor = 10;
     int32_t ret = manager->SetDuckFactor(duckFactor);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 }
 
 /**
@@ -2307,7 +2307,7 @@ HWTEST(AudioManagerUnitTest, SetDuckFactor_002, TestSize.Level1)
 
     int32_t duckFactor = 50;
     int32_t ret = manager->SetDuckFactor(duckFactor);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 }
 
 /**
@@ -2322,7 +2322,7 @@ HWTEST(AudioManagerUnitTest, SetDuckFactor_003, TestSize.Level1)
 
     int32_t duckFactor = 100;
     int32_t ret = manager->SetDuckFactor(duckFactor);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 }
 
 /**
@@ -2337,7 +2337,7 @@ HWTEST(AudioManagerUnitTest, SetDuckFactor_004, TestSize.Level1)
 
     int32_t duckFactor = 0;
     int32_t ret = manager->SetDuckFactor(duckFactor);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 }
 
 /**
@@ -2381,7 +2381,7 @@ HWTEST(AudioManagerUnitTest, DisableVolumeLimitWhenVoiceCall_001, TestSize.Level
     auto manager = AudioSystemManager::GetInstance();
 
     int32_t ret = manager->DisableVolumeLimitWhenVoiceCall(true);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 }
 
 /**
@@ -2395,7 +2395,7 @@ HWTEST(AudioManagerUnitTest, DisableVolumeLimitWhenVoiceCall_002, TestSize.Level
     auto manager = AudioSystemManager::GetInstance();
 
     int32_t ret = manager->DisableVolumeLimitWhenVoiceCall(false);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -41,6 +41,7 @@ public:
     int32_t GetStreamProperty(VAAudioStreamProperty &streamProp) override;
     int32_t RequestSharedMem(const VASharedMemInfo &memInfo) override;
     int32_t GetCapturePosition(uint64_t &frames, uint64_t &timestamp) override;
+    void NotifyStartStreamFailed() override;
 
     OH_AudioCommon_Result RegisterStartCallback(OH_AudioAccessoryInputStream_StartCallback callback);
     OH_AudioCommon_Result RegisterStopCallback(OH_AudioAccessoryInputStream_StopCallback callback);

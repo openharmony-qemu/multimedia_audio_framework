@@ -456,17 +456,119 @@ HWTEST_F(AudioDeviceManagerUnitTest, UpdateDeviceCategory_001, TestSize.Level4)
 
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> updated = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    deviceManager.connectedDevices_ = { desc };
+
+    // CATEGORY_DEFAULT -> CATEGORY_DEFAULT
+    EXPECT_FALSE(AudioPolicyUtils::GetInstance().UpdateDeviceCategory(deviceManager.connectedDevices_, updated));
+
+    // BT_UNWEAR_HEADPHONE -> BT_HEADPHONE
+    desc->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    updated->deviceCategory_ = BT_HEADPHONE;
+    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateDeviceCategory(deviceManager.connectedDevices_, updated));
+
+    // BT_HEADPHONE -> BT_UNWEAR_HEADPHONE
+    desc->deviceCategory_ = BT_HEADPHONE;
+    updated->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateDeviceCategory(deviceManager.connectedDevices_, updated));
+
+    // BT_UNWEAR_HEADPHONE -> BT_GLASSES
+    desc->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    updated->deviceCategory_ = BT_GLASSES;
+    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateDeviceCategory(deviceManager.connectedDevices_, updated));
+    EXPECT_EQ(desc->glassesWearCount_, 1);
+
+    // BT_GLASSES -> BT_UNWEAR_HEADPHONE
     desc->deviceCategory_ = BT_GLASSES;
+    updated->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateDeviceCategory(deviceManager.connectedDevices_, updated));
+    EXPECT_EQ(desc->glassesWearCount_, 1);
 
-    deviceManager.connectedDevices_ = { std::make_shared<AudioDeviceDescriptor>(
-        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE) };
-    desc->glassesWearCount_ = 0;
-    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateDeviceCategory(deviceManager.connectedDevices_, desc));
+    // BT_UNWEAR_HEADPHONE -> BT_GLASSES
+    desc->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    updated->deviceCategory_ = BT_GLASSES;
+    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateDeviceCategory(deviceManager.connectedDevices_, updated));
+    EXPECT_EQ(desc->glassesWearCount_, 2);
 
-    deviceManager.connectedDevices_ = { std::make_shared<AudioDeviceDescriptor>(
-        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE) };
-    desc->glassesWearCount_ = 2;
-    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateDeviceCategory(deviceManager.connectedDevices_, desc));
+    deviceManager.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager.
+ * @tc.number: UpdateEnableState_001.
+ * @tc.desc  : Test UpdateEnableState.
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, UpdateEnableState_001, TestSize.Level4)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = deviceManager.connectedDevices_;
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> updated = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    deviceManager.connectedDevices_ = { desc };
+
+    // true -> true
+    desc->isEnable_ = true;
+    updated->isEnable_ = true;
+    EXPECT_FALSE(AudioPolicyUtils::GetInstance().UpdateEnableState(deviceManager.connectedDevices_, updated));
+
+    // true -> false
+    desc->isEnable_ = true;
+    updated->isEnable_ = false;
+    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateEnableState(deviceManager.connectedDevices_, updated));
+
+    // false -> true
+    desc->isEnable_ = false;
+    updated->isEnable_ = true;
+    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateEnableState(deviceManager.connectedDevices_, updated));
+
+    // false -> false
+    desc->isEnable_ = false;
+    updated->isEnable_ = false;
+    EXPECT_FALSE(AudioPolicyUtils::GetInstance().UpdateEnableState(deviceManager.connectedDevices_, updated));
+
+    deviceManager.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager.
+ * @tc.number: UpdateDeviceUsage_001.
+ * @tc.desc  : Test UpdateDeviceUsage.
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, UpdateDeviceUsage_001, TestSize.Level4)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = deviceManager.connectedDevices_;
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> updated = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    deviceManager.connectedDevices_ = { desc };
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+
+    // ALL_USAGE -> ALL_USAGE
+    desc->deviceUsage_ = ALL_USAGE;
+    updated->deviceUsage_ = ALL_USAGE;
+    EXPECT_FALSE(AudioPolicyUtils::GetInstance().UpdateDeviceUsage(deviceManager.connectedDevices_, updated, reason));
+
+    // ALL_USAGE -> VOICE
+    desc->deviceUsage_ = ALL_USAGE;
+    updated->deviceUsage_ = VOICE;
+    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateDeviceUsage(deviceManager.connectedDevices_, updated, reason));
+
+    // VOICE -> ALL_USAGE
+    desc->deviceUsage_ = VOICE;
+    updated->deviceUsage_ = ALL_USAGE;
+    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateDeviceUsage(deviceManager.connectedDevices_, updated, reason));
+
+    // VOICE -> VOICE
+    desc->deviceUsage_ = VOICE;
+    updated->deviceUsage_ = VOICE;
+    EXPECT_FALSE(AudioPolicyUtils::GetInstance().UpdateDeviceUsage(deviceManager.connectedDevices_, updated, reason));
 
     deviceManager.connectedDevices_ = backup;
 }

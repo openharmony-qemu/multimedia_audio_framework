@@ -166,6 +166,8 @@ HWTEST_F(AudioPipeInfoUnitTest, IsSameUsbDevice_001, TestSize.Level2)
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     deviceDesc->macAddress_ = "00:11:22:33:44:55";
     testOutputPipe_->moduleInfo_.macAddress = deviceDesc->macAddress_;
+    // Set deviceType to USB so IsSameUsbDevice's isPipeUsbDevice check passes
+    testOutputPipe_->moduleInfo_.deviceType = std::to_string(DEVICE_TYPE_USB_HEADSET);
 
     EXPECT_TRUE(testOutputPipe_->IsSameUsbDevice(deviceDesc));
 

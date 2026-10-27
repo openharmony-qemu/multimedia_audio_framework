@@ -85,12 +85,14 @@ std::set<std::string> AudioActiveDevice::GetActiveBtDeviceMac() const
 void AudioActiveDevice::AddActiveBtDevice(const std::string &macAddress)
 {
     std::lock_guard<std::mutex> lock(activeBtDevicesMutex_);
+    AUDIO_INFO_LOG("bt: %{public}s added", AudioPolicyUtils::GetInstance().GetEncryptAddr(macAddress).c_str());
     activeBTDevices_.insert(macAddress);
 }
 
 void AudioActiveDevice::RemoveActiveBtDevice(const std::string &macAddress)
 {
     std::lock_guard<std::mutex> lock(activeBtDevicesMutex_);
+    AUDIO_INFO_LOG("bt: %{public}s removed", AudioPolicyUtils::GetInstance().GetEncryptAddr(macAddress).c_str());
     activeBTDevices_.erase(macAddress);
 }
 
@@ -155,7 +157,7 @@ float AudioActiveDevice::GetMaxAmplitude(const int32_t deviceId, AudioInterrupt 
     }
     if (AudioRouterSelectStrategy::GetInstance().IsCurrentInputDevice(deviceId, uid)) {
         std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(
-            desc->deviceType_);
+            desc->deviceType_, AUDIO_FLAG_NONE, desc->isUnidirectional_);
         return AudioServerProxy::GetInstance().GetInputMaxAmplitudeProxy(sourceName);
     }
 

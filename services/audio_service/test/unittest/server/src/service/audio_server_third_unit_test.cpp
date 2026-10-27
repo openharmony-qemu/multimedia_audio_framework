@@ -246,18 +246,15 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerCheckStreamInfoFormat_001, TestSiz
 {
     EXPECT_NE(nullptr, audioServer);
     
-    // Test CheckStreamInfoFormat with valid config
     AudioProcessConfig config;
-    // Initialize config with valid data
-    config.streamInfo.samplingRate = SAMPLE_RATE_44100; // Valid sampling rate
-    config.streamInfo.format = SAMPLE_S16LE; // Valid format
-    config.streamInfo.encoding = ENCODING_PCM; // Valid encoding
-    config.streamInfo.channelLayout = CH_LAYOUT_MONO; // Valid channel layout
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.streamInfo.samplingRate = SAMPLE_RATE_44100;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.channelLayout = CH_LAYOUT_MONO;
     
     bool result = audioServer->CheckStreamInfoFormat(config);
-    
-    // Verify that the function returns true for valid config
-    EXPECT_FALSE(result);
+    EXPECT_TRUE(result);
 }
 
 /**
@@ -484,7 +481,9 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerPermissionChecker_001, TestSize.Le
     config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA; // Valid stream usage
     config.rendererInfo.playerType = PLAYER_TYPE_DEFAULT; // Valid player type
     
+    int32_t errCode = 0;
     bool result = audioServer->PermissionChecker(config);
+    (void)errCode;
     
     // The return value depends on whether the permission is granted
     // We just verify that the function can be called without crash
@@ -531,7 +530,9 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerCheckRecorderPermission_001, TestS
     config.audioMode = AUDIO_MODE_RECORD;
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC; // Valid source type
     
+    int32_t errCode = 0;
     bool result = audioServer->CheckRecorderPermission(config);
+    (void)errCode;
     
     // The return value depends on whether the permission is granted
     // We just verify that the function can be called without crash
@@ -779,7 +780,7 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerSuspendRenderSink_001, TestSize.Le
     
     // Test SuspendRenderSink with invalid sink name (should fail)
     std::string sinkName = "invalid_sink";
-    int32_t ret = audioServer->SuspendRenderSink(sinkName);
+    int32_t ret = audioServer->SuspendRenderSink(sinkName, "");
     
     // Verify that the function returns an error for invalid sink name
     EXPECT_NE(SUCCESS, ret);
@@ -797,7 +798,7 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerRestoreRenderSink_001, TestSize.Le
     
     // Test RestoreRenderSink with invalid sink name (should fail)
     std::string sinkName = "invalid_sink";
-    int32_t ret = audioServer->RestoreRenderSink(sinkName);
+    int32_t ret = audioServer->RestoreRenderSink(sinkName, "");
     
     // Verify that the function returns an error for invalid sink name
     EXPECT_NE(SUCCESS, ret);

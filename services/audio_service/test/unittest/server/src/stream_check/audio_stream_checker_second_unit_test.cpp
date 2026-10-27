@@ -306,7 +306,10 @@ HWTEST(AudioStreamCheckerSecondTest, CalculateFrameAfterStandby_009, TestSize.Le
     int64_t abnormalFrameNum = 0;
     
     checker->CalculateFrameAfterStandby(checkerPara, abnormalFrameNum);
-    EXPECT_GT(abnormalFrameNum, 0);
+    // abnormalStartTime = now - 200ms, stopTime = 0 (DEFAULT_TIME).
+    // CalculateFrameCommon: calculateFrameNum = (now - startVal) / NORMAL_FRAME_PER_TIME
+    // = 200000000ns / 20000000ns(20ms) = 10. isMonitorNoDataFrame=true so abnormalFrameNum += 10.
+    EXPECT_EQ(abnormalFrameNum, 10);
 }
 
 /**

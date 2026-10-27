@@ -19,9 +19,13 @@
 #include "audio_definition_adapter_info.h"
 #include "audio_device_type.h"
 #include "audio_effect.h"
+#include <algorithm>
 
 namespace OHOS {
 namespace AudioStandard {
+static const std::string VA_DEVICE_INFO_NAME_SPP = "Virtual Audio Spp";
+static const std::string VA_DEVICE_INFO_NAME_UNIDIRECTIONAL_SPP = "Virtual Audio Unidirectional Spp";
+
 AudioPolicyConfigData& AudioPolicyConfigData::GetInstance()
 {
     static AudioPolicyConfigData instance;
@@ -126,7 +130,8 @@ std::string AudioPolicyConfigData::GetVersion()
 }
 
 std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(DeviceType type_, DeviceRole role_,
-    const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag, std::string macAddress)
+    const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag, std::string macAddress,
+    bool isUnidirectional)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
     // use primary to select device when in remote cast;
@@ -160,13 +165,15 @@ std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(D
 
     for (auto &deviceInfo : deviceSetIt->second) {
         std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = deviceInfo->adapterInfo_.lock();
-        if (adapterInfoPtr == nullptr) {
-            AUDIO_ERR_LOG("AdapterInfo is nullptr!");
-            continue;
-        }
-        bool condition = (adapterInfoPtr->adapterName == targetAdapterName);
+        CHECK_AND_CONTINUE_LOG(adapterInfoPtr != nullptr, "AdapterInfo is nullptr!");
+        const std::string &expectedVaName = isUnidirectional ?
+            VA_DEVICE_INFO_NAME_UNIDIRECTIONAL_SPP : VA_DEVICE_INFO_NAME_SPP;
+        bool condition = (type_ == DEVICE_TYPE_BT_SPP)
+            ? (deviceInfo->name_ == expectedVaName)
+            : (adapterInfoPtr->adapterName == targetAdapterName);
 #ifdef MULTI_BUS_ENABLE
-        condition = condition && (deviceInfo->address_ == macAddress);
+        condition = (type_ == DEVICE_TYPE_BT_SPP) ? condition
+            : (condition && deviceInfo->address_ == macAddress);
 #endif
         if (condition) {
             return deviceInfo;
@@ -272,6 +279,50 @@ void AudioPolicyConfigData::RegisterAdapter(std::shared_ptr<PolicyAdapterInfo> a
         adapterInfoMap.find(adapterInfoPtr->GetTypeEnum()) == adapterInfoMap.end(), "adapter already exists");
     adapterInfoMap.insert({adapterInfoPtr->GetTypeEnum(), adapterInfoPtr});
     ReorganizeInternal();
+}
+
+void AudioPolicyConfigData::CreateNormalInputPipeAndDevice(
+    const std::shared_ptr<PolicyAdapterInfo> &adapterInfoPtr, const std::string &pipeName,
+    const std::string &deviceName, DeviceType deviceType)
+{
+    CHECK_AND_RETURN_LOG(adapterInfoPtr != nullptr, "adapterInfoPtr is nullptr");
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
+    pipeInfo->adapterInfo_ = adapterInfoPtr;
+    pipeInfo->name_ = pipeName;
+    pipeInfo->role_ = PIPE_ROLE_INPUT;
+    pipeInfo->supportDevices_.push_back(deviceName);
+    AdapterDeviceInfo deviceInfo{};
+    deviceInfo.adapterInfo_ = adapterInfoPtr;
+    deviceInfo.name_ = deviceName;
+    deviceInfo.type_ = deviceType;
+    deviceInfo.role_ = INPUT_DEVICE;
+    deviceInfo.supportPipes_.push_back(pipeName);
+    deviceInfo.supportPipeMap_[AudioFlag::AUDIO_INPUT_FLAG_NORMAL] = pipeInfo;
+    PaPropInfo paProp = {};
+    paProp.lib_ = "libmodule-hdi-source.z.so";
+    paProp.role_ = "source";
+    paProp.moduleName_ = pipeName;
+    pipeInfo->paProp_ = std::move(paProp);
+    adapterInfoPtr->pipeInfos.push_back(pipeInfo);
+    adapterInfoPtr->deviceInfos.push_back(std::make_shared<AdapterDeviceInfo>(deviceInfo));
+}
+
+bool AudioPolicyConfigData::EnsureAdapterInputPipe(AudioAdapterType adapterType, const std::string &pipeName,
+    const std::string &deviceName, DeviceType deviceType)
+{
+    std::lock_guard<std::mutex> lock(statusMutex_);
+    auto it = adapterInfoMap.find(adapterType);
+    CHECK_AND_RETURN_RET(it != adapterInfoMap.end() && it->second != nullptr, false);
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = it->second;
+    const bool pipeExists = std::any_of(adapterInfoPtr->pipeInfos.begin(), adapterInfoPtr->pipeInfos.end(),
+        [&pipeName](const auto &pipe) {
+            return pipe != nullptr && pipe->name_ == pipeName;
+        });
+    if (!pipeExists) {
+        CreateNormalInputPipeAndDevice(adapterInfoPtr, pipeName, deviceName, deviceType);
+    }
+    ReorganizeInternal();
+    return true;
 }
 
 void AudioPolicyConfigData::UnregisterAdapter(AudioAdapterType adapterType)

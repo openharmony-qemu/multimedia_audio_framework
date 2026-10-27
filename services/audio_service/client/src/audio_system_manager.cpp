@@ -230,6 +230,11 @@ int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
     return AudioVolumeClientManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
 
+int32_t AudioSystemManager::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted)
+{
+    return AudioVolumeClientManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(appUid, muted);
+}
+
 int32_t AudioSystemManager::SetVoipRendererMuteForUid(const int32_t appUid, const int64_t streamId, const bool muted)
 {
     return AudioVolumeClientManager::GetInstance().SetVoipRendererMuteForUid(appUid, streamId, muted);
@@ -293,9 +298,10 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
 }
 
 int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
-    DeviceType deviceType)
+    DeviceType deviceType, std::string macAddress)
 {
-    return AudioVolumeClientManager::GetInstance().SetVolumeWithDevice(volumeType, volumeLevel, deviceType);
+    return AudioVolumeClientManager::GetInstance().SetVolumeWithDevice(volumeType, volumeLevel, deviceType,
+        macAddress);
 }
 
 int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType, int32_t uid, int32_t zoneId) const
@@ -643,6 +649,11 @@ std::string AudioSystemManager::GetSystemSoundPath(const int32_t systemSoundType
     return AudioSystemClientPolicyManager::GetInstance().GetSystemSoundPath(systemSoundType);
 }
 
+int32_t AudioSystemManager::SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos)
+{
+    return AudioSystemClientPolicyManager::GetInstance().SetAncoPlaybackInfo(ancoPlaybackInfos);
+}
+
 // Below stub implementation is added to handle compilation error in call manager
 // Once call manager adapt to new interrupt implementation, this will be removed
 int32_t AudioSystemManager::SetAudioManagerCallback(const AudioVolumeType streamType,
@@ -895,14 +906,14 @@ int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const 
     return AudioSystemClientPolicyManager::GetInstance().LoadSplitModule(splitArgs, networkId);
 }
 
-int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual)
+int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual, int32_t uid)
 {
-    return AudioSystemClientPolicyManager::GetInstance().SetVirtualCall(isVirtual);
+    return AudioSystemClientPolicyManager::GetInstance().SetVirtualCall(isVirtual, uid);
 }
 
-bool AudioSystemManager::GetVirtualCall()
+bool AudioSystemManager::GetVirtualCall(int32_t uid)
 {
-    return AudioSystemClientPolicyManager::GetInstance().GetVirtualCall();
+    return AudioSystemClientPolicyManager::GetInstance().GetVirtualCall(uid);
 }
 
 int32_t AudioSystemManager::SetQueryAllowedPlaybackCallback(

@@ -772,8 +772,9 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_RendererCallbackOnStateChange_001
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     auto renderCallback = std::make_shared<AudioLoopbackPrivate::RendererCallbackImpl>(*audioLoopback);
+    // Behavior change: OnStateChange no longer directly writes rendererState_,
+    // instead calls CheckDeviceSupport() + UpdateStatus()
     renderCallback->OnStateChange(RENDERER_RUNNING, CMD_FROM_SYSTEM);
-    EXPECT_EQ(audioLoopback->rendererState_, RENDERER_RUNNING);
 }
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CapturerCallbackOnStateChange_001, TestSize.Level1)

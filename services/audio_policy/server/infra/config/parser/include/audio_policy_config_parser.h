@@ -66,7 +66,10 @@ private:
     void ParseStreamProps(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<AdapterPipeInfo> &pipeInfo);
     void ParseAttributes(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<AdapterPipeInfo> &pipeInfo);
     void ParseAttributeByName(AttributeInfo &attributeInfo, std::shared_ptr<AdapterPipeInfo> &pipeInfo);
+    void ParseAttributeByNameExt(AttributeInfo &attributeInfo, std::shared_ptr<AdapterPipeInfo> &pipeInfo);
     void ParseFlagAttribute(AttributeInfo &attributeInfo, std::shared_ptr<AdapterPipeInfo> &pipeInfo);
+    void ParseHalLatency(AttributeInfo &attributeInfo, std::shared_ptr<AdapterPipeInfo> &pipeInfo);
+    bool ParseUint32Attr(const std::string &str, uint32_t &value);
     void ParseDevices(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<PolicyAdapterInfo> &adapterInfo);
     void SplitStringToList(std::string &str, std::list<std::string> &result, const char *delim);
     void ParseGroups(std::shared_ptr<AudioXmlNode> curNode, PolicyXmlNodeType type);
@@ -79,6 +82,8 @@ private:
     void HandleUpdateRouteSupportParsed(std::string &value);
     void HandleUpdateAnahsSupportParsed(std::string &value);
     void HandleEncodingEac3SupportParsed(std::shared_ptr<AdapterPipeInfo> pipeInfo, const std::string &value);
+    void HandleEffectLatencyParsed(const std::string &value);
+    void HandleWarmupLatencyParsed(const std::string &value);
     
     void ConvertAdapterInfoToGroupInfo(std::unordered_map<std::string, std::string> &volumeGroupMap,
         std::unordered_map<std::string, std::string> &interruptGroupMap);

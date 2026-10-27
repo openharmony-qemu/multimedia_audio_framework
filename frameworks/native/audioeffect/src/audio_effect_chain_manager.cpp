@@ -1082,8 +1082,21 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamicInner(
 int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
     Trace trace("AudioEffectChainManager::UpdateSpatializationState");
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    return UpdateSpatializationStateInner(spatializationState);
+    SensorAction sensorAction = SensorAction::SENSOR_ACTION_NONE;
+    bool useDspEngine = false;
+    int32_t ret;
+    // Hold sensorMutex_ from state computation through action application so the commit
+    // order of headTrackingEnabled_ matches the sensor execution order (no reorder race).
+    std::lock_guard<std::mutex> sensorLock(sensorMutex_);
+    {
+        std::lock_guard<std::mutex> lock(dynamicMutex_);
+        ret = UpdateSpatializationStateInner(spatializationState, sensorAction);
+        useDspEngine = btOffloadEnabled_;
+    }
+    // Sensor binder calls must stay outside dynamicMutex_: blocking here would freeze all
+    // effect operations and stall the HpaeManager FIFO (sceneboard appfreeze, 2026-10-24).
+    ApplySensorActionLocked(sensorAction, useDspEngine);
+    return ret;
 }
 
 int32_t AudioEffectChainManager::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
@@ -1180,41 +1193,48 @@ int32_t AudioEffectChainManager::SetHdiParam(const AudioEffectScene &sceneType)
 }
 
 // LCOV_EXCL_START
-void AudioEffectChainManager::UpdateSensorState()
+AudioEffectChainManager::SensorAction AudioEffectChainManager::UpdateSensorStateLocked()
 {
     effectHdiInput_[0] = HDI_HEAD_MODE;
     effectHdiInput_[1] = headTrackingEnabled_ == true ? 1 : 0;
     AUDIO_INFO_LOG("set hdi head mode: %{public}d", effectHdiInput_[1]);
-    CHECK_AND_RETURN_LOG(audioEffectHdiParam_ != nullptr, "audioEffectHdiParam_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, SensorAction::SENSOR_ACTION_NONE,
+        "audioEffectHdiParam_ is nullptr");
     int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi head mode failed");
     }
 
     if (headTrackingEnabled_) {
-        ActivateHeadTracking();
-        return;
+        return SensorAction::SENSOR_ACTION_ACTIVATE;
     }
-
     if (btOffloadEnabled_) {
-        return;
+        return SensorAction::SENSOR_ACTION_NONE;
     }
-
-    DeactivateHeadTracking();
+    return SensorAction::SENSOR_ACTION_DEACTIVATE;
 }
 
-void AudioEffectChainManager::ActivateHeadTracking()
+void AudioEffectChainManager::ApplySensorActionLocked(SensorAction action, bool useDspEngine)
 {
-#ifdef SENSOR_ENABLE
-    int32_t ret;
-    if (btOffloadEnabled_) {
-        headTracker_->SensorInit();
-        ret = headTracker_->SensorSetConfig(DSP_SPATIALIZER_ENGINE);
-    } else {
-        headTracker_->SensorInit();
-        ret = headTracker_->SensorSetConfig(ARM_SPATIALIZER_ENGINE);
+    if (action == SensorAction::SENSOR_ACTION_NONE) {
+        return;
     }
+    if (action == SensorAction::SENSOR_ACTION_ACTIVATE) {
+        ActivateHeadTracking(useDspEngine);
+        return;
+    }
+    DeactivateHeadTrackingSensor();
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    DisableHeadTrackingOnChainsLocked();
+}
 
+void AudioEffectChainManager::ActivateHeadTracking(bool useDspEngine)
+{
+    (void)useDspEngine; // avoid unused-parameter warning when SENSOR_ENABLE is off
+#ifdef SENSOR_ENABLE
+    headTracker_->SensorInit();
+    int32_t ret = headTracker_->SensorSetConfig(useDspEngine ? DSP_SPATIALIZER_ENGINE :
+        ARM_SPATIALIZER_ENGINE);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("SensorSetConfig error!");
     }
@@ -1225,13 +1245,19 @@ void AudioEffectChainManager::ActivateHeadTracking()
 #endif
 }
 
-void AudioEffectChainManager::DeactivateHeadTracking()
+void AudioEffectChainManager::DeactivateHeadTrackingSensor()
 {
 #ifdef SENSOR_ENABLE
     if (headTracker_->SensorDeactive() != SUCCESS) {
         AUDIO_ERR_LOG("SensorDeactive failed");
     }
     headTracker_->SensorUnsubscribe();
+#endif
+}
+
+void AudioEffectChainManager::DisableHeadTrackingOnChainsLocked()
+{
+#ifdef SENSOR_ENABLE
     HeadPostureData headPostureData = {1, 1.0, 0.0, 0.0, 0.0}; // ori head posturedata
     headTracker_->SetHeadPostureData(headPostureData);
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
@@ -2047,32 +2073,40 @@ bool AudioEffectChainManager::CheckIfSpkDsp()
 void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSupported)
 {
     Trace trace("AudioEffectChainManager::UpdateEffectBtOffloadSupported: " + std::to_string(isSupported));
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    if (isSupported == btOffloadSupported_) {
-        return;
-    }
-
-    if (!spatializationEnabled_) {
-        btOffloadSupported_ = isSupported;
-        AUDIO_INFO_LOG("btOffloadSupported_ %{public}d, but spatialization is off, do nothing", btOffloadSupported_);
-        return;
-    }
-    // Release ARM, try offload to DSP
-    AUDIO_INFO_LOG("btOffloadSupported_ %{public}d, try offload effect on device %{public}d",
-        btOffloadSupported_, deviceType_);
-    AudioSpatializationState oldState = {spatializationEnabled_, headTrackingEnabled_};
-    AudioSpatializationState offState = {false, false};
-    UpdateSpatializationStateInner(offState);
-    btOffloadSupported_ = isSupported;
-    UpdateSpatializationStateInner(oldState);
-    int32_t ret = UpdatePersonalizedSpatializationStateInner(personalizedSpatializationEnabled_);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("UpdatePersonalizedSpatializationStateInner failed: %{public}d", ret);
-        if (personalizedSpatializationStateResultCallback_ != nullptr) {
-            personalizedSpatializationStateResultCallback_(ret);
+    SensorAction sensorAction = SensorAction::SENSOR_ACTION_NONE;
+    bool useDspEngine = false;
+    // sensorMutex_ first, then dynamicMutex_: keeps decide+apply atomic (see sensorMutex_).
+    std::lock_guard<std::mutex> sensorLock(sensorMutex_);
+    {
+        std::lock_guard<std::mutex> lock(dynamicMutex_);
+        if (isSupported == btOffloadSupported_) {
+            return;
         }
+
+        if (!spatializationEnabled_) {
+            btOffloadSupported_ = isSupported;
+            AUDIO_INFO_LOG("btOffloadSupported_ %{public}d, but spatialization is off, do nothing",
+                btOffloadSupported_);
+            return;
+        }
+        // Release ARM, try offload to DSP
+        AUDIO_INFO_LOG("btOffloadSupported_ %{public}d, try offload effect on device %{public}d",
+            btOffloadSupported_, deviceType_);
+        AudioSpatializationState oldState = {spatializationEnabled_, headTrackingEnabled_};
+        AudioSpatializationState offState = {false, false};
+        UpdateSpatializationStateInner(offState, sensorAction); // intermediate action, overwritten below
+        btOffloadSupported_ = isSupported;
+        UpdateSpatializationStateInner(oldState, sensorAction); // final action wins
+        int32_t ret = UpdatePersonalizedSpatializationStateInner(personalizedSpatializationEnabled_);
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("UpdatePersonalizedSpatializationStateInner failed: %{public}d", ret);
+            if (personalizedSpatializationStateResultCallback_ != nullptr) {
+                personalizedSpatializationStateResultCallback_(ret);
+            }
+        }
+        useDspEngine = btOffloadEnabled_;
     }
-    return;
+    ApplySensorActionLocked(sensorAction, useDspEngine);
 }
 
 void AudioEffectChainManager::SetPersonalizedSpatializationStateResultCallback(
@@ -2673,7 +2707,8 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfigInner(
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::UpdateSpatializationStateInner(AudioSpatializationState spatializationState)
+int32_t AudioEffectChainManager::UpdateSpatializationStateInner(AudioSpatializationState spatializationState,
+    SensorAction &sensorAction)
 {
     Trace trace("AudioEffectChainManager::UpdateSpatializationStateInner previous state: " +
         std::to_string(spatializationEnabled_.load()) + std::to_string(headTrackingEnabled_) +
@@ -2689,7 +2724,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationStateInner(AudioSpatializat
     }
     if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
         headTrackingEnabled_ = spatializationState.headTrackingEnabled;
-        UpdateSensorState();
+        sensorAction = UpdateSensorStateLocked();
     }
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
@@ -2733,25 +2768,33 @@ int32_t AudioEffectChainManager::UpdatePersonalizedSpatializationEnabledToHdi()
 
 void AudioEffectChainManager::SetBypassSpatializationForStereo(bool bypass)
 {
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    CHECK_AND_RETURN_LOG(bypassSpatializationForStereo_ != bypass,
-        "no need to update bypassSpatializationForStereo_ %{public}d", bypassSpatializationForStereo_);
-    AUDIO_INFO_LOG("AudioEffectChainManager::SetBypassSpatializationForStereo %{public}d", bypass);
-    bypassSpatializationForStereo_ = bypass;
-    DeviceType deviceTypeTemp = deviceType_;
-    if (Util::IsEnhancedRoutingSupported()) {
-        deviceTypeTemp = spatializationDeviceType_;
+    SensorAction sensorAction = SensorAction::SENSOR_ACTION_NONE;
+    bool useDspEngine = false;
+    // sensorMutex_ first, then dynamicMutex_: keeps decide+apply atomic (see sensorMutex_).
+    std::lock_guard<std::mutex> sensorLock(sensorMutex_);
+    {
+        std::lock_guard<std::mutex> lock(dynamicMutex_);
+        CHECK_AND_RETURN_LOG(bypassSpatializationForStereo_ != bypass,
+            "no need to update bypassSpatializationForStereo_ %{public}d", bypassSpatializationForStereo_);
+        AUDIO_INFO_LOG("AudioEffectChainManager::SetBypassSpatializationForStereo %{public}d", bypass);
+        bypassSpatializationForStereo_ = bypass;
+        DeviceType deviceTypeTemp = deviceType_;
+        if (Util::IsEnhancedRoutingSupported()) {
+            deviceTypeTemp = spatializationDeviceType_;
+        }
+        CHECK_AND_RETURN(spatializationEnabled_ && (deviceTypeTemp == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            deviceTypeTemp == DEVICE_TYPE_BLUETOOTH_SCO || deviceTypeTemp == DEVICE_TYPE_NEARLINK));
+        AudioSpatializationState spatializationState = {spatializationEnabled_, headTrackingEnabled_};
+        bool previousOffloadState = btOffloadEnabled_;
+        UpdateSpatializationEnabled(spatializationState);
+        if (headTrackingEnabled_ && !bypassSpatializationForStereo_ && previousOffloadState != btOffloadEnabled_) {
+            AUDIO_INFO_LOG("btOffloadEnabled change from %{public}d to %{public}d, UpdateSensorState",
+                previousOffloadState, btOffloadEnabled_);
+            sensorAction = UpdateSensorStateLocked();
+        }
+        useDspEngine = btOffloadEnabled_;
     }
-    CHECK_AND_RETURN(spatializationEnabled_ && (deviceTypeTemp == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        deviceTypeTemp == DEVICE_TYPE_BLUETOOTH_SCO || deviceTypeTemp == DEVICE_TYPE_NEARLINK));
-    AudioSpatializationState spatializationState = {spatializationEnabled_, headTrackingEnabled_};
-    bool previousOffloadState = btOffloadEnabled_;
-    UpdateSpatializationEnabled(spatializationState);
-    if (headTrackingEnabled_ && !bypassSpatializationForStereo_ && previousOffloadState != btOffloadEnabled_) {
-        AUDIO_INFO_LOG("btOffloadEnabled change from %{public}d to %{public}d, UpdateSensorState",
-            previousOffloadState, btOffloadEnabled_);
-        UpdateSensorState();
-    }
+    ApplySensorActionLocked(sensorAction, useDspEngine);
 }
 
 int32_t AudioEffectChainManager::ReturnEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels,

@@ -293,6 +293,7 @@ const std::shared_ptr<AudioZoneDescriptor> AudioZone::GetDescriptorNoLock()
     descriptor->initMode_ = static_cast<int32_t>(context_.initMode_);
     descriptor->supportType_ = static_cast<int32_t>(context_.supportType_);
     descriptor->preferDevice_ = preferDevice_;
+    descriptor->userId_ = context_.userId_;
     AUDIO_INFO_LOG("zone %{public}d init mode %{public}d", zoneId_, descriptor->initMode_);
 
     for (const auto &key : keys_) {
@@ -643,6 +644,17 @@ bool AudioZone::CheckDeviceInZone(AudioDeviceDescriptor device)
     for (const auto &it : devices_) {
         if (it.second && it.first->deviceType_ == device.deviceType_ &&
             it.first->networkId_ == device.networkId_ && it.first->macAddress_ == device.macAddress_) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioZone::CheckDeviceInZone(const std::string &macAddress)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (const auto &it : devices_) {
+        if (it.second && it.first != nullptr && it.first->macAddress_ == macAddress) {
             return true;
         }
     }

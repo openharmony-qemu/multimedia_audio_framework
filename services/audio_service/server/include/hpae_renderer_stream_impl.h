@@ -23,6 +23,7 @@
 #include <future>
 #include "i_renderer_stream.h"
 #include "audio_ring_cache.h"
+#include "common/hdi_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -117,8 +118,7 @@ private:
     uint32_t GetNearlinkLatency(); // unit ms
     uint32_t GetSinkLatency(); // unit ms
     int32_t GetSinkLatencyInner(uint32_t &sinkLatency);
-    static int32_t GetSinkLatencyInner(const std::string &deviceClass, const std::string &deviceNetId,
-        const std::string &macAddress, uint32_t &sinkLatency);
+    static int32_t GetSinkLatencyInner(const HdiIdInfoParam &param, uint32_t &sinkLatency);
     void GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base);
     void OnDeviceClassChange(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);
@@ -126,6 +126,12 @@ private:
     void NotifyFirstStreamData();
     void NotifyFirstFrameConsumedOnce();
     int32_t FetchSinkLatency(uint32_t &sinkLatency);
+    bool TryGetCachedSinkLatency(const std::string &deviceClass, const std::string &deviceNetId,
+        uint32_t &sinkLatency);
+    int32_t GetSinkEffectLatency(const std::string &deviceClass, const std::string &deviceNetId);
+    int32_t GetSinkWarmupLatency(const std::string &deviceClass, const std::string &deviceNetId);
+    bool IsSinkRunning(const std::string &deviceClass, const std::string &deviceNetId);
+    bool IsDirectPipe(const std::string &deviceClass);
     void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
     uint64_t GetOffloadLatency();
@@ -143,7 +149,6 @@ private:
     size_t byteSizePerFrame_ = 0;
     size_t spanSizeInFrame_ = 0;
     size_t minBufferSize_ = 0;
-    uint64_t expectedPlaybackDurationMs_ = 0;
 
     int32_t renderRate_ = 0;
     int32_t effectMode_ = -1;
@@ -178,6 +183,8 @@ private:
     std::string deviceNetId_;
     // Sensitive: never print in plain text logs or hidump
     std::string macAddress_;
+    std::string deviceName_;
+    std::string busAddress_;
     // record latency
 
     // buffer mode, write or callback

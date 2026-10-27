@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -85,7 +86,6 @@ static const char* PIPE_USB_ARM_INPUT = "usb_arm_input";
 static const char* PIPE_DP_OUTPUT = "dp_output";
 static const char* PIPE_ACCESSORY_INPUT = "accessory_input";
 
-static constexpr int32_t FUSION_CONNECTIVITY_SA_ID = 1191;
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_THRESHOLD = 2;
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_MSG_ARRAY_MAX = 5;
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_HDI_SEGMENTS = 2;
@@ -110,6 +110,11 @@ struct ConcurrentCaptureDfxResult {
 struct RouteUpdateCallbackInfo {
     sptr<IStandardAudioPolicyManagerListener> listener;
     uid_t clientUid = 0;
+};
+
+struct A2dpSuspendState {
+    bool needSuspend = false;
+    std::chrono::steady_clock::time_point suspendUntil;
 };
 
 class AudioA2dpOffloadManager;
@@ -146,6 +151,7 @@ public:
         int32_t SetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
         int32_t UnsetAudioRouteSelectorCallback();
         int32_t SetSplitModeReady();
+        int32_t SetSupportReload(bool isSupportReload, const std::string &networkId);
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
         void OnCheckActiveMusicTime(const std::string &reason) override;
         int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute) override;
@@ -261,6 +267,7 @@ public:
         void ReloadSourceForEffect(const AudioEffectPropertyArray oldPropertyArray,
             const AudioEffectPropertyArray newPropertyArray);
         void OnVehiclePriorityChanged(bool enable);
+        void MutePrimarySinkByCollaborative(int32_t duration);
         // Trigger reload for VoIP priority change due to mute callback
         void TriggerVoipPriorityReload(uint32_t sessionId, bool lowered);
         int32_t GetActiveStreamRendererInfosForDevice(
@@ -388,6 +395,7 @@ public:
     int32_t SetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
     int32_t UnsetAudioRouteSelectorCallback();
     int32_t SetSplitModeReady();
+    int32_t SetSupportReload(bool isSupportReload, const std::string &networkId);
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
     void OnCheckActiveMusicTime(const std::string &reason);
 
@@ -486,7 +494,6 @@ public:
     void OnUpdateAnahsSupport(std::string anahsShowType);
     void RegisterBluetoothListener();
     void UnregisterBluetoothListener();
-    void RegisterFusionConnectivityListener();
     void ConfigDistributedRoutingRole(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
     int32_t SetRingerMode(AudioRingerMode ringMode);
     int32_t FetchOutputDeviceAndRoute(std::string caller,
@@ -495,8 +502,9 @@ public:
         const std::string &caller);
     std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> PreviewInputDeviceSelection(
         const std::string &caller);
-    bool HandleA2dpSuspendWhenLoad();
-    void HandleA2dpRestore();
+    bool HandleA2dpSuspendWhenLoad(const std::string &macAddress);
+    void HandleA2dpRestore(const std::string &macAddress);
+    void EraseA2dpSuspendState(const std::string &macAddress);
     int32_t FetchInputDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     void SetAudioServerProxy();
@@ -556,6 +564,8 @@ public:
     int32_t GetActiveStreamRendererInfosForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         std::vector<AudioRendererInfo> &rendererInfos);
+    bool GetSupportReload(const std::string &networkId);
+    void RemoveSupportReload(const std::string &networkId);
 
 private:
     void UpdateEnhanceEffectState(SourceType source);
@@ -622,8 +632,6 @@ private:
     void RegisterBluetoothDeathCallback();
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
 #endif
-    void RegisterFusionConnectivityDeathCallback();
-    static void FusionConnectivityCrashedCallback(pid_t pid, uid_t uid);
     int32_t FetchDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -640,6 +648,10 @@ private:
     void ProcessInputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag);
     void RemoveUnusedPipe(const AudioStreamDeviceChangeReasonExt reason =
         AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    void RemoveAndCloseUnusedCapturerPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos,
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    void RemoveAndCloseUnusedPipeInternal(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos,
+        const AudioStreamDeviceChangeReasonExt &reason);
     void RemoveUnusedRecordPipe();
     void MoveStreamSink(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<AudioPipeInfo> pipeInfo, const AudioStreamDeviceChangeReasonExt reason);
@@ -652,8 +664,7 @@ private:
     void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const std::vector<SourceOutput>& sourceOutputs);
     void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-        const std::vector<SourceOutput>& sourceOutputs,
-        std::shared_ptr<AudioPipeInfo> pipeInfo);
+        const std::vector<SourceOutput>& sourceOutputs, std::shared_ptr<AudioPipeInfo> pipeInfo);
     int32_t MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
         std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor, uint32_t routeFlag = AUDIO_FLAG_NONE);
     int32_t MoveToRemoteInputDevice(
@@ -680,6 +691,10 @@ private:
         bool hasSystemPermission);
     static void UpdateCapturerInfoWhenNoPermission(const shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
         bool hasSystemPermission);
+    void UpdateCapturerDeviceInfoByActiveDevice(
+        vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
+        vector<shared_ptr<AudioDeviceDescriptor>> &inputDevices,
+        bool hasBTPermission, bool hasSystemPermission);
     void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     void UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
@@ -703,8 +718,8 @@ private:
         InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage);
     void HandleNormalOrDualToneRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage);
-    void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-        const uint32_t pipeId);
+    void UpdateRingerOrAlarmerDualDeviceOutputRouter(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t pipeId);
     void UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
@@ -773,7 +788,6 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     bool IsHeadsetToSpkOrEp(const std::shared_ptr<AudioDeviceDescriptor> &oldDesc,
         const std::shared_ptr<AudioDeviceDescriptor> &newDesc);
-    bool IsSceneRequireMuteAndSleep();
     void SetVoiceCallMuteForSwitchDevice();
     void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason,
@@ -802,7 +816,7 @@ private:
     bool IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs);
     bool HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeReasonExt &reason,
         const AudioDeviceDescriptor &actived, const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams);
-    void HandleA2dpSuspend();
+    void HandleA2dpSuspend(const std::string &macAddress);
     bool UpdateActiveDeviceAndVolumeBeforeMoveSession(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     void SyncVolWhenCurrentOutputDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &desc);
@@ -914,6 +928,7 @@ private:
         SessionOperationMsg opMsg);
     void CheckNeedPreRemoveUnusedPipe(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos);
     bool IsUltraFastSupportedForDevice(DeviceType deviceType);
+    void MutePrimarySinkByCollaborative(int32_t duration);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
@@ -953,6 +968,8 @@ private:
 
     bool hearingAidCallFlag_ = false;
     bool hearingAidReloadFlag_ = false;
+    std::map<std::string, bool> isSupportReloadMap_;
+    std::mutex isSupportReloadMutex_;
     bool callTransferCreated_ = false;
     std::shared_ptr<HPAE::IHpaeSoftLink> softLink_ = nullptr;
 
@@ -974,7 +991,6 @@ private:
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
     static bool isBtListenerRegistered;
     static bool isBtCrashed;
-    static bool isFusionConnectivityListenerRegistered;
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     bool isCurrentRemoteRenderer_ = false;
@@ -984,8 +1000,7 @@ private:
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     std::mutex serviceFlagMutex_;
 
-    std::atomic<bool> a2dpNeedSuspend_ = { false };
-    std::chrono::steady_clock::time_point a2dpSuspendUntil_;
+    std::unordered_map<std::string, A2dpSuspendState> a2dpSuspendStates_;
     std::mutex a2dpSuspendMutex_;
     std::unordered_set<uint32_t> capturerSessionIdisRemovedSet_;
 
@@ -1112,10 +1127,13 @@ private:
 
 class RestoreA2dpSinkAction : public AsyncActionHandler::AsyncAction {
 public:
+    explicit RestoreA2dpSinkAction(const std::string &macAddress) : macAddress_(macAddress) {}
     void Exec() override
     {
-        AudioCoreService::GetCoreService()->HandleA2dpRestore();
+        AudioCoreService::GetCoreService()->HandleA2dpRestore(macAddress_);
     }
+private:
+    std::string macAddress_;
 };
 
 class RegisterSilentStreamCallbackAction : public AsyncActionHandler::AsyncAction {

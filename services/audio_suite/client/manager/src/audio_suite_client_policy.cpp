@@ -300,6 +300,7 @@ int32_t AudioSuiteClientPolicy::UninstallCloudRom(const std::vector<std::string>
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "UninstallCloudRom result: %{public}d", result);
     return SUCCESS;
 }
+
 int32_t AudioSuiteClientPolicy::RegisterDownloadInterfaceCallback(
     const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback)
 {
@@ -323,8 +324,9 @@ int32_t AudioSuiteClientPolicy::RegisterDownloadInterfaceCallback(
     if (ret != SUCCESS || result != SUCCESS) {
         downloadCallbackStub_ = nullptr;
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UninstallCloudRom IPC ret: %{public}d", ret);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "UninstallCloudRom result: %{public}d", result);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterDownloadInterfaceCallback IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+        "RegisterDownloadInterfaceCallback result: %{public}d", result);
     return SUCCESS;
 }
 

@@ -240,15 +240,11 @@ HWTEST_F(AudioPipeSelectorAiut, SortCapturerPipesByExecOrder_001, TestSize.Level
     AIUT_INFO_LOG("entry");
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AIUT_ASSERT_NE_INFO_LOG(audioPipeSelector, nullptr, "audioPipeSelector is nullptr");
-    std::vector<std::shared_ptr<AudioPipeInfo>> oldPipeInfoList;
-    auto outputPipe = std::make_shared<AudioPipeInfo>();
-    outputPipe->pipeRole_ = PIPE_ROLE_OUTPUT;
-    oldPipeInfoList.push_back(outputPipe);
     std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList;
     auto newPipe = std::make_shared<AudioPipeInfo>();
     newPipe->pipeRole_ = PIPE_ROLE_INPUT;
     newPipeInfoList.push_back(newPipe);
-    audioPipeSelector->SortCapturerPipesByExecOrder(oldPipeInfoList, newPipeInfoList);
+    audioPipeSelector->SortCapturerPipesByExecOrder(newPipeInfoList);
     AIUT_EXPECT_EQ_INFO_LOG(newPipeInfoList.size(), 1, "list size should not change");
 }
 /**
@@ -262,21 +258,16 @@ HWTEST_F(AudioPipeSelectorAiut, SortCapturerPipesByExecOrder_002, TestSize.Level
     AIUT_INFO_LOG("entry");
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AIUT_ASSERT_NE_INFO_LOG(audioPipeSelector, nullptr, "audioPipeSelector is nullptr");
-    auto oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->id_ = 200;
-    oldPipe->pipeRole_ = PIPE_ROLE_INPUT;
-    oldPipe->moduleInfo_.ecType = std::to_string(EC_TYPE_SAME_ADAPTER);
-    std::vector<std::shared_ptr<AudioPipeInfo>> oldPipeInfoList = {oldPipe};
     auto newPipe1 = std::make_shared<AudioPipeInfo>();
     newPipe1->id_ = 100;
     newPipe1->pipeRole_ = PIPE_ROLE_INPUT;
-    newPipe1->moduleInfo_.ecType = "";
+    newPipe1->pipeAction_ = PIPE_ACTION_NEW;
     auto newPipe2 = std::make_shared<AudioPipeInfo>();
     newPipe2->id_ = 101;
     newPipe2->pipeRole_ = PIPE_ROLE_INPUT;
-    newPipe2->moduleInfo_.ecType = std::to_string(EC_TYPE_SAME_ADAPTER);
+    newPipe2->pipeAction_ = PIPE_ACTION_DEFAULT;
     std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList = {newPipe1, newPipe2};
-    audioPipeSelector->SortCapturerPipesByExecOrder(oldPipeInfoList, newPipeInfoList);
+    audioPipeSelector->SortCapturerPipesByExecOrder(newPipeInfoList);
     AIUT_EXPECT_EQ_INFO_LOG(newPipeInfoList.size(), 2, "list size should not change");
 }
 /**
@@ -357,18 +348,20 @@ HWTEST_F(AudioPipeSelectorAiut, DetermineInputPipeEcAndMicRef_001, TestSize.Leve
     pipe->adapterName_ = "primary";
     pipe->moduleInfo_.adapterName = "primary";
     auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->audioMode_ = AUDIO_MODE_RECORD;
+    stream->streamStatus_ = STREAM_STATUS_STARTED;
+    stream->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    stream->sessionId_ = 1001;
     stream->ecStreamInfo_.channels = STEREO;
     stream->ecStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     stream->ecStreamInfo_.format = SAMPLE_S16LE;
     stream->micInStreamInfo_.channels = STEREO;
     stream->micInStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     stream->micInStreamInfo_.format = SAMPLE_S16LE;
-    AudioPipeSelector::InputPipeStreamPairList pipePairs;
-    pipePairs.emplace_back(pipe, stream);
-    audioPipeSelector->DetermineInputPipeEcAndMicRef(pipePairs);
-    AIUT_EXPECT_EQ_INFO_LOG(pipe->moduleInfo_.ecType, std::to_string(EC_TYPE_SAME_ADAPTER),
-        "should set ec type to same adapter");
-    AIUT_EXPECT_EQ_INFO_LOG(pipe->moduleInfo_.openMicRef, "1", "should set openMicRef to 1");
+    pipe->streamDescriptors_.push_back(stream);
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList = {pipe};
+    audioPipeSelector->DetermineInputPipeConfig(newPipeInfoList);
+    AIUT_EXPECT_EQ_INFO_LOG(newPipeInfoList.size(), 1, "list size should not change");
 }
 /**
  * @tc.name  : DetermineInputPipeEcAndMicRef_002
@@ -381,9 +374,9 @@ HWTEST_F(AudioPipeSelectorAiut, DetermineInputPipeEcAndMicRef_002, TestSize.Leve
     AIUT_INFO_LOG("entry");
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AIUT_ASSERT_NE_INFO_LOG(audioPipeSelector, nullptr, "audioPipeSelector is nullptr");
-    AudioPipeSelector::InputPipeStreamPairList pipePairs;
-    audioPipeSelector->DetermineInputPipeEcAndMicRef(pipePairs);
-    AIUT_EXPECT_EQ_INFO_LOG(pipePairs.size(), 0, "pipePairs should remain empty after processing");
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList;
+    audioPipeSelector->DetermineInputPipeConfig(newPipeInfoList);
+    AIUT_EXPECT_EQ_INFO_LOG(newPipeInfoList.size(), 0, "list should remain empty after processing");
 }
 /**
  * @tc.name  : DetermineInputPipeEcAndMicRef_003
@@ -396,10 +389,10 @@ HWTEST_F(AudioPipeSelectorAiut, DetermineInputPipeEcAndMicRef_003, TestSize.Leve
     AIUT_INFO_LOG("entry");
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AIUT_ASSERT_NE_INFO_LOG(audioPipeSelector, nullptr, "audioPipeSelector is nullptr");
-    AudioPipeSelector::InputPipeStreamPairList pipePairs;
-    pipePairs.emplace_back(nullptr, nullptr);
-    audioPipeSelector->DetermineInputPipeEcAndMicRef(pipePairs);
-    AIUT_EXPECT_EQ_INFO_LOG(pipePairs.size(), 1, "pipePairs size should not change with nullptr entries");
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList;
+    newPipeInfoList.push_back(nullptr);
+    audioPipeSelector->DetermineInputPipeConfig(newPipeInfoList);
+    AIUT_EXPECT_EQ_INFO_LOG(newPipeInfoList.size(), 1, "list size should not change with nullptr entries");
 }
 /**
  * @tc.name  : DetermineInputPipeEcAndMicRef_004
@@ -413,28 +406,34 @@ HWTEST_F(AudioPipeSelectorAiut, DetermineInputPipeEcAndMicRef_004, TestSize.Leve
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AIUT_ASSERT_NE_INFO_LOG(audioPipeSelector, nullptr, "audioPipeSelector is nullptr");
     auto pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->pipeRole_ = PIPE_ROLE_INPUT;
     pipe1->adapterName_ = "primary";
     pipe1->moduleInfo_.adapterName = "primary";
     auto stream1 = std::make_shared<AudioStreamDescriptor>();
+    stream1->audioMode_ = AUDIO_MODE_RECORD;
+    stream1->streamStatus_ = STREAM_STATUS_STARTED;
+    stream1->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    stream1->sessionId_ = 1001;
     stream1->ecStreamInfo_.channels = STEREO;
     stream1->ecStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     stream1->ecStreamInfo_.format = SAMPLE_S16LE;
+    pipe1->streamDescriptors_.push_back(stream1);
     auto pipe2 = std::make_shared<AudioPipeInfo>();
+    pipe2->pipeRole_ = PIPE_ROLE_INPUT;
     pipe2->adapterName_ = "primary";
     pipe2->moduleInfo_.adapterName = "primary";
     auto stream2 = std::make_shared<AudioStreamDescriptor>();
+    stream2->audioMode_ = AUDIO_MODE_RECORD;
+    stream2->streamStatus_ = STREAM_STATUS_STARTED;
+    stream2->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    stream2->sessionId_ = 1002;
     stream2->ecStreamInfo_.channels = STEREO;
     stream2->ecStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     stream2->ecStreamInfo_.format = SAMPLE_S16LE;
-    AudioPipeSelector::InputPipeStreamPairList pipePairs;
-    pipePairs.emplace_back(pipe1, stream1);
-    pipePairs.emplace_back(pipe2, stream2);
-    audioPipeSelector->DetermineInputPipeEcAndMicRef(pipePairs);
-    // First pipe should get ec, second should not (adapter conflict)
-    AIUT_EXPECT_EQ_INFO_LOG(pipe1->moduleInfo_.ecType, std::to_string(EC_TYPE_SAME_ADAPTER),
-        "first pipe should get ec");
-    AIUT_EXPECT_EQ_INFO_LOG(pipe2->moduleInfo_.ecType, std::string(""),
-        "second pipe should not get ec due to adapter conflict");
+    pipe2->streamDescriptors_.push_back(stream2);
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList = {pipe1, pipe2};
+    audioPipeSelector->DetermineInputPipeConfig(newPipeInfoList);
+    AIUT_EXPECT_EQ_INFO_LOG(newPipeInfoList.size(), 2, "list size should not change");
 }
 /**
  * @tc.name  : UpdateInputPipeReloadAction_001

@@ -70,6 +70,20 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceNames();
+}
+
+void HpaeSourceOutputNode::OnTraceInfoChanged()
+{
+    RebuildTraceNames();
+}
+
+void HpaeSourceOutputNode::RebuildTraceNames()
+{
+    auto traceBase = "[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess "
+        + GetTraceInfo();
+    muteTraceName_ = traceBase + "_[Mute]";
+    unmuteTraceName_ = traceBase + "_[unMute]";
 }
 
 HpaeSourceOutputNode::~HpaeSourceOutputNode()
@@ -265,8 +279,7 @@ void HpaeSourceOutputNode::WriteDataAndUpdateFrames()
 void HpaeSourceOutputNode::DoProcess()
 {
     bool isMute = isMute_ || (!isInjector_ && isMicMute_);
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo() +
-        (isMute ? "_[Mute]" : "_[unMute]"));
+    Trace trace(isMute ? muteTraceName_ : unmuteTraceName_);
     HpaePcmBuffer *outputData = GetAndValidateOutput();
     if (outputData == nullptr) {
         return;

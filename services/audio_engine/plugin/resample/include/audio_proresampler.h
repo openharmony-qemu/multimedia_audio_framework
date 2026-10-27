@@ -22,6 +22,11 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+// Quality presets for direct callers: FAST matches the engine realtime chain
+// (REASAMPLE_QUAILTY in hpae_audio_format_converter_node.cpp), HIGH is the
+// maximum quality the wrapper accepts (MAX_QUALITY in audio_proresampler.cpp).
+constexpr uint32_t QUALITY_FAST = 1;
+constexpr uint32_t QUALITY_HIGH = 10;
 class ProResampler : public Resampler {
 public:
     ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels, uint32_t quality);

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@
 #include "audio_service_enum.h"
 #include "audio_injector_policy.h"
 #include "audio_bus_selector.h"
+#include "audio_server_proxy.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
@@ -44,7 +45,34 @@ namespace {
     constexpr uint32_t MS_PER_S = 1000;
 }
 
+enum class EcAdapterType {
+    TYPE_PRIMARY,
+    TYPE_USB_HEADSET,
+    TYPE_WIRED_HEADSET,
+    TYPE_BLUETOOTH_NEARLINK,
+    TYPE_USB_ARM,
+    TYPE_DP,
+    TYPE_ACCESSORY,
+};
+
+static const std::map<DeviceType, EcAdapterType> g_deviceEcAdapterMap = {
+    { DEVICE_TYPE_MIC, EcAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_SPEAKER, EcAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_LINE_DIGITAL, EcAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_WIRED_MICIN, EcAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_WIRED_HEADPHONES, EcAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_USB_HEADSET, EcAdapterType::TYPE_USB_HEADSET },
+    { DEVICE_TYPE_WIRED_HEADSET, EcAdapterType::TYPE_WIRED_HEADSET },
+    { DEVICE_TYPE_BLUETOOTH_SCO, EcAdapterType::TYPE_BLUETOOTH_NEARLINK },
+    { DEVICE_TYPE_NEARLINK_IN, EcAdapterType::TYPE_BLUETOOTH_NEARLINK },
+    { DEVICE_TYPE_NEARLINK, EcAdapterType::TYPE_BLUETOOTH_NEARLINK },
+    { DEVICE_TYPE_USB_ARM_HEADSET, EcAdapterType::TYPE_USB_ARM },
+    { DEVICE_TYPE_DP, EcAdapterType::TYPE_DP },
+    { DEVICE_TYPE_ACCESSORY, EcAdapterType::TYPE_ACCESSORY },
+};
+
 static constexpr int32_t MAX_FAST_STREAM_COUNT = 6;
+static constexpr uint32_t PRIMARY_ADAPTER_EC_DEFAULT_CHANNELS = 2;
 static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
     {AUDIO_OUTPUT_FLAG_NORMAL, PIPE_TYPE_OUT_NORMAL},
     {AUDIO_INPUT_FLAG_NORMAL, PIPE_TYPE_IN_NORMAL},
@@ -55,12 +83,38 @@ static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
     {AUDIO_OUTPUT_FLAG_DIRECT, PIPE_TYPE_OUT_DIRECT_NORMAL},
 };
 
+static const std::map<DeviceType, AudioAdapterType> g_deviceHalMap = {
+    { DEVICE_TYPE_MIC, AudioAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_USB_HEADSET, AudioAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_WIRED_HEADSET, AudioAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_BLUETOOTH_SCO, AudioAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_NEARLINK_IN, AudioAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_SPEAKER, AudioAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_NEARLINK, AudioAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_USB_ARM_HEADSET, AudioAdapterType::TYPE_USB },
+    { DEVICE_TYPE_DP, AudioAdapterType::TYPE_DP },
+    { DEVICE_TYPE_ACCESSORY, AudioAdapterType::TYPE_ACCESSORY },
+    { DEVICE_TYPE_LINE_DIGITAL, AudioAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_WIRED_MICIN, AudioAdapterType::TYPE_PRIMARY },
+    { DEVICE_TYPE_WIRED_HEADPHONES, AudioAdapterType::TYPE_PRIMARY },
+};
+
 static std::map<AudioSampleFormat, std::string> formatStrToHpae = {
     {SAMPLE_U8, "s8"},
     {SAMPLE_S16LE, "s16"},
     {SAMPLE_S24LE, "s24"},
     {SAMPLE_S32LE, "s32"},
     {SAMPLE_F32LE, "f32"},
+};
+
+// Only these devices support mic-ref enhance-state query.
+static const std::vector<DeviceType> MIC_REF_DEVICES = {
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN,
+    DEVICE_TYPE_NEARLINK_IN,
 };
 
 static const std::map<SourceType, int32_t> g_inputSourceTypePriority = {
@@ -114,6 +168,107 @@ static bool IsVoiceRecognitionMicInEcSupportedInputDevice(
         IsVoiceRecognitionMicInEcSupportedInputDeviceType(deviceDesc->deviceType_);
 }
 
+static bool IsMicRefSupportedInputDevice(DeviceType deviceType)
+{
+    return std::find(MIC_REF_DEVICES.begin(), MIC_REF_DEVICES.end(), deviceType) != MIC_REF_DEVICES.end();
+}
+
+static std::string GetEnhancePropByName(const AudioEffectPropertyArray &propertyArray,
+    const std::string &propName)
+{
+    auto iter = std::find_if(propertyArray.property.begin(), propertyArray.property.end(),
+        [&propName](const AudioEffectProperty &prop) {
+            return prop.name == propName;
+        });
+    return iter != propertyArray.property.end() ? iter->category : "";
+}
+
+static bool IsAdapterSupportEc(const std::string &adapterName)
+{
+    CHECK_AND_RETURN_RET(!adapterName.empty(), false);
+    if (ecSupportedInputAdapters.count(adapterName) == 0) {
+        AUDIO_INFO_LOG("Current Adapter %{public}s not support ec.", adapterName.c_str());
+        return false;
+    }
+    return true;
+}
+
+static bool TryOccupyEcForAdapter(const std::string &adapterName, std::unordered_set<std::string> &ecOccupiedAdapters)
+{
+    CHECK_AND_RETURN_RET(!adapterName.empty(), false);
+    return ecOccupiedAdapters.emplace(adapterName).second;
+}
+
+static bool TryOccupyMicRefForAdapter(const std::string &adapterName,
+    std::unordered_set<std::string> &micRefOccupiedAdapters)
+{
+    CHECK_AND_RETURN_RET(!adapterName.empty(), false);
+    return micRefOccupiedAdapters.emplace(adapterName).second;
+}
+
+static bool GetEnhanceEffectMicRefState(DeviceType deviceType, bool &isMicRefRecordOn, bool &isMicRefVoipUpOn)
+{
+    AudioEffectPropertyArray effectPropertyArray = {};
+    int32_t ret = AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(effectPropertyArray, deviceType);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("get enhance property fail, ret: %{public}d", ret);
+        return false;
+    }
+    std::string record = GetEnhancePropByName(effectPropertyArray, "record");
+    std::string voipUp = GetEnhancePropByName(effectPropertyArray, "voip_up");
+    AUDIO_INFO_LOG("micref info %{public}s, %{public}s", record.c_str(), voipUp.c_str());
+    isMicRefRecordOn = record == "NRON";
+    isMicRefVoipUpOn = voipUp == "PNR";
+    return true;
+}
+
+static bool IsPipeSupportDeviceType(const std::shared_ptr<AdapterPipeInfo> &pipeInfo, DeviceType deviceType)
+{
+    CHECK_AND_RETURN_RET(pipeInfo != nullptr, false);
+    for (const auto &streamPropInfo : pipeInfo->streamPropInfos_) {
+        CHECK_AND_CONTINUE(streamPropInfo != nullptr);
+        if (streamPropInfo->supportDeviceMap_.find(deviceType) != streamPropInfo->supportDeviceMap_.end()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static std::shared_ptr<AdapterPipeInfo> GetPipeInfoByDeviceType(const std::shared_ptr<PolicyAdapterInfo> &adapterInfo,
+    DeviceType deviceType, AudioPipeRole pipeRole)
+{
+    CHECK_AND_RETURN_RET(adapterInfo != nullptr, nullptr);
+    for (const auto &pipeInfo : adapterInfo->pipeInfos) {
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+        CHECK_AND_CONTINUE(pipeInfo->role_ == pipeRole);
+        if (IsPipeSupportDeviceType(pipeInfo, deviceType)) {
+            return pipeInfo;
+        }
+    }
+    return nullptr;
+}
+
+static bool ShouldOpenMicRefByEnhanceState(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    // `record` controls normal recording scenes, `voip_up` controls voice-communication uplink scenes.
+    CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
+    SourceType source = streamDesc->capturerInfo_.sourceType;
+    CHECK_AND_RETURN_RET(source == SOURCE_TYPE_VOICE_COMMUNICATION || source == SOURCE_TYPE_MIC, false);
+    auto inputDesc = streamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN_RET(inputDesc != nullptr, false);
+    if (!IsMicRefSupportedInputDevice(inputDesc->deviceType_)) {
+        return false;
+    }
+
+    bool isMicRefRecordOn = false;
+    bool isMicRefVoipUpOn = false;
+    if (!GetEnhanceEffectMicRefState(inputDesc->deviceType_, isMicRefRecordOn, isMicRefVoipUpOn)) {
+        return false;
+    }
+    return (source == SOURCE_TYPE_VOICE_COMMUNICATION && isMicRefVoipUpOn) ||
+        (source == SOURCE_TYPE_MIC && isMicRefRecordOn);
+}
+
 static bool HasDegradeInputDevice(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
     return std::any_of(deviceDescs.begin(), deviceDescs.end(), [](const auto &deviceDesc) {
@@ -125,6 +280,56 @@ static bool IsDegradeInputStream(const std::shared_ptr<AudioStreamDescriptor> &s
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
     return HasDegradeInputDevice(streamDesc->newDeviceDescs_) || HasDegradeInputDevice(streamDesc->oldDeviceDescs_);
+}
+
+static bool IsNormalEcSource(SourceType sourceType)
+{
+    return sourceType == SOURCE_TYPE_VOICE_COMMUNICATION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION;
+}
+
+static EcType GetEcTypeByDevice(DeviceType inputDevice, DeviceType outputDevice)
+{
+    if (ecSupportedOutputDevices.count(outputDevice) == 0) {
+        return EC_TYPE_NONE;
+    }
+    auto inIter = g_deviceEcAdapterMap.find(inputDevice);
+    auto outIter = g_deviceEcAdapterMap.find(outputDevice);
+    if (inIter == g_deviceEcAdapterMap.end() || outIter == g_deviceEcAdapterMap.end()) {
+        return EC_TYPE_NONE;
+    }
+    return inIter->second == outIter->second ? EC_TYPE_SAME_ADAPTER : EC_TYPE_DIFF_ADAPTER;
+}
+
+static std::string GetEcFormatString(AudioSampleFormat format)
+{
+    auto hpaeIt = formatStrToHpae.find(format);
+    if (hpaeIt != formatStrToHpae.end()) {
+        return hpaeIt->second;
+    }
+    auto moduleIt = AudioDefinitionPolicyUtils::enumToFormatStr.find(format);
+    return moduleIt != AudioDefinitionPolicyUtils::enumToFormatStr.end() ? moduleIt->second : "";
+}
+
+static bool IsEcParamComplete(const AudioModuleInfo &ecModuleInfo)
+{
+    return !ecModuleInfo.ecSamplingRate.empty() && !ecModuleInfo.ecFormat.empty() &&
+        !ecModuleInfo.ecChannels.empty();
+}
+
+static void FillEcParamsFromStreamInfo(const AudioStreamInfo &streamInfo, AudioModuleInfo &ecModuleInfo)
+{
+    if (streamInfo.channels <= CHANNEL_UNKNOW && streamInfo.format == INVALID_WIDTH) {
+        return;
+    }
+    if (ecModuleInfo.ecSamplingRate.empty() && streamInfo.samplingRate > 0) {
+        ecModuleInfo.ecSamplingRate = std::to_string(static_cast<uint32_t>(streamInfo.samplingRate));
+    }
+    if (ecModuleInfo.ecChannels.empty() && streamInfo.channels > CHANNEL_UNKNOW) {
+        ecModuleInfo.ecChannels = std::to_string(static_cast<uint32_t>(streamInfo.channels));
+    }
+    if (ecModuleInfo.ecFormat.empty()) {
+        ecModuleInfo.ecFormat = GetEcFormatString(streamInfo.format);
+    }
 }
 
 static bool IsCamcorderMicInSupportedInputDevice(
@@ -185,7 +390,7 @@ static bool IsPipeStreamPropValid(const std::shared_ptr<PipeStreamPropInfo> &str
         streamPropInfo->format_ != INVALID_WIDTH;
 }
 
-static void ClearEcModuleInfo(AudioModuleInfo &moduleInfo)
+static void ResetToDefaultEcConfigInModuleInfo(AudioModuleInfo &moduleInfo)
 {
     moduleInfo.ecType = "";
     moduleInfo.ecAdapter = "";
@@ -194,38 +399,31 @@ static void ClearEcModuleInfo(AudioModuleInfo &moduleInfo)
     moduleInfo.ecChannels = "";
 }
 
-static void UpdateEcModuleInfo(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, const std::string &ecType,
-    AudioModuleInfo &moduleInfo)
+static void ApplyEcModuleInfo(const AudioModuleInfo &ecModuleInfo, AudioModuleInfo &moduleInfo)
 {
-    if (!IsEcEnabled(ecType)) {
-        ClearEcModuleInfo(moduleInfo);
-        return;
-    }
+    AUDIO_INFO_LOG("ApplyEcModuleInfo: ecType=%{public}s, ecAdapter=%{public}s, ecSamplingRate=%{public}s, "
+        "ecFormat=%{public}s, ecChannels=%{public}s",
+        ecModuleInfo.ecType.c_str(), ecModuleInfo.ecAdapter.c_str(), ecModuleInfo.ecSamplingRate.c_str(),
+        ecModuleInfo.ecFormat.c_str(), ecModuleInfo.ecChannels.c_str());
+    moduleInfo.ecType = ecModuleInfo.ecType;
+    moduleInfo.ecAdapter = ecModuleInfo.ecAdapter;
+    moduleInfo.ecSamplingRate = ecModuleInfo.ecSamplingRate;
+    moduleInfo.ecFormat = ecModuleInfo.ecFormat;
+    moduleInfo.ecChannels = ecModuleInfo.ecChannels;
+}
 
-    if (ecType == std::to_string(EC_TYPE_DIFF_ADAPTER)) {
-        moduleInfo.ecType = ecType;
-        return;
-    }
-
-    if (streamDesc == nullptr || streamDesc->ecStreamInfo_.channels <= CHANNEL_UNKNOW) {
-        ClearEcModuleInfo(moduleInfo);
-        return;
-    }
-
-    moduleInfo.ecType = ecType;
-    moduleInfo.ecAdapter = "";
-    moduleInfo.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo_.samplingRate);
-    moduleInfo.ecChannels = std::to_string(streamDesc->ecStreamInfo_.channels);
-    if (formatStrToHpae.count(streamDesc->ecStreamInfo_.format) > 0) {
-        moduleInfo.ecFormat = formatStrToHpae[streamDesc->ecStreamInfo_.format];
-    } else {
-        moduleInfo.ecFormat = "";
-    }
+static bool IsEcModuleInfoSame(const AudioModuleInfo &newModuleInfo, const AudioModuleInfo &oldModuleInfo)
+{
+    return NormalizeEcType(newModuleInfo.ecType) == NormalizeEcType(oldModuleInfo.ecType) &&
+        newModuleInfo.ecAdapter == oldModuleInfo.ecAdapter &&
+        newModuleInfo.ecSamplingRate == oldModuleInfo.ecSamplingRate &&
+        newModuleInfo.ecFormat == oldModuleInfo.ecFormat &&
+        newModuleInfo.ecChannels == oldModuleInfo.ecChannels;
 }
 
 static void ClearMicRefModuleInfo(AudioModuleInfo &moduleInfo)
 {
-    moduleInfo.openMicRef = IsMicRefEnabled(moduleInfo.openMicRef) ? "0" : "";
+    moduleInfo.openMicRef = "0";
     moduleInfo.micRefRate = "";
     moduleInfo.micRefFormat = "";
     moduleInfo.micRefChannels = "";
@@ -252,24 +450,6 @@ static void UpdateMicInModuleInfo(const std::shared_ptr<AudioStreamDescriptor> &
         moduleInfo.micInFormat = formatStrToHpae[streamDesc->micInStreamInfo_.format];
     } else {
         moduleInfo.micInFormat = "";
-    }
-}
-
-static void UpdateMicRefModuleInfo(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool shouldOpenMicRef,
-    AudioModuleInfo &moduleInfo)
-{
-    if (!shouldOpenMicRef || streamDesc == nullptr || streamDesc->micInStreamInfo_.channels <= CHANNEL_UNKNOW) {
-        ClearMicRefModuleInfo(moduleInfo);
-        return;
-    }
-
-    moduleInfo.openMicRef = "1";
-    moduleInfo.micRefRate = std::to_string(streamDesc->micInStreamInfo_.samplingRate);
-    moduleInfo.micRefChannels = std::to_string(streamDesc->micInStreamInfo_.channels);
-    if (formatStrToHpae.count(streamDesc->micInStreamInfo_.format) > 0) {
-        moduleInfo.micRefFormat = formatStrToHpae[streamDesc->micInStreamInfo_.format];
-    } else {
-        moduleInfo.micRefFormat = "";
     }
 }
 
@@ -362,6 +542,50 @@ bool AudioPipeSelector::IsBothFastArmUsbNeedRecreate(std::shared_ptr<AudioPipeIn
         return true;
     }
     return false;
+}
+
+void AudioPipeSelector::GetPipeInfoByDeviceTypeForMicRef(std::shared_ptr<AdapterPipeInfo> &pipeInfo)
+{
+    std::shared_ptr<PolicyAdapterInfo> info;
+    bool ret = pipeManager_->GetAdapterInfoByType(AudioAdapterType::TYPE_PRIMARY, info);
+    // Mic-ref parameters reuse the primary_input mic capability.
+    if (ret && info != nullptr) {
+        pipeInfo = info->GetPipeInfoByName("primary_input");
+    }
+}
+
+void AudioPipeSelector::UpdateMicRefModuleInfo(
+    const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool shouldOpenMicRef, AudioModuleInfo &moduleInfo)
+{
+    AUDIO_INFO_LOG("UpdateMicRefModuleInfo: shouldOpenMicRef=%{public}d", shouldOpenMicRef);
+    if (!shouldOpenMicRef || streamDesc == nullptr) {
+        AUDIO_INFO_LOG("UpdateMicRefModuleInfo: clear mic ref info");
+        ClearMicRefModuleInfo(moduleInfo);
+        auto inputDesc = streamDesc != nullptr ? streamDesc->GetMainNewDeviceDesc() : nullptr;
+        if (inputDesc != nullptr) {
+            AudioEffectPropertyArray effectPropertyArray = {};
+            AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(effectPropertyArray, inputDesc->deviceType_);
+        }
+        return;
+    }
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfo;
+    GetPipeInfoByDeviceTypeForMicRef(pipeInfo);
+    CHECK_AND_RETURN_LOG(pipeInfo != nullptr, "mic pipe not found");
+    // Mic-ref channel count follows the primary mic pipe capability instead of the current capturer stream info.
+    auto micStreamPropInfo = AudioCoreConfigManager::GetInstance().GetAvailableStreamPropInfoForDevice(
+        pipeInfo->streamPropInfos_, DEVICE_TYPE_MIC);
+
+    moduleInfo.openMicRef = "1";
+    moduleInfo.micRefRate = "48000";
+    moduleInfo.micRefFormat = "s16le";
+    std::string micRefChannels = "4";
+    if (micStreamPropInfo != nullptr) {
+        moduleInfo.micRefChannels = std::to_string(micStreamPropInfo->channels_);
+    } else {
+        moduleInfo.micRefChannels = micRefChannels;
+    }
+    AUDIO_INFO_LOG("UpdateMicRefModuleInfo: micRefChannels=%{public}s", moduleInfo.micRefChannels.c_str());
 }
 
 AudioPipeSelector::AudioPipeSelector() : pipeManager_(AudioPipeManager::GetPipeManager())
@@ -472,7 +696,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     CHECK_AND_RETURN_RET(ScanPipeListForStreamDesc(pipeInfoList, streamDesc), {});
     AUDIO_INFO_LOG("Original Pipelist size: %{public}zu, stream routeFlag: 0x%{public}x to fetch",
         pipeInfoList.size(), streamDesc->routeFlag_);
-    
+
     if (streamDesc->isNearLinkCollaborationEnable_ && (!(streamDesc->GetRoute() & AUDIO_OUTPUT_FLAG_MULTICHANNEL))) {
         streamDesc->isNearLinkCollaborationEnable_ = false;
     }
@@ -504,15 +728,19 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
 
     // Find whether any existing pipe matches
     bool findPipe = FindExistingPipe(selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
-    CHECK_AND_RETURN_RET(!findPipe, selectedPipeInfoList);
+    if (!findPipe) {
+        // Need to open a new pipe for incoming stream
+        AudioPipeInfo info = {};
+        ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+        info.pipeAction_ = PIPE_ACTION_NEW;
+        selectedPipeInfoList.push_back(std::make_shared<AudioPipeInfo>(info));
+        HILOG_COMM_INFO("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u",
+            info.ToString().c_str(), streamDesc->sessionId_);
+    }
 
-    // Need to open a new pipe for incoming stream
-    AudioPipeInfo info = {};
-    ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    info.pipeAction_ = PIPE_ACTION_NEW;
-    selectedPipeInfoList.push_back(std::make_shared<AudioPipeInfo>(info));
-    HILOG_COMM_INFO("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u",
-        info.ToString().c_str(), streamDesc->sessionId_);
+    if (Util::IsEnhancedRoutingSupported()) {
+        DetermineInputPipeConfig(selectedPipeInfoList);
+    }
 
     return selectedPipeInfoList;
 }
@@ -810,9 +1038,9 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
         HandlePipeNotExist(newPipeInfoList, streamDesc);
     }
 
+    // Round 3: configure EC/MICREF according to highest priority streams and single-HAL limits.
     if (Util::IsEnhancedRoutingSupported()) {
-        auto pipePairs = DetermineInputPipeBaseConfig(newPipeInfoList);
-        DetermineInputPipeEcAndMicRef(pipePairs);
+        DetermineInputPipeConfig(newPipeInfoList);
     }
 }
 
@@ -831,8 +1059,9 @@ AudioPipeSelector::InputPipeStreamPairList AudioPipeSelector::DetermineInputPipe
     return pipePairs;
 }
 
-void AudioPipeSelector::DetermineInputPipeEcAndMicRef(const InputPipeStreamPairList &pipePairs)
+void AudioPipeSelector::DetermineInputPipeConfig(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList)
 {
+    auto pipePairs = DetermineInputPipeBaseConfig(newPipeInfoList);
     std::unordered_set<std::string> ecOccupiedAdapters;
     std::unordered_set<std::string> micRefOccupiedAdapters;
     for (const auto &pipePair : pipePairs) {
@@ -880,16 +1109,158 @@ std::shared_ptr<AudioStreamDescriptor> AudioPipeSelector::GetHighestPriorityStre
     return highestStream;
 }
 
-std::string AudioPipeSelector::DetermineTargetEcType(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    const std::string &currentEcType) const
+bool AudioPipeSelector::ShouldEnableEcForInputStream(const std::shared_ptr<AudioStreamDescriptor> &streamDesc) const
 {
-    if (streamDesc == nullptr || streamDesc->ecStreamInfo_.channels <= CHANNEL_UNKNOW) {
+    CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
+    SourceType sourceType = streamDesc->capturerInfo_.sourceType;
+    if (IsNormalEcSource(sourceType)) {
+        return true;
+    }
+    if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        return !IsDegradeInputStream(streamDesc) && streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW;
+    }
+    return sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT &&
+        streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW;
+}
+
+std::shared_ptr<AudioStreamDescriptor> AudioPipeSelector::GetEcOutputStreamDesc() const
+{
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs =
+        pipeManager_->GetStreamDescsByStreamUsage(STREAM_USAGE_VOICE_COMMUNICATION);
+    auto videoOutputDescs = pipeManager_->GetStreamDescsByStreamUsage(STREAM_USAGE_VIDEO_COMMUNICATION);
+    outputDescs.insert(outputDescs.end(), videoOutputDescs.begin(), videoOutputDescs.end());
+
+    auto validOutput = [](const std::shared_ptr<AudioStreamDescriptor> &desc) {
+        return desc != nullptr && desc->audioMode_ == AUDIO_MODE_PLAYBACK;
+    };
+    auto startedOutput = std::find_if(outputDescs.begin(), outputDescs.end(), [&](const auto &desc) {
+        return validOutput(desc) && desc->streamStatus_ == STREAM_STATUS_STARTED;
+    });
+    if (startedOutput != outputDescs.end()) {
+        return *startedOutput;
+    }
+    auto output = std::find_if(outputDescs.begin(), outputDescs.end(), validOutput);
+    return output != outputDescs.end() ? *output : nullptr;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioPipeSelector::GetInputDeviceForEc(
+    const std::shared_ptr<AudioStreamDescriptor> &inputStream) const
+{
+    CHECK_AND_RETURN_RET(inputStream != nullptr && !inputStream->newDeviceDescs_.empty(), nullptr);
+    return inputStream->newDeviceDescs_.front();
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioPipeSelector::GetOutputDeviceForEc(
+    const std::shared_ptr<AudioStreamDescriptor> &outputStream) const
+{
+    CHECK_AND_RETURN_RET(outputStream != nullptr && !outputStream->newDeviceDescs_.empty(), nullptr);
+    return outputStream->newDeviceDescs_.front();
+}
+
+std::string AudioPipeSelector::GetOutputHalNameForEc(DeviceType outputDevice) const
+{
+    auto iter = g_deviceHalMap.find(outputDevice);
+    CHECK_AND_RETURN_RET_LOG(iter != g_deviceHalMap.end(), "", "device %{public}d not support ec", outputDevice);
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo;
+    bool ret = pipeManager_->GetAdapterInfoByType(iter->second, adapterInfo);
+    if (!ret || adapterInfo == nullptr) {
+        AUDIO_ERR_LOG("output adapter not found for device %{public}d", outputDevice);
         return "";
     }
-    if (IsEcEnabled(currentEcType)) {
-        return currentEcType;
+    return adapterInfo->adapterName;
+}
+
+std::shared_ptr<AdapterPipeInfo> AudioPipeSelector::GetOutputPipeInfoForEc(DeviceType outputDevice) const
+{
+    auto iter = g_deviceHalMap.find(outputDevice);
+    CHECK_AND_RETURN_RET_LOG(iter != g_deviceHalMap.end(), nullptr, "device %{public}d not support ec", outputDevice);
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo;
+    bool ret = pipeManager_->GetAdapterInfoByType(iter->second, adapterInfo);
+    CHECK_AND_RETURN_RET_LOG(ret && adapterInfo != nullptr, nullptr,
+        "output adapter not found for device %{public}d", outputDevice);
+    auto pipeInfo = GetPipeInfoByDeviceType(adapterInfo, outputDevice, PIPE_ROLE_OUTPUT);
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, nullptr,
+        "output pipe not found for device %{public}d", outputDevice);
+    return pipeInfo;
+}
+
+void AudioPipeSelector::UpdateEcParamsByOutputDevice(DeviceType outputDevice,
+    const std::shared_ptr<AudioPipeInfo> &outputPipe, const std::shared_ptr<AudioStreamDescriptor> &outputStream,
+    const AudioModuleInfo &inputModuleInfo, const AudioStreamInfo &inputStreamInfo,
+    AudioModuleInfo &targetEcModuleInfo) const
+{
+    if (targetEcModuleInfo.ecAdapter == DP_CLASS || targetEcModuleInfo.ecAdapter == USB_CLASS) {
+        if (outputPipe != nullptr) {
+            targetEcModuleInfo.ecSamplingRate = outputPipe->moduleInfo_.rate;
+            targetEcModuleInfo.ecFormat = outputPipe->moduleInfo_.format;
+            targetEcModuleInfo.ecChannels = outputPipe->moduleInfo_.channels;
+            FillEcParamsFromStreamInfo(outputPipe->audioStreamInfo_, targetEcModuleInfo);
+        } else if (outputStream != nullptr) {
+            //startup scene, the playback stream is already visible but its output pipe
+            //is not ready in pipeManager yet, so EC temporarily uses stream info here.
+            FillEcParamsFromStreamInfo(outputStream->streamInfo_, targetEcModuleInfo);
+        }
+        auto pipeInfo = GetOutputPipeInfoForEc(outputDevice);
+        CHECK_AND_RETURN_LOG(pipeInfo != nullptr, "output pipe info not found for ec");
+        auto streamPropInfo = AudioCoreConfigManager::GetInstance().GetAvailableStreamPropInfoForDevice(
+            pipeInfo->streamPropInfos_, outputDevice);
+        CHECK_AND_RETURN_LOG(streamPropInfo != nullptr, "output stream prop info not found for ec");
+        targetEcModuleInfo.ecSamplingRate = std::to_string(streamPropInfo->sampleRate_);
+        targetEcModuleInfo.ecChannels = std::to_string(streamPropInfo->channels_);
+        targetEcModuleInfo.ecFormat = GetEcFormatString(streamPropInfo->format_);
+        return;
     }
-    return std::to_string(EC_TYPE_SAME_ADAPTER);
+
+    targetEcModuleInfo.ecSamplingRate = inputModuleInfo.rate;
+    targetEcModuleInfo.ecFormat = inputModuleInfo.format;
+    targetEcModuleInfo.ecChannels = std::to_string(PRIMARY_ADAPTER_EC_DEFAULT_CHANNELS);
+    FillEcParamsFromStreamInfo(inputStreamInfo, targetEcModuleInfo);
+}
+
+void AudioPipeSelector::ResolveTargetEcModuleInfo(
+    const std::shared_ptr<AudioStreamDescriptor> &highestStream,
+    const std::shared_ptr<AudioPipeInfo> &newPipe, AudioModuleInfo &targetEcModuleInfo) const
+{
+    // Stage 1: collect input/output context from the streams that have already finished routing.
+    CHECK_AND_RETURN_LOG(highestStream != nullptr && newPipe != nullptr, "stream or pipe is nullptr");
+    if (!ShouldEnableEcForInputStream(highestStream)) {
+        return;
+    }
+
+    auto inputDevice = GetInputDeviceForEc(highestStream);
+    auto outputStream = GetEcOutputStreamDesc();
+    auto outputDevice = GetOutputDeviceForEc(outputStream);
+    if (highestStream->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION  &&
+        outputDevice == nullptr) {
+        outputDevice = std::make_shared<AudioDeviceDescriptor>();
+        CHECK_AND_RETURN_LOG(outputDevice != nullptr, "make transcription ec output device failed");
+        outputDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
+        outputDevice->networkId_ = LOCAL_NETWORK_ID;
+        AUDIO_INFO_LOG("voice transcription ec uses fixed speaker output without call stream");
+    }
+    CHECK_AND_RETURN_LOG(inputDevice != nullptr && outputDevice != nullptr,
+        "ec device desc is nullptr, input session %{public}u, output session %{public}u",
+        highestStream->sessionId_, outputStream != nullptr ? outputStream->sessionId_ : 0);
+
+    // Stage 2: derive the EC mode and target adapter from selected devices.
+    EcType ecType = GetEcTypeByDevice(inputDevice->deviceType_, outputDevice->deviceType_);
+    if (ecType == EC_TYPE_NONE) {
+        AUDIO_WARNING_LOG("device pair not support ec, input %{public}d output %{public}d",
+            inputDevice->deviceType_, outputDevice->deviceType_);
+        return;
+    }
+    targetEcModuleInfo.ecType = std::to_string(ecType);
+    targetEcModuleInfo.ecAdapter = GetOutputHalNameForEc(outputDevice->deviceType_);
+    CHECK_AND_RETURN_LOG(!targetEcModuleInfo.ecAdapter.empty(), "ec adapter is empty");
+
+    // Stage 3: finalize EC parameters with clear priority: output pipe, output stream, then config fallback.
+    auto pipeList = pipeManager_->GetPipeList();
+    auto outputPipe = outputStream != nullptr ? pipeManager_->FindPipeBySessionId(pipeList, outputStream->sessionId_) :
+        nullptr;
+    UpdateEcParamsByOutputDevice(outputDevice->deviceType_, outputPipe, outputStream, newPipe->moduleInfo_,
+        newPipe->audioStreamInfo_, targetEcModuleInfo);
 }
 
 std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::GetSortedInputPipes(
@@ -931,13 +1302,14 @@ std::shared_ptr<AudioPipeInfo> AudioPipeSelector::FindOldInputPipe(const std::sh
 void AudioPipeSelector::UpdateInputPipeParamByHighestStream(const std::shared_ptr<AudioStreamDescriptor> &highestStream,
     std::shared_ptr<AudioPipeInfo> &newPipe)
 {
+    CHECK_AND_RETURN(highestStream != nullptr && newPipe != nullptr, "stream or pipe is nullptr.");
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     auto streamDesc = highestStream;
     pipeManager_->GetStreamPropInfo(streamDesc, streamPropInfo);
     if (IsPipeStreamPropValid(streamPropInfo)) {
         UpdatePipeInfoFromStreamProp(highestStream, streamPropInfo, *newPipe);
     }
-
+    newPipe->moduleInfo_.sourceType = std::to_string(highestStream->capturerInfo_.sourceType);
     bool needMicIn = highestStream->micInStreamInfo_.channels > CHANNEL_UNKNOW;
     UpdateMicInModuleInfo(highestStream, needMicIn, newPipe->moduleInfo_);
 }
@@ -948,15 +1320,21 @@ void AudioPipeSelector::UpdateInputPipeEcAndMicRefByHighestStream(
 {
     const std::string adapterName = !newPipe->moduleInfo_.adapterName.empty() ?
         newPipe->moduleInfo_.adapterName : newPipe->adapterName_;
-    std::string targetEcType = DetermineTargetEcType(highestStream, newPipe->moduleInfo_.ecType);
-    if (IsEcEnabled(targetEcType) && !adapterName.empty() && !ecOccupiedAdapters.emplace(adapterName).second) {
-        targetEcType = "";
+    AudioModuleInfo ecModuleInfo;
+    ResolveTargetEcModuleInfo(highestStream, newPipe, ecModuleInfo);
+    // EC resources are exclusive on the same adapter. Once a higher-priority input pipe has occupied the
+    // adapter-level EC reference, lower-priority pipes on that adapter must fall back to no-EC.
+    bool shouldApplyEc = IsAdapterSupportEc(adapterName) && IsEcEnabled(ecModuleInfo.ecType) &&
+        IsEcParamComplete(ecModuleInfo) && TryOccupyEcForAdapter(adapterName, ecOccupiedAdapters);
+    if (shouldApplyEc) {
+        ApplyEcModuleInfo(ecModuleInfo, newPipe->moduleInfo_);
+    } else {
+        ResetToDefaultEcConfigInModuleInfo(newPipe->moduleInfo_);
     }
-    UpdateEcModuleInfo(highestStream, targetEcType, newPipe->moduleInfo_);
 
-    bool needMicRef = highestStream->micInStreamInfo_.channels > CHANNEL_UNKNOW;
-    if (needMicRef && !adapterName.empty() && !micRefOccupiedAdapters.emplace(adapterName).second) {
-        needMicRef = false;
+    bool needMicRef = ShouldOpenMicRefByEnhanceState(highestStream);
+    if (needMicRef && !adapterName.empty()) {
+        needMicRef = TryOccupyMicRefForAdapter(adapterName, micRefOccupiedAdapters);
     }
     UpdateMicRefModuleInfo(highestStream, needMicRef, newPipe->moduleInfo_);
 }
@@ -972,7 +1350,9 @@ bool AudioPipeSelector::IsNeedReloadForInputPipe(const std::shared_ptr<AudioPipe
     if (newPipe->audioStreamInfo_.channels != oldPipe->audioStreamInfo_.channels) {
         return true;
     }
-    if (NormalizeEcType(newPipe->moduleInfo_.ecType) != NormalizeEcType(oldPipe->moduleInfo_.ecType)) {
+    if (!IsEcModuleInfoSame(newPipe->moduleInfo_, oldPipe->moduleInfo_)) {
+        AUDIO_INFO_LOG("[NewPipeFetch] IsNeedReloadForInputPipe: ec changed %{public}s -> %{public}s",
+            oldPipe->moduleInfo_.ecType.c_str(), newPipe->moduleInfo_.ecType.c_str());
         return true;
     }
     if (IsMicRefEnabled(newPipe->moduleInfo_.openMicRef) != IsMicRefEnabled(oldPipe->moduleInfo_.openMicRef)) {
@@ -984,49 +1364,11 @@ bool AudioPipeSelector::IsNeedReloadForInputPipe(const std::shared_ptr<AudioPipe
     return false;
 }
 
-CapturerPipeExecOrder AudioPipeSelector::GetCapturerPipeExecOrder(const std::shared_ptr<AudioPipeInfo> &newPipe,
-    const std::unordered_map<uint32_t, std::shared_ptr<AudioPipeInfo>> &oldPipeMap,
-    const std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList) const
+void AudioPipeSelector::SortCapturerPipesByExecOrder(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList) const
 {
-    CHECK_AND_RETURN_RET(newPipe != nullptr, CapturerPipeExecOrder::NORMAL);
-    CHECK_AND_RETURN_RET(newPipe->pipeRole_ == PIPE_ROLE_INPUT, CapturerPipeExecOrder::NORMAL);
-    auto oldPipe = FindOldInputPipe(newPipe, oldPipeMap, oldPipeInfoList);
-    bool oldHasEc = oldPipe != nullptr && IsEcEnabled(oldPipe->moduleInfo_.ecType);
-    bool oldHasMicRef = oldPipe != nullptr && IsMicRefEnabled(oldPipe->moduleInfo_.openMicRef);
-    bool oldHasMicIn = oldPipe != nullptr && IsMicInEnabled(oldPipe->moduleInfo_);
-    bool newHasEc = IsEcEnabled(newPipe->moduleInfo_.ecType);
-    bool newHasMicRef = IsMicRefEnabled(newPipe->moduleInfo_.openMicRef);
-    bool newHasMicIn = IsMicInEnabled(newPipe->moduleInfo_);
-
-    bool closeBeforeOpen = (oldHasEc && !newHasEc) || (oldHasMicRef && !newHasMicRef) || (oldHasMicIn && !newHasMicIn);
-    bool openAfterClose = (!oldHasEc && newHasEc) || (!oldHasMicRef && newHasMicRef) || (!oldHasMicIn && newHasMicIn);
-    if (closeBeforeOpen) {
-        return CapturerPipeExecOrder::CLOSE_BEFORE_OPEN;
-    }
-    if (openAfterClose) {
-        return CapturerPipeExecOrder::OPEN_AFTER_CLOSE;
-    }
-    return CapturerPipeExecOrder::NORMAL;
-}
-
-void AudioPipeSelector::SortCapturerPipesByExecOrder(const std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList,
-    std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList) const
-{
-    std::unordered_map<uint32_t, std::shared_ptr<AudioPipeInfo>> oldPipeMap;
-    bool hasInputPipe = false;
-    for (const auto &oldPipe : oldPipeInfoList) {
-        CHECK_AND_CONTINUE(oldPipe != nullptr);
-        CHECK_AND_CONTINUE(oldPipe->pipeRole_ == PIPE_ROLE_INPUT);
-        oldPipeMap[oldPipe->id_] = oldPipe;
-        hasInputPipe = true;
-    }
-    CHECK_AND_RETURN(hasInputPipe);
-
     std::stable_sort(newPipeInfoList.begin(), newPipeInfoList.end(),
-        [this, &oldPipeMap, &oldPipeInfoList](const std::shared_ptr<AudioPipeInfo> &left,
-            const std::shared_ptr<AudioPipeInfo> &right) {
-            return GetCapturerPipeExecOrder(left, oldPipeMap, oldPipeInfoList) <
-                GetCapturerPipeExecOrder(right, oldPipeMap, oldPipeInfoList);
+        [](const std::shared_ptr<AudioPipeInfo> &left, const std::shared_ptr<AudioPipeInfo> &right) {
+            return  left->pipeAction_ < right->pipeAction_;
         });
 }
 
@@ -1046,7 +1388,7 @@ void AudioPipeSelector::HandleEmptyInputPipeReload(std::vector<std::shared_ptr<A
         bool oldHasMicIn = IsMicInEnabled(oldPipe->moduleInfo_);
         CHECK_AND_CONTINUE(oldHasEc || oldHasMicRef || oldHasMicIn);
 
-        ClearEcModuleInfo(newPipe->moduleInfo_);
+        ResetToDefaultEcConfigInModuleInfo(newPipe->moduleInfo_);
         ClearMicInModuleInfo(newPipe->moduleInfo_);
         ClearMicRefModuleInfo(newPipe->moduleInfo_);
         if (newPipe->pipeAction_ != PIPE_ACTION_NEW) {
@@ -1121,7 +1463,17 @@ void AudioPipeSelector::UpdateInputPipeReloadAction(std::vector<std::shared_ptr<
         CHECK_AND_CONTINUE(oldPipe != nullptr);
         auto highestStream = GetHighestPriorityStream(newPipe->streamDescriptors_);
         CHECK_AND_CONTINUE(highestStream != nullptr);
+        AUDIO_INFO_LOG("[UpdateInputPipeReloadAction] newPipe=%{public}s, newHighestStream sessionId=%{public}u,"
+            "sourceType=%{public}d, oldPipe=%{public}s, oldSampleRate=%{public}d, "
+            "oldChannels=%{public}d",
+            newPipe->moduleInfo_.name.c_str(), highestStream->sessionId_, highestStream->capturerInfo_.sourceType,
+            oldPipe->moduleInfo_.name.c_str(), oldPipe->audioStreamInfo_.samplingRate,
+            oldPipe->audioStreamInfo_.channels);
         auto oldHighestStream = GetHighestPriorityStream(oldPipe->streamDescriptors_);
+        if (oldHighestStream != nullptr) {
+            AUDIO_INFO_LOG("[UpdateInputPipeReloadAction] oldHighestStream sessionId=%{public}u, sourceType=%{public}d",
+                oldHighestStream->sessionId_, oldHighestStream->capturerInfo_.sourceType);
+        }
         if (IsNeedReloadForInputPipe(newPipe, oldPipe, highestStream, oldHighestStream) &&
             newPipe->pipeAction_ != PIPE_ACTION_NEW) {
             newPipe->pipeAction_ = PIPE_ACTION_RELOAD;
@@ -1141,7 +1493,7 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
     if (Util::IsEnhancedRoutingSupported()) {
         auto oldPipeMap = BuildOldPipeMap(oldPipeInfoList);
         UpdateInputPipeReloadAction(newPipeInfoList, oldPipeMap, oldPipeInfoList);
-        SortCapturerPipesByExecOrder(oldPipeInfoList, newPipeInfoList);
+        SortCapturerPipesByExecOrder(newPipeInfoList);
     }
 }
 
@@ -1744,6 +2096,16 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
     }
 }
 
+void AudioPipeSelector::FillLatencyConfig(AudioPipeInfo &info,
+    std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr)
+{
+    info.moduleInfo_.halLatency = pipeInfoPtr->halLatency_;
+    PolicyGlobalConfigs globalConfigs;
+    pipeManager_->GetGlobalConfigs(globalConfigs);
+    info.moduleInfo_.effectLatency = globalConfigs.primaryEffectLatency;
+    info.moduleInfo_.warmupLatency = globalConfigs.primaryWarmupLatency;
+}
+
 void AudioPipeSelector::UpdateModuleInfoWithDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
     AudioModuleInfo &moduleInfo)
 {
@@ -1839,6 +2201,8 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     // engine uses networkId to distinguish different renders,
     // so we need to set networkId after UpdateModuleInfoWithDevice;
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
+
+    FillLatencyConfig(info, pipeInfoPtr);
 
     info.streamDescriptors_.push_back(streamDesc);
     info.streamDescMap_[streamDesc->sessionId_] = streamDesc;
@@ -2094,7 +2458,7 @@ void AudioPipeSelector::UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStream
 void AudioPipeSelector::UpdateRendererPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is null");
- 
+
     AudioPipeType type = GetPipeType(streamDesc->routeFlag_, streamDesc->audioMode_);
     AudioStreamCollector::GetAudioStreamCollector().UpdateRendererPipeInfo(streamDesc->sessionId_, type);
 }
@@ -2105,7 +2469,8 @@ bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor>
     CHECK_AND_RETURN_RET(streamDesc != nullptr && pipeInfo != nullptr, false);
 
     CHECK_AND_RETURN_RET(pipeInfo->GetRoute() == streamDesc->GetRoute() && pipeInfo->IsSameAdapter(adapterName) &&
-        (pipeInfo->IsSameName(pipeName) || pipeInfo->IsSameAdapter("remote")), false);
+        (pipeInfo->IsSameName(pipeName) || pipeInfo->IsSameAdapter("remote") ||
+        IsMultiA2dpPipeMatch(streamDesc, pipeInfo)), false);
 
     // Use networkId to distinguish multiple remote devices that may exist
     auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
@@ -2186,6 +2551,20 @@ void AudioPipeSelector::MatchCollaborativePipe(const std::shared_ptr<PipeStreamP
     UpdatePipeInfoFromStreamProp(streamDesc, streamPropInfo, *pipeInfo);
 
     pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
+}
+
+bool AudioPipeSelector::IsMultiA2dpPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const std::shared_ptr<AudioPipeInfo> &pipeInfo)
+{
+    CHECK_AND_RETURN_RET(streamDesc != nullptr && pipeInfo != nullptr, false);
+    CHECK_AND_RETURN_RET(pipeInfo->IsSameAdapter(ADAPTER_A2DP_TYPE), false);
+#ifdef MULTI_USER_ZONE
+    auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN_RET(deviceDesc != nullptr, false);
+    return pipeInfo->IsSameMacAddress(deviceDesc->macAddress_);
+#else
+    return false;
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS

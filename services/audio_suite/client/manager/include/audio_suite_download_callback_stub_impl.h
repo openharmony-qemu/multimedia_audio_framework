@@ -26,7 +26,7 @@ class AudioSuiteDownloadCallbackStubImpl : public AudioSuiteDownloadCallbackStub
 public:
     AudioSuiteDownloadCallbackStubImpl();
     virtual ~AudioSuiteDownloadCallbackStubImpl();
-    int32_t SetAudioSuiteRomDownloadCallback(const std::weak_ptr<AudioSuiteRomDownloadCallback> &callback);
+    int32_t SetAudioSuiteRomDownloadCallback(const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback);
     void ClearCallback();
 
     int32_t GetFeatureNewVersion(const std::vector<std::string> &featureNames,

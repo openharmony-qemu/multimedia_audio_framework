@@ -46,8 +46,18 @@ enum class DeviceGroupType : int32_t {
     HEARING_AID = 7,
     /** Line digital device */
     LINE_DIGITAL = 8,
+    /** Wired headset device */
+    WIRED_HEADSET = 9,
+    /** Wired headphones device */
+    WIRED_HEADPHONES = 10,
+    /** USB headset device */
+    USB_HEADSET = 11,
+    /** USB arm headset device */
+    USB_ARM_HEADSET = 12,
+    /** HDMI device */
+    HDMI = 13,
     /** The maximum valid value */
-    MAX = LINE_DIGITAL,
+    MAX = HDMI,
 };
 
 enum class VolumeKeyType : int32_t {

@@ -37,6 +37,31 @@ static constexpr int16_t AUDIO_HVS_HOA_ORDER_2 = 2;
 static constexpr int16_t AUDIO_HVS_HOA_ORDER_3 = 3;
 static constexpr int16_t AUDIO_HVS_HOA_FORMAT_INVALID = -1;
 
+// Enum range definitions (consistent with ENUM_STRING_MAP)
+// SoundFieldType: [FRONT_FACING(1), WIDE(4)], CLOSE(0) is invalid for external API
+static constexpr int32_t SOUND_FIELD_TYPE_MIN = 1;
+static constexpr int32_t SOUND_FIELD_TYPE_MAX = 4;
+// EnvironmentType: [BROADCAST(1), GRAMOPHONE(4)], CLOSE(0) is invalid for external API
+static constexpr int32_t ENVIRONMENT_TYPE_MIN = 1;
+static constexpr int32_t ENVIRONMENT_TYPE_MAX = 4;
+// VoiceBeautifierType: [CLEAR(1), STUDIO(4)]
+static constexpr int32_t VOICE_BEAUTIFIER_TYPE_MIN = 1;
+static constexpr int32_t VOICE_BEAUTIFIER_TYPE_MAX = 4;
+// GeneralVoiceChangeType: [CUTE(1), WAR(10)]
+static constexpr int32_t GENERAL_VOICE_CHANGE_TYPE_MIN = 1;
+static constexpr int32_t GENERAL_VOICE_CHANGE_TYPE_MAX = 10;
+// AudioPureVoiceChangeGenderOption: [FEMALE(1), MALE(2)]
+static constexpr int32_t PURE_VOICE_CHANGE_GENDER_OPTION_MIN = 1;
+static constexpr int32_t PURE_VOICE_CHANGE_GENDER_OPTION_MAX = 2;
+// AudioPureVoiceChangeType: [CARTOON(1), SEASONED(7)]
+static constexpr int32_t PURE_VOICE_CHANGE_TYPE_MIN = 1;
+static constexpr int32_t PURE_VOICE_CHANGE_TYPE_MAX = 7;
+
+// Pitch range for pure voice change option
+static constexpr float AUDIO_VOICE_MORPHING_PITCH_MIN = 0.3f;
+static constexpr float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
+static constexpr float AUDIO_VOICE_MORPHING_PITCH_DEFAULT = 0.0f;
+
 static const std::unordered_map<std::string, std::vector<std::string>> OPTIONS_FIELD_NAMES = {
     {"AudioEqualizerFrequencyBandGains",
         {"band0", "band1", "band2", "band3", "band4", "band5", "band6", "band7", "band8", "band9"}},

@@ -1257,6 +1257,22 @@ public:
     static bool CheckSupportedSamplingRates(uint32_t rates);
 
     /**
+     * @brief Checks whether an audio stream info combination is supported.
+     *
+     * The renderer supports bit-width conversion, channel conversion and resampling, so a stream
+     * info combination whose sample format, channel count and sampling rate are within the supported
+     * lists is considered supported even when conversion is required. For hardware-decoding
+     * encoding types, the bitrate field in {@link AudioStreamInfo} is validated against the
+     * configured max bitrate: a bitrate exceeding the max is not supported. Use -1 to skip
+     * bitrate validation.
+     *
+     * @param streamInfo Indicates the stream info to check. For details, see
+     * {@link AudioStreamInfo}.
+     * @return Returns true if the combination is supported, false otherwise.
+     */
+    static bool CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo);
+
+    /**
      * @brief Set the render target
      * @param target The target at which the stream needs to be rendered.
      * @return Returns {@link SUCCESS} if render target is successfully set; returns an error code

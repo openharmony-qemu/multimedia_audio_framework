@@ -110,7 +110,7 @@ ohos_shared_library("audio_common") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
-    "../audio_engine:audio_engine_plugins",
+    "../audio_engine:audio_common_algorithm",
   ]
 
   external_deps = [
@@ -682,7 +682,7 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_engine:hpae_engine_manager",
-    "../audio_engine:audio_engine_plugins",
+    "../audio_engine:audio_common_algorithm",
     "../audio_engine:audio_engine_utils",
     "../audio_policy:audio_foundation",
   ]
@@ -805,7 +805,6 @@ audio_ohos_library("audio_service") {
     "server/src/audio_system_load_listener.cpp",
     "server/src/config/audio_param_parser.cpp",
     "server/src/audio_injector_service.cpp",
-    "server/src/audio_thermal_listener.cpp",
   ]
 
   configs = [ ":audio_service_config" ]
@@ -859,6 +858,7 @@ audio_ohos_library("audio_service") {
   }
 
   if (audio_framework_feature_thermal_manager) {
+    sources += [ "server/src/audio_thermal_listener.cpp" ]
     external_deps += [
         "thermal_manager:thermalmgr_listener",
         "thermal_manager:thermalsrv_client",
@@ -923,6 +923,10 @@ audio_ohos_library("audio_service") {
 
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
+  if (audio_framework_feature_multi_bus) {
+    defines += [ "MULTI_BUS_ENABLE" ]
   }
 
   cflags = [ "-Os" ]

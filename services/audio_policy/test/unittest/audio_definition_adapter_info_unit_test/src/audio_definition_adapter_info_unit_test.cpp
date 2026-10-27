@@ -495,6 +495,40 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_014, TestSize.L
 
 /**
 * @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: GetAdapterDeviceInfo_VA_001
+* @tc.desc  : Test GetAdapterDeviceInfo matches BT_SPP by unidirectional device name
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, GetAdapterDeviceInfo_VA_001, TestSize.Level1)
+{
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    DeviceType type = DEVICE_TYPE_BT_SPP;
+    DeviceRole role = INPUT_DEVICE;
+    std::string networkId = LOCAL_NETWORK_ID;
+    uint32_t flags = 0;
+    std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(type, role);
+
+    auto sppDevice = std::make_shared<AdapterDeviceInfo>();
+    sppDevice->name_ = "Virtual Audio Spp";
+    auto uniDevice = std::make_shared<AdapterDeviceInfo>();
+    uniDevice->name_ = "Virtual Audio Unidirectional Spp";
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo->adapterName = ADAPTER_TYPE_VA;
+    sppDevice->adapterInfo_ = adapterInfo;
+    uniDevice->adapterInfo_ = adapterInfo;
+
+    std::set<std::shared_ptr<AdapterDeviceInfo>> deviceSet;
+    deviceSet.insert(sppDevice);
+    deviceSet.insert(uniDevice);
+    audioPolicyConfigData->deviceInfoMap[deviceMapKey] = deviceSet;
+
+    EXPECT_EQ(audioPolicyConfigData->GetAdapterDeviceInfo(
+        type, role, networkId, flags, 0, "", false), sppDevice);
+    EXPECT_EQ(audioPolicyConfigData->GetAdapterDeviceInfo(
+        type, role, networkId, flags, 0, "", true), uniDevice);
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
 * @tc.number: AudioPolicyConfigData_015
 * @tc.desc  : Test PolicyAdapterInfo GetAdapterType
 */

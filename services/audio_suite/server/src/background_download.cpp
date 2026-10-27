@@ -109,6 +109,7 @@ int32_t BackgroundDownload::Init()
 
 void BackgroundDownload::ProcessPendingDownloads()
 {
+    CHECK_AND_RETURN_LOG(!stopped_.load(), "BackgroundDownload stopped, skip ProcessPendingDownloads");
     std::vector<std::pair<std::string, int32_t>> toProcess;
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -162,12 +163,15 @@ void BackgroundDownload::ProcessPendingDownloads()
 
 void BackgroundDownload::Release()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (subscriber_ != nullptr) {
-        EventFwk::CommonEventManager::UnSubscribeCommonEvent(subscriber_);
-        subscriber_ = nullptr;
-        AUDIO_INFO_LOG("Release finish, BackgroundDownload remove subscriber");
+    std::shared_ptr<EventSubscriber> subscriber;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        CHECK_AND_RETURN_LOG(subscriber_ != nullptr,
+                             "subscriber_ is nullptr, skip unsubscribe");
+        subscriber = std::move(subscriber_);
     }
+    EventFwk::CommonEventManager::UnSubscribeCommonEvent(subscriber);
+    AUDIO_INFO_LOG("Release finish, BackgroundDownload remove subscriber");
 }
 
 bool BackgroundDownload::AreConditionsMet(const std::string& featureName)
@@ -208,11 +212,10 @@ bool BackgroundDownload::IsWifiConnected()
 #if !defined(AUDIOSUITE_SA_UT) && defined(AUDIO_SUITE_ROM_DOWNLOAD_NET_MANAGER)
     NetManagerStandard::NetHandle handle;
     int32_t ret = NetManagerStandard::NetConnClient::GetInstance().GetDefaultNet(handle);
-    if (ret != 0) {
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, false, "GetDefaultNet failed, ret:%{public}d", ret);
     NetManagerStandard::NetAllCapabilities netAllCap;
-    NetManagerStandard::NetConnClient::GetInstance().GetNetCapabilities(handle, netAllCap);
+    int32_t capRet = NetManagerStandard::NetConnClient::GetInstance().GetNetCapabilities(handle, netAllCap);
+    CHECK_AND_RETURN_RET_LOG(capRet == 0, false, "GetNetCapabilities failed, ret:%{public}d", capRet);
     const std::set<NetManagerStandard::NetBearType> &types = netAllCap.bearerTypes_;
     return types.count(NetManagerStandard::BEARER_WIFI);
 #else
@@ -236,8 +239,10 @@ bool BackgroundDownload::IsBatteryLevelMet()
 {
 #if !defined(AUDIOSUITE_SA_UT) && defined(AUDIO_SUITE_ROM_DOWNLOAD_BATTERY_MANAGER)
     auto &batteryService = OHOS::PowerMgr::BatterySrvClient::GetInstance();
-    uint32_t capacity = static_cast<uint32_t>(batteryService.GetCapacity());
-    return capacity > BACKGROUND_DOWNLOAD_BATTERY_LEVEL;
+    int32_t capacity = batteryService.GetCapacity();
+    CHECK_AND_RETURN_RET_LOG(capacity >= 0, false,
+        "GetCapacity failed, capacity:%{public}d", capacity);
+    return static_cast<uint32_t>(capacity) > BACKGROUND_DOWNLOAD_BATTERY_LEVEL;
 #else
     return true;
 #endif

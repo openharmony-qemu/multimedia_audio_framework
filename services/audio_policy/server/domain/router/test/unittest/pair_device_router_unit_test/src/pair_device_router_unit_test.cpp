@@ -29,15 +29,28 @@ namespace AudioStandard {
 
 void PairDeviceRouterUnitTest::SetUpTestCase(void) {}
 void PairDeviceRouterUnitTest::TearDownTestCase(void) {}
-void PairDeviceRouterUnitTest::SetUp(void) {}
-void PairDeviceRouterUnitTest::TearDown(void) {}
+
+void PairDeviceRouterUnitTest::SetUp(void)
+{
+    systemOutputs_ = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    connectedDevices_ = AudioDeviceManager::GetAudioDeviceManager().connectedDevices_;
+}
+
+void PairDeviceRouterUnitTest::TearDown(void)
+{
+    auto &selectStrategy = AudioRouterSelectStrategy::GetInstance();
+    selectStrategy.OnAppDied(UID);
+    selectStrategy.UpdateCurrentOutputDevice(SYSTEM_UID, systemOutputs_);
+
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_ = connectedDevices_;
+}
 
 /**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_001
- * @tc.desc  : Test PairDeviceRouter GetMediaRenderDevice interface.
+ * @tc.name  : Test GetMediaRenderDevice.
+ * @tc.number: GetMediaRenderDevice_001
+ * @tc.desc  : Test GetMediaRenderDevice with STREAM_USAGE_MEDIA.
  */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_001, TestSize.Level4)
+HWTEST_F(PairDeviceRouterUnitTest, GetMediaRenderDevice_001, TestSize.Level4)
 {
     PairDeviceRouter router;
     auto dev = router.GetMediaRenderDevice(STREAM_USAGE_MEDIA, 0);
@@ -46,107 +59,24 @@ HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_001, TestSize.Level4)
 }
 
 /**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_002
- * @tc.desc  : Test PairDeviceRouter GetCallCaptureDevice interface.
+ * @tc.name  : Test GetMediaRenderDevice.
+ * @tc.number: GetMediaRenderDevice_002
+ * @tc.desc  : Test GetMediaRenderDevice with STREAM_USAGE_MUSIC.
  */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_002, TestSize.Level4)
+HWTEST_F(PairDeviceRouterUnitTest, GetMediaRenderDevice_002, TestSize.Level4)
 {
     PairDeviceRouter router;
-    auto dev = router.GetCallCaptureDevice(static_cast<SourceType>(0), 101, 201);
+    auto dev = router.GetMediaRenderDevice(STREAM_USAGE_MUSIC, 0);
     ASSERT_NE(dev, nullptr);
+    EXPECT_EQ(dev->getType(), DeviceType::DEVICE_TYPE_NONE);
 }
 
 /**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_003
- * @tc.desc  : Test PairDeviceRouter GetCallCaptureDevice interface.
+ * @tc.name  : Test GetCallRenderDevice.
+ * @tc.number: GetCallRenderDevice_001
+ * @tc.desc  : Test GetCallRenderDevice interface.
  */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_003, TestSize.Level4)
-{
-    PairDeviceRouter router;
-    auto dev = router.GetCallCaptureDevice(static_cast<SourceType>(0), 102, 202);
-    ASSERT_NE(dev, nullptr);
-}
-
-/**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_004
- * @tc.desc  : Test PairDeviceRouter GetCallCaptureDevice interface.
- */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_004, TestSize.Level4)
-{
-    PairDeviceRouter router;
-    auto dev = router.GetCallCaptureDevice(static_cast<SourceType>(0), 103, 203);
-    ASSERT_NE(dev, nullptr);
-}
-
-/**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_005
- * @tc.desc  : Test PairDeviceRouter GetCallCaptureDevice interface.
- */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_005, TestSize.Level4)
-{
-    PairDeviceRouter router;
-    auto dev = router.GetCallCaptureDevice(static_cast<SourceType>(0), 104, 104);
-    ASSERT_NE(dev, nullptr);
-}
-
-/**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_006
- * @tc.desc  : Test PairDeviceRouter GetCallCaptureDevice interface.
- */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_006, TestSize.Level4)
-{
-    PairDeviceRouter router;
-    auto dev = router.GetCallCaptureDevice(static_cast<SourceType>(0), 105, 205);
-    ASSERT_NE(dev, nullptr);
-}
-
-/**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_007
- * @tc.desc  : Test PairDeviceRouter GetCallCaptureDevice interface.
- */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_007, TestSize.Level4)
-{
-    PairDeviceRouter router;
-    auto dev = router.GetCallCaptureDevice(static_cast<SourceType>(0), 106, 206);
-    ASSERT_NE(dev, nullptr);
-}
-
-/**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_008
- * @tc.desc  : Test PairDeviceRouter GetCallCaptureDevice interface.
- */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_008, TestSize.Level4)
-{
-    PairDeviceRouter router;
-    auto dev = router.GetCallCaptureDevice(static_cast<SourceType>(0), 107, 207);
-    ASSERT_NE(dev, nullptr);
-}
-
-/**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_009
- * @tc.desc  : Test PairDeviceRouter GetCallCaptureDevice interface.
- */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_009, TestSize.Level4)
-{
-    PairDeviceRouter router;
-    auto dev = router.GetCallCaptureDevice(static_cast<SourceType>(0), 108, 208);
-    ASSERT_NE(dev, nullptr);
-}
-
-/**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_010
- * @tc.desc  : Test PairDeviceRouter GetCallRenderDevice interface.
- */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_010, TestSize.Level4)
+HWTEST_F(PairDeviceRouterUnitTest, GetCallRenderDevice_001, TestSize.Level4)
 {
     PairDeviceRouter router;
     auto dev = router.GetCallRenderDevice(STREAM_USAGE_VOICE_COMMUNICATION, 0);
@@ -154,11 +84,11 @@ HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_010, TestSize.Level4)
 }
 
 /**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_011
- * @tc.desc  : Test PairDeviceRouter GetRingRenderDevices interface.
+ * @tc.name  : Test GetRingRenderDevices.
+ * @tc.number: GetRingRenderDevices_001
+ * @tc.desc  : Test GetRingRenderDevices interface.
  */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_011, TestSize.Level4)
+HWTEST_F(PairDeviceRouterUnitTest, GetRingRenderDevices_001, TestSize.Level4)
 {
     PairDeviceRouter router;
     auto descs = router.GetRingRenderDevices(STREAM_USAGE_RINGTONE, 0);
@@ -166,11 +96,11 @@ HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_011, TestSize.Level4)
 }
 
 /**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_012
- * @tc.desc  : Test PairDeviceRouter GetRecordCaptureDevice interface.
+ * @tc.name  : Test GetRecordCaptureDevice.
+ * @tc.number: GetRecordCaptureDevice_001
+ * @tc.desc  : Test GetRecordCaptureDevice interface.
  */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_012, TestSize.Level4)
+HWTEST_F(PairDeviceRouterUnitTest, GetRecordCaptureDevice_001, TestSize.Level4)
 {
     PairDeviceRouter router;
     auto dev = router.GetRecordCaptureDevice(SOURCE_TYPE_MIC, 0);
@@ -179,11 +109,11 @@ HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_012, TestSize.Level4)
 }
 
 /**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_013
- * @tc.desc  : Test PairDeviceRouter GetToneRenderDevice interface.
+ * @tc.name  : Test GetToneRenderDevice.
+ * @tc.number: GetToneRenderDevice_001
+ * @tc.desc  : Test GetToneRenderDevice interface.
  */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_013, TestSize.Level4)
+HWTEST_F(PairDeviceRouterUnitTest, GetToneRenderDevice_001, TestSize.Level4)
 {
     PairDeviceRouter router;
     auto dev = router.GetToneRenderDevice(STREAM_USAGE_MEDIA, 0);
@@ -192,134 +122,204 @@ HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_013, TestSize.Level4)
 }
 
 /**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_014
- * @tc.desc  : Test PairDeviceRouter GetRouterType interface.
+ * @tc.name  : Test GetRouterType.
+ * @tc.number: GetRouterType_001
+ * @tc.desc  : Test GetRouterType interface.
  */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_014, TestSize.Level4)
+HWTEST_F(PairDeviceRouterUnitTest, GetRouterType_001, TestSize.Level4)
 {
     PairDeviceRouter router;
     EXPECT_EQ(router.GetRouterType(), ROUTER_TYPE_PAIR_DEVICE);
 }
 
 /**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_015
- * @tc.desc  : Test PairDeviceRouter GetClassName interface.
+ * @tc.name  : Test GetClassName.
+ * @tc.number: GetClassName_001
+ * @tc.desc  : Test GetClassName interface.
  */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_015, TestSize.Level4)
+HWTEST_F(PairDeviceRouterUnitTest, GetClassName_001, TestSize.Level4)
 {
     PairDeviceRouter router;
     EXPECT_EQ(router.GetClassName(), "pair_device_router");
 }
 
 /**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_016
- * @tc.desc  : Test GetCallCaptureDevice with valid pairDevice, isEnable=true, CONNECTED, no exception.
+ * @tc.name  : Test GetCallCaptureDevice.
+ * @tc.number: GetCallCaptureDevice_001
+ * @tc.desc  : Test GetCallCaptureDevice when connected device not found, returns empty.
  */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_016, TestSize.Level4)
+HWTEST_F(PairDeviceRouterUnitTest, GetCallCaptureDevice_001, TestSize.Level4)
 {
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceId_ = 1;
-    auto pairDev = std::make_shared<AudioDeviceDescriptor>();
-    pairDev->connectState_ = ConnectState::CONNECTED;
-    pairDev->exceptionFlag_ = false;
-    pairDev->isEnable_ = true;
-    pairDev->deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
-    desc->pairDeviceDescriptor_ = pairDev;
-
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(desc);
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_ = {};
 
     PairDeviceRouter router;
-    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_MIC, 200, 300);
-    ASSERT_NE(dev, nullptr);
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-}
-
-/**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_017
- * @tc.desc  : Test GetCallCaptureDevice with pairDevice SIMULATED_CONNECTED returns empty.
- */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_017, TestSize.Level4)
-{
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceId_ = 2;
-    auto pairDev = std::make_shared<AudioDeviceDescriptor>();
-    pairDev->connectState_ = ConnectState::SIMULATED_CONNECTED;
-    pairDev->exceptionFlag_ = false;
-    pairDev->isEnable_ = true;
-    desc->pairDeviceDescriptor_ = pairDev;
-
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(desc);
-
-    PairDeviceRouter router;
-    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_MIC, 201, 301);
+    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_MIC, UID, SESSION);
     ASSERT_NE(dev, nullptr);
     EXPECT_EQ(dev->getType(), DeviceType::DEVICE_TYPE_NONE);
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
 }
 
 /**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_018
- * @tc.desc  : Test GetCallCaptureDevice with pairDevice disabled but isScoStateConnect=true.
- */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_018, TestSize.Level4)
-{
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceId_ = 3;
-    auto pairDev = std::make_shared<AudioDeviceDescriptor>();
-    pairDev->connectState_ = ConnectState::CONNECTED;
-    pairDev->exceptionFlag_ = false;
-    pairDev->isEnable_ = false;
-    pairDev->deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
-    desc->pairDeviceDescriptor_ = pairDev;
-
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(desc);
-
-    PairDeviceRouter router;
-    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_MIC, 202, 302);
-    ASSERT_NE(dev, nullptr);
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-}
-
-/**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_019
+ * @tc.name  : Test GetCallCaptureDevice.
+ * @tc.number: GetCallCaptureDevice_002
  * @tc.desc  : Test GetCallCaptureDevice with nullptr pairDevice returns empty.
  */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_019, TestSize.Level4)
+HWTEST_F(PairDeviceRouterUnitTest, GetCallCaptureDevice_002, TestSize.Level4)
 {
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceId_ = 4;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = 0;
     desc->pairDeviceDescriptor_ = nullptr;
 
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(desc);
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_ = { desc };
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(UID, { desc });
 
     PairDeviceRouter router;
-    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_MIC, 203, 303);
+    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_MIC, UID, SESSION);
     ASSERT_NE(dev, nullptr);
     EXPECT_EQ(dev->getType(), DeviceType::DEVICE_TYPE_NONE);
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
 }
 
 /**
- * @tc.name  : Test PairDeviceRouter.
- * @tc.number: PairDeviceRouter_020
- * @tc.desc  : Test GetMediaRenderDevice with STREAM_USAGE_MUSIC.
+ * @tc.name  : Test GetCallCaptureDevice.
+ * @tc.number: GetCallCaptureDevice_003
+ * @tc.desc  : Test GetCallCaptureDevice with pairDevice SIMULATED_CONNECTED returns empty.
  */
-HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_020, TestSize.Level4)
+HWTEST_F(PairDeviceRouterUnitTest, GetCallCaptureDevice_003, TestSize.Level4)
 {
+    auto desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = 0;
+    auto pairDev = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_MIC, DeviceRole::INPUT_DEVICE);
+    pairDev->connectState_ = ConnectState::SIMULATED_CONNECTED;
+    desc->pairDeviceDescriptor_ = pairDev;
+
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_ = { desc };
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(UID, { desc });
+
     PairDeviceRouter router;
-    auto dev = router.GetMediaRenderDevice(STREAM_USAGE_MUSIC, 0);
+    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_MIC, UID, SESSION);
     ASSERT_NE(dev, nullptr);
     EXPECT_EQ(dev->getType(), DeviceType::DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test GetCallCaptureDevice.
+ * @tc.number: GetCallCaptureDevice_004
+ * @tc.desc  : Test GetCallCaptureDevice with pairDevice SUSPEND_CONNECTED returns empty.
+ */
+HWTEST_F(PairDeviceRouterUnitTest, GetCallCaptureDevice_004, TestSize.Level4)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = 0;
+    auto pairDev = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::INPUT_DEVICE);
+    pairDev->connectState_ = ConnectState::SUSPEND_CONNECTED;
+    desc->pairDeviceDescriptor_ = pairDev;
+
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_ = { desc };
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(UID, { desc });
+
+    PairDeviceRouter router;
+    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_MIC, UID, SESSION);
+    ASSERT_NE(dev, nullptr);
+    EXPECT_EQ(dev->getType(), DeviceType::DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test GetCallCaptureDevice.
+ * @tc.number: GetCallCaptureDevice_005
+ * @tc.desc  : Test GetCallCaptureDevice with pairDevice exceptionFlag=true returns empty.
+ */
+HWTEST_F(PairDeviceRouterUnitTest, GetCallCaptureDevice_005, TestSize.Level4)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = 0;
+    auto pairDev = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::INPUT_DEVICE);
+    pairDev->exceptionFlag_ = true;
+    desc->pairDeviceDescriptor_ = pairDev;
+
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_ = { desc };
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(UID, { desc });
+
+    PairDeviceRouter router;
+    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_MIC, UID, SESSION);
+    ASSERT_NE(dev, nullptr);
+    EXPECT_EQ(dev->getType(), DeviceType::DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test GetCallCaptureDevice.
+ * @tc.number: GetCallCaptureDevice_006
+ * @tc.desc  : Test GetCallCaptureDevice with pairDevice disabled, returns empty.
+ */
+HWTEST_F(PairDeviceRouterUnitTest, GetCallCaptureDevice_006, TestSize.Level4)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = 0;
+    auto pairDev = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::INPUT_DEVICE);
+    pairDev->isEnable_ = false;
+    desc->pairDeviceDescriptor_ = pairDev;
+
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_ = { desc };
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(UID, { desc });
+
+    PairDeviceRouter router;
+    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_MIC, UID, SESSION);
+    ASSERT_NE(dev, nullptr);
+    EXPECT_EQ(dev->getType(), DeviceType::DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test GetCallCaptureDevice.
+ * @tc.number: GetCallCaptureDevice_007
+ * @tc.desc  : Test GetCallCaptureDevice with BLUETOOTH_SCO pairDevice.
+ */
+HWTEST_F(PairDeviceRouterUnitTest, GetCallCaptureDevice_007, TestSize.Level4)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = 0;
+    auto pairDev = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::INPUT_DEVICE);
+    desc->pairDeviceDescriptor_ = pairDev;
+
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_ = { desc };
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(UID, { desc });
+
+    PairDeviceRouter router;
+    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_MIC, UID, SESSION);
+    ASSERT_NE(dev, nullptr);
+    EXPECT_EQ(Bluetooth::AudioHfpManager::IsAudioScoStateConnect(),
+        dev->getType() == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO);
+}
+
+/**
+ * @tc.name  : Test GetCallCaptureDevice.
+ * @tc.number: GetCallCaptureDevice_008
+ * @tc.desc  : Test GetCallCaptureDevice with available non-SCO pairDevice returns pairDevice.
+ */
+HWTEST_F(PairDeviceRouterUnitTest, GetCallCaptureDevice_008, TestSize.Level4)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_WIRED_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceId_ = 0;
+    auto pairDev = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_WIRED_HEADSET, DeviceRole::INPUT_DEVICE);
+    desc->pairDeviceDescriptor_ = pairDev;
+
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_ = { desc };
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(UID, { desc });
+
+    PairDeviceRouter router;
+    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_MIC, UID, SESSION);
+    ASSERT_NE(dev, nullptr);
+    EXPECT_EQ(dev->getType(), DeviceType::DEVICE_TYPE_WIRED_HEADSET);
 }
 
 } // namespace AudioStandard

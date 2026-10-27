@@ -1007,7 +1007,9 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSensorState_001, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->headTrackingEnabled_ = true;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
-    AudioEffectChainManager::GetInstance()->UpdateSensorState();
+    std::lock_guard<std::mutex> sensorLock(AudioEffectChainManager::GetInstance()->sensorMutex_);
+    auto sensorAction = AudioEffectChainManager::GetInstance()->UpdateSensorStateLocked();
+    AudioEffectChainManager::GetInstance()->ApplySensorActionLocked(sensorAction, true);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1023,7 +1025,9 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSensorState_002, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->headTrackingEnabled_ = false;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
-    AudioEffectChainManager::GetInstance()->UpdateSensorState();
+    std::lock_guard<std::mutex> sensorLock(AudioEffectChainManager::GetInstance()->sensorMutex_);
+    auto sensorAction = AudioEffectChainManager::GetInstance()->UpdateSensorStateLocked();
+    AudioEffectChainManager::GetInstance()->ApplySensorActionLocked(sensorAction, false);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1046,7 +1050,9 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSensorState_003, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->UpdateSensorState();
+    std::lock_guard<std::mutex> sensorLock(AudioEffectChainManager::GetInstance()->sensorMutex_);
+    auto sensorAction = AudioEffectChainManager::GetInstance()->UpdateSensorStateLocked();
+    AudioEffectChainManager::GetInstance()->ApplySensorActionLocked(sensorAction, false);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -3165,11 +3171,40 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationStateInner_001, Test
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioSpatializationState spatializationState = {true, true};
-    int32_t result = AudioEffectChainManager::GetInstance()->UpdateSpatializationStateInner(spatializationState);
+    auto sensorAction = AudioEffectChainManager::SensorAction::SENSOR_ACTION_NONE;
+    int32_t result = AudioEffectChainManager::GetInstance()->UpdateSpatializationStateInner(spatializationState,
+        sensorAction);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->spatializationEnabled_ = false;
-    result = AudioEffectChainManager::GetInstance()->UpdateSpatializationStateInner(spatializationState);
+    result = AudioEffectChainManager::GetInstance()->UpdateSpatializationStateInner(spatializationState,
+        sensorAction);
     EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+* @tc.name   : Test concurrent head tracking flip ordering
+* @tc.number : UpdateSpatializationState_Concurrent_001
+* @tc.desc   : Two threads flip headTrackingEnabled in opposite directions; the entry-level
+*              sensorMutex_ serialization keeps decide+apply ordered and deadlock-free.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_Concurrent_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    auto flipper = [](bool headTracking) {
+        AudioSpatializationState spatializationState = {true, headTracking};
+        for (int32_t i = 0; i < 50; ++i) {
+            AudioEffectChainManager::GetInstance()->UpdateSpatializationState(spatializationState);
+        }
+    };
+    std::thread enableThread(flipper, true);
+    std::thread disableThread(flipper, false);
+    enableThread.join();
+    disableThread.join();
+    // Joins returning means no deadlock; a final full-path call still succeeds afterwards.
+    AudioSpatializationState finalState = {true, true};
+    EXPECT_EQ(SUCCESS, AudioEffectChainManager::GetInstance()->UpdateSpatializationState(finalState));
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**

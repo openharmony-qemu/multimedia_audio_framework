@@ -231,6 +231,11 @@ void AudioAccessory::NotifyOpenInputStream(std::shared_ptr<VAInputStreamCallback
     // Handled by stream implementation
 }
 
+void AudioAccessory::NotifyStartStreamFailed()
+{
+    AudioPolicyManager::GetInstance().SetVADeviceExceptionFlag(macAddress_, true);
+}
+
 VADevice AudioAccessory::MakeVADevice() const
 {
     VADevice device;

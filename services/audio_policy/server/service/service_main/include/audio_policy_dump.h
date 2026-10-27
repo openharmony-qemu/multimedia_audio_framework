@@ -65,6 +65,7 @@ public:
     void EffectManagerInfoDump(std::string &dumpString);
     void MicrophoneMuteInfoDump(std::string &dumpString);
     void AudioPolicyBootDump(std::string &dumpString);
+    void IdHandlerInfoDump(std::string &dumpString);
     void RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime);
     void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
     void RecordBootAnimationClientStateTime(const BootAnimationInfo &info);

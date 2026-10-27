@@ -38,6 +38,7 @@ enum VADeviceRole {
 enum VADeviceType {
     VA_DEVICE_TYPE_NONE = 0,
     VA_DEVICE_TYPE_BT_SPP = 1,
+    VA_DEVICE_TYPE_NEARLINK_PORT = 2,
 };
 
 // Noise reduction mode for external microphone devices

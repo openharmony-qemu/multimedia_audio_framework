@@ -22,6 +22,7 @@
 #include "audio_router_follow_strategy.h"
 #include "audio_router_independent_strategy.h"
 #include "audio_router_infra.h"
+#include "audio_rollback_manager.h"
 #include "audio_device_manager.h"
 #include "audio_policy_log.h"
 #include "audio_policy_utils.h"
@@ -341,7 +342,8 @@ void AudioRouterSelectStrategy::ExcludeDevices(const std::vector<std::shared_ptr
     AudioDeviceUsage usage)
 {
     auto &routerInfra = AudioRouterInfra::GetInstance();
-
+    auto &rollback = AudioRollbackManager::GetInstance();
+    std::vector<std::pair<SelectDeviceType, const AudioDeviceDescriptor&>> params;
     routerInfra.Lock();
     for (const auto &device : devices) {
         if (device == nullptr) {
@@ -361,11 +363,15 @@ void AudioRouterSelectStrategy::ExcludeDevices(const std::vector<std::shared_ptr
         };
         for (const auto &type : types) {
             if ((usage & type.first) != 0) {
+                params.push_back({type.second, *device});
                 routerInfra.ClearAllSelectSelectDevice(type.second, simpleDesc);
             }
         }
     }
     routerInfra.Unlock();
+    for (auto &item : params) {
+        rollback.ExcludeSelection(item.first, item.second);
+    }
 }
 
 void AudioRouterSelectStrategy::ExcludePairDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
@@ -601,6 +607,7 @@ void AudioRouterSelectStrategy::ClearAllSelectSelectDevice(PreferredType preferr
 
 void AudioRouterSelectStrategy::OnAppDied(int32_t uid)
 {
+    AudioRollbackManager::GetInstance().OnAppDied(uid);
     AudioRouterInfra::GetInstance().OnAppDied(uid);
 }
 }

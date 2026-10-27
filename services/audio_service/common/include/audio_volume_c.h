@@ -70,7 +70,10 @@ void RemoveStopFadeoutState(uint32_t streamIndex);
 
 int32_t GetSimpleBufferAvg(uint8_t *buffer, int32_t length);
 
-enum FadeStrategy GetFadeStrategy(uint64_t expectedPlaybackDurationMs);
+// Classify fade strategy by expected playback duration in bytes. Interval boundaries (10ms/40ms) are
+// reverse-computed in byte domain inside, so the caller-supplied byte value is never multiplied.
+enum FadeStrategy GetFadeStrategy(uint64_t expectedPlaybackDurationBytes, uint64_t byteSizePerFrame,
+    uint32_t sampleRate);
 
 void SetOffloadType(uint32_t streamIndex, int32_t offloadType);
 

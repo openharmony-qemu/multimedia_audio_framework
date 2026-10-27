@@ -15,6 +15,7 @@
 #ifndef HPAE_MANAGER_HIGH_RISK_INTERFACE_FUZZER_H
 #define HPAE_MANAGER_HIGH_RISK_INTERFACE_FUZZER_H
 
+#include <atomic>
 #include "audio_service_hpae_callback.h"
 #include "audio_info.h"
 #include "hpae_manager.h"
@@ -37,6 +38,7 @@ public:
     void OnReloadAudioPortCb(int32_t portId) override
     {
         portId_ = portId;
+        reloadCbReceived_.store(true);
     }
     
     void OnSetSinkMuteCb(int32_t result) override
@@ -115,6 +117,11 @@ public:
         return portId_;
     }
 
+    bool IsReloadCbReceived() const noexcept
+    {
+        return reloadCbReceived_.load();
+    }
+
     int32_t GetCloseAudioPortResult() const noexcept
     {
         return closeAudioPortResult_;
@@ -187,6 +194,7 @@ public:
 
 private:
     int32_t portId_ = -1;
+    std::atomic<bool> reloadCbReceived_ {false};
     int32_t closeAudioPortResult_ = -1;
     int32_t setSinkMuteResult_ = -1;
     int32_t getAllSinkInputsResult_ = -1;
@@ -228,6 +236,7 @@ public:
 
     int32_t sinkPortId_ = -1;
     int32_t sourcePortId_ = -1;
+    int32_t reloadPortId_ = -1;
 };
 } // namespace AudioStandard
 } // namespace OHOS

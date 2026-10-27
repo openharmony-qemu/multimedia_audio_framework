@@ -416,6 +416,26 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, FaultCode_RenderSinkInit_NullSink, TestS
 }
 
 /**
+ * @tc.name  : renderSinkInit_InitFailedReleasesSink_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkInit releases audioRendererSink_ and renderId_ when Init fails.
+ */
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, renderSinkInit_InitFailedReleasesSink_001, TestSize.Level0)
+{
+    EXPECT_CALL(*mockSink_, IsInited()).WillOnce(Return(false));
+    EXPECT_CALL(*mockSink_, Init(_)).WillOnce(Return(ERROR));
+    offloadNode_->renderId_ = 1;
+
+    IAudioSinkAttr attr;
+    attr.adapterName = "offload";
+    int32_t result = offloadNode_->RenderSinkInit(attr);
+    EXPECT_EQ(result, ERROR);
+    EXPECT_EQ(offloadNode_->audioRendererSink_, nullptr);
+    EXPECT_EQ(offloadNode_->renderId_, HDI_INVALID_ID);
+    EXPECT_EQ(offloadNode_->RenderSinkDeInit(), ERR_ILLEGAL_STATE);
+}
+
+/**
  * @tc.name  : FaultCode_RenderSinkDeInit_NullSink
  * @tc.type  : FUNC
  * @tc.desc  : Test RenderSinkDeInit returns ERR_ILLEGAL_STATE when audioRendererSink_ is nullptr,

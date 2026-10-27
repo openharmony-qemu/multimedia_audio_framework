@@ -110,60 +110,6 @@ HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_004, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test IsStreamSupported API
- * @tc.type  : FUNC
- * @tc.number: IsPlaybackChannelRelatedInfoValid_001
- * @tc.desc  : Test IsPlaybackChannelRelatedInfoValid interface.
- */
-HWTEST(IAudioStreamUnitTest, IsPlaybackChannelRelatedInfoValid_001, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
-        std::make_shared<CapturerInClientInner>(AudioStreamType::STREAM_MUSIC, 0);
-    std::uint8_t audioChannel = 100;
-    std::uint64_t channelLayout = 100;
-    EXPECT_FALSE(IAudioStream::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
-
-    audioChannel = 2;
-    channelLayout = 100;
-    EXPECT_FALSE(IAudioStream::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
-
-    audioChannel = 2;
-    channelLayout = 4;
-    EXPECT_FALSE(IAudioStream::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
-
-    audioChannel = 2;
-    channelLayout = 3;
-    EXPECT_TRUE(IAudioStream::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
-}
-
-/**
- * @tc.name  : Test IsStreamSupported API
- * @tc.type  : FUNC
- * @tc.number: IsRecordChannelRelatedInfoValid_001
- * @tc.desc  : Test IsRecordChannelRelatedInfoValid interface.
- */
-HWTEST(IAudioStreamUnitTest, IsRecordChannelRelatedInfoValid_001, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
-        std::make_shared<CapturerInClientInner>(AudioStreamType::STREAM_MUSIC, 0);
-    std::uint8_t audioChannel = 100;
-    std::uint64_t channelLayout = 100;
-    EXPECT_FALSE(IAudioStream::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
-
-    audioChannel = 2;
-    channelLayout = 100;
-    EXPECT_FALSE(IAudioStream::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
-
-    audioChannel = 2;
-    channelLayout = 4;
-    EXPECT_FALSE(IAudioStream::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
-
-    audioChannel = 2;
-    channelLayout = 3;
-    EXPECT_TRUE(IAudioStream::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
-}
-
-/**
  * @tc.name  : Test CheckRendererAudioStreamInfo API
  * @tc.type  : FUNC
  * @tc.number: CheckRendererAudioStreamInfo_001

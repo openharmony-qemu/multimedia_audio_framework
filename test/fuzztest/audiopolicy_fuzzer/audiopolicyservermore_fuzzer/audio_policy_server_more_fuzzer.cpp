@@ -615,6 +615,23 @@ void FuzzIsPlaybackSupported()
     server->SetDeviceActive(GetData<int32_t>(), GetData<int32_t>() % MAXVALUE == 1, GetData<int32_t>());
 }
 
+// CheckAudioRendererStreamInfoSupport
+void FuzzCheckAudioRendererStreamInfoSupport()
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = static_cast<AudioSamplingRate>(GetData<int32_t>());
+    streamInfo.encoding = static_cast<AudioEncodingType>(GetData<int32_t>());
+    streamInfo.format = static_cast<AudioSampleFormat>(GetData<int32_t>());
+    streamInfo.channels = static_cast<AudioChannel>(GetData<int32_t>());
+    streamInfo.channelLayout = static_cast<AudioChannelLayout>(GetData<int64_t>());
+    streamInfo.customSampleRate = GetData<uint32_t>();
+    streamInfo.bitrate = GetData<int32_t>();
+    bool support = false;
+    server->CheckAudioRendererStreamInfoSupport(streamInfo, support);
+}
+
 // Lines 2432-2474: IsDeviceActive, GetActiveOutputDevice, GetDmDeviceType, GetActiveInputDevice
 void FuzzIsDeviceActive()
 {
@@ -1398,6 +1415,7 @@ TestFuncs g_testFuncs[] = {
     FuzzSetClientCallbacks,
     FuzzIsStreamActiveByStreamUsage,
     FuzzIsPlaybackSupported,
+    FuzzCheckAudioRendererStreamInfoSupport,
     FuzzIsDeviceActive,
     FuzzSetRingerModeInner,
     FuzzInitMicrophoneMute,

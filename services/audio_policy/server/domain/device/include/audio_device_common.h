@@ -58,6 +58,7 @@ public:
         static AudioDeviceCommon instance;
         return instance;
     }
+    static void FetchAndRoute(const char* caller = "");
     void Init(std::shared_ptr<AudioPolicyServerHandler> handler);
     void DeInit();
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,

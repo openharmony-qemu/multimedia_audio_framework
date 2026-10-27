@@ -23,6 +23,7 @@
 #include "hpae_format_convert.h"
 #include "audio_utils.h"
 #include "hpae_node_common.h"
+#include "util/id_handler.h"
 #include "audio_engine_log.h"
 #include "stream_dfx_manager.h"
 
@@ -53,6 +54,21 @@ HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo, HpaeS
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeRemoteSinkOutputNode::OnTraceInfoChanged()
+{
+    RebuildTraceName();
+}
+
+void HpaeRemoteSinkOutputNode::RebuildTraceName()
+{
+    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
+    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
+    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
+    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
+    processTraceName_ = "HpaeRemoteSinkOutputNode::DoProcess " + rate + ch + len + format;
 }
 
 HpaeRemoteSinkOutputNode::~HpaeRemoteSinkOutputNode()
@@ -103,11 +119,7 @@ void HpaeRemoteSinkOutputNode::HandlePcmDumping(SplitStreamType streamType, char
 
 void HpaeRemoteSinkOutputNode::DoProcess()
 {
-    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
-    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
-    Trace trace("HpaeRemoteSinkOutputNode::DoProcess " + rate + ch + len + format);
+    Trace trace(processTraceName_);
     if (audioRendererSink_ == nullptr) {
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
         return;
@@ -195,9 +207,10 @@ void HpaeRemoteSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaeP
 int32_t HpaeRemoteSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass,
     const std::string &deviceNetId)
 {
-    // Remote path must use deviceNetId (a valid distributed networkId), never macAddress,
-    // otherwise it would be treated as deviceNetworkId by RemoteAudioRenderSink and break routing.
-    const std::string &info = deviceNetId.empty() ? HDI_ID_INFO_DEFAULT : deviceNetId;
+    // Remote routing keys the sink by the distributed networkId; the SelectIdInfo remote
+    // branch returns it verbatim (never macAddress, which is not a legal networkId).
+    HdiIdInfoParam param = {.deviceClass = deviceClass, .networkId = deviceNetId};
+    const std::string info = IdHandler::SelectIdInfo(param);
     renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info, true);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
@@ -236,12 +249,17 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     timer.Start();
 #endif
     int32_t ret = audioRendererSink_->Init(attr);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("RenderSinkInit failed, ret: %{public}d", ret);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
                 BusinessScenario::CREATE, ERR_OPERATION_FAILED),
-        __FUNCTION__, false),
-        "RenderSinkInit failed, ret: %{public}d", ret);
+            __FUNCTION__, false);
+        // Release the sink reference on init failure to avoid leaking renderId_.
+        audioRendererSink_ = nullptr;
+        HdiAdapterManager::GetInstance().ReleaseId(renderId_);
+        return ret;
+    }
     SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();

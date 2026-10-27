@@ -66,6 +66,18 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     }
 #endif
     isNonStandardSampleRate_ = IsNonStandardSampleRate(nodeInfo.GetEffectiveSampleRate());
+    RebuildTraceNames();
+}
+
+void HpaeSinkInputNode::OnTraceInfoChanged()
+{
+    RebuildTraceNames();
+}
+
+void HpaeSinkInputNode::RebuildTraceNames()
+{
+    processTraceName_ = "[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " + GetTraceInfo();
+    underflowTraceName_ = "[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess underflow";
 }
 
 HpaeSinkInputNode::~HpaeSinkInputNode()
@@ -138,7 +150,7 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
 
 void HpaeSinkInputNode::DoProcess()
 {
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " + GetTraceInfo());
+    Trace trace(processTraceName_);
 
     int32_t ret = SUCCESS;
 
@@ -154,7 +166,7 @@ void HpaeSinkInputNode::DoProcess()
             AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
                 static_cast<uint32_t>(appUid_));
         }
-        Trace underflowTrace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess underflow");
+        Trace underflowTrace(underflowTraceName_);
         memset_s(inputAudioBuffer_.GetPcmDataBuffer(), inputAudioBuffer_.Size(), 0, inputAudioBuffer_.Size());
     } else {
         if (pipeType != PIPE_TYPE_UNKNOWN) {
@@ -235,6 +247,7 @@ HpaeSessionState HpaeSinkInputNode::GetState()
 void HpaeSinkInputNode::SetAppUid(int32_t appUid)
 {
     appUid_ = appUid;
+    isSystemApp_ = CheckoutSystemAppUtil::CheckoutSystemApp(appUid_);
 }
 
 int32_t HpaeSinkInputNode::GetAppUid()
@@ -394,8 +407,8 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
         "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
     // offload / direct / non-standard sample rate / SE preheating: never force data
-    bool forceData = (offloadEnable_ || isDirect_ || isNonStandardSampleRate_
-                      || sessionEffectPreheatActive_) ? false : true;
+    bool forceData = (offloadEnable_ || isDirect_ || isNonStandardSampleRate_ || sessionEffectPreheatActive_
+                      || (GetEffectStreamUsage() == STREAM_USAGE_ACCESSIBILITY && isSystemApp_)) ? false : true;
     uint64_t latency = 0;
     OffloadCallbackData callbackData;
     auto nodeCallback = GetNodeStatusCallback().lock();
@@ -415,6 +428,8 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
         .deviceClass = GetDeviceClass(),
         .deviceNetId = GetDeviceNetId(),
         .macAddress = GetMacAddress(),
+        .deviceName = GetDeviceName(),
+        .busAddress = GetBusAddress(),
         .needData = needData,
         .forceData = forceData,
         .writePos_ = callbackData.writePos_,

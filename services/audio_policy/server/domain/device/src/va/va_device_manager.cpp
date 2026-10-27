@@ -19,7 +19,6 @@
 
 #include "va_device_manager.h"
 #include "audio_policy_log.h"
-#include "audio_module_info.h"
 #include "audio_effect_service.h"
 #include "audio_noise_reduction_types.h"
 #include "audio_pipe_manager.h"
@@ -27,12 +26,13 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static const std::string VA_DEVICE_INFO_NAME = "Virtual Audio";
-static const std::string VA_INPUT_PIPE_INFO_NAME = "va_input";
+static const std::string VA_DEVICE_INFO_NAME_SPP = "Virtual Audio Spp";
+static const std::string VA_DEVICE_INFO_NAME_NEARLINK = "Virtual Audio Nearlink";
+static const std::string VA_DEVICE_INFO_NAME_UNIDIRECTIONAL_SPP = "Virtual Audio Unidirectional Spp";
 
 namespace {
 constexpr uint32_t CYCLES_PER_SECOND = 50;
- 
+
 uint32_t GetSampleBytes(AudioSampleFormat format)
 {
     switch (format) {
@@ -70,6 +70,9 @@ std::shared_ptr<AudioDeviceDescriptor> VADeviceManager::ConvertVADeviceToDescrip
     switch (config.type_) {
         case VA_DEVICE_TYPE_BT_SPP:
             desc->deviceType_ = DEVICE_TYPE_BT_SPP;
+            break;
+        case VA_DEVICE_TYPE_NEARLINK_PORT:
+            desc->deviceType_ = DEVICE_TYPE_NEARLINK_PORT;
             break;
         default:
             desc->deviceType_ = DEVICE_TYPE_NONE;
@@ -119,11 +122,13 @@ void VADeviceManager::OnDevicesConnected(
     {
         std::lock_guard<std::mutex> lock(statusMutex_);
         connectedVADeviceMap_[vaDevice->configuration_.address_] = controller;
- 
-        if (!config_.GetAdapterInfo(AudioAdapterType::TYPE_VA)) {
-            RegisterVAAdapterToMap();
-        }
-        AddVAStreamPropToMap(vaDevice->configuration_.properties_);
+
+        std::string pipeName;
+        std::string deviceName;
+        DeviceType deviceType;
+        GetVAPipeAndDeviceName(vaDevice->configuration_, pipeName, deviceName, deviceType);
+        AddVADeviceToAdapter(vaDevice);
+        AddVAStreamPropToMap(vaDevice->configuration_.properties_, pipeName, deviceName);
     }
     sptr<IRemoteObject> controllerObj = controller->AsObject();
     if (controllerObj != nullptr) {
@@ -184,52 +189,49 @@ void VADeviceManager::GetDeviceController(const std::string macAddr, sptr<IRemot
     }
 }
 
-void VADeviceManager::RegisterVAAdapterToMap()
+void VADeviceManager::GetVAPipeAndDeviceName(const VADeviceConfiguration &config,
+    std::string &pipeName, std::string &deviceName, DeviceType &deviceType)
 {
-    PolicyAdapterInfo adapterInfo{};
-    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>(adapterInfo);
+    const bool isNearlink = !config.isUnidirectional_ &&
+        config.type_ == VA_DEVICE_TYPE_NEARLINK_PORT;
+    pipeName = config.isUnidirectional_ ? VA_INPUT_UNIDIRECTIONAL_SPP
+        : (isNearlink ? VA_INPUT_NEARLINK : VA_INPUT_SPP);
+    deviceName = config.isUnidirectional_ ? VA_DEVICE_INFO_NAME_UNIDIRECTIONAL_SPP
+        : (isNearlink ? VA_DEVICE_INFO_NAME_NEARLINK : VA_DEVICE_INFO_NAME_SPP);
+    deviceType = isNearlink ? DEVICE_TYPE_NEARLINK_PORT : DEVICE_TYPE_BT_SPP;
+}
+
+void VADeviceManager::AddVADeviceToAdapter(const std::shared_ptr<VADevice> &vaDevice)
+{
+    CHECK_AND_RETURN_LOG(vaDevice != nullptr, "vaDevice is nullptr");
+    std::string pipeName;
+    std::string deviceName;
+    DeviceType deviceType;
+    GetVAPipeAndDeviceName(vaDevice->configuration_, pipeName, deviceName, deviceType);
+
+    if (config_.EnsureAdapterInputPipe(AudioAdapterType::TYPE_VA, pipeName, deviceName, deviceType)) {
+        return;
+    }
+
+    auto adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
     adapterInfoPtr->adapterName = ADAPTER_TYPE_VA;
-
-    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
-    pipeInfo->adapterInfo_ = adapterInfoPtr;
-    pipeInfo->name_ = VA_INPUT_PIPE_INFO_NAME;
-    pipeInfo->role_ = PIPE_ROLE_INPUT;
-    pipeInfo->supportDevices_.push_back(VA_DEVICE_INFO_NAME);
-
-    AdapterDeviceInfo deviceInfo{};
-    deviceInfo.adapterInfo_ = adapterInfoPtr;
-    deviceInfo.name_ = VA_DEVICE_INFO_NAME;
-    deviceInfo.type_ = DEVICE_TYPE_BT_SPP;
-    deviceInfo.role_ = INPUT_DEVICE;
-    deviceInfo.supportPipes_.push_back(VA_INPUT_PIPE_INFO_NAME);
-    deviceInfo.supportPipeMap_[AudioFlag::AUDIO_INPUT_FLAG_NORMAL] = pipeInfo;
-
-    adapterInfoPtr->deviceInfos.push_back(make_shared<AdapterDeviceInfo>(deviceInfo));
-
-    PaPropInfo paProp = {};
-    paProp.lib_ = "libmodule-hdi-source.z.so";
-    paProp.role_ = "source";
-    paProp.moduleName_ = VIRTUAL_AUDIO;
-
-    pipeInfo->paProp_ = std::move(paProp);
-
-    adapterInfoPtr->pipeInfos.push_back(pipeInfo);
-
+    config_.CreateNormalInputPipeAndDevice(adapterInfoPtr, pipeName, deviceName, deviceType);
     config_.RegisterAdapter(adapterInfoPtr);
 }
 
-void VADeviceManager::AddVAStreamPropToMap(std::list<VAAudioStreamProperty> properties)
+void VADeviceManager::AddVAStreamPropToMap(std::list<VAAudioStreamProperty> properties,
+    const std::string &pipeName, const std::string &deviceName)
 {
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps;
     for (auto vaStreamProp : properties) {
         std::shared_ptr<PipeStreamPropInfo> pipeStreamPropInfo =
             ConvertVADeviceStreamPropertyToPipeStreamPropInfo(vaStreamProp);
         CHECK_AND_RETURN_LOG(pipeStreamPropInfo != nullptr, "pipeStreamPropInfo is null");
-        pipeStreamPropInfo->supportDevices_.push_back(VA_DEVICE_INFO_NAME);
+        pipeStreamPropInfo->supportDevices_.push_back(deviceName);
         streamProps.push_back(pipeStreamPropInfo);
     }
     CHECK_AND_RETURN_LOG(streamProps.size() != 0, "streamProps is empty");
-    config_.RegisterStreamProperty(AudioAdapterType::TYPE_VA, VA_INPUT_PIPE_INFO_NAME, streamProps);
+    config_.RegisterStreamProperty(AudioAdapterType::TYPE_VA, pipeName, streamProps);
 }
 
 std::shared_ptr<PipeStreamPropInfo> VADeviceManager::ConvertVADeviceStreamPropertyToPipeStreamPropInfo(

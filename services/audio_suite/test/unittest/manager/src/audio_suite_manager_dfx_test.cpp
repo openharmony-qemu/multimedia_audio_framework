@@ -317,6 +317,56 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetPureVoiceChangeOptionInvalidParamTe
     AudioSuitePipelineImpl::DeInitGlobal();
 }
 
+// Test SetPureVoiceChangeOption with invalid optionGender range.
+HWTEST_F(AudioSuiteEngineManagerUnitTest, SetPureVoiceChangeOptionInvalidGenderTest, TestSize.Level0)
+{
+    AudioSuitePipelineImpl::InitGlobal();
+
+    auto pipeline = std::make_shared<AudioSuitePipelineImpl>(AudioSuite::PIPELINE_EDIT_MODE, 0);
+
+    // Test optionGender below MIN (PURE_VOICE_CHANGE_GENDER_OPTION_MIN = 1)
+    AudioPureVoiceChangeOption option;
+    option.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(0);
+    option.optionType = PURE_VOICE_CHANGE_TYPE_SEASONED;
+    option.pitch = 0.0f;
+    int32_t ret = pipeline->SetPureVoiceChangeOption(2, option);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    // Test optionGender above MAX (PURE_VOICE_CHANGE_GENDER_OPTION_MAX = 2)
+    option.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(3);
+    option.optionType = PURE_VOICE_CHANGE_TYPE_SEASONED;
+    option.pitch = 0.0f;
+    ret = pipeline->SetPureVoiceChangeOption(2, option);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    AudioSuitePipelineImpl::DeInitGlobal();
+}
+
+// Test SetPureVoiceChangeOption with invalid optionType range.
+HWTEST_F(AudioSuiteEngineManagerUnitTest, SetPureVoiceChangeOptionInvalidTypeTest, TestSize.Level0)
+{
+    AudioSuitePipelineImpl::InitGlobal();
+
+    auto pipeline = std::make_shared<AudioSuitePipelineImpl>(AudioSuite::PIPELINE_EDIT_MODE, 0);
+
+    // Test optionType below MIN (PURE_VOICE_CHANGE_TYPE_MIN = 1)
+    AudioPureVoiceChangeOption option;
+    option.optionGender = PURE_VOICE_CHANGE_FEMALE;
+    option.optionType = static_cast<AudioPureVoiceChangeType>(0);
+    option.pitch = 0.0f;
+    int32_t ret = pipeline->SetPureVoiceChangeOption(2, option);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    // Test optionType above MAX (PURE_VOICE_CHANGE_TYPE_MAX = 7)
+    option.optionGender = PURE_VOICE_CHANGE_FEMALE;
+    option.optionType = static_cast<AudioPureVoiceChangeType>(8);
+    option.pitch = 0.0f;
+    ret = pipeline->SetPureVoiceChangeOption(2, option);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    AudioSuitePipelineImpl::DeInitGlobal();
+}
+
 HWTEST_F(AudioSuiteEngineManagerUnitTest, SetSpaceRenderExtensionParamsInvalidParamTest, TestSize.Level0)
 {
     AudioSuitePipelineImpl::InitGlobal();
@@ -416,7 +466,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetEnvironmentTypeInvalidEnumValueTest
 
     // Test invalid enum value (10) to test deep layer fault interception
     ret = pipeline->SetEnvironmentType(nodeId, static_cast<EnvironmentType>(10));
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     // Destroy node
     ret = pipeline->DestroyNode(nodeId);
@@ -441,7 +491,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetVoiceBeautifierTypeInvalidEnumValue
 
     // Test invalid enum value (10) to test deep layer fault interception
     ret = pipeline->SetVoiceBeautifierType(nodeId, static_cast<VoiceBeautifierType>(10));
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     // Destroy node
     ret = pipeline->DestroyNode(nodeId);
@@ -466,7 +516,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetGeneralVoiceChangeTypeInvalidEnumVa
 
     // Test invalid enum value (20) to test deep layer fault interception
     ret = pipeline->SetGeneralVoiceChangeType(nodeId, static_cast<AudioGeneralVoiceChangeType>(20));
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     // Destroy node
     ret = pipeline->DestroyNode(nodeId);
@@ -491,7 +541,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetSoundFieldTypeInvalidEnumValueTest,
 
     // Test invalid enum value (10) to test deep layer fault interception
     ret = pipeline->SetSoundFieldType(nodeId, static_cast<SoundFieldType>(10));
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     // Destroy node
     ret = pipeline->DestroyNode(nodeId);

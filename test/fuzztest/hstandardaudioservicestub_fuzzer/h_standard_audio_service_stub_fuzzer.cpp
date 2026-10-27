@@ -420,14 +420,16 @@ void SuspendRenderSink(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::string sinkName = provider.ConsumeRandomLengthString();
-    audioServer->SuspendRenderSink(sinkName);
+    std::string macAddress = provider.ConsumeRandomLengthString();
+    audioServer->SuspendRenderSink(sinkName, macAddress);
 }
 
 void RestoreRenderSink(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::string sinkName = provider.ConsumeRandomLengthString();
-    audioServer->RestoreRenderSink(sinkName);
+    std::string macAddress = provider.ConsumeRandomLengthString();
+    audioServer->RestoreRenderSink(sinkName, macAddress);
 }
 
 void LoadHdiEffectModel(FuzzedDataProvider &provider)
@@ -571,7 +573,7 @@ void CreateHdiSinkPort(FuzzedDataProvider &provider)
     std::string idInfo = provider.ConsumeRandomLengthString();
     uint32_t renderId = provider.ConsumeIntegral<uint32_t>();
     IAudioSinkAttr attr;
-    audioServer->CreateHdiSinkPort(deviceClass, idInfo, attr, renderId);
+    audioServer->CreateHdiSinkPort(deviceClass, idInfo, attr, true, renderId);
 }
 
 void CreateSinkPort(FuzzedDataProvider &provider)
@@ -593,7 +595,7 @@ void CreateHdiSourcePort(FuzzedDataProvider &provider)
     std::string idInfo = provider.ConsumeRandomLengthString();
     uint32_t captureId = provider.ConsumeIntegral<uint32_t>();
     IAudioSourceAttr attr;
-    audioServer->CreateHdiSourcePort(deviceClass, idInfo, attr, captureId);
+    audioServer->CreateHdiSourcePort(deviceClass, idInfo, attr, true, captureId);
 }
 
 void CreateSourcePort(FuzzedDataProvider &provider)

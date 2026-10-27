@@ -99,6 +99,8 @@ public:
 
     virtual const std::vector<std::shared_ptr<AudioPipeInfo>> GetPipeList();
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedPipe();
+    std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedPipeForCapturer(
+        const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedRecordPipe();
     std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string adapterName, const uint32_t routeFlag);
     std::shared_ptr<AudioPipeInfo> GetPipeinfoById(AudioIOHandle id);
@@ -226,6 +228,9 @@ public:
     bool IsFocusStandby(uint32_t sessionId);
 
 private:
+    // Filter unused pipes shared by renderer and capturer pipe queries.
+    std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedPipeInternal(
+        const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     bool IsSpecialPipe(uint32_t routeFlag);
     bool IsNormalRecordPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);

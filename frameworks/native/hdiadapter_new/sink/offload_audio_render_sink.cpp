@@ -141,6 +141,7 @@ int32_t OffloadAudioRenderSink::ExecStart()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
     UpdateSinkState(true);
     ChangePipeStatus(PIPE_STATUS_RUNNING);
+    firstFrameRendered_.store(false);
     dumpFileName_ = "offload_sink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" +
         std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
@@ -180,6 +181,7 @@ int32_t OffloadAudioRenderSink::ExecStop(bool flushFirst)
     int32_t ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
     ChangePipeStatus(PIPE_STATUS_STANDBY);
+    firstFrameRendered_.store(false);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("stop fail, ret: %{public}d", ret);
         ctrlState_.store(CtrlState::CTRL_STARTED); // legacy contract: started_ stays true on failure
@@ -432,6 +434,7 @@ int32_t OffloadAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &
     }
 #endif
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
+    firstFrameRendered_.store(true);
     if (writeLen != 0) {
         BufferDesc buffer = { reinterpret_cast<uint8_t *>(&data), len, len };
         AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,

@@ -99,7 +99,7 @@ int32_t AudioVolumeClientManager::SetVolume(AudioVolumeType volumeType, int32_t 
 }
 
 int32_t AudioVolumeClientManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
-    DeviceType deviceType)
+    DeviceType deviceType, std::string macAddress)
 {
     AUDIO_INFO_LOG("%{public}s: volumeType[%{public}d], volumeLevel[%{public}d], deviceType[%{public}d]",
         __func__, volumeType, volumeLevel, deviceType);
@@ -138,7 +138,8 @@ int32_t AudioVolumeClientManager::SetVolumeWithDevice(AudioVolumeType volumeType
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType,
+        0, macAddress);
 }
 
 int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t uid, int32_t zoneId) const
@@ -984,6 +985,16 @@ int32_t AudioVolumeClientManager::SetAppVolumeMuted(int32_t appUid, bool muted, 
     bool ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "SetAppVolumeMuted: No system permission");
     return AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
+}
+
+int32_t AudioVolumeClientManager::SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("SetAppVolumeMuteAndHideVolumeBar: appUid[%{public}d], muted[%{public}d]",
+        appUid, muted);
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+        "SetAppVolumeMuteAndHideVolumeBar: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppVolumeMuteAndHideVolumeBar(appUid, muted);
 }
 
 int32_t AudioVolumeClientManager::SetVoipRendererMuteForUid(int32_t appUid, const int64_t streamId, bool muted)

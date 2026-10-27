@@ -163,6 +163,10 @@ private:
     bool ValidateSpaceRenderExtension(const AudioSpaceRenderExtensionParams &extension);
     bool ValidateTempoPitch(float speed, float pitch);
     bool ValidatePureVoiceChange(const AudioPureVoiceChangeOption &option);
+    bool ValidateSoundFieldType(SoundFieldType soundFieldType);
+    bool ValidateEnvironmentType(EnvironmentType environmentType);
+    bool ValidateVoiceBeautifierType(VoiceBeautifierType voiceBeautifierType);
+    bool ValidateGeneralVoiceChangeType(AudioGeneralVoiceChangeType type);
     // utility
     int32_t StringToInt32(std::string &str);
     // PrintInfo helpers

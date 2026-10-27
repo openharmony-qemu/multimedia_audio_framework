@@ -39,6 +39,7 @@
 #include "audio_connected_device.h"
 #include "boot_animation_state_info.h"
 #include "audio_iohandle_map.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -97,6 +98,12 @@ public:
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, DeviceType deviceType);
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
+
+    int32_t SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted);
+
+    bool IsAppMuteAndHideVolumeBar(int32_t appUid);
+
+    int32_t ClearAppMuteAndHideByOwnerUid(int32_t callerUid);
 
     int32_t SetAppVolumeMutedDB(int32_t appUid, bool muted);
 
@@ -209,11 +216,12 @@ public:
 
     bool IsVolumeUnadjustable();
 
-    float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType, int32_t volumeLevel);
+    float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType,
+        int32_t volumeLevel, bool isSupportWearDetection = false);
 
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
 
-    DeviceVolumeType GetDeviceCategory(DeviceType deviceType);
+    DeviceVolumeType GetDeviceCategory(DeviceType deviceType, AudioStreamType streamType = STREAM_MUSIC);
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
@@ -242,6 +250,8 @@ public:
     std::string GetHdiSourceIdInfo(const AudioModuleInfo &audioModuleInfo) const;
 
     IAudioSinkAttr GetAudioSinkAttr(const AudioModuleInfo &audioModuleInfo) const;
+    void FillSinkLatencyAttr(IAudioSinkAttr &attr, const AudioModuleInfo &audioModuleInfo) const;
+    void FillUltraFastPeriod(IAudioSinkAttr &attr, const AudioModuleInfo &audioModuleInfo) const;
 
     IAudioSourceAttr GetAudioSourceAttr(const AudioModuleInfo &audioModuleInfo) const;
 
@@ -316,7 +326,8 @@ public:
     void SetVgsVolumeSupported(bool isVgsSupported);
     bool IsVgsVolumeSupported() const;
 
-    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType,
+        int32_t zoneId = 0);
     int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     int32_t UpdateDeviceSpatialEnabled(const std::string &address, const AudioSpatializationState &state);
@@ -369,7 +380,8 @@ public:
     float GetSystemVolumeInDbByDegree(AudioVolumeType volumeType,
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc, bool mute);
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
-    float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
+    float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType,
+        int32_t volumeDegree, bool isSupportWearDetection = false);
     int32_t UpdateCollaborativeProductId(const std::string &productId);
     bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage);
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length);
@@ -524,7 +536,8 @@ private:
     int32_t SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t zoneId = 0);
     float CalculateVolumeDbExt(int32_t volumeInt, int32_t limit = MAX_VOLUME_DEGREE);
-    float CalculateVolumeDbNonlinearExt(AudioStreamType streamType, DeviceType deviceType, int32_t volumeDegree);
+    float CalculateVolumeDbNonlinearExt(AudioStreamType streamType, DeviceType deviceType,
+        int32_t volumeDegree, bool isSupportWearDetection = false);
     void SaveVolumeData(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType,
         int32_t volumeLevel, bool updateDb = false, bool updateMem = false, int32_t zoneId = 0);
     int32_t GetStreamVolumeDegreeInternal(std::shared_ptr<AudioDeviceDescriptor> &device,
@@ -543,7 +556,7 @@ private:
     void RedirectVolumeType(std::shared_ptr<AudioStreamDescriptor> streamDescriptor,
         AudioVolumeType &volumeType);
     void SaveSpecifiedDeviceVolumeInner(AudioStreamType streamType, int32_t volumeLevel,
-        DeviceType deviceType);
+        DeviceType deviceType, int32_t zoneId);
     void SaveSystemAppVolumeLevelToDb();
     void SaveSystemAppVolumeMuteStatusToDb(bool isAsync);
     int32_t RestoreSystemAppVolumeLevel();

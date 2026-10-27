@@ -74,6 +74,24 @@ int32_t AudioA2dpDeviceBehavior::ActivateA2dpDevice(std::shared_ptr<AudioDeviceD
     return ret;
 }
 
+std::string AudioA2dpDeviceBehavior::GetActivatedBtDeviceMac()
+{
+    auto activedBts = AudioActiveDevice::GetInstance().GetActiveBtDeviceMac();
+    std::string lastActiveA2dpDevice = activedBts.empty() ? "" : *activedBts.begin();
+    return lastActiveA2dpDevice;
+}
+
+bool AudioA2dpDeviceBehavior::IsBtDeviceActive(std::shared_ptr<AudioDeviceDescriptor> deviceDesc)
+{
+    auto isActivated = Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDesc->macAddress_ &&
+    Bluetooth::AudioA2dpManager::GetActiveA2dpDeviceLocal() == deviceDesc->macAddress_;
+// if bluetooth used for audio zone, devices will be actived by default, and the interface will return empty.
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+    isActivated = true;
+#endif
+    return isActivated;
+}
+
 int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDesc)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr &&
@@ -82,18 +100,12 @@ int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDev
 
     int32_t result = ERROR;
 #ifdef BLUETOOTH_ENABLE
-    // With dual bluetooth devices, the active device is a mac address set. A device joins the
-    // set only after it is actually activated, so a failed activation never changes the set and
-    // previously active devices are kept as-is.
-    auto isActivated = Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDesc->macAddress_ &&
-        Bluetooth::AudioA2dpManager::GetActiveA2dpDeviceLocal() == deviceDesc->macAddress_;
-#ifdef FEATURE_AUDIO_ZONE_VOLUME
-    isActivated = true;
-#endif
+    std::string lastActiveA2dpDevice = GetActivatedBtDeviceMac();
+    bool isActivated = IsBtDeviceActive(deviceDesc);
     if (isActivated) {
-        AUDIO_INFO_LOG("[%{public}s] [%{public}s] already active",
+        AUDIO_INFO_LOG("[%{public}s] id:%{public}d already active",
             AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceDesc->macAddress_).c_str(),
-            deviceDesc->deviceName_.c_str());
+            deviceDesc->deviceId_);
     } else {
         Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(deviceDesc->macAddress_);
         std::string productId;
@@ -103,23 +115,25 @@ int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDev
             AUDIO_INFO_LOG("productId: %{public}s", productId.c_str());
         }
 
-        result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDesc->macAddress_);
+        result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDesc->GetMacAddress());
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("Active [%{public}s] failed, active devices unchanged",
-                AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceDesc->macAddress_).c_str());
+                AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceDesc->GetMacAddress()).c_str());
             return result;
         }
     }
-    AudioActiveDevice::GetInstance().AddActiveBtDevice(deviceDesc->macAddress_);
+#ifndef FEATURE_AUDIO_ZONE
+    AudioActiveDevice::GetInstance().RemoveActiveBtDevice(lastActiveA2dpDevice);
+#endif
+    AudioActiveDevice::GetInstance().AddActiveBtDevice(deviceDesc->GetMacAddress());
 
-    if (isActivated && AudioIOHandleMap::GetInstance().CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
-        return SUCCESS;
-    }
+    std::string moduleName = AudioPolicyUtils::GetInstance().GetA2dpModuleName(deviceDesc->macAddress_, OUTPUT_DEVICE);
+    CHECK_AND_RETURN_RET(!isActivated || !AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleName), SUCCESS);
     AudioStreamInfo audioStreamInfo = {};
-    AudioActiveDevice::GetInstance().GetActiveA2dpDeviceStreamInfo(deviceDesc->macAddress_, audioStreamInfo);
+    AudioActiveDevice::GetInstance().GetActiveA2dpDeviceStreamInfo(deviceDesc->GetMacAddress(), audioStreamInfo);
     std::string networkId  = AudioActiveDevice::GetInstance().GetCurrentOutputDeviceNetworkId();
     std::string sinkName   = AudioPolicyUtils::GetInstance().GetSinkPortName(
-        AudioActiveDevice::GetInstance().GetCurrentOutputDeviceType());
+        AudioActiveDevice::GetInstance().GetCurrentOutputDeviceType(), PIPE_TYPE_UNKNOWN, deviceDesc->macAddress_);
 
     A2dpReloadContext context = {DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, networkId, sinkName,
         SOURCE_TYPE_INVALID, deviceDesc->macAddress_};
@@ -127,7 +141,7 @@ int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDev
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
-    coreService->HandleA2dpSuspendWhenLoad();
+    coreService->HandleA2dpSuspendWhenLoad(deviceDesc->macAddress_);
 #endif
     return result;
 }
@@ -147,6 +161,7 @@ int32_t AudioA2dpDeviceBehavior::LoadA2dpModule(const A2dpReloadContext &context
         AUDIO_INFO_LOG("Load a2dp module [%{public}s], role[%{public}d], config role[%{public}d]",
             moduleInfo.name.c_str(), deviceRole, configRole);
         if (configRole != deviceRole) { continue; }
+        moduleInfo.name = AudioPolicyUtils::GetInstance().GetA2dpModuleName(context.macAddress, deviceRole);
         if (!AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name)) {
             AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, context.audioStreamInfo);
 
@@ -162,26 +177,8 @@ int32_t AudioA2dpDeviceBehavior::LoadA2dpModule(const A2dpReloadContext &context
 
             AudioIOHandleMap::GetInstance().AddIOHandleInfo(moduleInfo.name, ioHandle);
 
-            auto pipeInfo = std::make_shared<AudioPipeInfo>();
-            pipeInfo->id_ = ioHandle;
-            pipeInfo->paIndex_ = paIndex;
-            if (moduleInfo.role == "sink") {
-                pipeInfo->name_ = "a2dp_output";
-                pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
-                pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-            } else {
-                pipeInfo->name_ = "a2dp_input";
-                pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
-                pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-            }
-            pipeInfo->adapterName_ = "a2dp";
-            pipeInfo->moduleInfo_ = moduleInfo;
-            pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
-            pipeInfo->InitAudioStreamInfo();
-            auto pipeManager = AudioPipeManager::GetPipeManager();
-            CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_NULL_POINTER, "pipeManager is nullptr");
-            pipeManager->AddAudioPipeInfo(pipeInfo);
-            AUDIO_INFO_LOG("Add PipeInfo %{public}u in load a2dp.", pipeInfo->id_);
+            int32_t result = LoadA2dpModuleInner(moduleInfo, ioHandle, paIndex);
+            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "LoadA2dpModuleInner failed %{public}d", result);
         } else {
             // At least one a2dp device is already connected. A new a2dp device is connecting.
             // Need to reload a2dp module when switching to a2dp device.
@@ -192,12 +189,38 @@ int32_t AudioA2dpDeviceBehavior::LoadA2dpModule(const A2dpReloadContext &context
     return SUCCESS;
 }
 
+int32_t AudioA2dpDeviceBehavior::LoadA2dpModuleInner(const AudioModuleInfo &moduleInfo, AudioIOHandle ioHandle,
+    uint32_t paIndex)
+{
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->id_ = ioHandle;
+    pipeInfo->paIndex_ = paIndex;
+    if (moduleInfo.role == "sink") {
+        pipeInfo->name_ = AudioPolicyUtils::GetInstance().GetA2dpPipeName(moduleInfo.macAddress, OUTPUT_DEVICE);
+        pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+        pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    } else {
+        pipeInfo->name_ = "a2dp_input";
+        pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+        pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    }
+    pipeInfo->adapterName_ = "a2dp";
+    pipeInfo->moduleInfo_ = moduleInfo;
+    pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->InitAudioStreamInfo();
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_NULL_POINTER, "pipeManager is nullptr");
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+    AUDIO_INFO_LOG("Add PipeInfo %{public}u in load a2dp.", pipeInfo->id_);
+    return SUCCESS;
+}
+
 int32_t AudioA2dpDeviceBehavior::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, const A2dpReloadContext &context)
 {
     AudioIOHandleMap::GetInstance().MuteDefaultSinkPort(context.networkId, context.sinkName);
 
     std::string portName = (context.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) ?
-        BLUETOOTH_MIC : BLUETOOTH_SPEAKER;
+        BLUETOOTH_MIC : moduleInfo.name;
 
     AudioIOHandle activateDeviceIOHandle;
     AudioIOHandleMap::GetInstance().GetModuleIdByKey(portName, activateDeviceIOHandle);
@@ -229,7 +252,7 @@ int32_t AudioA2dpDeviceBehavior::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo
     pipeInfo->id_ = ioHandle;
     pipeInfo->paIndex_ = paIndex;
     if (moduleInfo.role == "sink") {
-        pipeInfo->name_ = "a2dp_output";
+        pipeInfo->name_ = AudioPolicyUtils::GetInstance().GetA2dpPipeName(moduleInfo.macAddress, OUTPUT_DEVICE);
         pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
         pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     } else {

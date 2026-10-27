@@ -40,6 +40,7 @@
 #include "boot_animation_state_info.h"
 #include "audio_separation_effect_enabled_change_callback.h"
 #include "audio_info.h"
+#include "audio_anco_playback_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -67,10 +68,12 @@ public:
         int32_t volumeFlag = 0, int32_t uid = 0, int32_t zoneId = INVALID_ZONEID);
 
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
-        int32_t volumeFlag = 0);
+        int32_t volumeFlag = 0, std::string macAddress = "");
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0);
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
+
+    int32_t SetAppVolumeMuteAndHideVolumeBar(int32_t appUid, bool muted);
 
     int32_t SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted);
 
@@ -127,6 +130,8 @@ public:
     bool IsDirectPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
 
     bool IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
+
+    int32_t CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo, bool &support);
 
     bool IsEnhancedRoutingSupported();
 
@@ -276,6 +281,8 @@ public:
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);
+
+    int32_t SetAncoPlaybackInfo(const std::vector<AncoPlaybackInfo> &ancoPlaybackInfos);
 
     int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
 
@@ -639,6 +646,8 @@ public:
 
     int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId);
 
+    int32_t AddDeviceTagToAudioZone(int32_t zoneId, const std::string &deviceTag);
+
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId);
 
     int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
@@ -762,6 +771,8 @@ public:
 
     int32_t SetSplitModeReady();
 
+    int32_t SetSupportReload(bool isSupportReload, const std::string &networkId);
+
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, const uint32_t sessionId,
@@ -779,9 +790,9 @@ public:
 
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
-    int32_t SetVirtualCall(const bool isVirtual);
+    int32_t SetVirtualCall(const bool isVirtual, int32_t uid = 0);
 
-    bool GetVirtualCall();
+    bool GetVirtualCall(int32_t uid = 0);
 
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionId,
         const SourceType sourceType, bool isRunning);
@@ -820,6 +831,8 @@ public:
     int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrapper> &vaBroker);
+    int32_t GetUsbHeadsetType(const std::string &macAddress, int32_t deviceRole, int32_t &usbHeadsetType);
+    int32_t SetVADeviceExceptionFlag(const std::string &macAddress, bool exceptionFlag);
     bool IsCollaborativePlaybackSupported();
     bool IsCollaborativePlaybackSupportedForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);

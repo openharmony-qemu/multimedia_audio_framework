@@ -50,6 +50,31 @@ HpaeCaptureEffectNode::HpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+    RebuildTraceName();
+}
+
+void HpaeCaptureEffectNode::OnTraceInfoChanged()
+{
+    HpaePluginNode::OnTraceInfoChanged();
+    RebuildTraceName();
+}
+
+void HpaeCaptureEffectNode::RebuildTraceName()
+{
+    traceName_ = "[" + sceneType_ + "]HpaeCaptureEffectNode::SignalProcess inputs num[" +
+        std::to_string(inputStream_.GetPreOutputNum()) + "]";
+}
+
+void HpaeCaptureEffectNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
+{
+    HpaePluginNode::Connect(preNode);
+    RebuildTraceName();
+}
+
+void HpaeCaptureEffectNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
+{
+    HpaePluginNode::DisConnect(preNode);
+    RebuildTraceName();
 }
 
 HpaeCaptureEffectNode::~HpaeCaptureEffectNode()
@@ -70,8 +95,7 @@ bool HpaeCaptureEffectNode::Reset()
 
 HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    Trace trace("[" + sceneType_ + "]HpaeCaptureEffectNode::SignalProcess inputs num[" +
-        std::to_string(inputs.size()) + "]");
+    Trace trace(traceName_);
     if (inputs.empty()) {
         AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
         return nullptr;
@@ -118,6 +142,7 @@ void HpaeCaptureEffectNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpa
     std::shared_ptr<HpaeNode> realPreNode = preNode->GetSharedInstance(nodeInfo);
     CHECK_AND_RETURN_LOG(realPreNode != nullptr, "realPreNode is nullptr");
     inputStream_.Connect(realPreNode, preNode->GetOutputPort(nodeInfo));
+    RebuildTraceName();
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
         callback->OnNotifyDfxNodeInfo(true, realPreNode->GetNodeId(), GetNodeId());
@@ -132,6 +157,7 @@ void HpaeCaptureEffectNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<
         "%{public}u has disconnected with preNode", GetNodeId());
     const auto port = preNode->GetOutputPort(nodeInfo, true);
     inputStream_.DisConnect(port);
+    RebuildTraceName();
 #ifdef ENABLE_HIDUMP_DFX
     CHECK_AND_RETURN_LOG(port != nullptr, "port is nullptr");
     if (auto callback = GetNodeStatusCallback().lock()) {

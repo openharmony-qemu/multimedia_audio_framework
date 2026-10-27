@@ -157,6 +157,7 @@ public:
     bool principal_ = false;
     bool allUsbDeviceDisable_ = false;
     std::set<std::pair<int32_t, int32_t>> disableUsbDeviceSet_ {};
+    int32_t halLatency_ = LATENCY_UNCONFIG;
 
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos_ {};
@@ -221,6 +222,9 @@ struct PolicyGlobalConfigs {
     std::list<PolicyConfigInfo> commonConfigs_ {};
     bool updateRouteSupport_ = false;
     PolicyGlobalPaConfigs globalPaConfigs_;
+    int32_t primaryEffectLatency = LATENCY_UNCONFIG;
+    int32_t primaryWarmupLatency = LATENCY_UNCONFIG;
+    int32_t hwEncodingTypeMaxBitrate = 0;
 };
 
 class AudioPolicyConfigData {
@@ -234,7 +238,8 @@ public:
 
     std::string GetVersion();
     std::shared_ptr<AdapterDeviceInfo> GetAdapterDeviceInfo(DeviceType type_, DeviceRole role_,
-        const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag = 0, std::string macAddress = "");
+        const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag = 0,
+        std::string macAddress = "", bool isUnidirectional = false);
 
     void UpdateDynamicStreamProps(const std::string adapterName, const std::string &pipeName,
         const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps, const std::string &networkId);
@@ -251,6 +256,10 @@ public:
     void RegisterStreamProperty(
         AudioAdapterType adapterType, std::string pipeName, std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps);
     AudioPin DecideAudioPin(DeviceType type, DeviceRole role);
+    void CreateNormalInputPipeAndDevice(const std::shared_ptr<PolicyAdapterInfo> &adapterInfoPtr,
+        const std::string &pipeName, const std::string &deviceName, DeviceType deviceType);
+    bool EnsureAdapterInputPipe(AudioAdapterType adapterType, const std::string &pipeName,
+        const std::string &deviceName, DeviceType deviceType);
 
     std::weak_ptr<AdapterPipeInfo> pipeInfo_;
     std::list<std::string> supportDevices_ {};

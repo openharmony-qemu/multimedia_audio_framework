@@ -521,20 +521,22 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_028, TestSize.Level4)
 /**
  * @tc.name  : Test AudioDeviceStatus.
  * @tc.number: AudioDeviceStatus_029
- * @tc.desc  : Test AddAudioDevice sets isSupportMultiZone.
+ * @tc.desc  : Test AddDevice sets isSupportMultiZone.
  */
 HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_029, TestSize.Level4)
 {
-    AudioModuleInfo speakerInfo;
-    speakerInfo.role = ROLE_SINK;
-    speakerInfo.name = "Speaker";
-    audioDeviceStatus_->audioConfigManager_.deviceClassInfo_[ClassType::TYPE_PRIMARY] = { speakerInfo };
-    audioDeviceStatus_->AddAudioDevice(speakerInfo, DEVICE_TYPE_SPEAKER);
+    PolicyAdapterInfo adapterInfo;
+    AdapterDeviceInfo speakerInfo;
+    speakerInfo.name_ = "Speaker";
+    speakerInfo.type_ = DEVICE_TYPE_SPEAKER;
+    speakerInfo.role_ = OUTPUT_DEVICE;
+    audioDeviceStatus_->AddDevice(adapterInfo, speakerInfo);
 
-    AudioModuleInfo micInfo;
-    micInfo.role = ROLE_SOURCE;
-    micInfo.name = "Built_in_mic";
-    audioDeviceStatus_->AddAudioDevice(micInfo, DEVICE_TYPE_MIC);
+    AdapterDeviceInfo micInfo;
+    micInfo.name_ = "Built_in_mic";
+    micInfo.type_ = DEVICE_TYPE_MIC;
+    micInfo.role_ = INPUT_DEVICE;
+    audioDeviceStatus_->AddDevice(adapterInfo, micInfo);
 
     auto &devices = audioDeviceStatus_->audioConnectedDevice_.connectedDevices_;
     for (auto &desc : devices) {
@@ -565,6 +567,105 @@ HWTEST_F(AudioDeviceStatusExtendedTest, CheckNeedExclude_001, TestSize.Level4)
     audioDeviceStatus_->OnDeviceStatusUpdated(updatedDesc, updatedDesc.deviceType_,
         updatedDesc.macAddress_, "", isActualConnection, streamInfo, isConnected);
     EXPECT_EQ(updatedDesc.visibleMode_, GLOBAL_VISIBLE);
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager::IsScoConnected.
+ * @tc.number: IsScoConnected_001
+ * @tc.desc  : IsScoConnected returns true only for an enabled, connected SCO OUTPUT device with
+ *             a matching MAC address; returns false for mismatched mac, input role, disabled,
+ *             non-connected, or non-SCO device types, and for an empty device list.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, IsScoConnected_001, TestSize.Level4)
+{
+    auto &deviceManager = audioDeviceStatus_->audioDeviceManager_;
+    auto saved = deviceManager.connectedDevices_;
+    auto makeSco = [](DeviceRole role, bool enable, ConnectState state, const std::string &mac) {
+        auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, role);
+        desc->macAddress_ = mac;
+        desc->isEnable_ = enable;
+        desc->connectState_ = state;
+        return desc;
+    };
+
+    deviceManager.connectedDevices_.clear();
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:00"));
+
+    auto scoOut = makeSco(OUTPUT_DEVICE, true, CONNECTED, "00:11:22:33:44:01");
+    deviceManager.connectedDevices_.push_back(scoOut);
+    EXPECT_TRUE(deviceManager.IsScoConnected("00:11:22:33:44:01"));
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:99"));
+
+    deviceManager.connectedDevices_.push_back(makeSco(INPUT_DEVICE, true, CONNECTED, "00:11:22:33:44:02"));
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:02"));
+
+    deviceManager.connectedDevices_.push_back(makeSco(OUTPUT_DEVICE, false, CONNECTED, "00:11:22:33:44:03"));
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:03"));
+
+    deviceManager.connectedDevices_.push_back(
+        makeSco(OUTPUT_DEVICE, true, VIRTUAL_CONNECTED, "00:11:22:33:44:04"));
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:04"));
+
+    auto a2dp = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    a2dp->macAddress_ = "00:11:22:33:44:05";
+    a2dp->isEnable_ = true;
+    a2dp->connectState_ = CONNECTED;
+    deviceManager.connectedDevices_.push_back(a2dp);
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:05"));
+
+    deviceManager.connectedDevices_.push_back(nullptr);
+    EXPECT_FALSE(deviceManager.IsScoConnected("00:11:22:33:44:06"));
+
+    deviceManager.connectedDevices_ = saved;
+}
+
+/**
+ * @tc.name  : Test AudioDeviceStatus.
+ * @tc.number: AudioDeviceStatus_076
+ * @tc.desc  : Test HandleDistributedDeviceDisConnected with input device (INPUT_DEVICE branch).
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_076, TestSize.Level4)
+{
+    DStatusInfo statusInfo = {};
+    strncpy_s(statusInfo.networkId, NETWORK_ID_SIZE, "test_076", NETWORK_ID_SIZE - 1);
+    statusInfo.hdiPin = AudioPin::AUDIO_PIN_IN_DAUDIO_DEFAULT;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
+    AudioStreamDeviceChangeReasonExt reason;
+    AudioDeviceDescriptor deviceDesc(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    audioDeviceStatus_->HandleDistributedDeviceDisConnected(statusInfo, descForCb, reason, deviceDesc);
+    EXPECT_FALSE(audioDeviceStatus_->remoteCapturerSwitch_);
+}
+
+/**
+ * @tc.name  : Test AudioDeviceStatus.
+ * @tc.number: AudioDeviceStatus_077
+ * @tc.desc  : Test HandleDistributedDeviceDisConnected with output device (not INPUT_DEVICE branch).
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_077, TestSize.Level4)
+{
+    DStatusInfo statusInfo = {};
+    strncpy_s(statusInfo.networkId, NETWORK_ID_SIZE, "test_077", NETWORK_ID_SIZE - 1);
+    statusInfo.hdiPin = AudioPin::AUDIO_PIN_OUT_SPEAKER;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
+    AudioStreamDeviceChangeReasonExt reason;
+    AudioDeviceDescriptor deviceDesc(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    audioDeviceStatus_->HandleDistributedDeviceDisConnected(statusInfo, descForCb, reason, deviceDesc);
+    EXPECT_FALSE(audioDeviceStatus_->remoteCapturerSwitch_);
+}
+
+/**
+ * @tc.name  : Test AudioDeviceStatus.
+ * @tc.number: AudioDeviceStatus_078
+ * @tc.desc  : Test HandleOfflineDistributedDevice with output device (not INPUT_DEVICE branch).
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_078, TestSize.Level4)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->networkId_ = "test_078";
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioDeviceStatus_->audioConnectedDevice_.connectedDevices_ = { desc };
+    audioDeviceStatus_->HandleOfflineDistributedDevice();
+    EXPECT_FALSE(audioDeviceStatus_->remoteCapturerSwitch_);
 }
 
 } // namespace AudioStandard

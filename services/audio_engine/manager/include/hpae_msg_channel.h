@@ -140,6 +140,7 @@ struct HpaeDfxNodeInfo {
     std::string deviceName;
     // Sensitive: never print in plain text logs or hidump
     std::string macAddress;
+    std::string busAddress;
     std::string nodeName;
     SourceType sourceType;
     uint32_t routeFlag = 0;

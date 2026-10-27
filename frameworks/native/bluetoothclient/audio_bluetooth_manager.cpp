@@ -660,17 +660,10 @@ int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
     return SUCCESS;
 }
 
-bool AudioHfpManager::IsVirtualCall()
+bool AudioHfpManager::IsVirtualCall(pid_t uid)
 {
     std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
-    for (const auto &it : virtualCalls_) {
-        if (!it.second) {
-            AUDIO_INFO_LOG("not virtual call for service %{public}d", it.first);
-            return false;
-        }
-    }
-    AUDIO_INFO_LOG("is virtual call");
-    return true;
+    return virtualCalls_.find(uid) == virtualCalls_.end();
 }
 
 bool AudioHfpManager::IsAudioScoStateConnect()
@@ -695,7 +688,12 @@ ScoCategory AudioHfpManager::JudgeScoCategory()
     if (scene == AUDIO_SCENE_VOICE_RINGING || scene == AUDIO_SCENE_PHONE_CALL) {
         return ScoCategory::SCO_CALLULAR;
     } else if (scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_PHONE_CHAT) {
-        return !IsVirtualCall() ? ScoCategory::SCO_CALLULAR : ScoCategory::SCO_VIRTUAL;
+        bool allVirtual = true;
+        {
+            std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
+            allVirtual = virtualCalls_.empty();
+        }
+        return !allVirtual ? ScoCategory::SCO_CALLULAR : ScoCategory::SCO_VIRTUAL;
     }
 
     if (isRecognitionScene_.load()) {

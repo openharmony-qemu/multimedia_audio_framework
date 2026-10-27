@@ -117,6 +117,8 @@ public:
 
     virtual int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId) = 0;
 
+    virtual int32_t AddDeviceTagToAudioZone(int32_t zoneId, const std::string &deviceTag) = 0;
+
     virtual int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) = 0;
 
     virtual int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) = 0;

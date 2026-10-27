@@ -46,7 +46,7 @@ void ClientTypeManager::GetAndSaveClientType(uint32_t uid, const std::string &bu
 
     std::unique_lock<ffrt::mutex> lock(clientTypeMapMutex_);
     auto it = clientTypeMap_.find(uid);
-    if (it != clientTypeMap_.end()) {
+    if (it != clientTypeMap_.end() && it->second.bundleName == bundleName) {
         AUDIO_INFO_LOG("Uid already in map");
         return;
     }
@@ -85,7 +85,7 @@ ClientType ClientTypeManager::GetClientTypeByUid(uint32_t uid)
         AUDIO_INFO_LOG("Cannot find uid %{public}u", uid);
         return CLIENT_TYPE_OTHERS;
     }
-    return it->second;
+    return it->second.clientType;
 }
 
 ClientType ClientTypeManager::GetClientTypeByUidSync(int32_t uid)
@@ -98,15 +98,16 @@ ClientType ClientTypeManager::GetClientTypeByUidSync(int32_t uid)
         cv.wait_for(lock, std::chrono::milliseconds(WAIT_CALLBACK_TIMEOUT_IN_MS), [this, &uidTemp]() {
             return clientTypeMap_.find(uidTemp) != clientTypeMap_.end();
         });
+        it = clientTypeMap_.find(uidTemp);
     }
-    return clientTypeMap_.find(uidTemp) == clientTypeMap_.end() ? CLIENT_TYPE_OTHERS : clientTypeMap_[uidTemp];
+    return it == clientTypeMap_.end() ? CLIENT_TYPE_OTHERS : it->second.clientType;
 }
 
-void ClientTypeManager::OnClientTypeQueryCompleted(uint32_t uid, ClientType clientType)
+void ClientTypeManager::OnClientTypeQueryCompleted(uint32_t uid, ClientType clientType, const std::string &bundleName)
 {
     std::unique_lock<ffrt::mutex> lock(clientTypeMapMutex_);
     AUDIO_INFO_LOG("uid: %{public}u, client type: %{public}d", uid, clientType);
-    clientTypeMap_.insert_or_assign(uid, clientType);
+    clientTypeMap_.insert_or_assign(uid, ClientTypeInfo{clientType, bundleName});
     cv.notify_all();
 }
 } // namespace AudioStandard

@@ -57,6 +57,8 @@ private:
     void DoProcessInner();
     void SilenceData();
     size_t GetRingCacheSize();
+    void OnTraceInfoChanged() override;
+    void RebuildTraceNames();
 private:
     InputPort<HpaePcmBuffer *> inputStream_;
     OutputPort<HpaePcmBuffer *> outputStream_;
@@ -69,6 +71,11 @@ private:
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif
+
+    // Cached per-entry trace names; rebuilt in ctor and whenever node info changes
+    std::string renderTraceName_;
+    std::string processTraceName_;
+    std::string innerTraceName_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

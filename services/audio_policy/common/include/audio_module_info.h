@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_policy_log.h"
 
@@ -80,6 +81,9 @@ static const char* PRIMARY_MMAP = "mmap";
 static const char* PRIMARY_DIRECT = "direct";
 static const char* ACCESSORY_SOURCE = "accessory_mic";
 static const char* VIRTUAL_AUDIO = "virtual_audio";
+static const char* VA_INPUT_SPP = "va_input_spp";
+static const char* VA_INPUT_UNIDIRECTIONAL_SPP = "va_input_unidirectional_spp";
+static const char* VA_INPUT_NEARLINK = "va_input_nearlink";
 static const char* PRIMARY_UNPROCESS_MIC = "Built_in_unprocess";
 static const char* PRIMARY_LIVE_MIC = "Built_in_live";
 static const char* PRIMARY_VOICE_RECOGNITION_MIC = "Built_in_voice_recognition";
@@ -188,6 +192,9 @@ struct AudioModuleInfo {
     uint32_t suspendIdleTimeout = DEFAULT_SUSPEND_TIME_IN_MS;
     bool allUsbDeviceDisable_ = false;
     std::set<std::pair<int32_t, int32_t>> disableUsbDeviceSet_ {};
+    int32_t effectLatency = LATENCY_UNCONFIG;
+    int32_t halLatency = LATENCY_UNCONFIG;
+    int32_t warmupLatency = LATENCY_UNCONFIG;
 
     std::list<AudioModuleInfo> ports;
     std::string extra;

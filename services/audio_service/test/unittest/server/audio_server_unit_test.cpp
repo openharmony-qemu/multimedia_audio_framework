@@ -1059,6 +1059,39 @@ HWTEST(AudioServerUnitTest, CheckRecorderPermission_FastFlag_001, TestSize.Level
 }
 
 /**
+ * @tc.name  : Test CheckStreamInfoFormat record channel by source type
+ * @tc.type  : FUNC
+ * @tc.number: CheckStreamInfoFormat_RecordChannel_001
+ * @tc.desc  : Test 10/12/16 channels require UNPROCESSED_VOICE_ASSISTANT and system app.
+ */
+HWTEST(AudioServerUnitTest, CheckStreamInfoFormat_RecordChannel_001, TestSize.Level1)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(100, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.channelLayout = CH_LAYOUT_UNKNOWN;
+
+    config.streamInfo.channels = CHANNEL_10;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_FALSE(audioServer->CheckStreamInfoFormat(config));
+    config.capturerInfo.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
+    EXPECT_FALSE(audioServer->CheckStreamInfoFormat(config));
+
+    config.streamInfo.channels = CHANNEL_12;
+    EXPECT_FALSE(audioServer->CheckStreamInfoFormat(config));
+
+    config.streamInfo.channels = CHANNEL_16;
+    EXPECT_FALSE(audioServer->CheckStreamInfoFormat(config));
+
+    config.streamInfo.channels = CHANNEL_14;
+    EXPECT_FALSE(audioServer->CheckStreamInfoFormat(config));
+}
+/**
  * @tc.name  : Test ReportWakeupEvent API
  * @tc.type  : FUNC
  * @tc.number: ReportWakeupEvent_001

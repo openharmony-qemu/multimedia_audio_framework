@@ -950,10 +950,10 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_003, TestSize.Level0)
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float volumeSet = 0.5;
     result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
-    EXPECT_TRUE(result != AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     float volumeGet;
     result = OH_AudioRenderer_GetVolume(audioRenderer, &volumeGet);
-    EXPECT_TRUE(result != AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     EXPECT_EQ(volumeGet, 0.5);
     OH_AudioStreamBuilder_Destroy(builder);
 }
@@ -970,13 +970,13 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_004, TestSize.Level0)
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float volumeSet = 0.5;
     result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
-    EXPECT_TRUE(result != AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     volumeSet = 1.5;
     result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
     float volumeGet;
     result = OH_AudioRenderer_GetVolume(audioRenderer, &volumeGet);
-    EXPECT_TRUE(result != AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     EXPECT_EQ(volumeGet, 0.5);
     OH_AudioStreamBuilder_Destroy(builder);
 }

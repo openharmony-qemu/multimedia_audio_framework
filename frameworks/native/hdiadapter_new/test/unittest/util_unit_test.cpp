@@ -460,16 +460,76 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_016, TestSize.Level1)
 /**
  * @tc.name   : Test IdHandler API
  * @tc.number : IdHandlerUnitTest_017
- * @tc.desc   : Test SelectIdInfo priority: macAddress > deviceNetId > default
+ * @tc.desc   : Test SelectIdInfo priority: busAddress first, unmatched class falls to default
  */
 HWTEST_F(UtilUnitTest, IdHandlerUnitTest_017, TestSize.Level1)
 {
-    const std::string mac = "11:22:33:44:55:66";
-    const std::string netId = "LocalDevice";
+    HdiIdInfoParam param;
+    param.deviceClass = "primary";
+    param.networkId = "LocalDevice";
+    param.macAddress = "11:22:33:44:55:66";
+    // unmatched class: mac/networkId are ignored, falls to default
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), HDI_ID_INFO_DEFAULT);
 
-    EXPECT_EQ(IdHandler::SelectIdInfo(mac, netId), mac);
-    EXPECT_EQ(IdHandler::SelectIdInfo("", netId), netId);
-    EXPECT_EQ(IdHandler::SelectIdInfo("", ""), HDI_ID_INFO_DEFAULT);
+    param.busAddress = "bus10_out";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "bus10_out");
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_018
+ * @tc.desc   : Test SelectIdInfo remote classes return networkId even when mac is set
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_018, TestSize.Level1)
+{
+    HdiIdInfoParam param;
+    param.networkId = "remote_net_id";
+    param.macAddress = "11:22:33:44:55:66";
+    param.deviceClass = "remote";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "remote_net_id");
+    param.deviceClass = "remote_offload";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "remote_net_id");
+    param.deviceClass = "remote_multichannel";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "remote_net_id");
+
+    // remote with empty networkId returns "" verbatim (policy-aligned), not default
+    param.networkId = "";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "");
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_019
+ * @tc.desc   : Test SelectIdInfo primary_extra returns the module name
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_019, TestSize.Level1)
+{
+    HdiIdInfoParam param;
+    param.deviceClass = "primary_extra";
+    param.name = "Typec_Speaker";
+    param.networkId = "LocalDevice";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "Typec_Speaker");
+
+    // primary_extra with empty name returns "" verbatim (policy-aligned), not default
+    param.name = "";
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "");
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_020
+ * @tc.desc   : Test SelectIdInfo a2dp branch is gated by MULTI_USER_ZONE
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_020, TestSize.Level1)
+{
+    HdiIdInfoParam param;
+    param.deviceClass = "a2dp";
+    param.macAddress = "11:22:33:44:55:66";
+#ifdef MULTI_USER_ZONE
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), "11:22:33:44:55:66");
+#else
+    EXPECT_EQ(IdHandler::SelectIdInfo(param), HDI_ID_INFO_DEFAULT);
+#endif
 }
 
 /**
@@ -664,6 +724,64 @@ HWTEST_F(UtilUnitTest, AudioHdiVersionManagerUnitTest_006, TestSize.Level1)
 
     AudioHdiVersionManager::GetInstance().SetVersion(0, 0);
     EXPECT_FALSE(AudioHdiVersionManager::GetInstance().IsV61OrAbove());
+}
+
+/**
+ * @tc.name   : Test IdHandler Dump
+ * @tc.number : IdHandlerDumpUnitTest_001
+ * @tc.desc   : Test Dump with empty useIdSet, single useId and multiple useIds
+ */
+HWTEST_F(UtilUnitTest, IdHandlerDumpUnitTest_001, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    uint32_t id1 = idHandler.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, "dump_test_empty");
+    EXPECT_NE(id1, HDI_INVALID_ID);
+
+    std::string dumpStr;
+    idHandler.Dump(dumpStr);
+    EXPECT_TRUE(dumpStr.find("du*********empty") != std::string::npos);
+    EXPECT_TRUE(dumpStr.find("useCount: 0, useIds: []") != std::string::npos);
+
+    idHandler.IncInfoIdUseCount(id1);
+    dumpStr.clear();
+    idHandler.Dump(dumpStr);
+    EXPECT_TRUE(dumpStr.find("useCount: 1, useIds: [") != std::string::npos);
+    EXPECT_TRUE(dumpStr.find(std::to_string(id1)) != std::string::npos);
+
+    uint32_t id2 = idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, "dump_test_empty");
+    idHandler.IncInfoIdUseCount(id2);
+    dumpStr.clear();
+    idHandler.Dump(dumpStr);
+    EXPECT_TRUE(dumpStr.find("useCount: 2, useIds: [") != std::string::npos);
+    EXPECT_TRUE(dumpStr.find(std::to_string(id2)) != std::string::npos);
+
+    idHandler.DecInfoIdUseCount(id1);
+    idHandler.DecInfoIdUseCount(id2);
+}
+
+/**
+ * @tc.name   : Test IdHandler Dump
+ * @tc.number : IdHandlerDumpUnitTest_002
+ * @tc.desc   : Test Dump with freeInfoIdSet entries
+ */
+HWTEST_F(UtilUnitTest, IdHandlerDumpUnitTest_002, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    uint32_t id1 = idHandler.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, "dump_test_free1");
+    uint32_t id2 = idHandler.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, "dump_test_free2");
+    EXPECT_NE(id1, HDI_INVALID_ID);
+    EXPECT_NE(id2, HDI_INVALID_ID);
+    idHandler.IncInfoIdUseCount(id1);
+    idHandler.IncInfoIdUseCount(id2);
+    idHandler.DecInfoIdUseCount(id1);
+    idHandler.DecInfoIdUseCount(id2);
+
+    std::string dumpStr;
+    idHandler.Dump(dumpStr);
+    EXPECT_TRUE(dumpStr.find("freeInfoIds: [") != std::string::npos);
+    EXPECT_FALSE(dumpStr.find("freeInfoIdSet size: 0") != std::string::npos);
 }
 
 } // namespace AudioStandard

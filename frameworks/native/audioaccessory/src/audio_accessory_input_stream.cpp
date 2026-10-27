@@ -119,6 +119,12 @@ int32_t AudioAccessoryInputStream::GetCapturePosition(uint64_t &frames, uint64_t
     return SUCCESS;
 }
 
+void AudioAccessoryInputStream::NotifyStartStreamFailed()
+{
+    AUDIO_INFO_LOG("NotifyStartStreamFailed called");
+    accessory_.NotifyStartStreamFailed();
+}
+
 OH_AudioCommon_Result AudioAccessoryInputStream::RegisterStartCallback(
     OH_AudioAccessoryInputStream_StartCallback callback)
 {

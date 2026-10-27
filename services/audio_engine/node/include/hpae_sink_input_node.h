@@ -99,6 +99,8 @@ private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
     bool ReadToAudioBuffer(int32_t &ret);
+    void OnTraceInfoChanged() override;
+    void RebuildTraceNames();
     std::weak_ptr<IStreamCallback> writeCallback_;
     AudioCallBackStreamInfo streamInfo_;
     PcmBufferInfo pcmBufferInfo_;
@@ -111,6 +113,7 @@ private:
     bool isDrain_ = false;
     HpaeSessionState state_ = HPAE_SESSION_NEW;
     int32_t appUid_ = -1;
+    bool isSystemApp_ = false;
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
     bool offloadEnable_ = false;
     int32_t offloadType_ = OFFLOAD_DEFAULT;
@@ -124,6 +127,10 @@ private:
     bool isNonStandardSampleRate_ = false;
     std::optional<SessionEffectAttachState> sessionEffectAttachState_;
     bool sessionEffectPreheatActive_ = false;
+
+    // Cached DoProcess trace names; rebuilt in ctor and whenever node info changes
+    std::string processTraceName_;
+    std::string underflowTraceName_;
 };
 
 }  // namespace HPAE
