@@ -5,7 +5,6 @@
 export * from "./multiPipelineIndex";
 export * from "./audioRecord";
 export * from "./timeline";
-export * from "./cloudRomDownload";
 export const record: () => void;
 export const audioRendererInit: () => void;
 export const audioRendererDestory: () => void;
@@ -76,6 +75,17 @@ export const getRecordedAudioData: () => ArrayBuffer | null;
 export const stopAudioRenderer: () => number;
 export const releaseAudioRenderer: () => void;
 export const unregisterPlaybackFinishCallback: () => void;
+export const convert: (outputFormat: {
+  encodingType: number;
+  samplingRate: number;
+  channelLayout: number;
+  sampleFormat: number;
+}, fd: number) => {
+  tempPath: string;
+  inputSampleRate: number;
+  inputChannels: number;
+  inputSampleFormat: string;
+} | null;
 export const audioFormatConverter: (inputFormat: {
   encodingType: number;
   samplingRate: number;

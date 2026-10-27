@@ -76,6 +76,9 @@ export interface  JsonFileInfo {
   summary:string;
   realTime:boolean;
   sceneInfos:string[];
+  caseType?:string;
+  parallelCount?:number;
+  formatConversionScenes?:FormatConversionSceneInfo[];
 };
 
 export interface DisplayPipelineInfo {
@@ -83,3 +86,37 @@ export interface DisplayPipelineInfo {
   effectChain: Map<string, string[]>;
   mixerChain: string[];
 }
+
+export interface NativeAudioFormat {
+  encodingType: number;
+  samplingRate: number;
+  channelLayout: number;
+  sampleFormat: number;
+};
+
+export interface ConvertResult {
+  tempPath: string;
+  inputSampleRate: number;
+  inputChannels: number;
+  inputSampleFormat: string;
+};
+
+export interface FormatConversionInputFile {
+  path: string;
+};
+
+export interface FormatConversionOutputFile {
+  nameTemplate: string;
+  samplingRate: number;
+  bitDepth: number;
+  channels: number;
+};
+
+export interface FormatConversionSceneInfo {
+  sceneName: string;
+  description: string;
+  inputFile: FormatConversionInputFile;
+  outputFile: FormatConversionOutputFile;
+  outputFormat: NativeAudioFormat;
+  expectedOutput: ExpectedOutput;
+};

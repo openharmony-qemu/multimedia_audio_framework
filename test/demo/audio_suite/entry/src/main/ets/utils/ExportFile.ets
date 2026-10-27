@@ -89,9 +89,9 @@ export function concatArrayBuffer(wavHeaderBuffer: ArrayBuffer, pcmBuffer: Array
     return resultBuffer;
 }
 
-export function writeWavFileHeader(pcmBuffer: ArrayBuffer, sampleRate: number, channels: number, bitsPerSample: number): ArrayBuffer {
+export function writeWavFileHeader(pcmBuffer: ArrayBuffer, sampleRate: number, channels: number, bitsPerSample: number, sampleFormat?: number): ArrayBuffer {
     Logger.info(TAG,
-        `writeWavFileHeader sampleRate : ${sampleRate} --- channels : ${channels} --- bitsPerSample : ${bitsPerSample}`);
+        `writeWavFileHeader sampleRate : ${sampleRate} --- channels : ${channels} --- bitsPerSample : ${bitsPerSample} --- sampleFormat : ${sampleFormat}`);
     const header = new ArrayBuffer(44);
     const dv = new DataView(header);
     // Write to RIFF block
@@ -104,11 +104,18 @@ export function writeWavFileHeader(pcmBuffer: ArrayBuffer, sampleRate: number, c
     // fmt block size
     dv.setUint32(16, 16, true);
     // Format Category (1 - PCM, 3 - IEEE Floating Point)
-    dv.setUint16(20, 3, true);
-    if (bitsPerSample === 32) {
-        dv.setUint16(20, 3, true);
+    if (sampleFormat !== undefined) {
+        if (sampleFormat === 4) {
+            dv.setUint16(20, 3, true);
+        } else {
+            dv.setUint16(20, 1, true);
+        }
     } else {
-        dv.setUint16(20, 1, true);
+        if (bitsPerSample === 32) {
+            dv.setUint16(20, 3, true);
+        } else {
+            dv.setUint16(20, 1, true);
+        }
     }
     // Number of audio channels
     dv.setUint16(22, channels, true);

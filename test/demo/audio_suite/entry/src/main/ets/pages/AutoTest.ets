@@ -11,7 +11,8 @@ import { fileUri, ListFileOptions, picker } from '@kit.CoreFileKit';
 import fs from '@ohos.file.fs';
 import {NodeType, ColorMap, InputStringToNodeTypeMap} from '../utils/InterfaceInfo'
 import { SceneInfo, OutputFile, InputFile, ExpectedOutput, ExecuteReport,
-  NodeInfo, PipelineInfo, JsonFileInfo, DisplayPipelineInfo } from '../utils/autoTest/Interface'
+  NodeInfo, PipelineInfo, JsonFileInfo, DisplayPipelineInfo,
+  NativeAudioFormat, FormatConversionSceneInfo, ConvertResult } from '../utils/autoTest/Interface'
 import { BusinessError } from '@kit.BasicServicesKit';
 import { multiPipelineSaveFileBuffer, writeWavFileHeader, multiPipelineRealTimeSaveFileBuffer } from '../utils/ExportFile';
 import audioNapi from 'libentry.so';
@@ -201,6 +202,75 @@ function checkMd5IsEqual(outputFileMd5: string[], expectedFileMd5: string[]): bo
   return ret;
 }
 
+@Concurrent
+function formatConversionInBackground(
+  outputFormat: NativeAudioFormat,
+  fd: number
+): ConvertResult | null {
+  const ret = audioNapi.convert(outputFormat, fd);
+  if (ret == null) {
+    return null;
+  }
+  return ret;
+}
+
+function parseFormatConversionJson(jsonObjectStr: string): FormatConversionSceneInfo {
+  const sceneInfo: FormatConversionSceneInfo = {
+    sceneName: '',
+    description: '',
+    inputFile: { path: '' },
+    outputFile: { nameTemplate: '', samplingRate: 0, bitDepth: 0, channels: 0 },
+    outputFormat: { encodingType: 0, samplingRate: 0, channelLayout: 0, sampleFormat: 0 },
+    expectedOutput: { md5Value: [] }
+  };
+  sceneInfo.sceneName = Object(jsonObjectStr)["scene_name"];
+  sceneInfo.description = Object(jsonObjectStr)["description"];
+  sceneInfo.inputFile.path = Object(jsonObjectStr)["input_file"]["path"];
+  sceneInfo.outputFile.nameTemplate = Object(jsonObjectStr)["output_file"]["name_template"];
+  sceneInfo.outputFile.samplingRate = Object(jsonObjectStr)["output_file"]["sampling_rate"];
+  sceneInfo.outputFile.bitDepth = Object(jsonObjectStr)["output_file"]["bit_depth"];
+  sceneInfo.outputFile.channels = Object(jsonObjectStr)["output_file"]["channels"];
+  sceneInfo.outputFormat.encodingType = Object(jsonObjectStr)["output_format"]["encodingType"];
+  sceneInfo.outputFormat.samplingRate = Object(jsonObjectStr)["output_format"]["samplingRate"];
+  sceneInfo.outputFormat.channelLayout = Object(jsonObjectStr)["output_format"]["channelLayout"];
+  sceneInfo.outputFormat.sampleFormat = Object(jsonObjectStr)["output_format"]["sampleFormat"];
+  if (Object(jsonObjectStr)["expected_output"] != undefined &&
+    Object(jsonObjectStr)["expected_output"]["md5Value"] != undefined) {
+    sceneInfo.expectedOutput.md5Value = Object(jsonObjectStr)["expected_output"]["md5Value"];
+  }
+  return sceneInfo;
+}
+
+class Semaphore {
+  private permits: number;
+  private waitingPromises: Array<() => void> = [];
+
+  constructor(permits: number) {
+    this.permits = permits;
+  }
+
+  acquire(): Promise<void> {
+    if (this.permits > 0) {
+      this.permits--;
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve: () => void) => {
+      this.waitingPromises.push(resolve);
+    });
+  }
+
+  release(): void {
+    if (this.waitingPromises.length > 0) {
+      const resolve = this.waitingPromises.shift();
+      if (resolve) {
+        resolve();
+      }
+    } else {
+      this.permits++;
+    }
+  }
+}
+
 @Builder
 export function AutoTestBuilder() {
   AutoTest()
@@ -229,6 +299,7 @@ export struct AutoTest {
   @State executeResultSuccess: boolean = true;
   @State showExecuteResult: boolean = false;
   @State failedCases: string[] = [];
+  @State formatConversionReportsMap: Map<string, ExecuteReport[]> = new Map();
   // Real-time playback state variables
   @State isRealTimePlaying: boolean = false;
   @State currentPlaybackProgress: number = 0;
@@ -266,9 +337,26 @@ export struct AutoTest {
         let obj = JSON.parse(fileData);
         jsonFileInfo.summary = Object(obj)["summary"];
         jsonFileInfo.realTime = Object(obj)["realTime"] === true || Object(obj)["real_time"] === true;
+        jsonFileInfo.caseType = Object(obj)["caseType"];
         this.selectOptionList.push({ value: jsonFileInfo.summary });
         jsonSummaryToJsonFileInfoMap.set(jsonFileInfo.summary, jsonFileInfo);
+        if (jsonFileInfo.caseType === 'formatConversion') {
+          jsonFileInfo.parallelCount = Object(obj)["parallelCount"];
+          if (Object(obj)["scenes"] == undefined || !Array.isArray(Object(obj)["scenes"])) {
+            fs.closeSync(file.fd);
+            return;
+          }
+          jsonFileInfo.formatConversionScenes = [];
+          const caseNum: number = Object(obj)["scenes"]["length"];
+          for (let i = 0; i < caseNum; i++) {
+            const fcScene: FormatConversionSceneInfo = parseFormatConversionJson(Object(obj)["scenes"][i]);
+            jsonFileInfo.formatConversionScenes.push(fcScene);
+          }
+          fs.closeSync(file.fd);
+          return;
+        }
         if (Object(obj)["scenes"] == undefined || !Array.isArray(Object(obj)["scenes"])) {
+          fs.closeSync(file.fd);
           return;
         }
         const caseNum: number = Object(obj)["scenes"]["length"];
@@ -769,7 +857,17 @@ export struct AutoTest {
     Logger.info(TAG, `executeSingleFileWithSyncInit start fileSummary:${fileSummary}`);
     this.autoTestProcessMap.clear();
     const jsonFileInfo = jsonSummaryToJsonFileInfoMap.get(fileSummary);
-    if (jsonFileInfo == undefined || jsonFileInfo.sceneInfos.length == 0) {
+    if (jsonFileInfo == undefined) {
+      Logger.error(TAG, `executeSingleFileWithSyncInit: Invalid jsonFileInfo for ${fileSummary}`);
+      return FAILED;
+    }
+
+    if (jsonFileInfo.caseType === 'formatConversion') {
+      Logger.info(TAG, `=== Format Conversion Stress Test mode ===`);
+      return await this.executeFormatConversion(jsonFileInfo, reportFlag);
+    }
+
+    if (jsonFileInfo.sceneInfos.length == 0) {
       Logger.error(TAG, `executeSingleFileWithSyncInit: Invalid jsonFileInfo for ${fileSummary}`);
       return FAILED;
     }
@@ -816,7 +914,172 @@ export struct AutoTest {
     }
   }
 
-    // Execute standard offline playback (multi-pipeline)
+  async executeFormatConversion(jsonFileInfo: JsonFileInfo, reportFlag: boolean): Promise<number> {
+    Logger.info(TAG, 'executeFormatConversion start');
+    if (jsonFileInfo.formatConversionScenes == undefined || jsonFileInfo.formatConversionScenes.length == 0) {
+      Logger.error(TAG, `executeFormatConversion: no formatConversionScenes`);
+      return FAILED;
+    }
+    if (jsonFileInfo.parallelCount == undefined || jsonFileInfo.parallelCount <= 0) {
+      Logger.error(TAG, `executeFormatConversion: invalid parallelCount`);
+      return FAILED;
+    }
+
+    const semaphore = new Semaphore(jsonFileInfo.parallelCount);
+    const sceneReports: ExecuteReport[] = [];
+    const startTime = new Date().getTime();
+
+    const promises = jsonFileInfo.formatConversionScenes.map(async (fcScene) => {
+      await semaphore.acquire();
+      try {
+        const report = await this.executeSingleFormatConversion(fcScene);
+        sceneReports.push(report);
+        return report.result ? SUCCESS : FAILED;
+      } finally {
+        semaphore.release();
+      }
+    });
+
+    await Promise.all(promises);
+
+    sceneReports.forEach(report => {
+      if (!report.result) {
+        this.failedCases.push(report.sceneName);
+      }
+    });
+
+    this.formatConversionReportsMap.set(jsonFileInfo.summary, sceneReports);
+
+    if (reportFlag) {
+      await this.saveFormatConversionReport(jsonFileInfo.summary, sceneReports);
+    }
+
+    const endTime = new Date().getTime();
+    Logger.info(TAG, `executeFormatConversion completed in ${(endTime - startTime) / 1000}s`);
+    return SUCCESS;
+  }
+
+  async executeSingleFormatConversion(fcScene: FormatConversionSceneInfo): Promise<ExecuteReport> {
+    const startTimeStamp = new Date().getTime();
+    const report: ExecuteReport = {
+      sceneInfoId: util.generateRandomUUID(true),
+      sceneName: fcScene.sceneName,
+      startTime: getDateStringWithTimeStamp(startTimeStamp, 0),
+      startTimeStamp: startTimeStamp,
+      endTime: '',
+      endTimeStamp: 0,
+      costTime: 0,
+      result: false,
+      exeReportPath: ''
+    };
+
+    Logger.info(TAG, `executeSingleFormatConversion start sceneName:${fcScene.sceneName}`);
+    const inputPath = `${inputDir}/${fcScene.inputFile.path}`;
+    let inputFile: fs.File | undefined;
+    try {
+      inputFile = fs.openSync(inputPath, fs.OpenMode.READ_ONLY);
+
+      const convertResult: ConvertResult = await taskpool.execute(
+        formatConversionInBackground,
+        fcScene.outputFormat,
+        inputFile.fd
+      ) as ConvertResult;
+
+      if (!convertResult) {
+        Logger.error(TAG, `executeSingleFormatConversion: conversion returned null for ${fcScene.sceneName}`);
+        report.result = false;
+        return report;
+      }
+
+      const tempOutputPath: string = convertResult.tempPath;
+      const inputChannelStr = convertResult.inputChannels === 1 ? 'MONO' : 'STEREO';
+      const dynamicName = `output_${convertResult.inputSampleRate}_${convertResult.inputSampleFormat}_${inputChannelStr}_to_${fcScene.outputFile.nameTemplate}`;
+      let tempFile: fs.File | undefined;
+      try {
+        tempFile = fs.openSync(tempOutputPath, fs.OpenMode.READ_ONLY);
+        const tempStat = fs.statSync(tempOutputPath);
+        const pcmBuffer = new ArrayBuffer(tempStat.size);
+        fs.readSync(tempFile.fd, pcmBuffer);
+
+        const wavBuffer = writeWavFileHeader(
+          pcmBuffer,
+          fcScene.outputFile.samplingRate,
+          fcScene.outputFile.channels,
+          fcScene.outputFile.bitDepth,
+          fcScene.outputFormat.sampleFormat
+        );
+
+        const outputFilePath = `${outputPath}/${dynamicName}.wav`;
+        const outputFile = fs.openSync(outputFilePath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
+        fs.writeSync(outputFile.fd, wavBuffer);
+        fs.closeSync(outputFile.fd);
+
+        report.result = true;
+        Logger.info(TAG, `executeSingleFormatConversion: output saved to ${outputFilePath}`);
+
+        if (fcScene.expectedOutput.md5Value.length > 0) {
+          const outputFileMd5 = getMD5OfFile(outputFilePath);
+          if (!checkMd5IsEqual([outputFileMd5], fcScene.expectedOutput.md5Value)) {
+            Logger.error(TAG, `executeSingleFormatConversion: MD5 mismatch for ${fcScene.sceneName}, actual=${outputFileMd5}`);
+            report.result = false;
+            return report;
+          } else {
+            Logger.info(TAG, `executeSingleFormatConversion: MD5 match for ${fcScene.sceneName}`);
+          }
+        } else {
+          Logger.info(TAG, `executeSingleFormatConversion: skip MD5 check for ${fcScene.sceneName} (no expected md5)`);
+        }
+
+        return report;
+      } catch (e) {
+        Logger.error(TAG, `executeSingleFormatConversion: save error: ${e}`);
+        report.result = false;
+        return report;
+      } finally {
+        if (tempFile) {
+          fs.closeSync(tempFile.fd);
+        }
+        try {
+          await fs.unlink(tempOutputPath);
+        } catch (e) {
+          Logger.warn(TAG, `executeSingleFormatConversion: temp file delete failed: ${e}`);
+        }
+      }
+    } catch (e) {
+      Logger.error(TAG, `executeSingleFormatConversion: error: ${e}`);
+      report.result = false;
+      return report;
+    } finally {
+      if (inputFile) {
+        fs.closeSync(inputFile.fd);
+      }
+      const endTime = new Date().getTime();
+      report.endTimeStamp = endTime;
+      report.endTime = getDateStringWithTimeStamp(endTime, 0);
+      report.costTime = endTime - report.startTimeStamp;
+      Logger.info(TAG, `executeSingleFormatConversion end sceneName:${fcScene.sceneName} costTime:${report.costTime}ms`);
+    }
+  }
+
+  async saveFormatConversionReport(summary: string, sceneReports: ExecuteReport[]): Promise<void> {
+    Logger.info(TAG, `saveFormatConversionReport start summary=${summary}`);
+    const csvFileSavePath = `${outputPath}/execute_report_${getDateStringWithTimeStamp(new Date().getTime())}.csv`;
+    let csvText = `执行用例: ${summary},,,,,,,\n${csvReportHeaderText}`;
+    for (const report of sceneReports) {
+      const inputFilePath = `${inputDir}/${report.sceneName}`;
+      const resultStr = report.result ? '执行成功' : '执行异常';
+      const text = `"${report.sceneName}","${report.startTime}","${report.endTime}","${report.costTime / 1000} s","${inputFilePath}","","${report.exeReportPath}","${resultStr}"`;
+      csvText += text + '\n';
+    }
+    csvText += `,,,,,,,\n`;
+    const csvTextWithBom = this.addBOMToStartOfString(csvText);
+    const file = fs.openSync(csvFileSavePath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
+    fs.writeSync(file.fd, csvTextWithBom);
+    fs.closeSync(file.fd);
+    Logger.info(TAG, `saveFormatConversionReport saved to ${csvFileSavePath}`);
+  }
+
+  // Execute standard offline playback (multi-pipeline)
   async executeStandardPlayback(jsonFileInfo: JsonFileInfo, reportFlag: boolean): Promise<number> {
     Logger.info(TAG, 'executeStandardPlayback start');
 
@@ -1203,6 +1466,7 @@ export struct AutoTest {
               } else {
                 Logger.info(TAG, `Add EQ Effect node successful!!!`);
                 Logger.info(TAG, `EQ Effect node successful!!!`);
+
               }
               break;
             case NodeType.GENERAL_VOICE_CHANGE:
@@ -1448,6 +1712,22 @@ export struct AutoTest {
   }
 
   async getCsvTextOfSingeCase(summary: string): Promise<string> {
+    const jsonFileInfo = jsonSummaryToJsonFileInfoMap.get(summary);
+    if (jsonFileInfo != undefined && jsonFileInfo.caseType === 'formatConversion') {
+      const fcReports = this.formatConversionReportsMap.get(summary);
+      if (fcReports == undefined || fcReports.length === 0) {
+        return "";
+      }
+      let csvText = ``;
+      for (const report of fcReports) {
+        const inputFilePath = `${inputDir}`;
+        const resultStr = report.result ? '执行成功' : '执行异常';
+        const text = `"${report.sceneName}","${report.startTime}","${report.endTime}","${report.costTime / 1000} s","${inputFilePath}","","${report.exeReportPath}","${resultStr}"`;
+        csvText += `${text}\n`;
+      }
+      return csvText;
+    }
+
     let csvText = ``;
     let texts: string[] = [];
     const promises = jsonSummaryToJsonFileInfoMap.get(summary)?.sceneInfos.map(async (scene) => {

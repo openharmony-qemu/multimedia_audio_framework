@@ -223,7 +223,7 @@ void UpdateAudioBuffers(char* firAudioData, char* secAudioData)
 
 OH_AudioSuite_Result MultiPipelineRenderFrame()
 {
-    OH_AudioSuitePipeline* threadPipeline = g_threadPipelineManager->audioSuitePipeline;
+    OH_AudioSuitePipeline *threadPipeline = g_threadPipelineManager->audioSuitePipeline;
     OH_AudioFormat threadAudioFormatOutput = g_threadPipelineManager->audioFormatOutput;
 
     OH_AudioSuite_Result result = StartPipelineAndCheckState(threadPipeline);
@@ -431,11 +431,6 @@ napi_value MultiPipelineEnvPrepare(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest multiPipelinePrepare pipelineId=%{public}s", pipelineId.c_str());
 
-    // Reset global multiRenderFrameFlag before each test case to prevent cross-case pollution
-    // from previous offline AISS cases. If the current case contains AISS nodes, addAudioSeparation
-    // will set it back to true after this function returns.
-    g_multiRenderFrameFlag = false;
-
     if (g_threadPipelineManager != nullptr && g_threadPipelineManager->pipelineId == pipelineId) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "multiPipelinePrepare direct return, pipeline manager of thread had inited,"
@@ -481,13 +476,13 @@ napi_value AudioEditNodeInitMultiPipeline(napi_env env, napi_callback_info info)
         g_engineInitedFlag = true;
         result = OH_AudioSuiteEngine_Create(&g_multiAudioSuiteEngine);
     }
-    OH_AudioSuite_PipelineWorkMode workMode;
+    OH_AudioSuite_PipelineWorkMode workMode = OH_AudioSuite_PipelineWorkMode::AUDIOSUITE_PIPELINE_EDIT_MODE;
 
     // Create Pipeline
     result = OH_AudioSuiteEngine_CreatePipeline(g_multiAudioSuiteEngine,
         &g_multiAudioSuitePipeline[g_initedPipelineNum], workMode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-                 "audioEditTest OH_AudioEditEngine_CreatePipeline result: %{public}d", static_cast<int>(result));
+                 "audioEditTest OH_AudioEditEngine_CreatePipeline result: %{public}d workmode:%{public}d", static_cast<int>(result), workMode);
     // Instantiate PipelineManager
     std::shared_ptr<NodeManager> nodeManager =
         std::make_shared<NodeManager>(g_multiAudioSuitePipeline[g_initedPipelineNum]);
