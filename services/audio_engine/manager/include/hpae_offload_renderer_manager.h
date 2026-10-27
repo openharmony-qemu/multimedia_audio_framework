@@ -141,6 +141,7 @@ private:
     void StopOuputNode();
     void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state,
         uint32_t appUid = INVALID_UID);
+    void SetStreamSilentMode(uint32_t sessionId, bool silentMode) override;
     void FlushPipelineNodes(uint32_t sessionId);
     void TearDownCurrentNodePipeline(uint32_t sessionId, HpaeSessionState state, bool isSessionEffectActive);
 

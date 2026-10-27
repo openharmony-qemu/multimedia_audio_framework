@@ -57,7 +57,8 @@ public:
     const char *GetRenderFrameData(void);
     uint64_t GetLatency();
     void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
+        uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID,
+        bool silentMode = false);
 
 private:
     bool ReadDataAndConvertFormat();

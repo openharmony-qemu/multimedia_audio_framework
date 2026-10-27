@@ -414,11 +414,11 @@ uint32_t HpaeFastSinkOutputNode::GetSpanSizeInFrame() const
 }
 
 void HpaeFastSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
+    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid, bool silentMode)
 {
     CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_LOG(audioRendererSink_->IsInited(), "audioRendererSink_ not init");
-    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
+    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid, silentMode);
 }
 
 uint64_t HpaeFastSinkOutputNode::GetLatency()

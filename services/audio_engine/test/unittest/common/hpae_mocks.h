@@ -121,7 +121,8 @@ public:
     MOCK_METHOD(DeviceType, GetCurrentOutputDevice, (), (override));
     MOCK_METHOD(void, RegisterCurrentDeviceCallback, (const std::function<void(bool)> &callback), (override));
     MOCK_METHOD(void, NotifyStreamChangeToSink,
-        (StreamChangeType change, uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid),
+        (StreamChangeType change, uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid,
+        bool silentMode),
         (override));
 };
 

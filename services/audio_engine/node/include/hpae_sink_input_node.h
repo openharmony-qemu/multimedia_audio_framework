@@ -65,6 +65,9 @@ public:
     int32_t GetAppUid();
     bool GetKeepRunning();
 
+    void SetStreamSilentMode(bool silentMode) { silentMode_ = silentMode; }
+    bool GetStreamSilentMode() const { return silentMode_; }
+
     void SetIsLowLatency(bool isLowLatency);
     bool GetIsLowLatency();
 
@@ -127,6 +130,7 @@ private:
     bool isNonStandardSampleRate_ = false;
     std::optional<SessionEffectAttachState> sessionEffectAttachState_;
     bool sessionEffectPreheatActive_ = false;
+    bool silentMode_ = false;
 
     // Cached DoProcess trace names; rebuilt in ctor and whenever node info changes
     std::string processTraceName_;

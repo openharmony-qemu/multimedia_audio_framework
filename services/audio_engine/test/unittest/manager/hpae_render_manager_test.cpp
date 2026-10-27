@@ -5281,6 +5281,7 @@ HWTEST_F(HpaeRendererManagerTest, IsRemoteDeviceClass_Values_001, TestSize.Level
  * @tc.type  : FUNC
  * @tc.number: IsHdiSpeedSupported_NormalManager_001
  * @tc.desc  : Normal renderer manager has no HDI speed capability (client keeps sonic speed).
+ * @tc.owner : audio_route_renderer
  */
 HWTEST_F(HpaeRendererManagerTest, IsHdiSpeedSupported_NormalManager_001, TestSize.Level1)
 {
@@ -6636,6 +6637,39 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyFinalizeNowOnStoppingNodeF
     WaitForMsgProcessing(hpaeRendererManager_);
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
     EXPECT_EQ(hpaeRendererManager_->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : SetStreamSilentMode_001
+ * @tc.type  : FUNC
+ * @tc.number: SetStreamSilentMode_001
+ * @tc.desc  : SetStreamSilentMode sets silentMode on the existing SinkInputNode.
+ * @tc.owner : audio_route_renderer
+ */
+HWTEST_F(HpaeRendererManagerTest, SetStreamSilentMode_001, TestSize.Level1)
+{
+    EXPECT_FALSE(sinkInputNode_->GetStreamSilentMode());
+    hpaeRendererManager_->SetStreamSilentMode(1, true);
+    WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_TRUE(sinkInputNode_->GetStreamSilentMode());
+
+    hpaeRendererManager_->SetStreamSilentMode(1, false);
+    WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_FALSE(sinkInputNode_->GetStreamSilentMode());
+}
+
+/**
+ * @tc.name  : SetStreamSilentMode_UnknownSession_002
+ * @tc.type  : FUNC
+ * @tc.number: SetStreamSilentMode_UnknownSession_002
+ * @tc.desc  : SetStreamSilentMode on unknown session is a safe no-op.
+ * @tc.owner : audio_route_renderer
+ */
+HWTEST_F(HpaeRendererManagerTest, SetStreamSilentMode_UnknownSession_002, TestSize.Level1)
+{
+    hpaeRendererManager_->SetStreamSilentMode(999, true);
+    WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_FALSE(sinkInputNode_->GetStreamSilentMode());
 }
 
 }  // namespace

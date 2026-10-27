@@ -3093,9 +3093,27 @@ HWTEST_F(HpaeFastSinkOutputNodeTest, refreshSpanSize_WithSyncInfo_001, TestSize.
 HWTEST_F(HpaeFastSinkOutputNodeTest, notifyStreamChangeToSink_Success_001, TestSize.Level0)
 {
     EXPECT_CALL(*mockSink_, IsInited()).WillOnce(Return(true));
-    EXPECT_CALL(*mockSink_, NotifyStreamChangeToSink(_, _, _, _, _)).Times(1);
+    EXPECT_CALL(*mockSink_, NotifyStreamChangeToSink(_, _, _, _, _, _)).Times(1);
     fastNode_->NotifyStreamChangeToSink(
         STREAM_CHANGE_TYPE_ADD, DEFAULT_SESSION_ID, STREAM_USAGE_UNKNOWN, RENDERER_RUNNING);
+}
+
+/**
+ * @tc.name  : notifyStreamChangeToSink_WithSilentMode_002
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_187
+ * @tc.desc  : Test NotifyStreamChangeToSink forwards silentMode=true to sink.
+ * @tc.owner : audio_route_renderer
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, notifyStreamChangeToSink_WithSilentMode_002, TestSize.Level0)
+{
+    EXPECT_CALL(*mockSink_, IsInited()).WillOnce(Return(true));
+    EXPECT_CALL(*mockSink_, NotifyStreamChangeToSink(
+        STREAM_CHANGE_TYPE_STATE_CHANGE, DEFAULT_SESSION_ID, STREAM_USAGE_UNKNOWN,
+        RENDERER_RUNNING, _, true)).Times(1);
+    fastNode_->NotifyStreamChangeToSink(
+        STREAM_CHANGE_TYPE_STATE_CHANGE, DEFAULT_SESSION_ID, STREAM_USAGE_UNKNOWN, RENDERER_RUNNING,
+        INVALID_UID, true);
 }
 
 // ==================== InitAudiobuffer null buffer branch ====================
