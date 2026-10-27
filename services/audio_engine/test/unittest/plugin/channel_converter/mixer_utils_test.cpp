@@ -1274,7 +1274,6 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerBoundary_001, TestSize.Level0)
     constexpr int32_t mixerMaxStreams = 1024; // facade gate: stream count in [1, 1024]
     constexpr int32_t max60MsFramesAt48k = 2880; // 48000 Hz * 60 ms block cap
     constexpr int32_t mixerStereo = 2;
-    constexpr int32_t misalignedMonoFrames = 3; // 3 * 1 not divisible by 4
     constexpr int16_t mixerTestAmplitude = 0x2000; // ~0.25 full scale, below limiter threshold
 
     AudioMixHandle handle = AudioMixerCreate(MIXER_TEST_RATE, mixerStereo, AUDIO_PCM_S16_LE);
@@ -1296,19 +1295,12 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerBoundary_001, TestSize.Level0)
         mixerTestAmplitude);
     struct AudioPcmMixStream overLen = {overBlock.data(), max60MsFramesAt48k + 1, 1.0f};
     EXPECT_EQ(AudioMixerProcess(handle, &overLen, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-    // sampleCount * channels not divisible by 4: 1 stereo frame gives total 2
+    // 1 stereo frame is processable geometry (2 chunks of 1 sample) but differs from
+    // the locked 960-frame block length, so the lock gate rejects it
     std::vector<int16_t> misalignBlock = MakeS16Block(1, mixerStereo, mixerTestAmplitude);
     struct AudioPcmMixStream misalign = {misalignBlock.data(), 1, 1.0f};
     EXPECT_EQ(AudioMixerProcess(handle, &misalign, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
     AudioMixerDestroy(handle);
-
-    // mono misalignment: 3 mono frames give total 3
-    AudioMixHandle mono = AudioMixerCreate(MIXER_TEST_RATE, 1, AUDIO_PCM_S16_LE);
-    ASSERT_NE(mono, nullptr);
-    std::vector<int16_t> monoBlock = MakeS16Block(misalignedMonoFrames, 1, mixerTestAmplitude);
-    struct AudioPcmMixStream misalignMono = {monoBlock.data(), misalignedMonoFrames, 1.0f};
-    EXPECT_EQ(AudioMixerProcess(mono, &misalignMono, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-    AudioMixerDestroy(mono);
 }
 
 /**
@@ -1551,4 +1543,120 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerTailLoopGeometry_001, TestSize.Level0)
     EXPECT_GT(MeanAbs(reinterpret_cast<const int16_t *>(result.outData),
         monoTailFrames * mixerMono), 0.0);
     AudioMixerDestroy(mono);
+}
+
+/**
+ * @tc.name: AudioMixerArbitraryBlock_001
+ * @tc.number: AudioMixerArbitraryBlock_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioMixerArbitraryBlock_001, TestSize.Level0)
+{
+    // Block lengths not divisible by 4 used to be rejected; the limiter now falls back
+    // to 3 / 2 / 1 equal chunks. mono@44.1k 20ms = 882 is the BT dual-path regression.
+    constexpr int32_t rateAt44100 = 44100;
+    constexpr int32_t mixerMono = 1;
+    constexpr int32_t mixerStereo = 2;
+    constexpr int32_t mono20MsAt44100 = 882; // 44100 * 20 / 1000, 3 chunks of 294
+    constexpr int32_t monoPrimeFrames = 881; // prime, single chunk
+    constexpr int32_t monoAlignedFrames = 880; // 4 chunks of 220, unchanged path
+    constexpr int32_t oneStereoFrame = 1;     // 2 chunks of 1, odd-history path
+    constexpr int16_t testAmplitude = 0x2000;
+
+    const int32_t frameCounts[] = {mono20MsAt44100, monoPrimeFrames, monoAlignedFrames};
+    for (int32_t frameCount : frameCounts) {
+        AudioMixHandle handle = AudioMixerCreate(rateAt44100, mixerMono, AUDIO_PCM_S16_LE);
+        ASSERT_NE(handle, nullptr);
+        std::vector<int16_t> block = MakeS16Block(frameCount, mixerMono, testAmplitude);
+        struct AudioPcmMixStream stream = {block.data(), frameCount, 1.0f};
+        struct AudioMixResult result = {};
+        for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+            result = AudioMixerProcess(handle, &stream, 1);
+            ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+            EXPECT_EQ(result.outSampleCount, frameCount);
+        }
+        EXPECT_GT(MeanAbs(reinterpret_cast<const int16_t *>(result.outData), frameCount), 0.0);
+        AudioMixerDestroy(handle);
+    }
+
+    // 1 stereo frame: 2 samples chunk into 2 x 1 and run the odd-history path
+    AudioMixHandle stereo = AudioMixerCreate(MIXER_TEST_RATE, mixerStereo, AUDIO_PCM_S16_LE);
+    ASSERT_NE(stereo, nullptr);
+    std::vector<int16_t> frame = MakeS16Block(oneStereoFrame, mixerStereo, testAmplitude);
+    struct AudioPcmMixStream stereoStream = {frame.data(), oneStereoFrame, 1.0f};
+    struct AudioMixResult result = {};
+    for (int32_t i = 0; i < MIXER_TEST_BLOCKS; ++i) {
+        result = AudioMixerProcess(stereo, &stereoStream, 1);
+        ASSERT_EQ(result.errCode, AUDIO_PCM_ALGO_SUCCESS);
+        EXPECT_EQ(result.outSampleCount, oneStereoFrame);
+    }
+    EXPECT_GT(MeanAbs(reinterpret_cast<const int16_t *>(result.outData),
+        oneStereoFrame * mixerStereo), 0.0);
+    AudioMixerDestroy(stereo);
+}
+
+/**
+ * @tc.name: AudioPcmConvertChannels_001
+ * @tc.number: AudioPcmConvertChannels_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioPcmConvertChannels_001, TestSize.Level0)
+{
+    constexpr int32_t mixerMono = 1;
+    constexpr int32_t mixerStereo = 2;
+    constexpr int32_t badChannels = 3;
+    constexpr int32_t sampleCount = 64;
+    constexpr int32_t s24BytesPerSample = 3;
+    constexpr int32_t s24MsbIndex = 2;
+    constexpr int32_t s24Bit16 = 16;
+    constexpr int32_t s24Bit8 = 8;
+    constexpr int16_t upmixAmplitude = 0x2000;  // 0.25
+    constexpr int16_t leftAmplitude = 0x2000;   // (0.25 + 0.125) / 2 = 0.1875
+    constexpr int16_t rightAmplitude = 0x1000;  // -> 6144 = 0x1800 exactly in S16
+    constexpr int16_t downmixExpected = 0x1800;
+
+    // mono -> stereo: each sample duplicated to L and R
+    std::vector<int16_t> monoBlock = MakeS16Block(sampleCount, mixerMono, upmixAmplitude);
+    std::vector<int16_t> stereoOut(static_cast<size_t>(sampleCount) * mixerStereo, 0);
+    ASSERT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S16_LE, mixerMono, mixerStereo, monoBlock.data(),
+        sampleCount, stereoOut.data()), AUDIO_PCM_ALGO_SUCCESS);
+    EXPECT_EQ(stereoOut[0], upmixAmplitude);
+    EXPECT_EQ(stereoOut[1], upmixAmplitude);
+    EXPECT_EQ(stereoOut[sampleCount * mixerStereo - 1], upmixAmplitude);
+
+    // stereo -> mono: each L/R pair averaged, exact in the float domain
+    std::vector<int16_t> stereoBlock(static_cast<size_t>(sampleCount) * mixerStereo, 0);
+    for (int32_t i = 0; i < sampleCount; ++i) {
+        stereoBlock[mixerStereo * i] = leftAmplitude;
+        stereoBlock[mixerStereo * i + 1] = rightAmplitude;
+    }
+    std::vector<int16_t> monoOut(sampleCount, 0);
+    ASSERT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S16_LE, mixerStereo, mixerMono, stereoBlock.data(),
+        sampleCount, monoOut.data()), AUDIO_PCM_ALGO_SUCCESS);
+    EXPECT_EQ(monoOut[0], downmixExpected);
+    EXPECT_EQ(monoOut[sampleCount - 1], downmixExpected);
+
+    // S24 round trip keeps the sample value in both duplicated channels
+    std::vector<uint8_t> s24In(static_cast<size_t>(sampleCount) * mixerMono * s24BytesPerSample, 0);
+    for (size_t i = 0; i < s24In.size(); i += s24BytesPerSample) {
+        s24In[i + s24MsbIndex] = 0x20; // 0x200000 = 0.25 full scale
+    }
+    std::vector<uint8_t> s24Out(static_cast<size_t>(sampleCount) * mixerStereo * s24BytesPerSample, 0);
+    ASSERT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S24_LE, mixerMono, mixerStereo, s24In.data(),
+        sampleCount, s24Out.data()), AUDIO_PCM_ALGO_SUCCESS);
+    uint32_t left = static_cast<uint32_t>(s24Out[s24MsbIndex]) << s24Bit16 |
+        static_cast<uint32_t>(s24Out[1]) << s24Bit8 | static_cast<uint32_t>(s24Out[0]);
+    uint32_t right = static_cast<uint32_t>(s24Out[s24BytesPerSample * mixerStereo + s24MsbIndex]) << s24Bit16 |
+        static_cast<uint32_t>(s24Out[s24BytesPerSample * mixerStereo + 1]) << s24Bit8 |
+        static_cast<uint32_t>(s24Out[s24BytesPerSample * mixerStereo]);
+    EXPECT_EQ(left, 0x200000u);
+    EXPECT_EQ(right, 0x200000u);
+
+    // invalid: same channels, unsupported channels, null data, non-positive count
+    EXPECT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S16_LE, mixerMono, mixerMono, monoBlock.data(),
+        sampleCount, stereoOut.data()), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S16_LE, badChannels, mixerMono, monoBlock.data(),
+        sampleCount, stereoOut.data()), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S16_LE, mixerMono, mixerStereo, nullptr,
+        sampleCount, stereoOut.data()), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S16_LE, mixerMono, mixerStereo, monoBlock.data(),
+        0, stereoOut.data()), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
 }

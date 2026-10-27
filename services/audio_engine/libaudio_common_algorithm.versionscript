@@ -50,6 +50,7 @@
     AudioMixerCreate;
     AudioMixerProcess;
     AudioMixerDestroy;
+    AudioPcmConvertChannels;
 
     # ---- mixing-table free functions (channel_converter/src/mixer_utils.cpp) ----
     # SetDefaultChannelLayout is called BY NAME from audio_service

@@ -663,6 +663,7 @@ private:
     void ApplyGainMono(float *inBuffer, float *outBuffer, float &lastGain, float deltaGain);
     uint32_t latency_ = 0;
     int32_t algoFrameLen_ = 0;
+    int32_t chunkCount_ = 0;
     float nextLev_ = 0.0f;
     float curMaxLev_ = 0.0f;
     float threshold_ = 0.0f;
@@ -686,6 +687,7 @@ PcmLimiter::PcmLimiter()
     gainRelease_ = PCM_GAIN_RELEASE;
     latency_ = 0;
     algoFrameLen_ = 0;
+    chunkCount_ = 0;
     curMaxLev_ = 0.0f;
     gain_ = 0.0f;
     channels_ = 0;
@@ -702,12 +704,16 @@ int32_t PcmLimiter::ValidateConfigParams(int32_t inputFrameBytes, int32_t bytePe
                                  bytePerSample == PCM_LMT_BYTE_PER_SAMPLE,
         MIX_ERR_INVALID_ARG,
         "Invalid input parameters");
-    CHECK_AND_RETURN_RET_LOG((inputFrameBytes / bytePerSample) % PCM_LMT_PROC_COUNT == 0,
-        MIX_ERR_INVALID_ARG,
-        "Invalid inputFrameBytes, frameLen must be an even number, intput frameLen is %{public}d",
-        inputFrameBytes / (bytePerSample * channels));
-
-    newAlgoFrameLen = inputFrameBytes / (bytePerSample * PCM_LMT_PROC_COUNT);
+    // 4 equal chunks keep the original limiter cadence; block lengths not divisible
+    // by 4 fall back to the largest divisor of at most 4 (3 / 2 / 1), so any block
+    // length is processable while chunk lengths stay constant (variable chunk
+    // lengths would break the in-place history window)
+    int32_t totalSamples = inputFrameBytes / bytePerSample;
+    chunkCount_ = PCM_LMT_PROC_COUNT;
+    while (totalSamples % chunkCount_ != 0) {
+        --chunkCount_;
+    }
+    newAlgoFrameLen = totalSamples / chunkCount_;
     CHECK_AND_RETURN_RET_LOG(newAlgoFrameLen > 0,
         MIX_ERR_INVALID_ARG,
         "Invalid inputFrameBytes, min request frameBytes is %{public}d",
@@ -770,14 +776,14 @@ int32_t PcmLimiter::Process(int32_t inputSampleCount, float *inBuffer, float *ou
         MIX_ERR_INVALID_ARG,
         "could not do process before SetConfig success");
 
-    CHECK_AND_RETURN_RET_LOG(algoFrameLen_ * PCM_LMT_PROC_COUNT == inputSampleCount,
+    CHECK_AND_RETURN_RET_LOG(algoFrameLen_ * chunkCount_ == inputSampleCount,
         MIX_ERR_INVALID_ARG,
         "error, requestSample = %{public}d, inputSample = %{public}d",
-        algoFrameLen_ * PCM_LMT_PROC_COUNT,
+        algoFrameLen_ * chunkCount_,
         inputSampleCount);
 
     int32_t ptrIndex = 0;
-    for (int32_t i = 0; i < PCM_LMT_PROC_COUNT; i++) {
+    for (int32_t i = 0; i < chunkCount_; i++) {
         ProcessAlgo(inBuffer + ptrIndex, outBuffer + ptrIndex);
         ptrIndex += algoFrameLen_;
     }
@@ -992,9 +998,9 @@ constexpr int32_t MIXER_CHANNEL_MONO = 1;
 constexpr int32_t MIXER_CHANNEL_STEREO = 2;
 constexpr int32_t MIXER_DATA_MAX_MS = 60;
 constexpr int32_t MIXER_MS_PER_SECOND = 1000;
-constexpr int32_t MIXER_LIMITER_DIVISOR = 4; // limiter processes input in 4 chunks
 constexpr float MIXER_VOLUME_MIN = 0.0f;
 constexpr float MIXER_VOLUME_MAX = 1.0f;
+constexpr float MONO_DOWNMIX_GAIN = 0.5f; // stereo->mono averages each L/R pair
 
 struct MixerContext {
     std::mutex mutex;
@@ -1048,15 +1054,13 @@ int32_t ValidateMixInputs(AudioMixHandle handle, const AudioPcmMixStream *stream
     return AUDIO_PCM_ALGO_SUCCESS;
 }
 
-// Validates block geometry (alignment, 60ms cap, locked sampleCount) and prepares the
-// limiter and work buffers on the first successful call. Caller must hold ctx->mutex.
+// Validates block geometry (60ms cap, locked sampleCount) and prepares the limiter
+// and work buffers on the first successful call. Any block length works: the limiter
+// chunks the block into 4 equal parts when possible and falls back to 3 / 2 / 1 equal
+// chunks otherwise. Caller must hold ctx->mutex.
 int32_t EnsureMixBlock(MixerContext *ctx, int32_t firstCount, int32_t &totalSamples)
 {
     totalSamples = firstCount * ctx->channels;
-    if (totalSamples % MIXER_LIMITER_DIVISOR != 0) {
-        AUDIO_ERR_LOG("AudioMixerProcess sampleCount*channel must be divisible by 4, total: %{public}d", totalSamples);
-        return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
-    }
     if (firstCount > ctx->sampleRate * MIXER_DATA_MAX_MS / MIXER_MS_PER_SECOND) {
         AUDIO_ERR_LOG("AudioMixerProcess sampleCount exceeds 60ms: %{public}d", firstCount);
         return AUDIO_PCM_ALGO_ERR_INVALID_PARAM;
@@ -1188,4 +1192,41 @@ extern "C" void AudioMixerDestroy(AudioMixHandle handle)
     MixerContext *ctx = static_cast<MixerContext *>(handle);
     delete ctx;
     AUDIO_INFO_LOG("AudioMixerDestroy success");
+}
+
+// Converts interleaved mono <-> stereo PCM without a full remix stack: mono duplicates
+// each sample to L/R, stereo averages each L/R pair. Works in the float domain so every
+// supported format reuses the pcm<->float converters and their clamping.
+extern "C" int32_t AudioPcmConvertChannels(AudioPcmFormat format, int32_t srcChannels,
+    int32_t dstChannels, const void *inData, int32_t sampleCount, void *outData)
+{
+    bool toStereo = srcChannels == MIXER_CHANNEL_MONO && dstChannels == MIXER_CHANNEL_STEREO;
+    bool toMono = srcChannels == MIXER_CHANNEL_STEREO && dstChannels == MIXER_CHANNEL_MONO;
+    CHECK_AND_RETURN_RET_LOG(inData != nullptr && outData != nullptr && sampleCount > 0 && (toStereo || toMono),
+        AUDIO_PCM_ALGO_ERR_INVALID_PARAM,
+        "AudioPcmConvertChannels invalid params, srcChannels: %{public}d, dstChannels: %{public}d",
+        srcChannels,
+        dstChannels);
+
+    int32_t inSamples = sampleCount * srcChannels;
+    int32_t outSamples = sampleCount * dstChannels;
+    std::vector<float> in(static_cast<size_t>(inSamples));
+    std::vector<float> out(static_cast<size_t>(outSamples));
+    int32_t ret = ConvertPcmToFloat(format, inData, inSamples, in.data());
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_PCM_ALGO_SUCCESS, ret,
+        "AudioPcmConvertChannels convert input failed, ret: %{public}d", ret);
+    if (toStereo) {
+        for (int32_t i = 0; i < sampleCount; ++i) {
+            out[MIXER_CHANNEL_STEREO * i] = in[i];
+            out[MIXER_CHANNEL_STEREO * i + 1] = in[i];
+        }
+    } else {
+        for (int32_t i = 0; i < sampleCount; ++i) {
+            out[i] = (in[MIXER_CHANNEL_STEREO * i] + in[MIXER_CHANNEL_STEREO * i + 1]) * MONO_DOWNMIX_GAIN;
+        }
+    }
+    ret = ConvertFloatToPcm(format, out.data(), outSamples, outData);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_PCM_ALGO_SUCCESS, ret,
+        "AudioPcmConvertChannels convert output failed, ret: %{public}d", ret);
+    return AUDIO_PCM_ALGO_SUCCESS;
 }

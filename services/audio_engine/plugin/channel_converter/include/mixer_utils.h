@@ -86,8 +86,8 @@ typedef void* AudioMixHandle;
 
 // Create a mixer. channel: 1 = mono, 2 = stereo; the output format equals the input
 // format. Constraints per AudioMixerProcess call: sampleCount > 0 and fixed after the
-// first successful call; sampleCount * channel divisible by 4 and not longer than
-// 60ms; stream count in [1, 1024].
+// first successful call; any block length works (the limiter chunks into 4 equal parts
+// when possible, 3 / 2 / 1 otherwise); not longer than 60ms; stream count in [1, 1024].
 AudioMixHandle AudioMixerCreate(int32_t sampleRate, int32_t channel, AudioPcmFormat format);
 
 struct AudioMixResult AudioMixerProcess(AudioMixHandle handle, const struct AudioPcmMixStream* streams,
@@ -95,6 +95,13 @@ struct AudioMixResult AudioMixerProcess(AudioMixHandle handle, const struct Audi
 
 // Destroy the mixer and release the internally allocated buffers.
 void AudioMixerDestroy(AudioMixHandle handle);
+
+// Convert interleaved mono <-> stereo PCM in the float domain: mono duplicates each
+// sample to L/R; stereo averages each L/R pair. srcChannels/dstChannels: 1 or 2 and
+// must differ. sampleCount is frames per channel; outData must hold
+// sampleCount * dstChannels samples. Returns AUDIO_PCM_ALGO_* codes.
+int32_t AudioPcmConvertChannels(AudioPcmFormat format, int32_t srcChannels, int32_t dstChannels,
+    const void* inData, int32_t sampleCount, void* outData);
 
 #ifdef __cplusplus
 }
