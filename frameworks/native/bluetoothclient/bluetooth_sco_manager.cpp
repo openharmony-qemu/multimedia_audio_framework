@@ -455,7 +455,6 @@ void BluetoothScoManager::ResetScoState(const BluetoothRemoteDevice &device)
     }
 
     cacheReq_ = nullptr;
-    isInitialized_ = false;
     SetAudioScoState(AudioScoState::DISCONNECTED);
     currentScoDevice_ = BluetoothRemoteDevice();
 }
