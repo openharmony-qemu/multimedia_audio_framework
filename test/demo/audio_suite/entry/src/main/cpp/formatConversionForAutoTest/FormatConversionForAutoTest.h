@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. ALL rights reserved.
+ * Copyright (c) 2026 Huawei Device Co., Ltd. 2025-2026. All rights reserved.
  */
 
 #ifndef AUDIOEDITTESTAPP_FORMAT_CONVERSION_FOR_AUTOTEST_H

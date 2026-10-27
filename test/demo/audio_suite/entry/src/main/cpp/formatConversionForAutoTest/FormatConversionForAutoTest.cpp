@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd. 2025-2026. All rights reserved.
+ */
+
 #include "FormatConversionForAutoTest.h"
 #include "hilog/log.h"
 #include "ohaudiosuite/native_audio_converter.h"
@@ -251,6 +255,7 @@ static napi_value Convert(napi_env env, napi_callback_info info)
     int32_t fd = -1;
     struct stat fileStat;
     napi_value result = nullptr;
+    napi_get_null(env, &result);
 
     size_t argc = ARG_COUNT;
     napi_value argv[ARG_COUNT];

@@ -223,20 +223,21 @@ function parseFormatConversionJson(jsonObjectStr: string): FormatConversionScene
     outputFormat: { encodingType: 0, samplingRate: 0, channelLayout: 0, sampleFormat: 0 },
     expectedOutput: { md5Value: [] }
   };
-  sceneInfo.sceneName = Object(jsonObjectStr)["scene_name"];
-  sceneInfo.description = Object(jsonObjectStr)["description"];
-  sceneInfo.inputFile.path = Object(jsonObjectStr)["input_file"]["path"];
-  sceneInfo.outputFile.nameTemplate = Object(jsonObjectStr)["output_file"]["name_template"];
-  sceneInfo.outputFile.samplingRate = Object(jsonObjectStr)["output_file"]["sampling_rate"];
-  sceneInfo.outputFile.bitDepth = Object(jsonObjectStr)["output_file"]["bit_depth"];
-  sceneInfo.outputFile.channels = Object(jsonObjectStr)["output_file"]["channels"];
-  sceneInfo.outputFormat.encodingType = Object(jsonObjectStr)["output_format"]["encodingType"];
-  sceneInfo.outputFormat.samplingRate = Object(jsonObjectStr)["output_format"]["samplingRate"];
-  sceneInfo.outputFormat.channelLayout = Object(jsonObjectStr)["output_format"]["channelLayout"];
-  sceneInfo.outputFormat.sampleFormat = Object(jsonObjectStr)["output_format"]["sampleFormat"];
-  if (Object(jsonObjectStr)["expected_output"] != undefined &&
-    Object(jsonObjectStr)["expected_output"]["md5Value"] != undefined) {
-    sceneInfo.expectedOutput.md5Value = Object(jsonObjectStr)["expected_output"]["md5Value"];
+  const obj = Object(jsonObjectStr);
+  sceneInfo.sceneName = obj["scene_name"] ?? '';
+  sceneInfo.description = obj["description"] ?? '';
+  sceneInfo.inputFile.path = obj["input_file"]?.["path"] ?? '';
+  sceneInfo.outputFile.nameTemplate = obj["output_file"]?.["name_template"] ?? '';
+  sceneInfo.outputFile.samplingRate = obj["output_file"]?.["sampling_rate"] ?? 0;
+  sceneInfo.outputFile.bitDepth = obj["output_file"]?.["bit_depth"] ?? 0;
+  sceneInfo.outputFile.channels = obj["output_file"]?.["channels"] ?? 0;
+  sceneInfo.outputFormat.encodingType = obj["output_format"]?.["encodingType"] ?? 0;
+  sceneInfo.outputFormat.samplingRate = obj["output_format"]?.["samplingRate"] ?? 0;
+  sceneInfo.outputFormat.channelLayout = obj["output_format"]?.["channelLayout"] ?? 0;
+  sceneInfo.outputFormat.sampleFormat = obj["output_format"]?.["sampleFormat"] ?? 0;
+  if (obj["expected_output"] != undefined &&
+    obj["expected_output"]["md5Value"] != undefined) {
+    sceneInfo.expectedOutput.md5Value = obj["expected_output"]["md5Value"];
   }
   return sceneInfo;
 }
