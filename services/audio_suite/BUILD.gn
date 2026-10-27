@@ -17,7 +17,6 @@ import("../../config.gni")
 
 group("audio_suite_packages") {
   deps = [
-    ":audio_pcm_process",
     ":audio_suite",
     ":audio_suite_capabilities",
   ]
@@ -190,7 +189,6 @@ audio_ohos_library("audio_suite") {
         "client/converter/src/audio_format_converter_impl.cpp",
         "client/utils/src/audio_suite_pcm_buffer.cpp",
         "client/utils/src/audio_suite_format_conversion.cpp",
-        "client/converter/src/audio_suite_raw_format_conversion.cpp",
       ]
     }
   } else {
@@ -200,67 +198,6 @@ audio_ohos_library("audio_suite") {
   }
 
   version_script = "libaudio_suite.versionscript"
-
-  subsystem_name = "multimedia"
-  part_name = "audio_framework"
-}
-
-audio_ohos_library("audio_pcm_process") {
-  branch_protector_ret = "pac_ret"
-  cflags = [
-    "-Os",
-    "-ffunction-sections",
-    "-fdata-sections",
-    "-fvisibility-inlines-hidden",
-  ]
-
-  ldflags = [
-    "-Wl,-gc-sections",
-  ]
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    cfi_vcall_icall_only = true
-    debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
-  }
-  install_enable = true
-
-  if (audio_framework_feature_audiosuite_support) {
-    include_dirs = [
-      "client/converter/include",
-      "client/manager/include",
-      "client/pcm_process/include",
-      "client/utils/include",
-      "client/node/include",
-      "../../interfaces/inner_api/native/audiocommon/include/",
-      "../../interfaces/inner_api/native/audiosuite/include",
-      "../../interfaces/inner_api/native/audio_pcm_process/include",
-      "../audio_engine/utils/",
-      "../audio_engine/plugin/channel_converter/include/",
-    ]
-
-    sources = [ "client/pcm_process/src/audio_pcm_process_impl.cpp" ]
-
-    deps = [
-      ":audio_suite",
-      "../audio_engine:audio_common_algorithm",
-      "../../frameworks/native/audioutils:audio_utils",
-      "../audio_service:audio_common",
-    ]
-
-    external_deps = [
-      "c_utils:utils",
-      "hilog:libhilog",
-      "bounds_checking_function:libsec_shared",
-    ]
-  }
-
-  # innerapi_tags = [ "chipsetsdk" ]
-
-  version_script = "libaudio_pcm_process.versionscript"
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

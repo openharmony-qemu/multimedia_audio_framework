@@ -35,7 +35,6 @@ if (audio_framework_feature_audiosuite_support) {
       "../../client/converter/include",
       "../../client/node/include",
       "../../client/utils/include",
-      "../../client/pcm_process/include",
       "../../client/stub/include",
       "../../server/include",
       "../../server/include",
@@ -47,7 +46,6 @@ if (audio_framework_feature_audiosuite_support) {
       "../../../../interfaces/inner_api/native/audiocommon/include",
       "../../../../interfaces/inner_api/native/audiosuite/include",
       "../../../../interfaces/inner_api/native/offlineaudioeffect/include",
-      "../../../../interfaces/inner_api/native/audio_pcm_process/include",
       "../../../../interfaces/kits/c/audio_suite/",
       "../../../../interfaces/kits/c/common",
       "../../../../frameworks/native/ohaudiosuite",
@@ -197,39 +195,6 @@ if (audio_framework_feature_audiosuite_support) {
     resource_config_file = "./resource/ohos_test.xml"
   }
 
-  ohos_unittest("audio_pcm_process_impl_test") {
-    module_out_path = module_output_path
-    sources = [
-      "pcm_process/audio_pcm_process_impl_test.cpp",
-      "tool/audio_suite_unittest_tools.cpp",
-    ]
-
-    sanitize = {
-      cfi = true
-      cfi_cross_dso = true
-      cfi_vcall_icall_only = true
-      debug = false
-      integer_overflow = true
-      ubsan = true
-      boundary_sanitize = true
-    }
-
-    configs = [ ":audio_suite_unit_config" ]
-
-    deps = [
-      "../../:audio_pcm_process",
-      "../../:audio_suite_static",
-    ]
-
-    external_deps = [
-      "bounds_checking_function:libsec_shared",
-      "c_utils:utils",
-      "googletest:gtest",
-      "hilog:libhilog",
-      "bounds_checking_function:libsec_shared",
-    ]
-  }
-
   ohos_unittest("audio_suite_service_test") {
     module_out_path = module_output_path
     sources = [
@@ -314,11 +279,5 @@ if (audio_framework_feature_audiosuite_support) {
 
     part_name = "audio_framework"
     subsystem_name = "multimedia"
-  }
-
-  group("audio_pcm_process_module_test") {
-    deps = [
-      "../module_test:audio_pcm_process_module_test",
-    ]
   }
 }

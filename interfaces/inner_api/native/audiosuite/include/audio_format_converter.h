@@ -64,7 +64,6 @@ public:
     virtual int32_t Process(void* outputData, uint32_t outputCapacity, uint32_t* outputSize) = 0;
 
     // Input data is transferred through the interface
-    virtual AudioConvertResult SyncProcess(const uint8_t* inData, uint32_t inBytes) = 0;
     virtual size_t GetDelayDataSize() = 0;
 
     virtual void Destroy() = 0;
