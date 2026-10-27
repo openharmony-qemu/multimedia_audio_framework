@@ -1219,7 +1219,7 @@ void FuzzLoopbackDevicePairs()
     server->GetLoopbackSupportedDevicePairs(inputDevices, outputDevices, ret);
     std::shared_ptr<AudioDeviceDescriptor> inputDevice;
     std::shared_ptr<AudioDeviceDescriptor> outputDevice;
-    server->GetLoopbackPreferredDevicePair(inputDevice, outputDevice, ret);
+    server->GetLoopbackPreferredDevicePair(false, inputDevice, outputDevice, ret);
 }
 
 // Lines 6114-6118: UpdateDeviceInfo
