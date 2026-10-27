@@ -2361,8 +2361,8 @@ void AudioVolumeManager::SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType str
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     volumeEvent.deviceType = desc != nullptr ? desc->deviceType_ : DEVICE_TYPE_NONE;
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
-        audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
+        audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent, zoneId);
+        audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent, zoneId);
     }
 }
 
