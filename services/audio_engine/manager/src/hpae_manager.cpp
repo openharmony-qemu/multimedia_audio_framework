@@ -310,6 +310,10 @@ int32_t HpaeManager::DeInit()
     }
     delayedTaskQueue_.CancelAll();
     hpaeNoLockQueue_.HandleRequests();  // todo suspend
+    // Drain-then-destroy: any queued createCoreSink runs first, then the thread is stopped.
+    if (auto coreSink = SafeGetMap(rendererManagerMap_, DEFAULT_CORE_SINK_NAME)) {
+        coreSink->DeInit();  // stops Virtual_Render thread; map entry kept for re-Init reuse
+    }
     isInit_.store(false);
     AUDIO_INFO_LOG("success");
     return SUCCESS;
