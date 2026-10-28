@@ -138,11 +138,15 @@ private:
     void MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchFastArmusbPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchArmusbInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchArmUsbFormatPipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         const std::shared_ptr<AudioPipeInfo> &pipeInfo, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void SyncArmUsbSiblingFastPipe(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+        std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     SelectedDeviceFormat SelectArmUsbFormat(
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
@@ -183,8 +187,6 @@ private:
     bool IsMultiStreamPrimary(const std::string &pipeName);
     void UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescriptor> existingStream,
         std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
-    void UpdateActionForArmUsbFastConcede(std::shared_ptr<AudioStreamDescriptor> &existingStream,
-        std::shared_ptr<AudioStreamDescriptor> &incomingStream, ConcurrencyAction &action);
     InputPipeStreamPairList DetermineInputPipeBaseConfig(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList);
     void DetermineInputPipeConfig(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList);
     int32_t GetPipePriority(const std::shared_ptr<AudioPipeInfo> &pipeInfo) const;

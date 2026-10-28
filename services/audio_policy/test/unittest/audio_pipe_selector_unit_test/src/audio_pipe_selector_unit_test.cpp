@@ -1921,7 +1921,8 @@ HWTEST_F(AudioPipeSelectorUnitTest, MatchFastArmusbPipe_001, TestSize.Level1)
     auto pipeInfo = MakeTestPipe(PIPE_ROLE_OUTPUT, "primary", AUDIO_OUTPUT_FLAG_FAST);
     pipeInfo->name_ = "primary_output";
     pipeInfo->moduleInfo_.macAddress = "old_addr";
-    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamDesc);
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamPropInfo, streamDesc);
     EXPECT_EQ(pipeInfo->moduleInfo_.macAddress, "old_addr");
 }
 
@@ -1943,7 +1944,9 @@ HWTEST_F(AudioPipeSelectorUnitTest, MatchFastArmusbPipe_002, TestSize.Level1)
     deviceDesc->macAddress_ = "same_addr";
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
-    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamDesc);
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->sampleRate_ = 8000;
+    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamPropInfo, streamDesc);
     EXPECT_EQ(pipeInfo->moduleInfo_.macAddress, "same_addr");
     EXPECT_EQ(pipeInfo->moduleInfo_.rate, "8000");
 }
@@ -1970,7 +1973,8 @@ HWTEST_F(AudioPipeSelectorUnitTest, MatchFastArmusbPipe_003, TestSize.Level1)
     deviceDesc->audioStreamInfo_.push_back(deviceStreamInfo);
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
-    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamDesc);
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamPropInfo, streamDesc);
     EXPECT_EQ(pipeInfo->moduleInfo_.macAddress, "new_addr");
     EXPECT_EQ(pipeInfo->moduleInfo_.rate, "96000");
 }

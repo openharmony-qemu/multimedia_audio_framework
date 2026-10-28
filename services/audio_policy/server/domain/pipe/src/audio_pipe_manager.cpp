@@ -501,6 +501,24 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipeForCa
     return GetUnusedPipeInternal(pipeInfos);
 }
 
+static bool HasActiveArmUsbFastPipe(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos,
+    const std::string &macAddress)
+{
+    for (const auto &pipe : pipeInfos) {
+        if (pipe == nullptr || pipe->name_ != "fast_usb_arm_output") {
+            continue;
+        }
+        if (pipe->moduleInfo_.macAddress != macAddress) {
+            continue;
+        }
+        if (!pipe->streamDescriptors_.empty() &&
+            pipe->audioStreamInfo_.samplingRate > AudioSamplingRate::SAMPLE_RATE_48000) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipeInternal(
     const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
 {
@@ -516,8 +534,8 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipeInter
         if (pipe->streamDescriptors_.empty() && pipe->pipeRole_ == PIPE_ROLE_OUTPUT &&
             pipe->routeFlag_ == AUDIO_OUTPUT_FLAG_NORMAL &&
             pipe->moduleInfo_.deviceType == std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET))) {
-            // for arm usb normal pipe
-            if (pipe->audioStreamInfo_.samplingRate > AudioSamplingRate::SAMPLE_RATE_48000) {
+            if (pipe->audioStreamInfo_.samplingRate > AudioSamplingRate::SAMPLE_RATE_48000 &&
+                !HasActiveArmUsbFastPipe(pipeInfos, pipe->moduleInfo_.macAddress)) {
                 newList.push_back(pipe);
             }
             continue;
