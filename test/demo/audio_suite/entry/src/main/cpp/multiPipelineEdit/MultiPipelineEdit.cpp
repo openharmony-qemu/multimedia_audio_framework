@@ -487,7 +487,8 @@ napi_value AudioEditNodeInitMultiPipeline(napi_env env, napi_callback_info info)
     result = OH_AudioSuiteEngine_CreatePipeline(g_multiAudioSuiteEngine,
         &g_multiAudioSuitePipeline[g_initedPipelineNum], workMode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-                 "audioEditTest OH_AudioEditEngine_CreatePipeline result: %{public}d workmode:%{public}d", static_cast<int>(result), workMode);
+                 "audioEditTest OH_AudioEditEngine_CreatePipeline result: %{public}d workmode:%{public}d",
+                 static_cast<int>(result), workMode);
     // Instantiate PipelineManager
     std::shared_ptr<NodeManager> nodeManager =
         std::make_shared<NodeManager>(g_multiAudioSuitePipeline[g_initedPipelineNum]);
