@@ -269,9 +269,11 @@ HWTEST_F(HpaeVirtualRendererManagerTest, PullLoop20ms, TestSize.Level1)
     WaitForMsgProcessing(manager);
 
     EXPECT_EQ(manager->Start(TEST_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(manager);
     std::this_thread::sleep_for(std::chrono::milliseconds(150));  // ~7 periods
     int32_t duringRun = count.load();
     EXPECT_GE(duringRun, 3);  // at least 3 pulls in 150ms (>=40ms of pacing)
+    EXPECT_LE(duringRun, 12);  // upper bound: catch busy-spin regression (no AbsoluteSleep)
 
     EXPECT_EQ(manager->Pause(TEST_SESSION_ID), SUCCESS);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));

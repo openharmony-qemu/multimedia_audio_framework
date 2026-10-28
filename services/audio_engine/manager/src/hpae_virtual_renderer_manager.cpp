@@ -125,6 +125,11 @@ void HpaeVirtualRendererManager::Process()
     if (!IsRunning()) {
         return;  // thread blocks in HpaeSignalProcessThread::Run while no RUNNING session
     }
+    int64_t now = ClockTime::GetCurNano();
+    // Re-anchor only when off the grid by a full period (late stall or EINTR storm): no catch-up.
+    if (now - wakeUpTime_ >= PULL_PERIOD_NS || wakeUpTime_ - now >= PULL_PERIOD_NS) {
+        wakeUpTime_ = now;
+    }
     for (const auto &it : sinkInputNodeMap_) {
         auto stateItr = sessionNodeMap_.find(it.first);
         if (stateItr == sessionNodeMap_.end() || stateItr->second.state != HPAE_SESSION_RUNNING) {
@@ -132,10 +137,6 @@ void HpaeVirtualRendererManager::Process()
         }
         // Pull one frameLen from client shared buffer; output port is unconnected => discarded.
         it.second->DoProcess();
-    }
-    int64_t now = ClockTime::GetCurNano();
-    if (wakeUpTime_ < now) {
-        wakeUpTime_ = now;  // first round after idle or after a long stall: re-anchor, no catch-up
     }
     wakeUpTime_ += PULL_PERIOD_NS;
     ClockTime::AbsoluteSleep(wakeUpTime_);
