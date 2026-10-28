@@ -345,4 +345,17 @@ HWTEST_F(HpaeVirtualRendererManagerTest, MoveStreamSyncUnknownSession, TestSize.
     WaitForMsgProcessing(manager);
     EXPECT_EQ(manager->DeInit(), SUCCESS);
 }
+
+HWTEST_F(HpaeVirtualRendererManagerTest, RegisterWriteCallbackUnknownSession, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    std::atomic<int32_t> count(0);
+    auto cb = MakeCountingCb(count);
+    EXPECT_EQ(manager->RegisterWriteCallback(INVALID_SESSION_ID, cb), SUCCESS);
+    WaitForMsgProcessing(manager);
+    HpaeSinkInputInfo info;
+    EXPECT_NE(manager->GetSinkInputInfo(INVALID_SESSION_ID, info), SUCCESS);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
 }  // namespace

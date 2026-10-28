@@ -24,6 +24,7 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "hpae_node_common.h"
+#include "hpae_stream_move_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -364,11 +365,15 @@ void HpaeVirtualRendererManager::MoveStreamSync(uint32_t sessionId, const std::s
         AUDIO_ERR_LOG("[StartMove] session %{public}u not found, move to %{public}s",
             sessionId, sinkName.c_str());
         TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+        HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY,
+            sinkInfo_.deviceName, sinkName, "not find session node");
         return;
     }
     if (sinkName.empty()) {
         AUDIO_ERR_LOG("[StartMove] session %{public}u failed, sinkName is empty", sessionId);
         TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+        HpaeStreamMoveMonitor::ReportStreamMoveException(sinkInputNodeMap_[sessionId]->GetAppUid(), sessionId,
+            HPAE_STREAM_CLASS_TYPE_PLAY, sinkInfo_.deviceName, sinkName, "sinkName is empty");
         return;
     }
     AUDIO_INFO_LOG("[StartMove] session %{public}u, sink [virtual render] --> [%{public}s]",
@@ -434,9 +439,11 @@ void HpaeVirtualRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     uint32_t sessionId = node->GetNodeInfo().sessionId;
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
+    nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.historyFrameCount = 0;
     nodeInfo.statusCallback = weak_from_this();
     node->SetNodeInfo(nodeInfo);
+    node->SetIsLowLatency(false);
     sinkInputNodeMap_[sessionId] = node;
     SetSessionState(sessionId, node->GetState());
 #ifdef ENABLE_HIDUMP_DFX
