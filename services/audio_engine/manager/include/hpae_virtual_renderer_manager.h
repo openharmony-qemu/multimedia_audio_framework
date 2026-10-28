@@ -100,7 +100,7 @@ private:
     bool HasRunningSession();
 
 private:
-    static constexpr int64_t PULL_PERIOD_NS = 20000000;  // 20ms fixed cadence, see spec section 8
+    static constexpr int64_t PULL_PERIOD_NS = 20000000;  // 20ms pull cadence, assumes frameLen matches
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
     HpaeSinkInfo sinkInfo_;

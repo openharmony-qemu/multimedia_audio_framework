@@ -138,10 +138,10 @@ HpaeSinkInfo HpaeVirtualRendererManager::GetSinkInfo()
     return sinkInfo_;
 }
 
-int32_t HpaeVirtualRendererManager::GetDeviceHDFDumpInfo()
+std::string HpaeVirtualRendererManager::GetDeviceHDFDumpInfo()
 {
     AUDIO_ERR_LOG("Unsupported operation");
-    return SUCCESS;
+    return "";
 }
 
 int32_t HpaeVirtualRendererManager::SetMute(bool isMute)
