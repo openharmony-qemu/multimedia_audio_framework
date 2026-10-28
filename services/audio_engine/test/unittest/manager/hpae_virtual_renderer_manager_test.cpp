@@ -68,6 +68,7 @@ static void WaitForMsgProcessing(std::shared_ptr<HpaeVirtualRendererManager> &ma
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_MS_40));
     EXPECT_EQ(manager->IsMsgProcessing(), false);
+    EXPECT_EQ(waitCount < waitCountThd, true);
 }
 
 HWTEST_F(HpaeVirtualRendererManagerTest, CreateStreamAndGetSinkInputInfo, TestSize.Level1)

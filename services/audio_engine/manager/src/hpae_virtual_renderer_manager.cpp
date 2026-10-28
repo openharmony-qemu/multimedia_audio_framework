@@ -177,10 +177,11 @@ void HpaeVirtualRendererManager::CreateInputSession(const HpaeStreamInfo &stream
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.deviceName = sinkInfo_.deviceName;
-    sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    sinkInputNodeMap_[streamInfo.sessionId]->SetAppUid(streamInfo.uid);
     sessionNodeMap_[streamInfo.sessionId].sceneType = nodeInfo.sceneType;
     sessionNodeMap_[streamInfo.sessionId].state = HPAE_SESSION_NEW;
+    auto inputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    inputNode->SetAppUid(streamInfo.uid);
+    sinkInputNodeMap_[streamInfo.sessionId] = inputNode;
     AUDIO_INFO_LOG("sessionId:%{public}u channels:%{public}u rate:%{public}u", streamInfo.sessionId,
         nodeInfo.channels, nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
 }
@@ -198,10 +199,10 @@ void HpaeVirtualRendererManager::DeleteInputSession(uint32_t sessionId)
 
 void HpaeVirtualRendererManager::SetSessionState(uint32_t sessionId, HpaeSessionState state)
 {
+    auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_LOG(node != nullptr, "sessionId %{public}u not exist", sessionId);
     sessionNodeMap_[sessionId].state = state;
-    if (auto node = SafeGetMap(sinkInputNodeMap_, sessionId)) {
-        node->SetState(state);
-    }
+    node->SetState(state);
 }
 
 int32_t HpaeVirtualRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo)
@@ -209,8 +210,11 @@ int32_t HpaeVirtualRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSin
     auto inputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
     CHECK_AND_RETURN_RET_LOG(inputNode != nullptr, ERR_INVALID_OPERATION,
         "sessionId %{public}u not exist", sessionId);
+    auto stateItr = sessionNodeMap_.find(sessionId);
+    CHECK_AND_RETURN_RET_LOG(stateItr != sessionNodeMap_.end(), ERR_INVALID_OPERATION,
+        "sessionId %{public}u not exist", sessionId);
     sinkInputInfo.nodeInfo = inputNode->GetNodeInfo();
-    sinkInputInfo.rendererSessionInfo = sessionNodeMap_[sessionId];
+    sinkInputInfo.rendererSessionInfo = stateItr->second;
     return SUCCESS;
 }
 
