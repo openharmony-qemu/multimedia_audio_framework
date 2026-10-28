@@ -25,7 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-std::string DEFAULT_NODE_STRING_KEY = "1_48000_2_1_4"; // _4 is channelLayout mono
+std::string DEFAULT_NODE_STRING_KEY = "1_48000_2_1_4_100"; // _4 channelLayout mono, _100 frameLen
 std::string DEFAULT_SCENE_MUSIC = "SCENE_MUSIC";
 std::string DEFAULT_SCENE_EXTRA = "SCENE_EXTRA";
 constexpr size_t DEFAULT_LEN = 100;
@@ -1697,6 +1697,23 @@ HWTEST_F(HpaeNodeCommonTest, StringToNum_Invalid_002, TestSize.Level0)
     EXPECT_EQ(StringToNum(""), 0L);
     EXPECT_EQ(StringToNum("abc"), 0L);
     EXPECT_EQ(StringToNum("12abc"), 0L);
+}
+
+/**
+ * @tc.name: TransNodeInfoToStringKey_FrameLen_001
+ * @tc.type: FUNC
+ * @tc.number: TransNodeInfoToStringKey_FrameLen_001
+ * @tc.desc: Key includes frameLen: sessions with identical geometry but different spans
+ *           must get different keys (converter buffers are sized by frameLen).
+ */
+HWTEST_F(HpaeNodeCommonTest, TransNodeInfoToStringKey_FrameLen_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo1 = GetTestNodeInfo();
+    HpaeNodeInfo nodeInfo2 = GetTestNodeInfo();
+    EXPECT_EQ(TransNodeInfoToStringKey(nodeInfo1), TransNodeInfoToStringKey(nodeInfo2));
+
+    nodeInfo2.frameLen = DEFAULT_LEN + 1;
+    EXPECT_NE(TransNodeInfoToStringKey(nodeInfo1), TransNodeInfoToStringKey(nodeInfo2));
 }
 
 } // namespace HPAE
