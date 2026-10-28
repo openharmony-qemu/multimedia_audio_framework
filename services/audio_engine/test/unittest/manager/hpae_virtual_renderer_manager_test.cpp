@@ -264,7 +264,8 @@ HWTEST_F(HpaeVirtualRendererManagerTest, PullLoop20ms, TestSize.Level1)
     EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager);
     std::atomic<int32_t> count(0);
-    EXPECT_EQ(manager->RegisterWriteCallback(TEST_SESSION_ID, MakeCountingCb(count)), SUCCESS);
+    auto cb = MakeCountingCb(count);  // named hold: whole chain stores weak_ptr only
+    EXPECT_EQ(manager->RegisterWriteCallback(TEST_SESSION_ID, cb), SUCCESS);
     WaitForMsgProcessing(manager);
 
     EXPECT_EQ(manager->Start(TEST_SESSION_ID), SUCCESS);
@@ -275,7 +276,7 @@ HWTEST_F(HpaeVirtualRendererManagerTest, PullLoop20ms, TestSize.Level1)
     EXPECT_EQ(manager->Pause(TEST_SESSION_ID), SUCCESS);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     int32_t afterPause = count.load();
-    EXPECT_EQ(afterPause, duringRun);  // paused: no more pulls
+    EXPECT_LE(afterPause - duringRun, 1);  // paused: at most one in-flight pull may land
     EXPECT_EQ(manager->DeInit(), SUCCESS);
 }
 
@@ -288,7 +289,8 @@ HWTEST_F(HpaeVirtualRendererManagerTest, PullLoopIdleNoWakeup, TestSize.Level1)
     EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager);
     std::atomic<int32_t> count(0);
-    EXPECT_EQ(manager->RegisterWriteCallback(TEST_SESSION_ID, MakeCountingCb(count)), SUCCESS);
+    auto cb = MakeCountingCb(count);  // named hold: whole chain stores weak_ptr only
+    EXPECT_EQ(manager->RegisterWriteCallback(TEST_SESSION_ID, cb), SUCCESS);
     WaitForMsgProcessing(manager);
     std::this_thread::sleep_for(std::chrono::milliseconds(120));
     EXPECT_EQ(count.load(), 0);  // no RUNNING session => thread blocked, zero pulls

@@ -420,6 +420,7 @@ int32_t HpaeVirtualRendererManager::RegisterWriteCallback(uint32_t sessionId,
     const std::weak_ptr<IStreamCallback> &callback)
 {
     auto request = [this, sessionId, callback]() {
+        Trace trace("HpaeVirtualRendererManager::RegisterWriteCallback");
         AUDIO_INFO_LOG("RegisterWriteCallback sessionId %{public}u", sessionId);
         auto inputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(inputNode != nullptr, "sessionId %{public}u not exist", sessionId);
