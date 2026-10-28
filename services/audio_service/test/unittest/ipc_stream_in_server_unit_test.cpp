@@ -31,7 +31,6 @@
 #include "parcel.h"
 #include "audio_stream_enum.h"
 #include "oh_audio_buffer.h"
-#include "ipc_skeleton.h"
 
 using namespace testing::ext;
 

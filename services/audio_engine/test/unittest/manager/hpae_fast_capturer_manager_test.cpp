@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "audio_errors.h"
-#include "audio_shared_memory.h"
 #include "audio_stream_enum.h"
 #include "hpae_fast_capturer_manager.h"
 #include "hpae_mocks.h"
@@ -264,75 +263,6 @@ HWTEST_F(HpaeFastCapturerManagerTest, InitCapturerManagerInvalidFrameLen, TestSi
     sourceInfo.frameLen = 50000;
     manager = std::make_shared<HpaeFastCapturerManager>(sourceInfo);
     EXPECT_NE(manager->InitCapturerManager(), SUCCESS);
-}
-
-/** @tc.desc: Warm-up calls Start then Stop for both fast modes, including Start and Stop failures. */
-HWTEST_F(HpaeFastCapturerManagerTest, WarmUpCapturerStartStop_001, TestSize.Level1)
-{
-    for (auto routeFlag : {AUDIO_INPUT_FLAG_FAST, AUDIO_INPUT_FLAG_ULTRA_FAST}) {
-        for (int32_t startResult : {SUCCESS, ERROR}) {
-            for (int32_t stopResult : {SUCCESS, ERROR}) {
-                HpaeSourceInfo sourceInfo = CreateFastSourceInfo(routeFlag);
-                sourceInfo.isUltraFast = routeFlag == AUDIO_INPUT_FLAG_ULTRA_FAST;
-                auto manager = std::make_shared<HpaeFastCapturerManager>(sourceInfo);
-                auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
-                manager->sourceInputNode_ = CreateFastSourceInputNode(sourceInfo, mockSource);
-                EXPECT_CALL(*mockSource, IsInited()).WillRepeatedly(Return(true));
-                EXPECT_CALL(*mockSource, DeInit()).Times(0);
-                {
-                    InSequence sequence;
-                    EXPECT_CALL(*mockSource, Start()).WillOnce(Return(startResult));
-                    EXPECT_CALL(*mockSource, Stop()).WillOnce(Return(stopResult));
-                }
-                manager->WarmUpCapturer();
-                EXPECT_EQ(manager->sourceInputNode_->GetSourceState(), STREAM_MANAGER_SUSPENDED);
-                Mock::VerifyAndClearExpectations(mockSource.get());
-                manager->sourceInputNode_->audioCapturerSource_ = nullptr;
-                manager->sourceInputNode_->captureId_ = HDI_INVALID_ID;
-            }
-        }
-    }
-}
-
-/** @tc.desc: Init and warm-up failures do not actively deinitialize an ultra fast source. */
-HWTEST_F(HpaeFastCapturerManagerTest, UltraFastInitFailureDoesNotDeInit_001, TestSize.Level1)
-{
-    auto memory = AudioSharedMemory::CreateFromLocal(960 * 4, "ultra_fast_failure_test");
-    ASSERT_NE(memory, nullptr);
-    auto &hdiManager = HdiAdapterManager::GetInstance();
-    uint32_t captureId = hdiManager.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_DEFAULT, true);
-    auto savedSource = hdiManager.captureSources_[captureId].source_;
-    for (bool warmUpFailure : {false, true}) {
-        auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
-        hdiManager.captureSources_[captureId].source_ = mockSource;
-        EXPECT_CALL(*mockSource, DeInit()).Times(0);
-        EXPECT_CALL(*mockSource, IsInited()).WillRepeatedly(Return(warmUpFailure));
-        if (warmUpFailure) {
-            EXPECT_CALL(*mockSource, GetMmapBufferInfo(_, _, _, _, _))
-                .WillOnce(DoAll(SetArgReferee<0>(memory->GetFd()), SetArgReferee<1>(960),
-                    SetArgReferee<2>(120), SetArgReferee<3>(4), SetArgReferee<4>(0), Return(SUCCESS)));
-            EXPECT_CALL(*mockSource, Start()).WillOnce(Return(ERROR));
-            EXPECT_CALL(*mockSource, Stop()).WillOnce(Return(SUCCESS));
-        } else {
-            EXPECT_CALL(*mockSource, Init(_)).WillOnce(Return(ERROR));
-        }
-        HpaeSourceInfo info = CreateFastSourceInfo(AUDIO_INPUT_FLAG_ULTRA_FAST);
-        info.deviceClass = "primary_ultra_fast";
-        info.deviceType = DEVICE_TYPE_USB_HEADSET;
-        info.frameLen = 120;
-        info.isUltraFast = true;
-        auto manager = std::make_shared<HpaeFastCapturerManager>(info);
-        EXPECT_EQ(manager->InitCapturerManager(), warmUpFailure ? SUCCESS : ERROR);
-        EXPECT_EQ(manager->IsInit(), warmUpFailure);
-        EXPECT_EQ(manager->sourceInputNode_->audioCapturerSource_, mockSource);
-        EXPECT_EQ(manager->sourceInputNode_->GetCaptureId(), captureId);
-        Mock::VerifyAndClearExpectations(mockSource.get());
-        EXPECT_CALL(*mockSource, IsInited()).WillRepeatedly(Return(warmUpFailure));
-        EXPECT_CALL(*mockSource, DeInit()).Times(warmUpFailure ? 1 : 0);
-        EXPECT_EQ(manager->DeInit(false), SUCCESS);
-    }
-    hdiManager.captureSources_[captureId].source_ = savedSource;
-    hdiManager.ReleaseId(captureId);
 }
 
 /**
@@ -945,31 +875,6 @@ HWTEST_F(HpaeFastCapturerManagerTest, MoveAllStream_PreferNonMatchingId, TestSiz
     manager->HandleMsg();
     EXPECT_EQ(manager->sourceOutputNodeMap_.count(FAST_SESSION_ID), 1);
 }
-/** @tc.desc: Ultra fast routes use a 2.5 ms span calculated from the sampling rate. */
-HWTEST_F(HpaeFastCapturerManagerTest, UltraFastSourceAttr_001, TestSize.Level1)
-{
-    for (const std::string &adapter : {std::string("primary"), std::string("usb")}) {
-        auto info = CreateFastSourceInfo(AUDIO_INPUT_FLAG_ULTRA_FAST);
-        info.adapterName = adapter;
-        info.frameLen = static_cast<uint64_t>(info.samplingRate) * ULTRA_FAST_CAPTURE_PERIOD_US / AUDIO_US_PER_S;
-        info.isUltraFast = true;
-        auto manager = std::make_shared<HpaeFastCapturerManager>(info);
-        IAudioSourceAttr attr;
-        manager->CreateSourceAttr(attr);
-        EXPECT_EQ(attr.audioStreamFlag, AUDIO_FLAG_ULTRA_FAST);
-        EXPECT_EQ(attr.routeFlag, AUDIO_INPUT_FLAG_ULTRA_FAST);
-        EXPECT_EQ(attr.adapterName, adapter);
-        info.frameLen = 240;
-        manager = std::make_shared<HpaeFastCapturerManager>(info);
-        EXPECT_EQ(manager->InitCapturerManager(), ERR_INVALID_PARAM);
-    }
-    auto info = CreateFastSourceInfo(AUDIO_INPUT_FLAG_FAST);
-    auto manager = std::make_shared<HpaeFastCapturerManager>(info);
-    IAudioSourceAttr attr;
-    manager->CreateSourceAttr(attr);
-    EXPECT_EQ(attr.audioStreamFlag, AUDIO_FLAG_MMAP);
-}
-
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

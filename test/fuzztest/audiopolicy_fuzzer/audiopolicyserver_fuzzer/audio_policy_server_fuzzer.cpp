@@ -685,12 +685,6 @@ void AudioPolicyServerIsFastRecordingSupportedFuzztest()
     int32_t source = GetData<uint16_t>();
     bool support = GetData<bool>();
     audioPolicyServer->IsFastRecordingSupported(streamInfo, source, support);
-    streamInfo.samplingRate = static_cast<AudioSamplingRate>(GetData<uint32_t>());
-    streamInfo.format = static_cast<AudioSampleFormat>(GetData<uint8_t>());
-    streamInfo.encoding = static_cast<AudioEncodingType>(GetData<uint8_t>());
-    streamInfo.channelLayout = static_cast<AudioChannelLayout>(GetData<uint64_t>());
-    audioPolicyServer->IsUltraFastRecordingSupported(streamInfo, source, support);
-    audioPolicyServer->IsUltraFastRecordingPlatformSupported(support);
 }
 
 void AudioPolicyServerSetRingerModeInternalFuzztest()

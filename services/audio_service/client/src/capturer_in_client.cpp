@@ -2612,7 +2612,6 @@ void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrIn
         NotifyFastStatusChange(FASTSTATUS_FAST);
     }
     InitCacheBuffer(clientSpanSizeInByte_);
-    needSetThreadPriority_ = true;
     isNeedRefreshCbBuffer_ = true;
     clientBuffer_->UpdateSpanBasicInfo(spanSizeInFrame_, cacheSizeInByte_, sizePerFrameInByte_);
     AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}zu "

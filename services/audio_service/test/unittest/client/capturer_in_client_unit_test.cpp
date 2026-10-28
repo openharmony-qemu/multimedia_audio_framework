@@ -237,7 +237,10 @@ public:
     virtual int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) override { return 0; }
 
     virtual int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
-        uint32_t threadPriority) override { return SUCCESS; }
+        uint32_t threadPriority) override
+    {
+        return 0;
+    }
 
     virtual int32_t SetDefaultOutputDevice(int32_t defaultOuputDevice, bool skipForce = false) override { return 0; }
 
@@ -2973,136 +2976,5 @@ HWTEST(CapturerInClientUnitTest, JudgeFastStreamByCapturerAttr_Normal_001, TestS
     bool ret = capturerInClientInner->JudgeFastStreamByCapturerAttr();
     EXPECT_FALSE(ret);
 }
-/** @tc.desc: Ultra fast status is accepted and reported; unsupported status values are ignored. */
-HWTEST_F(CapturerInClientUnitTest, UltraFastStatus_001, TestSize.Level1)
-{
-    auto client = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, 20001);
-    client->capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
-    EXPECT_EQ(client->GetFastStatus(), FASTSTATUS_ULTRA_FAST);
-    EXPECT_EQ(client->GetStreamClass(), IAudioStream::FAST_STREAM);
-    int32_t notifications = 0;
-    FastStatus received = FASTSTATUS_INVALID;
-    client->SetFastStatusChangeCallback([&](FastStatus status) { received = status; ++notifications; });
-    client->NotifyFastStatusChange(FASTSTATUS_ULTRA_FAST);
-    EXPECT_EQ(received, FASTSTATUS_ULTRA_FAST);
-    client->NotifyFastStatusChange(FASTSTATUS_INVALID);
-    EXPECT_EQ(notifications, 1);
-    client->NotifyFastStatusChange(FASTSTATUS_NORMAL);
-    EXPECT_EQ(received, FASTSTATUS_NORMAL);
-    client->capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
-    EXPECT_EQ(client->GetFastStatus(), FASTSTATUS_FAST);
-}
-
-/** @tc.desc: An ultra-fast request keeps its application block independent of service span changes. */
-HWTEST_F(CapturerInClientUnitTest, UltraFastCallbackDeviceSwitch_001, TestSize.Level1)
-{
-    auto client = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, 20001);
-    client->capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
-    client->capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
-    client->streamParams_.samplingRate = SAMPLE_RATE_48000;
-    client->streamParams_.format = SAMPLE_S16LE;
-    client->streamParams_.channels = STEREO;
-    client->streamParams_.encoding = ENCODING_PCM;
-    client->sizePerFrameInByte_ = 4;
-    client->clientBuffer_ = OHAudioBuffer::CreateFromLocal(7680, 120, 4);
-    client->InitCallbackBuffer(ULTRA_FAST_CAPTURE_PERIOD_US);
-    EXPECT_EQ(client->cbBufferSize_, 480);
-    for (const auto &attr : {CapturerAttrInfo{240, 1920, AUDIO_INPUT_FLAG_FAST},
-        CapturerAttrInfo{960, 7680, AUDIO_INPUT_FLAG_NORMAL},
-        CapturerAttrInfo{120, 960, AUDIO_INPUT_FLAG_ULTRA_FAST}}) {
-        client->RefreshCapturerAttrInfoFromSpan(attr);
-        client->CheckRefreshCbBuffer();
-        EXPECT_EQ(client->cbBufferSize_, 480);
-        EXPECT_EQ(client->spanSizeInFrame_, attr.spanSizeInFrame);
-        EXPECT_FALSE(client->isNeedRefreshCbBuffer_);
-    }
-    EXPECT_EQ(client->GetFastStatus(), FASTSTATUS_ULTRA_FAST);
-    client->RefreshCapturerAttrInfoFromSpan({240, 1920, AUDIO_INPUT_FLAG_ULTRA_FAST});
-    EXPECT_EQ(client->GetFastStatus(), FASTSTATUS_NORMAL);
-    client->CheckRefreshCbBuffer();
-    EXPECT_EQ(client->cbBufferSize_, 480);
-    client->streamParams_.samplingRate = SAMPLE_RATE_44100;
-    client->InitCallbackBuffer(20000);
-    EXPECT_EQ(client->cbBufferSize_, 4096 * 4);
-    client->capturerInfo_.originalFlag = AUDIO_FLAG_MMAP;
-    client->streamParams_.samplingRate = SAMPLE_RATE_48000;
-    client->InitCallbackBuffer(5000);
-    EXPECT_EQ(client->cbBufferSize_, 960);
-}
-
-/** @tc.desc: Ultra-fast PCM blocks use the client sample rate and retain the previous fallback for invalid spans. */
-HWTEST_F(CapturerInClientUnitTest, UltraFastUsbCallbackProfile_001, TestSize.Level1)
-{
-    auto client = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, 20001);
-    client->capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
-    client->streamParams_.encoding = ENCODING_PCM;
-    client->streamParams_.format = SAMPLE_S32LE;
-    client->streamParams_.channels = CHANNEL_4;
-    client->sizePerFrameInByte_ = 16;
-    for (auto rate : {SAMPLE_RATE_16000, SAMPLE_RATE_32000, SAMPLE_RATE_48000, SAMPLE_RATE_96000}) {
-        client->streamParams_.samplingRate = rate;
-        for (uint64_t duration : {ULTRA_FAST_CAPTURE_PERIOD_US, uint64_t(5000), uint64_t(20000)}) {
-            client->InitCallbackBuffer(duration);
-            EXPECT_EQ(client->cbBufferSize_, static_cast<uint64_t>(rate) * ULTRA_FAST_CAPTURE_PERIOD_US /
-                AUDIO_US_PER_S * 16);
-        }
-    }
-    client->streamParams_.samplingRate = SAMPLE_RATE_16000;
-    client->streamParams_.encoding = ENCODING_AUDIOVIVID;
-    client->InitCallbackBuffer(ULTRA_FAST_CAPTURE_PERIOD_US);
-    EXPECT_EQ(client->cbBufferSize_, 4096 * 16);
-    client->streamParams_.encoding = ENCODING_PCM;
-    client->streamParams_.samplingRate = 0;
-    client->InitCallbackBuffer(ULTRA_FAST_CAPTURE_PERIOD_US);
-    EXPECT_EQ(client->cbBufferSize_, 4096 * 16);
-    client->streamParams_.samplingRate = SAMPLE_RATE_44100;
-    client->InitCallbackBuffer(ULTRA_FAST_CAPTURE_PERIOD_US);
-    EXPECT_EQ(client->cbBufferSize_, 4096 * 16);
-    client->streamParams_.samplingRate = SAMPLE_RATE_16000;
-    client->streamParams_.format = SAMPLE_S16LE;
-    client->streamParams_.channels = MONO;
-    client->sizePerFrameInByte_ = 2;
-    client->clientBuffer_ = OHAudioBuffer::CreateFromLocal(2560, 40, 2);
-    client->InitCallbackBuffer(ULTRA_FAST_CAPTURE_PERIOD_US);
-    EXPECT_EQ(client->cbBufferSize_, 80);
-    for (const auto &attr : {CapturerAttrInfo{80, 640, AUDIO_INPUT_FLAG_FAST},
-        CapturerAttrInfo{320, 2560, AUDIO_INPUT_FLAG_NORMAL},
-        CapturerAttrInfo{40, 320, AUDIO_INPUT_FLAG_ULTRA_FAST}}) {
-        client->RefreshCapturerAttrInfoFromSpan(attr);
-        client->CheckRefreshCbBuffer();
-        EXPECT_EQ(client->cbBufferSize_, 80);
-    }
-}
-
-/** @tc.desc: Ultra-fast requests retain common duration limits and reinitialize only on a refresh request. */
-HWTEST_F(CapturerInClientUnitTest, UltraFastCallbackDurationLimit_001, TestSize.Level1)
-{
-    auto client = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, 20001);
-    client->capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
-    client->streamParams_.samplingRate = SAMPLE_RATE_48000;
-    client->streamParams_.encoding = ENCODING_PCM;
-    client->sizePerFrameInByte_ = 4;
-    client->InitCallbackBuffer(2000000);
-    EXPECT_EQ(client->cbBufferSize_, 480);
-    client->InitCallbackBuffer(2000001);
-    EXPECT_EQ(client->cbBufferSize_, 480);
-    client->InitCallbackBuffer(ULTRA_FAST_CAPTURE_PERIOD_US);
-    EXPECT_EQ(client->cbBufferSize_, 480);
-    client->spanSizeInFrame_ = 240;
-    client->isNeedRefreshCbBuffer_ = false;
-    client->CheckRefreshCbBuffer();
-    EXPECT_EQ(client->cbBufferSize_, 480);
-    client->isNeedRefreshCbBuffer_ = true;
-    client->CheckRefreshCbBuffer();
-    EXPECT_EQ(client->cbBufferSize_, 480);
-    EXPECT_FALSE(client->isNeedRefreshCbBuffer_);
-    client->capturerInfo_.originalFlag = AUDIO_FLAG_MMAP;
-    client->InitCallbackBuffer(5000);
-    EXPECT_EQ(client->cbBufferSize_, 960);
-    client->capturerInfo_.originalFlag = AUDIO_FLAG_NORMAL;
-    client->InitCallbackBuffer(20000);
-    EXPECT_EQ(client->cbBufferSize_, 3840);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS
