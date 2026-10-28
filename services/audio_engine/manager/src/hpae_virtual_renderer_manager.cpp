@@ -139,6 +139,81 @@ HpaeSinkInfo HpaeVirtualRendererManager::GetSinkInfo()
     return sinkInfo_;
 }
 
+int32_t HpaeVirtualRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_INVALID_OPERATION, "not init");
+    auto request = [this, streamInfo]() {
+        Trace trace("[" + std::to_string(streamInfo.sessionId) + "]HpaeVirtualRendererManager::CreateStream");
+        AUDIO_INFO_LOG("CreateStream sessionId %{public}u", streamInfo.sessionId);
+        CreateInputSession(streamInfo);
+        SetSessionState(streamInfo.sessionId, HPAE_SESSION_PREPARED);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeVirtualRendererManager::DestroyStream(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_INVALID_OPERATION, "not init");
+    auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualRendererManager::DestroyStream");
+        AUDIO_INFO_LOG("DestroyStream sessionId %{public}u", sessionId);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId) != nullptr,
+            "sessionId %{public}u not exist", sessionId);
+        SetSessionState(sessionId, HPAE_SESSION_RELEASED);
+        DeleteInputSession(sessionId);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+void HpaeVirtualRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo)
+{
+    HpaeNodeInfo nodeInfo;
+    ConfigNodeInfo(nodeInfo, streamInfo);
+    nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType);
+    nodeInfo.historyFrameCount = 0;
+    nodeInfo.statusCallback = weak_from_this();
+    nodeInfo.deviceClass = sinkInfo_.deviceClass;
+    nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    nodeInfo.deviceName = sinkInfo_.deviceName;
+    sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    sinkInputNodeMap_[streamInfo.sessionId]->SetAppUid(streamInfo.uid);
+    sessionNodeMap_[streamInfo.sessionId].sceneType = nodeInfo.sceneType;
+    sessionNodeMap_[streamInfo.sessionId].state = HPAE_SESSION_NEW;
+    AUDIO_INFO_LOG("sessionId:%{public}u channels:%{public}u rate:%{public}u", streamInfo.sessionId,
+        nodeInfo.channels, nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
+}
+
+void HpaeVirtualRendererManager::DeleteInputSession(uint32_t sessionId)
+{
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId)) {
+        OnNotifyDfxNodeAdmin(false, sinkInputNode->GetNodeInfo());
+    }
+#endif
+    sinkInputNodeMap_.erase(sessionId);
+    sessionNodeMap_.erase(sessionId);
+}
+
+void HpaeVirtualRendererManager::SetSessionState(uint32_t sessionId, HpaeSessionState state)
+{
+    sessionNodeMap_[sessionId].state = state;
+    if (auto node = SafeGetMap(sinkInputNodeMap_, sessionId)) {
+        node->SetState(state);
+    }
+}
+
+int32_t HpaeVirtualRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo)
+{
+    auto inputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_RET_LOG(inputNode != nullptr, ERR_INVALID_OPERATION,
+        "sessionId %{public}u not exist", sessionId);
+    sinkInputInfo.nodeInfo = inputNode->GetNodeInfo();
+    sinkInputInfo.rendererSessionInfo = sessionNodeMap_[sessionId];
+    return SUCCESS;
+}
+
 std::string HpaeVirtualRendererManager::GetDeviceHDFDumpInfo()
 {
     AUDIO_ERR_LOG("Unsupported operation");
@@ -269,16 +344,6 @@ std::vector<SinkInput> HpaeVirtualRendererManager::GetAllSinkInputsInfo()
 }
 
 // --- stubs replaced by later tasks ---
-int32_t HpaeVirtualRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
-{
-    return SUCCESS;
-}
-
-int32_t HpaeVirtualRendererManager::DestroyStream(uint32_t sessionId)
-{
-    return SUCCESS;
-}
-
 int32_t HpaeVirtualRendererManager::Start(uint32_t sessionId)
 {
     return SUCCESS;
@@ -326,11 +391,6 @@ int32_t HpaeVirtualRendererManager::RegisterWriteCallback(uint32_t sessionId,
     return SUCCESS;
 }
 
-int32_t HpaeVirtualRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo)
-{
-    return SUCCESS;
-}
-
 int32_t HpaeVirtualRendererManager::AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node)
 {
     return SUCCESS;
@@ -345,12 +405,6 @@ int32_t HpaeVirtualRendererManager::AddAllNodesToSink(
 void HpaeVirtualRendererManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) {}
 
 void HpaeVirtualRendererManager::OnNotifyQueue() {}
-
-void HpaeVirtualRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo) {}
-
-void HpaeVirtualRendererManager::DeleteInputSession(uint32_t sessionId) {}
-
-void HpaeVirtualRendererManager::SetSessionState(uint32_t sessionId, HpaeSessionState state) {}
 
 void HpaeVirtualRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &sinkName) {}
 
