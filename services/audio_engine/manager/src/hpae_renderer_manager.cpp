@@ -1694,6 +1694,8 @@ void HpaeRendererManager::SetStreamSilentMode(uint32_t sessionId, bool silentMod
         auto inputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(inputNode != nullptr, "sessionId %{public}u not exist", sessionId);
         inputNode->SetStreamSilentMode(silentMode);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId,
+            ConvertHpaeToRendererState(inputNode->GetState()), inputNode->GetAppUid());
     };
     SendRequest(request, __func__);
 }

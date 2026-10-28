@@ -6672,4 +6672,30 @@ HWTEST_F(HpaeRendererManagerTest, SetStreamSilentMode_UnknownSession_002, TestSi
     EXPECT_FALSE(sinkInputNode_->GetStreamSilentMode());
 }
 
+/**
+ * @tc.name  : SetStreamSilentMode_NotifySink_003
+ * @tc.type  : FUNC
+ * @tc.number: SetStreamSilentMode_NotifySink_003
+ * @tc.desc  : SetStreamSilentMode must notify the sink with the updated silentMode.
+ * @tc.owner : audio_route_renderer
+ */
+HWTEST_F(HpaeRendererManagerTest, SetStreamSilentMode_NotifySink_003, TestSize.Level1)
+{
+    auto mockRenderSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
+    ON_CALL(*mockRenderSink, IsInited()).WillByDefault(Return(true));
+    outputCluster_->hpaeSinkOutputNode_->audioRendererSink_ = mockRenderSink;
+
+    EXPECT_CALL(*mockRenderSink, NotifyStreamChangeToSink(
+        STREAM_CHANGE_TYPE_STATE_CHANGE, 1, testing::_, testing::_, testing::_, true)).Times(1);
+    hpaeRendererManager_->SetStreamSilentMode(1, true);
+    WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_TRUE(sinkInputNode_->GetStreamSilentMode());
+
+    EXPECT_CALL(*mockRenderSink, NotifyStreamChangeToSink(
+        STREAM_CHANGE_TYPE_STATE_CHANGE, 1, testing::_, testing::_, testing::_, false)).Times(1);
+    hpaeRendererManager_->SetStreamSilentMode(1, false);
+    WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_FALSE(sinkInputNode_->GetStreamSilentMode());
+}
+
 }  // namespace
