@@ -326,7 +326,9 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_015, TestS
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_016, TestSize.Level0)
 {
     audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
-    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
+    // Pre-set to the already-enabled state so the test reaches the MutePrimarySinkByCollaborative branch
+    // instead of the state-change path, which requires a real service adapter and is unavailable in UT.
+    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_BLUETOOTH_OPEN;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice = std::make_shared<AudioDeviceDescriptor>();
     audioDevice->macAddress_ = testAddr1;
     audioCollaborativeService_.curDeviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
