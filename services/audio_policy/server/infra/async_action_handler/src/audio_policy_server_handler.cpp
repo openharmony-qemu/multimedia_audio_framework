@@ -2207,20 +2207,30 @@ void AudioPolicyServerHandler::HandleSpatialAudioSourceTypeChange(const AppExecF
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    std::lock_guard<std::mutex> lock(handleMapMutex_);
-    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        std::shared_ptr<AudioPolicyClientHolder> spatialAudioSourceTypeChangeCb = it->second;
-        if (spatialAudioSourceTypeChangeCb == nullptr) {
-            AUDIO_ERR_LOG("spatialAudioSourceTypeChangeCb : nullptr for client : %{public}d", it->first);
-            continue;
-        }
-        if (clientCallbacksMap_.count(it->first) > 0 &&
-            clientCallbacksMap_[it->first].count(CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE) > 0 &&
-            clientCallbacksMap_[it->first][CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE]) {
+    // Snapshot enabled holders under handleMapMutex_, then dispatch outside it: the client callback is a
+    // synchronous binder call whose reply timing is controlled by the peer, so holding the mutex across it
+    // lets one non-replying client block the whole callback fabric (same pattern as HandleInterruptEvent).
+    std::vector<std::shared_ptr<AudioPolicyClientHolder>> spatialAudioSourceTypeChangeCbs;
+    {
+        std::lock_guard<std::mutex> lock(handleMapMutex_);
+        for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end();
+            ++it) {
+            std::shared_ptr<AudioPolicyClientHolder> spatialAudioSourceTypeChangeCb = it->second;
+            if (spatialAudioSourceTypeChangeCb == nullptr) {
+                AUDIO_ERR_LOG("spatialAudioSourceTypeChangeCb : nullptr for client : %{public}d", it->first);
+                continue;
+            }
+            if (clientCallbacksMap_.count(it->first) > 0 &&
+                clientCallbacksMap_[it->first].count(CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE) > 0 &&
+                clientCallbacksMap_[it->first][CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE]) {
                 AUDIO_INFO_LOG("AudioPolicyServerHandler::HandleSpatialAudioSourceTypeChange enabled %{public}d",
                     eventContextObj->mode);
-            spatialAudioSourceTypeChangeCb->OnSpatialAudioSourceTypeChange(eventContextObj->mode);
+                spatialAudioSourceTypeChangeCbs.push_back(spatialAudioSourceTypeChangeCb);
+            }
         }
+    }
+    for (const auto &spatialAudioSourceTypeChangeCb : spatialAudioSourceTypeChangeCbs) {
+        spatialAudioSourceTypeChangeCb->OnSpatialAudioSourceTypeChange(eventContextObj->mode);
     }
 }
 
