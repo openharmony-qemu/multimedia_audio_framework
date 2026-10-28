@@ -1275,8 +1275,8 @@ void AudioService::SetNonInterruptMuteForProcess(const uint32_t sessionId, const
     // when old stream already released and new stream not create yet
     // set muteflag 0 but can not find session in allRendererMap_, allCapturerMap_ and linkedPairedList_
     // need erase it from mutedSessions_ to avoid new stream can not be set unmute
-    if (mutedSessions_.count(sessionId) && !muteFlag) {
-        mutedSessions_.erase(sessionId);
+    if (!muteFlag) {
+        RemoveIdFromMuteControlSet(sessionId);
     }
     // when old stream already released and new stream not create yet
     // set muteflag 1 but cannot find sessionId in allRendererMap_, allCapturerMap_ and linkedPairedList_
