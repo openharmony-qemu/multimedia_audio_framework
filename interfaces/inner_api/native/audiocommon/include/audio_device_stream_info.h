@@ -26,6 +26,8 @@ struct DeviceStreamInfo {
     std::set<AudioSampleFormat> formats;
     std::set<AudioChannelLayout> channelLayout;
     std::set<AudioSamplingRate> samplingRate;
+    std::set<AudioSamplingRate> fastSamplingRate;
+    std::set<AudioSamplingRate> ufastSamplingRate;
 
     DeviceStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,
         AudioChannelLayout channelLayout_)
@@ -69,7 +71,9 @@ struct DeviceStreamInfo {
             && parcel.WriteInt32(static_cast<int32_t>(format))
             && MarshallingSetInt32(samplingRate, parcel)
             && MarshallingSetInt64(channelLayout, parcel)
-            && MarshallingSetInt32(formats, parcel);
+            && MarshallingSetInt32(formats, parcel)
+            && MarshallingSetInt32(fastSamplingRate, parcel)
+            && MarshallingSetInt32(ufastSamplingRate, parcel);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -78,6 +82,8 @@ struct DeviceStreamInfo {
         samplingRate = UnmarshallingSetInt32<AudioSamplingRate>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
         channelLayout = UnmarshallingSetInt64<AudioChannelLayout>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
         formats = UnmarshallingSetInt32<AudioSampleFormat>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
+        fastSamplingRate = UnmarshallingSetInt32<AudioSamplingRate>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
+        ufastSamplingRate = UnmarshallingSetInt32<AudioSamplingRate>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
     }
 
     static std::string SerializeList(const std::list<DeviceStreamInfo> &streamInfoList)

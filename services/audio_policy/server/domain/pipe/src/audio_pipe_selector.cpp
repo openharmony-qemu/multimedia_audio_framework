@@ -33,6 +33,7 @@
 #include "audio_service_enum.h"
 #include "audio_injector_policy.h"
 #include "audio_bus_selector.h"
+#include "audio_scene_manager.h"
 #include "audio_server_proxy.h"
 
 #undef LOG_DOMAIN
@@ -773,8 +774,7 @@ SelectedDeviceFormat AudioPipeSelector::SelectArmUsbFormat(
 {
     isVoip = (streamDesc->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) != 0;
     auto allStreams = pipeManager_->GetAllOutputStreamDescs();
-    hasVoip = isVoip || AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(
-        deviceDesc->macAddress_, allStreams, nullptr);
+    hasVoip = isVoip || (AudioSceneManager::GetInstance().GetAudioScene() != AUDIO_SCENE_DEFAULT);
     if (hasVoip) {
         return {AudioSamplingRate::SAMPLE_RATE_48000, AudioSampleFormat::SAMPLE_S16LE,
             AudioChannelLayout::CH_LAYOUT_STEREO};
@@ -808,7 +808,6 @@ void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
         streamPropInfo->channels_ = ConvertLayoutToAudioChannel(selected.channelLayout);
         DeviceStreamInfo streamInfo;
         streamInfo.format = selected.format;
-        streamInfo.formats.insert(selected.format);
         streamInfo.samplingRate.insert(selected.rate);
         streamInfo.channelLayout.insert(selected.channelLayout);
         temp->audioStreamInfo_ = {streamInfo};
@@ -2483,11 +2482,10 @@ void AudioPipeSelector::MatchArmUsbFormatPipe(const std::shared_ptr<PipeStreamPr
     }
 
     bool isVoip = (streamDesc->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) != 0;
-    bool hasVoipOnPipe = AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(
-        deviceDesc->macAddress_, pipeManager_->GetAllOutputStreamDescs(), pipeInfo);
+    bool inCallScene = AudioSceneManager::GetInstance().GetAudioScene() != AUDIO_SCENE_DEFAULT;
     bool shouldReload = false;
 
-    if (isVoip || hasVoipOnPipe) {
+    if (isVoip || inCallScene) {
         shouldReload = true;
     } else {
         uint32_t streamRate = streamPropInfo->sampleRate_;
@@ -2498,8 +2496,8 @@ void AudioPipeSelector::MatchArmUsbFormatPipe(const std::shared_ptr<PipeStreamPr
 
     CHECK_AND_RETURN(shouldReload);
 
-    AUDIO_INFO_LOG("ArmUsb format reload:pipeRate=%{public}s streamRate=%{public}u isVoip%{public}d hasVoip%{public}d",
-        pipeInfo->moduleInfo_.rate.c_str(), streamPropInfo->sampleRate_, isVoip, hasVoipOnPipe);
+    AUDIO_INFO_LOG("ArmUsb format reload:pipeRate=%{public}s streamRate=%{public}u isVoip%{public}d inCall%{public}d",
+        pipeInfo->moduleInfo_.rate.c_str(), streamPropInfo->sampleRate_, isVoip, inCallScene);
     UpdateModuleInfoWithDevice(deviceDesc, pipeInfo->moduleInfo_);
     pipeInfo->InitAudioStreamInfo();
     pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;

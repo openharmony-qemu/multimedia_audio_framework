@@ -25,6 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t API_VERSION_18 = 18;
 constexpr size_t KV_SIZE = 2;
+constexpr uint32_t ONLY_SUPPORT_MMAP = 2;
 
 const std::map<DeviceType, std::string> deviceTypeStringMap = {
     {DEVICE_TYPE_INVALID, "INVALID"},
@@ -369,14 +370,21 @@ std::list<DeviceStreamInfo> AudioDeviceDescriptor::GetAudioStreamInfo() const
     return audioStreamInfo_;
 }
 
-void AudioDeviceDescriptor::SetDeviceSupportMmap(const uint32_t deviceSupportMmap)
-{
-    deviceSupportMmap_ = deviceSupportMmap;
-}
-
 uint32_t AudioDeviceDescriptor::GetDeviceSupportMmap() const
 {
-    return deviceSupportMmap_;
+    if (audioStreamInfo_.empty()) {
+        return 0;
+    }
+    const DeviceStreamInfo &info = audioStreamInfo_.back();
+    bool fastSupported = !info.fastSamplingRate.empty();
+    bool ufastSupported = !info.ufastSamplingRate.empty();
+    if (fastSupported && ufastSupported) {
+        return 1;
+    }
+    if (fastSupported && !ufastSupported) {
+        return ONLY_SUPPORT_MMAP;
+    }
+    return 0;
 }
 
 std::unordered_map<std::string, std::string> AudioDeviceDescriptor::ParseAudioParameters(
@@ -396,7 +404,7 @@ std::unordered_map<std::string, std::string> AudioDeviceDescriptor::ParseAudioPa
     return ret;
 }
 
-static void ParseRateValues(const std::string &value, DeviceStreamInfo &streamInfo)
+static void ParseRateValues(const std::string &value, std::set<AudioSamplingRate> &rates)
 {
     for (const auto &rateStr : Util::SplitString(value, '|')) {
         uint32_t samplingRate = 0;
@@ -405,20 +413,19 @@ static void ParseRateValues(const std::string &value, DeviceStreamInfo &streamIn
             AUDIO_WARNING_LOG("invalid sampling rate string: %{public}s", rateStr.c_str());
             continue;
         }
-        streamInfo.samplingRate.insert(static_cast<AudioSamplingRate>(samplingRate));
+        rates.insert(static_cast<AudioSamplingRate>(samplingRate));
     }
 }
 
 static void ParseFormatValues(const std::string &value, DeviceStreamInfo &streamInfo)
 {
-    bool isFirst = true;
     for (const auto &formatStr : Util::SplitString(value, '|')) {
         AudioSampleFormat fmt = g_formatStrToEnum[ParseAudioFormat(formatStr)];
         streamInfo.formats.insert(fmt);
-        if (isFirst) {
-            streamInfo.format = fmt;
-            isFirst = false;
-        }
+    }
+    // use max format
+    if (!streamInfo.formats.empty()) {
+        streamInfo.format = *streamInfo.formats.rbegin();
     }
 }
 
@@ -426,9 +433,40 @@ static void ParseChannelValues(const std::string &value, DeviceStreamInfo &strea
 {
     for (const auto &chanStr : Util::SplitString(value, '|')) {
         uint32_t channels = 0;
-        ConvertToUint32(chanStr, channels);
-        AudioChannelLayout layout = static_cast<AudioChannel>(channels) == CHANNEL_4 ?
-            CH_LAYOUT_4POINT0 : CH_LAYOUT_UNKNOWN;
+        if (!ConvertToUint32(chanStr, channels) || channels == 0) {
+            AUDIO_ERR_LOG("invalid channel string: %{public}s", chanStr.c_str());
+            continue;
+        }
+        AudioChannelLayout layout = CH_LAYOUT_UNKNOWN;
+        switch (static_cast<AudioChannel>(channels)) {
+            case AudioChannel::MONO:
+                layout = CH_LAYOUT_MONO;
+                break;
+            case AudioChannel::STEREO:
+                layout = CH_LAYOUT_STEREO;
+                break;
+            case AudioChannel::CHANNEL_3:
+                layout = CH_LAYOUT_SURROUND;
+                break;
+            case AudioChannel::CHANNEL_4:
+                layout = CH_LAYOUT_4POINT0;
+                break;
+            case AudioChannel::CHANNEL_5:
+                layout = CH_LAYOUT_5POINT0;
+                break;
+            case AudioChannel::CHANNEL_6:
+                layout = CH_LAYOUT_5POINT1;
+                break;
+            case AudioChannel::CHANNEL_7:
+                layout = CH_LAYOUT_7POINT0;
+                break;
+            case AudioChannel::CHANNEL_8:
+                layout = CH_LAYOUT_7POINT1;
+                break;
+            default:
+                AUDIO_ERR_LOG("unsupported channel count: %{public}u", channels);
+                continue;
+        }
         streamInfo.channelLayout.insert(layout);
     }
 }
@@ -441,17 +479,12 @@ void AudioDeviceDescriptor::UpdateDeviceInfoByAudioParameters(const std::string 
     if (it != parameters.end()) {
         deviceName_ = it->second;
     }
-    key = getRole() == DeviceRole::OUTPUT_DEVICE ? "sink_mmap" : "source_mmap";
-    it = parameters.find(key);
-    if (it != parameters.end()) {
-        ConvertToUint32(it->second, deviceSupportMmap_);
-    }
     bool isOutput = getRole() == DeviceRole::OUTPUT_DEVICE;
     DeviceStreamInfo streamInfo = {};
     key = isOutput ? "sink_rate" : "source_rate";
     it = parameters.find(key);
     if (it != parameters.end()) {
-        ParseRateValues(it->second, streamInfo);
+        ParseRateValues(it->second, streamInfo.samplingRate);
     }
     key = isOutput ? "sink_format" : "source_format";
     it = parameters.find(key);
@@ -462,6 +495,16 @@ void AudioDeviceDescriptor::UpdateDeviceInfoByAudioParameters(const std::string 
     it = parameters.find(key);
     if (it != parameters.end()) {
         ParseChannelValues(it->second, streamInfo);
+    }
+    key = isOutput ? "sink_fast" : "source_fast";
+    it = parameters.find(key);
+    if (it != parameters.end()) {
+        ParseRateValues(it->second, streamInfo.fastSamplingRate);
+    }
+    key = isOutput ? "sink_ufast" : "source_ufast";
+    it = parameters.find(key);
+    if (it != parameters.end()) {
+        ParseRateValues(it->second, streamInfo.ufastSamplingRate);
     }
     audioStreamInfo_.clear();
     audioStreamInfo_.push_back(streamInfo);

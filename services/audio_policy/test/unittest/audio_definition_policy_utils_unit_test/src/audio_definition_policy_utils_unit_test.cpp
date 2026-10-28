@@ -98,22 +98,17 @@ HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, SelectBestOutputFormat_FormatExactM
     EXPECT_EQ(result.format, SAMPLE_S32LE);
 }
 
-HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, SelectBestOutputFormat_FormatDowngrade, TestSize.Level1)
+HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, SelectBestOutputFormat_FormatDeviceOptimal, TestSize.Level1)
 {
-    DeviceStreamInfo cap = MakeCap({SAMPLE_RATE_48000}, SAMPLE_S16LE, {CH_LAYOUT_STEREO});
-    cap.formats.insert(SAMPLE_S24LE);
-    cap.formats.insert(SAMPLE_S16LE);
-    AudioStreamInfo app(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, AudioChannel::STEREO);
+    DeviceStreamInfo cap = MakeCap({SAMPLE_RATE_48000}, SAMPLE_S24LE, {CH_LAYOUT_STEREO});
+    AudioStreamInfo app(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, AudioChannel::STEREO);
     auto result = AudioDefinitionPolicyUtils::SelectBestOutputFormat(app, {cap});
     EXPECT_EQ(result.format, SAMPLE_S24LE);
 }
 
-HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, SelectBestOutputFormat_FormatAllAboveApp, TestSize.Level1)
+HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, SelectBestOutputFormat_FormatHighest, TestSize.Level1)
 {
-    DeviceStreamInfo cap = MakeCap({SAMPLE_RATE_48000}, SAMPLE_S24LE, {CH_LAYOUT_STEREO});
-    cap.formats.clear();
-    cap.formats.insert(SAMPLE_S24LE);
-    cap.formats.insert(SAMPLE_S32LE);
+    DeviceStreamInfo cap = MakeCap({SAMPLE_RATE_48000}, SAMPLE_S32LE, {CH_LAYOUT_STEREO});
     AudioStreamInfo app(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, AudioChannel::STEREO);
     auto result = AudioDefinitionPolicyUtils::SelectBestOutputFormat(app, {cap});
     EXPECT_EQ(result.format, SAMPLE_S32LE);
@@ -141,6 +136,16 @@ HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, SelectBestOutputFormat_ChannelAllAb
     AudioStreamInfo app(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, AudioChannel::MONO);
     auto result = AudioDefinitionPolicyUtils::SelectBestOutputFormat(app, {cap});
     EXPECT_EQ(result.channelLayout, CH_LAYOUT_STEREO);
+}
+
+HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, SelectBestOutputFormat_MultiCapMaxFormat, TestSize.Level1)
+{
+    DeviceStreamInfo cap1 = MakeCap({SAMPLE_RATE_48000}, SAMPLE_S16LE, {CH_LAYOUT_STEREO});
+    DeviceStreamInfo cap2 = MakeCap({SAMPLE_RATE_96000}, SAMPLE_S32LE, {CH_LAYOUT_STEREO});
+    AudioStreamInfo app(SAMPLE_RATE_96000, ENCODING_PCM, SAMPLE_S16LE, AudioChannel::STEREO);
+    auto result = AudioDefinitionPolicyUtils::SelectBestOutputFormat(app, {cap1, cap2});
+    EXPECT_EQ(result.format, SAMPLE_S32LE);
+    EXPECT_EQ(result.rate, SAMPLE_RATE_96000);
 }
 
 /* ---- FindHighestFormatStreamOnDevice ---- */
@@ -212,55 +217,6 @@ HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, FindHighest_ExtraStreamIncluded, Te
         TEST_MAC, {s1}, extra, info);
     EXPECT_TRUE(found);
     EXPECT_EQ(info.samplingRate, SAMPLE_RATE_384000);
-}
-
-/* ---- HasVoipStreamOnDevice ---- */
-
-HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, HasVoip_NoStreams, TestSize.Level1)
-{
-    bool result = AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(TEST_MAC, {}, nullptr);
-    EXPECT_FALSE(result);
-}
-
-HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, HasVoip_NoVoipStream, TestSize.Level1)
-{
-    auto s1 = MakePlaybackStream(48000, SAMPLE_S16LE);
-    s1->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    bool result = AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(TEST_MAC, {s1}, nullptr);
-    EXPECT_FALSE(result);
-}
-
-HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, HasVoip_VoipInStreams, TestSize.Level1)
-{
-    auto s1 = MakePlaybackStream(48000, SAMPLE_S16LE);
-    s1->routeFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
-    bool result = AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(TEST_MAC, {s1}, nullptr);
-    EXPECT_TRUE(result);
-}
-
-HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, HasVoip_VoipInPipe, TestSize.Level1)
-{
-    auto s1 = MakePlaybackStream(48000, SAMPLE_S16LE);
-    s1->routeFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
-    auto pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->streamDescriptors_.push_back(s1);
-    bool result = AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(TEST_MAC, {}, pipeInfo);
-    EXPECT_TRUE(result);
-}
-
-HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, HasVoip_MacMismatch, TestSize.Level1)
-{
-    auto s1 = MakePlaybackStream(48000, SAMPLE_S16LE, "AA:BB:CC:DD:EE:FF");
-    s1->routeFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
-    bool result = AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(TEST_MAC, {s1}, nullptr);
-    EXPECT_FALSE(result);
-}
-
-HWTEST_F(AudioDefinitionPolicyUtilsUnitTest, HasVoip_NullStream, TestSize.Level1)
-{
-    std::shared_ptr<AudioStreamDescriptor> nullStream = nullptr;
-    bool result = AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(TEST_MAC, {nullStream}, nullptr);
-    EXPECT_FALSE(result);
 }
 } // namespace AudioStandard
 } // namespace OHOS

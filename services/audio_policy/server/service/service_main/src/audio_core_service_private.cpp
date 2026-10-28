@@ -1075,7 +1075,7 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
 {
     Trace trace("AudioCoreService::ProcessOutputPipeUpdate");
     if (pipeInfo->moduleInfo_.deviceType == std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET))) {
-        CancelArmReload(pipeInfo->moduleInfo_.name);
+        CancelArmReload(pipeInfo);
     }
     bool hasMoveStream = false;
     for (auto &desc : pipeInfo->streamDescriptors_) {
@@ -3088,24 +3088,26 @@ void AudioCoreService::DelayReloadArmPipe(std::shared_ptr<AudioPipeInfo> pipeInf
 {
     CHECK_AND_RETURN(pipeInfo != nullptr);
     const AudioIOHandle id = pipeInfo->id_;
-    const std::string &moduleName = pipeInfo->moduleInfo_.name;
-    AUDIO_INFO_LOG("DelayReloadArmPipe id:%{public}u, module:%{public}s", id, moduleName.c_str());
+    const std::string reloadKey = pipeInfo->moduleInfo_.macAddress + "|" + pipeInfo->moduleInfo_.role;
+    AUDIO_INFO_LOG("DelayReloadArmPipe id:%{public}u, mac:%{public}s, role:%{public}s", id,
+        AudioPolicyUtils::GetInstance().EncUsbAddr(pipeInfo->moduleInfo_.macAddress).c_str(),
+        pipeInfo->moduleInfo_.role.c_str());
     {
         std::lock_guard<std::mutex> lock(armReloadMutex_);
-        CHECK_AND_RETURN_LOG(!isArmReloadPendingMap_[moduleName], "already pending");
-        isArmReloadPendingMap_[moduleName] = true;
-        isArmReopenedMap_[moduleName] = false;
+        CHECK_AND_RETURN_LOG(!isArmReloadPendingMap_[reloadKey], "already pending");
+        isArmReloadPendingMap_[reloadKey] = true;
+        isArmReopenedMap_[reloadKey] = false;
     }
     AudioModuleInfo moduleInfo = BuildDefaultArmModuleInfo(pipeInfo->moduleInfo_);
-    auto reloadFunc = [this, id, moduleName, moduleInfo] {
+    auto reloadFunc = [this, id, reloadKey, moduleInfo] {
         {
             std::unique_lock<std::mutex> lock(armReloadMutex_);
             armReloadCondition_.wait_for(lock, std::chrono::milliseconds(ARM_PIPE_RELOAD_DELAY_MS),
-                [this, &moduleName] { return isArmReopenedMap_[moduleName]; });
+                [this, &reloadKey] { return isArmReopenedMap_[reloadKey]; });
         }
-        if (isArmReopenedMap_[moduleName]) {
+        if (isArmReopenedMap_[reloadKey]) {
             std::lock_guard<std::mutex> lock(armReloadMutex_);
-            isArmReloadPendingMap_[moduleName] = false;
+            isArmReloadPendingMap_[reloadKey] = false;
             return;
         }
         uint32_t paIndex = HDI_INVALID_ID;
@@ -3119,20 +3121,24 @@ void AudioCoreService::DelayReloadArmPipe(std::shared_ptr<AudioPipeInfo> pipeInf
             }
         }
         std::lock_guard<std::mutex> lock(armReloadMutex_);
-        isArmReloadPendingMap_[moduleName] = false;
+        isArmReloadPendingMap_[reloadKey] = false;
     };
     std::thread reloadThread(reloadFunc);
     reloadThread.detach();
 }
 
-void AudioCoreService::CancelArmReload(const std::string &moduleName)
+void AudioCoreService::CancelArmReload(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    const std::string reloadKey = pipeInfo->moduleInfo_.macAddress + "|" + pipeInfo->moduleInfo_.role;
     std::lock_guard<std::mutex> lock(armReloadMutex_);
-    auto it = isArmReloadPendingMap_.find(moduleName);
+    auto it = isArmReloadPendingMap_.find(reloadKey);
     if (it != isArmReloadPendingMap_.end() && it->second) {
-        isArmReopenedMap_[moduleName] = true;
+        isArmReopenedMap_[reloadKey] = true;
         armReloadCondition_.notify_all();
-        AUDIO_INFO_LOG("CancelArmReload for %{public}s", moduleName.c_str());
+        AUDIO_INFO_LOG("CancelArmReload mac:%{public}s, role:%{public}s",
+            AudioPolicyUtils::GetInstance().EncUsbAddr(pipeInfo->moduleInfo_.macAddress).c_str(),
+            pipeInfo->moduleInfo_.role.c_str());
     }
 }
 

@@ -491,6 +491,94 @@ HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_006, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetUnusedPipe_009
+ * @tc.desc: Test GetUnusedPipe returns empty arm usb normal output pipe with rate > 48k.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_009, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipe1->streamDescriptors_.clear();
+    pipe1->moduleInfo_.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET));
+    pipe1->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_192000;
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    EXPECT_EQ(unusedPipes.size(), 1);
+}
+
+/**
+ * @tc.name: GetUnusedPipe_010
+ * @tc.desc: Test GetUnusedPipe does not return arm usb normal output pipe with rate <= 48k.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_010, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipe1->streamDescriptors_.clear();
+    pipe1->moduleInfo_.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET));
+    pipe1->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    EXPECT_EQ(unusedPipes.size(), 0);
+}
+
+/**
+ * @tc.name: GetUnusedPipe_011
+ * @tc.desc: Test GetUnusedPipe does not return arm usb input pipe even if rate > 48k.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_011, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->pipeRole_ = PIPE_ROLE_INPUT;
+    pipe1->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    pipe1->streamDescriptors_.clear();
+    pipe1->moduleInfo_.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET));
+    pipe1->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_192000;
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    EXPECT_EQ(unusedPipes.size(), 0);
+}
+
+/**
+ * @tc.name: GetUnusedPipe_012
+ * @tc.desc: Test GetUnusedPipe does not return arm usb output pipe when streams exist.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_012, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipe1->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    pipe1->moduleInfo_.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET));
+    pipe1->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_192000;
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    EXPECT_EQ(unusedPipes.size(), 0);
+}
+
+/**
  * @tc.name: IsSpecialPipe_001
  * @tc.desc: Test IsSpecialPipe when routeFlag includes AUDIO_OUTPUT_FLAG_FAST.
  * @tc.type: FUNC

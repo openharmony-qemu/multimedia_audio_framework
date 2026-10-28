@@ -47,9 +47,6 @@ public:
     static bool FindHighestFormatStreamOnDevice(const std::string &macAddress,
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams,
         const std::shared_ptr<AudioStreamDescriptor> &extra, AudioStreamInfo &highestInfo);
-    static bool HasVoipStreamOnDevice(const std::string &macAddress,
-        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams,
-        const std::shared_ptr<AudioPipeInfo> &pipeInfo);
 private:
     AudioDefinitionPolicyUtils() {}
     ~AudioDefinitionPolicyUtils() {}

@@ -25,6 +25,7 @@
 #include "audio_definition_policy_utils.h"
 #include "audio_policy_utils.h"
 #include "audio_pipe_manager.h"
+#include "audio_scene_manager.h"
 
 #include "audio_arm_device_behavior.h"
 
@@ -155,50 +156,48 @@ int32_t AudioArmDeviceBehavior::ReloadArmAudioPort(const AudioModuleInfo &module
     return SUCCESS;
 }
 
-void AudioArmDeviceBehavior::DetermineArmUsbFormat(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-    const DeviceStreamInfo &deviceStreamInfo,
-    std::string &rate, std::string &format, AudioChannelLayout &layout, std::string &channels)
+SelectedDeviceFormat AudioArmDeviceBehavior::DetermineArmUsbFormat(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    const DeviceStreamInfo &deviceStreamInfo)
 {
     auto pipeManager = AudioPipeManager::GetPipeManager();
     if (pipeManager != nullptr) {
         auto allStreams = pipeManager->GetAllOutputStreamDescs();
         std::string macAddr = deviceDesc->GetMacAddress();
-        if (AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(macAddr, allStreams, nullptr)) {
-            rate = std::to_string(SAMPLE_RATE_48000);
-            format = formatEnumToStr[SAMPLE_S16LE];
-            layout = CH_LAYOUT_STEREO;
-            channels = std::to_string(ConvertLayoutToAudioChannel(layout));
-            AUDIO_INFO_LOG("ArmUsb VoIP active, use 48k fixed format");
-            return;
+        if (AudioSceneManager::GetInstance().GetAudioScene() != AUDIO_SCENE_DEFAULT) {
+            AUDIO_INFO_LOG("ArmUsb call scene active, use 48k fixed format");
+            return {AudioSamplingRate::SAMPLE_RATE_48000, AudioSampleFormat::SAMPLE_S16LE,
+                AudioChannelLayout::CH_LAYOUT_STEREO};
         }
         AudioStreamInfo highestInfo;
         if (AudioDefinitionPolicyUtils::FindHighestFormatStreamOnDevice(macAddr, allStreams, nullptr, highestInfo)) {
             auto sel = AudioDefinitionPolicyUtils::SelectBestOutputFormat(highestInfo,
                 deviceDesc->GetAudioStreamInfo());
-            rate = std::to_string(sel.rate);
-            format = formatEnumToStr[sel.format];
-            layout = sel.channelLayout;
-            channels = std::to_string(ConvertLayoutToAudioChannel(layout));
-            AUDIO_INFO_LOG("ArmUsb highest stream: rate=%{public}s, format=%{public}s", rate.c_str(), format.c_str());
-            return;
+            AUDIO_INFO_LOG("ArmUsb highest stream: rate=%{public}u, format=%{public}u",
+                static_cast<uint32_t>(sel.rate), static_cast<uint32_t>(sel.format));
+            return sel;
         }
     }
-    rate = std::to_string(*deviceStreamInfo.samplingRate.rbegin());
-    format = formatEnumToStr[deviceStreamInfo.format];
-    layout = deviceStreamInfo.GetMainChannelLayout();
-    channels = std::to_string(ConvertLayoutToAudioChannel(layout));
-    AUDIO_INFO_LOG("ArmUsb no running stream, use HAL default: rate=%{public}s", rate.c_str());
+    SelectedDeviceFormat selected;
+    selected.rate = static_cast<AudioSamplingRate>(*deviceStreamInfo.samplingRate.rbegin());
+    selected.format = deviceStreamInfo.format;
+    selected.channelLayout = deviceStreamInfo.GetMainChannelLayout();
+    AUDIO_INFO_LOG("ArmUsb no running stream, use HAL default: rate=%{public}u",
+        static_cast<uint32_t>(selected.rate));
+    return selected;
 }
 
-void AudioArmDeviceBehavior::ApplyFormatToModuleInfo(AudioModuleInfo &moduleInfo, const std::string &rate,
-    const std::string &format, AudioChannelLayout layout, const std::string &channels,
-    uint32_t buffCalcMs, const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+void AudioArmDeviceBehavior::ApplyFormatToModuleInfo(AudioModuleInfo &moduleInfo,
+    const SelectedDeviceFormat &selected, uint32_t buffCalcMs,
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
 {
-    if (!rate.empty()) { moduleInfo.rate = rate; }
-    if (!format.empty()) { moduleInfo.format = format; }
-    if (layout != CH_LAYOUT_UNKNOWN) {
-        moduleInfo.channels = channels;
-        moduleInfo.channelLayout = std::to_string(layout);
+    moduleInfo.rate = std::to_string(static_cast<uint32_t>(selected.rate));
+    if (selected.format != AudioSampleFormat::INVALID_WIDTH) {
+        moduleInfo.format = formatEnumToStr[selected.format];
+    }
+    if (selected.channelLayout != CH_LAYOUT_UNKNOWN) {
+        moduleInfo.channels = std::to_string(ConvertLayoutToAudioChannel(selected.channelLayout));
+        moduleInfo.channelLayout = std::to_string(static_cast<uint64_t>(selected.channelLayout));
     }
     if (!moduleInfo.rate.empty() && !moduleInfo.format.empty() && !moduleInfo.channels.empty()) {
         uint32_t rateValue = 0;
@@ -224,12 +223,8 @@ void AudioArmDeviceBehavior::UpdateArmModuleInfo(const std::shared_ptr<AudioDevi
     DeviceStreamInfo deviceStreamInfo = deviceDesc->GetAudioStreamInfo().back();
     CHECK_AND_RETURN_LOG(!deviceStreamInfo.samplingRate.empty(), "samplingRate is empty");
 
-    std::string halRate;
-    std::string halFormat;
-    std::string halChannels;
-    AudioChannelLayout halLayout = CH_LAYOUT_UNKNOWN;
-    DetermineArmUsbFormat(deviceDesc, deviceStreamInfo, halRate, halFormat, halLayout, halChannels);
-    ApplyFormatToModuleInfo(moduleInfo, halRate, halFormat, halLayout, halChannels, buffCalcMs, deviceDesc);
+    auto selected = DetermineArmUsbFormat(deviceDesc, deviceStreamInfo);
+    ApplyFormatToModuleInfo(moduleInfo, selected, buffCalcMs, deviceDesc);
 }
 
 int32_t AudioArmDeviceBehavior::ProcessModuleActivation(

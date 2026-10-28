@@ -763,7 +763,7 @@ private:
     int32_t ReleaseFastPipeInner(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
             const std::string &moduleName);
     void DelayReloadArmPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
-    void CancelArmReload(const std::string &moduleName);
+    void CancelArmReload(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     bool HandleMuteBeforeDeviceSwitch(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,

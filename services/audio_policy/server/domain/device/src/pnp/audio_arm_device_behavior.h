@@ -17,6 +17,7 @@
 #define AUDIO_ARM_DEVICE_BEHAVIOR_H
 
 #include "audio_module_info.h"
+#include "audio_definition_policy_utils.h"
 #include "i_device_behavior_base.h"
 
 namespace OHOS {
@@ -34,11 +35,9 @@ public:
 private:
     void UpdateArmModuleInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         AudioModuleInfo &moduleInfo);
-    void DetermineArmUsbFormat(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-        const DeviceStreamInfo &deviceStreamInfo,
-        std::string &rate, std::string &format, AudioChannelLayout &layout, std::string &channels);
-    void ApplyFormatToModuleInfo(AudioModuleInfo &moduleInfo, const std::string &rate,
-        const std::string &format, AudioChannelLayout layout, const std::string &channels,
+    SelectedDeviceFormat DetermineArmUsbFormat(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceStreamInfo &deviceStreamInfo);
+    void ApplyFormatToModuleInfo(AudioModuleInfo &moduleInfo, const SelectedDeviceFormat &selected,
         uint32_t buffCalcMs, const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     int32_t ReloadArmAudioPort(const AudioModuleInfo &moduleInfo);
     int32_t ProcessModuleActivation(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,

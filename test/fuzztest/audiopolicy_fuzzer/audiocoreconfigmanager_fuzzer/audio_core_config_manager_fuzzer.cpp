@@ -25,7 +25,6 @@ const size_t THRESHOLD = 10;
 const size_t MAX_STRING_LEN = 64;
 const std::string DEFAULT_MAC_ADDRESS = "00:11:22:33:44:55";
 const int32_t MAX_TEST_UID = 10000;
-const uint32_t DEVICE_SUPPORT_MMAP = 1;
 typedef void (*TestFuncs)(FuzzedDataProvider&);
 
 const vector<DeviceType> g_testOutputDeviceTypes = {
@@ -82,7 +81,12 @@ std::shared_ptr<AudioDeviceDescriptor> MakeDeviceDescriptor(FuzzedDataProvider& 
     desc->deviceName_ = ConsumeString(fdp, "audio_fuzz_device");
     desc->deviceCategory_ = PickValue(fdp, g_testDeviceCategories);
     desc->deviceId_ = fdp.ConsumeIntegralInRange<int32_t>(0, MAX_TEST_UID);
-    desc->SetDeviceSupportMmap(fdp.ConsumeBool() ? DEVICE_SUPPORT_MMAP : 0);
+    if (fdp.ConsumeBool()) {
+        DeviceStreamInfo mmapCap;
+        mmapCap.fastSamplingRate.insert(AudioSamplingRate::SAMPLE_RATE_48000);
+        mmapCap.ufastSamplingRate.insert(AudioSamplingRate::SAMPLE_RATE_48000);
+        desc->audioStreamInfo_.push_back(mmapCap);
+    }
     return desc;
 }
 

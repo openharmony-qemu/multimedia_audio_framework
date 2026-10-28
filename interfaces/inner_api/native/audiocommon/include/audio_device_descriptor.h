@@ -148,8 +148,6 @@ public:
 
     void SetExtraDeviceInfo(const DStatusInfo &statusInfo, bool hasSystemPermission);
 
-    void SetDeviceSupportMmap(const uint32_t deviceSupportMmap);
-
     bool IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
     bool IsSameDeviceDescPtr(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const;
@@ -312,7 +310,6 @@ public:
     bool isPriorityReduced_ = false;
 
 private:
-    uint32_t deviceSupportMmap_ = 0; //only valid on armusb
     void CopyBaseFields(const AudioDeviceDescriptor &deviceDescriptor);
     void CopyExtendedFields(const AudioDeviceDescriptor &deviceDescriptor);
 

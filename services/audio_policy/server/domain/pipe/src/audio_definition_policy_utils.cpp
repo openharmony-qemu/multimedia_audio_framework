@@ -242,31 +242,13 @@ static void SelectBestRate(uint32_t appRate, const std::set<uint32_t> &deviceRat
     result = static_cast<AudioSamplingRate>(selected);
 }
 
-static void SelectBestFormat(AudioSampleFormat appFmt, const std::set<AudioSampleFormat> &deviceFormats,
-    AudioSampleFormat &result)
-{
-    CHECK_AND_RETURN(!deviceFormats.empty());
-    if (deviceFormats.count(appFmt) > 0) {
-        result = appFmt;
-        return;
-    }
-    AudioSampleFormat best = *deviceFormats.begin();
-    bool found = false;
-    for (const auto &fmt : deviceFormats) {
-        if (fmt <= appFmt) {
-            best = fmt;
-            found = true;
-        }
-    }
-    result = found ? best : *deviceFormats.rbegin();
-}
-
 static void SelectBestChannel(AudioChannel appCh, const std::set<AudioChannelLayout> &deviceLayouts,
     AudioChannelLayout &result)
 {
     CHECK_AND_RETURN(!deviceLayouts.empty());
     uint32_t appChVal = static_cast<uint32_t>(appCh);
     uint32_t maxLe = 0;
+    // layout -> channel, choose the best one
     for (const auto &layout : deviceLayouts) {
         uint32_t ch = static_cast<uint32_t>(ConvertLayoutToAudioChannel(layout));
         if (ch == appChVal) {
@@ -293,31 +275,27 @@ SelectedDeviceFormat AudioDefinitionPolicyUtils::SelectBestOutputFormat(const Au
 {
     SelectedDeviceFormat result;
     std::set<uint32_t> deviceRates;
-    std::set<AudioSampleFormat> deviceFormats;
     std::set<AudioChannelLayout> deviceLayouts;
+    bool hasFormat = false;
     for (const auto &cap : deviceCaps) {
         for (const auto &rate : cap.samplingRate) {
             deviceRates.insert(static_cast<uint32_t>(rate));
         }
-        if (cap.formats.empty()) {
-            if (cap.format != AudioSampleFormat::INVALID_WIDTH) {
-                deviceFormats.insert(cap.format);
+        if (cap.format != AudioSampleFormat::INVALID_WIDTH) {
+            if (!hasFormat || cap.format > result.format) {
+                result.format = cap.format;
             }
-        } else {
-            for (const auto &fmt : cap.formats) {
-                deviceFormats.insert(fmt);
-            }
+            hasFormat = true;
         }
         for (const auto &layout : cap.channelLayout) {
             deviceLayouts.insert(layout);
         }
     }
-    if (deviceRates.empty() && deviceFormats.empty() && deviceLayouts.empty()) {
+    if (deviceRates.empty() && !hasFormat && deviceLayouts.empty()) {
         return result;
     }
     uint32_t appRate = appStreamInfo.GetEffectiveSampleRate();
     SelectBestRate(appRate, deviceRates, result.rate);
-    SelectBestFormat(appStreamInfo.format, deviceFormats, result.format);
     SelectBestChannel(appStreamInfo.channels, deviceLayouts, result.channelLayout);
     AUDIO_INFO_LOG("SelectBestOutputFormat: appRate=%{public}u, rate=%{public}u, format=%{public}u, layout=%{public}u",
         appRate, static_cast<uint32_t>(result.rate), static_cast<uint32_t>(result.format),
@@ -354,31 +332,6 @@ bool AudioDefinitionPolicyUtils::FindHighestFormatStreamOnDevice(const std::stri
             macAddress.c_str(), highestRate, static_cast<uint32_t>(highestInfo.format));
     }
     return found;
-}
-
-bool AudioDefinitionPolicyUtils::HasVoipStreamOnDevice(const std::string &macAddress,
-    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams,
-    const std::shared_ptr<AudioPipeInfo> &pipeInfo)
-{
-    auto checkVoip = [](const std::shared_ptr<AudioStreamDescriptor> &stream, const std::string &addr) -> bool {
-        CHECK_AND_RETURN_RET(stream != nullptr && stream->IsPlayback() && !stream->newDeviceDescs_.empty(), false);
-        auto dev = stream->newDeviceDescs_[0];
-        CHECK_AND_RETURN_RET(dev != nullptr && dev->macAddress_ == addr, false);
-        return (stream->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) != 0;
-    };
-    for (const auto &stream : streams) {
-        if (checkVoip(stream, macAddress)) {
-            return true;
-        }
-    }
-    if (pipeInfo != nullptr) {
-        for (const auto &stream : pipeInfo->streamDescriptors_) {
-            if (checkVoip(stream, macAddress)) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 }
 }

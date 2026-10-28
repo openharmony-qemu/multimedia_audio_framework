@@ -511,6 +511,16 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipeInter
             (pipe->adapterName_ == ADAPTER_TYPE_VA &&
             pipe->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL) || pipe->moduleInfo_.className == PRIMARY_EXTRA_CLASS)) {
             newList.push_back(pipe);
+            continue;
+        }
+        if (pipe->streamDescriptors_.empty() && pipe->pipeRole_ == PIPE_ROLE_OUTPUT &&
+            pipe->routeFlag_ == AUDIO_OUTPUT_FLAG_NORMAL &&
+            pipe->moduleInfo_.deviceType == std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET))) {
+            // for arm usb normal pipe
+            if (pipe->audioStreamInfo_.samplingRate > AudioSamplingRate::SAMPLE_RATE_48000) {
+                newList.push_back(pipe);
+            }
+            continue;
         }
     }
     return newList;
