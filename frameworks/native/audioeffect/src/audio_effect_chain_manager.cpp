@@ -240,6 +240,12 @@ std::string AudioEffectChainManager::GenerateEffectChainKey(
 
 bool AudioEffectChainManager::GetOffloadEnabled()
 {
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    return GetOffloadEnabledInner();
+}
+
+bool AudioEffectChainManager::GetOffloadEnabledInner()
+{
     if (Util::IsEnhancedRoutingSupported()) {
         return false;
     }
@@ -595,7 +601,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::lock_guard<std::mutex> lock(dynamicMutex_);
 
-    if (GetOffloadEnabled()) {
+    if (GetOffloadEnabledInner()) {
         return EFFECT_OFFLOAD_BYPASS;
     }
 
@@ -628,7 +634,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     std::string sceneTypeAndDeviceKey = GenerateEffectChainKey(sceneType, deviceType, renderId);
     std::lock_guard<std::mutex> lock(dynamicMutex_);
 
-    if (GetOffloadEnabled()) {
+    if (GetOffloadEnabledInner()) {
         return EFFECT_OFFLOAD_BYPASS;
     }
 
@@ -2931,7 +2937,7 @@ ProcessClusterOperation AudioEffectChainManager::CheckProcessClusterInstances(co
     Trace trace("AudioEffectChainManager::CheckProcessClusterInstances: " + sceneType);
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET(sceneType != "SCENE_EXTRA", CREATE_EXTRA_PROCESSCLUSTER);
-    CHECK_AND_RETURN_RET(!GetOffloadEnabled(), USE_NONE_PROCESSCLUSTER);
+    CHECK_AND_RETURN_RET(!GetOffloadEnabledInner(), USE_NONE_PROCESSCLUSTER);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
 
@@ -2968,7 +2974,7 @@ ProcessClusterOperation AudioEffectChainManager::CheckProcessClusterInstances(
         "_r_" + std::to_string(renderId));
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET(sceneType != "SCENE_EXTRA", CREATE_EXTRA_PROCESSCLUSTER);
-    CHECK_AND_RETURN_RET(!GetOffloadEnabled(), USE_NONE_PROCESSCLUSTER);
+    CHECK_AND_RETURN_RET(!GetOffloadEnabledInner(), USE_NONE_PROCESSCLUSTER);
     std::string sceneTypeAndDeviceKey = GenerateEffectChainKey(sceneType, deviceType, renderId);
     std::string defaultSceneTypeAndDeviceKey = GenerateEffectChainKey(DEFAULT_SCENE_TYPE, deviceType, renderId);
 
