@@ -121,7 +121,24 @@ std::string HpaeVirtualRendererManager::GetThreadName()
 
 void HpaeVirtualRendererManager::Process()
 {
-    // replaced in Task 4
+    Trace trace("HpaeVirtualRendererManager::Process");
+    if (!IsRunning()) {
+        return;  // thread blocks in HpaeSignalProcessThread::Run while no RUNNING session
+    }
+    for (const auto &it : sinkInputNodeMap_) {
+        auto stateItr = sessionNodeMap_.find(it.first);
+        if (stateItr == sessionNodeMap_.end() || stateItr->second.state != HPAE_SESSION_RUNNING) {
+            continue;
+        }
+        // Pull one frameLen from client shared buffer; output port is unconnected => discarded.
+        it.second->DoProcess();
+    }
+    int64_t now = ClockTime::GetCurNano();
+    if (wakeUpTime_ < now) {
+        wakeUpTime_ = now;  // first round after idle or after a long stall: re-anchor, no catch-up
+    }
+    wakeUpTime_ += PULL_PERIOD_NS;
+    ClockTime::AbsoluteSleep(wakeUpTime_);
 }
 
 bool HpaeVirtualRendererManager::HasRunningSession()
@@ -399,6 +416,19 @@ int32_t HpaeVirtualRendererManager::RegisterReadCallback(uint32_t sessionId,
     return SUCCESS;
 }
 
+int32_t HpaeVirtualRendererManager::RegisterWriteCallback(uint32_t sessionId,
+    const std::weak_ptr<IStreamCallback> &callback)
+{
+    auto request = [this, sessionId, callback]() {
+        AUDIO_INFO_LOG("RegisterWriteCallback sessionId %{public}u", sessionId);
+        auto inputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+        CHECK_AND_RETURN_LOG(inputNode != nullptr, "sessionId %{public}u not exist", sessionId);
+        inputNode->RegisterWriteCallback(callback);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t HpaeVirtualRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload)
 {
     (void)sinkInfo;
@@ -451,12 +481,6 @@ int32_t HpaeVirtualRendererManager::MoveStream(uint32_t sessionId, const std::st
 
 int32_t HpaeVirtualRendererManager::MoveAllStream(const std::string &sinkName,
     const std::vector<uint32_t> &sessionIds, MoveSessionType moveType)
-{
-    return SUCCESS;
-}
-
-int32_t HpaeVirtualRendererManager::RegisterWriteCallback(uint32_t sessionId,
-    const std::weak_ptr<IStreamCallback> &callback)
 {
     return SUCCESS;
 }

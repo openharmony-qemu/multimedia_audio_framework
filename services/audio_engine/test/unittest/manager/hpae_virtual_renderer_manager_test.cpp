@@ -241,4 +241,58 @@ HWTEST_F(HpaeVirtualRendererManagerTest, ReleaseRemovesSession, TestSize.Level1)
     EXPECT_NE(manager->GetSinkInputInfo(TEST_SESSION_ID, info), SUCCESS);
     EXPECT_EQ(manager->DeInit(), SUCCESS);
 }
+static std::shared_ptr<MockStreamCallback> MakeCountingCb(std::atomic<int32_t> &count)
+{
+    auto cb = std::make_shared<MockStreamCallback>();
+    // Count formal pulls only: registration fires one info-sync OnStreamData with isPullData=false.
+    ON_CALL(*cb, OnStreamData(_)).WillByDefault(
+        [&count](AudioCallBackStreamInfo &info) {
+            if (info.isPullData) {
+                count.fetch_add(1);
+            }
+            return SUCCESS;
+        });
+    return cb;
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, PullLoop20ms, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager);
+    std::atomic<int32_t> count(0);
+    EXPECT_EQ(manager->RegisterWriteCallback(TEST_SESSION_ID, MakeCountingCb(count)), SUCCESS);
+    WaitForMsgProcessing(manager);
+
+    EXPECT_EQ(manager->Start(TEST_SESSION_ID), SUCCESS);
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));  // ~7 periods
+    int32_t duringRun = count.load();
+    EXPECT_GE(duringRun, 3);  // at least 3 pulls in 150ms (>=40ms of pacing)
+
+    EXPECT_EQ(manager->Pause(TEST_SESSION_ID), SUCCESS);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    int32_t afterPause = count.load();
+    EXPECT_EQ(afterPause, duringRun);  // paused: no more pulls
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, PullLoopIdleNoWakeup, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager);
+    std::atomic<int32_t> count(0);
+    EXPECT_EQ(manager->RegisterWriteCallback(TEST_SESSION_ID, MakeCountingCb(count)), SUCCESS);
+    WaitForMsgProcessing(manager);
+    std::this_thread::sleep_for(std::chrono::milliseconds(120));
+    EXPECT_EQ(count.load(), 0);  // no RUNNING session => thread blocked, zero pulls
+    EXPECT_EQ(manager->IsRunning(), false);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
 }  // namespace
