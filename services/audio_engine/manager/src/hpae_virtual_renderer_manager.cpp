@@ -296,6 +296,7 @@ int32_t HpaeVirtualRendererManager::Release(uint32_t sessionId)
     Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualRendererManager::Release");
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId) != nullptr, ERROR,
         "Release not find sessionId %{public}u", sessionId);
+    // Deliberate simplification vs injector: no StreamDfxManager report on a device-less sink.
     return DestroyStream(sessionId);
 }
 

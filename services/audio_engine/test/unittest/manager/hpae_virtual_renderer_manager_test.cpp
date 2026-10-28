@@ -210,6 +210,8 @@ HWTEST_F(HpaeVirtualRendererManagerTest, StartUnknownSession, TestSize.Level1)
     EXPECT_EQ(manager->Init(), SUCCESS);
     EXPECT_EQ(manager->Start(INVALID_SESSION_ID), SUCCESS);  // async, logged and skipped
     WaitForMsgProcessing(manager);
+    HpaeSinkInputInfo info;
+    EXPECT_NE(manager->GetSinkInputInfo(INVALID_SESSION_ID, info), SUCCESS);
     EXPECT_EQ(manager->IsRunning(), false);
     EXPECT_EQ(manager->DeInit(), SUCCESS);
 }
