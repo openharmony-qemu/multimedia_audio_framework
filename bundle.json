@@ -382,16 +382,6 @@
             },
             {
               "type": "none",
-              "name": "//foundation/multimedia/audio_framework/services/audio_suite:audio_pcm_process",
-              "header": {
-                "header_files": [
-                  "audio_pcm_process.h"
-                ],
-                "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audio_pcm_process/include/"
-              }
-            },
-            {
-              "type": "none",
               "name": "//foundation/multimedia/audio_framework/services/audio_engine:audio_common_algorithm",
               "header": {
                 "header_files": [
