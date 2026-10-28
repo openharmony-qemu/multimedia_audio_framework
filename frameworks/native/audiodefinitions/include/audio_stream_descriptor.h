@@ -257,6 +257,11 @@ public:
         return (routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
     }
 
+    bool IsVoipDirectRoute() const
+    {
+        return routeFlag_ == (AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP);
+    }
+
     bool IsEnhancedOutputRoute() const
     {
         if ((routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) != 0) {

@@ -54,6 +54,56 @@ static std::shared_ptr<AudioStreamDescriptor> MakeFastRecordStreamDesc(uint32_t 
     return streamDesc;
 }
 
+static std::shared_ptr<AudioStreamDescriptor> MakeVoipDirectStream()
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->audioMode_ = AUDIO_MODE_PLAYBACK;
+    stream->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP;
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    stream->newDeviceDescs_.push_back(desc);
+    return stream;
+}
+
+static std::shared_ptr<AudioStreamDescriptor> MakeDirectPlaybackStream()
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->audioMode_ = AUDIO_MODE_PLAYBACK;
+    stream->routeFlag_ = AUDIO_OUTPUT_FLAG_HD | AUDIO_OUTPUT_FLAG_DIRECT;
+    stream->audioFlag_ = AUDIO_OUTPUT_FLAG_HD;
+    stream->sessionId_ = TEST_STREAM_2_SESSION_ID;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    stream->newDeviceDescs_.push_back(desc);
+    return stream;
+}
+
+static std::shared_ptr<AudioPipeInfo> MakeDirectPipeWithStream(
+    std::shared_ptr<AudioStreamDescriptor> stream)
+{
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipe->routeFlag_ = AUDIO_OUTPUT_FLAG_HD | AUDIO_OUTPUT_FLAG_DIRECT;
+    pipe->moduleInfo_.name = "direct";
+    pipe->moduleInfo_.className = "primary_direct";
+    if (stream != nullptr) {
+        pipe->streamDescriptors_.push_back(stream);
+        pipe->streamDescMap_[stream->sessionId_] = stream;
+    }
+    return pipe;
+}
+
+static std::shared_ptr<AudioPipeInfo> MakePrimaryOutputPipe()
+{
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipe->adapterName_ = "primary";
+    pipe->moduleInfo_.name = "Speaker";
+    return pipe;
+}
+
 void AudioCoreServicePrivateTest::SetUp(void)
 {
     testCoreService_ = std::make_shared<AudioCoreService>();
@@ -5806,6 +5856,82 @@ HWTEST_F(AudioCoreServicePrivateTest, MutePrimarySinkByCollaborative_001, TestSi
 {
     ASSERT_NE(testCoreService_, nullptr);
     EXPECT_NO_THROW(testCoreService_->MutePrimarySinkByCollaborative(200000));
+}
+
+/**
+ * @tc.name  : HandleDirectPipeConflictForVoipDirect_001
+ * @tc.desc  : voip direct stream with existing direct pipe, streams moved and direct pipe closed
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleDirectPipeConflictForVoipDirect_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+
+    auto directStream = MakeDirectPlaybackStream();
+    auto directPipe = MakeDirectPipeWithStream(directStream);
+    audioCoreService->pipeManager_->AddAudioPipeInfo(directPipe);
+    auto primaryPipe = MakePrimaryOutputPipe();
+    audioCoreService->pipeManager_->AddAudioPipeInfo(primaryPipe);
+
+    auto voipDirectStream = MakeVoipDirectStream();
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = {directPipe};
+    AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN};
+
+    audioCoreService->HandleDirectPipeConflictForVoipDirect(voipDirectStream, pipeInfos, reason);
+
+    EXPECT_EQ(directStream->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_EQ(directStream->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_EQ(pipeInfos.size(), 0u);
+    EXPECT_TRUE(primaryPipe->ContainStream(directStream->sessionId_));
+}
+
+/**
+ * @tc.name  : HandleDirectPipeConflictForVoipDirect_002
+ * @tc.desc  : non-voip-direct stream, no operation performed
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleDirectPipeConflictForVoipDirect_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+
+    auto directStream = MakeDirectPlaybackStream();
+    auto directPipe = MakeDirectPipeWithStream(directStream);
+    audioCoreService->pipeManager_->AddAudioPipeInfo(directPipe);
+
+    auto normalStream = std::make_shared<AudioStreamDescriptor>();
+    normalStream->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = {directPipe};
+    AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN};
+
+    audioCoreService->HandleDirectPipeConflictForVoipDirect(normalStream, pipeInfos, reason);
+
+    EXPECT_EQ(directStream->routeFlag_, AUDIO_OUTPUT_FLAG_HD | AUDIO_OUTPUT_FLAG_DIRECT);
+    EXPECT_EQ(pipeInfos.size(), 1u);
+}
+
+/**
+ * @tc.name  : HandleDirectPipeConflictForVoipDirect_003
+ * @tc.desc  : voip direct stream but no direct pipe exists, no operation performed
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleDirectPipeConflictForVoipDirect_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+
+    auto primaryPipe = MakePrimaryOutputPipe();
+    audioCoreService->pipeManager_->AddAudioPipeInfo(primaryPipe);
+
+    auto voipDirectStream = MakeVoipDirectStream();
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos;
+    AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN};
+
+    audioCoreService->HandleDirectPipeConflictForVoipDirect(voipDirectStream, pipeInfos, reason);
+
+    EXPECT_EQ(pipeInfos.size(), 0u);
+    EXPECT_EQ(audioCoreService->pipeManager_->GetPipeList().size(), 1u);
 }
 } // namespace AudioStandard
 } // namespace OHOS

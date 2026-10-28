@@ -1027,6 +1027,8 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
     CHECK_AND_RETURN_RET_LOG(!(pipeInfos.empty() && streamDesc->GetRouteSelectRejectedFlag()), ERR_OPERATION_FAILED,
         "route select rejected renderer create for stream %{public}u", sessionId);
 
+    HandleDirectPipeConflictForVoipDirect(streamDesc, pipeInfos, reason);
+
     uint32_t sinkId = HDI_INVALID_ID;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
@@ -1048,6 +1050,54 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
     }
     RemoveUnusedPipe(reason);
     return SUCCESS;
+}
+
+void AudioCoreService::HandleDirectPipeConflictForVoipDirect(
+    std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos, const AudioStreamDeviceChangeReasonExt reason)
+{
+    // Voip direct and music direct share the same direct instance on Hisi.
+    // Creating or closing either pipe operates on the same instance, which causes
+    // silent or variable-speed playback. Therefore, when a voip direct stream is
+    // created, existing direct pipe streams must be moved to primary and the
+    // direct pipe must be closed first to avoid the conflict.
+    CHECK_AND_RETURN(streamDesc != nullptr && streamDesc->IsVoipDirectRoute());
+    std::shared_ptr<AudioPipeInfo> directPipe = pipeManager_->FindDirectOutputPipe();
+    CHECK_AND_RETURN(directPipe != nullptr);
+    std::shared_ptr<AudioPipeInfo> primaryPipe =
+        pipeManager_->GetPipeinfoByNameAndFlag("primary", AUDIO_OUTPUT_FLAG_NORMAL);
+    CHECK_AND_RETURN(primaryPipe != nullptr);
+    MoveDirectStreamsToPrimary(directPipe, primaryPipe, reason);
+    CloseDirectPipe(directPipe);
+    pipeInfos.erase(std::remove_if(pipeInfos.begin(), pipeInfos.end(),
+        [&directPipe](const std::shared_ptr<AudioPipeInfo> &pipe) { return pipe == directPipe; }),
+        pipeInfos.end());
+    AUDIO_INFO_LOG("voip direct stream %{public}u conflict handled, "
+        "direct pipe closed and streams moved to primary", streamDesc->sessionId_);
+}
+
+void AudioCoreService::MoveDirectStreamsToPrimary(std::shared_ptr<AudioPipeInfo> directPipe,
+    std::shared_ptr<AudioPipeInfo> primaryPipe, const AudioStreamDeviceChangeReasonExt reason)
+{
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams = directPipe->streamDescriptors_;
+    for (auto &stream : streams) {
+        CHECK_AND_CONTINUE(stream != nullptr);
+        MoveStreamSink(stream, primaryPipe, reason);
+        stream->ResetToNormalRoute(true);
+        stream->SetAudioFlag(AUDIO_OUTPUT_FLAG_NORMAL);
+        audioPipeSelector_->UpdateRendererPipeInfo(stream);
+        directPipe->RemoveStream(stream->GetSessionId());
+        pipeManager_->AddStreamToPipe(primaryPipe, stream, PIPE_ACTION_UPDATE);
+    }
+}
+
+void AudioCoreService::CloseDirectPipe(std::shared_ptr<AudioPipeInfo> directPipe)
+{
+    CHECK_AND_RETURN_LOG(directPipe != nullptr, "directPipe is nullptr");
+    audioPolicyManager_.CloseAudioPort(directPipe->id_, directPipe->paIndex_);
+    pipeManager_->RemoveAudioPipeInfo(directPipe);
+    audioIOHandleMap_.DelIOHandleInfo(directPipe->moduleInfo_.name);
+    audioPolicyManager_.RemoveAudioPipeVolume(directPipe->id_);
 }
 
 void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,
