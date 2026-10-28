@@ -17,6 +17,7 @@
 #define LOG_TAG "HpaeVirtualRendererManager"
 #endif
 
+#include <algorithm>
 #include "hpae_virtual_renderer_manager.h"
 #include "audio_errors.h"
 #include "audio_engine_log.h"
@@ -332,6 +333,121 @@ void HpaeVirtualRendererManager::OnNotifyQueue()
     hpaeSignalProcessThread_->Notify();
 }
 
+int32_t HpaeVirtualRendererManager::MoveStream(uint32_t sessionId, const std::string &sinkName)
+{
+    if (!IsInit()) {
+        MoveStreamSync(sessionId, sinkName);
+    } else {
+        auto request = [this, sessionId, sinkName]() { MoveStreamSync(sessionId, sinkName); };
+        SendRequest(request, __func__);
+    }
+    return SUCCESS;
+}
+
+int32_t HpaeVirtualRendererManager::MoveAllStream(const std::string &sinkName,
+    const std::vector<uint32_t> &sessionIds, MoveSessionType moveType)
+{
+    if (!IsInit()) {
+        MoveAllStreamToNewSink(sinkName, sessionIds, moveType);
+    } else {
+        auto request = [this, sinkName, sessionIds, moveType]() {
+            MoveAllStreamToNewSink(sinkName, sessionIds, moveType);
+        };
+        SendRequest(request, __func__);
+    }
+    return SUCCESS;
+}
+
+void HpaeVirtualRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &sinkName)
+{
+    if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
+        AUDIO_ERR_LOG("[StartMove] session %{public}u not found, move to %{public}s",
+            sessionId, sinkName.c_str());
+        TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+        return;
+    }
+    if (sinkName.empty()) {
+        AUDIO_ERR_LOG("[StartMove] session %{public}u failed, sinkName is empty", sessionId);
+        TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+        return;
+    }
+    AUDIO_INFO_LOG("[StartMove] session %{public}u, sink [virtual render] --> [%{public}s]",
+        sessionId, sinkName.c_str());
+    std::shared_ptr<HpaeSinkInputNode> inputNode = sinkInputNodeMap_[sessionId];
+    DeleteInputSession(sessionId);
+    std::string name = sinkName;
+    TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
+}
+
+void HpaeVirtualRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
+    const std::vector<uint32_t> &moveIds, MoveSessionType moveType)
+{
+    Trace trace("HpaeVirtualRendererManager::MoveAllStreamToNewSink[" + sinkName + "]");
+    std::string name = sinkName;
+    std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
+    std::vector<uint32_t> sessionIds;
+    std::string idStr;
+    for (const auto &it : sinkInputNodeMap_) {
+        if (moveType == MOVE_ALL || std::find(moveIds.begin(), moveIds.end(), it.first) != moveIds.end()) {
+            sinkInputs.emplace_back(it.second);
+            sessionIds.emplace_back(it.first);
+            idStr.append("[").append(std::to_string(it.first)).append("],");
+        }
+    }
+    for (const auto &it : sessionIds) {
+        DeleteInputSession(it);
+    }
+    AUDIO_INFO_LOG("[StartMove] session %{public}s to sink %{public}s, move type %{public}d",
+        idStr.c_str(), name.c_str(), moveType);
+    if (moveType == MOVE_ALL) {
+        TriggerSyncCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
+    } else {
+        TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
+    }
+}
+
+int32_t HpaeVirtualRendererManager::AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node)
+{
+    auto request = [this, node]() { AddSingleNodeToSink(node); };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeVirtualRendererManager::AddAllNodesToSink(
+    const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs, bool isConnect)
+{
+    (void)isConnect;
+    auto request = [this, sinkInputs]() {
+        for (const auto &it : sinkInputs) {
+            AddSingleNodeToSink(it);
+        }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+void HpaeVirtualRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node,
+    bool isConnect)
+{
+    (void)isConnect;
+    CHECK_AND_RETURN_LOG(node != nullptr, "node is nullptr");
+    uint32_t sessionId = node->GetNodeInfo().sessionId;
+    HpaeNodeInfo nodeInfo = node->GetNodeInfo();
+    nodeInfo.deviceClass = sinkInfo_.deviceClass;
+    nodeInfo.historyFrameCount = 0;
+    nodeInfo.statusCallback = weak_from_this();
+    node->SetNodeInfo(nodeInfo);
+    sinkInputNodeMap_[sessionId] = node;
+    SetSessionState(sessionId, node->GetState());
+#ifdef ENABLE_HIDUMP_DFX
+    OnNotifyDfxNodeAdmin(true, nodeInfo);
+#endif
+    if (sessionNodeMap_[sessionId].state == HPAE_SESSION_RUNNING && hpaeSignalProcessThread_ != nullptr) {
+        hpaeSignalProcessThread_->Notify();  // resume pulling immediately
+    }
+    AUDIO_INFO_LOG("[FinishMove] session %{public}u to sink [virtual render]", sessionId);
+}
+
 std::string HpaeVirtualRendererManager::GetDeviceHDFDumpInfo()
 {
     AUDIO_ERR_LOG("Unsupported operation");
@@ -474,37 +590,6 @@ std::vector<SinkInput> HpaeVirtualRendererManager::GetAllSinkInputsInfo()
 {
     return {};
 }
-
-// --- stubs replaced by later tasks ---
-int32_t HpaeVirtualRendererManager::MoveStream(uint32_t sessionId, const std::string &sinkName)
-{
-    return SUCCESS;
-}
-
-int32_t HpaeVirtualRendererManager::MoveAllStream(const std::string &sinkName,
-    const std::vector<uint32_t> &sessionIds, MoveSessionType moveType)
-{
-    return SUCCESS;
-}
-
-int32_t HpaeVirtualRendererManager::AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node)
-{
-    return SUCCESS;
-}
-
-int32_t HpaeVirtualRendererManager::AddAllNodesToSink(
-    const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs, bool isConnect)
-{
-    return SUCCESS;
-}
-
-void HpaeVirtualRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &sinkName) {}
-
-void HpaeVirtualRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
-    const std::vector<uint32_t> &moveIds, MoveSessionType moveType) {}
-
-void HpaeVirtualRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node,
-    bool isConnect) {}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

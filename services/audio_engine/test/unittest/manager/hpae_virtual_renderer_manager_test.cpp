@@ -299,4 +299,50 @@ HWTEST_F(HpaeVirtualRendererManagerTest, PullLoopIdleNoWakeup, TestSize.Level1)
     EXPECT_EQ(manager->IsRunning(), false);
     EXPECT_EQ(manager->DeInit(), SUCCESS);
 }
+
+HWTEST_F(HpaeVirtualRendererManagerTest, AddNodeToSinkKeepsRunningAndPulls, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager);
+
+    // Move the session out (no receiver in UT: MOVE_ALL_SINK_INPUT payload is dropped).
+    EXPECT_EQ(manager->MoveAllStream("Speaker_File", {}, MOVE_ALL), SUCCESS);
+    WaitForMsgProcessing(manager);
+    HpaeSinkInputInfo info;
+    EXPECT_NE(manager->GetSinkInputInfo(TEST_SESSION_ID, info), SUCCESS);  // erased locally
+
+    // Re-add a fresh RUNNING node; pulls must resume for it.
+    HpaeNodeInfo nodeInfo;
+    ConfigNodeInfo(nodeInfo, streamInfo);
+    auto node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    node->SetState(HPAE_SESSION_RUNNING);
+    EXPECT_EQ(manager->AddNodeToSink(node), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->GetSinkInputInfo(TEST_SESSION_ID, info), SUCCESS);
+    EXPECT_EQ(info.rendererSessionInfo.state == HPAE_SESSION_RUNNING, true);
+
+    // Register the write callback AFTER the node exists; pulls resume at the 20ms cadence.
+    std::atomic<int32_t> count(0);
+    auto cb = MakeCountingCb(count);
+    EXPECT_EQ(manager->RegisterWriteCallback(TEST_SESSION_ID, cb), SUCCESS);
+    WaitForMsgProcessing(manager);
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    EXPECT_GE(count.load(), 3);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, MoveStreamSyncUnknownSession, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    EXPECT_EQ(manager->MoveStream(INVALID_SESSION_ID, "Speaker_File"), SUCCESS);  // logged skip
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->MoveAllStream("Speaker_File", {}, MOVE_ALL), SUCCESS);     // empty: no-op move
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
 }  // namespace
