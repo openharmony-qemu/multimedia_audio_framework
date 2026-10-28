@@ -27,13 +27,14 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-static const std::string VIRTUAL_RENDER_SINK_NAME = "Virtual_Render";
 
 HpaeVirtualRendererManager::HpaeVirtualRendererManager() : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)
 {
+    sinkInfo_.sinkId = 0;
     sinkInfo_.deviceName = VIRTUAL_RENDER_SINK_NAME;
     sinkInfo_.deviceClass = VIRTUAL_RENDER_SINK_NAME;
     sinkInfo_.adapterName = VIRTUAL_RENDER_SINK_NAME;
+    wakeUpTime_ = 0;
 }
 
 HpaeVirtualRendererManager::~HpaeVirtualRendererManager()
@@ -110,7 +111,7 @@ bool HpaeVirtualRendererManager::DeactivateThread()
 
 int32_t HpaeVirtualRendererManager::StopManager()
 {
-    return DeactivateThread() ? SUCCESS : ERROR;
+    return SUCCESS;
 }
 
 std::string HpaeVirtualRendererManager::GetThreadName()
@@ -264,7 +265,6 @@ int32_t HpaeVirtualRendererManager::RefreshProcessClusterByDevice()
 
 std::vector<SinkInput> HpaeVirtualRendererManager::GetAllSinkInputsInfo()
 {
-    AUDIO_ERR_LOG("Unsupported operation");
     return {};
 }
 
