@@ -696,6 +696,7 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, SetSpeed_001, TestSize.Level0)
  * @tc.type    : FUNC
  * @tc.number  : IsHdiSpeedSupported_001
  * @tc.desc    : The offload chain forwards speed to the sink, so HDI speed is supported.
+ * @tc.owner   : audio_route_renderer
  */
 HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, IsHdiSpeedSupported_001, TestSize.Level0)
 {

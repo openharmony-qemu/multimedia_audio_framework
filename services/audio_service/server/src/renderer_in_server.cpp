@@ -2721,6 +2721,10 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
     payload["silentType"] = std::to_string(SILENT_TYPE_MUTE_SESSION);
     payload["isSilent"] = std::to_string(isMuted);
     ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
+    AUDIO_INFO_LOG("SetStreamSilentMode uid %{public}d sessionId %{public}u silentMode %{public}d",
+        processConfig_.appInfo.appUid, streamIndex_, on);
+    HPAE::IHpaeManager::GetHpaeManager().SetStreamSilentMode(
+        HPAE::HPAE_STREAM_CLASS_TYPE_PLAY, streamIndex_, on);
     return SUCCESS;
 }
 

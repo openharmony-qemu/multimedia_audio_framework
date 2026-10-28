@@ -596,7 +596,7 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_GetLoopbackPreferredDevice
     std::shared_ptr<AudioDeviceDescriptor> inputDevice;
     std::shared_ptr<AudioDeviceDescriptor> outputDevice;
     int32_t ret = SUCCESS;
-    int32_t result = audioPolicyServer_->GetLoopbackPreferredDevicePair(inputDevice, outputDevice, ret);
+    int32_t result = audioPolicyServer_->GetLoopbackPreferredDevicePair(false, inputDevice, outputDevice, ret);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(ret, ERR_DEVICE_NOT_SUPPORTED);
 }

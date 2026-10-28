@@ -247,6 +247,7 @@ HpaeSessionState HpaeSinkInputNode::GetState()
 void HpaeSinkInputNode::SetAppUid(int32_t appUid)
 {
     appUid_ = appUid;
+    isSystemApp_ = CheckoutSystemAppUtil::CheckoutSystemApp(appUid_);
 }
 
 int32_t HpaeSinkInputNode::GetAppUid()
@@ -407,7 +408,7 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
     // offload / direct / non-standard sample rate / SE preheating: never force data
     bool forceData = (offloadEnable_ || isDirect_ || isNonStandardSampleRate_ || sessionEffectPreheatActive_
-                      || GetEffectStreamUsage() == STREAM_USAGE_ACCESSIBILITY) ? false : true;
+                      || (GetEffectStreamUsage() == STREAM_USAGE_ACCESSIBILITY && isSystemApp_)) ? false : true;
     uint64_t latency = 0;
     OffloadCallbackData callbackData;
     auto nodeCallback = GetNodeStatusCallback().lock();

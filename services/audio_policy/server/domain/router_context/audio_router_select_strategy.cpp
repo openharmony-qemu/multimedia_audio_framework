@@ -243,7 +243,7 @@ int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceTy
             if (AudioSelectInterfaceService::GetInstance().GetBlockFirstOverrode()) {
                 return SUCCESS;
             }
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
                 std::make_shared<AudioDeviceDescriptor>(), uid, "SetDefaultOutputDevice");
             return NEED_TO_FETCH;
         }

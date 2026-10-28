@@ -3726,5 +3726,53 @@ HWTEST(AudioUtilsUnitTest, GetEarpieceParam_001, TestSize.Level1)
         EXPECT_EQ(result, expected);
     }
 }
+
+/**
+ * @tc.name  : Test IsPlaybackChannelRelatedInfoValid
+ * @tc.number: AudioUtils_IsPlaybackChannelRelatedInfoValid_001
+ * @tc.desc  : Test IsPlaybackChannelRelatedInfoValid interface.
+ */
+HWTEST(AudioUtilsUnitTest, AudioUtils_IsPlaybackChannelRelatedInfoValid_001, TestSize.Level1)
+{
+    uint8_t audioChannel = 100;
+    uint64_t channelLayout = 100;
+    EXPECT_FALSE(Util::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 100;
+    EXPECT_FALSE(Util::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 4;
+    EXPECT_FALSE(Util::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 3;
+    EXPECT_TRUE(Util::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
+}
+
+/**
+ * @tc.name  : Test IsRecordChannelRelatedInfoValid
+ * @tc.number: AudioUtils_IsRecordChannelRelatedInfoValid_001
+ * @tc.desc  : Test IsRecordChannelRelatedInfoValid interface.
+ */
+HWTEST(AudioUtilsUnitTest, AudioUtils_IsRecordChannelRelatedInfoValid_001, TestSize.Level1)
+{
+    uint8_t audioChannel = 100;
+    uint64_t channelLayout = 100;
+    EXPECT_FALSE(Util::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 100;
+    EXPECT_FALSE(Util::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 4;
+    EXPECT_FALSE(Util::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 3;
+    EXPECT_TRUE(Util::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
+}
 } // namespace AudioStandard
 } // namespace OHOS

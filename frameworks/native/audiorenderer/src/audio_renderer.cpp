@@ -682,6 +682,13 @@ bool AudioRenderer::CheckSupportedSamplingRates(uint32_t rates)
         rates == SAMPLE_RATE_11025;
 }
 
+bool AudioRenderer::CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo)
+{
+    bool support = false;
+    AudioPolicyManager::GetInstance().CheckAudioRendererStreamInfoSupport(streamInfo, support);
+    return support;
+}
+
 // Inner function. Must be called with AudioRendererPrivate::rendererMutex_
 // or AudioRendererPrivate::streamMutex_ held.
 int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)

@@ -363,6 +363,20 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
                 AUDIO_INFO_LOG("disable usb device vendorId: %{public}d, productId: %{public}d", vendorId, productId);
             }
         }
+    } else {
+        ParseAttributeByNameExt(attributeInfo, pipeInfo);
+    }
+}
+
+void AudioPolicyConfigParser::ParseAttributeByNameExt(AttributeInfo &attributeInfo,
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo)
+{
+    if (attributeInfo.name_ == "max_bitrate") {
+        int32_t maxBitrate = 0;
+        if (StrToInt(attributeInfo.value_, maxBitrate)) {
+            globalConfigs_.hwEncodingTypeMaxBitrate = std::max(maxBitrate, 0);
+            AUDIO_INFO_LOG("max_bitrate parsed: %{public}d", globalConfigs_.hwEncodingTypeMaxBitrate);
+        }
     }
 }
 

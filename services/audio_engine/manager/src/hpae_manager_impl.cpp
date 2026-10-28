@@ -1116,6 +1116,13 @@ void HpaeManagerImpl::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, 
     manager_->TriggerAppsUidUpdate(streamClassType, sessionId);
 }
 
+void HpaeManagerImpl::SetStreamSilentMode(HpaeStreamClassType streamClassType, uint32_t sessionId,
+    bool silentMode)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->SetStreamSilentMode(streamClassType, sessionId, silentMode);
+}
+
 float HpaeManagerImpl::GetMaxAmplitude()
 {
     CHECK_AND_RETURN_RET_LOG(manager_, 0.0f, "manager is nullptr");

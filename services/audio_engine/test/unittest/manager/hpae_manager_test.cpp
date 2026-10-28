@@ -27,6 +27,7 @@
 #include "hpae_manager.h"
 #include "hpae_fast_renderer_manager.h"
 #include "hpae_fast_capturer_manager.h"
+#include "hpae_offload_renderer_manager.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -2380,6 +2381,7 @@ HWTEST_F(HpaeManagerUnitTest, StreamSpanRouteAndInnerReadCallbackBranches001, Te
  * @tc.type  : FUNC
  * @tc.number: IsSessionHdiSpeedSupported_001
  * @tc.desc  : Per-session HDI speed capability: unknown session, normal chain and missing sink.
+ * @tc.owner : audio_route_renderer
  */
 HWTEST_F(HpaeManagerUnitTest, IsSessionHdiSpeedSupported_001, TestSize.Level1)
 {
@@ -2397,6 +2399,27 @@ HWTEST_F(HpaeManagerUnitTest, IsSessionHdiSpeedSupported_001, TestSize.Level1)
     // Sink manager missing from the map keeps the conservative false answer.
     hpaeManager_->rendererManagerMap_.erase(sinkName);
     EXPECT_FALSE(hpaeManager_->IsSessionHdiSpeedSupported(playSessionId));
+}
+
+/**
+ * @tc.name  : Test IsSessionHdiSpeedSupported true path via the sync result chain
+ * @tc.type  : FUNC
+ * @tc.number: IsSessionHdiSpeedSupported_002
+ * @tc.desc  : Offload manager chain reports HDI speed capability through SendRequestSync.
+ */
+HWTEST_F(HpaeManagerUnitTest, IsSessionHdiSpeedSupported_002, TestSize.Level1)
+{
+    PrepareCoverageManager(hpaeManager_);
+
+    const uint32_t playSessionId = TEST_STREAM_SESSION_ID + 124;
+    const std::string sinkName = "Speaker_Offload";
+    HpaeSinkInfo sinkInfo;
+    hpaeManager_->rendererManagerMap_[sinkName] = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    hpaeManager_->rendererIdSinkNameMap_[playSessionId] = sinkName;
+
+    // Only the promise/future result path can deliver true (the timeout fallback returns
+    // false), so this also proves the request was executed and answered on the manager thread.
+    EXPECT_TRUE(hpaeManager_->IsSessionHdiSpeedSupported(playSessionId));
 }
 
 HWTEST_F(HpaeManagerUnitTest, StopAudioPort001, TestSize.Level4)
@@ -3659,6 +3682,34 @@ HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_SwitchBetweenModes_001, T
     ASSERT_EQ(hpaeManager_->UpdateCollaborativeState(isCollaborationEnabled), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->isCollaborationEnabled_, COLLABORATION_CLOSE);
+}
+
+/**
+ * @tc.name  : SetStreamSilentMode_UnknownSession_002
+ * @tc.type  : FUNC
+ * @tc.number: SetStreamSilentMode_UnknownSession_002
+ * @tc.desc  : SetStreamSilentMode on unknown session is a safe no-op.
+ * @tc.owner : audio_route_renderer
+ */
+HWTEST_F(HpaeManagerUnitTest, SetStreamSilentMode_UnknownSession_002, TestSize.Level1)
+{
+    PrepareCoverageManager(hpaeManager_);
+    hpaeManager_->SetStreamSilentMode(HPAE_STREAM_CLASS_TYPE_PLAY, 999, true);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+/**
+ * @tc.name  : SetStreamSilentMode_NonPlayType_003
+ * @tc.type  : FUNC
+ * @tc.number: SetStreamSilentMode_NonPlayType_003
+ * @tc.desc  : SetStreamSilentMode with non-PLAY stream class type is a safe no-op.
+ * @tc.owner : audio_route_renderer
+ */
+HWTEST_F(HpaeManagerUnitTest, SetStreamSilentMode_NonPlayType_003, TestSize.Level1)
+{
+    PrepareCoverageManager(hpaeManager_);
+    hpaeManager_->SetStreamSilentMode(HPAE_STREAM_CLASS_TYPE_RECORD, 1, true);
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 }  // namespace

@@ -637,6 +637,12 @@ private:
     int32_t FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         uint32_t &sessionId, StreamFlagInfo &flagInfo,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    void HandleDirectPipeConflictForVoipDirect(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos,
+        const AudioStreamDeviceChangeReasonExt reason);
+    void MoveDirectStreamsToPrimary(std::shared_ptr<AudioPipeInfo> directPipe,
+        std::shared_ptr<AudioPipeInfo> primaryPipe, const AudioStreamDeviceChangeReasonExt reason);
+    void CloseDirectPipe(std::shared_ptr<AudioPipeInfo> directPipe);
     void ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,
         const AudioStreamDeviceChangeReasonExt reason);
     void ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,

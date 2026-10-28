@@ -41,6 +41,16 @@
     *ChannelConverter*;
     *DownMixer*;
 
+    # ---- pcm process C facade (plugin/pcm_process/) ----
+    # extern "C", no mangling -> bare names. PCM<->float conversion, memory
+    # length helper and the C mixer shell for direct (chipsetsdk) callers.
+    ConvertPcmToFloat;
+    ConvertFloatToPcm;
+    AudioFormatCalcMemLength;
+    AudioMixerCreate;
+    AudioMixerProcess;
+    AudioMixerDestroy;
+
     # ---- mixing-table free functions (channel_converter/src/mixer_utils.cpp) ----
     # SetDefaultChannelLayout is called BY NAME from audio_service
     # (hpae_renderer_stream_impl.cpp); the rest are shared helpers.

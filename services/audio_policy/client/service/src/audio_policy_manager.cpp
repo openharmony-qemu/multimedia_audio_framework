@@ -780,6 +780,16 @@ bool AudioPolicyManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo,
     return support;
 }
 
+int32_t AudioPolicyManager::CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo, bool &support)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_OPERATION_FAILED);
+
+    support = false;
+    gsp->CheckAudioRendererStreamInfoSupport(streamInfo, support);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
     const int32_t zoneID)
 {
@@ -3690,7 +3700,7 @@ std::vector<AudioDevicePair> AudioPolicyManager::GetLoopbackSupportedDevicePairs
     return devicePairs;
 }
 
-AudioDevicePair AudioPolicyManager::GetLoopbackPreferredDevicePair()
+AudioDevicePair AudioPolicyManager::GetLoopbackPreferredDevicePair(bool isInterCall)
 {
     Trace trace("AudioPolicyManager::GetLoopbackPreferredDevicePair");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -3699,9 +3709,15 @@ AudioDevicePair AudioPolicyManager::GetLoopbackPreferredDevicePair()
     std::shared_ptr<AudioDeviceDescriptor> inputDevice;
     std::shared_ptr<AudioDeviceDescriptor> outputDevice;
     int32_t ret = 0;
-    gsp->GetLoopbackPreferredDevicePair(inputDevice, outputDevice, ret);
+    gsp->GetLoopbackPreferredDevicePair(isInterCall, inputDevice, outputDevice, ret);
 
     CHECK_AND_RETURN_RET(ret == SUCCESS && inputDevice != nullptr && outputDevice != nullptr, {});
+    inputDevice->deviceType_ = isInterCall && inputDevice->getType() == DEVICE_TYPE_USB_HEADSET ?
+        (inputDevice->modemCallSupported_ ?
+            DEVICE_TYPE_USB_HEADSET : DEVICE_TYPE_USB_ARM_HEADSET) : inputDevice->getType();
+    outputDevice->deviceType_ = isInterCall && outputDevice->getType() == DEVICE_TYPE_USB_HEADSET ?
+        (outputDevice->modemCallSupported_ ?
+            DEVICE_TYPE_USB_HEADSET : DEVICE_TYPE_USB_ARM_HEADSET) : outputDevice->getType();
     AUDIO_INFO_LOG("input:%{public}s output:%{public}s ", inputDevice->GetDeviceTypeString().c_str(),
         outputDevice->GetDeviceTypeString().c_str());
 

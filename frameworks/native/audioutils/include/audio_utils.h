@@ -103,6 +103,28 @@ public:
     static bool IsCustomSampleRateValid(uint32_t customSampleRate);
 
     static bool IsCamcorderMicInSupportedInputDeviceType(DeviceType deviceType);
+
+    static bool IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t channelLayout,
+        uint8_t encodingType = ENCODING_PCM);
+
+    static bool IsFormatValid(uint8_t format);
+
+    static bool IsEncodingTypeValid(uint8_t encodingType);
+
+    static bool IsSamplingRateValid(uint32_t samplingRate);
+
+    static bool IsRendererChannelValid(uint8_t channel, uint8_t encodingType);
+
+    static bool IsCapturerChannelValid(uint8_t channel);
+
+    static bool IsRendererChannelLayoutValid(uint64_t channelLayout);
+
+    static bool IsCapturerChannelLayoutValid(uint64_t channelLayout);
+
+    static bool IsPlaybackChannelRelatedInfoValid(uint8_t encodingType, uint8_t channels,
+        uint64_t channelLayout);
+
+    static bool IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
 };
 
 class AudioTypeUtils {

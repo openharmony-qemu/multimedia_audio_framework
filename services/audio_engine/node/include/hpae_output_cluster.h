@@ -56,7 +56,8 @@ public:
     uint32_t GetHdiLatency() override;
     uint64_t GetLatency(HpaeProcessorType sceneType) override;
     void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID) override;
+        uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID,
+        bool silentMode = false) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     void SetCollaborationState(CollaborationState isCollaborationEnabled) override;
     uint32_t GetRenderId() const override;

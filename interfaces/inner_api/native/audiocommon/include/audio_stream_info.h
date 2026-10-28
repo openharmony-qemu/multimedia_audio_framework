@@ -488,6 +488,7 @@ public:
     AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     // Add customSampleRate Init Value 0
     uint32_t customSampleRate = 0;
+    int32_t bitrate = -1;
 
     AudioStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,
         AudioChannel channels_, AudioChannelLayout channelLayout_ = AudioChannelLayout::CH_LAYOUT_UNKNOWN)
@@ -502,7 +503,8 @@ public:
             && parcel.WriteInt32(static_cast<int32_t>(format))
             && parcel.WriteInt32(static_cast<int32_t>(channels))
             && parcel.WriteInt64(static_cast<int64_t>(channelLayout))
-            && parcel.WriteUint32(customSampleRate);
+            && parcel.WriteUint32(customSampleRate)
+            && parcel.WriteInt32(bitrate);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -513,13 +515,14 @@ public:
         channels = static_cast<AudioChannel>(parcel.ReadInt32());
         channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt64());
         customSampleRate = parcel.ReadUint32();
+        bitrate = parcel.ReadInt32();
     }
 
     bool operator==(const AudioStreamInfo &info) const
     {
         return encoding == info.encoding && format == info.format && channels == info.channels &&
             channelLayout == info.channelLayout && samplingRate == info.samplingRate &&
-            customSampleRate == info.customSampleRate;
+            customSampleRate == info.customSampleRate && bitrate == info.bitrate;
     }
 
     uint32_t GetEffectiveSampleRate() const

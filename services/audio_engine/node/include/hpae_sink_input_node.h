@@ -65,6 +65,9 @@ public:
     int32_t GetAppUid();
     bool GetKeepRunning();
 
+    void SetStreamSilentMode(bool silentMode) { silentMode_ = silentMode; }
+    bool GetStreamSilentMode() const { return silentMode_; }
+
     void SetIsLowLatency(bool isLowLatency);
     bool GetIsLowLatency();
 
@@ -113,6 +116,7 @@ private:
     bool isDrain_ = false;
     HpaeSessionState state_ = HPAE_SESSION_NEW;
     int32_t appUid_ = -1;
+    bool isSystemApp_ = false;
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
     bool offloadEnable_ = false;
     int32_t offloadType_ = OFFLOAD_DEFAULT;
@@ -126,6 +130,7 @@ private:
     bool isNonStandardSampleRate_ = false;
     std::optional<SessionEffectAttachState> sessionEffectAttachState_;
     bool sessionEffectPreheatActive_ = false;
+    bool silentMode_ = false;
 
     // Cached DoProcess trace names; rebuilt in ctor and whenever node info changes
     std::string processTraceName_;

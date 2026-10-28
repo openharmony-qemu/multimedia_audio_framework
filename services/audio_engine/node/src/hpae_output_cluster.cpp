@@ -254,10 +254,10 @@ void HpaeOutputCluster::UpdateBusStatus(bool isActive)
 }
 
 void HpaeOutputCluster::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
+    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid, bool silentMode)
 {
     CHECK_AND_RETURN(hpaeSinkOutputNode_ != nullptr);
-    hpaeSinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
+    hpaeSinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid, silentMode);
 }
 
 int32_t HpaeOutputCluster::SetPriPaPower(void)

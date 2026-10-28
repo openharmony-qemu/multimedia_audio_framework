@@ -38,14 +38,16 @@ typedef void (*TestFuncs)();
 
 class ClientTypeListenerFuzzTest : public ClientTypeListener {
 public:
-    void OnClientTypeQueryCompleted(uint32_t uid, ClientType clientType) override
+    void OnClientTypeQueryCompleted(uint32_t uid, ClientType clientType, const std::string &bundleName) override
     {
         uid_ = uid;
         clientType_ = clientType;
+        bundleName_ = bundleName;
     }
 
     uint32_t uid_ = 0;
     ClientType clientType_ = CLIENT_TYPE_OTHERS;
+    std::string bundleName_;
 };
 
 class RemoteObjectFuzzTestStub : public IRemoteObject {
@@ -327,9 +329,9 @@ void ClientTypeManagerFuzzTest(FuzzedDataProvider& fdp)
     manager->clientTypeMap_.clear();
     manager->GetClientTypeByUid(uid);
     manager->GetAndSaveClientType(uid, bundleName);
-    manager->OnClientTypeQueryCompleted(uid, clientType);
+    manager->OnClientTypeQueryCompleted(uid, clientType, bundleName);
     manager->GetClientTypeByUid(uid);
-    manager->OnClientTypeQueryCompleted(static_cast<uint32_t>(syncUid), clientType);
+    manager->OnClientTypeQueryCompleted(static_cast<uint32_t>(syncUid), clientType, bundleName);
     manager->GetClientTypeByUidSync(syncUid);
     manager->GetClientTypeByUidSync(0);
     manager->SetQueryClientTypeCallback(nullptr);

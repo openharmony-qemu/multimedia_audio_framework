@@ -133,6 +133,8 @@ public:
 
     bool IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
 
+    int32_t CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo, bool &support);
+
     bool IsEnhancedRoutingSupported();
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
@@ -646,6 +648,8 @@ public:
 
     int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId);
 
+    int32_t AddDeviceTagToAudioZone(int32_t zoneId, const std::string &deviceTag);
+
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId);
 
     int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
@@ -750,7 +754,7 @@ public:
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);
     std::vector<AudioDevicePair> GetLoopbackSupportedDevicePairs();
-    AudioDevicePair GetLoopbackPreferredDevicePair();
+    AudioDevicePair GetLoopbackPreferredDevicePair(bool isInterCall = false);
     bool IsSupportInnerCaptureOffload();
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
     bool SetKaraokeParameters(DeviceType deviceType, KaraokeParamType paramType, int32_t value);
@@ -829,6 +833,7 @@ public:
     int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrapper> &vaBroker);
+    int32_t GetUsbHeadsetType(const std::string &macAddress, int32_t deviceRole, int32_t &usbHeadsetType);
     int32_t SetVADeviceExceptionFlag(const std::string &macAddress, bool exceptionFlag);
     bool IsCollaborativePlaybackSupported();
     bool IsCollaborativePlaybackSupportedForDevice(

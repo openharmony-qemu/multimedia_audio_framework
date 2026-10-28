@@ -32,6 +32,7 @@ public:
 
     OH_AudioCommon_Result GetDeviceRole(OH_AudioDevice_Role *deviceRole);
     OH_AudioCommon_Result GetDeviceType(OH_AudioDevice_Type *deviceType);
+    OH_AudioCommon_Result GetUsbHeadsetType(OH_AudioDevice_UsbHeadsetType *usbHeadsetType);
     OH_AudioCommon_Result GetDeviceId(uint32_t *id);
     OH_AudioCommon_Result GetDeviceName(char **name);
     OH_AudioCommon_Result GetDeviceAddress(char **address);

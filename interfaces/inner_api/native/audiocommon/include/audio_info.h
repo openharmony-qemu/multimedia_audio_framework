@@ -2649,6 +2649,8 @@ struct RendererStreamInfo {
     RendererState state_ = RENDERER_INVALID;
 
     std::string bundleName_ = "";
+
+    bool silentMode_ = false;
 };
 
 struct CapturerStreamInfo {

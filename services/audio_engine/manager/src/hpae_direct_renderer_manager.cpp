@@ -1230,10 +1230,23 @@ void HpaeDirectRendererManager::NotifyStreamChangeToSink(
 {
     CHECK_AND_RETURN(sinkOutputNode_ != nullptr);
     StreamUsage usage = STREAM_USAGE_UNKNOWN;
+    bool silentMode = false;
     if (sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end()) {
         usage = sinkInputNodeMap_[sessionId]->GetEffectStreamUsage();
+        silentMode = sinkInputNodeMap_[sessionId]->GetStreamSilentMode();
     }
-    sinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
+    sinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid, silentMode);
+}
+
+void HpaeDirectRendererManager::SetStreamSilentMode(uint32_t sessionId, bool silentMode)
+{
+    auto request = [this, sessionId, silentMode]() {
+        AUDIO_INFO_LOG("SetStreamSilentMode sessionId %{public}u, silentMode %{public}d", sessionId, silentMode);
+        auto inputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+        CHECK_AND_RETURN_LOG(inputNode != nullptr, "sessionId %{public}u not exist", sessionId);
+        inputNode->SetStreamSilentMode(silentMode);
+    };
+    SendRequest(request, __func__);
 }
 
 void HpaeDirectRendererManager::StopDirectOutputNodeSync(bool isStandby)

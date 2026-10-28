@@ -435,6 +435,47 @@ void AudioCoreConfigManager::GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs
     globalConfigs = globalConfigs_;
 }
 
+int32_t AudioCoreConfigManager::GetHwEncodingTypeMaxBitrate()
+{
+    return globalConfigs_.hwEncodingTypeMaxBitrate;
+}
+
+void AudioCoreConfigManager::SetHwEncodingTypeMaxBitrate(int32_t maxBitrate)
+{
+    globalConfigs_.hwEncodingTypeMaxBitrate = maxBitrate;
+}
+
+bool AudioCoreConfigManager::CheckRendererGeneralParamsValid(const AudioStreamInfo &streamInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(Util::IsFormatValid(streamInfo.format) && Util::IsEncodingTypeValid(streamInfo.encoding) &&
+        ((streamInfo.customSampleRate == 0 && Util::IsSamplingRateValid(streamInfo.samplingRate)) ||
+        (streamInfo.customSampleRate != 0 && Util::IsCustomSampleRateValid(streamInfo.customSampleRate))) &&
+        Util::IsPlaybackChannelRelatedInfoValid(streamInfo.encoding, streamInfo.channels, streamInfo.channelLayout),
+        false, "Unsupported audio renderer parameter");
+    return true;
+}
+
+bool AudioCoreConfigManager::CheckHwEncodingBitrateSupport(const AudioStreamInfo &streamInfo)
+{
+    if (!IsHWDecodingType(streamInfo.encoding) || streamInfo.bitrate == -1) {
+        return true;
+    }
+    CHECK_AND_RETURN_RET_LOG(streamInfo.bitrate > 0, false,
+        "bitrate must be greater than 0 or equal to -1(skip check)");
+    int32_t maxBitrate = GetHwEncodingTypeMaxBitrate();
+    CHECK_AND_RETURN_RET_LOG(maxBitrate > 0, false, "Max bitrate not configured");
+    CHECK_AND_RETURN_RET_LOG(streamInfo.bitrate <= maxBitrate, false,
+        "Bitrate %{public}d exceeds max bitrate %{public}d, not supported",
+        streamInfo.bitrate, maxBitrate);
+    return true;
+}
+
+bool AudioCoreConfigManager::CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo)
+{
+    CHECK_AND_RETURN_RET(CheckRendererGeneralParamsValid(streamInfo), false);
+    return CheckHwEncodingBitrateSupport(streamInfo);
+}
+
 bool AudioCoreConfigManager::GetVoipConfig()
 {
     return enableFastVoip_;

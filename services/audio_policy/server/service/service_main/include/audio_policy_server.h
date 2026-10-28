@@ -181,6 +181,9 @@ public:
     int32_t IsOffloadPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t streamUsage,
         bool &support) override;
 
+    int32_t CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo,
+        bool &support) override;
+
     int32_t IsVolumeUnadjustable(bool &unadjustable) override;
 
     int32_t AdjustVolumeByStep(int32_t adjustType) override;
@@ -427,7 +430,8 @@ public:
     int32_t IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, bool &ret) override;
     int32_t GetLoopbackSupportedDevicePairs(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &inputDevices,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices, int32_t &ret) override;
-    int32_t GetLoopbackPreferredDevicePair(std::shared_ptr<AudioDeviceDescriptor> &inputDevice,
+    int32_t GetLoopbackPreferredDevicePair(bool isInterCall,
+        std::shared_ptr<AudioDeviceDescriptor> &inputDevice,
         std::shared_ptr<AudioDeviceDescriptor> &outputDevice, int32_t &ret) override;
     int32_t IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret) override;
     int32_t SetKaraokeParameters(int32_t deviceType, int32_t paramType, int32_t value, bool &ret) override;
@@ -622,6 +626,8 @@ public:
 
     int32_t AddStreamIdToAudioZone(int32_t zoneId, uint32_t streamId) override;
 
+    int32_t AddDeviceTagToAudioZone(int32_t zoneId, const std::string &deviceTag) override;
+
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
 
     int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
@@ -750,6 +756,7 @@ public:
     int32_t GetVADeviceBroker(sptr<IRemoteObject> &client) override;
 
     int32_t GetVADeviceController(const std::string &macAddress, sptr<IRemoteObject> &controller) override;
+    int32_t GetUsbHeadsetType(const std::string &macAddress, int32_t deviceRole, int32_t &usbHeadsetType) override;
     int32_t SetVADeviceExceptionFlag(const std::string &macAddress, bool exceptionFlag) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
@@ -991,7 +998,8 @@ private:
     void InfoDumpHelp(std::string &dumpString);
 
     bool IsDeviceSupportLoopback(std::shared_ptr<AudioDeviceDescriptor> device);
-    int32_t SanitizeAndSetClientInfo(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+    int32_t SanitizeAndSetClientInfo(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs,
+        bool isInterCall);
 
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
     void AddSystemAbilityListeners();

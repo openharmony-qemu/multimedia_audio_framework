@@ -95,6 +95,11 @@ public:
     void GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData);
     void GetInterruptGroupData(std::unordered_map<std::string, std::string>& interruptGroupData);
     void GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs);
+    int32_t GetHwEncodingTypeMaxBitrate();
+    void SetHwEncodingTypeMaxBitrate(int32_t maxBitrate);
+    bool CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo);
+    bool CheckRendererGeneralParamsValid(const AudioStreamInfo &streamInfo);
+    bool CheckHwEncodingBitrateSupport(const AudioStreamInfo &streamInfo);
     bool GetVoipConfig();
     bool GetUpdateRouteSupport();
     bool GetAdapterInfoFlag();

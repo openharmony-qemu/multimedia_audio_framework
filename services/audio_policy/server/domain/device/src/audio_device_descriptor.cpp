@@ -229,6 +229,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     sinkLatencyMs_ = 0;
     sinkLatencyValid_ = false;
     isSupportReload_ = true;
+    isSupportCommunicationSharing_ = 0;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -276,6 +277,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     sinkLatencyMs_ = 0;
     sinkLatencyValid_ = false;
     isSupportReload_ = true;
+    isSupportCommunicationSharing_ = 0;
 }
 
 void AudioDeviceDescriptor::CopyBaseFields(const AudioDeviceDescriptor &deviceDescriptor)
@@ -334,6 +336,7 @@ void AudioDeviceDescriptor::CopyExtendedFields(const AudioDeviceDescriptor &devi
     sinkLatencyValid_ = deviceDescriptor.sinkLatencyValid_;
     isSupportReload_ = deviceDescriptor.isSupportReload_;
     isPriorityReduced_ = deviceDescriptor.isPriorityReduced_;
+    isSupportCommunicationSharing_ = deviceDescriptor.isSupportCommunicationSharing_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -597,9 +600,9 @@ bool AudioDeviceDescriptor::MarshallingExt(Parcel &parcel) const
         parcel.WriteBool(isSupportRemoteMultichannel_) && parcel.WriteUint32(deviceTokenId_) &&
         parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType())) &&
         parcel.WriteBool(isSilent_) && parcel.WriteBool(isSupportMultiZone_) &&
-        parcel.WriteInt32(static_cast<int32_t>(visibleMode_)) &&
-        parcel.WriteUint32(sinkLatencyMs_) && parcel.WriteBool(sinkLatencyValid_) &&
-        parcel.WriteBool(isSupportReload_) && parcel.WriteBool(isPriorityReduced_);
+        parcel.WriteInt32(static_cast<int32_t>(visibleMode_)) && parcel.WriteUint32(sinkLatencyMs_) &&
+        parcel.WriteBool(sinkLatencyValid_) && parcel.WriteBool(isSupportReload_) &&
+        parcel.WriteBool(isPriorityReduced_) && parcel.WriteInt32(isSupportCommunicationSharing_);
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
@@ -657,6 +660,7 @@ void AudioDeviceDescriptor::UnmarshallingSelfExt(Parcel &parcel)
     sinkLatencyValid_ = parcel.ReadBool();
     isSupportReload_ = parcel.ReadBool();
     isPriorityReduced_ = parcel.ReadBool();
+    isSupportCommunicationSharing_ = parcel.ReadInt32();
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
