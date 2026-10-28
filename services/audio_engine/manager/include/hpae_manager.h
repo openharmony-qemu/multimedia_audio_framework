@@ -341,7 +341,7 @@ private:
         HpaeSessionState status, HpaeSessionState state, IOperation operation);
     bool SetMovingPlayStreamState(uint32_t sessionId, HpaeSessionState state, IOperation operation);
     bool SetMovingCaptureStreamState(uint32_t sessionId, HpaeSessionState state, IOperation operation);
-    void AddPreferSinkForDefaultChange(bool isAdd, const std::string &sinkName);
+    void MarkClosingSinkPrefer(const std::string &sinkName);
     void OnCallbackOpenOrReloadFailed(bool isReload);
     bool ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId);
     bool CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName);
@@ -390,8 +390,6 @@ private:
     std::unordered_map<std::string, uint32_t> sinkNameSinkIdMap_;  // todo
     std::unordered_map<uint32_t, std::string> sinkIdSinkNameMap_;
     std::unordered_map<uint32_t, HpaeSessionState> movingIds_;
-    std::string defaultSink_ = "";
-    std::string coreSink_ = "";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;
     std::unordered_map<uint32_t, std::string> sourceIdSourceNameMap_;
     std::string defaultSource_ = "";

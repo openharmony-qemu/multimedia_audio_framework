@@ -1415,22 +1415,6 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink001, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink002, TestSize.Level1)
-{
-    EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->Init();
-    EXPECT_EQ(hpaeManager_->IsInit(), true);
-    sleep(1);
-    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
-    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->defaultSink_ = "virtual1";
-    EXPECT_EQ(hpaeManager_->SetDefaultSink(audioModuleInfo.name), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->CloseOutAudioPort("Speaker_File"), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-}
-
 HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSource001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
@@ -1596,13 +1580,12 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerMoveFailed002, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeManagerAddPreferSink001, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerMarkClosingSinkPrefer001, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->rendererIdSinkNameMap_.emplace(TEST_STREAM_SESSION_ID, "speaker_file");
-    hpaeManager_->AddPreferSinkForDefaultChange(false, "speaker_file");
     EXPECT_EQ(hpaeManager_->idPreferSinkNameMap_.size() == 0, true);
-    hpaeManager_->AddPreferSinkForDefaultChange(true, "speaker_file");
+    hpaeManager_->MarkClosingSinkPrefer("speaker_file");
     EXPECT_EQ(hpaeManager_->idPreferSinkNameMap_.size() == 1, true);
 }
 
