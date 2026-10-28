@@ -132,4 +132,111 @@ HWTEST_F(HpaeVirtualRendererManagerTest, GetSinkInfoName, TestSize.Level1)
     HpaeSinkInfo sinkInfo = manager->GetSinkInfo();
     EXPECT_EQ(sinkInfo.deviceName == "Virtual_Render", true);
 }
+
+HWTEST_F(HpaeVirtualRendererManagerTest, CreateStreamDuplicateSession, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);  // overwrites, no crash
+    WaitForMsgProcessing(manager);
+    HpaeSinkInputInfo info;
+    EXPECT_EQ(manager->GetSinkInputInfo(TEST_SESSION_ID, info), SUCCESS);
+    EXPECT_EQ(info.rendererSessionInfo.state == HPAE_SESSION_PREPARED, true);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, DestroyStreamNeverCreated, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    EXPECT_EQ(manager->DestroyStream(INVALID_SESSION_ID), SUCCESS);  // async skip, logged
+    WaitForMsgProcessing(manager);
+    HpaeSinkInputInfo info;
+    EXPECT_NE(manager->GetSinkInputInfo(INVALID_SESSION_ID, info), SUCCESS);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, CreateDestroyRecreateCycle, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->DestroyStream(TEST_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager);
+    HpaeSinkInputInfo info;
+    EXPECT_EQ(manager->GetSinkInputInfo(TEST_SESSION_ID, info), SUCCESS);
+    EXPECT_EQ(info.rendererSessionInfo.state == HPAE_SESSION_PREPARED, true);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, StartPauseStopStateFlow, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager);
+
+    EXPECT_EQ(manager->Start(TEST_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(manager);
+    HpaeSinkInputInfo info;
+    EXPECT_EQ(manager->GetSinkInputInfo(TEST_SESSION_ID, info), SUCCESS);
+    EXPECT_EQ(info.rendererSessionInfo.state == HPAE_SESSION_RUNNING, true);
+
+    EXPECT_EQ(manager->Pause(TEST_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->GetSinkInputInfo(TEST_SESSION_ID, info), SUCCESS);
+    EXPECT_EQ(info.rendererSessionInfo.state == HPAE_SESSION_PAUSED, true);
+
+    EXPECT_EQ(manager->Stop(TEST_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->GetSinkInputInfo(TEST_SESSION_ID, info), SUCCESS);
+    EXPECT_EQ(info.rendererSessionInfo.state == HPAE_SESSION_STOPPED, true);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, StartUnknownSession, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    EXPECT_EQ(manager->Start(INVALID_SESSION_ID), SUCCESS);  // async, logged and skipped
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->IsRunning(), false);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, FlushDrainReleaseUnknownSession, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    EXPECT_EQ(manager->Flush(INVALID_SESSION_ID), SUCCESS);
+    EXPECT_EQ(manager->Drain(INVALID_SESSION_ID), SUCCESS);
+    EXPECT_NE(manager->Release(INVALID_SESSION_ID), SUCCESS);  // sync check returns ERROR for unknown
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, ReleaseRemovesSession, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->Release(TEST_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(manager);
+    HpaeSinkInputInfo info;
+    EXPECT_NE(manager->GetSinkInputInfo(TEST_SESSION_ID, info), SUCCESS);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
 }  // namespace

@@ -218,6 +218,101 @@ int32_t HpaeVirtualRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSin
     return SUCCESS;
 }
 
+int32_t HpaeVirtualRendererManager::Start(uint32_t sessionId)
+{
+    auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualRendererManager::Start");
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId) != nullptr,
+            "sessionId %{public}u not exist", sessionId);
+        SetSessionState(sessionId, HPAE_SESSION_RUNNING);
+        if (hpaeSignalProcessThread_ != nullptr) {
+            hpaeSignalProcessThread_->Notify();  // wake the pull loop
+        }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeVirtualRendererManager::Pause(uint32_t sessionId, bool isStandby)
+{
+    (void)isStandby;
+    auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualRendererManager::Pause");
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId) != nullptr,
+            "sessionId %{public}u not exist", sessionId);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
+            HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+        SetSessionState(sessionId, HPAE_SESSION_PAUSED);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeVirtualRendererManager::Stop(uint32_t sessionId)
+{
+    auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualRendererManager::Stop");
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId) != nullptr,
+            "sessionId %{public}u not exist", sessionId);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
+            HPAE_SESSION_STOPPED, OPERATION_STOPPED);
+        SetSessionState(sessionId, HPAE_SESSION_STOPPED);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeVirtualRendererManager::Flush(uint32_t sessionId)
+{
+    auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualRendererManager::Flush");
+        auto inputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+        CHECK_AND_RETURN_LOG(inputNode != nullptr, "sessionId %{public}u not exist", sessionId);
+        inputNode->Flush();
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeVirtualRendererManager::Drain(uint32_t sessionId)
+{
+    auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualRendererManager::Drain");
+        auto inputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+        CHECK_AND_RETURN_LOG(inputNode != nullptr, "sessionId %{public}u not exist", sessionId);
+        inputNode->Drain();
+        if (sessionNodeMap_[sessionId].state != HPAE_SESSION_RUNNING) {
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
+                sessionNodeMap_[sessionId].state, OPERATION_DRAINED);
+        }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+// Sync check without the queue, aligned with injector Release semantics.
+int32_t HpaeVirtualRendererManager::Release(uint32_t sessionId)
+{
+    Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualRendererManager::Release");
+    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId) != nullptr, ERROR,
+        "Release not find sessionId %{public}u", sessionId);
+    return DestroyStream(sessionId);
+}
+
+void HpaeVirtualRendererManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation operation)
+{
+    // from sink input node: underflow / drained during the 20ms pull loop
+    auto itr = sessionNodeMap_.find(sessionId);
+    CHECK_AND_RETURN_LOG(itr != sessionNodeMap_.end(), "sessionId %{public}u not exist", sessionId);
+    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, itr->second.state, operation);
+}
+
+void HpaeVirtualRendererManager::OnNotifyQueue()
+{
+    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_ != nullptr, "hpaeSignalProcessThread_ is nullptr");
+    hpaeSignalProcessThread_->Notify();
+}
+
 std::string HpaeVirtualRendererManager::GetDeviceHDFDumpInfo()
 {
     AUDIO_ERR_LOG("Unsupported operation");
@@ -348,36 +443,6 @@ std::vector<SinkInput> HpaeVirtualRendererManager::GetAllSinkInputsInfo()
 }
 
 // --- stubs replaced by later tasks ---
-int32_t HpaeVirtualRendererManager::Start(uint32_t sessionId)
-{
-    return SUCCESS;
-}
-
-int32_t HpaeVirtualRendererManager::Pause(uint32_t sessionId, bool isStandby)
-{
-    return SUCCESS;
-}
-
-int32_t HpaeVirtualRendererManager::Flush(uint32_t sessionId)
-{
-    return SUCCESS;
-}
-
-int32_t HpaeVirtualRendererManager::Drain(uint32_t sessionId)
-{
-    return SUCCESS;
-}
-
-int32_t HpaeVirtualRendererManager::Stop(uint32_t sessionId)
-{
-    return SUCCESS;
-}
-
-int32_t HpaeVirtualRendererManager::Release(uint32_t sessionId)
-{
-    return SUCCESS;
-}
-
 int32_t HpaeVirtualRendererManager::MoveStream(uint32_t sessionId, const std::string &sinkName)
 {
     return SUCCESS;
@@ -405,10 +470,6 @@ int32_t HpaeVirtualRendererManager::AddAllNodesToSink(
 {
     return SUCCESS;
 }
-
-void HpaeVirtualRendererManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) {}
-
-void HpaeVirtualRendererManager::OnNotifyQueue() {}
 
 void HpaeVirtualRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &sinkName) {}
 
