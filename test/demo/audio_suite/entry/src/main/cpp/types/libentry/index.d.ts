@@ -5,6 +5,7 @@
 export * from "./multiPipelineIndex";
 export * from "./audioRecord";
 export * from "./timeline";
+export * from "./cloudRomDownload";
 export const record: () => void;
 export const audioRendererInit: () => void;
 export const audioRendererDestory: () => void;

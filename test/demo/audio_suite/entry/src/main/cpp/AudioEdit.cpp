@@ -48,6 +48,7 @@
 #include "audioRecord/AudioRecord.h"
 #include "timeline/Timeline_napi.h"
 #include "formatConversionForAutoTest/FormatConversionForAutoTest.h"
+#include "cloudRomDownload/CloudRomDownloadNapi.h"
 #include <multimedia/player_framework/native_avdemuxer.h>
 #include <multimedia/player_framework/native_avsource.h>
 #include <multimedia/player_framework/native_avcodec_base.h>
@@ -1427,6 +1428,26 @@ const std::vector<napi_property_descriptor> otherDescriptors = {
      napi_default, nullptr},
 };
 
+const std::vector<napi_property_descriptor> cloudRomDownloadDescriptors = {
+    {"cloudRomGetDownloadManager", nullptr, CloudRomGetDownloadManager, nullptr, nullptr, nullptr, napi_default,
+     nullptr},
+    {"cloudRomIsFeatureInstalled", nullptr, CloudRomIsFeatureInstalled, nullptr, nullptr, nullptr, napi_default,
+     nullptr},
+    {"cloudRomGetFeatureStatus", nullptr, CloudRomGetFeatureStatus, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"cloudRomGetDownloadStatus", nullptr, CloudRomGetDownloadStatus, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"cloudRomGetNewVersionInfo", nullptr, CloudRomGetNewVersionInfo, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"cloudRomStartDownload", nullptr, CloudRomStartDownload, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"cloudRomPauseDownload", nullptr, CloudRomPauseDownload, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"cloudRomCancelDownload", nullptr, CloudRomCancelDownload, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"cloudRomStartBackgroundDownload", nullptr, CloudRomStartBackgroundDownload, nullptr, nullptr, nullptr,
+     napi_default, nullptr},
+    {"cloudRomUninstallFeature", nullptr, CloudRomUninstallFeature, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"cloudRomRegisterDownloadCallback", nullptr, CloudRomRegisterDownloadCallback, nullptr, nullptr, nullptr,
+     napi_default, nullptr},
+    {"cloudRomUnregisterDownloadCallback", nullptr, CloudRomUnregisterDownloadCallback, nullptr, nullptr, nullptr,
+     napi_default, nullptr},
+};
+
 static napi_value Init(napi_env env, napi_value exports)
 {
     std::vector<napi_property_descriptor> desc = {
@@ -1457,6 +1478,7 @@ static napi_value Init(napi_env env, napi_value exports)
     desc.insert(desc.end(), timelineDescriptors.begin(), timelineDescriptors.end());
     desc.insert(desc.end(), callbackDescriptors.begin(), callbackDescriptors.end());
     desc.insert(desc.end(), otherDescriptors.begin(), otherDescriptors.end());
+    desc.insert(desc.end(), cloudRomDownloadDescriptors.begin(), cloudRomDownloadDescriptors.end());
     napi_define_properties(env, exports, desc.size(), desc.data());
     FormatConversionForAutoTestRegister(env, exports);
     return exports;

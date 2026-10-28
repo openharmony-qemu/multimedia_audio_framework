@@ -914,6 +914,7 @@ export struct AutoTest {
     }
   }
 
+    // Execute standard offline playback (multi-pipeline)
   async executeFormatConversion(jsonFileInfo: JsonFileInfo, reportFlag: boolean): Promise<number> {
     Logger.info(TAG, 'executeFormatConversion start');
     if (jsonFileInfo.formatConversionScenes == undefined || jsonFileInfo.formatConversionScenes.length == 0) {

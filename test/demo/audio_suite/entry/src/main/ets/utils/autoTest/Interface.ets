@@ -119,4 +119,4 @@ export interface FormatConversionSceneInfo {
   outputFile: FormatConversionOutputFile;
   outputFormat: NativeAudioFormat;
   expectedOutput: ExpectedOutput;
-};
+}
