@@ -21,6 +21,7 @@
 #include "audio_module_info.h"
 #include "hpae_capturer_manager.h"
 #include "hpae_virtual_capturer_manager.h"
+#include "hpae_virtual_renderer_manager.h"
 #include "hpae_renderer_manager.h"
 #include "hpae_inner_capturer_manager.h"
 #include "hpae_msg_channel.h"
@@ -346,6 +347,7 @@ private:
     bool CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName);
     bool CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName);
     void CreateCoreSourceManager();
+    void CreateCoreSinkManager();
     void DequeuePendingTransition(uint32_t sessionId);
     void EnqueuePendingTransition(uint32_t sessionId, HpaeSessionState state, IOperation operation);
     bool IsValidUpdateStatus(IOperation operation, HpaeSessionState currentState);

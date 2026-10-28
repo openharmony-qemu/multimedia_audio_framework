@@ -59,6 +59,8 @@ static const std::string BT_SINK_NAME = "Bt_Speaker";
 static const std::string USB_SINK_NAME = "Usb_arm_speaker";
 static const std::string DEFAULT_SPEAKER_SINK_NAME = "Speaker";
 static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
+// Single source of truth: name constant lives in hpae_info.h, shared with HpaeVirtualRendererManager.
+static const std::string DEFAULT_CORE_SINK_NAME = VIRTUAL_RENDER_SINK_NAME;
 static const std::string MCH_SINK_NAME = "MCH_Speaker";
 static const std::string NEARLINK_SINK_NAME = "Wireless_Speaker";
 // Max delay before a deferred AISS-disable request is force-closed, even if the bound stream never
@@ -167,6 +169,8 @@ int32_t HpaeManager::Init()
         hpaeManagerThread_ = std::make_unique<HpaeManagerThread>();
         hpaeManagerThread_->ActivateThread(this);
     }
+    auto createCoreSink = [this]() { CreateCoreSinkManager(); };
+    SendRequest(createCoreSink, __func__);
     isInit_.store(true);
     sessionEffectManager_ = std::make_unique<SessionEffectManager>(*this);
     return SUCCESS;
@@ -191,6 +195,10 @@ int32_t HpaeManager::SuspendAudioDevice(std::string &audioPortName, bool isSuspe
 
 int32_t HpaeManager::StopAudioPort(const std::string &audioPortName)
 {
+    if (audioPortName == DEFAULT_CORE_SINK_NAME) {
+        AUDIO_WARNING_LOG("core sink %{public}s is permanent, skip stop", audioPortName.c_str());
+        return SUCCESS;
+    }
     auto request = [this, audioPortName]() {
         AUDIO_INFO_LOG("HpaeManager::stop audio port: %{public}s", GetEncryptStr(audioPortName).c_str());
         auto renderManager = GetRendererManagerByName(audioPortName);
@@ -519,6 +527,20 @@ void HpaeManager::CreateCoreSourceManager()
     capturerManagerMap_[DEFAULT_CORE_SOURCE_NAME] = capturerManager;
     sourceNameSourceIdMap_[DEFAULT_CORE_SOURCE_NAME] = sinkSourceIndex;
     sourceIdSourceNameMap_[sinkSourceIndex] = DEFAULT_CORE_SOURCE_NAME;
+}
+
+void HpaeManager::CreateCoreSinkManager()
+{
+    uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
+    sinkSourceIndex_.fetch_add(1);
+    auto rendererManager = std::make_shared<HpaeVirtualRendererManager>();
+    rendererManager->RegisterSendMsgCallback(weak_from_this());
+    rendererManagerMap_[DEFAULT_CORE_SINK_NAME] = rendererManager;
+    sinkNameSinkIdMap_[DEFAULT_CORE_SINK_NAME] = sinkSourceIndex;
+    sinkIdSinkNameMap_[sinkSourceIndex] = DEFAULT_CORE_SINK_NAME;
+    rendererManagerMap_[DEFAULT_CORE_SINK_NAME]->Init();
+    AUDIO_INFO_LOG("create core sink %{public}s, sinkIndex %{public}u",
+        DEFAULT_CORE_SINK_NAME.c_str(), sinkSourceIndex);
 }
 
 int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex)
