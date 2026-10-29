@@ -188,6 +188,11 @@ HWTEST_F(HpaeRendererStreamUnitTest, HasCachedHistoryData_002, TestSize.Level0)
 
     rendererStreamImpl->Flush();
     EXPECT_FALSE(rendererStreamImpl->HasCachedHistoryData());
+
+    // Next engine callback re-establishes the truth after the reset
+    callBackStreamInfo.hasCachedHistoryData = true;
+    EXPECT_EQ(rendererStreamImpl->OnStreamData(callBackStreamInfo), SUCCESS);
+    EXPECT_TRUE(rendererStreamImpl->HasCachedHistoryData());
 }
 
 /**

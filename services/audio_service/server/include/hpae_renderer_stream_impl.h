@@ -109,7 +109,7 @@ public:
     void TriggerClientWake() override;
     void TriggerAppsUidUpdate() override;
     uint32_t GetRouteFlag() const noexcept override;
-    bool HasCachedHistoryData() override;
+    bool HasCachedHistoryData() const noexcept override;
 private:
     int32_t UpdateSpanSize(uint32_t spanSizeInFrame);
     void SyncOffloadMode();
@@ -221,6 +221,7 @@ private:
     bool isWriteFirst_ = false;
     bool delayedWake_ = false;
     std::atomic<uint32_t> routeFlag_ = 0;
+    // Latest engine-pushed historyBuffer cache state; refreshed in OnStreamData, reset in Flush.
     std::atomic<bool> hasCachedHistoryData_ = false;
 };
 } // namespace AudioStandard

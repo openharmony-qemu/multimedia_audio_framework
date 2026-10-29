@@ -1373,7 +1373,7 @@ uint32_t HpaeRendererStreamImpl::GetRouteFlag() const noexcept
     return routeFlag_.load();
 }
 
-bool HpaeRendererStreamImpl::HasCachedHistoryData()
+bool HpaeRendererStreamImpl::HasCachedHistoryData() const noexcept
 {
     return hasCachedHistoryData_.load();
 }
