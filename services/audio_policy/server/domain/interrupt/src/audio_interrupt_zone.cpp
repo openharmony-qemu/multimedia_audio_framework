@@ -253,7 +253,12 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
         interrupts.size(), zoneId);
     auto oldFocusList = tempMap[zoneId]->audioFocusInfoList;
     AudioFocusList newFocusList = interrupts;
-    for (auto itOld = oldFocusList.begin(); itOld != oldFocusList.end(); itOld++) {
+    for (auto itOld = oldFocusList.begin(); itOld != oldFocusList.end();) {
+        if (std::find(bypassSessionIds.begin(), bypassSessionIds.end(),
+            itOld->first.streamId) != bypassSessionIds.end()) {
+            itOld++;
+            continue;
+        }
         CHECK_AND_CONTINUE(std::find(bypassSessionIds.begin(), bypassSessionIds.end(),
             itOld->first.streamId) == bypassSessionIds.end());
         auto isPresent = [itOld](const std::pair<AudioInterrupt, AudioFocuState> &item) {
@@ -262,6 +267,7 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
         auto itNew = std::find_if(newFocusList.begin(), newFocusList.end(), isPresent);
         if (itNew == newFocusList.end()) {
             ForceStopAudioFocusInZone(zoneId, itOld->first);
+            itOld = oldFocusList.erase(itOld);
         } else {
             AUDIO_INFO_LOG("[RemoteFocus]refresh focus: %{public}d uid: %{public}d, "
                 "state from %{public}d to %{public}d",
@@ -270,13 +276,12 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
                 bool removeFocusInfo = false;
                 service_->SendInterruptEvent(itOld->second, itNew->second, itOld, removeFocusInfo);
             }
-            // restore strategy from old, prevent modified by sink
-            itNew->first.sessionStrategy = itOld->first.sessionStrategy;
-            itNew->first.independentStrategy = itOld->first.independentStrategy;
+            newFocusList.erase(itNew);
+            itOld++;
         }
     }
 
-    tempMap[zoneId]->audioFocusInfoList = newFocusList;
+    tempMap[zoneId]->audioFocusInfoList = oldFocusList;
     return SUCCESS;
 }
 
