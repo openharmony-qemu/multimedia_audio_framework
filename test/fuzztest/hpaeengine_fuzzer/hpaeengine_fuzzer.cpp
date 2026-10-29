@@ -400,7 +400,7 @@ void SuspendStopAudioPortFuzzTest()
     impl_->StopAudioPort(moduleInfo.name);
 }
 
-typedef void (*TestFuncs[37])();
+typedef void (*TestFuncs[31])();
 
 TestFuncs g_testFuncs = {
     OpenAudioPortFuzzTest,
