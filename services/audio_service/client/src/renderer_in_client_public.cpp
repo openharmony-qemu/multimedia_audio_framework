@@ -1565,8 +1565,8 @@ void RendererInClientInner::ReportUltraFastUsage()
     bean->Add("EXCEPTION_INFO_4", static_cast<int32_t>(GetUnderflowCount()));
     bean->Add("DEVICE_INFO_1", std::to_string(GetOverflowCount()));
     bean->Add("DEVICE_INFO_2", durationMs);
-    bean->Add("SYSTEM_INFO_1", static_cast<int32_t>(streamStartTime_ / 1000)); // report in seconds
-    bean->Add("SYSTEM_INFO_2", static_cast<int32_t>(stopTime / 1000)); // report in seconds
+    bean->Add("SYSTEM_INFO_1", static_cast<int32_t>(streamStartTime_ / 1000)); // report in seconds (1000ms -> 1s)
+    bean->Add("SYSTEM_INFO_2", static_cast<int32_t>(stopTime / 1000)); // report in seconds (1000ms -> 1s)
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
