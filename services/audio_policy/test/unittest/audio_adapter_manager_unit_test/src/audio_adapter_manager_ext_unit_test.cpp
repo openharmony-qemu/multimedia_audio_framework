@@ -958,6 +958,7 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SaveBootAnimationVolumeToLocal, TestSiz
 
     auto device = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(device, nullptr);
+
     VolumeUtils::SetPCVolumeEnable(false);
     device->deviceType_ = DEVICE_TYPE_SPEAKER;
     constexpr int32_t TEST_VOLUME_LEVEL = 3;
