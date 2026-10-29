@@ -776,6 +776,7 @@ bool HpaeRendererStreamImpl::InitLatencyInfo(const AudioCallBackStreamInfo &call
 int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackStreamInfo)
 {
     UpdateInnerCapWriteState(callBackStreamInfo.isWriteFirst_);
+    hasCachedHistoryData_.store(callBackStreamInfo.hasCachedHistoryData);
     bool needResetSinkLatencyFetcher = InitLatencyInfo(callBackStreamInfo);
     if (needResetSinkLatencyFetcher) {
         ResetSinkLatencyFetcher(callBackStreamInfo);
@@ -1369,6 +1370,11 @@ void HpaeRendererStreamImpl::TriggerClientWake()
 uint32_t HpaeRendererStreamImpl::GetRouteFlag() const noexcept
 {
     return routeFlag_.load();
+}
+
+bool HpaeRendererStreamImpl::HasCachedHistoryData()
+{
+    return hasCachedHistoryData_.load();
 }
 } // namespace AudioStandard
 } // namespace OHOS

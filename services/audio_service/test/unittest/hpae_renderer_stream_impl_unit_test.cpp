@@ -145,6 +145,31 @@ HWTEST_F(HpaeRendererStreamUnitTest, ConvertFadeStrategyToFadeType_001, TestSize
 }
 
 /**
+ * @tc.name  : Test HasCachedHistoryData caching via OnStreamData
+ * @tc.type  : FUNC
+ * @tc.number: HasCachedHistoryData_001
+ * @tc.desc  : Cached flag follows the latest OnStreamData payload, default false.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HasCachedHistoryData_001, TestSize.Level0)
+{
+    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl = CreateHpaeRendererStreamImpl();
+    ASSERT_NE(rendererStreamImpl, nullptr);
+
+    // Default before any engine callback
+    EXPECT_FALSE(rendererStreamImpl->HasCachedHistoryData());
+
+    AudioCallBackStreamInfo callBackStreamInfo;
+    callBackStreamInfo.needData = false;
+    callBackStreamInfo.hasCachedHistoryData = true;
+    EXPECT_EQ(rendererStreamImpl->OnStreamData(callBackStreamInfo), SUCCESS);
+    EXPECT_TRUE(rendererStreamImpl->HasCachedHistoryData());
+
+    callBackStreamInfo.hasCachedHistoryData = false;
+    EXPECT_EQ(rendererStreamImpl->OnStreamData(callBackStreamInfo), SUCCESS);
+    EXPECT_FALSE(rendererStreamImpl->HasCachedHistoryData());
+}
+
+/**
  * @tc.name  : Test HpaeRendererStreamImpl Construct
  * @tc.type  : FUNC
  * @tc.number: HpaeRendererStreamImplConstruct_001

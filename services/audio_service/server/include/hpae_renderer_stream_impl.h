@@ -109,6 +109,7 @@ public:
     void TriggerClientWake() override;
     void TriggerAppsUidUpdate() override;
     uint32_t GetRouteFlag() const noexcept override;
+    bool HasCachedHistoryData() override;
 private:
     int32_t UpdateSpanSize(uint32_t spanSizeInFrame);
     void SyncOffloadMode();
@@ -220,6 +221,7 @@ private:
     bool isWriteFirst_ = false;
     bool delayedWake_ = false;
     std::atomic<uint32_t> routeFlag_ = 0;
+    std::atomic<bool> hasCachedHistoryData_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

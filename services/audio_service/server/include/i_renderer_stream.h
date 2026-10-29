@@ -92,6 +92,7 @@ public:
     }
     virtual void TriggerAppsUidUpdate() { return; }
     virtual uint32_t GetRouteFlag() const noexcept { return 0; }
+    virtual bool HasCachedHistoryData() { return false; }
 };
 
 struct CaptureInfo {
