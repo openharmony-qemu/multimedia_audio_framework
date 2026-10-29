@@ -249,7 +249,8 @@ void HpaeSourceOutputNode::ProcessAudioData(HpaePcmBuffer *outputData, bool isMu
         if (safeSamples < requestSamples) {
             AUDIO_ERR_LOG("sessionId %{public}u clamp convert: upstream %{public}u*%{public}u,"
                 " request %{public}u*%{public}u", GetSessionId(), outputData->GetChannelCount(),
-                outputData->GetFrameLen(), GetChannelCount(), GetFrameLen());
+                outputData->GetFrameLen(), static_cast<uint32_t>(GetChannelCount()),
+                static_cast<uint32_t>(GetFrameLen()));
             // zero the buffer first so the unconverted tail is silence instead of stale data
             ret = memset_s(sourceOutputData_.data(), sourceOutputData_.size(), 0, sourceOutputData_.size());
             CHECK_AND_RETURN_LOG(ret == EOK, "memset_s failed with error:%{public}d", ret);
