@@ -942,8 +942,7 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateVolumeDataForUserSwitch_Flow, Tes
 
 /**
  * @tc.name: SaveBootAnimationVolumeToLocal
- * @tc.desc: Test SaveBootAnimationVolumeToLocal with different pc/device/
-volumeType/mute combinations.
+ * @tc.desc: Test SaveBootAnimationVolumeToLocal with different pc/device/volumeType/mute
  * @tc.type: FUNC
  * @tc.require: #ICDC94
  */
