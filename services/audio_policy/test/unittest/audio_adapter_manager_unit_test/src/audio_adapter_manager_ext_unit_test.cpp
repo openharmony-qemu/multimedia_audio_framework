@@ -951,14 +951,13 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SaveBootAnimationVolumeToLocal, TestSiz
 {
     AudioAdapterManager adapterManager;
     const std::string volumeKey = "persist.multimedia.audio.ringtonevolume";
-    
+
     // device is nullptr: function should return directly without crash.
     std::shared_ptr<AudioDeviceDescriptor> nullDevice = nullptr;
     adapterManager.SaveBootAnimationVolumeToLocal(nullDevice, STREAM_NOTIFICATION);
 
     auto device = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(device, nullptr);
-
     VolumeUtils::SetPCVolumeEnable(false);
     device->deviceType_ = DEVICE_TYPE_SPEAKER;
     constexpr int32_t TEST_VOLUME_LEVEL = 3;
