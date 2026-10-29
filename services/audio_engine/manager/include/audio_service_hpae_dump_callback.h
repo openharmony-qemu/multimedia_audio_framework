@@ -25,7 +25,7 @@ typedef struct {
     std::string config;
 } HpaeSinkSourceInfo;
 
-struct HpaeInputOutputInfo{
+struct HpaeInputOutputInfo {
     uint32_t sessionId;
     std::string deviceName;
     int32_t uid;

@@ -563,11 +563,9 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
     };
 
     if (latencyMode_ == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST) {
-        if (!PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
-            IPCSkeleton::GetCallingTokenID())) {
-            AUDIO_ERR_LOG("Permission denied for ultra fast playback");
-            return AUDIOSTREAM_ERROR_PERMISSION_DENIED_ULTRA_FAST;
-        }
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
+            IPCSkeleton::GetCallingTokenID()), AUDIOSTREAM_ERROR_PERMISSION_DENIED_ULTRA_FAST,
+            "Permission denied for ultra fast playback");
         CHECK_AND_RETURN_RET_LOG(OHAudioRenderer::IsDeviceSupportUltraFast(),
             AUDIOSTREAM_ERROR_UNSUPPORTED_ULTRA_FAST, "Ultra fast playback not supported");
         rendererInfo.originalFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;

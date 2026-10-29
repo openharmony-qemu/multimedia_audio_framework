@@ -2263,16 +2263,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     if (!streamDesc->newDeviceDescs_.empty()) {
         UpdateModuleInfoWithDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
-
-    if (!pipeManager_->GetTrueUltraFastFlag()) {
-        if (streamDesc->IsUltraFastRequested()) {
-            if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_ULTRA_FAST ||
-                !AudioPipeManager::GetPipeManager()->HasRunningStream(streamDesc->sessionId_)) {
-                info.SetUltraFastFlag(true);
-                streamDesc->SetUltraFastImplemented(true);
-            }
-        }
-    }
+    HandleUltraFast(streamDesc, info);
 
     // engine uses networkId to distinguish different renders,
     // so we need to set networkId after UpdateModuleInfoWithDevice;
@@ -2288,6 +2279,21 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.name_ = pipeInfoPtr->name_;
     info.isCollaborationEnable_ = streamPropInfo->isCollaborationEnable_;
     info.InitAudioStreamInfo();
+}
+
+void AudioPipeSelector::HandleUltraFast(std::shared_ptr<AudioStreamDescriptor> &streamDesc, AudioPipeInfo &info)
+{
+    if (pipeManager_->GetTrueUltraFastFlag()) {
+        return;
+    }
+    if (!streamDesc->IsUltraFastRequested()) {
+        return;
+    }
+    if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_ULTRA_FAST ||
+        !AudioPipeManager::GetPipeManager()->HasRunningStream(streamDesc->sessionId_)) {
+        info.SetUltraFastFlag(true);
+        streamDesc->SetUltraFastImplemented(true);
+    }
 }
 
 AudioStreamAction AudioPipeSelector::JudgeStreamAction(

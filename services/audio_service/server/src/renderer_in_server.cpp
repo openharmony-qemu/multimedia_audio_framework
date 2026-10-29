@@ -1426,13 +1426,12 @@ FastStatus RendererInServer::GetFastStatusFromRendererFlags(int32_t rendererFlag
 int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener)
 {
     std::lock_guard<std::mutex> lock(writeLock_);
-    AUDIO_INFO_LOG("RefreshServerBufferForSpanSizeUpdate begin, sessionId:%{public}u oldSpan:%{public}zu",
-        streamIndex_, spanSizeInFrame_);
     
     size_t newSpanSizeInFrame = 0;
     stream_->GetSpanSizePerFrame(newSpanSizeInFrame);
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
-    AUDIO_INFO_LOG("New spanSize from stream: %{public}zu", newSpanSizeInFrame);
+    AUDIO_INFO_LOG("New spanSize from stream: %{public}zu, sessionId:%{public}u oldSpan:%{public}zu",
+        newSpanSizeInFrame, streamIndex_, spanSizeInFrame_);
     
     uint32_t newRouteFlag = stream_->GetRouteFlag();
     int32_t rendererFlags = GetRendererFlagsByRoute(newRouteFlag);

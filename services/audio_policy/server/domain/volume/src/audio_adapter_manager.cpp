@@ -1808,17 +1808,13 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
     if (pipeInfo->adapterName_ == "primary") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;
-            if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
-                idInfo = HDI_ID_INFO_VOIP;
-            }
+            if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) { idInfo = HDI_ID_INFO_VOIP; }
         } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
             idType = HDI_ID_TYPE_ULTRA_FAST;
             idInfo = HDI_ID_INFO_DEFAULT;
         } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT) {
             idType = HDI_ID_TYPE_PRIMARY;
-            if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
-                idInfo = HDI_ID_INFO_VOIP;
-            }
+            if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) { idInfo = HDI_ID_INFO_VOIP; }
         } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_INTERPHONE) {
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_INTERPHONE;
