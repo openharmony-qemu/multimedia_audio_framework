@@ -171,6 +171,8 @@ public:
     int32_t IsStreamActiveByStreamUsage(int32_t streamUsageIn, bool &active) override;
 
     int32_t IsFastPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage, bool &support) override;
+    int32_t IsUltraFastPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage, bool &support) override;
+    int32_t IsDeviceSupportUltraFast(bool &support) override;
     int32_t IsFastRecordingSupported(const AudioStreamInfo &streamInfo, int32_t source, bool &support) override;
     int32_t IsMultichannelPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t streamUsage,
         bool &support) override;

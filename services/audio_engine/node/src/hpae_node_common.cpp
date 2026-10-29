@@ -368,7 +368,7 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.fixedLatency = static_cast<uint32_t>(StringToNum(audioModuleInfo.fixedLatency));
     sinkInfo.deviceName = audioModuleInfo.name;
     sinkInfo.routeFlag = audioModuleInfo.routeFlag;
-    sinkInfo.isUltraFast = (sinkInfo.deviceClass.find("ultra_fast") != std::string::npos) ? true : false;
+    sinkInfo.isUltraFast = (ULTRA_FAST_DEVICE_CLASSES.count(sinkInfo.deviceClass) > 0);
     if (audioModuleInfo.needEmptyChunk) {
         sinkInfo.needEmptyChunk = audioModuleInfo.needEmptyChunk.value();
     }
@@ -533,7 +533,9 @@ void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSess
                 .privacyType = sessionInfo.streamInfo.privacyType,
                 .config = config,
                 .state = sessionInfo.state,
-                .startTime = sessionInfo.startTime
+                .startTime = sessionInfo.startTime,
+                .pipeType = sessionInfo.streamInfo.pipeType,
+                .spanSizeInFrame = static_cast<uint32_t>(sessionInfo.streamInfo.frameLen)
             };
         });
 }

@@ -261,10 +261,12 @@ public:
     void ReportExceptionForInterval();
     void ReportPreferredFrameSizeOutOfRange(int32_t frameSize, size_t minByte, size_t maxByte);
     void CheckAndReportTimestamp();
+    void ReportUltraFastUsage();
 
     bool IsFastStream() const
     {
-        return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST) != 0;
+        return (rendererInfo_.audioFlag & (AUDIO_OUTPUT_FLAG_FAST |
+            AUDIO_OUTPUT_FLAG_ULTRA_FAST)) != 0;
     }
 
     void UpdateLogTag()
@@ -275,8 +277,11 @@ public:
 
     bool IsUltraFastStream() const
     {
-        return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
+        return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED) ||
+            rendererInfo_.rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST;
     }
+
+    bool IsTrueUltraFastStream() const;
 
     bool IsUltraFastStreamRequested() const;
 
@@ -412,6 +417,7 @@ private:
     uint64_t fullTokenId_ = 0;
     int64_t lastTriggerTime_ = 0;
     bool logStopCallCount_ = false;
+    int64_t streamStartTime_ = 0;
 
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 

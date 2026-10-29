@@ -198,6 +198,7 @@ public:
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
     int32_t RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener);
     int32_t GetRendererFlagsByRoute(uint32_t routeFlag);
+    static FastStatus GetFastStatusFromRendererFlags(int32_t rendererFlags);
 
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId);
 

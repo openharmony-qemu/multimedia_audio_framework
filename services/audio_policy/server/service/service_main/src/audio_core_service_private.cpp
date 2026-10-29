@@ -377,7 +377,8 @@ void AudioCoreService::DecidedAudioFlagForStreams(std::vector<std::shared_ptr<Au
     }
     CHECK_AND_RETURN(needSetAllFastStreamNormal);
     for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
-        if (streamDesc->GetAudioFlag() == AUDIO_OUTPUT_FLAG_FAST) {
+        if (streamDesc->GetAudioFlag() == AUDIO_OUTPUT_FLAG_FAST ||
+            streamDesc->GetAudioFlag() == AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
             streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_NORMAL);
             AUDIO_INFO_LOG("Set stream %{public}u to normal", streamDesc->sessionId_);
         }
@@ -3218,7 +3219,11 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
             return PRIMARY_MMAP_VOIP;
         } else if (routeFlag == (AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP)) {
             return PRIMARY_DIRECT_VOIP;
-        } else if (routeFlag == AUDIO_OUTPUT_FLAG_FAST && defaultSinkPortName == PRIMARY_SPEAKER) {
+        } else if (routeFlag == AUDIO_OUTPUT_FLAG_ULTRA_FAST &&
+            defaultSinkPortName == PRIMARY_SPEAKER) {
+            return TRUE_ULTRA_FAST_SPEAKER;
+        } else if (routeFlag == AUDIO_OUTPUT_FLAG_FAST &&
+            defaultSinkPortName == PRIMARY_SPEAKER) {
             return PRIMARY_MMAP;
         } else if (routeFlag == AUDIO_OUTPUT_FLAG_FAST && defaultSinkPortName == BLUETOOTH_SPEAKER) {
             return BLUETOOTH_A2DP_FAST;

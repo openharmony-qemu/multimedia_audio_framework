@@ -71,6 +71,11 @@ bool AudioPipeManager::GetArmUsbUltraFastFlag()
     return audioConfigManager_.GetArmUsbUltraFastFlag();
 }
 
+bool AudioPipeManager::GetTrueUltraFastFlag()
+{
+    return audioConfigManager_.GetTrueUltraFastFlag();
+}
+
 bool AudioPipeManager::PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc)
 {
     return audioConfigManager_.PreferMultiChannelPipe(desc);
@@ -537,6 +542,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedRecordPip
 bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
 {
     if ((routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_HWDECODING) ||
         (routeFlag & AUDIO_INPUT_FLAG_FAST) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) ||
@@ -1729,6 +1735,27 @@ bool AudioPipeManager::HasUltraFastPipe()
 bool AudioPipeManager::IsUltraFastSupportedDevice(DeviceType deviceType)
 {
     return g_ultraFastDevicesSet.find(deviceType) != g_ultraFastDevicesSet.end();
+}
+
+bool AudioPipeManager::IsTrueUltraFastSupportedDevice(DeviceType deviceType)
+{
+    return g_trueUltraFastDeviceToAdapter.find(deviceType) != g_trueUltraFastDeviceToAdapter.end();
+}
+
+uint32_t AudioPipeManager::GetUltraFastStreamCount()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    uint32_t count = 0;
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (desc->GetRoute() == AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+                count++;
+            }
+        }
+    }
+    return count;
 }
 
 bool AudioPipeManager::IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo)

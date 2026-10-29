@@ -300,6 +300,8 @@ public:
     static std::shared_ptr<AudioRenderer> CreateRenderer(const AudioRendererOptions &rendererOptions,
         const AppInfo &appInfo = AppInfo());
 
+    static bool IsDeviceSupportUltraFast();
+
     /**
      * @brief Sets buffer LoopTimes.
      *

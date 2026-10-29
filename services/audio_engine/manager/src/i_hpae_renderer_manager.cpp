@@ -34,12 +34,14 @@ static const std::string DEVICE_CLASS_PRIMARY_MMAP_VOIP = "primary_mmap_voip";
 static const std::string DEVICE_CLASS_A2DP_VOIP = "a2dp_fast";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static const std::string DEVICE_CLASS_ULTRA_FAST = "ultra_fast";
+static const std::string DEVICE_CLASS_TRUE_ULTRA_FAST = "true_ultra_fast";
 static const std::string DEVICE_NAME_INNER_CAP = "InnerCapturerSink";
 static const std::string DEVICE_NAME_CAST_INNER_CAP = "RemoteCastInnerCapturer";
 static const std::string DEVICE_CLASS_VOIP_DIRECT = "voip";
 static const std::string DEVICE_CLASS_DIRECT = "direct";
 static const std::string DEVICE_CLASS_USB_FAST = "usb_arm_fast";
 static const std::string DEVICE_CLASS_USB_ULTRA_FAST = "usb_arm_ultra_fast";
+static const std::string DEVICE_CLASS_USB_TRUE_ULTRA_FAST = "usb_arm_true_ultra_fast";
 static const std::string DEVICE_CLASS_DP_FAST = "dp_fast";
 std::shared_ptr<IHpaeRendererManager> IHpaeRendererManager::CreateRendererManager(HpaeSinkInfo &sinkInfo)
 {
@@ -50,8 +52,10 @@ std::shared_ptr<IHpaeRendererManager> IHpaeRendererManager::CreateRendererManage
         sinkInfo.deviceClass == DEVICE_CLASS_PRIMARY_MMAP_VOIP ||
         sinkInfo.deviceClass == DEVICE_CLASS_A2DP_VOIP ||
         sinkInfo.deviceClass == DEVICE_CLASS_ULTRA_FAST ||
+        sinkInfo.deviceClass == DEVICE_CLASS_TRUE_ULTRA_FAST ||
         sinkInfo.deviceClass == DEVICE_CLASS_USB_FAST ||
         sinkInfo.deviceClass == DEVICE_CLASS_USB_ULTRA_FAST ||
+        sinkInfo.deviceClass == DEVICE_CLASS_USB_TRUE_ULTRA_FAST ||
         sinkInfo.deviceClass == DEVICE_CLASS_DP_FAST) {
         AUDIO_INFO_LOG("IHpaeRendererManager::CreateRendererManager HpaeFastRendererManager");
         return std::make_shared<HpaeFastRendererManager>(sinkInfo);

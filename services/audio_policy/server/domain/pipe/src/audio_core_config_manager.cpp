@@ -111,8 +111,23 @@ void AudioCoreConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
         "Parse audio policy xml failed, received data is empty");
 
     audioPolicyConfig_.Reorganize();
-
+    CheckTrueUltraFastPipe();
     isAdapterInfoMap_.store(true);
+}
+
+void AudioCoreConfigManager::CheckTrueUltraFastPipe()
+{
+    supportTrueUltraFast_ = false;
+    for (auto &adapterIt : audioPolicyConfig_.adapterInfoMap) {
+        for (auto &pipeInfo : adapterIt.second->pipeInfos) {
+            if (pipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+                supportTrueUltraFast_ = true;
+                break;
+            }
+        }
+        if (supportTrueUltraFast_) { break; }
+    }
+    AUDIO_INFO_LOG("supportTrueUltraFast_ = %{public}d", supportTrueUltraFast_);
 }
 
 void AudioCoreConfigManager::OnXmlParsingCompleted(
@@ -529,6 +544,31 @@ bool AudioCoreConfigManager::GetHasEarpiece()
 bool AudioCoreConfigManager::GetUltraFastFlag()
 {
     return supportUltraFast_;
+}
+
+bool AudioCoreConfigManager::GetTrueUltraFastFlag()
+{
+    return supportTrueUltraFast_;
+}
+
+bool AudioCoreConfigManager::CheckDeviceSupportUltraFast(DeviceType deviceType, AudioPipeRole role)
+{
+    AUDIO_INFO_LOG("Device type: %{public}d", deviceType);
+    auto it = g_trueUltraFastDeviceToAdapter.find(deviceType);
+    if (it == g_trueUltraFastDeviceToAdapter.end()) {
+        return false;
+    }
+    for (auto &adapterIt : audioPolicyConfig_.adapterInfoMap) {
+        if (adapterIt.second->adapterName != it->second) {
+            continue;
+        }
+        for (auto &pipeInfo : adapterIt.second->pipeInfos) {
+            if (pipeInfo->role_ == role && (pipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 bool AudioCoreConfigManager::GetArmUsbUltraFastFlag()
@@ -1015,7 +1055,7 @@ void AudioCoreConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStreamDe
         return;
     }
 
-    if (desc->routeFlag_ == AUDIO_OUTPUT_FLAG_FAST) {
+    if (desc->routeFlag_ == AUDIO_OUTPUT_FLAG_FAST || desc->routeFlag_ == AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
         std::shared_ptr<PipeStreamPropInfo> propInfo = pipeInfo->streamPropInfos_.front();
         if (propInfo == nullptr) {
             AUDIO_WARNING_LOG("propInfo is null!");

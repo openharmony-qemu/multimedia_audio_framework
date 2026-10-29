@@ -271,7 +271,7 @@ void AudioStreamDescriptor::DumpRendererStreamAttrs(std::string &dumpString)
     AppendFormat(dumpString, "    - OriginalFlag: %d RendererFlags: %d\n",
         rendererInfo_.originalFlag, rendererInfo_.rendererFlags);
     AppendFormat(dumpString, "    - OffloadAllowed: %d\n", rendererInfo_.isOffloadAllowed);
-    if (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+    if ((routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST)) {
         AppendFormat(dumpString, "    - UltraFastFlag: %u\n", ultraFastFlag_);
     }
 }
