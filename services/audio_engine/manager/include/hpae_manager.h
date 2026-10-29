@@ -108,7 +108,6 @@ public:
     bool IsRunning() override;
     bool IsMsgProcessing() override;
     // async interface
-    int32_t SetDefaultSink(std::string name) override;
     int32_t SetDefaultSource(std::string name) override;
     int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
     int32_t StopAudioPort(const std::string &audioPortName) override;

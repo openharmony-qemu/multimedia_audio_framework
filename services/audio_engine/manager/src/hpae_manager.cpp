@@ -826,47 +826,6 @@ int32_t HpaeManager::GetSourceInfoByIdx(const int32_t &sourceIdx,
     return SUCCESS;
 }
 
-int32_t HpaeManager::SetDefaultSink(std::string name)
-{
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!name.empty(), ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-                BusinessScenario::CREATE, ERR_INVALID_PARAM),
-            "invalid sink name", false),
-        "invalid sink name");
-    auto request = [this, name]() {
-        AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", GetEncryptStr(name).c_str());
-        if (name == defaultSink_) {
-            AUDIO_INFO_LOG("sink is same as default sink");
-            return;
-        }
-
-        std::shared_ptr<IHpaeRendererManager> newRendererManager = GetRendererManagerByName(name);
-        if (newRendererManager == nullptr || !newRendererManager->IsInit()) {
-            AUDIO_WARNING_LOG("sink: %{public}s not exist or not init, do not change default sink",
-                GetEncryptStr(name).c_str());
-            return;
-        }
-        std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(defaultSink_);
-        if (rendererManager == nullptr) {
-            AUDIO_INFO_LOG("default sink not exist, set default sink direct");
-            defaultSink_ = name;
-            return;
-        }
-        std::vector<uint32_t> sessionIds = GetAllRenderSession(defaultSink_);
-        if (sessionIds.size() > 0) {
-            rendererManager->MoveAllStream(name, sessionIds, MOVE_DEFAULT);
-        }
-        std::string oldDefaultSink = defaultSink_;
-        defaultSink_ = name;
-        if (!rendererManager->IsInit()) {
-            DeleteRendererManager(oldDefaultSink);
-        }
-    };
-    SendRequest(request, __func__);
-    return SUCCESS;
-}
-
 int32_t HpaeManager::SetDefaultSource(std::string name)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!name.empty(), ERROR_INVALID_PARAM,

@@ -51,7 +51,6 @@ public:
     virtual int32_t GetSourceInfoByIdx(const int32_t &sourceIdx,
         std::function<void(const HpaeSourceInfo &sourceInfo, int32_t result)> callback) = 0;
 
-    virtual int32_t SetDefaultSink(std::string name) = 0;
     virtual int32_t SetDefaultSource(std::string name) = 0;
     virtual int32_t GetAllSinkInputs() = 0;
     virtual int32_t GetAllSourceOutputs() = 0;
