@@ -88,10 +88,9 @@ protected:
         // Full pipeline setup via OpenAudioPort (creates RendererManager with Init)
         AudioModuleInfo audioModuleInfo = GetTestAudioModuleInfo();
         hpaeManager_->OpenAudioPort(audioModuleInfo);
-        hpaeManager_->SetDefaultSink(audioModuleInfo.name);
         WaitForMsgProcessing();
 
-        // Create stream
+        // Create stream (explicit deviceName: empty would land on Virtual_Render, skipping SE chain)
         HpaeStreamInfo streamInfo;
         streamInfo.channels = STEREO;
         streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -101,6 +100,7 @@ protected:
         streamInfo.streamType = STREAM_MUSIC;
         streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
         streamInfo.uid = TEST_UID;
+        streamInfo.deviceName = audioModuleInfo.name;
         hpaeManager_->CreateStream(streamInfo);
         WaitForMsgProcessing();
 

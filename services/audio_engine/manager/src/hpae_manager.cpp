@@ -1595,7 +1595,7 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
             AddStreamToCollection(streamInfo, deviceName);
         } else {
             AUDIO_WARNING_LOG(
-                "can not find default sink or source streamClassType %{public}d", streamInfo.streamClassType);
+                "can not find sink or source streamClassType %{public}d", streamInfo.streamClassType);
         }
     };
     SendRequest(request, __func__);
@@ -3184,21 +3184,6 @@ std::vector<HpaeCaptureMoveInfo> HpaeManager::GetUsedMoveInfos(std::vector<HpaeC
         results.emplace_back(moveInfo);
     }
     return results;
-}
-
-std::vector<uint32_t> HpaeManager::GetAllRenderSession(const std::string &name)
-{
-    std::vector<uint32_t> sessionIds;
-    sessionIds.reserve(rendererIdSinkNameMap_.size());
-    for (const auto &renderIdMap : rendererIdSinkNameMap_) {
-        if (renderIdMap.second == name &&
-            rendererIdStreamInfoMap_.find(renderIdMap.first) != rendererIdStreamInfoMap_.end() &&
-            rendererIdStreamInfoMap_[renderIdMap.first].streamInfo.isMoveAble) {
-            sessionIds.emplace_back(renderIdMap.first);
-            movingIds_.emplace(renderIdMap.first, rendererIdStreamInfoMap_[renderIdMap.first].state);
-        }
-    }
-    return sessionIds;
 }
 
 std::vector<uint32_t> HpaeManager::GetAllCaptureSession(const std::string &name)
