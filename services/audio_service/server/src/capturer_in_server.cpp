@@ -958,11 +958,6 @@ int32_t CapturerInServer::Start(bool hasNoCallback)
 // LCOV_EXCL_START
 int32_t CapturerInServer::StartInner(bool hasNoCallback)
 {
-    if (processConfig_.capturerInfo.originalFlag == AUDIO_FLAG_ULTRA_FAST ||
-        processConfig_.capturerInfo.capturerFlags == AUDIO_FLAG_ULTRA_FAST) {
-        CHECK_AND_RETURN_RET(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
-            processConfig_.appInfo.appTokenId), ERR_PERMISSION_DENIED);
-    }
     needStart = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
 

@@ -18,7 +18,6 @@
 
 #include <memory>
 #include <cinttypes>
-#include <unistd.h>
 
 #include "ipc_stream_in_server.h"
 #include "audio_service_log.h"

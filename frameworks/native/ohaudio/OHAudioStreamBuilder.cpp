@@ -673,7 +673,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
 
     AudioCapturerInfo capturerInfo = {
         sourceType_,
-        capturerFlags
+        latencyMode_ == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST ? AUDIO_FLAG_ULTRA_FAST : latencyMode_
     };
     capturerInfo.loopBackEffectEnabled = loopBackEffectEnabled_;
 
