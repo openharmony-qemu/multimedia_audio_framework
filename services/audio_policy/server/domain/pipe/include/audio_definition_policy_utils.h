@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
+#include <vector>
 #include "singleton.h"
 #include "audio_info.h"
 #include "audio_utils.h"
@@ -30,10 +31,22 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+struct SelectedDeviceFormat {
+    AudioSamplingRate rate = AudioSamplingRate::SAMPLE_RATE_48000;
+    AudioSampleFormat format = AudioSampleFormat::SAMPLE_S16LE;
+    AudioChannelLayout channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+};
+
 class AudioDefinitionPolicyUtils {
 public:
     static uint32_t PcmFormatToBytes(AudioSampleFormat format);
     static DeviceType GetDeviceTypeFromStr(const std::string &deviceTypeStr);
+    static SelectedDeviceFormat SelectBestOutputFormat(const AudioStreamInfo &appStreamInfo,
+        const std::list<DeviceStreamInfo> &deviceCaps);
+    static bool FindHighestFormatStreamOnDevice(const std::string &macAddress,
+        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams,
+        const std::shared_ptr<AudioStreamDescriptor> &extra, AudioStreamInfo &highestInfo);
 private:
     AudioDefinitionPolicyUtils() {}
     ~AudioDefinitionPolicyUtils() {}

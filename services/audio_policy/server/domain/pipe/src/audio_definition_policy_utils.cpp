@@ -229,5 +229,110 @@ DeviceType AudioDefinitionPolicyUtils::GetDeviceTypeFromStr(const std::string &d
     }
     return DEVICE_TYPE_NONE;
 }
+
+static void SelectBestRate(uint32_t appRate, const std::set<uint32_t> &deviceRates,
+    AudioSamplingRate &result)
+{
+    CHECK_AND_RETURN(!deviceRates.empty());
+    uint32_t selected = *deviceRates.begin();
+    for (const auto &rate : deviceRates) {
+        if (rate <= appRate) {
+            selected = rate;
+        }
+    }
+    result = static_cast<AudioSamplingRate>(selected);
+}
+
+static void SelectBestChannel(AudioChannel appCh, const std::set<AudioChannelLayout> &deviceLayouts,
+    AudioChannelLayout &result)
+{
+    CHECK_AND_RETURN(!deviceLayouts.empty());
+    uint32_t appChVal = static_cast<uint32_t>(appCh);
+    uint32_t maxLe = 0;
+    // layout -> channel, choose the best one
+    for (const auto &layout : deviceLayouts) {
+        uint32_t ch = static_cast<uint32_t>(ConvertLayoutToAudioChannel(layout));
+        if (ch == appChVal) {
+            result = layout;
+            return;
+        }
+        if (ch <= appChVal && ch > maxLe) {
+            maxLe = ch;
+        }
+    }
+    if (maxLe > 0) {
+        for (const auto &layout : deviceLayouts) {
+            if (static_cast<uint32_t>(ConvertLayoutToAudioChannel(layout)) == maxLe) {
+                result = layout;
+                return;
+            }
+        }
+    }
+    result = *deviceLayouts.begin();
+}
+
+SelectedDeviceFormat AudioDefinitionPolicyUtils::SelectBestOutputFormat(const AudioStreamInfo &appStreamInfo,
+    const std::list<DeviceStreamInfo> &deviceCaps)
+{
+    SelectedDeviceFormat result;
+    std::set<uint32_t> deviceRates;
+    std::set<AudioChannelLayout> deviceLayouts;
+    bool hasFormat = false;
+    for (const auto &cap : deviceCaps) {
+        for (const auto &rate : cap.samplingRate) {
+            deviceRates.insert(static_cast<uint32_t>(rate));
+        }
+        if (cap.format != AudioSampleFormat::INVALID_WIDTH) {
+            if (!hasFormat || cap.format > result.format) {
+                result.format = cap.format;
+            }
+            hasFormat = true;
+        }
+        for (const auto &layout : cap.channelLayout) {
+            deviceLayouts.insert(layout);
+        }
+    }
+    if (deviceRates.empty() && !hasFormat && deviceLayouts.empty()) {
+        return result;
+    }
+    uint32_t appRate = appStreamInfo.GetEffectiveSampleRate();
+    SelectBestRate(appRate, deviceRates, result.rate);
+    SelectBestChannel(appStreamInfo.channels, deviceLayouts, result.channelLayout);
+    AUDIO_INFO_LOG("SelectBestOutputFormat: appRate=%{public}u, rate=%{public}u, format=%{public}u, layout=%{public}u",
+        appRate, static_cast<uint32_t>(result.rate), static_cast<uint32_t>(result.format),
+        static_cast<uint32_t>(result.channelLayout));
+    return result;
+}
+
+bool AudioDefinitionPolicyUtils::FindHighestFormatStreamOnDevice(const std::string &macAddress,
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams,
+    const std::shared_ptr<AudioStreamDescriptor> &extra, AudioStreamInfo &highestInfo)
+{
+    uint32_t highestRate = 0;
+    bool found = false;
+    auto checkStream = [&macAddress, &highestRate, &highestInfo, &found](
+        const std::shared_ptr<AudioStreamDescriptor> &stream) {
+        CHECK_AND_RETURN(stream != nullptr && stream->IsPlayback() && !stream->newDeviceDescs_.empty());
+        auto dev = stream->newDeviceDescs_[0];
+        CHECK_AND_RETURN(dev != nullptr && dev->macAddress_ == macAddress);
+        uint32_t rate = stream->streamInfo_.GetEffectiveSampleRate();
+        if (rate > highestRate || (rate == highestRate && stream->streamInfo_.format > highestInfo.format)) {
+            highestRate = rate;
+            highestInfo = stream->streamInfo_;
+            found = true;
+        }
+    };
+    for (const auto &stream : streams) {
+        checkStream(stream);
+    }
+    if (extra != nullptr) {
+        checkStream(extra);
+    }
+    if (found) {
+        AUDIO_INFO_LOG("FindHighestFormatStreamOnDevice: mac=%{public}s, rate=%{public}u, format=%{public}u",
+            macAddress.c_str(), highestRate, static_cast<uint32_t>(highestInfo.format));
+    }
+    return found;
+}
 }
 }

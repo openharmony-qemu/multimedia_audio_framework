@@ -139,9 +139,19 @@ private:
     void MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchFastArmusbPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchArmusbInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void MatchArmUsbFormatPipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+        const std::shared_ptr<AudioPipeInfo> &pipeInfo, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void SyncArmUsbSiblingFastPipe(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+        std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
+    SelectedDeviceFormat SelectArmUsbFormat(
+        const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        bool &isVoip, bool &hasVoip);
     void UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
     bool IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,

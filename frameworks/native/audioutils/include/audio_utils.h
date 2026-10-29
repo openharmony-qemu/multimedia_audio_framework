@@ -312,7 +312,6 @@ class DumpFileUtil {
 public:
     static constexpr char DUMP_SERVER_PARA[] = "sys.audio.dump.writeserver.enable";
     static constexpr char DUMP_CLIENT_PARA[] = "sys.audio.dump.writeclient.enable";
-    static constexpr uint32_t PARAM_VALUE_LENTH = 256;
     static constexpr char BETA_VERSION[] = "beta";
     static void WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize);
     static void CloseDumpFile(FILE **dumpFile);
