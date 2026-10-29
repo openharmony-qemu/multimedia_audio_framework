@@ -53,6 +53,8 @@ public:
     bool HasRollbackInfo();
     int32_t RollbackDeviceId();
     bool HasVirtualSelect(int32_t deviceId);
+    int32_t VirtualSelectCount();
+    int32_t SelectionRollbackCount();
     int32_t VirtualSelectDeviceId(int32_t uid, SelectDeviceType type, uint32_t streamId);
     std::shared_ptr<AudioDeviceSimpleDescriptor> ToSimple(
         const std::shared_ptr<AudioDeviceDescriptor> &device);
@@ -123,6 +125,20 @@ int32_t AudioRollbackManagerTest::VirtualSelectDeviceId(int32_t uid, SelectDevic
         }
     }
     return -1;
+}
+
+int32_t AudioRollbackManagerTest::VirtualSelectCount()
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+    std::lock_guard<std::mutex> lg(rb.mutex_);
+    return static_cast<int32_t>(rb.virtualSelectDevices_.size());
+}
+
+int32_t AudioRollbackManagerTest::SelectionRollbackCount()
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+    std::lock_guard<std::mutex> lg(rb.mutex_);
+    return static_cast<int32_t>(rb.selectionRollbacks_.size());
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRollbackManagerTest::AddConnectedDevice(DeviceType type,
@@ -997,6 +1013,117 @@ HWTEST_F(AudioRollbackManagerTest, VirtualSelect_AppExitClears, TestSize.Level1)
     EXPECT_FALSE(HasVirtualSelect(newDev->deviceId_));
 }
 
+/**
+ * @tc.name  : ContinueSetDevice_NonMatchAndEmpty
+ * @tc.type  : FUNC
+ * @tc.desc  : ContinueSetDevice skips non-matching entries (else branch) and handles empty vector.
+ */
+HWTEST_F(AudioRollbackManagerTest, ContinueSetDevice_NonMatchAndEmpty, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+    constexpr int32_t devA = 5001;
+    constexpr int32_t devB = 5002;
+    constexpr int32_t devC = 5003;
+
+    AudioDeviceDescriptor desc(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc.deviceId_ = devC;
+
+    {
+        std::lock_guard<std::mutex> lg(rb.mutex_);
+        rb.virtualSelectDevices_.clear();
+        rb.virtualSelectDevices_.push_back({SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, devA, INVALID_STREAM_ID});
+        rb.virtualSelectDevices_.push_back({SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, devB, INVALID_STREAM_ID});
+        EXPECT_NO_THROW(rb.ContinueSetDevice(desc));
+        EXPECT_EQ(rb.virtualSelectDevices_.size(), 2u);
+    }
+
+    {
+        std::lock_guard<std::mutex> lg(rb.mutex_);
+        rb.virtualSelectDevices_.clear();
+        EXPECT_NO_THROW(rb.ContinueSetDevice(desc));
+        EXPECT_TRUE(rb.virtualSelectDevices_.empty());
+    }
+}
+
+/**
+ * @tc.name  : RollbackSetDevice_NoMatchAndEmpty
+ * @tc.type  : FUNC
+ * @tc.desc  : RollbackSetDevice returns false and keeps non-matching entries, and handles empty vector.
+ */
+HWTEST_F(AudioRollbackManagerTest, RollbackSetDevice_NoMatchAndEmpty, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+
+    {
+        std::lock_guard<std::mutex> lg(rb.mutex_);
+        rb.selectionRollbacks_.clear();
+        rb.selectionRollbacks_.push_back(
+            {6001, {SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, 6002, INVALID_STREAM_ID}});
+        rb.selectionRollbacks_.push_back(
+            {6003, {SYSTEM_UID, SelectDeviceType::CALL_OUTPUT, 6004, INVALID_STREAM_ID}});
+    }
+    EXPECT_FALSE(rb.RollbackSetDevice(TEST_APP_UID_10001, SelectDeviceType::MEDIA_INPUT, TEST_STREAM_ID_1, 7001));
+    EXPECT_EQ(SelectionRollbackCount(), 2);
+
+    {
+        std::lock_guard<std::mutex> lg(rb.mutex_);
+        rb.selectionRollbacks_.clear();
+    }
+    EXPECT_FALSE(rb.RollbackSetDevice(SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, INVALID_STREAM_ID, 7001));
+    EXPECT_EQ(SelectionRollbackCount(), 0);
+}
+
+/**
+ * @tc.name  : HandleVirtualConnected_NonVirtualErasesExisting
+ * @tc.type  : FUNC
+ * @tc.desc  : HandleVirtualConnected erases the existing virtual select entry when the device
+ *             connectState is not VIRTUAL_CONNECTED (e.g. CONNECTED), returning false.
+ */
+HWTEST_F(AudioRollbackManagerTest, HandleVirtualConnected_NonVirtualErasesExisting, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+    constexpr int32_t devId = 8001;
+
+    {
+        std::lock_guard<std::mutex> lg(rb.mutex_);
+        rb.virtualSelectDevices_.clear();
+        rb.rollbackInfo_.reset();
+        rb.virtualSelectDevices_.push_back({SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, devId, INVALID_STREAM_ID});
+    }
+
+    AudioDeviceDescriptor desc(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc.deviceId_ = devId;
+    desc.connectState_ = CONNECTED;
+    EXPECT_FALSE(rb.HandleVirtualConnected(SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, INVALID_STREAM_ID, desc));
+    EXPECT_EQ(VirtualSelectCount(), 0);
+}
+
+/**
+ * @tc.name  : HandleVirtualConnected_SameDeviceIdReturnsTrue
+ * @tc.type  : FUNC
+ * @tc.desc  : HandleVirtualConnected returns true early without modifying the entry or setting a
+ *             timer when the device is VIRTUAL_CONNECTED and the deviceId matches the existing entry.
+ */
+HWTEST_F(AudioRollbackManagerTest, HandleVirtualConnected_SameDeviceIdReturnsTrue, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+    constexpr int32_t devId = 8002;
+
+    {
+        std::lock_guard<std::mutex> lg(rb.mutex_);
+        rb.virtualSelectDevices_.clear();
+        rb.rollbackInfo_.reset();
+        rb.virtualSelectDevices_.push_back({SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, devId, INVALID_STREAM_ID});
+    }
+
+    AudioDeviceDescriptor desc(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc.deviceId_ = devId;
+    desc.connectState_ = VIRTUAL_CONNECTED;
+    EXPECT_TRUE(rb.HandleVirtualConnected(SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, INVALID_STREAM_ID, desc));
+    EXPECT_EQ(VirtualSelectCount(), 1);
+    EXPECT_EQ(VirtualSelectDeviceId(SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, INVALID_STREAM_ID), devId);
+}
+
 // ---------------------------------------------------------------------------
 // StepTimer unit tests
 // ---------------------------------------------------------------------------
@@ -1052,7 +1179,7 @@ HWTEST_F(StepTimerTest, SetTimeout_SingleTask_Fires, TestSize.Level1)
     StepTimer timer;
     std::promise<void> done;
     auto fut = done.get_future();
-    timer.SetTimeout(TEST_SHORT_MS, [&done]() { done.set_value(); });
+    timer.SetTimeout(std::chrono::milliseconds(TEST_SHORT_MS), [&done]() { done.set_value(); });
     EXPECT_EQ(fut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
 }
 
@@ -1073,9 +1200,9 @@ HWTEST_F(StepTimerTest, SetTimeout_MultipleTasks_AllFireByDelay, TestSize.Level1
         order.push_back(id);
         wc.Done();
     };
-    timer.SetTimeout(300, [&]() { record(3); });
-    timer.SetTimeout(100, [&]() { record(1); });
-    timer.SetTimeout(200, [&]() { record(2); });
+    timer.SetTimeout(std::chrono::milliseconds(300), [&]() { record(3); });
+    timer.SetTimeout(std::chrono::milliseconds(100), [&]() { record(1); });
+    timer.SetTimeout(std::chrono::milliseconds(200), [&]() { record(2); });
     EXPECT_TRUE(wc.Wait(TEST_TIMEOUT_MS));
     ASSERT_EQ(order.size(), 3u);
     EXPECT_EQ(order[0], 1);
@@ -1092,9 +1219,9 @@ HWTEST_F(StepTimerTest, SetTimeout_SameDeadline_AllFire, TestSize.Level1)
 {
     StepTimer timer;
     WaitCounter wc(3);
-    timer.SetTimeout(100, [&wc]() { wc.Done(); });
-    timer.SetTimeout(100, [&wc]() { wc.Done(); });
-    timer.SetTimeout(100, [&wc]() { wc.Done(); });
+    timer.SetTimeout(std::chrono::milliseconds(100), [&wc]() { wc.Done(); });
+    timer.SetTimeout(std::chrono::milliseconds(100), [&wc]() { wc.Done(); });
+    timer.SetTimeout(std::chrono::milliseconds(100), [&wc]() { wc.Done(); });
     EXPECT_TRUE(wc.Wait(TEST_TIMEOUT_MS));
     EXPECT_EQ(wc.Count(), 3);
 }
@@ -1109,7 +1236,7 @@ HWTEST_F(StepTimerTest, SetTimeout_ZeroDelay_Fires, TestSize.Level1)
     StepTimer timer;
     std::promise<void> done;
     auto fut = done.get_future();
-    timer.SetTimeout(0, [&done]() { done.set_value(); });
+    timer.SetTimeout(std::chrono::milliseconds(0), [&done]() { done.set_value(); });
     EXPECT_EQ(fut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
 }
 
@@ -1126,7 +1253,7 @@ HWTEST_F(StepTimerTest, SetTimeout_ConcurrentCalls_AllFire, TestSize.Level1)
     std::vector<std::thread> threads;
     for (int i = 0; i < N; i++) {
         threads.emplace_back([&timer, &wc]() {
-            timer.SetTimeout(TEST_SHORT_MS, [&wc]() { wc.Done(); });
+            timer.SetTimeout(std::chrono::milliseconds(TEST_SHORT_MS), [&wc]() { wc.Done(); });
         });
     }
     for (auto &t : threads) {
@@ -1146,8 +1273,8 @@ HWTEST_F(StepTimerTest, SetTimeout_CallbackAddsNewTask, TestSize.Level1)
     StepTimer timer;
     std::promise<void> done;
     auto fut = done.get_future();
-    timer.SetTimeout(TEST_SHORT_MS, [&timer, &done]() {
-        timer.SetTimeout(TEST_SHORT_MS, [&done]() { done.set_value(); });
+    timer.SetTimeout(std::chrono::milliseconds(TEST_SHORT_MS), [&timer, &done]() {
+        timer.SetTimeout(std::chrono::milliseconds(TEST_SHORT_MS), [&done]() { done.set_value(); });
     });
     EXPECT_EQ(fut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
 }
@@ -1162,7 +1289,7 @@ HWTEST_F(StepTimerTest, WorkerExitsWhenIdle, TestSize.Level1)
     StepTimer timer;
     std::promise<void> done;
     auto fut = done.get_future();
-    timer.SetTimeout(TEST_SHORT_MS, [&done]() { done.set_value(); });
+    timer.SetTimeout(std::chrono::milliseconds(TEST_SHORT_MS), [&done]() { done.set_value(); });
     ASSERT_EQ(fut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
     std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SETTLE_MS));
     EXPECT_FALSE(timer.running_);
@@ -1182,9 +1309,9 @@ HWTEST_F(StepTimerTest, TaskAddedWhileWaiting_FiresPromptly, TestSize.Level1)
     std::promise<void> shortDone;
     auto longFut = longDone.get_future();
     auto shortFut = shortDone.get_future();
-    timer.SetTimeout(TEST_LONG_MS, [&longDone]() { longDone.set_value(); });
+    timer.SetTimeout(std::chrono::milliseconds(TEST_LONG_MS), [&longDone]() { longDone.set_value(); });
     std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SETTLE_MS));
-    timer.SetTimeout(TEST_SHORT_MS, [&shortDone]() { shortDone.set_value(); });
+    timer.SetTimeout(std::chrono::milliseconds(TEST_SHORT_MS), [&shortDone]() { shortDone.set_value(); });
     EXPECT_EQ(shortFut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
     EXPECT_NE(longFut.wait_for(std::chrono::milliseconds(0)), std::future_status::ready);
     EXPECT_EQ(longFut.wait_for(std::chrono::milliseconds(TEST_TIMEOUT_MS)), std::future_status::ready);
@@ -1200,10 +1327,10 @@ HWTEST_F(StepTimerTest, SetTimeout_OverwriteWhileRunning, TestSize.Level1)
 {
     StepTimer timer;
     WaitCounter wc(3);
-    timer.SetTimeout(200, [&wc]() { wc.Done(); });
+    timer.SetTimeout(std::chrono::milliseconds(200), [&wc]() { wc.Done(); });
     std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SETTLE_MS));
-    timer.SetTimeout(TEST_SHORT_MS, [&wc]() { wc.Done(); });
-    timer.SetTimeout(150, [&wc]() { wc.Done(); });
+    timer.SetTimeout(std::chrono::milliseconds(TEST_SHORT_MS), [&wc]() { wc.Done(); });
+    timer.SetTimeout(std::chrono::milliseconds(150), [&wc]() { wc.Done(); });
     EXPECT_TRUE(wc.Wait(TEST_TIMEOUT_MS));
     EXPECT_EQ(wc.Count(), 3);
 }
