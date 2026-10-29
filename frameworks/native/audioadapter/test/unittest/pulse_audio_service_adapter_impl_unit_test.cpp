@@ -217,54 +217,6 @@ HWTEST(PulseAudioServiceAdapterImplUnitTest, PulseAudioServiceAdapterImplUnitTes
 
 /**
 * @tc.name  : Test PulseAudioServiceAdapterImplUnitTest API
-* @tc.number: PulseAudioServiceAdapterImplUnitTest_008
-* @tc.desc  : Test PulseAudioServiceAdapterImplUnitTest interface.
-*/
-HWTEST(PulseAudioServiceAdapterImplUnitTest, PulseAudioServiceAdapterImplUnitTest_008, TestSize.Level1)
-{
-    std::unique_ptr<AudioServiceAdapterCallback> audioServiceAdapterCallback =
-        std::make_unique<AudioServiceAdapterCallbackTest>();
-    auto pulseAudioServiceAdapterImpl = std::make_shared<PulseAudioServiceAdapterImpl>(audioServiceAdapterCallback);
-    ASSERT_NE(pulseAudioServiceAdapterImpl, nullptr);
-
-    pulseAudioServiceAdapterImpl->mMainLoop = pa_threaded_mainloop_new();
-    ASSERT_NE(pulseAudioServiceAdapterImpl->mMainLoop, nullptr);
-
-    pulseAudioServiceAdapterImpl->mContext = nullptr;
-
-    string name = "abc";
-    auto ret = pulseAudioServiceAdapterImpl->SetDefaultSink(name);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
-* @tc.name  : Test PulseAudioServiceAdapterImplUnitTest API
-* @tc.number: PulseAudioServiceAdapterImplUnitTest_009
-* @tc.desc  : Test PulseAudioServiceAdapterImplUnitTest interface.
-*/
-HWTEST(PulseAudioServiceAdapterImplUnitTest, PulseAudioServiceAdapterImplUnitTest_009, TestSize.Level1)
-{
-    std::unique_ptr<AudioServiceAdapterCallback> audioServiceAdapterCallback =
-        std::make_unique<AudioServiceAdapterCallbackTest>();
-    auto pulseAudioServiceAdapterImpl = std::make_shared<PulseAudioServiceAdapterImpl>(audioServiceAdapterCallback);
-    ASSERT_NE(pulseAudioServiceAdapterImpl, nullptr);
-
-    pulseAudioServiceAdapterImpl->mMainLoop = pa_threaded_mainloop_new();
-    ASSERT_NE(pulseAudioServiceAdapterImpl->mMainLoop, nullptr);
-
-    pa_mainloop* mainloop = pa_mainloop_new();
-    pa_mainloop_api* mainloop_api = pa_mainloop_get_api(mainloop);
-
-    pulseAudioServiceAdapterImpl->mContext = pa_context_new(mainloop_api, "MyAudioApp");
-    ASSERT_NE(pulseAudioServiceAdapterImpl->mContext, nullptr);
-
-    string name = "abc";
-    auto ret = pulseAudioServiceAdapterImpl->SetDefaultSink(name);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
-}
-
-/**
-* @tc.name  : Test PulseAudioServiceAdapterImplUnitTest API
 * @tc.number: PulseAudioServiceAdapterImplUnitTest_010
 * @tc.desc  : Test PulseAudioServiceAdapterImplUnitTest interface.
 */

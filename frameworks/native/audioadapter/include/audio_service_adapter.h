@@ -86,15 +86,6 @@ public:
     virtual int32_t CloseAudioPort(int32_t audioHandleIndex) = 0;
 
     /**
-     * @brief sets default audio sink.
-     *
-     * @param name name of default audio sink to be set
-     * @return Returns {@link SUCCESS} if default audio sink is set successfully; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     */
-    virtual int32_t SetDefaultSink(std::string name) = 0;
-
-    /**
      * @brief sets default audio source.
      *
      * @param name name of default audio source to be set

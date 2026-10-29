@@ -180,15 +180,6 @@ bool ProAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool i
     return SUCCESS;
 }
 
-int32_t ProAudioServiceAdapterImpl::SetDefaultSink(string name)
-{
-    Trace trace("SetDefaultSink:" + name);
-    lock_guard<mutex> lock(lock_);
-    IHpaeManager::GetHpaeManager().SetDefaultSink(name);
-    AUDIO_INFO_LOG("[%{public}s]", name.c_str());
-    return SUCCESS;
-}
-
 int32_t ProAudioServiceAdapterImpl::SetDefaultSource(string name)
 {
     Trace trace("SetDefaultSource:" + name);

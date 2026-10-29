@@ -166,13 +166,6 @@ void CloseAudioPortFuzzTest()
     impl_->CloseAudioPort(portId);
 }
 
-void SetDefaultSinkFuzzTest()
-{
-    SetUp();
-    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
-    impl_->SetDefaultSink(moduleInfo.name);
-}
-
 void SetDefaultSourceFuzzTest()
 {
     SetUp();
@@ -397,15 +390,6 @@ void ReloadAudioPortWithOpenPortFuzzTest()
     impl_->ReloadAudioPort(moduleInfo.name, moduleInfo);
 }
 
-void SetDefaultSinkWithActivePortFuzzTest()
-{
-    SetUp();
-    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
-    impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
-    std::string sinkName = moduleInfo.name;
-    impl_->SetDefaultSink(sinkName);
-}
-
 void SuspendStopAudioPortFuzzTest()
 {
     SetUp();
@@ -421,7 +405,6 @@ typedef void (*TestFuncs[37])();
 TestFuncs g_testFuncs = {
     OpenAudioPortFuzzTest,
     CloseAudioPortFuzzTest,
-    SetDefaultSinkFuzzTest,
     SetDefaultSourceFuzzTest,
     SuspendAudioDeviceFuzzTest,
     SetSinkMuteFuzzTest,
@@ -450,7 +433,6 @@ TestFuncs g_testFuncs = {
     OnGetCollaborativeUpdateCbFuzzTest,
     OpenCloseAudioPortFuzzTest,
     ReloadAudioPortWithOpenPortFuzzTest,
-    SetDefaultSinkWithActivePortFuzzTest,
     SuspendStopAudioPortFuzzTest,
 };
 
