@@ -967,13 +967,13 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SaveBootAnimationVolumeToLocal, TestSiz
     adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_NOTIFICATION);
     EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
 
-    adapterManager.volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_NOTIFICATION, true);
+    adapterManager.volumeDataMaintainer_.SaveMuteToMap(device, STREAM_NOTIFICATION, true);
     adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_NOTIFICATION);
-    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string("0"));
-    adapterManager.volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_NOTIFICATION, false);
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::string("0"));
+    adapterManager.volumeDataMaintainer_.SaveMuteToMap(device, STREAM_NOTIFICATION, false);
 
     adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_SYSTEM);
-    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string("0"));
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::string("0"));
 
     device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     adapterManager.volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_NOTIFICATION, volume);
