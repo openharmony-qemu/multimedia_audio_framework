@@ -406,6 +406,7 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
             "writeCallback is null, fatal err", false),
         "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
+    bool hasCachedHistoryData = historyBuffer_ && historyBuffer_->GetCurFrames() > 0;
     // offload / direct / non-standard sample rate / SE preheating: never force data
     bool forceData = (offloadEnable_ || isDirect_ || isNonStandardSampleRate_ || sessionEffectPreheatActive_
                       || (GetEffectStreamUsage() == STREAM_USAGE_ACCESSIBILITY && isSystemApp_)) ? false : true;
@@ -435,7 +436,8 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
         .writePos_ = callbackData.writePos_,
         .isWriteFirst_ = callbackData.isFlush_,
         .isLowLatency = isLowLatency_,
-        .isPullData = isPullData
+        .isPullData = isPullData,
+        .hasCachedHistoryData = hasCachedHistoryData
     };
     ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
     return writeCallback->OnStreamData(streamInfo_);

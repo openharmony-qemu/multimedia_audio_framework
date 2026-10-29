@@ -573,6 +573,42 @@ HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_IsPullDataMarking, TestSize.L
 }
 
 /**
+ * @tc.name  : OnStreamInfoChange_HasCachedHistoryData
+ * @tc.type  : FUNC
+ * @tc.desc  : hasCachedHistoryData reflects null buffer, cached frames and drained states
+ */
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_HasCachedHistoryData, TestSize.Level0)
+{
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillRepeatedly(SetArgReferee<1>(5));
+    std::vector<bool> capturedFlags;
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
+        .Times(3)
+        .WillRepeatedly([&](AudioCallBackStreamInfo& info) {
+            capturedFlags.push_back(info.hasCachedHistoryData);
+            return SUCCESS;
+        });
+
+    // Phase 1: no history buffer -> false
+    node_->historyBuffer_ = nullptr;
+    EXPECT_EQ(node_->OnStreamInfoChange(true), SUCCESS);
+
+    // Phase 2: Flush recreates the buffer, one pushed frame -> true
+    node_->Flush();
+    ASSERT_NE(node_->historyBuffer_, nullptr);
+    AddFrameToBuffer(node_->historyBuffer_);
+    EXPECT_EQ(node_->OnStreamInfoChange(false), SUCCESS);
+
+    // Phase 3: cached frame drained -> false
+    EXPECT_TRUE(node_->historyBuffer_->GetFrameData(node_->inputAudioBuffer_));
+    EXPECT_EQ(node_->OnStreamInfoChange(true), SUCCESS);
+
+    ASSERT_EQ(capturedFlags.size(), 3u);
+    EXPECT_FALSE(capturedFlags[0]);
+    EXPECT_TRUE(capturedFlags[1]);
+    EXPECT_FALSE(capturedFlags[2]);
+}
+
+/**
  * @tc.name  : FaultCode_OnStreamInfoChange_WriteCallbackNull
  * @tc.type  : FUNC
  * @tc.desc  : Test OnStreamInfoChange when writeCallback is null,

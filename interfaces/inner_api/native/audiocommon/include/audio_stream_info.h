@@ -574,6 +574,8 @@ struct AudioCallBackStreamInfo {
     // device migration and history rewind notifications. Internal-only: does not
     // change the public first-frame callback contract.
     bool isPullData = false;
+    // True when the node's history buffer exists and holds cached frames (rewind cache).
+    bool hasCachedHistoryData = false;
 };
 
 struct AudioCallBackCapturerStreamInfo {
