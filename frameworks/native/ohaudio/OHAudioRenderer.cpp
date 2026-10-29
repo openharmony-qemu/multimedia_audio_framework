@@ -29,6 +29,12 @@ static const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
+
+bool OHOS::AudioStandard::OHAudioRenderer::IsDeviceSupportUltraFast()
+{
+    return AudioRenderer::IsDeviceSupportUltraFast();
+}
+
 static OHOS::AudioStandard::OHAudioRenderer *convertRenderer(OH_AudioRenderer *renderer)
 {
     return reinterpret_cast<OHOS::AudioStandard::OHAudioRenderer*>(renderer);

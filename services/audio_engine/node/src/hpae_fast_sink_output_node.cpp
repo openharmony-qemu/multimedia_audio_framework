@@ -30,6 +30,7 @@
 #include "util/id_handler.h"
 #include "audio_engine_log.h"
 #include "audio_utils.h"
+#include "audio_schedule.h"
 #include "volume_tools.h"
 #include "audio_volume.h"
 #include "securec.h"
@@ -58,7 +59,7 @@ HpaeFastSinkOutputNode::HpaeFastSinkOutputNode(HpaeNodeInfo &nodeInfo)
     writeTimeModel_.ConfigSampleRate(sampleRate);
     logUtilsTag_ = "HpaeFastSinkOutputNode::" +
         (nodeInfo.deviceClass.empty() ? std::string("Fast") : nodeInfo.deviceClass);
-    isUltraFast_ = (nodeInfo.deviceClass == "ultra_fast");
+    isUltraFast_ = (ULTRA_FAST_DEVICE_CLASSES.count(nodeInfo.deviceClass) > 0);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeFastSinkOutputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -577,6 +578,7 @@ void HpaeFastSinkOutputNode::AsyncGetPosTime()
         return;
     }
     updatePosTimeThread_ = std::thread([this]() {
+        ScheduleReportData(getpid(), gettid(), "audio_server");
         while (!stopUpdateThread_.load()) {
             std::unique_lock<std::mutex> lock(updateThreadLock_);
             updateThreadCV_.wait_for(lock, std::chrono::milliseconds(WAIT_GET_POS_TIMEOUT_MS));

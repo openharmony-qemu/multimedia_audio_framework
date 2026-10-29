@@ -68,6 +68,7 @@ private:
     AudioChannelLayout uLayout_; // cached layout; mismatch forces a full sink re-init
     uint64_t latency_;
     bool firstSetVolume_;
+    std::once_flag qosOnce_; // one-shot QoS setup guard for 3DADirectThread (see PollAndWrite)
     std::shared_ptr<IRendererStream> stream_;
     std::function<int32_t (uint32_t &)> sinkLatencyFetcher_;
 };

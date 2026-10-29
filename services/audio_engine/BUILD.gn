@@ -157,6 +157,7 @@ config("audio_engine_node_config") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../frameworks/native/audioclock/include",
     "../../frameworks/native/hdiadapter_new/include",
+    "../../frameworks/native/audioschedule/include",
   ]
 
   cflags = [
@@ -241,6 +242,7 @@ ohos_shared_library("audio_engine_node") {
     ":audio_engine_utils",
     "../../frameworks/native/audioclock:audio_clock",
     "../../frameworks/native/audioeffect:audio_effect",
+    "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_policy:audio_foundation",

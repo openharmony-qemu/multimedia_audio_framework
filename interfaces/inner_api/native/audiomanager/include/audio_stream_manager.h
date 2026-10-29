@@ -155,6 +155,7 @@ public:
      * @since 20
      */
     bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
+    bool IsUltraFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
 
     /**
      * @brief Is fast recording supported.

@@ -75,6 +75,7 @@ private:
         std::string &adapterName, std::string &pipeName);
     void ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
+    void HandleUltraFast(std::shared_ptr<AudioStreamDescriptor> &streamDesc, AudioPipeInfo &info);
     void FillLatencyConfig(AudioPipeInfo &info, std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr);
     AudioStreamAction JudgeStreamAction(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe);
     void SortStreamDescsByStartTime(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
@@ -138,9 +139,19 @@ private:
     void MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchFastArmusbPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void MatchArmusbInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void MatchArmUsbFormatPipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+        const std::shared_ptr<AudioPipeInfo> &pipeInfo, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void SyncArmUsbSiblingFastPipe(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+        std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
+    SelectedDeviceFormat SelectArmUsbFormat(
+        const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        bool &isVoip, bool &hasVoip);
     void UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
     bool IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
@@ -150,6 +161,8 @@ private:
         const std::shared_ptr<AudioStreamDescriptor> &newStreamDesc);
     void HandleFastStreamLimitAndNearLinkState(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    void HandleUltraFastStreamLimit(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        int32_t &fastOutputNum, int32_t &ultraFastOutputNum);
     void HandleSpecialStreamLimitOnMultiDevice(
         const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &cmpStream);

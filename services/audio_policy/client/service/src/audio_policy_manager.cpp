@@ -723,6 +723,26 @@ bool AudioPolicyManager::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, St
     return support;
 }
 
+bool AudioPolicyManager::IsUltraFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
+
+    bool support = false;
+    gsp->IsUltraFastPlaybackSupported(streamInfo, static_cast<int32_t>(usage), support);
+    return support;
+}
+
+bool AudioPolicyManager::IsDeviceSupportUltraFast()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
+
+    bool support = false;
+    gsp->IsDeviceSupportUltraFast(support);
+    return support;
+}
+
 bool AudioPolicyManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

@@ -51,6 +51,13 @@ static const char* MMAP_CLASS = "primary_mmap";
 static const char* DIRECT_CLASS = "primary_direct";
 static const char* A2DP_FAST_CLASS = "a2dp_fast";
 static const char* ULTRA_FAST_CLASS = "ultra_fast";
+static const char* TRUE_ULTRA_FAST_CLASS = "true_ultra_fast";
+static const std::set<std::string> ULTRA_FAST_DEVICE_CLASSES = {
+    "ultra_fast",
+    "true_ultra_fast",
+    "usb_arm_ultra_fast",
+    "usb_arm_true_ultra_fast",
+};
 static const char* INTERPHONE_CLASS = "interphone";
 static const char* BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const char* BLUETOOTH_A2DP_FAST = "bt_a2dp_fast";
@@ -78,6 +85,7 @@ static const char* PORT_NONE = "none";
 static const char* PRIMARY_DIRECT_VOIP = "direct_voip";
 static const char* PRIMARY_MMAP_VOIP = "mmap_voip";
 static const char* PRIMARY_MMAP = "mmap";
+static const char* TRUE_ULTRA_FAST_SPEAKER = "true_ultra_fast_speaker";
 static const char* PRIMARY_DIRECT = "direct";
 static const char* ACCESSORY_SOURCE = "accessory_mic";
 static const char* VIRTUAL_AUDIO = "virtual_audio";

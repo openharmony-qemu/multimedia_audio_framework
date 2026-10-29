@@ -48,6 +48,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
     AudioPin pin = AUDIO_PIN_NONE;
     int32_t hdPlayBackMode = 0;
     bool isUltraFast = false;
+    bool isTrueUltraFast = false;
     std::string busName = "";
     int32_t effectLatency = LATENCY_UNCONFIG;
     int32_t halLatency = LATENCY_UNCONFIG;
@@ -75,6 +76,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
             parcel.WriteUint32(routeFlag) &&
             parcel.WriteInt32(hdPlayBackMode) &&
             parcel.WriteBool(isUltraFast) &&
+            parcel.WriteBool(isTrueUltraFast) &&
             parcel.WriteString(busName) &&
             parcel.WriteInt32(effectLatency) &&
             parcel.WriteInt32(halLatency) &&
@@ -108,6 +110,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
         attr->routeFlag = parcel.ReadUint32();
         attr->hdPlayBackMode = parcel.ReadInt32();
         attr->isUltraFast = parcel.ReadBool();
+        attr->isTrueUltraFast = parcel.ReadBool();
         attr->busName = parcel.ReadString();
         attr->effectLatency = parcel.ReadInt32();
         attr->halLatency = parcel.ReadInt32();

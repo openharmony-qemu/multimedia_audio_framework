@@ -118,7 +118,8 @@ enum AudioPipeType {
     PIPE_TYPE_IN_CAMCORDER = 23,
     PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT = 24,
     PIPE_TYPE_IN_NORMAL_VOICE_MESSAGE = 25,
-    PIPE_TYPE_IN_ULTRA_FAST = 26,
+    PIPE_TYPE_OUT_ULTRA_FAST = 26,
+    PIPE_TYPE_IN_ULTRA_FAST = 27,
 };
 
 enum AudioPreloadType {
@@ -150,6 +151,7 @@ struct AudioStreamParams {
     uint64_t micInChannelLayout = 0ULL;
     bool isVoiceRecognitionMicInEcDegrade = false;
     uint8_t ultraFastFlag = 0;
+    uint32_t trueUltraFastFlag = 0;
     int32_t playbackCaptureMode = 0;
     bool isModernInnerCapturer = false;
 };

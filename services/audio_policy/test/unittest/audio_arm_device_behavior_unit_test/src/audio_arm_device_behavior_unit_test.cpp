@@ -16,6 +16,8 @@
 #include "audio_policy_utils.h"
 #include "audio_core_service.h"
 #include "audio_pipe_manager.h"
+#include "audio_definition_policy_utils.h"
+#include "audio_scene_manager.h"
 #include "audio_arm_device_behavior_unit_test.h"
 
 using namespace testing::ext;
@@ -370,6 +372,126 @@ HWTEST_F(AudioArmDeviceBehaviorUnitTest, DeactivateDevice_004, TestSize.Level1)
     armDeviceBehavior_.activeArmOutputAddr_ = TEST_USB_ADDR;
     int32_t result = armDeviceBehavior_.DeactivateDevice();
     EXPECT_EQ(result, SUCCESS);
+}
+
+/* ---- UpdateArmModuleInfo ---- */
+
+namespace {
+std::shared_ptr<AudioDeviceDescriptor> MakeArmUsbDeviceDesc(
+    const std::string &address, std::set<AudioSamplingRate> rates,
+    AudioSampleFormat fmt = SAMPLE_S16LE)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    desc->deviceRole_ = OUTPUT_DEVICE;
+    desc->macAddress_ = address;
+    DeviceStreamInfo cap;
+    cap.samplingRate = rates;
+    cap.format = fmt;
+    cap.formats.insert(fmt);
+    cap.channelLayout.insert(CH_LAYOUT_STEREO);
+    desc->audioStreamInfo_.push_back(cap);
+    return desc;
+}
+
+void AddStreamToPipeManager(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    uint32_t pipeId = 1)
+{
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->id_ = pipeId;
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+}
+}
+
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_NoStreamHalHighest, TestSize.Level1)
+{
+    auto deviceDesc = MakeArmUsbDeviceDesc(TEST_USB_ADDR,
+        {SAMPLE_RATE_44100, SAMPLE_RATE_48000, SAMPLE_RATE_192000});
+    AudioModuleInfo moduleInfo = MakeUsbSinkModuleInfo();
+    armDeviceBehavior_.UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_192000));
+}
+
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_NoStreamSingleRate, TestSize.Level1)
+{
+    auto deviceDesc = MakeArmUsbDeviceDesc(TEST_USB_ADDR, {SAMPLE_RATE_48000});
+    AudioModuleInfo moduleInfo = MakeUsbSinkModuleInfo();
+    armDeviceBehavior_.UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_48000));
+}
+
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_WithHighSpecStream, TestSize.Level1)
+{
+    auto deviceDesc = MakeArmUsbDeviceDesc(TEST_USB_ADDR,
+        {SAMPLE_RATE_48000, SAMPLE_RATE_96000, SAMPLE_RATE_192000}, SAMPLE_S24LE);
+    deviceDesc->audioStreamInfo_.front().formats.insert(SAMPLE_S24LE);
+    deviceDesc->audioStreamInfo_.front().formats.insert(SAMPLE_S32LE);
+    auto streamDesc = MakeStreamDesc(OUTPUT_DEVICE);
+    streamDesc->streamInfo_.samplingRate = SAMPLE_RATE_192000;
+    streamDesc->streamInfo_.format = SAMPLE_S24LE;
+    AddStreamToPipeManager(streamDesc);
+    AudioModuleInfo moduleInfo = MakeUsbSinkModuleInfo();
+    armDeviceBehavior_.UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_192000));
+}
+
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_WithVoipStream, TestSize.Level1)
+{
+    auto deviceDesc = MakeArmUsbDeviceDesc(TEST_USB_ADDR,
+        {SAMPLE_RATE_48000, SAMPLE_RATE_192000}, SAMPLE_S24LE);
+    auto streamDesc = MakeStreamDesc(OUTPUT_DEVICE);
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
+    AddStreamToPipeManager(streamDesc, 2);
+    AudioModuleInfo moduleInfo = MakeUsbSinkModuleInfo();
+    armDeviceBehavior_.UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_48000));
+}
+
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_InvalidFormatKept, TestSize.Level1)
+{
+    auto deviceDesc = MakeArmUsbDeviceDesc(TEST_USB_ADDR, {SAMPLE_RATE_48000}, AudioSampleFormat::INVALID_WIDTH);
+    AudioModuleInfo moduleInfo = MakeUsbSinkModuleInfo();
+    moduleInfo.format = "s24le";
+    armDeviceBehavior_.UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    EXPECT_EQ(moduleInfo.format, "s24le");
+    EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_48000));
+}
+
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_UnknownLayoutKept, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceRole_ = OUTPUT_DEVICE;
+    deviceDesc->macAddress_ = TEST_USB_ADDR;
+    DeviceStreamInfo cap;
+    cap.samplingRate.insert(SAMPLE_RATE_48000);
+    cap.format = SAMPLE_S16LE;
+    cap.formats.insert(SAMPLE_S16LE);
+    deviceDesc->audioStreamInfo_.push_back(cap);
+
+    AudioModuleInfo moduleInfo = MakeUsbSinkModuleInfo();
+    moduleInfo.channels = "4";
+    moduleInfo.channelLayout = "5";
+    armDeviceBehavior_.UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    EXPECT_EQ(moduleInfo.channels, "4");
+    EXPECT_EQ(moduleInfo.channelLayout, "5");
+    EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_48000));
+    EXPECT_EQ(moduleInfo.format, "s16le");
+}
+
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_InCallScene, TestSize.Level1)
+{
+    auto deviceDesc = MakeArmUsbDeviceDesc(TEST_USB_ADDR,
+        {SAMPLE_RATE_48000, SAMPLE_RATE_192000}, SAMPLE_S24LE);
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    AudioModuleInfo moduleInfo = MakeUsbSinkModuleInfo();
+    armDeviceBehavior_.UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_48000));
+    EXPECT_EQ(moduleInfo.format, "s16le");
+    EXPECT_EQ(moduleInfo.channels, "2");
 }
 
 } // namespace AudioStandard

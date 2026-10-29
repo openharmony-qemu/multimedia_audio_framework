@@ -15,6 +15,7 @@
 #ifndef AUDIO_ROLLBACK_MANAGER_H
 #define AUDIO_ROLLBACK_MANAGER_H
 
+#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
@@ -53,15 +54,15 @@ public:
     StepTimer& operator=(StepTimer&&) = delete;
     ~StepTimer();
 
-    void SetTimeout(uint32_t timeoutMs, std::function<void()> fn);
+    void SetTimeout(std::chrono::milliseconds timeout, std::function<void()> fn);
 private:
     void WorkLoop();
-    std::vector<std::function<void()>> PickTasks(int64_t &now);
+    std::vector<std::function<void()>> PickTasks();
 
     std::mutex mutex_;
     bool running_{false};
     std::thread worker_;
-    std::vector<std::pair<int64_t, std::function<void()>>> tasks_;
+    std::vector<std::pair<std::chrono::time_point<std::chrono::steady_clock>, std::function<void()>>> tasks_;
     std::condition_variable cv_;
 };
 

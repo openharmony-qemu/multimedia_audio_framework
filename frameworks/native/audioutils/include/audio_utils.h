@@ -313,7 +313,6 @@ class DumpFileUtil {
 public:
     static constexpr char DUMP_SERVER_PARA[] = "sys.audio.dump.writeserver.enable";
     static constexpr char DUMP_CLIENT_PARA[] = "sys.audio.dump.writeclient.enable";
-    static constexpr uint32_t PARAM_VALUE_LENTH = 256;
     static constexpr char BETA_VERSION[] = "beta";
     static void WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize);
     static void CloseDumpFile(FILE **dumpFile);
@@ -695,7 +694,8 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI = 21,
     HDI_RENDER_OFFSET_REMOTE_MULTICHANNEL = 22,
     HDI_RENDER_OFFSET_VOICE_CALL_ASSISTANT = 23,
-    HDI_RENDER_OFFSET_HDMI = 24
+    HDI_RENDER_OFFSET_HDMI = 24,
+    HDI_RENDER_OFFSET_ULTRA_FAST = 25
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);

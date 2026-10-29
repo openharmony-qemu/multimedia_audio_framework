@@ -279,6 +279,8 @@ private:
         DeviceType deviceType, uint32_t renderId);
     // Unlocked core of LoadEffectProperties; caller must hold dynamicMutex_.
     void LoadEffectPropertiesLocked();
+    // Unlocked core of GetOffloadEnabled; caller must hold dynamicMutex_.
+    bool GetOffloadEnabledInner();
     int32_t ReleaseAudioEffectChainDynamicInner(const std::string &sceneType);
     int32_t ReleaseAudioEffectChainDynamicInner(const std::string &sceneType,
         DeviceType deviceType, uint32_t renderId);

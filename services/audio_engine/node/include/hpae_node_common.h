@@ -15,6 +15,8 @@
 
 #ifndef HPAE_NODE_COMMON_H
 #define HPAE_NODE_COMMON_H
+#include <set>
+#include <string>
 #include "hpae_define.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_effect.h"

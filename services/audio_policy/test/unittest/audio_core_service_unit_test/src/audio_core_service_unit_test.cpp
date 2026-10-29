@@ -3003,6 +3003,23 @@ HWTEST_F(AudioCoreServiceUnitTest, RecordIsForcedNormal_002, TestSize.Level1)
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false);
 }
 
+static void SetMmapSupport(AudioDeviceDescriptor &desc, uint32_t mode)
+{
+    if (desc.audioStreamInfo_.empty()) {
+        desc.audioStreamInfo_.emplace_back();
+    }
+    auto &info = desc.audioStreamInfo_.back();
+    info.fastSamplingRate.clear();
+    info.ufastSamplingRate.clear();
+    uint32_t onlyMmap = 2;
+    if (mode == 1) {
+        info.fastSamplingRate.insert(AudioSamplingRate::SAMPLE_RATE_48000);
+        info.ufastSamplingRate.insert(AudioSamplingRate::SAMPLE_RATE_48000);
+    } else if (mode == onlyMmap) {
+        info.fastSamplingRate.insert(AudioSamplingRate::SAMPLE_RATE_48000);
+    }
+}
+
 /**
  * @tc.name   : Test AudioCoreService::HandleA2dpRestore
  * @tc.number : RecordIsForcedNormal_003
@@ -3023,15 +3040,15 @@ HWTEST_F(AudioCoreServiceUnitTest, RecordIsForcedNormal_003, TestSize.Level1)
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
     deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    deviceDesc->SetDeviceSupportMmap(0);
+    SetMmapSupport(*deviceDesc, 0);
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), true);
-    deviceDesc->SetDeviceSupportMmap(1);
+    SetMmapSupport(*deviceDesc, 1);
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false);
 
     deviceDesc->deviceType_ = DEVICE_TYPE_MIC;
-    deviceDesc->SetDeviceSupportMmap(0);
+    SetMmapSupport(*deviceDesc, 0);
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false);
-    deviceDesc->SetDeviceSupportMmap(1);
+    SetMmapSupport(*deviceDesc, 1);
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false);
 }
 
@@ -3054,15 +3071,15 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_010, TestSize.Level1)
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
     deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    deviceDesc->SetDeviceSupportMmap(0);
+    SetMmapSupport(*deviceDesc, 0);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), true);
-    deviceDesc->SetDeviceSupportMmap(1);
+    SetMmapSupport(*deviceDesc, 1);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
 
     deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    deviceDesc->SetDeviceSupportMmap(0);
+    SetMmapSupport(*deviceDesc, 0);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
-    deviceDesc->SetDeviceSupportMmap(1);
+    SetMmapSupport(*deviceDesc, 1);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
 }
 

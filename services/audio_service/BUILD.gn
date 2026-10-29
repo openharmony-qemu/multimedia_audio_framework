@@ -659,6 +659,7 @@ audio_ohos_library("audio_process_service") {
   include_dirs = [
     "../../services/audio_engine/plugin/channel_converter/include",
     "../../frameworks/native/audiodefinitions/include",
+    "../../frameworks/native/audioqosmanager/include",
     "../audio_engine/plugin/resample/include",
     "../audio_engine/simd",
     "../audio_policy/client/service/include",

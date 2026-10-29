@@ -186,7 +186,9 @@ public:
         return (audioFlag_ == AUDIO_OUTPUT_FLAG_LOWPOWER) ||
             (audioFlag_ == AUDIO_OUTPUT_FLAG_MULTICHANNEL) ||
             (audioFlag_ == AUDIO_OUTPUT_FLAG_FAST) ||
+            (audioFlag_ == AUDIO_OUTPUT_FLAG_ULTRA_FAST) ||
             (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) ||
+            (routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) ||
             (routeFlag_ & AUDIO_INPUT_FLAG_FAST);
     }
 
@@ -326,7 +328,7 @@ public:
     // Check if this stream requests fast output pipe (based on audioFlag_, not routeFlag_)
     bool IsStreamRequestFastOutput() const
     {
-        return (audioFlag_ & AUDIO_OUTPUT_FLAG_FAST) != 0;
+        return (audioFlag_ & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST)) != 0;
     }
 
     void SetOriginalFlagForcedNormal()

@@ -107,7 +107,10 @@ public:
     bool IsSupportedDeviceTypeByAdapterType(AudioAdapterType adapterType, DeviceType deviceType);
     bool GetHasEarpiece();
     bool GetUltraFastFlag();
+    bool CheckDeviceSupportUltraFast(DeviceType deviceType, AudioPipeRole role);
     bool GetArmUsbUltraFastFlag();
+    bool GetTrueUltraFastFlag();
+    void CheckTrueUltraFastPipe();
     bool GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role);
     // Match ultra-fast flags and stream profiles from XML; ARM USB uses device source parameters.
     bool IsUltraFastRecordingDeviceSupported(const AudioStreamInfo &streamInfo,
@@ -207,6 +210,7 @@ private:
     bool supportMultSupMode_ = false;
     bool supportUltraFast_ = false;
     bool supportArmUsbUltraFast_ = false;
+    bool supportTrueUltraFast_ = false;
     bool isSupportIndependentPipe_ = false;
 
     std::atomic<bool> isAdapterInfoMap_ = false;

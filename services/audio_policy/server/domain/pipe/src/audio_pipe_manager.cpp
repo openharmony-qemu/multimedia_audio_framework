@@ -76,6 +76,11 @@ bool AudioPipeManager::GetArmUsbUltraFastFlag()
     return audioConfigManager_.GetArmUsbUltraFastFlag();
 }
 
+bool AudioPipeManager::GetTrueUltraFastFlag()
+{
+    return audioConfigManager_.GetTrueUltraFastFlag();
+}
+
 bool AudioPipeManager::PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc)
 {
     return audioConfigManager_.PreferMultiChannelPipe(desc);
@@ -506,6 +511,24 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipeForCa
     return GetUnusedPipeInternal(pipeInfos);
 }
 
+static bool HasActiveArmUsbFastPipe(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos,
+    const std::string &macAddress)
+{
+    for (const auto &pipe : pipeInfos) {
+        if (pipe == nullptr || pipe->name_ != "fast_usb_arm_output") {
+            continue;
+        }
+        if (pipe->moduleInfo_.macAddress != macAddress) {
+            continue;
+        }
+        if (!pipe->streamDescriptors_.empty() &&
+            pipe->audioStreamInfo_.samplingRate > AudioSamplingRate::SAMPLE_RATE_48000) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipeInternal(
     const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
 {
@@ -516,6 +539,16 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipeInter
             (pipe->adapterName_ == ADAPTER_TYPE_VA &&
             pipe->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL) || pipe->moduleInfo_.className == PRIMARY_EXTRA_CLASS)) {
             newList.push_back(pipe);
+            continue;
+        }
+        if (pipe->streamDescriptors_.empty() && pipe->pipeRole_ == PIPE_ROLE_OUTPUT &&
+            pipe->routeFlag_ == AUDIO_OUTPUT_FLAG_NORMAL &&
+            pipe->moduleInfo_.deviceType == std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET))) {
+            if (pipe->audioStreamInfo_.samplingRate > AudioSamplingRate::SAMPLE_RATE_48000 &&
+                !HasActiveArmUsbFastPipe(pipeInfos, pipe->moduleInfo_.macAddress)) {
+                newList.push_back(pipe);
+            }
+            continue;
         }
     }
     return newList;
@@ -542,6 +575,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedRecordPip
 bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
 {
     if ((routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_HWDECODING) ||
         (routeFlag & AUDIO_INPUT_FLAG_FAST) ||
         (routeFlag & AUDIO_INPUT_FLAG_ULTRA_FAST) ||
@@ -1735,6 +1769,27 @@ bool AudioPipeManager::HasUltraFastPipe()
 bool AudioPipeManager::IsUltraFastSupportedDevice(DeviceType deviceType)
 {
     return g_ultraFastDevicesSet.find(deviceType) != g_ultraFastDevicesSet.end();
+}
+
+bool AudioPipeManager::IsTrueUltraFastSupportedDevice(DeviceType deviceType)
+{
+    return g_trueUltraFastDeviceToAdapter.find(deviceType) != g_trueUltraFastDeviceToAdapter.end();
+}
+
+uint32_t AudioPipeManager::GetUltraFastStreamCount()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    uint32_t count = 0;
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (desc->GetRoute() == AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+                count++;
+            }
+        }
+    }
+    return count;
 }
 
 bool AudioPipeManager::IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo)

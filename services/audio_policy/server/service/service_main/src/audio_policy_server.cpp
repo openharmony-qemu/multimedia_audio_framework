@@ -2589,6 +2589,32 @@ int32_t AudioPolicyServer::IsFastPlaybackSupported(const AudioStreamInfo &stream
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::IsUltraFastPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage,
+    bool &support)
+{
+    support = false;
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.streamUsage = static_cast<StreamUsage>(usage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc{};
+    GetPreferredOutputDeviceDescriptors(rendererInfo, false, desc);
+    for (const auto &deviceDesc : desc) {
+        if (deviceDesc == nullptr) {
+            continue;
+        }
+        if (audioConfigManager_.CheckDeviceSupportUltraFast(deviceDesc->deviceType_, PIPE_ROLE_OUTPUT)) {
+            support = true;
+            break;
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::IsDeviceSupportUltraFast(bool &support)
+{
+    support = audioConfigManager_.GetTrueUltraFastFlag();
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::IsFastRecordingSupported(const AudioStreamInfo &streamInfo, int32_t source, bool &support)
 {
     AudioCapturerInfo capturerInfo = {};

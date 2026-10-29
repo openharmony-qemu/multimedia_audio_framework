@@ -103,6 +103,7 @@ static const int32_t DEFAULT_FAST_PIPE_CLOSE_DELAY_TIME_MS = 3000;
 static const int32_t A2DP_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 200;
 static const int32_t ARMUSB_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 0;
 static const int32_t MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 0;
+static const int32_t ARM_PIPE_RELOAD_DELAY_MS = 5000;
 static const std::unordered_map<std::string, int32_t> FAST_PIPE_DELAY_RELEASE_TIME_MS = {
     {"voip_fast_output", VOIP_FAST_PIPE_CLOSE_DELAY_TIME_MS},
     {"voip_fast_input", VOIP_REC_FAST_PIPE_CLOSE_DELAY_TIME_MS},
@@ -377,7 +378,8 @@ void AudioCoreService::DecidedAudioFlagForStreams(std::vector<std::shared_ptr<Au
     }
     CHECK_AND_RETURN(needSetAllFastStreamNormal);
     for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
-        if (streamDesc->GetAudioFlag() == AUDIO_OUTPUT_FLAG_FAST) {
+        if (streamDesc->GetAudioFlag() == AUDIO_OUTPUT_FLAG_FAST ||
+            streamDesc->GetAudioFlag() == AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
             streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_NORMAL);
             AUDIO_INFO_LOG("Set stream %{public}u to normal", streamDesc->sessionId_);
         }
@@ -1146,6 +1148,9 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioCoreService::ProcessOutputPipeUpdate");
+    if (pipeInfo->moduleInfo_.deviceType == std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET))) {
+        CancelArmReload(pipeInfo);
+    }
     bool hasMoveStream = false;
     for (auto &desc : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
@@ -1361,8 +1366,11 @@ void AudioCoreService::RemoveAndCloseUnusedPipeInternal(const std::vector<std::s
                 isPrimaryExtraInReleaseMap_[pipeInfo->name_] = false;
                 primaryExtraCloseCondition_.notify_all();
             }
-            AUDIO_INFO_LOG("primary_extra %{public}s close immediately (old device unavailable)",
-                pipeInfo->name_.c_str());
+            AUDIO_INFO_LOG("primary_extra %{public}s close (old device unavailable)", pipeInfo->name_.c_str());
+        } else if (pipeInfo->moduleInfo_.deviceType ==
+            std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET)) && !isOldDeviceUnavailable) {
+            DelayReloadArmPipe(pipeInfo);
+            continue;
         }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
@@ -3159,6 +3167,76 @@ void AudioCoreService::UpdateFastState(std::shared_ptr<AudioPipeInfo> pipeInfo)
     fastCloseCondition_.notify_all();
 }
 
+static AudioModuleInfo BuildDefaultArmModuleInfo(const AudioModuleInfo &src)
+{
+    AudioModuleInfo info = src;
+    info.rate = std::to_string(SAMPLE_RATE_48000);
+    info.format = "s16le";
+    info.channels = "2";
+    info.channelLayout = std::to_string(CH_LAYOUT_STEREO);
+    info.bufferSize = std::to_string(static_cast<uint32_t>(SAMPLE_RATE_48000) * STEREO *
+        AudioPolicyUtils::GetInstance().PcmFormatToBytes(SAMPLE_S16LE) * DEFAULT_PERIOD_IN_MS / AUDIO_MS_PER_SECOND);
+    return info;
+}
+
+void AudioCoreService::DelayReloadArmPipe(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    const AudioIOHandle id = pipeInfo->id_;
+    const std::string reloadKey = pipeInfo->moduleInfo_.macAddress + "|" + pipeInfo->moduleInfo_.role;
+    AUDIO_INFO_LOG("DelayReloadArmPipe id:%{public}u, mac:%{public}s, role:%{public}s", id,
+        AudioPolicyUtils::GetInstance().EncUsbAddr(pipeInfo->moduleInfo_.macAddress).c_str(),
+        pipeInfo->moduleInfo_.role.c_str());
+    {
+        std::lock_guard<std::mutex> lock(armReloadMutex_);
+        CHECK_AND_RETURN_LOG(!isArmReloadPendingMap_[reloadKey], "already pending");
+        isArmReloadPendingMap_[reloadKey] = true;
+        isArmReopenedMap_[reloadKey] = false;
+    }
+    AudioModuleInfo moduleInfo = BuildDefaultArmModuleInfo(pipeInfo->moduleInfo_);
+    auto reloadFunc = [this, id, reloadKey, moduleInfo] {
+        {
+            std::unique_lock<std::mutex> lock(armReloadMutex_);
+            armReloadCondition_.wait_for(lock, std::chrono::milliseconds(ARM_PIPE_RELOAD_DELAY_MS),
+                [this, &reloadKey] { return isArmReopenedMap_[reloadKey]; });
+        }
+        if (isArmReopenedMap_[reloadKey]) {
+            std::lock_guard<std::mutex> lock(armReloadMutex_);
+            isArmReloadPendingMap_[reloadKey] = false;
+            return;
+        }
+        uint32_t paIndex = HDI_INVALID_ID;
+        audioPolicyManager_.ReloadAudioPort(moduleInfo, paIndex);
+        if (paIndex != HDI_INVALID_ID) {
+            auto pipe = pipeManager_->GetPipeinfoById(id);
+            if (pipe != nullptr) {
+                pipe->moduleInfo_ = moduleInfo;
+                pipe->paIndex_ = paIndex;
+                pipe->InitAudioStreamInfo();
+            }
+        }
+        std::lock_guard<std::mutex> lock(armReloadMutex_);
+        isArmReloadPendingMap_[reloadKey] = false;
+    };
+    std::thread reloadThread(reloadFunc);
+    reloadThread.detach();
+}
+
+void AudioCoreService::CancelArmReload(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    const std::string reloadKey = pipeInfo->moduleInfo_.macAddress + "|" + pipeInfo->moduleInfo_.role;
+    std::lock_guard<std::mutex> lock(armReloadMutex_);
+    auto it = isArmReloadPendingMap_.find(reloadKey);
+    if (it != isArmReloadPendingMap_.end() && it->second) {
+        isArmReopenedMap_[reloadKey] = true;
+        armReloadCondition_.notify_all();
+        AUDIO_INFO_LOG("CancelArmReload mac:%{public}s, role:%{public}s",
+            AudioPolicyUtils::GetInstance().EncUsbAddr(pipeInfo->moduleInfo_.macAddress).c_str(),
+            pipeInfo->moduleInfo_.role.c_str());
+    }
+}
+
 void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
     bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -3233,7 +3311,11 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
             return PRIMARY_MMAP_VOIP;
         } else if (routeFlag == (AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP)) {
             return PRIMARY_DIRECT_VOIP;
-        } else if (routeFlag == AUDIO_OUTPUT_FLAG_FAST && defaultSinkPortName == PRIMARY_SPEAKER) {
+        } else if (routeFlag == AUDIO_OUTPUT_FLAG_ULTRA_FAST &&
+            defaultSinkPortName == PRIMARY_SPEAKER) {
+            return TRUE_ULTRA_FAST_SPEAKER;
+        } else if (routeFlag == AUDIO_OUTPUT_FLAG_FAST &&
+            defaultSinkPortName == PRIMARY_SPEAKER) {
             return PRIMARY_MMAP;
         } else if (routeFlag == AUDIO_OUTPUT_FLAG_FAST && defaultSinkPortName == BLUETOOTH_SPEAKER) {
             return BLUETOOTH_A2DP_FAST;
@@ -3697,6 +3779,7 @@ void AudioCoreService::SelectA2dpType(std::shared_ptr<AudioStreamDescriptor> &st
         static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allSessionInfos));
     streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = flag;
     JUDGE_AND_INFO_LOG(isCreateProcess, "A2dp offload flag:%{public}d", flag);
+    AudioServerProxy::GetInstance().UpdateEffectBtOffloadSupportedProxy(flag == A2DP_OFFLOAD);
 #endif
 }
 

@@ -16,7 +16,6 @@
 #define LOG_TAG "AudioRollbackManager"
 #endif
 
-#include <chrono>
 #include "audio_rollback_manager.h"
 #include "audio_policy_log.h"
 #include "audio_device_common.h"
@@ -28,8 +27,8 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-constexpr uint32_t CONTINUE_TIMEOUT_MS = 2000;
-constexpr uint32_t ROLLBACK_TIMEOUT_MS = 1000;
+constexpr chrono::milliseconds CONTINUE_TIMEOUT_MS(2000);
+constexpr chrono::milliseconds ROLLBACK_TIMEOUT_MS(1000);
 
 static bool IsConnected(const AudioDeviceDescriptor &desc)
 {
@@ -104,14 +103,14 @@ void AudioRollbackManager::ContinueSetDevice(const AudioDeviceDescriptor &desc)
 {
     auto deviceId = desc.deviceId_;
     AUDIO_INFO_LOG("id=%{public}d, type=%{public}d", deviceId, desc.deviceType_);
-    auto pred = [deviceId] (Selection &item) {
-        return item.deviceId == deviceId;
-    };
-    auto rmIt = remove_if(virtualSelectDevices_.begin(), virtualSelectDevices_.end(), pred);
-    for (auto it = rmIt; it < virtualSelectDevices_.end(); it++) {
-        RollbackSelection(*it);
+    for (auto it = virtualSelectDevices_.begin(); it != virtualSelectDevices_.end();) {
+        if (it->deviceId == deviceId) {
+            RollbackSelection(*it);
+            it = virtualSelectDevices_.erase(it);
+        } else {
+            it++;
+        }
     }
-    virtualSelectDevices_.erase(rmIt, virtualSelectDevices_.end());
 }
 
 bool AudioRollbackManager::RollbackNewConnect(int32_t deviceId, RollbackType type)
@@ -130,16 +129,16 @@ bool AudioRollbackManager::RollbackNewConnect(int32_t deviceId, RollbackType typ
 bool AudioRollbackManager::RollbackSetDevice(int32_t uid, SelectDeviceType type, uint32_t streamId, int32_t deviceId)
 {
     bool result = false;
-    auto pred = [deviceId, uid, type, streamId] (SelectionRollback &item) {
-        return item.targetId == deviceId && item.selection.uid == uid &&
-            item.selection.type == type && item.selection.streamId == streamId;
-    };
     std::lock_guard lg(mutex_);
-    auto rmIt = remove_if(selectionRollbacks_.begin(), selectionRollbacks_.end(), pred);
-    for (auto it = rmIt; it < selectionRollbacks_.end(); it++) {
-        result = RollbackSelection(it->selection) || result;
+    for (auto it = selectionRollbacks_.begin(); it != selectionRollbacks_.end();) {
+        if (it->targetId == deviceId && it->selection.uid == uid &&
+            it->selection.type == type && it->selection.streamId == streamId) {
+            result = RollbackSelection(it->selection) || result;
+            it = selectionRollbacks_.erase(it);
+        } else {
+            it++;
+        }
     }
-    selectionRollbacks_.erase(rmIt, selectionRollbacks_.end());
     return result;
 }
 
@@ -184,16 +183,15 @@ void AudioRollbackManager::HandleConnectLost(const AudioDeviceDescriptor &desc)
 {
     auto deviceId = desc.deviceId_;
     AUDIO_INFO_LOG("id=%{public}d, type=%{public}d", deviceId, desc.deviceType_);
-    auto pred = [deviceId] (SelectionRollback &item) {
-        return item.targetId == deviceId;
-    };
     RemoveSelection([deviceId](auto &s) { return s.deviceId == deviceId; });
-    auto rmIt = remove_if(selectionRollbacks_.begin(), selectionRollbacks_.end(), pred);
-    for (auto it = rmIt; it < selectionRollbacks_.end(); it++) {
-        RollbackSelection(it->selection);
+    for (auto it = selectionRollbacks_.begin(); it != selectionRollbacks_.end();) {
+        if (it->targetId == deviceId) {
+            RollbackSelection(it->selection);
+            it = selectionRollbacks_.erase(it);
+        } else {
+            it++;
+        }
     }
-    selectionRollbacks_.erase(rmIt, selectionRollbacks_.end());
-
     CHECK_AND_RETURN(rollbackInfo_ && rollbackInfo_->deviceId == deviceId);
     for (auto &item : rollbackInfo_->selections) {
         RollbackSelection(item);
@@ -250,9 +248,11 @@ bool AudioRollbackManager::HandleVirtualConnected(int32_t uid, SelectDeviceType 
     };
     std::lock_guard lg(mutex_);
     rollbackInfo_.reset();
-    auto it = remove_if(virtualSelectDevices_.begin(), virtualSelectDevices_.end(), pred);
+    auto it = find_if(virtualSelectDevices_.begin(), virtualSelectDevices_.end(), pred);
     if (desc.connectState_ != VIRTUAL_CONNECTED) {
-        virtualSelectDevices_.erase(it, virtualSelectDevices_.end());
+        if (it != virtualSelectDevices_.end()) {
+            virtualSelectDevices_.erase(it);
+        }
         return false;
     }
     if (it != virtualSelectDevices_.end()) {
@@ -378,12 +378,11 @@ StepTimer::~StepTimer()
     }
 }
 
-void StepTimer::SetTimeout(uint32_t timeoutMs, std::function<void()> fn)
+void StepTimer::SetTimeout(chrono::milliseconds timeout, std::function<void()> fn)
 {
-    int64_t now = chrono::duration_cast<chrono::milliseconds>(
-        chrono::steady_clock::now().time_since_epoch()).count();
+    auto ts = chrono::steady_clock::now() + timeout;
     unique_lock lk(mutex_);
-    tasks_.push_back({now + timeoutMs, std::move(fn)});
+    tasks_.push_back({std::move(ts), std::move(fn)});
     if (running_) {
         cv_.notify_one();
         return;
@@ -397,10 +396,9 @@ void StepTimer::SetTimeout(uint32_t timeoutMs, std::function<void()> fn)
     worker_ = std::thread(&StepTimer::WorkLoop, this);
 }
 
-std::vector<std::function<void()>> StepTimer::PickTasks(int64_t &now)
+std::vector<std::function<void()>> StepTimer::PickTasks()
 {
-    now = chrono::duration_cast<chrono::milliseconds>(
-        chrono::steady_clock::now().time_since_epoch()).count();
+    auto now = chrono::steady_clock::now();
     std::vector<std::function<void()>> funcs;
     unique_lock lk(mutex_);
     for (auto it = tasks_.begin(); it != tasks_.end();) {
@@ -417,8 +415,7 @@ std::vector<std::function<void()>> StepTimer::PickTasks(int64_t &now)
 void StepTimer::WorkLoop()
 {
     while (true) {
-        int64_t now = 0;
-        for (auto tasks = PickTasks(now); !tasks.empty(); tasks = PickTasks(now)) {
+        for (auto tasks = PickTasks(); !tasks.empty(); tasks = PickTasks()) {
             for (auto &task : tasks) {
                 task();
             }
@@ -428,12 +425,9 @@ void StepTimer::WorkLoop()
             running_ = false;
             return;
         }
-        int64_t next = INT64_MAX;
-        for (auto &t : tasks_) {
-            int64_t delta = t.first - now;
-            next = (delta < next) ? ((delta > 0) ? delta : 0) : next;
-        }
-        cv_.wait_for(lk, chrono::milliseconds(next));
+        auto it = min_element(tasks_.begin(), tasks_.end(),
+            [](auto &e1, auto &e2) { return e1.first < e2.first; });
+        cv_.wait_until(lk, it->first);
     }
 }
 
