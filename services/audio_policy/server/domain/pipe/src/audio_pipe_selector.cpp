@@ -2264,7 +2264,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         UpdateModuleInfoWithDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
 
-    if (!pipeManager->GetTrueUltraFastFlag()){
+    if (!pipeManager_->GetTrueUltraFastFlag()) {
         if (streamDesc->IsUltraFastRequested()) {
             if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_ULTRA_FAST ||
                 !AudioPipeManager::GetPipeManager()->HasRunningStream(streamDesc->sessionId_)) {
