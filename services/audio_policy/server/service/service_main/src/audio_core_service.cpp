@@ -1322,9 +1322,14 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
 void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool forceUpdate)
 {
     if (!forceUpdate) {
+        // pause/stop/release stream event don't trigger update sco state during ringing or in a call
         CHECK_AND_RETURN(!audioSceneManager_.IsVoiceCallRelatedScene());
     }
-    if (audioDeviceManager_.HasScoDevicesRealConnected()) {
+    // not-running stream (not from pause/stop/release stream event) don't trigger update sco state even it selects sco
+    bool skipUpdateScoState = forceUpdate && streamDesc != nullptr &&
+        streamDesc->streamStatus_ != STREAM_STATUS_STARTED &&
+        streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_BLUETOOTH_SCO;
+    if (!skipUpdateScoState && audioDeviceManager_.HasScoDevicesRealConnected()) {
         auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModemCopy();
         auto inputStreamDescs = pipeManager_->GetAllInputStreamDescsCopy();
         FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
