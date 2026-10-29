@@ -965,37 +965,37 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SaveBootAnimationVolumeToLocal, TestSiz
     VolumeScale volume{TEST_VOLUME_LEVEL, TEST_VOLUME_LEVEL};
     adapterManager.volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_NOTIFICATION, volume);
     adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_NOTIFICATION);
-    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")),std::to_string(TEST_VOLUME_LEVEL));
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
 
     adapterManager.volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_NOTIFICATION, true);
     adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_NOTIFICATION);
-    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")),std::to_string("0"));
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string("0"));
     adapterManager.volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_NOTIFICATION, false);
 
     adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_SYSTEM);
-    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")),std::to_string("0"));
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string("0"));
 
     device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     adapterManager.volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_NOTIFICATION, volume);
     adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_NOTIFICATION);
-    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")),std::to_string(TEST_VOLUME_LEVEL));
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
 
     VolumeUtils::SetPCVolumeEnable(true);
     device->deviceType_ = DEVICE_TYPE_SPEAKER;
     adapterManager.volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_SYSTEM, volume);
     adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_SYSTEM);
-    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")),std::to_string(TEST_VOLUME_LEVEL));
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
 
     device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_SYSTEM);
-    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")),std::to_string(TEST_VOLUME_LEVEL));
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
 
     device->deviceType_ = DEVICE_TYPE_SPEAKER;
     adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_NOTIFICATION);
-    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")),std::to_string(TEST_VOLUME_LEVEL));
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
 
     adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_MUSIC);
-    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")),std::to_string(TEST_VOLUME_LEVEL));
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
 
     VolumeUtils::SetPCVolumeEnable(false);
 }
