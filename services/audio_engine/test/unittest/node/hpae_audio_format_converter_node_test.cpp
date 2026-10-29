@@ -55,9 +55,19 @@ class MockNodeFormatInfoCallback : public INodeFormatInfoCallback {
 public:
     virtual ~MockNodeFormatInfoCallback() = default;
     AudioBasicFormat formatToReturn_;
+    AudioBasicFormat mixerFormatToReturn_;
+    int32_t downstreamQueryCount_ = 0;
+    int32_t mixerQueryCount_ = 0;
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override
     {
+        downstreamQueryCount_++;
         basicFormat = formatToReturn_;
+        return 0;
+    }
+    int32_t GetMixerInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override
+    {
+        mixerQueryCount_++;
+        basicFormat = mixerFormatToReturn_;
         return 0;
     }
 };
@@ -3153,6 +3163,50 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_NullInputWithProcess, TestS
 
     converterNode->DoProcess();
     EXPECT_NE(converterNode->outputStream_.PullOutputData(), nullptr);
+}
+
+/**
+ * @tc.name  : RegisterCallbackRoleTest_001
+ * @tc.type  : FUNC
+ * @tc.number: RegisterCallbackRoleTest_001.
+ * @tc.desc  : Default role queries GetNodeInputFormatInfo only
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, RegisterCallbackRoleTest_001, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter(); // 48k stereo -> 48k stereo
+    MockNodeFormatInfoCallback callback;
+    callback.formatToReturn_.rate = SAMPLE_RATE_44100;
+    callback.formatToReturn_.audioChannelInfo.numChannels = static_cast<uint32_t>(STEREO);
+    callback.formatToReturn_.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    converterNode->RegisterCallback(&callback); // default role = DOWNSTREAM_ALGO
+    EXPECT_TRUE(converterNode->CheckUpdateOutInfo());
+
+    EXPECT_EQ(converterNode->GetSampleRate(), SAMPLE_RATE_44100);
+    EXPECT_EQ(callback.downstreamQueryCount_, 1);
+    EXPECT_EQ(callback.mixerQueryCount_, 0);
+}
+
+/**
+ * @tc.name  : RegisterCallbackRoleTest_002
+ * @tc.type  : FUNC
+ * @tc.number: RegisterCallbackRoleTest_002.
+ * @tc.desc  : MIXER_INPUT role queries GetMixerInputFormatInfo only
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, RegisterCallbackRoleTest_002, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter();
+    MockNodeFormatInfoCallback callback;
+    callback.mixerFormatToReturn_.rate = SAMPLE_RATE_44100;
+    callback.mixerFormatToReturn_.audioChannelInfo.numChannels = static_cast<uint32_t>(STEREO);
+    callback.mixerFormatToReturn_.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    converterNode->RegisterCallback(&callback, ConverterFormatQueryRole::MIXER_INPUT);
+    EXPECT_TRUE(converterNode->CheckUpdateOutInfo());
+
+    EXPECT_EQ(converterNode->GetSampleRate(), SAMPLE_RATE_44100);
+    EXPECT_EQ(callback.downstreamQueryCount_, 0);
+    EXPECT_EQ(callback.mixerQueryCount_, 1);
 }
 
 }

@@ -113,9 +113,11 @@ HpaeAudioFormatConverterNode::~HpaeAudioFormatConverterNode()
 #endif
 }
 
-void HpaeAudioFormatConverterNode::RegisterCallback(INodeFormatInfoCallback *callback)
+void HpaeAudioFormatConverterNode::RegisterCallback(INodeFormatInfoCallback *callback,
+    ConverterFormatQueryRole role)
 {
     nodeFormatInfoCallback_ = callback;
+    formatQueryRole_ = role;
 }
 
 void HpaeAudioFormatConverterNode::DoProcess()
@@ -313,17 +315,20 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     return true;
 }
 
-// resolve the desired output format from downstream nodes (loudness/effect), with the
-// empty-format fallback.
+// resolve the desired output format from the format query (algo-side or mixer-side), with the
+// empty-format fallback
 void HpaeAudioFormatConverterNode::ResolveDownstreamOutFormat(uint32_t &numChannels,
     AudioChannelLayout &channelLayout, AudioSamplingRate &sampleRate)
 {
     AudioBasicFormat basicFormat;
     basicFormat.rate = preNodeInfo_.samplingRate;
 
-    // if there exists an effect node, converter node output is common input of loudness node and effectnode
-    // Must check loudness node input before effectnode
-    nodeFormatInfoCallback_->GetNodeInputFormatInfo(preNodeInfo_.sessionId, basicFormat);
+    // dispatch by role: algo-side (loudness/SE) or mixer-side (render effect/sink) requirement
+    if (formatQueryRole_ == ConverterFormatQueryRole::MIXER_INPUT) {
+        nodeFormatInfoCallback_->GetMixerInputFormatInfo(preNodeInfo_.sessionId, basicFormat);
+    } else {
+        nodeFormatInfoCallback_->GetNodeInputFormatInfo(preNodeInfo_.sessionId, basicFormat);
+    }
 
     numChannels = basicFormat.audioChannelInfo.numChannels;
     channelLayout = basicFormat.audioChannelInfo.channelLayout;
