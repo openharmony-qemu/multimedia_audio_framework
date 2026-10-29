@@ -157,7 +157,8 @@ void HpaeGainNode::ResetVolume()
     }
     audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
     audioVolume->Monitor(GetSessionId(), true);
-    AUDIO_INFO_LOG("curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
+    AUDIO_INFO_LOG("curSystemGain:%{public}f streamType :%{public}d sessionId:%{public}u", curSystemGain,
+        GetStreamType(), GetSessionId());
 }
 
 void HpaeGainNode::ClearFadeState()

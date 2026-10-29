@@ -37,6 +37,7 @@ static constexpr uint32_t AUDIO_MS_PER_S = 1000;
 static constexpr int32_t AUDIO_US_PER_MS = 1000;
 static constexpr int32_t AUDIO_FRAME_WORK_LATENCY_US = 40000;
 static constexpr int32_t AUDIO_DEFAULT_LATENCY_US = 160000;
+static constexpr int64_t SINK_OP_SLOW_ELAPSED_MS = 100; // print sink op elapsed only when slow
 }
 
 HpaeDirectSinkOutputNode::HpaeDirectSinkOutputNode(HpaeNodeInfo &nodeInfo)
@@ -240,7 +241,8 @@ int32_t HpaeDirectSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return ret;
@@ -261,7 +263,8 @@ int32_t HpaeDirectSinkOutputNode::RenderSinkDeInit()
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return SUCCESS;
@@ -290,7 +293,8 @@ int32_t HpaeDirectSinkOutputNode::RenderSinkStart(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     SetSinkState(STREAM_MANAGER_RUNNING);
@@ -315,7 +319,8 @@ int32_t HpaeDirectSinkOutputNode::RenderSinkStop(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return SUCCESS;

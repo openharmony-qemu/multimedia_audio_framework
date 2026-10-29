@@ -48,7 +48,7 @@ ProAudioServiceAdapterImpl::ProAudioServiceAdapterImpl(unique_ptr<AudioServiceAd
 
 bool ProAudioServiceAdapterImpl::Connect()
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_DEBUG_LOG("Enter");
     IHpaeManager::GetHpaeManager().RegisterSerivceCallback(shared_from_this());
     CHECK_AND_RETURN_RET_LOG(g_audioServiceAdapterCallback != nullptr, false,
         "g_audioServiceAdapterCallback is nullptr");
@@ -81,7 +81,7 @@ int32_t ProAudioServiceAdapterImpl::ReloadAudioPort(const std::string &audioPort
         AUDIO_ERR_LOG("Timeout");
         return ERROR;
     }
-    AUDIO_INFO_LOG("Leave");
+    AUDIO_DEBUG_LOG("Leave");
     return AudioPortIndex_;
 }
 
@@ -104,7 +104,7 @@ int32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const Au
         AUDIO_ERR_LOG("Timeout");
         return ERROR;
     }
-    AUDIO_INFO_LOG("Leave");
+    AUDIO_DEBUG_LOG("Leave");
     return AudioPortIndex_;
 }
 
@@ -132,7 +132,7 @@ int32_t ProAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
         return ERROR;
     }
 
-    AUDIO_INFO_LOG("Leave");
+    AUDIO_DEBUG_LOG("Leave");
     return SUCCESS;
 }
 
@@ -176,7 +176,7 @@ bool ProAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool i
     } else {
         IHpaeManager::GetHpaeManager().SetSinkMute(sinkName, isMute, isSync);
     }
-    AUDIO_INFO_LOG("Leave");
+    AUDIO_DEBUG_LOG("Leave");
     return SUCCESS;
 }
 
@@ -200,7 +200,7 @@ int32_t ProAudioServiceAdapterImpl::SetDefaultSource(string name)
 
 std::vector<SinkInfo> ProAudioServiceAdapterImpl::GetAllSinks()
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_DEBUG_LOG("Enter");
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSinks", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("[xcollie] GetAllSinks timeout");
@@ -217,7 +217,7 @@ std::vector<SinkInfo> ProAudioServiceAdapterImpl::GetAllSinks()
         AUDIO_ERR_LOG("Timeout");
         sinks_.clear();
     }
-    AUDIO_INFO_LOG("Leave");
+    AUDIO_DEBUG_LOG("Leave");
     return sinks_;
 }
 
@@ -309,7 +309,7 @@ int32_t ProAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setMut
         AUDIO_ERR_LOG("Timeout");
         return ERROR;
     }
-    AUDIO_INFO_LOG("Leave");
+    AUDIO_DEBUG_LOG("Leave");
     return SourceOutputMuteStreamSet_;
 }
 
@@ -328,13 +328,13 @@ int32_t ProAudioServiceAdapterImpl::SetSourceOutputStreamMuteByStreamId(int32_t 
         AUDIO_ERR_LOG("Timeout");
         return ERROR;
     }
-    AUDIO_INFO_LOG("Leave");
+    AUDIO_DEBUG_LOG("Leave");
     return SourceOutputMuteStreamSet_;
 }
 
 std::vector<SinkInput> ProAudioServiceAdapterImpl::GetAllSinkInputs()
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_DEBUG_LOG("Enter");
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSinkInputs", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("[xcollie] GetAllSinkInputs timeout");
@@ -350,13 +350,13 @@ std::vector<SinkInput> ProAudioServiceAdapterImpl::GetAllSinkInputs()
         AUDIO_ERR_LOG("Timeout");
         sinkInputs_.clear();
     }
-    AUDIO_INFO_LOG("Leave");
+    AUDIO_DEBUG_LOG("Leave");
     return sinkInputs_;
 }
 
 std::vector<SourceOutput> ProAudioServiceAdapterImpl::GetAllSourceOutputs()
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_DEBUG_LOG("Enter");
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSourceOutputs", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("[xcollie] GetAllSourceOutputs timeout");
@@ -372,7 +372,7 @@ std::vector<SourceOutput> ProAudioServiceAdapterImpl::GetAllSourceOutputs()
         AUDIO_ERR_LOG("Timeout");
         sourceOutputs_.clear();
     }
-    AUDIO_INFO_LOG("Leave");
+    AUDIO_DEBUG_LOG("Leave");
     return sourceOutputs_;
 }
 
@@ -383,7 +383,7 @@ void ProAudioServiceAdapterImpl::Disconnect()
 
 int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_DEBUG_LOG("Enter");
     lock_guard<mutex> lock(lock_);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetAudioEffectProperty_ = false;
@@ -400,7 +400,7 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyAr
 int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
     DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_DEBUG_LOG("Enter");
     lock_guard<mutex> lock(lock_);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetAudioEnhanceProperty_ = false;
@@ -416,7 +416,7 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEffectPropertyA
 
 int32_t ProAudioServiceAdapterImpl::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_DEBUG_LOG("Enter");
     lock_guard<mutex> lock(lock_);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishUpdateSpatializationState_ = false;

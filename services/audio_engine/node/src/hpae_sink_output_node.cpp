@@ -37,6 +37,7 @@ constexpr uint32_t SLEEP_TIME_IN_US = 20000;
 static constexpr int64_t WAIT_CLOSE_PA_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_PA_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
+static constexpr int64_t SINK_OP_SLOW_ELAPSED_MS = 100; // print sink op elapsed only when slow
 static const std::string BT_SINK_NAME = "a2dp";
 static const std::string USB_SINK_NAME = "usb";
 constexpr size_t DEFAULT_COLL_RENDER_FAILED_FRAME = 3;
@@ -326,7 +327,8 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64 " ms ret: %{public}d",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64 " ms ret: %{public}d",
         sinkOutAttr_.adapterName.c_str(), interval, ret);
     std::string adapterName = sinkOutAttr_.adapterName;
 #endif
@@ -376,7 +378,8 @@ int32_t HpaeSinkOutputNode::RenderSinkDeInit(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
@@ -457,7 +460,8 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
@@ -491,7 +495,8 @@ int32_t HpaeSinkOutputNode::RenderSinkStop(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
 

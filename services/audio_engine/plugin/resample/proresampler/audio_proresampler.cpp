@@ -62,7 +62,8 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     
     SingleStagePolyphaseResamplerSkipHalfTaps(state_);
     AUDIO_INFO_LOG("Init success inRate: %{public}d, outRate: %{public}d, channels: %{public}d, "
-        "quality: %{public}d.", inRate_, outRate_, channels_, quality_);
+        "quality: %{public}d, tmpOutBuf size: %{public}zu.", inRate_, outRate_, channels_, quality_,
+        tmpOutBuf_.size());
 }
 
 int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameLen, float *outBuffer,
@@ -121,8 +122,11 @@ int32_t ProResampler::CheckRateAndChannelParam()
 
 int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
 {
-    AUDIO_INFO_LOG("ProResampler inRate update: %{public}d -> %{public}d, outRate update: %{public}d -> %{public}d",
-        inRate_, inRate, outRate_, outRate);
+    // log only when a rate really changes; same-value calls are no-ops
+    if (inRate != inRate_ || outRate != outRate_) {
+        AUDIO_INFO_LOG("ProResampler inRate update: %{public}d -> %{public}d, outRate update: %{public}d "
+            "-> %{public}d", inRate_, inRate, outRate_, outRate);
+    }
     inRate_ = inRate;
     outRate_ = outRate;
 
@@ -267,7 +271,8 @@ int32_t ProResampler::ConfigBufferSizeAndExpectedInFrameLen()
     tmpOutBuf_.resize(sizeNeed, 0.0f);
     CHECK_AND_RETURN_RET_LOG(tmpOutBuf_.size() >= sizeNeed, RESAMPLER_ERR_ALLOC_FAILED,
         "tmpOutBuf_ size error, should be above %{public}zu, actually %{public}zu", sizeNeed, tmpOutBuf_.size());
-    AUDIO_INFO_LOG("input %{public}u Hz, output %{public}u Hz, channels: %{public}u, tmpOutBuf size %{public}zu",
+    // geometry already printed by the ctor "Init success" line; keep reconfig path at debug level
+    AUDIO_DEBUG_LOG("input %{public}u Hz, output %{public}u Hz, channels: %{public}u, tmpOutBuf size %{public}zu",
         inRate_, outRate_, channels_, tmpOutBuf_.size());
     return RESAMPLER_ERR_SUCCESS;
 }
