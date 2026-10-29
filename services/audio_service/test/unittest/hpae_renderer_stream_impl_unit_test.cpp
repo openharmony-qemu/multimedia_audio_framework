@@ -170,6 +170,27 @@ HWTEST_F(HpaeRendererStreamUnitTest, HasCachedHistoryData_001, TestSize.Level0)
 }
 
 /**
+ * @tc.name  : Test HasCachedHistoryData reset by Flush
+ * @tc.type  : FUNC
+ * @tc.number: HasCachedHistoryData_002
+ * @tc.desc  : Flush resets the cached flag to false.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HasCachedHistoryData_002, TestSize.Level0)
+{
+    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl = CreateHpaeRendererStreamImpl();
+    ASSERT_NE(rendererStreamImpl, nullptr);
+
+    AudioCallBackStreamInfo callBackStreamInfo;
+    callBackStreamInfo.needData = false;
+    callBackStreamInfo.hasCachedHistoryData = true;
+    EXPECT_EQ(rendererStreamImpl->OnStreamData(callBackStreamInfo), SUCCESS);
+    EXPECT_TRUE(rendererStreamImpl->HasCachedHistoryData());
+
+    rendererStreamImpl->Flush();
+    EXPECT_FALSE(rendererStreamImpl->HasCachedHistoryData());
+}
+
+/**
  * @tc.name  : Test HpaeRendererStreamImpl Construct
  * @tc.type  : FUNC
  * @tc.number: HpaeRendererStreamImplConstruct_001

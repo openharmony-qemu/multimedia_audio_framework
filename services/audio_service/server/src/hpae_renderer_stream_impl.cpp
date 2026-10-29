@@ -214,6 +214,7 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
 int32_t HpaeRendererStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
+    hasCachedHistoryData_.store(false);
     Trace trace("HpaeRendererStreamImpl::Flush[" + std::to_string(streamIndex_) + "]");
     int32_t ret = IHpaeManager::GetHpaeManager().Flush(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
