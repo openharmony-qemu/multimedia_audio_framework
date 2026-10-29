@@ -1702,6 +1702,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerDumpStreamInfoTest, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
 
     HpaeStreamInfo rendererStreamInfo = GetRenderStreamInfo();
+    rendererStreamInfo.deviceName = sinkAudioModuleInfo.name;  // keep on real sink, matching original routing
     hpaeManager_->CreateStream(rendererStreamInfo);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->DumpSinkInputsInfo();
@@ -2049,7 +2050,8 @@ HWTEST_F(HpaeManagerUnitTest, DeleteAudioPort_TEST_001, TestSize.Level1)
     hpaeManager_->rendererManagerMap_["Speaker_File"] = hpaeRendererManager_;
     hpaeManager_->sinkIdSinkNameMap_[1] = "Speaker_File";
     hpaeManager_->DeleteAudioport("Speaker_File");
-    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.size(), 0);
+    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.size(), 1);  // only the permanent core sink remains
+    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count("Virtual_Render"), 1);
 
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -2654,6 +2656,7 @@ HWTEST_F(HpaeManagerUnitTest, GetStreamSpanSize_001, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
 
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
+    streamInfo.deviceName = sinkAudioModuleInfo.name;  // keep on real sink, matching original routing
     EXPECT_EQ(hpaeManager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
@@ -3588,6 +3591,7 @@ HWTEST_F(HpaeManagerUnitTest, VirtualRenderSinkFallback, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
     sleep(1);
     std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback =
         std::make_shared<HpaeAudioServiceCallbackUnitTest>();
@@ -3603,6 +3607,9 @@ HWTEST_F(HpaeManagerUnitTest, VirtualRenderSinkFallback, TestSize.Level1)
     EXPECT_EQ(sinkInputs[0].paStreamId, streamInfo.sessionId);
     EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetAllSinkInputs(), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(callback->GetSinkInputs().empty(), true);
     hpaeManager_->DeInit();
 }
 
