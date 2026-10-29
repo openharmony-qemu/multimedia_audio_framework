@@ -20,6 +20,7 @@
 #include "audio_errors.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
+#include "audio_qosmanager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "sink/i_audio_render_sink.h"
@@ -31,6 +32,7 @@
 #include "audio_mute_factor_manager.h"
 #include "audio_sink_latency_fetcher.h"
 #include "util/id_handler.h"
+#include "parameter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -136,6 +138,14 @@ void CabinPlayBackEngine::StandbySleep()
 void CabinPlayBackEngine::PollAndWrite()
 {
     AUDIO_DEBUG_LOG("PollAndWrite thread started 3da direct");
+    // Same QoS chain as HpaeSignalProcessThread (RequestAuth + USER_INTERACTIVE) so this thread
+    // gets the same kernel priority as other bus render threads (e.g. bus0_media_out); without it
+    // only a one-shot RSS level-7 report applies and this thread stays one tier below.
+    // No ResetThreadQosLevel on stop: the thread is destroyed on Stop and QoS dies with the tid.
+    std::call_once(qosOnce_, [] {
+        int32_t setPriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
+        SetThreadQosLevelAsync(setPriority);
+    });
     if (stream_ == nullptr) {
         StandbySleep();
         return;
