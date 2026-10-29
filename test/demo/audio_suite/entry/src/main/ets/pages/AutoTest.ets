@@ -1785,36 +1785,80 @@ export struct AutoTest {
         precision: 4,
       });
       let inputFilePath = `${inputDir}/${input.path}`;
-      let file = fs.openSync(inputFilePath, fs.OpenMode.READ_WRITE);
-      let fsStat = fs.statSync(inputFilePath);
-      let buffer = new ArrayBuffer(fsStat.size);
-      fs.readSync(file.fd, buffer);
-      const wavView = new Uint8Array(buffer);
-      let wavHeaderBuffer = wavView.slice(0, 44).buffer;
-      const dataView = new DataView(wavHeaderBuffer);
-      // Get the number of channels; the number of channels is located at byte 22.
-      const channels: number = dataView.getUint16(22, true);
-      // Get the sampling rate, which is located at bytes 24 to 28.
-      const sampleRate: number = dataView.getUint32(24, true);
-      // Get bit depth, bit depth is located at byte 34.
-      const bitsPerSample: number = dataView.getUint16(34, true);
-      return media.createAVMetadataExtractor().then(async (avMetadataExtractor) => {
-        // Set fdSrc.
-        avMetadataExtractor.fdSrc = fs.openSync(inputFilePath);
-        // Get Metadata (Promise Mode)
-        let metadata = await avMetadataExtractor.fetchMetadata();
-        let fileLen = new Decimal(fsStat.size / 1024 / 1024 * 100).ceil();
-        console.info(TAG, `get meta data, media length: ${Number(metadata.duration) / 1000} s`);
+      let wavFile: fs.File | undefined = undefined;
+      try {
+        wavFile = fs.openSync(inputFilePath, fs.OpenMode.READ_ONLY);
+        let fsStat = fs.statSync(inputFilePath);
+        let buffer = new ArrayBuffer(fsStat.size);
+        fs.readSync(wavFile.fd, buffer);
+        const wavView = new Uint8Array(buffer);
+        let wavHeaderBuffer = wavView.slice(0, 44).buffer;
+        const dataView = new DataView(wavHeaderBuffer);
+        const channels: number = dataView.getUint16(22, true);
+        const sampleRate: number = dataView.getUint32(24, true);
+        const bitsPerSample: number = dataView.getUint16(34, true);
+
+        let avMetadataExtractor: media.AVMetadataExtractor | undefined = undefined;
+        let metaFile: fs.File | undefined = undefined;
+        try {
+          avMetadataExtractor = await media.createAVMetadataExtractor();
+          metaFile = fs.openSync(inputFilePath, fs.OpenMode.READ_ONLY);
+          avMetadataExtractor.fdSrc = metaFile;
+          let metadata = await avMetadataExtractor.fetchMetadata();
+          let fileLen = new Decimal(fsStat.size / 1024 / 1024 * 100).ceil();
+          console.info(TAG, `get meta data, media length: ${Number(metadata.duration) / 1000} s`);
+          ret += `--------------------------\r
+          输入文件路径: ${inputFilePath}\r
+          文件大小: ${(Number(fileLen) / 100).toString()} MB\r
+          音频长度: ${Number(metadata.duration) / 1000} s\r
+          音频格式(采样率/声道数/位深): ${sampleRate}/${channels}/${bitsPerSample}\r
+          `
+          durationStr += `--------------------------\r
+        ${Number(metadata.duration) / 1000} s\r
+        `
+        } catch (metaError) {
+          Logger.error(TAG, `getMetadataCsvTextOfInputFiles fetchMetadata failed for ${inputFilePath}: ${JSON.stringify(metaError)}`);
+          ret += `--------------------------\r
+          输入文件路径: ${inputFilePath}\r
+          Metadata获取失败: ${metaError}\r
+          `
+          durationStr += `--------------------------\r
+        Metadata获取失败\r
+        `
+        } finally {
+          if (avMetadataExtractor) {
+            try {
+              avMetadataExtractor.release();
+            } catch (releaseError) {
+              Logger.error(TAG, `release AVMetadataExtractor failed: ${JSON.stringify(releaseError)}`);
+            }
+          }
+          if (metaFile) {
+            try {
+              fs.closeSync(metaFile);
+            } catch (closeError) {
+              Logger.error(TAG, `close metaFile failed: ${JSON.stringify(closeError)}`);
+            }
+          }
+        }
+      } catch (fileError) {
+        Logger.error(TAG, `getMetadataCsvTextOfInputFiles open file failed for ${inputFilePath}: ${JSON.stringify(fileError)}`);
         ret += `--------------------------\r
         输入文件路径: ${inputFilePath}\r
-        文件大小: ${(Number(fileLen) / 100).toString()} MB\r
-        音频长度: ${Number(metadata.duration) / 1000} s\r
-        音频格式(采样率/声道数/位深): ${sampleRate}/${channels}/${bitsPerSample}\r
+        文件打开失败: ${fileError}\r
         `
         durationStr += `--------------------------\r
-      ${Number(metadata.duration) / 1000} s\r
+      文件打开失败\r
       `
-      })
+      } finally {
+        if (wavFile) {
+          try {
+            fs.closeSync(wavFile);
+          } catch (closeError) {
+            Logger.error(TAG, `close wavFile failed: ${JSON.stringify(closeError)}`);
+          }
+        }
+      }
     })
     await Promise.all(promises);
     return [ret, durationStr];
@@ -1829,33 +1873,62 @@ export struct AutoTest {
       Decimal.set({
         precision: 4,
       });
-      let file = fs.openSync(outputPath, fs.OpenMode.READ_WRITE);
-      let fsStat = fs.statSync(outputPath);
-      let buffer = new ArrayBuffer(fsStat.size);
-      fs.readSync(file.fd, buffer);
-      const wavView = new Uint8Array(buffer);
-      let wavHeaderBuffer = wavView.slice(0, 44).buffer;
-      const dataView = new DataView(wavHeaderBuffer);
-      // Get the number of channels; the number of channels is located at byte 22
-      const channels: number = dataView.getUint16(22, true);
-      // Get the sampling rate, which is located at bytes 24 to 28
-      const sampleRate: number = dataView.getUint32(24, true);
-      // Get bit depth, bit depth is located at byte 34
-      const bitsPerSample: number = dataView.getUint16(34, true);
+      let wavFile: fs.File | undefined = undefined;
+      let avMetadataExtractor: media.AVMetadataExtractor | undefined = undefined;
+      let metaFile: fs.File | undefined = undefined;
+      try {
+        wavFile = fs.openSync(outputPath, fs.OpenMode.READ_ONLY);
+        let fsStat = fs.statSync(outputPath);
+        let buffer = new ArrayBuffer(fsStat.size);
+        fs.readSync(wavFile.fd, buffer);
+        const wavView = new Uint8Array(buffer);
+        let wavHeaderBuffer = wavView.slice(0, 44).buffer;
+        const dataView = new DataView(wavHeaderBuffer);
+        const channels: number = dataView.getUint16(22, true);
+        const sampleRate: number = dataView.getUint32(24, true);
+        const bitsPerSample: number = dataView.getUint16(34, true);
 
-      let avMetadataExtractor = await media.createAVMetadataExtractor();
-      // Set fdSrc
-      avMetadataExtractor.fdSrc = fs.openSync(outputPath);
-      // Get Metadata (Promise Mode)
-      let metadata = await avMetadataExtractor.fetchMetadata();
-      let fileLen = new Decimal(fsStat.size / 1024 / 1024 * 100).ceil();
-      console.info(TAG, `get meta data, media length: ${Number(metadata.duration) / 1000} s`);
-      ret += `--------------------------\r
-      输出文件路径: ${outputPath}\r
-      文件大小: ${(Number(fileLen) / 100).toString()} MB\r
-      音频长度: ${Number(metadata.duration) / 1000} s\r
-      音频格式(采样率/声道数/位深): ${sampleRate}/${channels}/${bitsPerSample}\r
-      `
+        avMetadataExtractor = await media.createAVMetadataExtractor();
+        metaFile = fs.openSync(outputPath, fs.OpenMode.READ_ONLY);
+        avMetadataExtractor.fdSrc = metaFile;
+        let metadata = await avMetadataExtractor.fetchMetadata();
+        let fileLen = new Decimal(fsStat.size / 1024 / 1024 * 100).ceil();
+        console.info(TAG, `get meta data, media length: ${Number(metadata.duration) / 1000} s`);
+        ret += `--------------------------\r
+        输出文件路径: ${outputPath}\r
+        文件大小: ${(Number(fileLen) / 100).toString()} MB\r
+        音频长度: ${Number(metadata.duration) / 1000} s\r
+        音频格式(采样率/声道数/位深): ${sampleRate}/${channels}/${bitsPerSample}\r
+        `
+      } catch (metaError) {
+        Logger.error(TAG, `getMetadataCsvTextOfOutputFiles failed for ${outputPath}: ${JSON.stringify(metaError)}`);
+        ret += `--------------------------\r
+        输出文件路径: ${outputPath}\r
+        Metadata获取失败: ${metaError}\r
+        `
+      } finally {
+        if (avMetadataExtractor) {
+          try {
+            avMetadataExtractor.release();
+          } catch (releaseError) {
+            Logger.error(TAG, `release AVMetadataExtractor failed: ${JSON.stringify(releaseError)}`);
+          }
+        }
+        if (metaFile) {
+          try {
+            fs.closeSync(metaFile);
+          } catch (closeError) {
+            Logger.error(TAG, `close metaFile failed: ${JSON.stringify(closeError)}`);
+          }
+        }
+        if (wavFile) {
+          try {
+            fs.closeSync(wavFile);
+          } catch (closeError) {
+            Logger.error(TAG, `close wavFile failed: ${JSON.stringify(closeError)}`);
+          }
+        }
+      }
     }
     return new Promise((resolve: Function) => {
       resolve(ret);

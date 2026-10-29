@@ -35,6 +35,11 @@ static const uint32_t ARG_COUNT = 2;
 #define SAMPLE_FORMAT_S32LE 3
 #define SAMPLE_FORMAT_F32LE 4
 
+// 声道数量宏定义
+#define CHANNEL_COUNT_MONO 1
+#define CHANNEL_COUNT_STEREO 2
+#define CHANNEL_COUNT_UNKNOWN 0
+
 static std::atomic<uint32_t> g_tempFileCounter{0};
 
 struct ConversionContext {
@@ -398,11 +403,11 @@ static const char* GetSampleFormatStr(OH_Audio_SampleFormat format)
 static uint32_t GetChannelCount(OH_AudioChannelLayout layout)
 {
     if (layout == OH_AudioChannelLayout::CH_LAYOUT_MONO) {
-        return 1;
+        return CHANNEL_COUNT_MONO;
     } else if (layout == OH_AudioChannelLayout::CH_LAYOUT_STEREO) {
-        return 2;
+        return CHANNEL_COUNT_STEREO;
     }
-    return 0;
+    return CHANNEL_COUNT_UNKNOWN;
 }
 
 static napi_value BuildConvertResult(napi_env env,
