@@ -611,6 +611,10 @@ void RendererInServer::OnStatusUpdateSubs(IOperation operation)
         case OFFLOAD_ACTIVE_FOREGROUND_RUNNING:
             offloadState_ = OFFLOAD_ACTIVE_FOREGROUND_RUNNING;
             break;
+        // Valid engine history-cache flips carry no renderer state change; ignore them here.
+        case OPERATION_HISTORY_CACHE_AVAILABLE:
+        case OPERATION_HISTORY_CACHE_DRAINED:
+            break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
             status_ = I_STATUS_INVALID;

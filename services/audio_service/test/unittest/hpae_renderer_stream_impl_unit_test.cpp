@@ -178,6 +178,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HasCachedHistoryData_002, TestSize.Level0)
     std::shared_ptr<MockStatusCallback> statusCallback = std::make_shared<NiceMock<MockStatusCallback>>();
     rendererStreamImpl->RegisterStatusCallback(statusCallback);
 
+    // Any other operation leaking through is a forwarding bug
+    EXPECT_CALL(*statusCallback, OnStatusUpdate(_)).Times(0);
     EXPECT_CALL(*statusCallback, OnStatusUpdate(OPERATION_HISTORY_CACHE_AVAILABLE)).Times(1);
     EXPECT_CALL(*statusCallback, OnStatusUpdate(OPERATION_HISTORY_CACHE_DRAINED)).Times(1);
     rendererStreamImpl->OnHistoryCacheUpdate(true);
