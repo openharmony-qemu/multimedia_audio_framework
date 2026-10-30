@@ -163,5 +163,22 @@ HWTEST_F(AudioConcurrencyManagerUnitTest, GetPipeTypeByRouteFlag_008, TestSize.L
 
     EXPECT_EQ(result, PIPE_TYPE_IN_NORMAL_VOICE_MESSAGE);
 }
+/** @tc.desc: Ultra fast concurrency uses only explicit rules and defaults to PLAY_BOTH when absent. */
+HWTEST_F(AudioConcurrencyManagerUnitTest, UltraFastRecordingConcurrency_001, TestSize.Level1)
+{
+    AudioConcurrencyManager manager;
+    EXPECT_EQ(manager.GetPipeTypeByRouteFlag(AUDIO_INPUT_FLAG_ULTRA_FAST, AUDIO_MODE_RECORD), PIPE_TYPE_IN_ULTRA_FAST);
+    manager.concurrencyConfigMap_[{PIPE_TYPE_IN_LOWLATENCY, PIPE_TYPE_IN_VOIP}] = CONCEDE_INCOMING;
+    EXPECT_EQ(manager.GetConcurrencyAction(PIPE_TYPE_IN_ULTRA_FAST, PIPE_TYPE_IN_VOIP), PLAY_BOTH);
+    EXPECT_EQ(manager.GetConcurrencyAction(PIPE_TYPE_IN_LOWLATENCY, PIPE_TYPE_IN_VOIP), CONCEDE_INCOMING);
+    manager.concurrencyConfigMap_[{PIPE_TYPE_IN_VOIP, PIPE_TYPE_IN_LOWLATENCY}] = CONCEDE_EXISTING;
+    EXPECT_EQ(manager.GetConcurrencyAction(PIPE_TYPE_IN_VOIP, PIPE_TYPE_IN_ULTRA_FAST), PLAY_BOTH);
+    manager.concurrencyConfigMap_[{PIPE_TYPE_IN_LOWLATENCY, PIPE_TYPE_IN_LOWLATENCY}] = CONCEDE_INCOMING;
+    EXPECT_EQ(manager.GetConcurrencyAction(PIPE_TYPE_IN_ULTRA_FAST, PIPE_TYPE_IN_ULTRA_FAST), PLAY_BOTH);
+    manager.concurrencyConfigMap_[{PIPE_TYPE_IN_ULTRA_FAST, PIPE_TYPE_IN_VOIP}] = CONCEDE_EXISTING;
+    EXPECT_EQ(manager.GetConcurrencyAction(PIPE_TYPE_IN_ULTRA_FAST, PIPE_TYPE_IN_VOIP), CONCEDE_EXISTING);
+    EXPECT_EQ(manager.GetConcurrencyAction(PIPE_TYPE_IN_ULTRA_FAST, PIPE_TYPE_OUT_NORMAL), PLAY_BOTH);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

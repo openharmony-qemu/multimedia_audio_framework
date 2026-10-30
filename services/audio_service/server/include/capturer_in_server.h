@@ -37,6 +37,8 @@ public:
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnReadData(size_t length) override;
     int32_t OnReadData(int8_t *outputData, size_t requestDataLen) override;
+    void OnCaptureRouteChanged(uint32_t routeFlag, int32_t deviceType, uint32_t adapterType) override;
+    void Dump(std::string &dumpString);
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
@@ -114,6 +116,7 @@ private:
     int32_t GetCapturerFlagsByRoute(uint32_t routeFlag);
     bool CheckVoiceDownlinkPermission();
     int32_t StartStream();
+    const char *GetUltraFastFallbackReason() const;
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -175,6 +178,10 @@ private:
     bool isInMainThread_ = false;
 
     std::atomic<bool> sensitiveRecordPermitted_{false};
+    std::atomic<uint32_t> actualRouteFlag_{AUDIO_FLAG_NONE};
+    std::atomic<int32_t> actualDeviceType_{DEVICE_TYPE_INVALID};
+    std::atomic<uint32_t> actualAdapterType_{HDI_ADAPTER_TYPE_UNKNOWN};
+    std::atomic<FastStatus> actualFastStatus_{FASTSTATUS_NORMAL};
 };
 } // namespace AudioStandard
 } // namespace OHOS

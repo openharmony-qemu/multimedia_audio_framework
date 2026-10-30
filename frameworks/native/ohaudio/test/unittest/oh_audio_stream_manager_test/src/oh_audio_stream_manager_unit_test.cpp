@@ -328,5 +328,22 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsOffloadPlaybackSupp
     auto result = OH_AudioStreamManager_IsOffloadPlaybackSupported(audioStreamManager, streamInfo, usage);
     EXPECT_EQ(result, false);
 }
+/** @tc.desc: Invalid ultra fast recording queries fail closed. */
+HWTEST(OHAudioStreamManagerUnitTest, UltraFastRecordingInvalidQuery_001, TestSize.Level0)
+{
+    OH_AudioStreamManager *manager = nullptr;
+    ASSERT_EQ(OH_AudioManager_GetAudioStreamManager(&manager), AUDIOCOMMON_RESULT_SUCCESS);
+    OH_AudioStreamInfo info = {};
+    EXPECT_FALSE(OH_AudioStreamManager_IsUltraFastRecordingSupported(nullptr, &info, AUDIOSTREAM_SOURCE_TYPE_MIC));
+    EXPECT_FALSE(OH_AudioStreamManager_IsUltraFastRecordingSupported(manager, nullptr, AUDIOSTREAM_SOURCE_TYPE_MIC));
+    EXPECT_FALSE(OH_AudioStreamManager_IsUltraFastRecordingSupported(manager, &info,
+        static_cast<OH_AudioStream_SourceType>(-1)));
+    info.samplingRate = 44100;
+    info.sampleFormat = AUDIOSTREAM_SAMPLE_S32LE;
+    info.encodingType = AUDIOSTREAM_ENCODING_TYPE_AUDIOVIVID;
+    info.channelLayout = CH_LAYOUT_STEREO;
+    EXPECT_FALSE(OH_AudioStreamManager_IsUltraFastRecordingSupported(manager, &info, AUDIOSTREAM_SOURCE_TYPE_MIC));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

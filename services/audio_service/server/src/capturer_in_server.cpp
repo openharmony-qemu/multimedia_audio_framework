@@ -113,6 +113,8 @@ void ReportServerWakeupEvent(const AudioProcessConfig &config, AudioWakeupStageC
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
 {
     processConfig_ = processConfig;
+    actualFastStatus_.store(processConfig.capturerInfo.capturerFlags == AUDIO_FLAG_ULTRA_FAST ? FASTSTATUS_ULTRA_FAST :
+        (processConfig.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP ? FASTSTATUS_FAST : FASTSTATUS_NORMAL));
     streamListener_ = streamListener;
     innerCapId_ = processConfig.innerCapId;
     if (!IsCapturerConfigValid(processConfig)) {
@@ -158,6 +160,12 @@ int32_t CapturerInServer::ConfigServerBuffer()
     totalSizeInFrame_ = spanSizeInFrame_ * bufferNum;
     size_t totalSizeInFrameToCreate = processConfig_.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP ?
         totalSizeInFrame_ * TOTAL_SIZE_5MS_TO_20MS : totalSizeInFrame_;
+    if (processConfig_.capturerInfo.originalFlag == AUDIO_FLAG_ULTRA_FAST) {
+        // Reserve the largest supported hardware span so a 2.5 -> 20 ms switch keeps the shared allocation.
+        const size_t fallbackBufferSizeInFrame = static_cast<size_t>(
+            static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) * 20 / AUDIO_MS_PER_S * bufferNum);
+        totalSizeInFrameToCreate = std::max(totalSizeInFrameToCreate, fallbackBufferSizeInFrame);
+    }
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     spanSizeInBytes_ = byteSizePerFrame_ * spanSizeInFrame_;
     AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}zu, spanSizeInFrame_: %{public}zu,"
@@ -316,6 +324,9 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
 
 int32_t CapturerInServer::GetCapturerFlagsByRoute(uint32_t routeFlag)
 {
+    if (routeFlag & AUDIO_INPUT_FLAG_ULTRA_FAST) {
+        return AUDIO_FLAG_ULTRA_FAST;
+    }
     if (routeFlag & AUDIO_INPUT_FLAG_FAST) {
         if (routeFlag & AUDIO_INPUT_FLAG_VOIP) {
             return AUDIO_FLAG_VOIP_FAST;
@@ -351,6 +362,11 @@ void CapturerInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStr
 
     uint32_t newRouteFlag = stream_->GetRouteFlag();
     int32_t capturerFlags = GetCapturerFlagsByRoute(newRouteFlag);
+    if (capturerFlags == AUDIO_FLAG_ULTRA_FAST &&
+        newSpanSizeInFrame * AUDIO_US_PER_S != static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) *
+        ULTRA_FAST_CAPTURE_PERIOD_US) {
+        capturerFlags = AUDIO_FLAG_NORMAL;
+    }
 
     if (audioServerBuffer_ != nullptr) {
         AUDIO_INFO_LOG("SetPendingSpanSize: sessionId:%{public}u spanSize:%{public}zu totalSize:%{public}zu "
@@ -364,8 +380,10 @@ void CapturerInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStr
         AUDIO_INFO_LOG("Update processConfig_.capturerInfo.capturerFlags from %{public}u to %{public}u",
             processConfig_.capturerInfo.capturerFlags, capturerFlags);
         processConfig_.capturerInfo.capturerFlags = capturerFlags;
+        actualFastStatus_.store(capturerFlags == AUDIO_FLAG_NORMAL ? FASTSTATUS_NORMAL :
+            (capturerFlags == AUDIO_FLAG_ULTRA_FAST ? FASTSTATUS_ULTRA_FAST : FASTSTATUS_FAST));
         stateListener->OnOperationHandled(UPDATE_SPANSIZE, capturerFlags == AUDIO_FLAG_NORMAL ?
-            FASTSTATUS_NORMAL : FASTSTATUS_FAST);
+            FASTSTATUS_NORMAL : (capturerFlags == AUDIO_FLAG_ULTRA_FAST ? FASTSTATUS_ULTRA_FAST : FASTSTATUS_FAST));
     }
 
     spanSizeInFrame_ = newSpanSizeInFrame;
@@ -406,6 +424,36 @@ void CapturerInServer::HandleOperationStopped(CapturerStage stage)
         std::chrono::system_clock::now().time_since_epoch()).count();
     recorderDfx_->WriteDfxStopMsg(streamIndex_, stage,
         GetLastAudioDuration(), processConfig_);
+}
+
+void CapturerInServer::OnCaptureRouteChanged(uint32_t routeFlag, int32_t deviceType, uint32_t adapterType)
+{
+    actualRouteFlag_.store(routeFlag);
+    actualDeviceType_.store(deviceType);
+    actualAdapterType_.store(adapterType);
+}
+
+const char *CapturerInServer::GetUltraFastFallbackReason() const
+{
+    if (actualFastStatus_.load() == FASTSTATUS_ULTRA_FAST) {
+        return "NONE";
+    }
+    const auto &info = processConfig_.streamInfo;
+    if (info.samplingRate != SAMPLE_RATE_48000 || info.format != SAMPLE_S16LE || info.encoding != ENCODING_PCM ||
+        (info.channels != MONO && info.channels != STEREO)) {
+        return "STATIC_FORMAT";
+    }
+    return "ROUTE_OR_CONCURRENCY";
+}
+
+void CapturerInServer::Dump(std::string &dumpString)
+{
+    const int32_t pipe = actualFastStatus_.load() == FASTSTATUS_ULTRA_FAST ? PIPE_TYPE_IN_ULTRA_FAST :
+        (actualFastStatus_.load() == FASTSTATUS_FAST ? PIPE_TYPE_IN_LOWLATENCY : PIPE_TYPE_IN_NORMAL);
+    AppendFormat(dumpString, "Capturer stream id:%u requested latency flag:%d actual fast status:%d pipe type:%d "
+        "route flag:0x%x span size:%zu device type:%d fallback reason:%s underflows:%d overflows:%d\n",
+        streamIndex_, processConfig_.capturerInfo.originalFlag, actualFastStatus_.load(), pipe, actualRouteFlag_.load(),
+        spanSizeInFrame_, actualDeviceType_.load(), GetUltraFastFallbackReason(), underflowCount, overFlowLogFlag_);
 }
 
 BufferDesc CapturerInServer::DequeueBuffer(size_t length)

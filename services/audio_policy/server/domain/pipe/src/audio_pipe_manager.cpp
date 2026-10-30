@@ -66,6 +66,11 @@ bool AudioPipeManager::GetUltraFastFlag()
     return audioConfigManager_.GetUltraFastFlag();
 }
 
+bool AudioPipeManager::GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role)
+{
+    return audioConfigManager_.GetUltraFastFlag(adapterName, role);
+}
+
 bool AudioPipeManager::GetArmUsbUltraFastFlag()
 {
     return audioConfigManager_.GetArmUsbUltraFastFlag();
@@ -573,6 +578,7 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_HWDECODING) ||
         (routeFlag & AUDIO_INPUT_FLAG_FAST) ||
+        (routeFlag & AUDIO_INPUT_FLAG_ULTRA_FAST) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) ||
         (routeFlag & AUDIO_INPUT_FLAG_AI) ||
         (routeFlag & AUDIO_INPUT_FLAG_UNPROCESS) ||

@@ -25,6 +25,7 @@ class IReadCallback {
 public:
     virtual int32_t OnReadData(size_t length) = 0;
     virtual int32_t OnReadData(int8_t *outputData, size_t requestDataLen) = 0;
+    virtual void OnCaptureRouteChanged(uint32_t routeFlag, int32_t deviceType, uint32_t adapterType) {}
 };
 
 class ICapturerStreamCallback {

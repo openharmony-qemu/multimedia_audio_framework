@@ -1911,6 +1911,46 @@ HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_002, TestS
     EXPECT_TRUE(streamInfo.channelLayout.empty());
 }
 
+/** @tc.desc: Reported mono and stereo USB input channel counts retain their layouts. */
+HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_InputChannels_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor device(DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE);
+    const std::vector<std::pair<uint32_t, AudioChannelLayout>> cases = {
+        {1, CH_LAYOUT_MONO}, {2, CH_LAYOUT_STEREO}, {3, CH_LAYOUT_SURROUND}, {4, CH_LAYOUT_4POINT0},
+        {5, CH_LAYOUT_5POINT0}, {6, CH_LAYOUT_5POINT1}, {7, CH_LAYOUT_7POINT0}, {8, CH_LAYOUT_7POINT1},
+        {0, CH_LAYOUT_UNKNOWN}, {9, CH_LAYOUT_UNKNOWN}, {257, CH_LAYOUT_UNKNOWN}
+    };
+    for (const auto &[count, layout] : cases) {
+        device.UpdateDeviceInfoByAudioParameters("source_rate:16000;source_format:AUDIO_FORMAT_PCM_16_BIT;"
+            "source_chans:" + std::to_string(count));
+        auto infos = device.GetAudioStreamInfo();
+        ASSERT_EQ(infos.size(), 1u);
+        EXPECT_EQ(infos.back().GetMainChannelLayout(), layout) << count;
+        EXPECT_EQ(infos.back().format, SAMPLE_S16LE);
+        EXPECT_EQ(infos.back().samplingRate, std::set<AudioSamplingRate>{SAMPLE_RATE_16000});
+    }
+    device.UpdateDeviceInfoByAudioParameters("source_rate:16000;source_chans:invalid");
+    auto invalidInfos = device.GetAudioStreamInfo();
+    ASSERT_EQ(invalidInfos.size(), 1u);
+    EXPECT_EQ(invalidInfos.back().GetMainChannelLayout(), CH_LAYOUT_UNKNOWN);
+    device.UpdateDeviceInfoByAudioParameters("source_rate:16000");
+    auto missingInfos = device.GetAudioStreamInfo();
+    ASSERT_EQ(missingInfos.size(), 1u);
+    EXPECT_TRUE(missingInfos.back().channelLayout.empty());
+}
+
+/** @tc.desc: USB output uses the upstream channel-layout parsing for reported counts. */
+HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_OutputChannels_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor device(DEVICE_TYPE_USB_ARM_HEADSET, OUTPUT_DEVICE);
+    for (uint32_t count : {1u, 2u, 4u}) {
+        device.UpdateDeviceInfoByAudioParameters("sink_chans:" + std::to_string(count));
+        auto infos = device.GetAudioStreamInfo();
+        ASSERT_EQ(infos.size(), 1u);
+        EXPECT_EQ(infos.back().GetMainChannelLayout(), ConvertAudioChannelToLayout(static_cast<AudioChannel>(count)));
+    }
+}
+
 /**
 * @tc.name  : Test UpdateDeviceInfoByAudioParameters.
 * @tc.number: UpdateDeviceInfoByAudioParameters_003

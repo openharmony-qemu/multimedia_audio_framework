@@ -119,6 +119,7 @@ enum AudioPipeType {
     PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT = 24,
     PIPE_TYPE_IN_NORMAL_VOICE_MESSAGE = 25,
     PIPE_TYPE_OUT_ULTRA_FAST = 26,
+    PIPE_TYPE_IN_ULTRA_FAST = 27,
 };
 
 enum AudioPreloadType {
@@ -584,6 +585,9 @@ struct AudioCallBackCapturerStreamInfo {
     uint64_t latency = 0;
     int8_t *outputData = nullptr;
     size_t requestDataLen = 0;
+    uint32_t routeFlag = 0;
+    int32_t deviceType = -1;
+    uint32_t adapterType = 0;
 };
 
 struct AudioChannelInfo {

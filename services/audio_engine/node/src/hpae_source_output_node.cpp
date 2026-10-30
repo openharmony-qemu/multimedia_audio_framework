@@ -259,6 +259,9 @@ void HpaeSourceOutputNode::WriteDataAndUpdateFrames()
         .timestamp = GetTimestamp(),
         .outputData = (int8_t *)sourceOutputData_.data(),
         .requestDataLen = sourceOutputData_.size(),
+        .routeFlag = GetNodeInfo().routeFlag,
+        .deviceType = GetNodeInfo().deviceType,
+        .adapterType = GetNodeInfo().captureAdapterType,
     };
     if (auto readCallback = readCallback_.lock()) {
         ret = readCallback->OnStreamData(streamInfo_);

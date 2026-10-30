@@ -66,6 +66,9 @@ int32_t HpaeFastCapturerManager::CreateSessionNodes(const HpaeStreamInfo &stream
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
+    nodeInfo.routeFlag = sourceInfo_.routeFlag;
+    nodeInfo.deviceType = sourceInfo_.deviceType;
+    nodeInfo.captureAdapterType = AudioTypeUtils::HalNameToType(sourceInfo_.adapterName);
     auto sourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     sourceOutputNode->SetAppUid(streamInfo.uid);
     sourceOutputNodeMap_[streamInfo.sessionId] = sourceOutputNode;
@@ -176,9 +179,13 @@ void HpaeFastCapturerManager::CreateSourceAttr(IAudioSourceAttr &attr)
     attr.sourceType = static_cast<int32_t>(sourceInfo_.sourceType);
     attr.openMicSpeaker = sourceInfo_.openMicSpeaker;
     attr.macAddress = sourceInfo_.macAddress;
+    attr.routeFlag = sourceInfo_.routeFlag;
     bool isVoipFast = (sourceInfo_.routeFlag & AUDIO_INPUT_FLAG_VOIP_FAST) != 0 ||
         ((sourceInfo_.routeFlag & AUDIO_INPUT_FLAG_FAST) != 0 && (sourceInfo_.routeFlag & AUDIO_INPUT_FLAG_VOIP) != 0);
     attr.audioStreamFlag = isVoipFast ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
+    if (sourceInfo_.isUltraFast) {
+        attr.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
+    }
 }
 
 int32_t HpaeFastCapturerManager::InitCapturerManager()
@@ -187,6 +194,10 @@ int32_t HpaeFastCapturerManager::InitCapturerManager()
         sourceInfo_.sourceName.c_str(), sourceInfo_.channels, sourceInfo_.samplingRate, sourceInfo_.routeFlag);
     int32_t checkRet = CheckSourceInfoFramelen(sourceInfo_);
     CHECK_AND_RETURN_RET(checkRet == SUCCESS, checkRet);
+    if (sourceInfo_.isUltraFast) {
+        CHECK_AND_RETURN_RET(sourceInfo_.frameLen * AUDIO_US_PER_S ==
+            static_cast<uint64_t>(sourceInfo_.samplingRate) * ULTRA_FAST_CAPTURE_PERIOD_US, ERR_INVALID_PARAM);
+    }
 
     HpaeNodeInfo nodeInfo;
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
@@ -588,6 +599,9 @@ void HpaeFastCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &m
     Trace trace("HpaeFastCapturerManager::AddSingleNodeToSource[" + std::to_string(sessionId) + "]");
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
+    nodeInfo.routeFlag = sourceInfo_.routeFlag;
+    nodeInfo.deviceType = sourceInfo_.deviceType;
+    nodeInfo.captureAdapterType = AudioTypeUtils::HalNameToType(sourceInfo_.adapterName);
     HpaeNodeInfo inNodeInfo;
     inNodeInfo.frameLen = sourceInputNode_->GetNodeInfo().frameLen;
     inNodeInfo.samplingRate = sourceInputNode_->GetNodeInfo().samplingRate;

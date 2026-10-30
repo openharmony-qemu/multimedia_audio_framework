@@ -441,7 +441,7 @@ static void ParseChannelValues(const std::string &value, DeviceStreamInfo &strea
             continue;
         }
         AudioChannelLayout layout = CH_LAYOUT_UNKNOWN;
-        switch (static_cast<AudioChannel>(channels)) {
+        switch (channels) {
             case AudioChannel::MONO:
                 layout = CH_LAYOUT_MONO;
                 break;

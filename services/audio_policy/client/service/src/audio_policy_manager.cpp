@@ -753,6 +753,23 @@ bool AudioPolicyManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, S
     return support;
 }
 
+bool AudioPolicyManager::IsUltraFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
+{
+    const sptr<IAudioPolicy> proxy = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(proxy != nullptr, false);
+    bool supported = false;
+    return proxy->IsUltraFastRecordingSupported(streamInfo, static_cast<int32_t>(source), supported) == SUCCESS &&
+        supported;
+}
+
+bool AudioPolicyManager::IsUltraFastRecordingPlatformSupported()
+{
+    const sptr<IAudioPolicy> proxy = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(proxy != nullptr, false);
+    bool supported = false;
+    return proxy->IsUltraFastRecordingPlatformSupported(supported) == SUCCESS && supported;
+}
+
 bool AudioPolicyManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

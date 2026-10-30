@@ -130,6 +130,7 @@ public:
 class AudioTypeUtils {
 public:
     static StreamUsage GetStreamUsageByStreamType(AudioStreamType streamType);
+    // Convert a HAL adapter name, retaining the Primary fallback for unknown names.
     static HdiAdapterType HalNameToType(std::string halName);
 };
 
@@ -666,6 +667,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_LIVE = 21,
     HDI_CAPTURE_OFFSET_CAMCORDER = 23,
     HDI_CAPTURE_OFFSET_VOICE_MESSAGE = 24,
+    HDI_CAPTURE_OFFSET_ULTRA_FAST = 25,
 };
 
 enum HdiRenderOffset : uint32_t {

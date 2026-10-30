@@ -42,6 +42,7 @@ public:
     bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
     bool IsUltraFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
     bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
+    bool IsUltraFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
     bool IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage);
     bool IsDirectPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage);
     bool IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage);

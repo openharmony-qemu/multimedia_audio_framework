@@ -829,6 +829,16 @@ int32_t AudioCoreService::CreateCapturerClient(
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "streamDesc is nullptr");
 
     // Check interphone capturer conflict with VoIP/Cellular streams
+    if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST ||
+        streamDesc->capturerInfo_.capturerFlags == AUDIO_FLAG_ULTRA_FAST) {
+        CHECK_AND_RETURN_RET(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
+            IPCSkeleton::GetCallingTokenID()), ERR_PERMISSION_DENIED);
+        CHECK_AND_RETURN_RET(AudioCoreConfigManager::GetInstance().GetUltraFastFlag("primary", PIPE_ROLE_INPUT) ||
+            AudioCoreConfigManager::GetInstance().GetUltraFastFlag("usb", PIPE_ROLE_INPUT),
+            ERROR_UNSUPPORTED_ULTRA_FAST);
+        streamDesc->appInfo_.appTokenId = IPCSkeleton::GetCallingTokenID();
+        streamDesc->capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
+    }
     int32_t ret = CheckCapturerStreamConflicts(streamDesc);
     if (ret != SUCCESS) {
         return ret;
@@ -1288,6 +1298,23 @@ bool AudioCoreService::RecordIsForcedNormal(std::shared_ptr<AudioStreamDescripto
 
 void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
+    if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST &&
+        streamDesc->capturerInfo_.capturerFlags != AUDIO_FLAG_FORCED_NORMAL) {
+        // Always reconsider the request on a route change, including a return to a capable headset.
+        streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        CHECK_AND_RETURN(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
+            streamDesc->appInfo_.appTokenId));
+        const auto &info = streamDesc->streamInfo_;
+        CHECK_AND_RETURN(info.encoding == ENCODING_PCM);
+        if (IsStreamSupportMmap(streamDesc)) {
+            streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
+        }
+        if (AudioCoreConfigManager::GetInstance().IsUltraFastRecordingDeviceSupported(
+            streamDesc->streamInfo_, streamDesc->newDeviceDescs_)) {
+            streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+        }
+        return;
+    }
     auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
     if (sourceStrategyMap != nullptr) {
         auto strategyIt = sourceStrategyMap->find(streamDesc->capturerInfo_.sourceType);
@@ -1584,7 +1611,8 @@ int32_t AudioCoreService::StartClientForPlayback(uint32_t sessionId,
 void AudioCoreService::CheckFastToNormalForRecord(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     SessionOperationMsg opMsg)
 {
-    if (opMsg == SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL && (streamDesc->routeFlag_ & AUDIO_INPUT_FLAG_FAST)) {
+    if (opMsg == SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL &&
+        (streamDesc->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST))) {
         streamDesc->capturerInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
         AUDIO_INFO_LOG("fast record need to change to FORCED_NORMAL");
     }
@@ -3887,7 +3915,8 @@ bool AudioCoreService::HandleNormalInputPipes(const std::vector<std::shared_ptr<
             continue;
         }
 
-        uint32_t flagMask = AUDIO_INPUT_FLAG_AI | AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP_FAST |
+        uint32_t flagMask = AUDIO_INPUT_FLAG_AI | AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST |
+            AUDIO_INPUT_FLAG_VOIP_FAST |
             AUDIO_INPUT_FLAG_WAKEUP | AUDIO_INPUT_FLAG_UNPROCESS | AUDIO_INPUT_FLAG_ULTRASONIC |
             AUDIO_INPUT_FLAG_VOICE_RECOGNITION | AUDIO_INPUT_FLAG_RAW_AI | AUDIO_INPUT_FLAG_INTERPHONE |
             AUDIO_INPUT_FLAG_LIVE;
@@ -4160,7 +4189,7 @@ int32_t AudioCoreService::ReloadCaptureSession(uint32_t sessionId, SessionOperat
     }
     uint32_t targetSessionId = sessionId;
     if (newStreamDesc == nullptr || specialSourceTypeSet_.count(newStreamDesc->capturerInfo_.sourceType) != 0 ||
-        (newStreamDesc->routeFlag_ & AUDIO_INPUT_FLAG_FAST)) {
+        (newStreamDesc->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST))) {
         AUDIO_ERR_LOG("The session of %{public}u is special or no stream, no need reload.", sessionId);
         return ERROR;
     }

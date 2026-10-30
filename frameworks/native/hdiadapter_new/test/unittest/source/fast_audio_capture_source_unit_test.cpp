@@ -20,6 +20,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "fast_audio_capture_source.h"
+#include "../../aiut/adapter_common/device_manager/include/mock_i_device_manager.h"
 
 using namespace testing::ext;
 
@@ -256,6 +257,109 @@ HWTEST_F(FastAudioCaptureSourceUnitTest, EnableSyncInfo_001, TestSize.Level1)
 
     FastSource->EnableSyncInfo(1);
     EXPECT_EQ(FastSource->syncInfoSize_, 1);
+}
+
+/** @tc.desc: Capture requests select the corresponding HDI mmap type without a build flag. */
+HWTEST_F(FastAudioCaptureSourceUnitTest, CaptureMmapType_001, TestSize.Level1)
+{
+    FastAudioCaptureSource source;
+    source.attr_.sampleRate = SAMPLE_RATE_48000;
+    source.attr_.format = SAMPLE_S16LE;
+    source.attr_.channel = STEREO;
+    source.attr_.sourceType = SOURCE_TYPE_MIC;
+    AudioSampleAttributes sampleAttr = {};
+
+    source.attr_.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
+    source.InitAudioSampleAttr(sampleAttr);
+    EXPECT_EQ(sampleAttr.type, AUDIO_ULTRA_LOW_LAT);
+    EXPECT_EQ(sampleAttr.streamId,
+        static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_ULTRA_FAST)));
+    EXPECT_EQ(sampleAttr.period, 0);
+
+    source.attr_.audioStreamFlag = AUDIO_FLAG_MMAP;
+    source.InitAudioSampleAttr(sampleAttr);
+    EXPECT_EQ(sampleAttr.type, AUDIO_MMAP_NOIRQ);
+    EXPECT_EQ(sampleAttr.streamId,
+        static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST)));
+    EXPECT_EQ(sampleAttr.period, 0);
+
+    source.attr_.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
+    source.InitAudioSampleAttr(sampleAttr);
+    EXPECT_EQ(sampleAttr.type, AUDIO_MMAP_VOIP);
+    EXPECT_EQ(sampleAttr.streamId,
+        static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST)));
+    EXPECT_EQ(sampleAttr.period, 0);
+}
+
+/** @tc.desc: Failed mmap setup retains the HDI capture until an explicit DeInit. */
+HWTEST_F(FastAudioCaptureSourceUnitTest, CaptureMmapFailureDoesNotDestroy_001, TestSize.Level1)
+{
+    auto &manager = HdiAdapterManager::GetInstance();
+    auto savedManager = manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL];
+    auto mock = std::make_shared<testing::NiceMock<MockIDeviceManager>>();
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL] = mock;
+    for (int32_t flag : {AUDIO_FLAG_ULTRA_FAST, AUDIO_FLAG_MMAP}) {
+        IAudioCapture capture = {};
+        capture.ReqMmapBuffer = [](auto *, auto, auto *) -> int32_t { return ERR_OPERATION_FAILED; };
+        const uint32_t captureId = 7;
+        EXPECT_CALL(*mock, CreateCapture("primary", testing::_, testing::_, testing::_))
+            .WillOnce(testing::DoAll(testing::SetArgReferee<3>(captureId),
+                testing::Return(static_cast<void *>(&capture))));
+        EXPECT_CALL(*mock, DestroyCapture(testing::_, testing::_)).Times(0);
+        FastAudioCaptureSource source;
+        IAudioSourceAttr attr = {};
+        attr.adapterName = "primary";
+        attr.audioStreamFlag = flag;
+        attr.sampleRate = SAMPLE_RATE_48000;
+        attr.format = SAMPLE_S16LE;
+        attr.channel = STEREO;
+        attr.deviceType = DEVICE_TYPE_USB_HEADSET;
+        attr.sourceType = SOURCE_TYPE_MIC;
+        EXPECT_EQ(source.Init(attr), ERR_NOT_STARTED);
+        EXPECT_EQ(source.audioCapture_, &capture);
+        EXPECT_FALSE(source.IsInited());
+        testing::Mock::VerifyAndClearExpectations(mock.get());
+        EXPECT_CALL(*mock, DestroyCapture("primary", captureId)).Times(1);
+        source.DeInit();
+        EXPECT_EQ(source.audioCapture_, nullptr);
+        testing::Mock::VerifyAndClearExpectations(mock.get());
+    }
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL] = savedManager;
+}
+
+/** @tc.desc: Ultra fast and fast capture creation and routing use separate, consistent stream IDs. */
+HWTEST_F(FastAudioCaptureSourceUnitTest, CaptureRouteStreamId_001, TestSize.Level1)
+{
+    auto &manager = HdiAdapterManager::GetInstance();
+    auto savedManager = manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL];
+    auto mock = std::make_shared<testing::NiceMock<MockIDeviceManager>>();
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL] = mock;
+    const int32_t fastStreamId = static_cast<int32_t>(
+        GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST));
+    const int32_t ultraStreamId = static_cast<int32_t>(
+        GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_ULTRA_FAST));
+    EXPECT_NE(fastStreamId, ultraStreamId);
+    for (const std::string &adapter : {std::string("primary"), std::string("usb")}) {
+        FastAudioCaptureSource source;
+        source.attr_.adapterName = adapter;
+        source.attr_.sampleRate = SAMPLE_RATE_48000;
+        source.attr_.format = SAMPLE_S16LE;
+        source.attr_.channel = STEREO;
+        source.attr_.sourceType = SOURCE_TYPE_MIC;
+        for (int32_t flag : {AUDIO_FLAG_ULTRA_FAST, AUDIO_FLAG_MMAP, AUDIO_FLAG_VOIP_FAST}) {
+            source.attr_.audioStreamFlag = flag;
+            AudioSampleAttributes sampleAttr = {};
+            source.InitAudioSampleAttr(sampleAttr);
+            const int32_t expectedId = flag == AUDIO_FLAG_ULTRA_FAST ? ultraStreamId : fastStreamId;
+            EXPECT_EQ(sampleAttr.streamId, expectedId);
+            for (DeviceType device : {DEVICE_TYPE_MIC, DEVICE_TYPE_NONE}) {
+                EXPECT_CALL(*mock, SetInputRoute(adapter, device, expectedId, sampleAttr.sourceType))
+                    .WillOnce(testing::Return(SUCCESS));
+                EXPECT_EQ(source.DoSetInputRoute(device), SUCCESS);
+            }
+        }
+    }
+    manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL] = savedManager;
 }
 
 } // namespace AudioStandard

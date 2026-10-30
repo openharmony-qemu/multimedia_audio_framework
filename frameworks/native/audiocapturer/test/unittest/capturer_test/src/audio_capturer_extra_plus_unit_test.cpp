@@ -376,5 +376,20 @@ HWTEST(AudioCapturerUnitTest, NoNeedNotifyEvent_001, TestSize.Level1)
     EXPECT_NE(true, interruptCallback->NoNeedNotifyEvent(event));
 }
 
+/** @tc.desc: Runtime fallbacks preserve the ultra fast request for device migration and service recovery. */
+HWTEST(AudioCapturerUnitTest, UltraFastRequestPreserved_001, TestSize.Level1)
+{
+    AudioCapturerPrivate capturer(STREAM_MUSIC, AppInfo{}, false);
+    capturer.capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
+    EXPECT_EQ(capturer.DecideStreamClassAndUpdateCapturerInfo(AUDIO_INPUT_FLAG_ULTRA_FAST), IAudioStream::FAST_STREAM);
+    EXPECT_EQ(capturer.capturerInfo_.capturerFlags, AUDIO_FLAG_ULTRA_FAST);
+    EXPECT_EQ(capturer.capturerInfo_.pipeType, PIPE_TYPE_IN_ULTRA_FAST);
+    EXPECT_EQ(capturer.DecideStreamClassAndUpdateCapturerInfo(AUDIO_INPUT_FLAG_FAST), IAudioStream::FAST_STREAM);
+    EXPECT_EQ(capturer.capturerInfo_.originalFlag, AUDIO_FLAG_ULTRA_FAST);
+    EXPECT_EQ(capturer.capturerInfo_.capturerFlags, AUDIO_FLAG_MMAP);
+    EXPECT_EQ(capturer.DecideStreamClassAndUpdateCapturerInfo(AUDIO_INPUT_FLAG_NORMAL), IAudioStream::PA_STREAM);
+    EXPECT_EQ(capturer.capturerInfo_.originalFlag, AUDIO_FLAG_ULTRA_FAST);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2626,6 +2626,29 @@ int32_t AudioPolicyServer::IsFastRecordingSupported(const AudioStreamInfo &strea
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::IsUltraFastRecordingPlatformSupported(bool &support)
+{
+    support = audioConfigManager_.GetUltraFastFlag("primary", PIPE_ROLE_INPUT) ||
+        audioConfigManager_.GetUltraFastFlag("usb", PIPE_ROLE_INPUT);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::IsUltraFastRecordingSupported(const AudioStreamInfo &streamInfo, int32_t source,
+    bool &support)
+{
+    // Device and client format checks are shared with routing; stream slots are not reserved by this query.
+    support = false;
+    bool platformSupported = false;
+    IsUltraFastRecordingPlatformSupported(platformSupported);
+    CHECK_AND_RETURN_RET(platformSupported, SUCCESS);
+    CHECK_AND_RETURN_RET(source > SOURCE_TYPE_INVALID && source <= SOURCE_TYPE_MAX, SUCCESS);
+    AudioCapturerInfo info(static_cast<SourceType>(source), AUDIO_FLAG_ULTRA_FAST);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    CHECK_AND_RETURN_RET(GetPreferredInputDeviceDescriptors(info, devices) == SUCCESS, SUCCESS);
+    support = audioConfigManager_.IsUltraFastRecordingDeviceSupported(streamInfo, devices);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::IsMultichannelPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage,
     bool &support)
 {

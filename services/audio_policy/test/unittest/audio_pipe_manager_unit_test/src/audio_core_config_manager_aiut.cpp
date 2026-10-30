@@ -55,6 +55,124 @@ public:
     void TearDown(void) {}
 };
 
+/** @tc.desc: ARM USB uses the reported PCM profile and derives a 2.5 ms source buffer. */
+HWTEST_F(AudioCoreConfigManagerAiutTest, ArmUsbUltraFastRecordProfile_001, TestSize.Level1)
+{
+    auto &manager = AudioCoreConfigManager::GetInstance();
+    auto pipe = std::make_shared<AdapterPipeInfo>();
+    auto xmlProp = std::make_shared<PipeStreamPropInfo>();
+    xmlProp->sampleRate_ = SAMPLE_RATE_48000;
+    xmlProp->format_ = SAMPLE_S16LE;
+    xmlProp->channels_ = STEREO;
+    xmlProp->channelLayout_ = CH_LAYOUT_STEREO;
+    xmlProp->bufferSize_ = 960;
+    xmlProp->pipeInfo_ = pipe;
+    pipe->streamPropInfos_ = {xmlProp};
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    DeviceStreamInfo reported;
+    reported.samplingRate = {SAMPLE_RATE_16000};
+    reported.format = SAMPLE_S32LE;
+    reported.channelLayout = {CH_LAYOUT_MONO};
+    device->audioStreamInfo_ = {reported};
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->audioMode_ = AUDIO_MODE_RECORD;
+    stream->routeFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+    stream->newDeviceDescs_ = {device};
+    stream->streamInfo_ = AudioStreamInfo(SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO);
+    auto result = std::make_shared<PipeStreamPropInfo>();
+    manager.GetStreamPropInfoForRecord(stream, pipe, result, stream->streamInfo_);
+    EXPECT_EQ(stream->routeFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
+    EXPECT_EQ(result->sampleRate_, SAMPLE_RATE_16000);
+    EXPECT_EQ(result->format_, SAMPLE_S32LE);
+    EXPECT_EQ(result->channels_, MONO);
+    EXPECT_EQ(result->channelLayout_, CH_LAYOUT_MONO);
+    EXPECT_EQ(result->bufferSize_, 160);
+    EXPECT_EQ(result->pipeInfo_.lock(), pipe);
+    EXPECT_EQ(xmlProp->sampleRate_, SAMPLE_RATE_48000);
+    EXPECT_EQ(xmlProp->bufferSize_, 960);
+
+    reported.samplingRate = {SAMPLE_RATE_96000};
+    reported.format = SAMPLE_S16LE;
+    reported.channelLayout = {CH_LAYOUT_STEREO};
+    device->audioStreamInfo_ = {reported};
+    result = manager.GetArmUsbUltraFastRecordProp(device, pipe);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->sampleRate_, SAMPLE_RATE_96000);
+    EXPECT_EQ(result->bufferSize_, 960);
+
+    device->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    stream->streamInfo_ = AudioStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO);
+    manager.GetStreamPropInfoForRecord(stream, pipe, result, stream->streamInfo_);
+    EXPECT_EQ(result->sampleRate_, SAMPLE_RATE_48000);
+    EXPECT_EQ(result->bufferSize_, 960);
+}
+
+/** @tc.desc: HAL source_chans reaches the ultra fast profile instead of becoming zero channels. */
+HWTEST_F(AudioCoreConfigManagerAiutTest, ArmUsbUltraFastParsedInputChannels_001, TestSize.Level1)
+{
+    auto &manager = AudioCoreConfigManager::GetInstance();
+    auto pipe = std::make_shared<AdapterPipeInfo>();
+    auto xmlProp = std::make_shared<PipeStreamPropInfo>();
+    xmlProp->sampleRate_ = SAMPLE_RATE_48000;
+    xmlProp->channels_ = STEREO;
+    xmlProp->channelLayout_ = CH_LAYOUT_STEREO;
+    xmlProp->format_ = SAMPLE_S16LE;
+    xmlProp->bufferSize_ = 960;
+    xmlProp->pipeInfo_ = pipe;
+    pipe->streamPropInfos_ = {xmlProp};
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE);
+    for (uint32_t count : {1u, 2u, 4u}) {
+        device->UpdateDeviceInfoByAudioParameters("source_rate:16000;source_format:AUDIO_FORMAT_PCM_16_BIT;"
+            "source_chans:" + std::to_string(count));
+        auto prop = manager.GetArmUsbUltraFastRecordProp(device, pipe);
+        ASSERT_NE(prop, nullptr) << count;
+        EXPECT_EQ(prop->sampleRate_, SAMPLE_RATE_16000);
+        EXPECT_EQ(prop->format_, SAMPLE_S16LE);
+        EXPECT_EQ(prop->channels_, count);
+        EXPECT_EQ(prop->bufferSize_, 40 * count * sizeof(int16_t));
+        EXPECT_EQ(xmlProp->sampleRate_, SAMPLE_RATE_48000);
+        EXPECT_EQ(xmlProp->bufferSize_, 960);
+    }
+}
+
+/** @tc.desc: Missing or invalid ARM USB capabilities cannot create an ultra fast profile. */
+HWTEST_F(AudioCoreConfigManagerAiutTest, ArmUsbUltraFastRecordProfile_002, TestSize.Level1)
+{
+    auto &manager = AudioCoreConfigManager::GetInstance();
+    auto pipe = std::make_shared<AdapterPipeInfo>();
+    pipe->streamPropInfos_ = {std::make_shared<PipeStreamPropInfo>()};
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    device->audioStreamInfo_.clear();
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+    DeviceStreamInfo reported;
+    reported.samplingRate.clear();
+    reported.format = SAMPLE_S16LE;
+    reported.channelLayout = {CH_LAYOUT_MONO};
+    device->audioStreamInfo_ = {reported};
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+    reported.samplingRate = {SAMPLE_RATE_16000};
+    reported.format = INVALID_WIDTH;
+    device->audioStreamInfo_ = {reported};
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+    reported.format = SAMPLE_S16LE;
+    reported.channelLayout = {CH_LAYOUT_UNKNOWN};
+    device->audioStreamInfo_ = {reported};
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+    reported.channelLayout = {CH_LAYOUT_MONO};
+    reported.samplingRate = {SAMPLE_RATE_44100};
+    device->audioStreamInfo_ = {reported};
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+    reported.samplingRate = {static_cast<AudioSamplingRate>(0)};
+    device->audioStreamInfo_ = {reported};
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+    reported.samplingRate = {SAMPLE_RATE_16000};
+    device->audioStreamInfo_ = {reported};
+    pipe->streamPropInfos_.clear();
+    EXPECT_EQ(manager.GetArmUsbUltraFastRecordProp(device, pipe), nullptr);
+}
+
 /**
  * @tc.name: AudioCoreConfigManager_SetEcEnableState_001
  * @tc.number: AudioCoreConfigManager_SetEcEnableState_001
@@ -967,6 +1085,321 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, GetTargetSourceType_008, TestSize.Level
     configManager.GetTargetSourceTypeAndMatchingFlag(SOURCE_TYPE_INVALID, useMatchingPropInfo);
     AIUT_EXPECT_FALSE_INFO_LOG(useMatchingPropInfo,
         "useMatchingPropInfo should remain false for default case");
+}
+
+/** @tc.desc: Routing checks the client format, real local device and independent input pipe. */
+HWTEST_F(AudioCoreConfigManagerAiutTest, UltraFastRecordingCapability_001, TestSize.Level1)
+{
+    AudioStreamInfo streamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO);
+    auto &manager = AudioCoreConfigManager::GetInstance();
+    auto &config = AudioPolicyConfigData::GetInstance();
+    auto savedAdapters = config.adapterInfoMap;
+    auto savedDevices = config.deviceInfoMap;
+    config.adapterInfoMap.clear();
+    config.deviceInfoMap.clear();
+    EXPECT_FALSE(manager.GetUltraFastFlag("primary", PIPE_ROLE_INPUT));
+    auto adapter = std::make_shared<PolicyAdapterInfo>();
+    adapter->adapterName = "primary";
+    auto device = std::make_shared<AdapterDeviceInfo>();
+    device->name_ = "Hifi_Headset_In";
+    device->type_ = DEVICE_TYPE_USB_HEADSET;
+    device->role_ = INPUT_DEVICE;
+    device->adapterInfo_ = adapter;
+    auto pipe = std::make_shared<AdapterPipeInfo>();
+    pipe->name_ = "primary_ultra_fast_input";
+    pipe->role_ = PIPE_ROLE_INPUT;
+    pipe->supportFlags_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+    auto prop = std::make_shared<PipeStreamPropInfo>();
+    prop->sampleRate_ = SAMPLE_RATE_48000;
+    prop->format_ = SAMPLE_S16LE;
+    prop->channels_ = STEREO;
+    prop->channelLayout_ = CH_LAYOUT_STEREO;
+    prop->bufferSize_ = 480;
+    prop->supportDeviceMap_[DEVICE_TYPE_USB_HEADSET] = device;
+    pipe->streamPropInfos_ = {nullptr, prop};
+    pipe->adapterInfo_ = adapter;
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
+    adapter->pipeInfos = {nullptr, pipe};
+    adapter->deviceInfos = {device};
+    config.adapterInfoMap[AudioAdapterType::TYPE_PRIMARY] = adapter;
+    config.deviceInfoMap[{DEVICE_TYPE_USB_HEADSET, INPUT_DEVICE}] = {device};
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    desc->deviceRole_ = INPUT_DEVICE;
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    EXPECT_TRUE(manager.GetUltraFastFlag("primary", PIPE_ROLE_INPUT));
+    EXPECT_FALSE(manager.GetUltraFastFlag("primary", PIPE_ROLE_OUTPUT));
+    EXPECT_FALSE(manager.GetUltraFastFlag("remote", PIPE_ROLE_INPUT));
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {nullptr, desc}));
+    prop->format_ = SAMPLE_S32LE;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    for (auto format : {SAMPLE_S24LE, SAMPLE_S32LE, SAMPLE_F32LE}) {
+        streamInfo.format = format;
+        EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    }
+    streamInfo.format = SAMPLE_S16LE;
+    prop->format_ = SAMPLE_S16LE;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {}));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {nullptr}));
+    prop->bufferSize_ = 960;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    prop->sampleRate_ = SAMPLE_RATE_44100;
+    prop->format_ = SAMPLE_S32LE;
+    prop->channelLayout_ = CH_LAYOUT_MONO;
+    prop->supportDeviceMap_.clear();
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    pipe->streamPropInfos_.clear();
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    prop->sampleRate_ = SAMPLE_RATE_48000;
+    prop->format_ = SAMPLE_S16LE;
+    prop->channelLayout_ = CH_LAYOUT_STEREO;
+    pipe->streamPropInfos_ = {nullptr, prop};
+    EXPECT_TRUE(manager.GetUltraFastFlag("primary", PIPE_ROLE_INPUT));
+    pipe->name_ = "primary_fast_input";
+    EXPECT_TRUE(manager.GetUltraFastFlag("primary", PIPE_ROLE_INPUT));
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    pipe->supportFlags_ = AUDIO_INPUT_FLAG_FAST;
+    EXPECT_FALSE(manager.GetUltraFastFlag("primary", PIPE_ROLE_INPUT));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    pipe->supportFlags_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+    pipe->name_ = "primary_ultra_fast_input";
+    device->isSimulated_ = true;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    device->isSimulated_ = false;
+    desc->networkId_ = "remote";
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    desc->deviceRole_ = OUTPUT_DEVICE;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    desc->deviceRole_ = INPUT_DEVICE;
+    pipe->role_ = PIPE_ROLE_OUTPUT;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    pipe->role_ = PIPE_ROLE_INPUT;
+    auto wrongPipe = std::make_shared<AdapterPipeInfo>();
+    wrongPipe->name_ = "primary_fast_input";
+    wrongPipe->role_ = PIPE_ROLE_INPUT;
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = wrongPipe;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = nullptr;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
+    device->adapterInfo_.reset();
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    device->adapterInfo_ = adapter;
+    adapter->adapterName = "remote";
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    adapter->adapterName = "primary";
+    config.adapterInfoMap.clear();
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    config.adapterInfoMap[AudioAdapterType::TYPE_PRIMARY] = adapter;
+    device->supportPipeMap_.clear();
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
+    adapter->adapterName = "usb";
+    pipe->name_ = "usb_ultra_fast_input";
+    config.adapterInfoMap[AudioAdapterType::TYPE_USB] = adapter;
+    device->type_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    config.deviceInfoMap.clear();
+    config.deviceInfoMap[{DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE}] = {device};
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    config.deviceInfoMap.clear();
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    config.adapterInfoMap = std::move(savedAdapters);
+    config.deviceInfoMap = std::move(savedDevices);
+}
+
+/** @tc.desc: XML device associations and profiles determine support independently of adapter and pipe names. */
+HWTEST_F(AudioCoreConfigManagerAiutTest, UltraFastRecordingDeviceQuery_001, TestSize.Level1)
+{
+    AudioStreamInfo streamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO);
+    auto &manager = AudioCoreConfigManager::GetInstance();
+    auto &config = AudioPolicyConfigData::GetInstance();
+    auto savedAdapters = config.adapterInfoMap;
+    auto savedDevices = config.deviceInfoMap;
+    config.adapterInfoMap.clear();
+    config.deviceInfoMap.clear();
+
+    auto adapter = std::make_shared<PolicyAdapterInfo>();
+    adapter->adapterName = "primary";
+    auto pipe = std::make_shared<AdapterPipeInfo>();
+    pipe->name_ = "primary_ultra_fast_input";
+    pipe->role_ = PIPE_ROLE_INPUT;
+    pipe->supportFlags_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+    pipe->adapterInfo_ = adapter;
+    auto validProp = std::make_shared<PipeStreamPropInfo>();
+    validProp->format_ = SAMPLE_S16LE;
+    validProp->sampleRate_ = SAMPLE_RATE_48000;
+    validProp->channels_ = STEREO;
+    validProp->channelLayout_ = CH_LAYOUT_STEREO;
+    pipe->streamPropInfos_ = {nullptr, validProp};
+    adapter->pipeInfos = {nullptr, pipe};
+    config.adapterInfoMap[AudioAdapterType::TYPE_PRIMARY] = adapter;
+
+    auto device = std::make_shared<AdapterDeviceInfo>();
+    device->role_ = INPUT_DEVICE;
+    device->adapterInfo_ = adapter;
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceRole_ = INPUT_DEVICE;
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    const std::vector<std::pair<std::string, DeviceType>> supportedDevices = {
+        {"Hifi_Headset_In", DEVICE_TYPE_USB_HEADSET}
+    };
+    const std::vector<std::pair<std::string, DeviceType>> unsupportedDevices = {
+        {"Builtin_Mic_In", DEVICE_TYPE_MIC},
+        {"Wired_Headset_In", DEVICE_TYPE_WIRED_HEADSET},
+        {"Bt_SCO_In", DEVICE_TYPE_BLUETOOTH_SCO},
+        {"Nearlink_In", DEVICE_TYPE_NEARLINK_IN}
+    };
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {}));
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {nullptr}));
+    for (const auto &[name, type] : supportedDevices) {
+        device->name_ = name;
+        device->type_ = type;
+        desc->deviceType_ = type;
+        config.deviceInfoMap.clear();
+        config.deviceInfoMap[{type, INPUT_DEVICE}] = {device};
+        // The associated XML profile matches the client request.
+        EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {nullptr, desc})) << name;
+        EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc})) << name;
+    }
+    device->supportPipeMap_.clear();
+    for (const auto &[name, type] : unsupportedDevices) {
+        device->name_ = name;
+        device->type_ = type;
+        desc->deviceType_ = type;
+        config.deviceInfoMap.clear();
+        config.deviceInfoMap[{type, INPUT_DEVICE}] = {device};
+        EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc})) << name;
+    }
+
+    device->name_ = "Unlisted_In";
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    device->name_ = "Hifi_Headset_In";
+    device->type_ = DEVICE_TYPE_USB_HEADSET;
+    desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    config.deviceInfoMap.clear();
+    config.deviceInfoMap[{DEVICE_TYPE_USB_HEADSET, INPUT_DEVICE}] = {device};
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    const std::vector<AudioStreamInfo> unsupportedStreamInfos = {
+        {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO},
+        {SAMPLE_RATE_44100, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO},
+        {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO, CH_LAYOUT_STEREO},
+        {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_4, CH_LAYOUT_4POINT0},
+        {SAMPLE_RATE_48000, ENCODING_AUDIOVIVID, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO}
+    };
+    for (const auto &unsupportedInfo : unsupportedStreamInfos) {
+        EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(unsupportedInfo, {desc}));
+    }
+    streamInfo.channels = MONO;
+    streamInfo.channelLayout = CH_LAYOUT_MONO;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.channelLayout = CH_LAYOUT_UNKNOWN;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    EXPECT_EQ(streamInfo.channelLayout, CH_LAYOUT_UNKNOWN);
+    streamInfo.channels = STEREO;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.channels = CHANNEL_4;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.channels = CHANNEL_UNKNOW;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.channels = CHANNEL_16;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.channels = STEREO;
+    validProp->format_ = SAMPLE_S32LE;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.format = SAMPLE_S32LE;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.format = SAMPLE_S16LE;
+    streamInfo.channels = MONO;
+    streamInfo.channelLayout = CH_LAYOUT_MONO;
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.format = SAMPLE_S16LE;
+    validProp->format_ = SAMPLE_S16LE;
+    streamInfo.channels = STEREO;
+    streamInfo.channelLayout = CH_LAYOUT_STEREO;
+    auto prop = std::make_shared<PipeStreamPropInfo>();
+    prop->format_ = SAMPLE_S32LE;
+    prop->sampleRate_ = SAMPLE_RATE_44100;
+    prop->bufferSize_ = 0;
+    pipe->streamPropInfos_ = {prop};
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    pipe->streamPropInfos_ = {nullptr, validProp};
+    pipe->supportFlags_ = AUDIO_INPUT_FLAG_FAST;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    pipe->supportFlags_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+    device->isSimulated_ = true;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    device->isSimulated_ = false;
+    desc->networkId_ = "remote";
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    desc->deviceRole_ = OUTPUT_DEVICE;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    desc->deviceRole_ = INPUT_DEVICE;
+    pipe->role_ = PIPE_ROLE_OUTPUT;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    pipe->role_ = PIPE_ROLE_INPUT;
+    pipe->name_ = "fast_input";
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    pipe->name_ = "primary_ultra_fast_input";
+    device->supportPipeMap_.clear();
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = nullptr;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
+    adapter->pipeInfos.clear();
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    adapter->pipeInfos = {pipe};
+    device->adapterInfo_.reset();
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    device->adapterInfo_ = adapter;
+    adapter->adapterName = "product_capture_adapter";
+    device->name_ = "Product_Microphone_In";
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    validProp->sampleRate_ = SAMPLE_RATE_16000;
+    validProp->format_ = SAMPLE_S32LE;
+    streamInfo = AudioStreamInfo(SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO);
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    validProp->sampleRate_ = SAMPLE_RATE_48000;
+    validProp->format_ = SAMPLE_S16LE;
+    streamInfo = AudioStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO);
+
+    // USB ARM support continues to use the independent USB pipe.
+    config.adapterInfoMap.clear();
+    adapter->adapterName = "usb";
+    config.adapterInfoMap[PolicyAdapterInfo::GetAdapterType("usb")] = adapter;
+    pipe->name_ = "usb_ultra_fast_input";
+    device->name_ = "Arm_Usb_Headset_In";
+    device->type_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    config.deviceInfoMap.clear();
+    config.deviceInfoMap[{DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE}] = {device};
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    for (auto rate : {SAMPLE_RATE_16000, SAMPLE_RATE_96000}) {
+        streamInfo = AudioStreamInfo(rate, ENCODING_PCM, SAMPLE_S32LE, CHANNEL_4, CH_LAYOUT_4POINT0);
+        EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    }
+    streamInfo.encoding = ENCODING_AUDIOVIVID;
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo.encoding = ENCODING_PCM;
+    pipe->name_ = "primary_ultra_fast_input";
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    pipe->name_ = "usb_ultra_fast_input";
+    device->type_ = DEVICE_TYPE_MIC;
+    desc->deviceType_ = DEVICE_TYPE_MIC;
+    config.deviceInfoMap[{DEVICE_TYPE_MIC, INPUT_DEVICE}] = {device};
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    streamInfo = AudioStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO);
+    EXPECT_TRUE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    device->supportPipeMap_.clear();
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    config.deviceInfoMap.clear();
+    EXPECT_FALSE(manager.IsUltraFastRecordingDeviceSupported(streamInfo, {desc}));
+    config.adapterInfoMap = std::move(savedAdapters);
+    config.deviceInfoMap = std::move(savedDevices);
 }
 
 } // namespace AudioStandard

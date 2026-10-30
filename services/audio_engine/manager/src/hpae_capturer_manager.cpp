@@ -126,6 +126,9 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     HpaeProcessorType sceneType = TransSourceTypeToSceneType(streamInfo.sourceType);
     nodeInfo.sceneType = sceneType;
     nodeInfo.sourceType = sourceInfo_.sourceType;
+    nodeInfo.routeFlag = sourceInfo_.routeFlag;
+    nodeInfo.deviceType = sourceInfo_.deviceType;
+    nodeInfo.captureAdapterType = AudioTypeUtils::HalNameToType(sourceInfo_.adapterName);
     nodeInfo.micInChannels = sourceInfo_.micInChannels;
     nodeInfo.appMicInChannelCount = streamInfo.appMicInChannelCount;
     if (streamInfo.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE) {
@@ -1168,6 +1171,9 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
     nodeInfo.sourceType = sourceInfo_.sourceType;
+    nodeInfo.routeFlag = sourceInfo_.routeFlag;
+    nodeInfo.deviceType = sourceInfo_.deviceType;
+    nodeInfo.captureAdapterType = AudioTypeUtils::HalNameToType(sourceInfo_.adapterName);
     nodeInfo.micInChannels = sourceInfo_.micInChannels;
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;

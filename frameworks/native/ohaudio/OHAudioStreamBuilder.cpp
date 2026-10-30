@@ -652,6 +652,11 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         "Error, invalid type input");
     CHECK_AND_RETURN_RET_LOG(capturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "Error, capturer is nullptr");
+    if (latencyMode_ == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
+            static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID())),
+            AUDIOSTREAM_ERROR_PERMISSION_DENIED_ULTRA_FAST, "Ultra fast recording permission denied");
+    }
     if (sourceType_ == SOURCE_TYPE_VOICE_DOWNLINK) {
         CHECK_AND_RETURN_RET_LOG(sensitiveRecordPermitCallback_ != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
             "Error, capturer for downlink stream must set SensitiveRecordPermitCallback");
@@ -666,7 +671,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
 
     AudioCapturerInfo capturerInfo = {
         sourceType_,
-        latencyMode_
+        latencyMode_ == AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST ? AUDIO_FLAG_ULTRA_FAST : latencyMode_
     };
     capturerInfo.loopBackEffectEnabled = loopBackEffectEnabled_;
 

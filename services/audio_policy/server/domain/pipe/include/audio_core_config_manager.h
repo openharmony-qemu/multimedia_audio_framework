@@ -111,6 +111,10 @@ public:
     bool GetArmUsbUltraFastFlag();
     bool GetTrueUltraFastFlag();
     void CheckTrueUltraFastPipe();
+    bool GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role);
+    // Match ultra-fast flags and stream profiles from XML; ARM USB uses device source parameters.
+    bool IsUltraFastRecordingDeviceSupported(const AudioStreamInfo &streamInfo,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
     bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool GetFastStreamSupport(AudioStreamInfo &streamInfo, std::shared_ptr<AdapterDeviceInfo> &deviceInfo);
@@ -170,6 +174,8 @@ private:
     void GetStreamPropInfoForRecord(std::shared_ptr<AudioStreamDescriptor> desc,
         std::shared_ptr<AdapterPipeInfo> adapterPipeInfo, std::shared_ptr<PipeStreamPropInfo> &info,
         const AudioStreamInfo &streamInfo);
+    std::shared_ptr<PipeStreamPropInfo> GetArmUsbUltraFastRecordProp(
+        const std::shared_ptr<AudioDeviceDescriptor> &device, const std::shared_ptr<AdapterPipeInfo> &pipe);
     std::shared_ptr<AdapterPipeInfo> GetNormalRecordAdapterInfo(std::shared_ptr<AudioStreamDescriptor> desc);
     std::list<std::shared_ptr<PipeStreamPropInfo>> SelectStreamPropInfo(
         std::list<std::shared_ptr<PipeStreamPropInfo>> &streamPropInfos,

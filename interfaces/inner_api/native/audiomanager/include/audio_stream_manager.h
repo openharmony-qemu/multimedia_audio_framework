@@ -166,6 +166,7 @@ public:
      * @since 20
      */
     bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
+    bool IsUltraFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
 
     /**
      * @brief Is multichannel playback supported.

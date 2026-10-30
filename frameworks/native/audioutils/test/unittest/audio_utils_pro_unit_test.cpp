@@ -86,5 +86,21 @@ HWTEST(AudioUtilsProUnitTest, SolePipe_001, TestSize.Level1)
     EXPECT_EQ(testPipe, pipeName);
 }
 
+/** @tc.desc: All capture callers share HAL adapter mapping and the legacy unknown-name fallback. */
+HWTEST(AudioUtilsProUnitTest, HalNameToType_001, TestSize.Level1)
+{
+    const std::vector<std::pair<std::string, HdiAdapterType>> cases = {
+        {"primary", HDI_ADAPTER_TYPE_PRIMARY}, {"usb", HDI_ADAPTER_TYPE_USB},
+        {"a2dp", HDI_ADAPTER_TYPE_A2DP}, {"hdmi", HDI_ADAPTER_TYPE_HDMI},
+        {"dp", HDI_ADAPTER_TYPE_DP}, {"remote", HDI_ADAPTER_TYPE_REMOTE},
+        {"hearing_aid", HDI_ADAPTER_TYPE_HEARING_AID}, {"accessory", HDI_ADAPTER_TYPE_ACCESSORY},
+        {"sle", HDI_ADAPTER_TYPE_SLE}, {"va", HDI_ADAPTER_TYPE_VA},
+        {"", HDI_ADAPTER_TYPE_PRIMARY}, {"unknown", HDI_ADAPTER_TYPE_PRIMARY}
+    };
+    for (const auto &[name, type] : cases) {
+        EXPECT_EQ(AudioTypeUtils::HalNameToType(name), type) << name;
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
