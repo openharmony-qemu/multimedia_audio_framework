@@ -402,7 +402,7 @@ void HpaeRendererManager::DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo)
     auto defaultProcessCluster = SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT);
     if (defaultProcessCluster && processCluster == defaultProcessCluster) {
         sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]--;
-        AUDIO_DEBUG_LOG("sceneType default count is %{public}d",
+        AUDIO_INFO_LOG("sceneType default count is %{public}d",
             sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
     }
     DeleteProcessClusterInner(nodeInfo.sessionId, nodeInfo.sceneType);
@@ -1098,8 +1098,7 @@ void HpaeRendererManager::DereferenceInputCluster(uint32_t sessionId)
     auto defaultProcessCluster = SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT);
     if (defaultProcessCluster && processCluster == defaultProcessCluster) {
         sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]--;
-        AUDIO_DEBUG_LOG("sceneType default count is %{public}d",
-            sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
+        AUDIO_INFO_LOG("sceneType default count is %{public}d", sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
     }
 }
 

@@ -98,7 +98,7 @@ int32_t HpaeAdapterManager::ReleaseRender(uint32_t streamIndex)
     CHECK_AND_RETURN_RET_LOG(currentRender != nullptr, SUCCESS, "No matching stream");
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
-    AUDIO_DEBUG_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
+    AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
     if (rendererStreamMap_.size() == 0) {
         AUDIO_INFO_LOG("Release the last stream");
     }

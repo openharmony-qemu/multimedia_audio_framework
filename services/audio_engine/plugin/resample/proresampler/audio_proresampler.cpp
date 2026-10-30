@@ -271,8 +271,7 @@ int32_t ProResampler::ConfigBufferSizeAndExpectedInFrameLen()
     tmpOutBuf_.resize(sizeNeed, 0.0f);
     CHECK_AND_RETURN_RET_LOG(tmpOutBuf_.size() >= sizeNeed, RESAMPLER_ERR_ALLOC_FAILED,
         "tmpOutBuf_ size error, should be above %{public}zu, actually %{public}zu", sizeNeed, tmpOutBuf_.size());
-    // geometry already printed by the ctor "Init success" line; keep reconfig path at debug level
-    AUDIO_DEBUG_LOG("input %{public}u Hz, output %{public}u Hz, channels: %{public}u, tmpOutBuf size %{public}zu",
+    AUDIO_INFO_LOG("input %{public}u Hz, output %{public}u Hz, channels: %{public}u, tmpOutBuf size %{public}zu",
         inRate_, outRate_, channels_, tmpOutBuf_.size());
     return RESAMPLER_ERR_SUCCESS;
 }
