@@ -310,8 +310,8 @@ int32_t HpaeManager::DeInit()
     hpaeNoLockQueue_.HandleRequests();  // todo suspend
     // Drain-then-destroy: Virtual_Render is lazily created inside CreateRendererManager on this
     // thread; null-safe lookup covers the case where no real sink was ever opened.
-    if (auto coreSink = SafeGetMap(rendererManagerMap_, VIRTUAL_SINK_NAME)) {
-        coreSink->DeInit();  // stops Virtual_Render thread; map entry kept for re-Init reuse
+    if (auto virtualSink = SafeGetMap(rendererManagerMap_, VIRTUAL_SINK_NAME)) {
+        virtualSink->DeInit();  // stops Virtual_Render thread; map entry kept for re-Init reuse
     }
     coreSink_ = "";  // avoid stale sink name across DeInit/Init cycles
     isInit_.store(false);
@@ -542,7 +542,7 @@ void HpaeManager::CreateVirtualSinkManager()
     sinkNameSinkIdMap_[VIRTUAL_SINK_NAME] = sinkSourceIndex;
     sinkIdSinkNameMap_[sinkSourceIndex] = VIRTUAL_SINK_NAME;
     rendererManagerMap_[VIRTUAL_SINK_NAME]->Init();
-    AUDIO_INFO_LOG("create core sink %{public}s, sinkIndex %{public}u",
+    AUDIO_INFO_LOG("create virtual sink %{public}s, sinkIndex %{public}u",
         VIRTUAL_SINK_NAME.c_str(), sinkSourceIndex);
 }
 
@@ -906,7 +906,7 @@ void HpaeManager::MoveToPreferSink(const std::string &name, std::shared_ptr<Audi
         HILOG_COMM_INFO("[MoveToPreferSink]Move %{public}s To Prefer Sink: %{public}s",
             VIRTUAL_SINK_NAME.c_str(), name.c_str());
         if (!SafeGetMap(rendererManagerMap_, VIRTUAL_SINK_NAME)) {
-            AUDIO_ERR_LOG("can not find core sink: %{public}s", VIRTUAL_SINK_NAME.c_str());
+            AUDIO_ERR_LOG("can not find virtual sink: %{public}s", VIRTUAL_SINK_NAME.c_str());
             serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[name]);
             return;
         }
@@ -1265,7 +1265,7 @@ void HpaeManager::HandleMoveAllSinkInputs(
         sinkInputs = GetPerferSinkInputs(sinkInputs);
     }
     if (sinkName.empty()) {
-        AUDIO_INFO_LOG("sink name is empty, move to core sink:%{public}s",
+        AUDIO_INFO_LOG("sink name is empty, move to virtual sink:%{public}s",
             GetEncryptStr(VIRTUAL_SINK_NAME).c_str());
         sinkName = VIRTUAL_SINK_NAME;
     }
