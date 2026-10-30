@@ -615,6 +615,25 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, MemoryAllocation_PcDevice_001, TestSi
         }
     }
 }
+
+/**
+ * @tc.name: ApplyHighpassFilter_FrameCountZero_001
+ * @tc.type: FUNC
+ * @tc.number: ApplyHighpassFilter_FrameCountZero_001
+ * @tc.desc: Zero safeFrameCount returns before any copy: the two-argument signature rejects an
+ *           empty span early, regardless of the highpass support state.
+ */
+HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_FrameCountZero_001, TestSize.Level1)
+{
+    auto node = CreateTestNode(SOURCE_TYPE_MIC);
+    ASSERT_NE(node, nullptr);
+
+    auto pcmBuffer = CreateTestPcmBuffer();
+    ASSERT_NE(pcmBuffer, nullptr);
+
+    node->ApplyHighpassFilter(pcmBuffer.get(), 0); // 0 frame span is rejected before any copy
+    SUCCEED();
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
