@@ -145,6 +145,46 @@ HWTEST_F(HpaeRendererStreamUnitTest, ConvertFadeStrategyToFadeType_001, TestSize
 }
 
 /**
+ * @tc.name  : Test HasCachedHistoryData updated via OnHistoryCacheUpdate
+ * @tc.type  : FUNC
+ * @tc.number: HasCachedHistoryData_001
+ * @tc.desc  : Callback is the sole update source of the cached query state.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HasCachedHistoryData_001, TestSize.Level0)
+{
+    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl = CreateHpaeRendererStreamImpl();
+    ASSERT_NE(rendererStreamImpl, nullptr);
+
+    // Default before any callback
+    EXPECT_FALSE(rendererStreamImpl->HasCachedHistoryData());
+
+    rendererStreamImpl->OnHistoryCacheUpdate(true);
+    EXPECT_TRUE(rendererStreamImpl->HasCachedHistoryData());
+
+    rendererStreamImpl->OnHistoryCacheUpdate(false);
+    EXPECT_FALSE(rendererStreamImpl->HasCachedHistoryData());
+}
+
+/**
+ * @tc.name  : Test OnHistoryCacheUpdate forwards IOperation to status callback
+ * @tc.type  : FUNC
+ * @tc.number: HasCachedHistoryData_002
+ * @tc.desc  : Available/drained flips are forwarded via OnStatusUpdate enum codes.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HasCachedHistoryData_002, TestSize.Level0)
+{
+    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl = CreateHpaeRendererStreamImpl();
+    ASSERT_NE(rendererStreamImpl, nullptr);
+    std::shared_ptr<MockStatusCallback> statusCallback = std::make_shared<NiceMock<MockStatusCallback>>();
+    rendererStreamImpl->RegisterStatusCallback(statusCallback);
+
+    EXPECT_CALL(*statusCallback, OnStatusUpdate(OPERATION_HISTORY_CACHE_AVAILABLE)).Times(1);
+    EXPECT_CALL(*statusCallback, OnStatusUpdate(OPERATION_HISTORY_CACHE_DRAINED)).Times(1);
+    rendererStreamImpl->OnHistoryCacheUpdate(true);
+    rendererStreamImpl->OnHistoryCacheUpdate(false);
+}
+
+/**
  * @tc.name  : Test HpaeRendererStreamImpl Construct
  * @tc.type  : FUNC
  * @tc.number: HpaeRendererStreamImplConstruct_001

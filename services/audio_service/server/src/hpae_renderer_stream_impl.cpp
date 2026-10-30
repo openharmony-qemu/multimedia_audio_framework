@@ -214,7 +214,6 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
 int32_t HpaeRendererStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
-    hasCachedHistoryData_.store(false);
     Trace trace("HpaeRendererStreamImpl::Flush[" + std::to_string(streamIndex_) + "]");
     int32_t ret = IHpaeManager::GetHpaeManager().Flush(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
@@ -792,6 +791,15 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
         "Send data disabled, sessionId %{public}u", streamIndex_);
     return isCallbackMode_ ? HandleCallbackBufferData(callBackStreamInfo)
                            : HandleWriteBufferData(callBackStreamInfo);
+}
+
+void HpaeRendererStreamImpl::OnHistoryCacheUpdate(bool available)
+{
+    hasCachedHistoryData_.store(available);
+    auto statusCallback = statusCallback_.lock();
+    CHECK_AND_RETURN_LOG(statusCallback, "statusCallback is null, sessionId %{public}u", streamIndex_);
+    statusCallback->OnStatusUpdate(available ? OPERATION_HISTORY_CACHE_AVAILABLE
+                                             : OPERATION_HISTORY_CACHE_DRAINED);
 }
 
 int32_t HpaeRendererStreamImpl::HandleCallbackBufferData(AudioCallBackStreamInfo &callBackStreamInfo)

@@ -100,6 +100,7 @@ public:
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
+    void OnHistoryCacheUpdate(bool available) override;
 
     bool OnQueryUnderrun() override;
     void SetSendDataEnabled(bool enabled) override;
@@ -221,7 +222,7 @@ private:
     bool isWriteFirst_ = false;
     bool delayedWake_ = false;
     std::atomic<uint32_t> routeFlag_ = 0;
-    // Latest engine-pushed historyBuffer cache state; refreshed in OnStreamData, reset in Flush.
+    // History buffer cache state; updated only by OnHistoryCacheUpdate (engine flip events).
     std::atomic<bool> hasCachedHistoryData_ = false;
 };
 } // namespace AudioStandard
