@@ -127,6 +127,9 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
         // if historyBuffer has enough data, write to outputStream
         if (!streamInfo_.needData && historyBuffer_) {
             historyBuffer_->GetFrameData(inputAudioBuffer_);
+            if (historyBuffer_->GetCurFrames() == 0) {
+                NotifyHistoryCacheUpdate(false);
+            }
             outputStream_.WriteDataToOutput(&inputAudioBuffer_);
             inputAudioBuffer_.SetBufferValid(true); // historyBuffer always valid
             return false; // do not continue in DoProcess!
@@ -210,6 +213,9 @@ bool HpaeSinkInputNode::RegisterWriteCallback(const std::weak_ptr<IStreamCallbac
 // reset historyBuffer
 void HpaeSinkInputNode::Flush()
 {
+    if (historyBuffer_ && historyBuffer_->GetCurFrames() > 0) {
+        NotifyHistoryCacheUpdate(false);
+    }
     if (GetNodeInfo().historyFrameCount == 0) {
         historyBuffer_ = nullptr;
     } else if (historyBuffer_ && historyBuffer_->GetFrames() == GetNodeInfo().historyFrameCount) {
@@ -276,8 +282,22 @@ void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFra
     hdiFramePosition_.store(hdiFramePosition);
     AUDIO_INFO_LOG("rewind %{public}zu frames", ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
     rewindTime_.store(rewindTime);
-    historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
+    size_t rewindFrames = historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
+    if (rewindFrames > 0) {
+        NotifyHistoryCacheUpdate(true);
+    }
     OnStreamInfoChange(false);
+}
+
+void HpaeSinkInputNode::NotifyHistoryCacheUpdate(bool available)
+{
+    bool expected = !available;
+    if (!historyCacheNotified_.compare_exchange_strong(expected, available)) {
+        return;
+    }
+    auto writeCallback = writeCallback_.lock();
+    CHECK_AND_RETURN_LOG(writeCallback, "writeCallback is null, Id: %{public}d", GetSessionId());
+    writeCallback->OnHistoryCacheUpdate(available);
 }
 
 void HpaeSinkInputNode::EnsureHistoryBufferForAiss(uint32_t preheatFrames)
@@ -290,6 +310,10 @@ void HpaeSinkInputNode::EnsureHistoryBufferForAiss(uint32_t preheatFrames)
         nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate,
         nodeInfo.channelLayout, preheatFrames};
     pcmInfo.isMultiFrames = true;
+    // Recreate for larger AISS preheat drops cached frames: emit drained flip before replacement
+    if (historyBuffer_ && historyBuffer_->GetCurFrames() > 0) {
+        NotifyHistoryCacheUpdate(false);
+    }
     historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
     AUDIO_INFO_LOG("AISS: historyBuffer allocated for %{public}u frames", preheatFrames);
 }
@@ -354,6 +378,10 @@ void HpaeSinkInputNode::SetNodeInfo(HpaeNodeInfo& nodeInfo)
         inputAudioBuffer_.ReConfig(pcmBufferInfo_);
         interleveData_.resize(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
 
+        // Recreate for new frameLen drops cached frames: emit drained flip before replacement
+        if (historyBuffer_ && historyBuffer_->GetCurFrames() > 0) {
+            NotifyHistoryCacheUpdate(false);
+        }
         if (nodeInfo.historyFrameCount > 0) {
             PcmBufferInfo pcmInfo = PcmBufferInfo{
                 nodeInfo.channels, nodeInfo.frameLen, nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate :

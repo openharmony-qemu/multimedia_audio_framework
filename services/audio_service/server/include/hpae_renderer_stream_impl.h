@@ -100,6 +100,7 @@ public:
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
+    void OnHistoryCacheUpdate(bool available) override;
 
     bool OnQueryUnderrun() override;
     void SetSendDataEnabled(bool enabled) override;
@@ -109,6 +110,7 @@ public:
     void TriggerClientWake() override;
     void TriggerAppsUidUpdate() override;
     uint32_t GetRouteFlag() const noexcept override;
+    bool HasCachedHistoryData() const noexcept override;
 private:
     int32_t UpdateSpanSize(uint32_t spanSizeInFrame);
     void SyncOffloadMode();
@@ -220,6 +222,8 @@ private:
     bool isWriteFirst_ = false;
     bool delayedWake_ = false;
     std::atomic<uint32_t> routeFlag_ = 0;
+    // History buffer cache state; updated only by OnHistoryCacheUpdate (engine flip events).
+    std::atomic<bool> hasCachedHistoryData_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

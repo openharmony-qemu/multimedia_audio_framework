@@ -796,6 +796,11 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
                            : HandleWriteBufferData(callBackStreamInfo);
 }
 
+void HpaeRendererStreamImpl::OnHistoryCacheUpdate(bool available)
+{
+    hasCachedHistoryData_.store(available);
+}
+
 int32_t HpaeRendererStreamImpl::HandleCallbackBufferData(AudioCallBackStreamInfo &callBackStreamInfo)
 {
     auto requestDataLen = callBackStreamInfo.requestDataLen;
@@ -1372,6 +1377,11 @@ void HpaeRendererStreamImpl::TriggerClientWake()
 uint32_t HpaeRendererStreamImpl::GetRouteFlag() const noexcept
 {
     return routeFlag_.load();
+}
+
+bool HpaeRendererStreamImpl::HasCachedHistoryData() const noexcept
+{
+    return hasCachedHistoryData_.load();
 }
 } // namespace AudioStandard
 } // namespace OHOS
