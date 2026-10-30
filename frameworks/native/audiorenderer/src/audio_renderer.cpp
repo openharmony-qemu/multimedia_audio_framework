@@ -558,9 +558,9 @@ bool AudioRenderer::CheckStreamTypeAndPermission(AudioStreamType audioStreamType
         // Client-side check bypassed; server enforces real permission
 #else
         AudioRenderer::SendRendererCreateError(streamUsage, ERR_INVALID_PARAM);
-    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        PLAY_CREATE_INVALID_PARAM, "ULTRASONIC can only create by MSDP", false);
-        AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_CREATE_INVALID_PARAM, "ULTRASONIC can only create by MSDP", false);
+            AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
         return false;
 #endif
     }
