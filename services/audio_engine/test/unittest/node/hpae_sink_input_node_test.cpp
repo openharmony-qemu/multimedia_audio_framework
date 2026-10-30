@@ -614,6 +614,11 @@ HWTEST_F(HpaeSinkInputNodeTest, HistoryCacheUpdate_RewindDrainFlush, TestSize.Le
     EXPECT_EQ(trueCnt, 2);
     node_->Flush();
     EXPECT_EQ(falseCnt, 2);
+
+    // zero-frame rewind (10000us -> 0 frames) changes nothing and does not re-notify
+    node_->RewindHistoryBuffer(10000, 100);
+    EXPECT_EQ(trueCnt, 2);
+    EXPECT_EQ(falseCnt, 2);
 }
 
 /**

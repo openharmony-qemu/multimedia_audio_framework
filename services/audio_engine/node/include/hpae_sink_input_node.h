@@ -120,7 +120,7 @@ private:
     int32_t appUid_ = -1;
     bool isSystemApp_ = false;
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
-    bool historyCacheNotified_ = false;
+    std::atomic<bool> historyCacheNotified_ = false;
     bool offloadEnable_ = false;
     int32_t offloadType_ = OFFLOAD_DEFAULT;
     float loudnessGain_ = 0.0f;

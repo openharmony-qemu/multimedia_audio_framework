@@ -291,10 +291,10 @@ void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFra
 
 void HpaeSinkInputNode::NotifyHistoryCacheUpdate(bool available)
 {
-    if (historyCacheNotified_ == available) {
+    bool expected = !available;
+    if (!historyCacheNotified_.compare_exchange_strong(expected, available)) {
         return;
     }
-    historyCacheNotified_ = available;
     auto writeCallback = writeCallback_.lock();
     CHECK_AND_RETURN_LOG(writeCallback, "writeCallback is null, Id: %{public}d", GetSessionId());
     writeCallback->OnHistoryCacheUpdate(available);
@@ -310,6 +310,10 @@ void HpaeSinkInputNode::EnsureHistoryBufferForAiss(uint32_t preheatFrames)
         nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate,
         nodeInfo.channelLayout, preheatFrames};
     pcmInfo.isMultiFrames = true;
+    // Recreate for larger AISS preheat drops cached frames: emit drained flip before replacement
+    if (historyBuffer_ && historyBuffer_->GetCurFrames() > 0) {
+        NotifyHistoryCacheUpdate(false);
+    }
     historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
     AUDIO_INFO_LOG("AISS: historyBuffer allocated for %{public}u frames", preheatFrames);
 }
@@ -374,6 +378,10 @@ void HpaeSinkInputNode::SetNodeInfo(HpaeNodeInfo& nodeInfo)
         inputAudioBuffer_.ReConfig(pcmBufferInfo_);
         interleveData_.resize(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
 
+        // Recreate for new frameLen drops cached frames: emit drained flip before replacement
+        if (historyBuffer_ && historyBuffer_->GetCurFrames() > 0) {
+            NotifyHistoryCacheUpdate(false);
+        }
         if (nodeInfo.historyFrameCount > 0) {
             PcmBufferInfo pcmInfo = PcmBufferInfo{
                 nodeInfo.channels, nodeInfo.frameLen, nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate :
