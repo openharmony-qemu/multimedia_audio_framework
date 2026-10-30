@@ -621,7 +621,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, MemoryAllocation_PcDevice_001, TestSi
  * @tc.type: FUNC
  * @tc.number: ApplyHighpassFilter_FrameCountZero_001
  * @tc.desc: Zero safeFrameCount returns before any copy: the two-argument signature rejects an
- *           empty span early, regardless of the highpass support state.
+ *           empty span early and leaves the input buffer untouched.
  */
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_FrameCountZero_001, TestSize.Level1)
 {
@@ -630,9 +630,15 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_FrameCountZero_00
 
     auto pcmBuffer = CreateTestPcmBuffer();
     ASSERT_NE(pcmBuffer, nullptr);
+    float *pcmData = pcmBuffer->GetPcmDataBuffer();
+    ASSERT_NE(pcmData, nullptr);
+    const size_t sentinelCount = static_cast<size_t>(DEFAULT_FRAME_LENGTH) * STEREO;
+    std::fill(pcmData, pcmData + sentinelCount, 0.5f); // sentinel: early return must not touch it
 
     node->ApplyHighpassFilter(pcmBuffer.get(), 0); // 0 frame span is rejected before any copy
-    SUCCEED();
+    for (size_t i = 0; i < sentinelCount; i++) {
+        EXPECT_EQ(pcmData[i], 0.5f); // untouched: the guard fires before the first memcpy
+    }
 }
 } // namespace HPAE
 } // namespace AudioStandard

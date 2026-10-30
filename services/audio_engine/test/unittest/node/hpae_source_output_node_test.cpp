@@ -1183,7 +1183,7 @@ HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_Clamp_002, TestSize.Level1)
 HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_Mute_001, TestSize.Level1)
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
-    nodeInfo.frameLen = 480; // 5 for 100ms@48k divided by 10
+    nodeInfo.frameLen = 480; // 480 for 10ms@48k
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_S16LE;
     std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
@@ -1228,6 +1228,7 @@ HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_Clamp_003, TestSize.Level1)
     node->isSupportHighpassFilter_ = true;
     node->filterChannelCount_ = static_cast<int32_t>(nodeInfo.channels);
     node->highpassFilter_ = std::make_unique<AudioHighPassFilter>();
+    node->highpassFilter_->InitFilter(node->filterChannelCount_); // init on device; fails safely on PC
 
     PcmBufferInfo upstreamInfo(nodeInfo.channels, upstreamFrameLen, nodeInfo.samplingRate);
     HpaePcmBuffer upstream(upstreamInfo);
