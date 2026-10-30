@@ -1569,7 +1569,7 @@ void RendererInClientInner::RefreshRendererAttrInfoFromSpan(const RendererAttrIn
     rendererInfo_.audioFlag = attr.routeFlag;
     if (attr.routeFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_TRUE_ULTRA_FAST;
-    } else if ((attr.routeFlag & AUDIO_OUTPUT_FLAG_FAST) == 0) {    
+    } else if ((attr.routeFlag & AUDIO_OUTPUT_FLAG_FAST) == 0) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     } else if (attr.routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;

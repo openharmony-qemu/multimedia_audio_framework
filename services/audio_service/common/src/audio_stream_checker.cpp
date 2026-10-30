@@ -21,6 +21,7 @@
 #include "volume_tools.h"
 #include "media_monitor_manager.h"
 #include "app_bundle_manager.h"
+#include "dfx/stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -147,6 +147,7 @@ public:
     static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
     static int32_t CheckRendererAudioStreamInfo(const AudioStreamParams info);
     static int32_t CheckCapturerAudioStreamInfo(const AudioStreamParams info);
+
     static inline bool IsFastStreamClass(StreamClass streamClass)
     {
         if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
