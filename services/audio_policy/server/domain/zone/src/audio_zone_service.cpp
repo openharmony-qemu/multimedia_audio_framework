@@ -29,7 +29,6 @@
 #include "audio_device_manager.h"
 #include "audio_connected_device.h"
 #include "audio_volume_manager.h"
-#include "audio_pipe_manager.h"
 #include "stream_dfx_manager.h"
 #include "os_account_manager.h"
 
@@ -770,7 +769,8 @@ AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId, bo
         HILOG_COMM_ERROR("[GetAudioInterruptForZone]interruptService_ tmp is nullptr"));
     tmp->GetAudioFocusInfoList(zoneId, interrupts);
     CHECK_AND_RETURN_RET(filterRemote == true, interrupts);
-    AudioZoneUtils::GetInstance().FilterRemoteAudioInterrupt(tmp, interrupts);
+    AudioZoneFocusFilter::GetInstance().FilterAudioInterrupt(AudioFocusFilterType::FILTER_REMOTE_FOCUS,
+        interrupts, tmp);
     AUDIO_INFO_LOG("[RemoteFocus]remote focus size %{public}zu", interrupts.size());
     return interrupts;
 }
@@ -899,16 +899,17 @@ AudioInterruptResult AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
     return result;
 }
 
-std::vector<uint32_t> AudioZoneService::GetLocalSessionIds(
-    const std::shared_ptr<AudioInterruptService> &interruptService, const AudioZoneFocusList &focusList)
+std::vector<uint32_t> AudioZoneService::GetLocalFocusSessionIds(int32_t zoneId,
+    const std::shared_ptr<AudioInterruptService> &interruptService)
 {
     std::vector<uint32_t> localSessionIds = {};
     CHECK_AND_RETURN_RET(interruptService != nullptr, localSessionIds);
-    for (auto focus = focusList.begin(); focus != focusList.end(); focus++) {
-        uint32_t realSessionId = interruptService->GetRealSessionIdByAudioInterrupt(focus->first);
-        auto streamDesc = AudioPipeManager::GetPipeManager()->GetStreamDescById(realSessionId);
-        CHECK_AND_CONTINUE(streamDesc != nullptr && !streamDesc->IsDeviceRemote());
-        localSessionIds.push_back(focus->first.streamId);
+    AudioZoneFocusList focusList;
+    interruptService->GetAudioFocusInfoList(zoneId, focusList);
+    AudioZoneFocusFilter::GetInstance().FilterAudioInterrupt(AudioFocusFilterType::FILTER_LOCAL_FOCUS,
+        focusList, interruptService);
+    for (const auto &focus : focusList) {
+        localSessionIds.emplace_back(focus.first.streamId);
     }
     return localSessionIds;
 }
@@ -942,9 +943,7 @@ int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, const std::
     if (deviceTag.empty()) {
         std::vector<uint32_t> localSessionIds = {};
         if (zoneId == 0) {
-            std::list<std::pair<AudioInterrupt, AudioFocuState>> focusList = {};
-            tmp->GetAudioFocusInfoList(zoneId, focusList);
-            localSessionIds = GetLocalSessionIds(tmp, focusList);
+            localSessionIds = GetLocalFocusSessionIds(zoneId, tmp);
         }
         ret = tmp->InjectInterruptToAudioZone(zoneId, interrupts, localSessionIds);
     } else {

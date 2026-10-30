@@ -16,7 +16,6 @@
 #define LOG_TAG "AudioZoneInterruptReporter"
 
 #include "audio_zone_interrupt_reporter.h"
-#include "audio_pipe_manager.h"
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_zone_utils.h"
@@ -147,7 +146,8 @@ AudioZoneFocusList AudioZoneInterruptReporter::GetFocusList()
     if (deviceTag_.empty()) {
         interruptService_->GetAudioFocusInfoList(zoneId_, focusList);
         CHECK_AND_RETURN_RET(zoneId_ == 0, focusList);
-        AudioZoneUtils::GetInstance().FilterRemoteAudioInterrupt(interruptService_, focusList);
+        AudioZoneFocusFilter::GetInstance().FilterAudioInterrupt(AudioFocusFilterType::FILTER_REMOTE_FOCUS,
+            focusList, interruptService_);
     } else {
         interruptService_->GetAudioFocusInfoList(zoneId_, deviceTag_, focusList);
     }

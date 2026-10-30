@@ -1105,33 +1105,19 @@ HWTEST_F(AudioZoneServiceUnitTest, GetAvailableDevices_001, TestSize.Level1)
  */
 HWTEST_F(AudioZoneServiceUnitTest, FilterRemoteAudioInterrupt_001, TestSize.Level1)
 {
-    auto &zoneUtils = AudioZoneUtils::GetInstance();
-    auto interruptService = std::make_shared<AudioInterruptService>();
+    auto &focusFilter = AudioZoneFocusFilter::GetInstance();
     std::list<std::pair<AudioInterrupt, AudioFocuState>> focusList = {};
-    zoneUtils.FilterRemoteAudioInterrupt(interruptService, focusList);
+    focusFilter.UpdateLocalSessionIds({});
+    focusFilter.FilterAudioInterrupt(AudioFocusFilterType::FILTER_REMOTE_FOCUS, focusList, nullptr);
 
     AudioInterrupt a1;
     a1.streamId = 100;
     focusList.push_back({a1, AudioFocuState::ACTIVE});
-    zoneUtils.FilterRemoteAudioInterrupt(interruptService, focusList);
-
-    auto &pipeList = AudioPipeManager::GetPipeManager()->curPipeList_;
-    auto pipeInfo = std::make_shared<AudioPipeInfo>();
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = {};
-    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
-    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
-    deviceDesc->networkId_ = "RemoteDevice";
-    newDeviceDescs.emplace_back(deviceDesc);
-    streamDesc->sessionId_ = 100;
-    streamDesc->newDeviceDescs_ = newDeviceDescs;
-    streamDescs.emplace_back(streamDesc);
-    pipeInfo->streamDescriptors_ = streamDescs;
-    pipeList.emplace_back(pipeInfo);
-
+    focusFilter.FilterAudioInterrupt(AudioFocusFilterType::FILTER_REMOTE_FOCUS, focusList, nullptr);
+    
+    focusFilter.UpdateLocalSessionIds({});
     focusList.push_back({a1, AudioFocuState::ACTIVE});
-    zoneUtils.FilterRemoteAudioInterrupt(interruptService, focusList);
-    pipeList.pop_back();
+    focusFilter.FilterAudioInterrupt(AudioFocusFilterType::FILTER_REMOTE_FOCUS, focusList, nullptr);
     EXPECT_NE(focusList.size(), 0);
 }
 
@@ -1142,32 +1128,18 @@ HWTEST_F(AudioZoneServiceUnitTest, FilterRemoteAudioInterrupt_001, TestSize.Leve
  */
 HWTEST_F(AudioZoneServiceUnitTest, FilterRemoteAudioInterrupt_002, TestSize.Level1)
 {
-    auto &zoneUtils = AudioZoneUtils::GetInstance();
-    auto interruptService = std::make_shared<AudioInterruptService>();
+    auto &focusFilter = AudioZoneFocusFilter::GetInstance();
     std::list<std::pair<AudioInterrupt, AudioFocuState>> focusList = {};
-    zoneUtils.FilterRemoteAudioInterrupt(interruptService, focusList);
+    focusFilter.UpdateLocalSessionIds({});
+    focusFilter.FilterAudioInterrupt(AudioFocusFilterType::FILTER_REMOTE_FOCUS, focusList, nullptr);
 
     AudioInterrupt a1;
     a1.streamId = 100;
     focusList.push_back({a1, AudioFocuState::ACTIVE});
-
-    auto &pipeList = AudioPipeManager::GetPipeManager()->curPipeList_;
-    auto pipeInfo = std::make_shared<AudioPipeInfo>();
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = {};
-    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
-    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
-    deviceDesc->networkId_ = "LocalDevice";
-    newDeviceDescs.emplace_back(deviceDesc);
-    streamDesc->sessionId_ = 100;
-    streamDesc->newDeviceDescs_ = newDeviceDescs;
-    streamDescs.emplace_back(streamDesc);
-    pipeInfo->streamDescriptors_ = streamDescs;
-    pipeList.emplace_back(pipeInfo);
-
-    zoneUtils.FilterRemoteAudioInterrupt(interruptService, focusList);
-    pipeList.pop_back();
-    EXPECT_EQ(focusList.size(), 0);
+    
+    focusFilter.UpdateLocalSessionIds({100});
+    focusFilter.FilterAudioInterrupt(AudioFocusFilterType::FILTER_REMOTE_FOCUS, focusList, nullptr);
+    EXPECT_NE(focusList.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

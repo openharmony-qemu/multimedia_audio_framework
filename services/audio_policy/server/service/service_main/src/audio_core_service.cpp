@@ -28,6 +28,7 @@
 #include "audio_usb_manager.h"
 #include "audio_spatialization_service.h"
 #include "audio_zone_service.h"
+#include "audio_zone_utils.h"
 #include "audio_bundle_manager.h"
 
 #include <algorithm>
@@ -749,6 +750,7 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
         AudioBundleManager::GetBundleNameFromUid(GetRealUid(streamDesc)));
 
     UpdateStreamDevicesForCreate(streamDesc, "CreateRendererClient");
+    UpdateLocalSessionIdsFromStreamDesc();
     // Call(Modem/Transfer) stream need special process, because there are no real hdi output or input in fwk.
     // Input also need to be handled because capturer won't be created, only has renderer.
     StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
@@ -869,6 +871,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
+    UpdateLocalSessionIdsFromStreamDesc();
     if (!hasInputDeviceSnapshot && IsVoiceRecognitionMicInEcRequested(streamDesc)) {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
             "micin/ec capture denied: no system permission");
@@ -2912,6 +2915,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     BatchFetchAndStartOutputStreams(outputStreamDescs, caller);
     // todo fix
     HandleA2dpSuspendWhenFetch(reason, audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), outputStreamDescs);
+    UpdateLocalSessionIdsFromStreamDesc();
     // this will update volume device map
     audioActiveDevice_.UpdateStreamDeviceMapForOutput("FetchOutputDeviceAndRoute");
     audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
@@ -2929,6 +2933,27 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
         HandleFetchOutputWhenNoRunningStream(reason);
     }
     return ret;
+}
+
+void AudioCoreService::UpdateLocalSessionIdsFromStreamDesc()
+{
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+    std::vector<uint32_t> localSessionIds;
+    auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
+    for (const auto &streamDesc : outputStreamDescs) {
+        if (streamDesc == nullptr || streamDesc->IsDeviceRemote()) {
+            continue;
+        }
+        localSessionIds.push_back(streamDesc->sessionId_);
+    }
+    auto inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
+    for (const auto &streamDesc : inputStreamDescs) {
+        if (streamDesc == nullptr || streamDesc->IsDeviceRemote()) {
+            continue;
+        }
+        localSessionIds.push_back(streamDesc->sessionId_);
+    }
+    AudioZoneFocusFilter::GetInstance().UpdateLocalSessionIds(localSessionIds);
 }
 
 std::map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> AudioCoreService::PreviewOutputDeviceSelection(
@@ -3105,6 +3130,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
             needUpdateActiveDevice = !isUpdateActiveDevice;
         }
     }
+    UpdateLocalSessionIdsFromStreamDesc();
     audioActiveDevice_.UpdateStreamDeviceMapForInput("fetchInputDevice");
     if (isUpdateActiveDevice) {
         // networkId is not used.
