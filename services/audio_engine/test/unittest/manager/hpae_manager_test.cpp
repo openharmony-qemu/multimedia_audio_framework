@@ -3613,4 +3613,49 @@ HWTEST_F(HpaeManagerUnitTest, VirtualRenderSinkFallback, TestSize.Level1)
     hpaeManager_->DeInit();
 }
 
+/**
+ * @tc.name  : StopAudioPortOnCoreSinkIsSkipped
+ * @tc.desc  : StopAudioPort on the permanent core sink returns SUCCESS and the sink keeps serving.
+ */
+HWTEST_F(HpaeManagerUnitTest, StopAudioPortOnCoreSinkIsSkipped, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->StopAudioPort("Virtual_Render"), SUCCESS);  // guard hit, skip stop
+    WaitForMsgProcessing(hpaeManager_);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback =
+        std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();  // empty deviceName
+    EXPECT_EQ(hpaeManager_->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetAllSinkInputs(), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(callback->GetSinkInputs().empty(), false);  // core sink still serves streams
+    EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : CloseOutAudioPortOnCoreSinkIsSkipped
+ * @tc.desc  : CloseOutAudioPort on the permanent core sink returns SUCCESS and keeps the entry.
+ */
+HWTEST_F(HpaeManagerUnitTest, CloseOutAudioPortOnCoreSinkIsSkipped, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->CloseOutAudioPort("Virtual_Render"), SUCCESS);  // guard hit, skip close
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count("Virtual_Render"), 1);  // entry survives
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
+    EXPECT_EQ(hpaeManager_->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+}
+
 }  // namespace
