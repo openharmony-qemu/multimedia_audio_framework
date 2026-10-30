@@ -60,7 +60,7 @@ static const std::string USB_SINK_NAME = "Usb_arm_speaker";
 static const std::string DEFAULT_SPEAKER_SINK_NAME = "Speaker";
 static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
 // Single source of truth: name constant lives in hpae_info.h, shared with HpaeVirtualRendererManager.
-static const std::string DEFAULT_CORE_SINK_NAME = VIRTUAL_RENDER_SINK_NAME;
+static const std::string VIRTUAL_SINK_NAME = VIRTUAL_RENDER_SINK_NAME;
 static const std::string MCH_SINK_NAME = "MCH_Speaker";
 static const std::string NEARLINK_SINK_NAME = "Wireless_Speaker";
 // Max delay before a deferred AISS-disable request is force-closed, even if the bound stream never
@@ -193,8 +193,8 @@ int32_t HpaeManager::SuspendAudioDevice(std::string &audioPortName, bool isSuspe
 
 int32_t HpaeManager::StopAudioPort(const std::string &audioPortName)
 {
-    if (audioPortName == DEFAULT_CORE_SINK_NAME) {
-        AUDIO_WARNING_LOG("core sink %{public}s is permanent, skip stop", audioPortName.c_str());
+    if (audioPortName == VIRTUAL_SINK_NAME) {
+        AUDIO_WARNING_LOG("permanent sink %{public}s, skip stop", audioPortName.c_str());
         return SUCCESS;
     }
     auto request = [this, audioPortName]() {
@@ -310,7 +310,7 @@ int32_t HpaeManager::DeInit()
     hpaeNoLockQueue_.HandleRequests();  // todo suspend
     // Drain-then-destroy: Virtual_Render is lazily created inside CreateRendererManager on this
     // thread; null-safe lookup covers the case where no real sink was ever opened.
-    if (auto coreSink = SafeGetMap(rendererManagerMap_, DEFAULT_CORE_SINK_NAME)) {
+    if (auto coreSink = SafeGetMap(rendererManagerMap_, VIRTUAL_SINK_NAME)) {
         coreSink->DeInit();  // stops Virtual_Render thread; map entry kept for re-Init reuse
     }
     coreSink_ = "";  // avoid stale sink name across DeInit/Init cycles
@@ -420,7 +420,7 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
     if (coreSink_ == "") {
         coreSink_ = audioModuleInfo.name;
         AUDIO_INFO_LOG("SetCoreSink name: %{public}s", GetEncryptStr(coreSink_).c_str());
-        CreateCoreSinkManager();  // mirror capture side: core manager created after first port
+        CreateVirtualSinkManager();  // mirror capture side: virtual sink manager created after first port
     }
     if (audioModuleInfo.name == VIRTUAL_INJECTOR) {
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
@@ -532,18 +532,18 @@ void HpaeManager::CreateCoreSourceManager()
     sourceIdSourceNameMap_[sinkSourceIndex] = DEFAULT_CORE_SOURCE_NAME;
 }
 
-void HpaeManager::CreateCoreSinkManager()
+void HpaeManager::CreateVirtualSinkManager()
 {
     uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
     sinkSourceIndex_.fetch_add(1);
     auto rendererManager = std::make_shared<HpaeVirtualRendererManager>();
     rendererManager->RegisterSendMsgCallback(weak_from_this());
-    rendererManagerMap_[DEFAULT_CORE_SINK_NAME] = rendererManager;
-    sinkNameSinkIdMap_[DEFAULT_CORE_SINK_NAME] = sinkSourceIndex;
-    sinkIdSinkNameMap_[sinkSourceIndex] = DEFAULT_CORE_SINK_NAME;
-    rendererManagerMap_[DEFAULT_CORE_SINK_NAME]->Init();
+    rendererManagerMap_[VIRTUAL_SINK_NAME] = rendererManager;
+    sinkNameSinkIdMap_[VIRTUAL_SINK_NAME] = sinkSourceIndex;
+    sinkIdSinkNameMap_[sinkSourceIndex] = VIRTUAL_SINK_NAME;
+    rendererManagerMap_[VIRTUAL_SINK_NAME]->Init();
     AUDIO_INFO_LOG("create core sink %{public}s, sinkIndex %{public}u",
-        DEFAULT_CORE_SINK_NAME.c_str(), sinkSourceIndex);
+        VIRTUAL_SINK_NAME.c_str(), sinkSourceIndex);
 }
 
 int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex)
@@ -738,8 +738,8 @@ void HpaeManager::MarkClosingSinkPrefer(const std::string &sinkName)
 
 int32_t HpaeManager::CloseOutAudioPort(std::string sinkName)
 {
-    if (sinkName == DEFAULT_CORE_SINK_NAME || (!coreSink_.empty() && sinkName == coreSink_)) {
-        AUDIO_WARNING_LOG("core sink %{public}s is permanent, skip close", sinkName.c_str());
+    if (sinkName == VIRTUAL_SINK_NAME || (!coreSink_.empty() && sinkName == coreSink_)) {
+        AUDIO_WARNING_LOG("permanent sink %{public}s, skip close", sinkName.c_str());
         return SUCCESS;
     }
     std::unique_lock<std::mutex> lock(sinkVirtualOutputNodeMapMutex_, std::defer_lock);
@@ -893,7 +893,7 @@ void HpaeManager::MoveToPreferSink(const std::string &name, std::shared_ptr<Audi
     for (const auto &id : idPreferSinkNameMap_) {
         if (id.second == name && rendererIdStreamInfoMap_[id.first].state == HPAE_SESSION_RUNNING &&
             rendererIdSinkNameMap_[id.first] != id.second &&
-            rendererIdSinkNameMap_[id.first] == DEFAULT_CORE_SINK_NAME) {
+            rendererIdSinkNameMap_[id.first] == VIRTUAL_SINK_NAME) {
             sessionIds.emplace_back(id.first);
             movingIds_.emplace(id.first, HPAE_SESSION_RUNNING);
         }
@@ -904,13 +904,13 @@ void HpaeManager::MoveToPreferSink(const std::string &name, std::shared_ptr<Audi
     }
     auto request = [this, name, sessionIds, serviceCallback]() {
         HILOG_COMM_INFO("[MoveToPreferSink]Move %{public}s To Prefer Sink: %{public}s",
-            DEFAULT_CORE_SINK_NAME.c_str(), name.c_str());
-        if (!SafeGetMap(rendererManagerMap_, DEFAULT_CORE_SINK_NAME)) {
-            AUDIO_ERR_LOG("can not find core sink: %{public}s", DEFAULT_CORE_SINK_NAME.c_str());
+            VIRTUAL_SINK_NAME.c_str(), name.c_str());
+        if (!SafeGetMap(rendererManagerMap_, VIRTUAL_SINK_NAME)) {
+            AUDIO_ERR_LOG("can not find core sink: %{public}s", VIRTUAL_SINK_NAME.c_str());
             serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[name]);
             return;
         }
-        rendererManagerMap_[DEFAULT_CORE_SINK_NAME]->MoveAllStream(name, sessionIds, MOVE_PREFER);
+        rendererManagerMap_[VIRTUAL_SINK_NAME]->MoveAllStream(name, sessionIds, MOVE_PREFER);
     };
     SendRequest(request, __func__);
 }
@@ -1266,8 +1266,8 @@ void HpaeManager::HandleMoveAllSinkInputs(
     }
     if (sinkName.empty()) {
         AUDIO_INFO_LOG("sink name is empty, move to core sink:%{public}s",
-            GetEncryptStr(DEFAULT_CORE_SINK_NAME).c_str());
-        sinkName = DEFAULT_CORE_SINK_NAME;
+            GetEncryptStr(VIRTUAL_SINK_NAME).c_str());
+        sinkName = VIRTUAL_SINK_NAME;
     }
     if (!SafeGetMap(rendererManagerMap_, sinkName)) {
         AUDIO_WARNING_LOG("can not find sink: %{public}s", GetEncryptStr(sinkName).c_str());
