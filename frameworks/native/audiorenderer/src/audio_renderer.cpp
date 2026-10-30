@@ -396,6 +396,9 @@ bool AudioRenderer::CheckUltrasonicPermission(AudioStreamType audioStreamType, S
     if (audioStreamType != STREAM_ULTRASONIC || getuid() == UID_MSDP_SA) {
         return true;
     }
+#ifdef MULTI_BUS_ENABLE
+    return true;
+#endif
     AudioRenderer::SendRendererCreateError(streamUsage, ERR_INVALID_PARAM);
     StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
         PLAY_CREATE_INVALID_PARAM, "ULTRASONIC can only create by MSDP", false);
@@ -551,11 +554,15 @@ AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
 bool AudioRenderer::CheckStreamTypeAndPermission(AudioStreamType audioStreamType, StreamUsage streamUsage)
 {
     if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
-AudioRenderer::SendRendererCreateError(streamUsage, ERR_INVALID_PARAM);
+#ifdef MULTI_BUS_ENABLE
+        // Client-side check bypassed; server enforces real permission
+#else
+        AudioRenderer::SendRendererCreateError(streamUsage, ERR_INVALID_PARAM);
     StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
         PLAY_CREATE_INVALID_PARAM, "ULTRASONIC can only create by MSDP", false);
         AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
         return false;
+#endif
     }
 
 #ifdef MULTI_ALARM_LEVEL
