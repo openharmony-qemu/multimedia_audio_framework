@@ -308,10 +308,13 @@ int32_t HpaeManager::DeInit()
     }
     delayedTaskQueue_.CancelAll();
     hpaeNoLockQueue_.HandleRequests();  // todo suspend
-    // Drain-then-destroy: Virtual_Render is lazily created inside CreateRendererManager on this
-    // thread; null-safe lookup covers the case where no real sink was ever opened.
+    // Destroy and unregister: lazy re-creation takes a fresh index, so old entries must go.
     if (auto virtualSink = SafeGetMap(rendererManagerMap_, VIRTUAL_SINK_NAME)) {
-        virtualSink->DeInit();  // stops Virtual_Render thread; map entry kept for re-Init reuse
+        uint32_t virtualSinkIndex = sinkNameSinkIdMap_[VIRTUAL_SINK_NAME];
+        virtualSink->DeInit();  // stops Virtual_Render thread
+        rendererManagerMap_.erase(VIRTUAL_SINK_NAME);
+        sinkIdSinkNameMap_.erase(virtualSinkIndex);
+        sinkNameSinkIdMap_.erase(VIRTUAL_SINK_NAME);
     }
     coreSink_ = "";  // avoid stale sink name across DeInit/Init cycles
     isInit_.store(false);
@@ -420,7 +423,7 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
     if (coreSink_ == "") {
         coreSink_ = audioModuleInfo.name;
         AUDIO_INFO_LOG("SetCoreSink name: %{public}s", GetEncryptStr(coreSink_).c_str());
-        CreateVirtualSinkManager();  // mirror capture side: virtual sink manager created after first port
+        EnsureVirtualSinkManager();  // virtual sink manager created after first port
     }
     if (audioModuleInfo.name == VIRTUAL_INJECTOR) {
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
@@ -532,8 +535,10 @@ void HpaeManager::CreateCoreSourceManager()
     sourceIdSourceNameMap_[sinkSourceIndex] = DEFAULT_CORE_SOURCE_NAME;
 }
 
-void HpaeManager::CreateVirtualSinkManager()
+void HpaeManager::EnsureVirtualSinkManager()
 {
+    CHECK_AND_RETURN_LOG(!SafeGetMap(rendererManagerMap_, VIRTUAL_SINK_NAME),
+        "virtual sink manager already exists");
     uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
     sinkSourceIndex_.fetch_add(1);
     auto rendererManager = std::make_shared<HpaeVirtualRendererManager>();
@@ -575,6 +580,8 @@ int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo
     rendererManagerMap_[audioModuleInfo.name] = rendererManager;
     sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
     sinkIdSinkNameMap_[sinkSourceIndex] = audioModuleInfo.name;
+    // ensure fallback target exists even if this is the first port ever opened
+    EnsureVirtualSinkManager();
     rendererManagerMap_[audioModuleInfo.name]->Init();
     AUDIO_INFO_LOG("OpenAudioPort name: %{public}s end sinkIndex is %{public}u",
         audioModuleInfo.name.c_str(),

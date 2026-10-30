@@ -90,7 +90,7 @@ protected:
         hpaeManager_->OpenAudioPort(audioModuleInfo);
         WaitForMsgProcessing();
 
-        // Create stream (explicit deviceName: empty would land on Virtual_Render, skipping SE chain)
+        // Create stream (deviceName set explicitly: coreSink_ fallback equals this sink, keep intent clear)
         HpaeStreamInfo streamInfo;
         streamInfo.channels = STEREO;
         streamInfo.samplingRate = SAMPLE_RATE_44100;

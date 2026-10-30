@@ -29,7 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-// Permanent core sink: sessions parked here when no real device is attached.
+// Permanent virtual sink: sessions parked here when no real device is attached.
 // Pulls each RUNNING sink-input every 20ms and discards the data.
 class HpaeVirtualRendererManager : public IHpaeRendererManager {
 public:

@@ -2051,7 +2051,8 @@ HWTEST_F(HpaeManagerUnitTest, DeleteAudioPort_TEST_001, TestSize.Level1)
     hpaeManager_->sinkIdSinkNameMap_[1] = "Speaker_File";
     hpaeManager_->DeleteAudioport("Speaker_File");
     EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.size(), 0);  // raw removal shrinks the map
-    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count("Virtual_Render"), 0);  // no core sink before first port
+    // Virtual_Render is lazy: absent before the first real port
+    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count("Virtual_Render"), 0);
 
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -3607,8 +3608,32 @@ HWTEST_F(HpaeManagerUnitTest, EmptyDeviceNameFallsToCoreSink, TestSize.Level1)
     std::vector<SinkInput> sinkInputs = callback->GetSinkInputs();
     EXPECT_EQ(sinkInputs.size(), 1);  // fresh manager per test: this stream is the only sink input
     EXPECT_EQ(sinkInputs[0].sinkName == audioModuleInfo.name, true);  // coreSink_ is the first real sink
+    EXPECT_EQ(sinkInputs[0].paStreamId, streamInfo.sessionId);
     EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : EmptyDeviceNameWithoutRealSinkFails
+ * @tc.desc  : With no sink ever opened, an empty deviceName stream is skipped, not created.
+ */
+HWTEST_F(HpaeManagerUnitTest, EmptyDeviceNameWithoutRealSinkFails, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();  // deviceName empty, no sink ever opened
+    EXPECT_EQ(hpaeManager_->CreateStream(streamInfo), SUCCESS);  // async, lambda logs and skips
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetAllSinkInputs(), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback =
+        std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+    EXPECT_EQ(hpaeManager_->GetAllSinkInputs(), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(callback->GetSinkInputs().empty(), true);  // coreSink_ empty: creation skipped
     hpaeManager_->DeInit();
 }
 
@@ -3635,6 +3660,8 @@ HWTEST_F(HpaeManagerUnitTest, NonCoreSinkCloseFallsBackToVirtualRender, TestSize
     streamInfo.deviceName = secondSink.name;
     EXPECT_EQ(hpaeManager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);  // RUNNING path moves back
+    WaitForMsgProcessing(hpaeManager_);
     // close the non-core sink: its streams fall back to Virtual_Render
     EXPECT_EQ(hpaeManager_->CloseOutAudioPort(secondSink.name), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
@@ -3643,16 +3670,25 @@ HWTEST_F(HpaeManagerUnitTest, NonCoreSinkCloseFallsBackToVirtualRender, TestSize
     std::vector<SinkInput> sinkInputs = callback->GetSinkInputs();
     EXPECT_EQ(sinkInputs.size(), 1);  // stream survives the close
     EXPECT_EQ(sinkInputs[0].sinkName == "Virtual_Render", true);
+    EXPECT_EQ(hpaeManager_->idPreferSinkNameMap_[streamInfo.sessionId] == secondSink.name, true);
+    // re-open the closed sink: the RUNNING stream migrates back from Virtual_Render
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(secondSink), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetAllSinkInputs(), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    sinkInputs = callback->GetSinkInputs();
+    EXPECT_EQ(sinkInputs.size(), 1);
+    EXPECT_EQ(sinkInputs[0].sinkName == secondSink.name, true);
     EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->DeInit();
 }
 
 /**
- * @tc.name  : StopAudioPortOnCoreSinkIsSkipped
+ * @tc.name  : StopAudioPortOnVirtualSinkIsSkipped
  * @tc.desc  : StopAudioPort on Virtual_Render returns SUCCESS and sinks keep serving streams.
  */
-HWTEST_F(HpaeManagerUnitTest, StopAudioPortOnCoreSinkIsSkipped, TestSize.Level1)
+HWTEST_F(HpaeManagerUnitTest, StopAudioPortOnVirtualSinkIsSkipped, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -3677,10 +3713,10 @@ HWTEST_F(HpaeManagerUnitTest, StopAudioPortOnCoreSinkIsSkipped, TestSize.Level1)
 }
 
 /**
- * @tc.name  : CloseOutAudioPortOnCoreSinkIsSkipped
+ * @tc.name  : CloseOutAudioPortOnVirtualSinkIsSkipped
  * @tc.desc  : CloseOutAudioPort on Virtual_Render returns SUCCESS and keeps the entry.
  */
-HWTEST_F(HpaeManagerUnitTest, CloseOutAudioPortOnCoreSinkIsSkipped, TestSize.Level1)
+HWTEST_F(HpaeManagerUnitTest, CloseOutAudioPortOnVirtualSinkIsSkipped, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
