@@ -162,8 +162,9 @@ int32_t CapturerInServer::ConfigServerBuffer()
         totalSizeInFrame_ * TOTAL_SIZE_5MS_TO_20MS : totalSizeInFrame_;
     if (processConfig_.capturerInfo.originalFlag == AUDIO_FLAG_ULTRA_FAST) {
         // Reserve the largest supported hardware span so a 2.5 -> 20 ms switch keeps the shared allocation.
-        totalSizeInFrameToCreate = std::max(totalSizeInFrameToCreate,
-            static_cast<size_t>(processConfig_.streamInfo.samplingRate) * 20 / AUDIO_MS_PER_S * bufferNum);
+        const size_t fallbackBufferSizeInFrame = static_cast<size_t>(
+            static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) * 20 / AUDIO_MS_PER_S * bufferNum);
+        totalSizeInFrameToCreate = std::max(totalSizeInFrameToCreate, fallbackBufferSizeInFrame);
     }
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     spanSizeInBytes_ = byteSizePerFrame_ * spanSizeInFrame_;
