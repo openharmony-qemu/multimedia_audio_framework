@@ -209,8 +209,7 @@ void HpaeVirtualRendererManager::CreateInputSession(const HpaeStreamInfo &stream
 void HpaeVirtualRendererManager::DeleteInputSession(uint32_t sessionId)
 {
 #ifdef ENABLE_HIDUMP_DFX
-    // defensive branch, unreachable via public API; marker kept intentionally
-    if (auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId)) { // 补充ut提升分支覆盖率
+    if (auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId)) {
         OnNotifyDfxNodeAdmin(false, sinkInputNode->GetNodeInfo());
     }
 #endif

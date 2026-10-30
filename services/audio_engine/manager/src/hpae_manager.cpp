@@ -900,8 +900,7 @@ void HpaeManager::MoveToPreferSink(const std::string &name, std::shared_ptr<Audi
     auto request = [this, name, sessionIds, serviceCallback]() {
         HILOG_COMM_INFO("[MoveToPreferSink]Move %{public}s To Prefer Sink: %{public}s",
             DEFAULT_CORE_SINK_NAME.c_str(), name.c_str());
-        // defensive branch, unreachable via public API; marker kept intentionally
-        if (!SafeGetMap(rendererManagerMap_, DEFAULT_CORE_SINK_NAME)) {// 补充ut提升分支覆盖率
+        if (!SafeGetMap(rendererManagerMap_, DEFAULT_CORE_SINK_NAME)) {
             AUDIO_ERR_LOG("can not find core sink: %{public}s", DEFAULT_CORE_SINK_NAME.c_str());
             serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[name]);
             return;
