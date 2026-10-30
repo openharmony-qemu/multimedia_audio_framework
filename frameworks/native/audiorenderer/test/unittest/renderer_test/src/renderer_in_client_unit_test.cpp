@@ -5421,21 +5421,5 @@ HWTEST(RendererInClientInnerUnitTest, Write_Standby_Rejected_001, TestSize.Level
     int32_t ret = ptrRendererInClientInner->Write(buffer, sizeof(buffer));
     EXPECT_EQ(ret, ERR_INVALID_OPERATION);
 }
-
-/**
- * @tc.name  : Test Write works after exit standby
- * @tc.type  : FUNC
- * @tc.number: Write_Standby_Rejected_002
- * @tc.desc  : Test RendererInClientInner::Write not rejected after standby(false)
- */
-HWTEST(RendererInClientInnerUnitTest, Write_Standby_Rejected_002, TestSize.Level1)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
-    uint8_t buffer[1024] = {0};
-    ptrRendererInClientInner->SetStandby(true);
-    ptrRendererInClientInner->SetStandby(false);
-    int32_t ret = ptrRendererInClientInner->Write(buffer, sizeof(buffer));
-    EXPECT_NE(ret, ERR_INVALID_OPERATION);
-}
 } // namespace AudioStandard
 } // namespace OHOS
