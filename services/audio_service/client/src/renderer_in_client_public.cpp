@@ -1540,14 +1540,14 @@ void RendererInClientInner::ReportExceptionForInterval()
     bean->Add("SYSTEM_INFO_2", DFX_INVALID_SYSTEM_INFO);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
- 
+
 void RendererInClientInner::ReportUltraFastUsage()
 {
     int64_t stopTime = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     int32_t durationMs = streamStartTime_ > 0 ? static_cast<int32_t>(stopTime - streamStartTime_) : 0;
     std::string adapterName = (defaultOutputDevice_ == DEVICE_TYPE_USB_ARM_HEADSET) ? "usb" : "primary";
- 
+
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::UNDERRUN_ISSUE,
         Media::MediaMonitor::FAULT_EVENT);
@@ -1573,7 +1573,7 @@ void RendererInClientInner::ReportUltraFastUsage()
 void RendererInClientInner::ReportPreferredFrameSizeOutOfRange(int32_t frameSize, size_t minByte, size_t maxByte)
 {
     std::string appName = AppBundleManager::GetSelfBundleName();
-     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::UNDERRUN_ISSUE,
         Media::MediaMonitor::FAULT_EVENT);
     bean->Add("APP_INFO_1", appName);
