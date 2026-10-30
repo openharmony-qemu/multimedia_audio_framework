@@ -656,7 +656,6 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
             static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID())),
             AUDIOSTREAM_ERROR_PERMISSION_DENIED_ULTRA_FAST, "Ultra fast recording permission denied");
-        capturerFlags = AUDIO_FLAG_ULTRA_FAST;
     }
     if (sourceType_ == SOURCE_TYPE_VOICE_DOWNLINK) {
         CHECK_AND_RETURN_RET_LOG(sensitiveRecordPermitCallback_ != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,

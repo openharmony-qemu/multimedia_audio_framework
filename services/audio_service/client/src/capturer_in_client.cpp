@@ -1961,9 +1961,13 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 RECORD_SEND_DATA_ILLEGAL_STATE, "ipcStream_ is null", true), "ipcStream_ is null");
+        ThreadPriorityConfig prioLevel = THREAD_PRIORITY_QOS_7;
+        if (capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST) {
+            prioLevel = THREAD_PRIORITY_ULTRA_FAST_4;
+        }
         ipcStream_->RegisterThreadPriority(gettid(),
             AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid),
-            METHOD_WRITE_OR_READ, THREAD_PRIORITY_QOS_7);
+            METHOD_WRITE_OR_READ, prioLevel);
         needSetThreadPriority_ = false;
     }
 

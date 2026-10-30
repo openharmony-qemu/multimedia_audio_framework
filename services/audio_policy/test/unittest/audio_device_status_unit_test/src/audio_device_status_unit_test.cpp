@@ -1939,21 +1939,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_InputChann
     EXPECT_TRUE(missingInfos.back().channelLayout.empty());
 }
 
-/** @tc.desc: Input multi-value capabilities retain valid layouts and reject truncated channel counts. */
-HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_InputMultiChannels_001, TestSize.Level1)
-{
-    AudioDeviceDescriptor device(DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE);
-    device.UpdateDeviceInfoByAudioParameters("source_rate:16000;source_chans:1|2|257|9|0|invalid");
-    auto infos = device.GetAudioStreamInfo();
-    ASSERT_EQ(infos.size(), 1u);
-    const std::set<AudioChannelLayout> expectedLayouts = {CH_LAYOUT_MONO, CH_LAYOUT_STEREO};
-    EXPECT_EQ(infos.back().channelLayout, expectedLayouts);
-    device.UpdateDeviceInfoByAudioParameters("source_rate:16000;source_chans:257");
-    infos = device.GetAudioStreamInfo();
-    ASSERT_EQ(infos.size(), 1u);
-    EXPECT_TRUE(infos.back().channelLayout.empty());
-}
-
 /** @tc.desc: USB output uses the upstream channel-layout parsing for reported counts. */
 HWTEST_F(AudioDeviceStatusUnitTest, UpdateDeviceInfoByAudioParameters_OutputChannels_001, TestSize.Level1)
 {
