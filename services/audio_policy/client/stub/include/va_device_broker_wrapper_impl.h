@@ -18,7 +18,6 @@
 #include "virtual_audio_interface.h"
 
 #include "iaudio_policy.h"
-#include "system_ability_definition.h"
 
 namespace OHOS {
 namespace AudioStandard {
