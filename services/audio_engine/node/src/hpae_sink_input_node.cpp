@@ -127,6 +127,9 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
         // if historyBuffer has enough data, write to outputStream
         if (!streamInfo_.needData && historyBuffer_) {
             historyBuffer_->GetFrameData(inputAudioBuffer_);
+            if (historyBuffer_->GetCurFrames() == 0) {
+                NotifyHistoryCacheUpdate(false);
+            }
             outputStream_.WriteDataToOutput(&inputAudioBuffer_);
             inputAudioBuffer_.SetBufferValid(true); // historyBuffer always valid
             return false; // do not continue in DoProcess!
@@ -210,6 +213,9 @@ bool HpaeSinkInputNode::RegisterWriteCallback(const std::weak_ptr<IStreamCallbac
 // reset historyBuffer
 void HpaeSinkInputNode::Flush()
 {
+    if (historyBuffer_ && historyBuffer_->GetCurFrames() > 0) {
+        NotifyHistoryCacheUpdate(false);
+    }
     if (GetNodeInfo().historyFrameCount == 0) {
         historyBuffer_ = nullptr;
     } else if (historyBuffer_ && historyBuffer_->GetFrames() == GetNodeInfo().historyFrameCount) {
@@ -276,8 +282,22 @@ void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFra
     hdiFramePosition_.store(hdiFramePosition);
     AUDIO_INFO_LOG("rewind %{public}zu frames", ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
     rewindTime_.store(rewindTime);
-    historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
+    size_t rewindFrames = historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
+    if (rewindFrames > 0) {
+        NotifyHistoryCacheUpdate(true);
+    }
     OnStreamInfoChange(false);
+}
+
+void HpaeSinkInputNode::NotifyHistoryCacheUpdate(bool available)
+{
+    if (historyCacheNotified_ == available) {
+        return;
+    }
+    historyCacheNotified_ = available;
+    auto writeCallback = writeCallback_.lock();
+    CHECK_AND_RETURN_LOG(writeCallback, "writeCallback is null, Id: %{public}d", GetSessionId());
+    writeCallback->OnHistoryCacheUpdate(available);
 }
 
 void HpaeSinkInputNode::EnsureHistoryBufferForAiss(uint32_t preheatFrames)
@@ -406,7 +426,6 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
             "writeCallback is null, fatal err", false),
         "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
-    bool hasCachedHistoryData = historyBuffer_ && historyBuffer_->GetCurFrames() > 0;
     // offload / direct / non-standard sample rate / SE preheating: never force data
     bool forceData = (offloadEnable_ || isDirect_ || isNonStandardSampleRate_ || sessionEffectPreheatActive_
                       || (GetEffectStreamUsage() == STREAM_USAGE_ACCESSIBILITY && isSystemApp_)) ? false : true;
@@ -436,8 +455,7 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
         .writePos_ = callbackData.writePos_,
         .isWriteFirst_ = callbackData.isFlush_,
         .isLowLatency = isLowLatency_,
-        .isPullData = isPullData,
-        .hasCachedHistoryData = hasCachedHistoryData
+        .isPullData = isPullData
     };
     ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
     return writeCallback->OnStreamData(streamInfo_);

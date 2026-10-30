@@ -573,39 +573,47 @@ HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_IsPullDataMarking, TestSize.L
 }
 
 /**
- * @tc.name  : OnStreamInfoChange_HasCachedHistoryData
+ * @tc.name  : HistoryCacheUpdate_RewindDrainFlush
  * @tc.type  : FUNC
- * @tc.desc  : hasCachedHistoryData reflects null buffer, cached frames and drained states
+ * @tc.desc  : OnHistoryCacheUpdate fires on rewind, drain and flush flips, deduped
  */
-HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_HasCachedHistoryData, TestSize.Level0)
+HWTEST_F(HpaeSinkInputNodeTest, HistoryCacheUpdate_RewindDrainFlush, TestSize.Level0)
 {
     EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillRepeatedly(SetArgReferee<1>(5));
-    std::vector<bool> capturedFlags;
-    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
-        .Times(3)
-        .WillRepeatedly([&](AudioCallBackStreamInfo& info) {
-            capturedFlags.push_back(info.hasCachedHistoryData);
-            return SUCCESS;
-        });
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_)).WillRepeatedly(Return(SUCCESS));
+    int32_t trueCnt = 0;
+    int32_t falseCnt = 0;
+    EXPECT_CALL(*mockStreamCallback_, OnHistoryCacheUpdate(true))
+        .Times(AnyNumber()).WillRepeatedly([&](bool) { trueCnt++; });
+    EXPECT_CALL(*mockStreamCallback_, OnHistoryCacheUpdate(false))
+        .Times(AnyNumber()).WillRepeatedly([&](bool) { falseCnt++; });
 
-    // Phase 1: no history buffer -> false
-    node_->historyBuffer_ = nullptr;
-    EXPECT_EQ(node_->OnStreamInfoChange(true), SUCCESS);
+    // 1. rewind makes cache available: notified once, duplicate rewind deduped.
+    //    100000us = 5 frames at 48kHz / frameLen 960 (ConvertUsToFrameCount divides by frameLen)
+    node_->RewindHistoryBuffer(100000, 100);
+    node_->RewindHistoryBuffer(100000, 100);
+    EXPECT_EQ(trueCnt, 1);
+    EXPECT_EQ(falseCnt, 0);
 
-    // Phase 2: Flush recreates the buffer, one pushed frame -> true
+    // 2. draining the last frame notifies false once (rewind set 5 frames)
+    int32_t ret = SUCCESS;
+    for (int i = 0; i < 5; i++) {
+        node_->ReadToAudioBuffer(ret);
+    }
+    EXPECT_EQ(node_->historyBuffer_->GetCurFrames(), 0u);
+    EXPECT_EQ(falseCnt, 1);
+
+    // 3. extra pull after drained does not re-notify
+    node_->ReadToAudioBuffer(ret);
+    EXPECT_EQ(falseCnt, 1);
+
+    // 4. flush with empty cache does not notify; rewind then flush notifies false
     node_->Flush();
-    ASSERT_NE(node_->historyBuffer_, nullptr);
-    AddFrameToBuffer(node_->historyBuffer_);
-    EXPECT_EQ(node_->OnStreamInfoChange(false), SUCCESS);
-
-    // Phase 3: cached frame drained -> false
-    EXPECT_TRUE(node_->historyBuffer_->GetFrameData(node_->inputAudioBuffer_));
-    EXPECT_EQ(node_->OnStreamInfoChange(true), SUCCESS);
-
-    ASSERT_EQ(capturedFlags.size(), 3u);
-    EXPECT_FALSE(capturedFlags[0]);
-    EXPECT_TRUE(capturedFlags[1]);
-    EXPECT_FALSE(capturedFlags[2]);
+    EXPECT_EQ(falseCnt, 1);
+    node_->RewindHistoryBuffer(100000, 100);
+    EXPECT_EQ(trueCnt, 2);
+    node_->Flush();
+    EXPECT_EQ(falseCnt, 2);
 }
 
 /**

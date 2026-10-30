@@ -777,7 +777,6 @@ bool HpaeRendererStreamImpl::InitLatencyInfo(const AudioCallBackStreamInfo &call
 int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackStreamInfo)
 {
     UpdateInnerCapWriteState(callBackStreamInfo.isWriteFirst_);
-    hasCachedHistoryData_.store(callBackStreamInfo.hasCachedHistoryData);
     bool needResetSinkLatencyFetcher = InitLatencyInfo(callBackStreamInfo);
     if (needResetSinkLatencyFetcher) {
         ResetSinkLatencyFetcher(callBackStreamInfo);
