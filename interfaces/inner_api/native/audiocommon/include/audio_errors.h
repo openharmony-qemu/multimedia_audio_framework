@@ -43,6 +43,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr int32_t LATENCY_UNCONFIG = -1;
 constexpr int MODULE_AUDIO = 1;
 constexpr int SUBSYS_AUDIO = 30;
 constexpr uint32_t OPEN_PORT_FAILURE = (uint32_t) -1;

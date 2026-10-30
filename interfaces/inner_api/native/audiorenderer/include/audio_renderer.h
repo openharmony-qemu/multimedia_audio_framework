@@ -300,6 +300,8 @@ public:
     static std::shared_ptr<AudioRenderer> CreateRenderer(const AudioRendererOptions &rendererOptions,
         const AppInfo &appInfo = AppInfo());
 
+    static bool IsDeviceSupportUltraFast();
+
     /**
      * @brief Sets buffer LoopTimes.
      *
@@ -589,7 +591,7 @@ public:
      * @param on Enter or exit the standby state. true: enter; false: exit.
      * @return Returns {@link SUCCESS} if the operation is successful.
      *         Returns {@link ERR_ILLEGAL_STATE} if the operation is not allowed in the current state.
-     * @since 26.2.0
+     * @since 26.1.0
      */
     virtual int32_t Standby(bool on) { return 0; }
 
@@ -1270,6 +1272,22 @@ public:
      * @since 20
      */
     static bool CheckSupportedSamplingRates(uint32_t rates);
+
+    /**
+     * @brief Checks whether an audio stream info combination is supported.
+     *
+     * The renderer supports bit-width conversion, channel conversion and resampling, so a stream
+     * info combination whose sample format, channel count and sampling rate are within the supported
+     * lists is considered supported even when conversion is required. For hardware-decoding
+     * encoding types, the bitrate field in {@link AudioStreamInfo} is validated against the
+     * configured max bitrate: a bitrate exceeding the max is not supported. Use -1 to skip
+     * bitrate validation.
+     *
+     * @param streamInfo Indicates the stream info to check. For details, see
+     * {@link AudioStreamInfo}.
+     * @return Returns true if the combination is supported, false otherwise.
+     */
+    static bool CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo);
 
     /**
      * @brief Set the render target
