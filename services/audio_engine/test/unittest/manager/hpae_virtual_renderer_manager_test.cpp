@@ -358,4 +358,182 @@ HWTEST_F(HpaeVirtualRendererManagerTest, RegisterWriteCallbackUnknownSession, Te
     EXPECT_NE(manager->GetSinkInputInfo(INVALID_SESSION_ID, info), SUCCESS);
     EXPECT_EQ(manager->DeInit(), SUCCESS);
 }
+
+HWTEST_F(HpaeVirtualRendererManagerTest, DestructorCleansUpWhenInited, TestSize.Level1)
+{
+    {
+        auto manager = std::make_shared<HpaeVirtualRendererManager>();
+        EXPECT_EQ(manager->Init(), SUCCESS);
+        EXPECT_EQ(manager->IsInit(), true);
+    }  // destroyed without DeInit: dtor must DeInit and join the pull thread
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, DeInitTwiceIsIdempotent, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);  // thread != nullptr branch
+    EXPECT_EQ(manager->DeInit(), SUCCESS);  // thread == nullptr branch
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, DeactivateThreadIdempotent, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    EXPECT_EQ(manager->DeactivateThread(), true);  // thread != nullptr branch
+    EXPECT_EQ(manager->DeactivateThread(), true);  // thread == nullptr branch
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, PullLoopSkipsNonRunningSession, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    HpaeStreamInfo streamA;
+    InitStreamInfo(streamA);
+    HpaeStreamInfo streamB;
+    InitStreamInfo(streamB);
+    streamB.sessionId = TEST_SESSION_ID + 1;
+    EXPECT_EQ(manager->CreateStream(streamA), SUCCESS);
+    EXPECT_EQ(manager->CreateStream(streamB), SUCCESS);
+    WaitForMsgProcessing(manager);
+    std::atomic<int32_t> countA(0);
+    auto cbA = MakeCountingCb(countA);
+    std::atomic<int32_t> countB(0);
+    auto cbB = MakeCountingCb(countB);
+    EXPECT_EQ(manager->RegisterWriteCallback(TEST_SESSION_ID, cbA), SUCCESS);
+    EXPECT_EQ(manager->RegisterWriteCallback(TEST_SESSION_ID + 1, cbB), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->Start(TEST_SESSION_ID), SUCCESS);  // only A RUNNING, B stays PREPARED
+    WaitForMsgProcessing(manager);
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    EXPECT_GE(countA.load(), 3);  // RUNNING session pulled
+    EXPECT_EQ(countB.load(), 0);  // non-RUNNING session skipped by the Process filter
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, DrainNotRunningFiresDrainedCallback, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    auto msgCb = std::make_shared<MockSendMsgCallback>();
+    manager->RegisterSendMsgCallback(msgCb);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);  // PREPARED, not RUNNING
+    WaitForMsgProcessing(manager);
+    EXPECT_CALL(*msgCb, Invoke(UPDATE_STATUS, _)).Times(1);  // drained fired immediately
+    EXPECT_EQ(manager->Drain(TEST_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, DrainRunningDoesNotFireDrained, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    auto msgCb = std::make_shared<MockSendMsgCallback>();
+    manager->RegisterSendMsgCallback(msgCb);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
+    std::atomic<int32_t> count(0);
+    auto cb = MakeCountingCb(count);  // SUCCESS data keeps underflow quiet
+    EXPECT_EQ(manager->RegisterWriteCallback(TEST_SESSION_ID, cb), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->Start(TEST_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(manager);
+    // Pause also fires UPDATE_STATUS, so count only the DRAINED operation instead of Times(0).
+    std::atomic<int32_t> drainedCount(0);
+    ON_CALL(*msgCb, Invoke(UPDATE_STATUS, _)).WillByDefault(
+        [&drainedCount](HpaeMsgCode, const std::any &args) {
+            auto statusArgs = std::any_cast<std::tuple<HpaeStreamClassType, uint32_t,
+                HpaeSessionState, IOperation>>(&args);
+            if (statusArgs != nullptr && std::get<3>(*statusArgs) == OPERATION_DRAINED) {
+                drainedCount.fetch_add(1);
+            }
+        });
+    EXPECT_EQ(manager->Drain(TEST_SESSION_ID), SUCCESS);  // RUNNING: drained deferred to data end
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    EXPECT_EQ(manager->Pause(TEST_SESSION_ID), SUCCESS);  // stop pulls; PAUSED fires UPDATE_STATUS
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(drainedCount.load(), 0);  // client keeps supplying data: drained never fires
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, MoveStreamWithoutInitSyncPath, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();  // not inited: sync path
+    auto msgCb = std::make_shared<MockSendMsgCallback>();
+    manager->RegisterSendMsgCallback(msgCb);
+    EXPECT_CALL(*msgCb, Invoke(MOVE_SESSION_FAILED, _)).Times(1);
+    EXPECT_EQ(manager->MoveStream(INVALID_SESSION_ID, "Speaker_File"), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, MoveAllStreamWithoutInitSyncPath, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();  // not inited: sync path
+    auto msgCb = std::make_shared<MockSendMsgCallback>();
+    manager->RegisterSendMsgCallback(msgCb);
+    EXPECT_CALL(*msgCb, InvokeSync(MOVE_ALL_SINK_INPUT, _)).Times(1);  // MOVE_ALL uses sync cb
+    EXPECT_EQ(manager->MoveAllStream("Speaker_File", {}, MOVE_ALL), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, MoveStreamPacksNodeAndErases, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    auto msgCb = std::make_shared<MockSendMsgCallback>();
+    manager->RegisterSendMsgCallback(msgCb);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_CALL(*msgCb, Invoke(MOVE_SINK_INPUT, _)).Times(1);
+    EXPECT_EQ(manager->MoveStream(TEST_SESSION_ID, "Speaker_File"), SUCCESS);
+    WaitForMsgProcessing(manager);
+    HpaeSinkInputInfo info;
+    EXPECT_NE(manager->GetSinkInputInfo(TEST_SESSION_ID, info), SUCCESS);  // erased locally
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, MoveStreamEmptySinkNameFails, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    auto msgCb = std::make_shared<MockSendMsgCallback>();
+    manager->RegisterSendMsgCallback(msgCb);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_CALL(*msgCb, Invoke(MOVE_SESSION_FAILED, _)).Times(1);
+    EXPECT_EQ(manager->MoveStream(TEST_SESSION_ID, ""), SUCCESS);
+    WaitForMsgProcessing(manager);
+    HpaeSinkInputInfo info;
+    EXPECT_EQ(manager->GetSinkInputInfo(TEST_SESSION_ID, info), SUCCESS);  // kept on failure
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
+
+HWTEST_F(HpaeVirtualRendererManagerTest, MoveAllStreamSelectiveMovesOnlyListedIds, TestSize.Level1)
+{
+    auto manager = std::make_shared<HpaeVirtualRendererManager>();
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    auto msgCb = std::make_shared<MockSendMsgCallback>();
+    manager->RegisterSendMsgCallback(msgCb);
+    HpaeStreamInfo streamA;
+    InitStreamInfo(streamA);
+    HpaeStreamInfo streamB;
+    InitStreamInfo(streamB);
+    streamB.sessionId = TEST_SESSION_ID + 1;
+    EXPECT_EQ(manager->CreateStream(streamA), SUCCESS);
+    EXPECT_EQ(manager->CreateStream(streamB), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_CALL(*msgCb, Invoke(MOVE_ALL_SINK_INPUT, _)).Times(1);  // non-MOVE_ALL uses async
+    EXPECT_EQ(manager->MoveAllStream("Speaker_File", {TEST_SESSION_ID}, MOVE_DEFAULT), SUCCESS);
+    WaitForMsgProcessing(manager);
+    HpaeSinkInputInfo info;
+    EXPECT_NE(manager->GetSinkInputInfo(TEST_SESSION_ID, info), SUCCESS);      // listed id moved
+    EXPECT_EQ(manager->GetSinkInputInfo(TEST_SESSION_ID + 1, info), SUCCESS);  // unlisted id kept
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+}
 }  // namespace
