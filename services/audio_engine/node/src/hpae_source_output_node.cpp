@@ -97,13 +97,14 @@ HpaeSourceOutputNode::~HpaeSourceOutputNode()
 #endif
 }
 
-void HpaeSourceOutputNode::ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer)
+void HpaeSourceOutputNode::ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer, uint32_t safeFrameCount)
 {
     CHECK_AND_RETURN_LOG(inputPcmBuffer && inputPcmBuffer->GetPcmDataBuffer(), "invalid inputBuffer");
     float *pcmData = inputPcmBuffer->GetPcmDataBuffer();
     CHECK_AND_RETURN_LOG(pcmData != nullptr, "pcmData buffer is nullptr");
 
-    int32_t frameCount = static_cast<int32_t>(GetFrameLen());
+    // safeFrameCount is already clamped to the upstream buffer capacity by the caller
+    int32_t frameCount = static_cast<int32_t>(safeFrameCount);
     CHECK_AND_RETURN_LOG(frameCount > 0, "invalid frameCount: %{public}d", frameCount);
     int32_t nbSamples = filterChannelCount_ * frameCount;
     std::vector<float> inputSamples(nbSamples);
@@ -235,10 +236,29 @@ void HpaeSourceOutputNode::ProcessAudioData(HpaePcmBuffer *outputData, bool isMu
         ret = memset_s(sourceOutputData_.data(), sourceOutputData_.size(), 0, sourceOutputData_.size());
         CHECK_AND_RETURN_LOG(ret == EOK, "memset_s failed with error:%{public}d", ret);
     } else {
-        if (isSupportHighpassFilter_) {
-            ApplyHighpassFilter(outputData);
+        // The upstream buffer may have been built at a different frameLen than this node
+        // (e.g. a cached format converter frozen at another session's span); clamp reads
+        // to its real capacity.
+        size_t requestSamples = static_cast<size_t>(GetChannelCount()) * GetFrameLen();
+        size_t upstreamSamples = static_cast<size_t>(outputData->GetChannelCount())
+            * outputData->GetFrameLen();
+        size_t safeSamples = std::min(requestSamples, upstreamSamples);
+        if (GetChannelCount() > 0) {
+            safeSamples -= safeSamples % static_cast<size_t>(GetChannelCount());
         }
-        ConvertFromFloat(GetBitWidth(), GetChannelCount() * GetFrameLen(),
+        if (safeSamples < requestSamples) {
+            AUDIO_ERR_LOG("sessionId %{public}u clamp convert: upstream %{public}u*%{public}u,"
+                " request %{public}u*%{public}u", GetSessionId(), outputData->GetChannelCount(),
+                outputData->GetFrameLen(), static_cast<uint32_t>(GetChannelCount()),
+                static_cast<uint32_t>(GetFrameLen()));
+            // zero the buffer first so the unconverted tail is silence instead of stale data
+            ret = memset_s(sourceOutputData_.data(), sourceOutputData_.size(), 0, sourceOutputData_.size());
+            CHECK_AND_RETURN_LOG(ret == EOK, "memset_s failed with error:%{public}d", ret);
+        }
+        if (isSupportHighpassFilter_ && safeSamples > 0) {
+            ApplyHighpassFilter(outputData, static_cast<uint32_t>(safeSamples / GetChannelCount()));
+        }
+        ConvertFromFloat(GetBitWidth(), static_cast<unsigned int>(safeSamples),
             outputData->GetPcmDataBuffer(), sourceOutputData_.data());
     }
     auto nodeCallback = GetNodeStatusCallback().lock();
@@ -443,6 +463,13 @@ void HpaeSourceOutputNode::SetNodeInfo(HpaeNodeInfo &nodeInfo)
     if (nodeInfo.frameLen != GetNodeInfo().frameLen || nodeInfo.channels != GetNodeInfo().channels) {
         sourceOutputData_.resize(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
         interleveData_.resize(nodeInfo.frameLen * nodeInfo.channels);
+        // injector-path buffers were built from ctor geometry; rebuild them with the new
+        // geometry, otherwise MixInputs()/SelectOutputData() keep serving ctor-sized buffers
+        pcmBufferInfo_ = PcmBufferInfo(nodeInfo.channels, nodeInfo.frameLen,
+            nodeInfo.samplingRate, nodeInfo.channelLayout);
+        mixedOutput_.ReConfig(pcmBufferInfo_);
+        tmpOutput_.ReConfig(pcmBufferInfo_);
+        silenceData_.ReConfig(pcmBufferInfo_);
     }
     HpaeNode::SetNodeInfo(nodeInfo);
 }

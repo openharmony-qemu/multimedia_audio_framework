@@ -282,11 +282,15 @@ bool CheckHpaeNodeInfoIsSame(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &curNodeInf
 std::string TransNodeInfoToStringKey(HpaeNodeInfo& nodeInfo)
 {
     uint32_t effectiveRate = nodeInfo.GetEffectiveSampleRate();
+    // frameLen is part of the key: converter/output buffers are sized by frameLen, so sessions
+    // with identical rate/channels/format but different spans must not share a cached converter
+    // frozen at another session's frameLen (cross-session buffer overrun).
     std::string nodeKey = std::to_string(nodeInfo.sourceBufferType) + "_" +
                           std::to_string(effectiveRate) + "_" +
                           std::to_string(nodeInfo.channels) + "_" +
                           std::to_string(nodeInfo.format) + "_" +
-                          std::to_string(nodeInfo.channelLayout);
+                          std::to_string(nodeInfo.channelLayout) + "_" +
+                          std::to_string(nodeInfo.frameLen);
     return nodeKey;
 }
 

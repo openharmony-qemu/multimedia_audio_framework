@@ -320,6 +320,44 @@ HWTEST_F(HpaeSourceInputClusterTest, HpaeSourceInputClusterResetAllTest_001, Tes
     EXPECT_EQ(fmtConverMap.size(), 2); // 2 for converterMap size
     EXPECT_EQ(hpaeSourceInputCluster->ResetAll(), true);
 }
+
+/**
+ * @tc.name  : Converter cache is isolated by frameLen
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSourceInputClusterConverterFrameLenKeyTest
+ * @tc.desc  : Sessions with same rate/channels/format but different frameLen must NOT share one
+ *             cached converter: the shared converter is frozen at the first session's span and
+ *             the other session reads past its end (SEGV in ConvertFromFloat on 7885).
+ */
+HWTEST_F(HpaeSourceInputClusterTest, HpaeSourceInputClusterConverterFrameLenKeyTest, TestSize.Level1)
+{
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
+    HpaeNodeInfo clusterInfo;
+    clusterInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    clusterInfo.samplingRate = SAMPLE_RATE_48000;
+    clusterInfo.channels = STEREO;
+    clusterInfo.format = SAMPLE_F32LE;
+    clusterInfo.statusCallback = testStatuscallback;
+    std::shared_ptr<HpaeSourceInputCluster> hpaeSourceInputCluster =
+        std::make_shared<HpaeSourceInputCluster>(clusterInfo);
+
+    // both sessions share geometry with each other and differ from the cluster only in rate,
+    // so both go through the converter path; they differ from each other only in frameLen
+    HpaeNodeInfo sessionInfo = clusterInfo;
+    sessionInfo.samplingRate = SAMPLE_RATE_16000;
+    auto converterSpanA = hpaeSourceInputCluster->GetSharedInstance(sessionInfo);
+
+    HpaeNodeInfo sessionInfoSmallerSpan = sessionInfo;
+    sessionInfoSmallerSpan.frameLen = DEFAULT_FRAME_LENGTH / 2; // 2 for half span
+    auto converterSpanB = hpaeSourceInputCluster->GetSharedInstance(sessionInfoSmallerSpan);
+
+    EXPECT_NE(converterSpanA, nullptr);
+    EXPECT_NE(converterSpanB, nullptr);
+    EXPECT_NE(converterSpanA, converterSpanB);
+    EXPECT_EQ(hpaeSourceInputCluster->GetConverterNodeCount(), 2); // 2: one converter per frameLen
+    EXPECT_EQ(converterSpanA->GetNodeInfo().frameLen, sessionInfo.frameLen);
+    EXPECT_EQ(converterSpanB->GetNodeInfo().frameLen, sessionInfoSmallerSpan.frameLen);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
