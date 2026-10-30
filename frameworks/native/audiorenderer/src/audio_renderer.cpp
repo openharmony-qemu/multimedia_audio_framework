@@ -1083,12 +1083,11 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
         flag, ret, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
     return ret;
 }
- 
+
 IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRendererInfoExt(uint32_t flag)
 {
     IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
     if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
-    } else if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_OFFLOAD;
     } else if (flag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
@@ -1107,9 +1106,6 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
     }
-    HILOG_COMM_INFO("[DecideStreamClassAndUpdateRendererInfo]Route flag: %{public}u, streamClass: %{public}d, "\
-        "rendererFlag: %{public}d, pipeType: %{public}d",
-        flag, ret, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
     return ret;
 }
 
