@@ -796,10 +796,6 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
 void HpaeRendererStreamImpl::OnHistoryCacheUpdate(bool available)
 {
     hasCachedHistoryData_.store(available);
-    auto statusCallback = statusCallback_.lock();
-    CHECK_AND_RETURN_LOG(statusCallback, "statusCallback is null, sessionId %{public}u", streamIndex_);
-    statusCallback->OnStatusUpdate(available ? OPERATION_HISTORY_CACHE_AVAILABLE
-                                             : OPERATION_HISTORY_CACHE_DRAINED);
 }
 
 int32_t HpaeRendererStreamImpl::HandleCallbackBufferData(AudioCallBackStreamInfo &callBackStreamInfo)

@@ -166,27 +166,6 @@ HWTEST_F(HpaeRendererStreamUnitTest, HasCachedHistoryData_001, TestSize.Level0)
 }
 
 /**
- * @tc.name  : Test OnHistoryCacheUpdate forwards IOperation to status callback
- * @tc.type  : FUNC
- * @tc.number: HasCachedHistoryData_002
- * @tc.desc  : Available/drained flips are forwarded via OnStatusUpdate enum codes.
- */
-HWTEST_F(HpaeRendererStreamUnitTest, HasCachedHistoryData_002, TestSize.Level0)
-{
-    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl = CreateHpaeRendererStreamImpl();
-    ASSERT_NE(rendererStreamImpl, nullptr);
-    std::shared_ptr<MockStatusCallback> statusCallback = std::make_shared<NiceMock<MockStatusCallback>>();
-    rendererStreamImpl->RegisterStatusCallback(statusCallback);
-
-    // Any other operation leaking through is a forwarding bug
-    EXPECT_CALL(*statusCallback, OnStatusUpdate(_)).Times(0);
-    EXPECT_CALL(*statusCallback, OnStatusUpdate(OPERATION_HISTORY_CACHE_AVAILABLE)).Times(1);
-    EXPECT_CALL(*statusCallback, OnStatusUpdate(OPERATION_HISTORY_CACHE_DRAINED)).Times(1);
-    rendererStreamImpl->OnHistoryCacheUpdate(true);
-    rendererStreamImpl->OnHistoryCacheUpdate(false);
-}
-
-/**
  * @tc.name  : Test HpaeRendererStreamImpl Construct
  * @tc.type  : FUNC
  * @tc.number: HpaeRendererStreamImplConstruct_001
