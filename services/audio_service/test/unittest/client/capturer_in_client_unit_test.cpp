@@ -1122,7 +1122,7 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_003, TestSize.Level1)
     ret = capturerInClientInner->ConstructConfig();
     EXPECT_NE(ret.streamInfo.channels, AudioChannel::CHANNEL_UNKNOW);
 }
-1
+
 /**
  * @tc.name  : Test ConstructConfig API
  * @tc.type  : FUNC
