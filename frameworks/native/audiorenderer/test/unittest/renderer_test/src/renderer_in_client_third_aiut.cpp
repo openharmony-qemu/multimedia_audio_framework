@@ -165,6 +165,8 @@ public:
 
     int32_t SetOffloadDataCallbackState(int32_t state) { return 0; }
 
+    ErrCode SetStandbyState(bool on) { return SUCCESS; }
+
     sptr<IRemoteObject> AsObject() { return nullptr; }
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,

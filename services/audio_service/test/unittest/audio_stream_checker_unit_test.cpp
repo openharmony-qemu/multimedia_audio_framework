@@ -2060,5 +2060,160 @@ HWTEST(AudioStreamCheckerTest, InitCallbackInfo_001, TestSize.Level1)
     EXPECT_TRUE(callbackInfo.isBackground);
     EXPECT_EQ(callbackInfo.audioMode, AUDIO_MODE_PLAYBACK);
 }
+
+/**
+ * @tc.name  : Test SetExplicitStandbyState enter
+ * @tc.type  : FUNC
+ * @tc.number: SetExplicitStandbyState_001
+ */
+HWTEST(AudioStreamCheckerTest, SetExplicitStandbyState_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->SetExplicitStandbyState(true);
+    EXPECT_TRUE(checker->explicitStandbyEnable_);
+    EXPECT_NE(checker->explicitStandbyStartTime_, 0);
+    EXPECT_EQ(checker->explicitStandbyBackgroundStartTime_, 0);
+    EXPECT_FALSE(checker->explicitStandbyTimeoutReported_);
+}
+
+/**
+ * @tc.name  : Test SetExplicitStandbyState exit
+ * @tc.type  : FUNC
+ * @tc.number: SetExplicitStandbyState_002
+ */
+HWTEST(AudioStreamCheckerTest, SetExplicitStandbyState_002, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->SetExplicitStandbyState(true);
+    checker->SetExplicitStandbyState(false);
+    EXPECT_FALSE(checker->explicitStandbyEnable_);
+    EXPECT_EQ(checker->explicitStandbyStartTime_, 0);
+    EXPECT_EQ(checker->explicitStandbyBackgroundStartTime_, 0);
+    EXPECT_FALSE(checker->explicitStandbyTimeoutReported_);
+}
+
+/**
+ * @tc.name  : Test CheckExplicitStandbyTimeout not in standby
+ * @tc.type  : FUNC
+ * @tc.number: CheckExplicitStandbyTimeout_001
+ */
+HWTEST(AudioStreamCheckerTest, CheckExplicitStandbyTimeout_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->CheckExplicitStandbyTimeout();
+    EXPECT_FALSE(checker->explicitStandbyTimeoutReported_);
+}
+
+/**
+ * @tc.name  : Test CheckExplicitStandbyTimeout foreground no report
+ * @tc.type  : FUNC
+ * @tc.number: CheckExplicitStandbyTimeout_002
+ */
+HWTEST(AudioStreamCheckerTest, CheckExplicitStandbyTimeout_002, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->UpdateAppState(false);
+    checker->SetExplicitStandbyState(true);
+    checker->CheckExplicitStandbyTimeout();
+    EXPECT_FALSE(checker->explicitStandbyTimeoutReported_);
+    EXPECT_EQ(checker->explicitStandbyBackgroundStartTime_, 0);
+}
+
+/**
+ * @tc.name  : Test CheckExplicitStandbyTimeout background not enough time
+ * @tc.type  : FUNC
+ * @tc.number: CheckExplicitStandbyTimeout_003
+ */
+HWTEST(AudioStreamCheckerTest, CheckExplicitStandbyTimeout_003, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->UpdateAppState(true);
+    checker->SetExplicitStandbyState(true);
+    checker->CheckExplicitStandbyTimeout();
+    EXPECT_FALSE(checker->explicitStandbyTimeoutReported_);
+    EXPECT_NE(checker->explicitStandbyBackgroundStartTime_, 0);
+    checker->CheckExplicitStandbyTimeout();
+    EXPECT_FALSE(checker->explicitStandbyTimeoutReported_);
+}
+
+/**
+ * @tc.name  : Test CheckExplicitStandbyTimeout already reported no repeat
+ * @tc.type  : FUNC
+ * @tc.number: CheckExplicitStandbyTimeout_004
+ */
+HWTEST(AudioStreamCheckerTest, CheckExplicitStandbyTimeout_004, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->UpdateAppState(true);
+    checker->SetExplicitStandbyState(true);
+    checker->explicitStandbyBackgroundStartTime_ = ClockTime::GetCurNano() - 11 * 60 * AUDIO_NS_PER_SECOND;
+    checker->explicitStandbyTimeoutReported_ = true;
+    checker->CheckExplicitStandbyTimeout();
+    EXPECT_TRUE(checker->explicitStandbyTimeoutReported_);
+}
+
+/**
+ * @tc.name  : Test CheckExplicitStandbyTimeout timeout triggers report
+ * @tc.type  : FUNC
+ * @tc.number: CheckExplicitStandbyTimeout_007
+ * @tc.desc  : Test standby + background + elapsed >= 10min triggers report
+ */
+HWTEST(AudioStreamCheckerTest, CheckExplicitStandbyTimeout_007, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->UpdateAppState(true);
+    checker->SetExplicitStandbyState(true);
+    checker->explicitStandbyBackgroundStartTime_ = ClockTime::GetCurNano() - 11 * 60 * AUDIO_NS_PER_SECOND;
+    EXPECT_FALSE(checker->explicitStandbyTimeoutReported_);
+    checker->CheckExplicitStandbyTimeout();
+    EXPECT_TRUE(checker->explicitStandbyTimeoutReported_);
+}
+
+/**
+ * @tc.name  : Test CheckExplicitStandbyTimeout foreground resets timer
+ * @tc.type  : FUNC
+ * @tc.number: CheckExplicitStandbyTimeout_005
+ */
+HWTEST(AudioStreamCheckerTest, CheckExplicitStandbyTimeout_005, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->UpdateAppState(true);
+    checker->SetExplicitStandbyState(true);
+    checker->CheckExplicitStandbyTimeout();
+    EXPECT_NE(checker->explicitStandbyBackgroundStartTime_, 0);
+    checker->UpdateAppState(false);
+    checker->CheckExplicitStandbyTimeout();
+    EXPECT_EQ(checker->explicitStandbyBackgroundStartTime_, 0);
+    EXPECT_FALSE(checker->explicitStandbyTimeoutReported_);
+}
+
+/**
+ * @tc.name  : Test CheckExplicitStandbyTimeout standby false clears all
+ * @tc.type  : FUNC
+ * @tc.number: CheckExplicitStandbyTimeout_006
+ */
+HWTEST(AudioStreamCheckerTest, CheckExplicitStandbyTimeout_006, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->UpdateAppState(true);
+    checker->SetExplicitStandbyState(true);
+    checker->CheckExplicitStandbyTimeout();
+    EXPECT_NE(checker->explicitStandbyBackgroundStartTime_, 0);
+    checker->SetExplicitStandbyState(false);
+    checker->CheckExplicitStandbyTimeout();
+    EXPECT_FALSE(checker->explicitStandbyEnable_);
+    EXPECT_EQ(checker->explicitStandbyStartTime_, 0);
+    EXPECT_EQ(checker->explicitStandbyBackgroundStartTime_, 0);
+    EXPECT_FALSE(checker->explicitStandbyTimeoutReported_);
+}
 }
 }

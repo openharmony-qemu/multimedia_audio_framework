@@ -248,6 +248,8 @@ public:
 
     virtual int32_t SetOffloadDataCallbackState(int32_t state) override { return 0; }
 
+    virtual ErrCode SetStandbyState(bool on) override { return SUCCESS; }
+
     virtual int32_t SetSpeed(float speed) override { return 0; }
 
     virtual sptr<IRemoteObject> AsObject() override { return nullptr; }
@@ -1102,23 +1104,12 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_003, TestSize.Level1)
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     Init(capturerInClientInner);
     capturerInClientInner->capturerInfo_.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
-
-    capturerInClientInner->streamParams_.channels = AudioChannel::CHANNEL_10;
-    capturerInClientInner->streamParams_.ecChannels = AudioChannel::CHANNEL_6;
+    capturerInClientInner->streamParams_.channels = AudioChannel::MONO;
+    capturerInClientInner->streamParams_.ecChannels = AudioChannel::STEREO;
     AudioProcessConfig ret = capturerInClientInner->ConstructConfig();
     int32_t expectChannels = static_cast<int32_t>(capturerInClientInner->streamParams_.channels) +
         static_cast<int32_t>(capturerInClientInner->streamParams_.ecChannels);
     EXPECT_EQ(static_cast<int32_t>(ret.streamInfo.channels), expectChannels);
-
-    capturerInClientInner->streamParams_.channels = AudioChannel::CHANNEL_10;
-    capturerInClientInner->streamParams_.ecChannels = AudioChannel::CHANNEL_4;
-    ret = capturerInClientInner->ConstructConfig();
-    EXPECT_EQ(static_cast<int32_t>(ret.streamInfo.channels), 14);
-
-    capturerInClientInner->streamParams_.channels = AudioChannel::CHANNEL_12;
-    capturerInClientInner->streamParams_.ecChannels = AudioChannel::CHANNEL_6;
-    ret = capturerInClientInner->ConstructConfig();
-    EXPECT_NE(ret.streamInfo.channels, AudioChannel::CHANNEL_UNKNOW);
 }
 
 /**

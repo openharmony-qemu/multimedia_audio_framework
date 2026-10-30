@@ -79,4 +79,5 @@ interface IIpcStream {
     void CalculateCacheCount([in] unsigned int cacheSizeInFrame, [out] unsigned int cacheCount);
     void UpdateUnderrunInfo([in] unsigned int underrunInfoKey, [in] int underrunInfoVal);
     void SetPitch([in] float pitch);
+    void SetStandbyState([in] boolean on);
 }

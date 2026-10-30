@@ -300,8 +300,6 @@ public:
     static std::shared_ptr<AudioRenderer> CreateRenderer(const AudioRendererOptions &rendererOptions,
         const AppInfo &appInfo = AppInfo());
 
-    static bool IsDeviceSupportUltraFast();
-
     /**
      * @brief Sets buffer LoopTimes.
      *
@@ -579,6 +577,21 @@ public:
      * @since 8
      */
     virtual int32_t ReleaseWithError() { return 0; }
+
+    /**
+     * @brief Enters or exits the audio standby state.
+     *
+     * The standby state is used when there is no data during audio playback. After entering
+     * standby, the cyclic thread that requests data from the application pauses and does not
+     * receive proactively written data. The data that has been written to the system continues
+     * to be played. This interface does not change the state obtained through GetStatus().
+     *
+     * @param on Enter or exit the standby state. true: enter; false: exit.
+     * @return Returns {@link SUCCESS} if the operation is successful.
+     *         Returns {@link ERR_ILLEGAL_STATE} if the operation is not allowed in the current state.
+     * @since 26.2.0
+     */
+    virtual int32_t Standby(bool on) { return 0; }
 
     /**
      * @brief Obtains a reasonable minimum buffer size for rendering, however, the renderer can
@@ -1257,22 +1270,6 @@ public:
      * @since 20
      */
     static bool CheckSupportedSamplingRates(uint32_t rates);
-
-    /**
-     * @brief Checks whether an audio stream info combination is supported.
-     *
-     * The renderer supports bit-width conversion, channel conversion and resampling, so a stream
-     * info combination whose sample format, channel count and sampling rate are within the supported
-     * lists is considered supported even when conversion is required. For hardware-decoding
-     * encoding types, the bitrate field in {@link AudioStreamInfo} is validated against the
-     * configured max bitrate: a bitrate exceeding the max is not supported. Use -1 to skip
-     * bitrate validation.
-     *
-     * @param streamInfo Indicates the stream info to check. For details, see
-     * {@link AudioStreamInfo}.
-     * @return Returns true if the combination is supported, false otherwise.
-     */
-    static bool CheckAudioRendererStreamInfoSupport(const AudioStreamInfo &streamInfo);
 
     /**
      * @brief Set the render target

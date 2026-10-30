@@ -19,6 +19,8 @@
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker_thread.h"
 #include "volume_tools.h"
+#include "media_monitor_manager.h"
+#include "app_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -482,6 +484,59 @@ void AudioStreamChecker::DataResume()
             CleanRecordData(para);
         }
     }
+}
+
+void AudioStreamChecker::SetExplicitStandbyState(bool on)
+{
+    std::lock_guard<std::mutex> lock(standbyLock_);
+    explicitStandbyEnable_ = on;
+    explicitStandbyBackgroundStartTime_ = 0;
+    explicitStandbyTimeoutReported_ = false;
+    explicitStandbyStartTime_ = on ? ClockTime::GetCurNano() : 0;
+    AUDIO_INFO_LOG("sessionId:%{public}u SetExplicitStandbyState on:%{public}d",
+        streamConfig_.originalSessionId, on);
+}
+
+void AudioStreamChecker::CheckExplicitStandbyTimeout()
+{
+    std::lock_guard<std::mutex> lock(standbyLock_);
+    if (!explicitStandbyEnable_ || explicitStandbyStartTime_ == 0) {
+        return;
+    }
+    if (explicitStandbyTimeoutReported_) {
+        return;
+    }
+    bool isBackground = false;
+    {
+        std::lock_guard<std::recursive_mutex> bgLock(backgroundStateLock_);
+        isBackground = isBackground_;
+    }
+    int64_t now = ClockTime::GetCurNano();
+    if (!isBackground) {
+        explicitStandbyBackgroundStartTime_ = 0;
+        return;
+    }
+    if (explicitStandbyBackgroundStartTime_ == 0) {
+        explicitStandbyBackgroundStartTime_ = now;
+        return;
+    }
+    int64_t elapsedMs = (now - explicitStandbyBackgroundStartTime_) / AUDIO_US_PER_SECOND;
+    constexpr int64_t STANDBY_TIMEOUT_MS = 10 * 60 * 1000;
+    if (elapsedMs < STANDBY_TIMEOUT_MS) {
+        return;
+    }
+    std::string bundleName = AppBundleManager::GetBundleNameFromUid(streamConfig_.appInfo.appUid);
+    AUDIO_WARNING_LOG("sessionId:%{public}u Standby background timeout: %{public}" PRId64 " ms, bundle:%{public}s",
+        streamConfig_.originalSessionId, elapsedMs, bundleName.c_str());
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::UNDERRUN_ISSUE,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("ISSUE_TYPE", TYPE_STANDBY_BACKGROUND_TIMEOUT);
+    bean->Add("STREAM_INFO_3", static_cast<int32_t>(streamConfig_.rendererInfo.streamUsage));
+    bean->Add("APP_INFO_1", bundleName);
+    bean->Add("EXCEPTION_INFO_1", "Standby background timeout: " + std::to_string(elapsedMs) + "ms");
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    explicitStandbyTimeoutReported_ = true;
 }
 }
 }

@@ -176,6 +176,7 @@ public:
 
     int32_t StartDataCallback() override;
     int32_t StopDataCallback() override;
+    int32_t Standby(bool on) override;
     void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
     void ResetFirstFrameState() override;
 
@@ -243,7 +244,6 @@ private:
     std::shared_ptr<AudioStreamDescriptor> GenerateStreamDesc(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
     IAudioStream::StreamClass DecideStreamClassAndUpdateRendererInfo(uint32_t flag);
-    IAudioStream::StreamClass DecideStreamClassAndUpdateRendererInfoExt(uint32_t flag);
     int32_t InitAudioInterruptCallback(bool isRestoreAudio = false);
     int32_t InitOutputDeviceChangeCallback();
     void InitAudioRouteCallback();

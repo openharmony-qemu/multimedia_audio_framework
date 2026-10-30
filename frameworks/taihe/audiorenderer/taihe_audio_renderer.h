@@ -62,6 +62,7 @@ public:
     void PauseSync();
     void StopSync();
     void ReleaseSync();
+    void StandbySync(bool on);
     int64_t GetBufferSizeSync();
     int64_t GetAudioStreamIdSync();
     void SetVolumeSync(double volume);

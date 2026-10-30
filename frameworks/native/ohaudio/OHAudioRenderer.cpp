@@ -29,12 +29,6 @@ static const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
-
-bool OHOS::AudioStandard::OHAudioRenderer::IsDeviceSupportUltraFast()
-{
-    return AudioRenderer::IsDeviceSupportUltraFast();
-}
-
 static OHOS::AudioStandard::OHAudioRenderer *convertRenderer(OH_AudioRenderer *renderer)
 {
     return reinterpret_cast<OHOS::AudioStandard::OHAudioRenderer*>(renderer);
@@ -134,6 +128,24 @@ OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer *renderer)
     } else {
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
     }
+}
+
+OH_AudioStream_Result OH_AudioRenderer_Standby(OH_AudioRenderer *renderer, bool on)
+{
+    AUDIO_INFO_LOG("in, on: %{public}d", static_cast<int>(on));
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::PLAY_STANDBY_NULL_POINTER, "convert renderer failed", true),
+        "convert renderer failed");
+
+    int32_t result = audioRenderer->Standby(on);
+    if (result == OHOS::AudioStandard::SUCCESS) {
+        return AUDIOSTREAM_SUCCESS;
+    }
+    OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        OHOS::AudioStandard::PLAY_STANDBY_ILLEGAL_STATE, "Standby failed", true);
+    return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
 }
 
 OH_AudioStream_Result OH_AudioRenderer_GetCurrentState(OH_AudioRenderer *renderer, OH_AudioStream_State *state)
@@ -617,13 +629,19 @@ bool OHAudioRenderer::Release()
         AUDIO_ERR_LOG("renderer client is nullptr");
         return false;
     }
-
     if (!audioRenderer_->Release()) {
         return false;
     }
     audioRenderer_ = nullptr;
     audioRendererCallback_ = nullptr;
     return true;
+}
+
+int32_t OHAudioRenderer::Standby(bool on)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, OHOS::AudioStandard::ERROR,
+        "renderer client is nullptr");
+    return audioRenderer_->Standby(on);
 }
 
 RendererState OHAudioRenderer::GetCurrentState()

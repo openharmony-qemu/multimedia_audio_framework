@@ -138,6 +138,7 @@ public:
     int32_t SetPitch(float pitch) override;
 
     int32_t SetOffloadDataCallbackState(int32_t state) override;
+    int32_t SetStandbyState(bool on) override;
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) override;

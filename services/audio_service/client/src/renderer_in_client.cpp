@@ -232,8 +232,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     if (rendererInfo_.rendererFlags != AUDIO_FLAG_NORMAL && rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT && rendererInfo_.rendererFlags != AUDIO_FLAG_3DA_DIRECT &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_TRUE_ULTRA_FAST) {
+        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT && rendererInfo_.rendererFlags != AUDIO_FLAG_3DA_DIRECT) {
         AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", rendererInfo_.rendererFlags);
         rendererInfo_.rendererFlags = 0;
     }
@@ -309,13 +308,13 @@ int32_t RendererInClientInner::InitSharedBuffer()
 
 bool RendererInClientInner::IsLowLatencyRenderer() const
 {
-    return (rendererInfo_.audioFlag & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST));
+    return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST);
 }
 
 uint64_t RendererInClientInner::GetDefaultCallbackBufferDurationInUs() const
 {
     AUDIO_INFO_LOG("Static check flag %{public}x", staticCheckFlag_);
-    if ((IsUltraFastStreamRequested() && isSupportUltraFast_) || (staticCheckFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST)) {
+    if (IsUltraFastStreamRequested() && isSupportUltraFast_) {
         return ULTRA_FAST_BUF_DURATION_IN_USEC;
     } else if (staticCheckFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
         return FAST_BUF_DURATION_IN_USEC;
@@ -470,9 +469,9 @@ bool RendererInClientInner::WaitForRunning()
     Trace trace("RendererInClientInner::WaitForRunning");
     // check renderer state_: call client write only in running else wait on statusMutex_
     std::unique_lock<std::mutex> stateLock(statusMutex_);
-    if (state_ != RUNNING) {
+    if (state_ != RUNNING || isStandby_.load(std::memory_order_acquire)) {
         bool stopWaiting = cbThreadCv_.wait_for(stateLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-            return state_ == RUNNING || cbThreadReleased_;
+            return (state_ == RUNNING && !isStandby_.load(std::memory_order_acquire)) || cbThreadReleased_;
         });
         if (cbThreadReleased_) {
             AUDIO_INFO_LOG("CBThread end in non-running status, sessionID :%{public}d", sessionId_);
@@ -1567,9 +1566,7 @@ void RendererInClientInner::RefreshRendererAttrInfoFromSpan(const RendererAttrIn
     }
     cacheSizeInFrame_ = attr.engineSize;
     rendererInfo_.audioFlag = attr.routeFlag;
-    if (attr.routeFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
-        rendererInfo_.rendererFlags = AUDIO_FLAG_TRUE_ULTRA_FAST;
-    } else if ((attr.routeFlag & AUDIO_OUTPUT_FLAG_FAST) == 0) {
+    if ((attr.routeFlag & AUDIO_OUTPUT_FLAG_FAST) == 0) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     } else if (attr.routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;

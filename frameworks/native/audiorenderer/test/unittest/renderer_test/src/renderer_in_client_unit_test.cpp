@@ -166,6 +166,8 @@ public:
 
     virtual int32_t SetOffloadDataCallbackState(int32_t state) override { return 0; }
 
+    virtual ErrCode SetStandbyState(bool on) override { return SUCCESS; }
+
     virtual sptr<IRemoteObject> AsObject() override { return nullptr; }
 
     virtual int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
@@ -4301,6 +4303,7 @@ public:
     int32_t SetDefaultOutputDevice(int32_t defaultOuputDevice, bool skipForce) override { return SUCCESS; }
     int32_t SetSourceDuration(int64_t duration) override { return SUCCESS; }
     int32_t SetOffloadDataCallbackState(int32_t state) override { return SUCCESS; }
+    ErrCode SetStandbyState(bool on) override { return SUCCESS; }
     int32_t SetSpeed(float speed) override { return SUCCESS; }
     int32_t SetPitch(float pitch) override { return SUCCESS; }
     sptr<IRemoteObject> AsObject() override { return nullptr; }
@@ -4471,7 +4474,6 @@ HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_NormalStream_001, TestSize.Le
  * @tc.type  : FUNC
  * @tc.number: SetSpeed_HdiRejectedFallback_001
  * @tc.desc  : Server SetSpeed rejection must apply local sonic speed instead of failing.
- * @tc.owner : audio_route_renderer
  */
 HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_HdiRejectedFallback_001, TestSize.Level1)
 {
@@ -4494,7 +4496,6 @@ HWTEST(RendererInClientPublicNewUnitTest, SetSpeed_HdiRejectedFallback_001, Test
  * @tc.type  : FUNC
  * @tc.number: NotifyRouteUpdate_HdiRejectedKeepSpeed_001
  * @tc.desc  : Switching to HDI speed mode with a rejected speed keeps the client-side speed.
- * @tc.owner : audio_route_renderer
  */
 HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_HdiRejectedKeepSpeed_001, TestSize.Level1)
 {
@@ -5356,6 +5357,100 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_101, TestSize.Level1
     params.remoteChannelLayout = CH_LAYOUT_UNKNOWN;
     int32_t ret = renderer->SetAudioStreamInfo(params, nullptr, AudioPlaybackCaptureConfig());
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test SetStandby and IsStandby API
+ * @tc.type  : FUNC
+ * @tc.number: SetStandby_001
+ * @tc.desc  : Test RendererInClientInner::SetStandby enter standby, IsStandby returns true
+ */
+HWTEST(RendererInClientInnerUnitTest, SetStandby_001, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    EXPECT_FALSE(ptrRendererInClientInner->IsStandby());
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(true), SUCCESS);
+    EXPECT_TRUE(ptrRendererInClientInner->IsStandby());
+}
+
+/**
+ * @tc.name  : Test SetStandby exit standby
+ * @tc.type  : FUNC
+ * @tc.number: SetStandby_002
+ * @tc.desc  : Test RendererInClientInner::SetStandby exit standby, IsStandby returns false
+ */
+HWTEST(RendererInClientInnerUnitTest, SetStandby_002, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->SetStandby(true);
+    EXPECT_TRUE(ptrRendererInClientInner->IsStandby());
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(false), SUCCESS);
+    EXPECT_FALSE(ptrRendererInClientInner->IsStandby());
+}
+
+/**
+ * @tc.name  : Test SetStandby idempotent
+ * @tc.type  : FUNC
+ * @tc.number: SetStandby_003
+ * @tc.desc  : Test RendererInClientInner::SetStandby repeated calls are safe
+ */
+HWTEST(RendererInClientInnerUnitTest, SetStandby_003, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(true), SUCCESS);
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(true), SUCCESS);
+    EXPECT_TRUE(ptrRendererInClientInner->IsStandby());
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(false), SUCCESS);
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(false), SUCCESS);
+    EXPECT_FALSE(ptrRendererInClientInner->IsStandby());
+}
+
+/**
+ * @tc.name  : Test Write rejected in standby state
+ * @tc.type  : FUNC
+ * @tc.number: Write_Standby_Rejected_001
+ * @tc.desc  : Test RendererInClientInner::Write returns ERR_INVALID_OPERATION in standby
+ */
+HWTEST(RendererInClientInnerUnitTest, Write_Standby_Rejected_001, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    uint8_t buffer[1024] = {0};
+    ptrRendererInClientInner->SetStandby(true);
+    int32_t ret = ptrRendererInClientInner->Write(buffer, sizeof(buffer));
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test Write works after exit standby
+ * @tc.type  : FUNC
+ * @tc.number: Write_Standby_Rejected_002
+ * @tc.desc  : Test RendererInClientInner::Write not rejected after standby(false)
+ */
+HWTEST(RendererInClientInnerUnitTest, Write_Standby_Rejected_002, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    uint8_t buffer[1024] = {0};
+    ptrRendererInClientInner->SetStandby(true);
+    ptrRendererInClientInner->SetStandby(false);
+    int32_t ret = ptrRendererInClientInner->Write(buffer, sizeof(buffer));
+    EXPECT_NE(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test SetStandby with ipcStream set
+ * @tc.type  : FUNC
+ * @tc.number: SetStandby_IpcCall_001
+ * @tc.desc  : Test SetStandby calls ipcStream_->SetStandbyState
+ */
+HWTEST(RendererInClientInnerUnitTest, SetStandby_IpcCall_001, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+    ASSERT_NE(ptrRendererInClientInner->ipcStream_, nullptr);
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(true), SUCCESS);
+    EXPECT_TRUE(ptrRendererInClientInner->IsStandby());
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(false), SUCCESS);
+    EXPECT_FALSE(ptrRendererInClientInner->IsStandby());
 }
 
 } // namespace AudioStandard

@@ -689,24 +689,13 @@ void RendererInServer::ReportExceptionForOffload()
 {
     std::string appName = AppBundleManager::GetBundleNameFromUid(processConfig_.appInfo.appUid);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::AUDIO, Media::MediaMonitor::UNDERRUN_ISSUE,
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
         Media::MediaMonitor::FAULT_EVENT);
-    bean->Add("ISSUE_TYPE", TYPE_OFFLOAD_NOT_ENOUGH_DATA);
-    bean->Add("STREAM_INFO_1", std::to_string(DFX_INVALID_STREAM_INFO));
-    bean->Add("STREAM_INFO_2", std::to_string(DFX_INVALID_STREAM_INFO));
-    bean->Add("STREAM_INFO_3", processConfig_.streamType);
-    bean->Add("STREAM_INFO_4", DFX_INVALID_STREAM_INFO);
-    bean->Add("APP_INFO_1", appName);
-    bean->Add("APP_INFO_2", std::to_string(DFX_INVALID_APP_INFO));
-    bean->Add("APP_INFO_3", DFX_INVALID_APP_INFO);
-    bean->Add("EXCEPTION_INFO_1", std::to_string(DFX_INVALID_EXCEPTION_INFO));
-    bean->Add("EXCEPTION_INFO_2", std::to_string(DFX_INVALID_EXCEPTION_INFO));
-    bean->Add("EXCEPTION_INFO_3", DFX_INVALID_EXCEPTION_INFO);
-    bean->Add("EXCEPTION_INFO_4", DFX_INVALID_EXCEPTION_INFO);
-    bean->Add("DEVICE_INFO_1", std::to_string(DFX_INVALID_DEVICE_INFO));
-    bean->Add("DEVICE_INFO_2", DFX_INVALID_DEVICE_INFO);
-    bean->Add("SYSTEM_INFO_1", DFX_INVALID_SYSTEM_INFO);
-    bean->Add("SYSTEM_INFO_2", DFX_INVALID_SYSTEM_INFO);
+    bean->Add("APP_NAME", appName);
+    bean->Add("STREAM_TYPE", processConfig_.streamType);
+    bean->Add("TYPE", TYPE_OFFLOAD_NOT_ENOUGH_DATA);
+    AUDIO_ERR_LOG("ReportExceptionForFast: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
+        appName.c_str(), processConfig_.streamType, TYPE_OFFLOAD_NOT_ENOUGH_DATA);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -721,24 +710,13 @@ void RendererInServer::ReportExceptionForFast()
     CHECK_AND_RETURN(isTimeout);
     std::string appName = AppBundleManager::GetBundleNameFromUid(processConfig_.appInfo.appUid);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::AUDIO, Media::MediaMonitor::UNDERRUN_ISSUE,
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
         Media::MediaMonitor::FAULT_EVENT);
-    bean->Add("ISSUE_TYPE", TYPE_FAST_ABUSE);
-    bean->Add("STREAM_INFO_1", std::to_string(DFX_INVALID_STREAM_INFO));
-    bean->Add("STREAM_INFO_2", std::to_string(DFX_INVALID_STREAM_INFO));
-    bean->Add("STREAM_INFO_3", streamType);
-    bean->Add("STREAM_INFO_4", DFX_INVALID_STREAM_INFO);
-    bean->Add("APP_INFO_1", appName);
-    bean->Add("APP_INFO_2", std::to_string(DFX_INVALID_APP_INFO));
-    bean->Add("APP_INFO_3", DFX_INVALID_APP_INFO);
-    bean->Add("EXCEPTION_INFO_1", std::to_string(DFX_INVALID_EXCEPTION_INFO));
-    bean->Add("EXCEPTION_INFO_2", std::to_string(DFX_INVALID_EXCEPTION_INFO));
-    bean->Add("EXCEPTION_INFO_3", DFX_INVALID_EXCEPTION_INFO);
-    bean->Add("EXCEPTION_INFO_4", DFX_INVALID_EXCEPTION_INFO);
-    bean->Add("DEVICE_INFO_1", std::to_string(DFX_INVALID_DEVICE_INFO));
-    bean->Add("DEVICE_INFO_2", DFX_INVALID_DEVICE_INFO);
-    bean->Add("SYSTEM_INFO_1", DFX_INVALID_SYSTEM_INFO);
-    bean->Add("SYSTEM_INFO_2", DFX_INVALID_SYSTEM_INFO);
+    bean->Add("APP_NAME", appName);
+    bean->Add("STREAM_TYPE", streamType);
+    bean->Add("TYPE", TYPE_FAST_ABUSE);
+    AUDIO_ERR_LOG("ReportExceptionForFast: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
+        appName.c_str(), streamType, TYPE_FAST_ABUSE);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -1399,9 +1377,6 @@ void RendererInServer::UpdateStreamStatusByRendererState()
 
 int32_t RendererInServer::GetRendererFlagsByRoute(uint32_t routeFlag)
 {
-    if (routeFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
-        return AUDIO_FLAG_TRUE_ULTRA_FAST;
-    }
     if (routeFlag & AUDIO_OUTPUT_FLAG_FAST) {
         if (routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
             return AUDIO_FLAG_VOIP_FAST;
@@ -1412,34 +1387,23 @@ int32_t RendererInServer::GetRendererFlagsByRoute(uint32_t routeFlag)
     return AUDIO_FLAG_NORMAL;
 }
 
-FastStatus RendererInServer::GetFastStatusFromRendererFlags(int32_t rendererFlags)
-{
-    if (rendererFlags == AUDIO_FLAG_NORMAL) {
-        return FASTSTATUS_NORMAL;
-    }
-    if (rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST) {
-        return FASTSTATUS_ULTRA_FAST;
-    }
-    return FASTSTATUS_FAST;
-}
-
 int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener)
 {
     std::lock_guard<std::mutex> lock(writeLock_);
+    AUDIO_INFO_LOG("RefreshServerBufferForSpanSizeUpdate begin, sessionId:%{public}u oldSpan:%{public}zu",
+        streamIndex_, spanSizeInFrame_);
     
     size_t newSpanSizeInFrame = 0;
     stream_->GetSpanSizePerFrame(newSpanSizeInFrame);
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
-    AUDIO_INFO_LOG("New spanSize from stream: %{public}zu, sessionId:%{public}u oldSpan:%{public}zu",
-        newSpanSizeInFrame, streamIndex_, spanSizeInFrame_);
+    AUDIO_INFO_LOG("New spanSize from stream: %{public}zu", newSpanSizeInFrame);
     
     uint32_t newRouteFlag = stream_->GetRouteFlag();
     int32_t rendererFlags = GetRendererFlagsByRoute(newRouteFlag);
 
     size_t newEngineSizeInFrame = newSpanSizeInFrame;
     if (rendererFlags != AUDIO_FLAG_MMAP &&
-        rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererFlags != AUDIO_FLAG_TRUE_ULTRA_FAST) {
+        rendererFlags != AUDIO_FLAG_VOIP_FAST) {
         newEngineSizeInFrame = newSpanSizeInFrame * DEFAULT_SPAN_SIZE;
     }
     
@@ -1454,8 +1418,8 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
         AUDIO_INFO_LOG("SetPendingSpanSize: sessionId:%{public}u spanSize:%{public}zu engineSize:%{public}zu "
             "routeFlag:%{public}u isLowLatency:%{public}d",
             streamIndex_, newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag,
-            rendererFlags == AUDIO_FLAG_MMAP || rendererFlags == AUDIO_FLAG_VOIP_FAST ||
-            rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST);
+            rendererFlags == AUDIO_FLAG_MMAP ||
+            rendererFlags == AUDIO_FLAG_VOIP_FAST);
         audioServerBuffer_->SetPendingSpanSize(newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag);
     }
 
@@ -1463,8 +1427,8 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
         AUDIO_INFO_LOG("Update processConfig_.rendererInfo.rendererFlags from %{public}u to %{public}u",
             processConfig_.rendererInfo.rendererFlags, rendererFlags);
         processConfig_.rendererInfo.rendererFlags = rendererFlags;
-        stateListener->OnOperationHandled(UPDATE_SPANSIZE,
-            GetFastStatusFromRendererFlags(rendererFlags));
+        stateListener->OnOperationHandled(UPDATE_SPANSIZE, rendererFlags == AUDIO_FLAG_NORMAL ?
+            FASTSTATUS_NORMAL : FASTSTATUS_FAST);
     }
 
     spanSizeInFrame_ = newSpanSizeInFrame;
@@ -1623,7 +1587,7 @@ int32_t RendererInServer::StartInner(bool hasNoCallback)
             PLAY_START_OPERATION_FAILED, "Policy start client failed", false),
         HILOG_COMM_ERROR("[StartInner]Policy start client failed, reason: %{public}d", ret));
 
-    if (!(processConfig_.rendererInfo.audioFlag & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST))) {
+    if (!(processConfig_.rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST)) {
         // Bluetooth connection may take a long time, which may cause the data before and after the connection
         // are not continuous, resulting in pop sounds. To avoid the problem,
         // WaitForDataConnection() needs to be called after UpdateSessionOperation(), where device is activated,
@@ -2735,10 +2699,6 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
     payload["silentType"] = std::to_string(SILENT_TYPE_MUTE_SESSION);
     payload["isSilent"] = std::to_string(isMuted);
     ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
-    AUDIO_INFO_LOG("SetStreamSilentMode uid %{public}d sessionId %{public}u silentMode %{public}d",
-        processConfig_.appInfo.appUid, streamIndex_, on);
-    HPAE::IHpaeManager::GetHpaeManager().SetStreamSilentMode(
-        HPAE::HPAE_STREAM_CLASS_TYPE_PLAY, streamIndex_, on);
     return SUCCESS;
 }
 
@@ -3662,7 +3622,7 @@ int32_t RendererInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_
     if (cacheSizeInFrame > spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT) {
         cacheSizeInFrame = spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT;
     }
-    if (processConfig_.rendererInfo.audioFlag & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST)) {
+    if (processConfig_.rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST) {
         cacheCount = FAST_ROUTE_CACHE_COUNT;
         AUDIO_INFO_LOG("CalculateCacheCount: cacheSizeInFrame=%{public}u, spanSizeInFrame_=%{public}zu, "
             "cacheCount=%{public}u", cacheSizeInFrame, spanSizeInFrame_, cacheCount);
@@ -3696,6 +3656,13 @@ int32_t RendererInServer::PostSilentAction(std::shared_ptr<AsyncActionHandler::A
     bool postRet = asyncHandler_->PostAsyncAction(desc);
     CHECK_AND_RETURN_RET_LOG(postRet, ERR_INVALID_HANDLE, "Post failed for sessionId %{public}u", streamIndex_);
     return SUCCESS;
+}
+
+void RendererInServer::SetExplicitStandbyState(bool on)
+{
+    AUDIO_INFO_LOG("[%{public}u] SetExplicitStandbyState on:%{public}d", streamIndex_, on);
+    CHECK_AND_RETURN_LOG(audioStreamChecker_ != nullptr, "audioStreamChecker_ is nullptr");
+    audioStreamChecker_->SetExplicitStandbyState(on);
 }
 } // namespace AudioStandard
 } // namespace OHOS

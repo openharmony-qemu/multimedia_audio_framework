@@ -4401,5 +4401,87 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_NoNeedNotifyEvent_001, TestSize.Lev
     EXPECT_NE(true, audioInterruptCallback->NoNeedNotifyEvent(interruptEvent));
 }
 
+/**
+ * @tc.name  : Test AudioRenderer Standby with non-media stream type
+ * @tc.type  : FUNC
+ * @tc.number: AudioRenderer_Standby_StreamType_001
+ * @tc.desc  : Test Standby with VOICE_COMMUNICATION returns ILLEGAL_STATE
+ */
+HWTEST(AudioRendererUnitTest, AudioRenderer_Standby_StreamType_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+    int32_t ret = audioRenderer->Standby(true);
+    EXPECT_EQ(ERROR_ILLEGAL_STATE, ret);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test AudioRenderer Standby already in standby
+ * @tc.type  : FUNC
+ * @tc.number: AudioRenderer_Standby_State_001
+ * @tc.desc  : Test Standby(true) twice returns ILLEGAL_STATE
+ */
+HWTEST(AudioRendererUnitTest, AudioRenderer_Standby_State_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+    int32_t ret = audioRenderer->Standby(true);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioRenderer->Standby(true);
+    EXPECT_EQ(ERROR_ILLEGAL_STATE, ret);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test AudioRenderer Standby exit without enter
+ * @tc.type  : FUNC
+ * @tc.number: AudioRenderer_Standby_State_002
+ * @tc.desc  : Test Standby(false) without Standby(true) returns ILLEGAL_STATE
+ */
+HWTEST(AudioRendererUnitTest, AudioRenderer_Standby_State_002, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+    int32_t ret = audioRenderer->Standby(false);
+    EXPECT_EQ(ERROR_ILLEGAL_STATE, ret);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test AudioRenderer Standby then Stop then Start fails
+ * @tc.type  : FUNC
+ * @tc.number: AudioRenderer_Standby_StartDuringStandby_001
+ * @tc.desc  : Test standby -> stop -> start returns false
+ */
+HWTEST(AudioRendererUnitTest, AudioRenderer_Standby_StartDuringStandby_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+    int32_t ret = audioRenderer->Standby(true);
+    EXPECT_EQ(SUCCESS, ret);
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+    bool isRestarted = audioRenderer->Start();
+    EXPECT_NE(true, isRestarted);
+    audioRenderer->Release();
+}
 } // namespace AudioStandard
 } // namespace OHOS

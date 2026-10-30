@@ -39,10 +39,7 @@ enum AudioErrors: i32 {
   ERROR_UNSUPPORTED = 6800104,
   ERROR_TIMEOUT = 6800105,
   ERROR_STREAM_LIMIT = 6800201,
-  ERROR_SYSTEM = 6800301,
-  ERROR_SERVICE_DIED = 6800302,
-  ERROR_NETWORK_CONDITION_NOT_MET = 6800501,
-  ERROR_STORAGE_NOT_ENOUGH = 6800502
+  ERROR_SYSTEM = 6800301
 }
 
 enum AudioState: i32 {
@@ -1226,6 +1223,10 @@ interface AudioRenderer {
   @gen_async("release")
   @gen_promise("release")
   ReleaseSync(): void;
+
+  @gen_async("standby")
+  @gen_promise("standby")
+  StandbySync(on: bool): void;
 
   @gen_async("getBufferSize")
   @gen_promise("getBufferSize")

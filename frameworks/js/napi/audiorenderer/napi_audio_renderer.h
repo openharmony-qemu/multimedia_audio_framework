@@ -113,6 +113,7 @@ private:
     static napi_value Pause(napi_env env, napi_callback_info info);
     static napi_value Stop(napi_env env, napi_callback_info info);
     static napi_value Release(napi_env env, napi_callback_info info);
+    static napi_value Standby(napi_env env, napi_callback_info info);
     static napi_value GetBufferSize(napi_env env, napi_callback_info info);
     static napi_value GetBufferSizeSync(napi_env env, napi_callback_info info);
     static napi_value GetAudioStreamId(napi_env env, napi_callback_info info);

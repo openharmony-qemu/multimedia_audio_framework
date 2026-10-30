@@ -105,7 +105,6 @@ static const std::map<AudioFlag, int32_t> OUTPUT_ROUTE_TO_STREAM_MAP = {
     {AUDIO_OUTPUT_FLAG_NORMAL, AUDIO_FLAG_NORMAL},
     {AUDIO_OUTPUT_FLAG_DIRECT, AUDIO_FLAG_DIRECT},
     {AUDIO_OUTPUT_FLAG_FAST, AUDIO_FLAG_MMAP},
-    {AUDIO_OUTPUT_FLAG_ULTRA_FAST, AUDIO_FLAG_TRUE_ULTRA_FAST},
 };
 
 static const std::map<uint32_t, IAudioStream::StreamClass> AUDIO_OUTPUT_FLAG_GROUP_MAP = {
@@ -114,7 +113,6 @@ static const std::map<uint32_t, IAudioStream::StreamClass> AUDIO_OUTPUT_FLAG_GRO
     {AUDIO_OUTPUT_FLAG_MULTICHANNEL, IAudioStream::StreamClass::PA_STREAM},
     {AUDIO_OUTPUT_FLAG_LOWPOWER, IAudioStream::StreamClass::PA_STREAM},
     {AUDIO_OUTPUT_FLAG_FAST, IAudioStream::StreamClass::FAST_STREAM},
-    {AUDIO_OUTPUT_FLAG_ULTRA_FAST, IAudioStream::StreamClass::FAST_STREAM},
     {AUDIO_OUTPUT_FLAG_HWDECODING, IAudioStream::StreamClass::PA_STREAM},
 };
 
@@ -506,11 +504,6 @@ std::shared_ptr<AudioRendererPrivate> AudioRenderer::CreateAndInitRendererObject
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     return audioRenderer;
-}
-
-bool AudioRenderer::IsDeviceSupportUltraFast()
-{
-    return AudioPolicyManager::GetInstance().IsDeviceSupportUltraFast();
 }
 
 std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
@@ -1046,12 +1039,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
 IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRendererInfo(uint32_t flag)
 {
     IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
-    if (flag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
-        rendererInfo_.originalFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
-        rendererInfo_.rendererFlags = AUDIO_FLAG_TRUE_ULTRA_FAST;
-        rendererInfo_.pipeType = PIPE_TYPE_OUT_ULTRA_FAST;
-        ret = IAudioStream::StreamClass::FAST_STREAM;
-    } else if (flag & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
+    if (flag & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_3DA_DIRECT;
     } else if (flag & AUDIO_OUTPUT_FLAG_FAST) {
@@ -1075,19 +1063,7 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
             rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
             rendererInfo_.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
         }
-    } else {
-        ret = DecideStreamClassAndUpdateRendererInfoExt(flag);
-    }
-    HILOG_COMM_INFO("[DecideStreamClassAndUpdateRendererInfo]Route flag: %{public}u, streamClass: %{public}d, "\
-        "rendererFlag: %{public}d, pipeType: %{public}d",
-        flag, ret, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
-    return ret;
-}
-
-IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRendererInfoExt(uint32_t flag)
-{
-    IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
-    if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
+    } else if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_OFFLOAD;
     } else if (flag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
@@ -1106,6 +1082,9 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
     }
+    HILOG_COMM_INFO("[DecideStreamClassAndUpdateRendererInfo]Route flag: %{public}u, streamClass: %{public}d, "\
+        "rendererFlag: %{public}d, pipeType: %{public}d",
+        flag, ret, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
     return ret;
 }
 
@@ -1480,6 +1459,12 @@ bool AudioRendererPrivate::ValidateStartState()
 {
     RendererState state = GetStatusInner();
     if (state == RENDERER_PREPARED || state == RENDERER_STOPPED || state == RENDERER_PAUSED) {
+        if (audioStream_ != nullptr && audioStream_->IsStandby()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                PLAY_START_ILLEGAL_STATE, "In standby state", true);
+            AUDIO_INFO_LOG("[Start]Start failed. In standby state.");
+            return false;
+        }
         return true;
     }
     StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -1961,8 +1946,7 @@ int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
         ERROR_INVALID_PARAM, "loudnessGain set invalid");
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_TRUE_ULTRA_FAST,
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
         ERROR_UNSUPPORTED, "low latency mode not supported");
     return currentStream->SetLoudnessGain(loudnessGain);
 }
@@ -1978,8 +1962,7 @@ float AudioRendererPrivate::GetLoudnessGain() const
 
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_TRUE_ULTRA_FAST,
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
         0.0f, "low latency mode not supported");
 
     return currentStream->GetLoudnessGain();
@@ -3670,6 +3653,38 @@ int32_t AudioRendererPrivate::StopDataCallback()
             PLAY_STOP_ILLEGAL_STATE, "Illegal state", true),
         HILOG_COMM_ERROR("[StopDataCallback]StopDataCallback failed. Illegal state:%{public}u", state));
     return audioStream_->SetOffloadDataCallbackState(3); // 3 hdi state full
+}
+
+int32_t AudioRendererPrivate::Standby(bool on)
+{
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    RendererState state = GetStatusInner();
+    StreamUsage streamUsage = rendererInfo_.streamUsage;
+    bool isMediaStream = (streamUsage == STREAM_USAGE_MUSIC || streamUsage == STREAM_USAGE_MOVIE ||
+        streamUsage == STREAM_USAGE_GAME || streamUsage == STREAM_USAGE_AUDIOBOOK);
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(isMediaStream, ERROR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_STANDBY_ILLEGAL_STATE, "Unsupported stream type", true),
+        AUDIO_INFO_LOG("[Standby]Unsupported stream usage:%{public}d", streamUsage));
+    CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(audioStream_ != nullptr, ERROR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            PLAY_STANDBY_ILLEGAL_STATE, "audioStream_ is null", true),
+        AUDIO_INFO_LOG("[Standby]audioStream_ is null"));
+    if (on) {
+        CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(state == RENDERER_RUNNING && !audioStream_->IsStandby(),
+            ERROR_ILLEGAL_STATE,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                PLAY_STANDBY_ILLEGAL_STATE, "Illegal state for enter standby", true),
+            AUDIO_INFO_LOG("[Standby]Enter standby failed. state:%{public}u", state));
+    } else {
+        CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(audioStream_->IsStandby(), ERROR_ILLEGAL_STATE,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                PLAY_STANDBY_ILLEGAL_STATE, "Not in standby state", true),
+            AUDIO_INFO_LOG("[Standby]Exit standby failed. Not in standby state"));
+    }
+    int32_t ret = audioStream_->SetStandby(on);
+    AUDIO_INFO_LOG("[Standby]SetStandby on:%{public}d, ret:%{public}d", static_cast<int>(on), ret);
+    return ret;
 }
 
 void AudioRendererPrivate::SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
