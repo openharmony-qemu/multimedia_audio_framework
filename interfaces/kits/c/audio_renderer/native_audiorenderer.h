@@ -582,6 +582,35 @@ OH_AudioStream_Result OH_AudioRenderer_GetLatency(OH_AudioRenderer* renderer,
 OH_AudioStream_Result OH_AudioRenderer_SetIndependentAudioSessionStrategy(
     OH_AudioRenderer* renderer, const OH_AudioSession_Strategy *strategy, uint32_t behavior);
 
+/**
+ * @brief Enters or exits the audio standby state.
+ *
+ * The standby state is used when there is no data for a short period of time during audio playing.
+ * For example, the streaming media is waiting for network download.
+ * After the audio channel enters the standby state, the audio channel remains unchanged.
+ * The cyclic thread that only requests data from applications pauses and does not receive proactively written data.
+ * The data that has been written to the system continues to be played.
+ * You can invoke this interface to enter the standby state only when the stream is in
+ * {@link AUDIOSTREAM_STATE_RUNNING} state. The interface can be invoked to exit only when
+ * the interface is in standby state.
+ * In the standby state, you can also directly call {@link OH_AudioRenderer_Pause},
+ * {@link OH_AudioRenderer_Stop}, {@link OH_AudioRenderer_Release} stops playing,
+ * but {@link OH_AudioRenderer_Start} cannot be called.
+ * Note that this interface does not change the state obtained through
+ * {@link OH_AudioRenderer_GetCurrentState}.
+ * @param renderer [in] Point to the audio renderer created by {@link OH_AudioStreamBuilder_GenerateRenderer}.
+ * @param on [in] Enter or exit the standby state. The options are as follows: true: enter; false: exit.
+ * @return <ul>
+ *         <li>{@link #AUDIOSTREAM_SUCCESS} interface is successfully invoked. </li>
+ *         <li>{@link #AUDIOSTREAM_ERROR_INVALID_PARAM} renderer parameter is a null pointer. </li>
+ *         <li>{@link #AUDIOSTREAM_ERROR_ILLEGAL_STATE}
+ *             1. is not in the running state.
+ *             2. Exit cannot be called in non-standby state. </li>
+ *         </ul>
+ * @since 26.2.0
+ */
+OH_AudioStream_Result OH_AudioRenderer_Standby(OH_AudioRenderer* renderer, bool on);
+
 #ifdef __cplusplus
 }
 #endif

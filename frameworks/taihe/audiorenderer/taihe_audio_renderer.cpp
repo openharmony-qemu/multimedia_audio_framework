@@ -266,6 +266,19 @@ void AudioRendererImpl::ReleaseSync()
     }
 }
 
+void AudioRendererImpl::StandbySync(bool on)
+{
+    if (audioRenderer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
+        return;
+    }
+    int32_t ret = audioRenderer_->Standby(on);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, OHOS::AudioStandard::ErrMessage(ret));
+        return;
+    }
+}
+
 int64_t AudioRendererImpl::GetBufferSizeSync()
 {
     size_t bufferSize = 0;

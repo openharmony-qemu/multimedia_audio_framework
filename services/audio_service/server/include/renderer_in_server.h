@@ -137,6 +137,7 @@ public:
     int32_t SetSpeed(float speed);
     int32_t SetPitch(float pitch);
     int32_t SetOffloadDataCallbackState(int32_t state);
+    void SetExplicitStandbyState(bool on);
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);

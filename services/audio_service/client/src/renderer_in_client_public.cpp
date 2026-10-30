@@ -1795,6 +1795,8 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
     CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERR_INVALID_OPERATION, "Write with meta: not supported");
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
+    CHECK_AND_RETURN_RET_LOG(!isStandby_.load(std::memory_order_acquire), ERR_INVALID_OPERATION,
+        "Write: not allowed in standby state");
     int32_t ret = WriteInner(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
     return ret <= 0 ? ret : static_cast<int32_t>(pcmBufferSize);
 }
@@ -1804,6 +1806,8 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
     CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERR_INVALID_OPERATION, "Write: not supported");
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
+    CHECK_AND_RETURN_RET_LOG(!isStandby_.load(std::memory_order_acquire), ERR_INVALID_OPERATION,
+        "Write: not allowed in standby state");
     return WriteInner(buffer, bufferSize);
 }
 
@@ -2558,6 +2562,29 @@ int32_t RendererInClientInner::SetOffloadDataCallbackState(int cbState)
     Trace trace("RendererInClientInner::SetOffloadDataCallbackState: " + std::to_string(cbState));
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
     return ipcStream_->SetOffloadDataCallbackState(cbState);
+}
+
+int32_t RendererInClientInner::SetStandby(bool on)
+{
+    AUDIO_INFO_LOG("[SetStandby] on:%{public}d, current standby:%{public}d",
+        static_cast<int>(on), static_cast<int>(isStandby_.load()));
+    bool expected = !on;
+    if (!isStandby_.compare_exchange_strong(expected, on)) {
+        AUDIO_WARNING_LOG("[SetStandby] Already in target state, on:%{public}d", static_cast<int>(on));
+    }
+    if (!on) {
+        std::unique_lock<std::mutex> stateLock(statusMutex_);
+        cbThreadCv_.notify_all();
+    }
+    if (ipcStream_ != nullptr) {
+        ipcStream_->SetStandbyState(on);
+    }
+    return SUCCESS;
+}
+
+bool RendererInClientInner::IsStandby() const
+{
+    return isStandby_.load(std::memory_order_acquire);
 }
 
 bool RendererInClientInner::GetStopFlag() const

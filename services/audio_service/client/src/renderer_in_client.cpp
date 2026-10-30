@@ -470,9 +470,9 @@ bool RendererInClientInner::WaitForRunning()
     Trace trace("RendererInClientInner::WaitForRunning");
     // check renderer state_: call client write only in running else wait on statusMutex_
     std::unique_lock<std::mutex> stateLock(statusMutex_);
-    if (state_ != RUNNING) {
+    if (state_ != RUNNING || isStandby_.load(std::memory_order_acquire)) {
         bool stopWaiting = cbThreadCv_.wait_for(stateLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-            return state_ == RUNNING || cbThreadReleased_;
+            return (state_ == RUNNING && !isStandby_.load(std::memory_order_acquire)) || cbThreadReleased_;
         });
         if (cbThreadReleased_) {
             AUDIO_INFO_LOG("CBThread end in non-running status, sessionID :%{public}d", sessionId_);

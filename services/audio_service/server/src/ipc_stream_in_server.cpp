@@ -592,6 +592,14 @@ int32_t IpcStreamInServer::SetOffloadDataCallbackState(int32_t state)
     return rendererInServer_->SetOffloadDataCallbackState(state);
 }
 
+int32_t IpcStreamInServer::SetStandbyState(bool on)
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr,
+        ERR_OPERATION_FAILED, "mode is not playback or renderer is null");
+    rendererInServer_->SetExplicitStandbyState(on);
+    return SUCCESS;
+}
+
 int32_t IpcStreamInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
     uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame)
 {

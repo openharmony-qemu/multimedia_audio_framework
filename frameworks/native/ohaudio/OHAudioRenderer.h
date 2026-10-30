@@ -215,6 +215,7 @@ public:
     bool Stop();
     bool Flush();
     bool Release();
+    int32_t Standby(bool on);
     RendererState GetCurrentState();
     void GetStreamId(uint32_t& streamId);
     AudioChannel GetChannelCount();

@@ -54,6 +54,7 @@ void AudioStreamCheckerThread::AddThreadTask(std::shared_ptr<AudioStreamChecker>
             for (auto it : tempCheckers) {
                 it->MonitorCheckFrame();
                 it->CheckVolume();
+                it->CheckExplicitStandbyTimeout();
             }
             ClockTime::RelativeSleep(STREAM_CHECK_INTERVAL_TIME);
         } while (sharedThreadTask->currentTaskCount_.load() != 0);

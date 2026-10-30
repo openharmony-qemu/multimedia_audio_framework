@@ -3697,5 +3697,12 @@ int32_t RendererInServer::PostSilentAction(std::shared_ptr<AsyncActionHandler::A
     CHECK_AND_RETURN_RET_LOG(postRet, ERR_INVALID_HANDLE, "Post failed for sessionId %{public}u", streamIndex_);
     return SUCCESS;
 }
+
+void RendererInServer::SetExplicitStandbyState(bool on)
+{
+    AUDIO_INFO_LOG("[%{public}u] SetExplicitStandbyState on:%{public}d", streamIndex_, on);
+    CHECK_AND_RETURN_LOG(audioStreamChecker_ != nullptr, "audioStreamChecker_ is nullptr");
+    audioStreamChecker_->SetExplicitStandbyState(on);
+}
 } // namespace AudioStandard
 } // namespace OHOS

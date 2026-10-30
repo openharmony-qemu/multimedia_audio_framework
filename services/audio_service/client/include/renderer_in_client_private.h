@@ -239,6 +239,8 @@ public:
     void SetCallbackLoopTid(int32_t tid) override;
     int32_t GetCallbackLoopTid() override;
     int32_t SetOffloadDataCallbackState(int32_t cbState) override;
+    int32_t SetStandby(bool on) override;
+    bool IsStandby() const override;
     void NotifyRouteUpdate(const StreamFlagInfo &flagInfo, const std::string &networkId) override;
     bool GetStopFlag() const override;
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
@@ -483,6 +485,7 @@ private:
     std::atomic<StreamFocusState> streamFocusState_ = FOCUS_INVALID;
     std::mutex focusStatusMutex_;
     std::atomic<State> state_ = INVALID;
+    std::atomic<bool> isStandby_ = false;
     // using this lock when change status_
     std::mutex statusMutex_;
     // for status operation wait and notify

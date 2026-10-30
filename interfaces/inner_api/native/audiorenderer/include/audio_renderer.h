@@ -581,6 +581,21 @@ public:
     virtual int32_t ReleaseWithError() { return 0; }
 
     /**
+     * @brief Enters or exits the audio standby state.
+     *
+     * The standby state is used when there is no data during audio playback. After entering
+     * standby, the cyclic thread that requests data from the application pauses and does not
+     * receive proactively written data. The data that has been written to the system continues
+     * to be played. This interface does not change the state obtained through GetStatus().
+     *
+     * @param on Enter or exit the standby state. true: enter; false: exit.
+     * @return Returns {@link SUCCESS} if the operation is successful.
+     *         Returns {@link ERR_ILLEGAL_STATE} if the operation is not allowed in the current state.
+     * @since 26.1.0
+     */
+    virtual int32_t Standby(bool on) { return 0; }
+
+    /**
      * @brief Obtains a reasonable minimum buffer size for rendering, however, the renderer can
      *        accept other write sizes as well.
      *

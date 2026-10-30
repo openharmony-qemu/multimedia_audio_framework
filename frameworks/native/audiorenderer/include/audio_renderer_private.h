@@ -176,6 +176,7 @@ public:
 
     int32_t StartDataCallback() override;
     int32_t StopDataCallback() override;
+    int32_t Standby(bool on) override;
     void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
     void ResetFirstFrameState() override;
 
