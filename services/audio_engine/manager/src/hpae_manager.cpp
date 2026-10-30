@@ -169,8 +169,6 @@ int32_t HpaeManager::Init()
         hpaeManagerThread_ = std::make_unique<HpaeManagerThread>();
         hpaeManagerThread_->ActivateThread(this);
     }
-    auto createCoreSink = [this]() { CreateCoreSinkManager(); };
-    SendRequest(createCoreSink, __func__);
     isInit_.store(true);
     sessionEffectManager_ = std::make_unique<SessionEffectManager>(*this);
     return SUCCESS;
@@ -310,10 +308,12 @@ int32_t HpaeManager::DeInit()
     }
     delayedTaskQueue_.CancelAll();
     hpaeNoLockQueue_.HandleRequests();  // todo suspend
-    // Drain-then-destroy: any queued createCoreSink runs first, then the thread is stopped.
+    // Drain-then-destroy: Virtual_Render is lazily created inside CreateRendererManager on this
+    // thread; null-safe lookup covers the case where no real sink was ever opened.
     if (auto coreSink = SafeGetMap(rendererManagerMap_, DEFAULT_CORE_SINK_NAME)) {
         coreSink->DeInit();  // stops Virtual_Render thread; map entry kept for re-Init reuse
     }
+    coreSink_ = "";  // avoid stale sink name across DeInit/Init cycles
     isInit_.store(false);
     AUDIO_INFO_LOG("success");
     return SUCCESS;
@@ -417,6 +417,11 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
     rendererManagerMap_[audioModuleInfo.name] = rendererManager;
     sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
     sinkIdSinkNameMap_[sinkSourceIndex] = audioModuleInfo.name;
+    if (coreSink_ == "") {
+        coreSink_ = audioModuleInfo.name;
+        AUDIO_INFO_LOG("SetCoreSink name: %{public}s", GetEncryptStr(coreSink_).c_str());
+        CreateCoreSinkManager();  // mirror capture side: core manager created after first port
+    }
     if (audioModuleInfo.name == VIRTUAL_INJECTOR) {
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
         HpaeNodeInfo nodeInfo;
@@ -733,7 +738,7 @@ void HpaeManager::MarkClosingSinkPrefer(const std::string &sinkName)
 
 int32_t HpaeManager::CloseOutAudioPort(std::string sinkName)
 {
-    if (sinkName == DEFAULT_CORE_SINK_NAME) {
+    if (sinkName == DEFAULT_CORE_SINK_NAME || (!coreSink_.empty() && sinkName == coreSink_)) {
         AUDIO_WARNING_LOG("core sink %{public}s is permanent, skip close", sinkName.c_str());
         return SUCCESS;
     }
@@ -1570,8 +1575,7 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
         if (INNER_SOURCE_TYPE_SET.count(streamInfo.sourceType) != 0) {
             return CreateStreamForCapInner(streamInfo);
         } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
-            std::string deviceName = streamInfo.deviceName == "" ? DEFAULT_CORE_SINK_NAME
-                                                                 : streamInfo.deviceName;
+            std::string deviceName = streamInfo.deviceName == "" ? coreSink_ : streamInfo.deviceName;
             AUDIO_INFO_LOG("devicename:%{public}s, sessionId:%{public}u",
                 GetEncryptStr(deviceName).c_str(), streamInfo.sessionId);
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, deviceName),

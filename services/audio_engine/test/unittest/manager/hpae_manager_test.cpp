@@ -296,7 +296,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    streamInfo.deviceName = audioModuleInfo.name;  // empty would now land on Virtual_Render
+    streamInfo.deviceName = audioModuleInfo.name;  // empty would fall to coreSink_
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
 
@@ -377,7 +377,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest002, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    streamInfo.deviceName = audioModuleInfo.name;  // empty would now land on Virtual_Render
+    streamInfo.deviceName = audioModuleInfo.name;  // empty would fall to coreSink_
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
     int32_t fixedNum = 100;
@@ -439,7 +439,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest003, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    streamInfo.deviceName = audioModuleInfo.name;  // empty would now land on Virtual_Render
+    streamInfo.deviceName = audioModuleInfo.name;  // empty would fall to coreSink_
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
     int32_t fixedNum = 100;
@@ -492,7 +492,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest004, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    streamInfo.deviceName = audioModuleInfo.name;  // empty would now land on Virtual_Render
+    streamInfo.deviceName = audioModuleInfo.name;  // empty would fall to coreSink_
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
     int32_t fixedNum = 100;
@@ -546,11 +546,11 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest005, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    streamInfo.deviceName = audioModuleInfo.name;  // empty would now land on Virtual_Render
+    streamInfo.deviceName = audioModuleInfo.name;  // empty would fall to coreSink_
     hpaeManager_->CreateStream(streamInfo);
     HpaeStreamInfo streamInfo2 = GetRenderStreamInfo();
     streamInfo2.sessionId = TEST_STREAM_SESSION_ID + 1;
-    streamInfo2.deviceName = audioModuleInfo.name;  // empty would now land on Virtual_Render
+    streamInfo2.deviceName = audioModuleInfo.name;  // empty would fall to coreSink_
     hpaeManager_->CreateStream(streamInfo2);
     WaitForMsgProcessing(hpaeManager_);
     int32_t fixedNum = 100;
@@ -616,7 +616,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest001, TestSize.Leve
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    streamInfo.deviceName = audioModuleInfo.name;  // empty would now land on Virtual_Render
+    streamInfo.deviceName = audioModuleInfo.name;  // empty would fall to coreSink_
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
     int32_t fixedNum = 100;
@@ -675,7 +675,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest002, TestSize.Leve
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    streamInfo.deviceName = audioModuleInfo.name;  // empty would now land on Virtual_Render
+    streamInfo.deviceName = audioModuleInfo.name;  // empty would fall to coreSink_
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
     int32_t fixedNum = 100;
@@ -737,7 +737,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003, TestSize.Leve
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    streamInfo.deviceName = audioModuleInfo.name;  // empty would now land on Virtual_Render
+    streamInfo.deviceName = audioModuleInfo.name;  // empty would fall to coreSink_
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
     int32_t fixedNum = 100;
@@ -1133,7 +1133,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest004, TestSize.Leve
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    streamInfo.deviceName = audioModuleInfo.name;  // empty would now land on Virtual_Render
+    streamInfo.deviceName = audioModuleInfo.name;  // empty would fall to coreSink_
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
     int32_t fixedNum = 100;
@@ -1451,7 +1451,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest001, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    streamInfo.deviceName = audioModuleInfo.name;  // empty would now land on Virtual_Render
+    streamInfo.deviceName = audioModuleInfo.name;  // empty would fall to coreSink_
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
     int32_t fixedNum = 100;
@@ -2050,8 +2050,8 @@ HWTEST_F(HpaeManagerUnitTest, DeleteAudioPort_TEST_001, TestSize.Level1)
     hpaeManager_->rendererManagerMap_["Speaker_File"] = hpaeRendererManager_;
     hpaeManager_->sinkIdSinkNameMap_[1] = "Speaker_File";
     hpaeManager_->DeleteAudioport("Speaker_File");
-    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.size(), 1);  // only the permanent core sink remains
-    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count("Virtual_Render"), 1);
+    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.size(), 0);  // raw removal shrinks the map
+    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count("Virtual_Render"), 0);  // no core sink before first port
 
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -3584,10 +3584,10 @@ HWTEST_F(HpaeManagerUnitTest, SetStreamSilentMode_NonPlayType_003, TestSize.Leve
 }
 
 /**
- * @tc.name  : VirtualRenderSinkFallback
- * @tc.desc  : A PLAY stream with empty deviceName lands on the permanent Virtual_Render core sink.
+ * @tc.name  : EmptyDeviceNameFallsToCoreSink
+ * @tc.desc  : A PLAY stream with empty deviceName lands on coreSink_, the first real sink opened.
  */
-HWTEST_F(HpaeManagerUnitTest, VirtualRenderSinkFallback, TestSize.Level1)
+HWTEST_F(HpaeManagerUnitTest, EmptyDeviceNameFallsToCoreSink, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -3596,38 +3596,76 @@ HWTEST_F(HpaeManagerUnitTest, VirtualRenderSinkFallback, TestSize.Level1)
     std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback =
         std::make_shared<HpaeAudioServiceCallbackUnitTest>();
     EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
-    HpaeStreamInfo streamInfo = GetRenderStreamInfo();  // deviceName empty
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();  // deviceName empty -> coreSink_
     EXPECT_EQ(hpaeManager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetAllSinkInputs(), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     std::vector<SinkInput> sinkInputs = callback->GetSinkInputs();
     EXPECT_EQ(sinkInputs.size(), 1);  // fresh manager per test: this stream is the only sink input
-    EXPECT_EQ(sinkInputs[0].sinkName == "Virtual_Render", true);
-    EXPECT_EQ(sinkInputs[0].paStreamId, streamInfo.sessionId);
+    EXPECT_EQ(sinkInputs[0].sinkName == audioModuleInfo.name, true);  // coreSink_ is the first real sink
     EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : NonCoreSinkCloseFallsBackToVirtualRender
+ * @tc.desc  : Closing a non-core sink moves its streams to the Virtual_Render fallback sink.
+ */
+HWTEST_F(HpaeManagerUnitTest, NonCoreSinkCloseFallsBackToVirtualRender, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback =
+        std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+    AudioModuleInfo coreSink = GetSinkAudioModeInfo();  // first open -> coreSink_ + core manager
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(coreSink), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    AudioModuleInfo secondSink = GetSinkAudioModeInfo("Speaker_File1");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(secondSink), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
+    streamInfo.deviceName = secondSink.name;
+    EXPECT_EQ(hpaeManager_->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    // close the non-core sink: its streams fall back to Virtual_Render
+    EXPECT_EQ(hpaeManager_->CloseOutAudioPort(secondSink.name), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetAllSinkInputs(), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(callback->GetSinkInputs().empty(), true);
+    std::vector<SinkInput> sinkInputs = callback->GetSinkInputs();
+    EXPECT_EQ(sinkInputs.size(), 1);  // stream survives the close
+    EXPECT_EQ(sinkInputs[0].sinkName == "Virtual_Render", true);
+    EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->DeInit();
 }
 
 /**
  * @tc.name  : StopAudioPortOnCoreSinkIsSkipped
- * @tc.desc  : StopAudioPort on the permanent core sink returns SUCCESS and the sink keeps serving.
+ * @tc.desc  : StopAudioPort on Virtual_Render returns SUCCESS and sinks keep serving streams.
  */
 HWTEST_F(HpaeManagerUnitTest, StopAudioPortOnCoreSinkIsSkipped, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
     sleep(1);
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);  // first real sink -> coreSink_
+    WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->StopAudioPort("Virtual_Render"), SUCCESS);  // guard hit, skip stop
     WaitForMsgProcessing(hpaeManager_);
     std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback =
         std::make_shared<HpaeAudioServiceCallbackUnitTest>();
     EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
-    HpaeStreamInfo streamInfo = GetRenderStreamInfo();  // empty deviceName
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();  // empty deviceName -> coreSink_
     EXPECT_EQ(hpaeManager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetAllSinkInputs(), SUCCESS);
@@ -3640,17 +3678,20 @@ HWTEST_F(HpaeManagerUnitTest, StopAudioPortOnCoreSinkIsSkipped, TestSize.Level1)
 
 /**
  * @tc.name  : CloseOutAudioPortOnCoreSinkIsSkipped
- * @tc.desc  : CloseOutAudioPort on the permanent core sink returns SUCCESS and keeps the entry.
+ * @tc.desc  : CloseOutAudioPort on Virtual_Render returns SUCCESS and keeps the entry.
  */
 HWTEST_F(HpaeManagerUnitTest, CloseOutAudioPortOnCoreSinkIsSkipped, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
     sleep(1);
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);  // lazy-creates Virtual_Render
+    WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->CloseOutAudioPort("Virtual_Render"), SUCCESS);  // guard hit, skip close
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count("Virtual_Render"), 1);  // entry survives
-    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();  // empty deviceName -> coreSink_
     EXPECT_EQ(hpaeManager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);

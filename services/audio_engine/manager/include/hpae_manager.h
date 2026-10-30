@@ -390,6 +390,7 @@ private:
     std::unordered_map<uint32_t, HpaeSessionState> movingIds_;
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;
     std::unordered_map<uint32_t, std::string> sourceIdSourceNameMap_;
+    std::string coreSink_ = "";
     std::string defaultSource_ = "";
     std::string coreSource_ = "";
     std::atomic<int32_t> sinkSourceIndex_ = 0;
