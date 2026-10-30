@@ -105,6 +105,7 @@ static const std::map<AudioFlag, int32_t> OUTPUT_ROUTE_TO_STREAM_MAP = {
     {AUDIO_OUTPUT_FLAG_NORMAL, AUDIO_FLAG_NORMAL},
     {AUDIO_OUTPUT_FLAG_DIRECT, AUDIO_FLAG_DIRECT},
     {AUDIO_OUTPUT_FLAG_FAST, AUDIO_FLAG_MMAP},
+    {AUDIO_OUTPUT_FLAG_ULTRA_FAST, AUDIO_FLAG_TRUE_ULTRA_FAST},
 };
 
 static const std::map<uint32_t, IAudioStream::StreamClass> AUDIO_OUTPUT_FLAG_GROUP_MAP = {
@@ -113,6 +114,7 @@ static const std::map<uint32_t, IAudioStream::StreamClass> AUDIO_OUTPUT_FLAG_GRO
     {AUDIO_OUTPUT_FLAG_MULTICHANNEL, IAudioStream::StreamClass::PA_STREAM},
     {AUDIO_OUTPUT_FLAG_LOWPOWER, IAudioStream::StreamClass::PA_STREAM},
     {AUDIO_OUTPUT_FLAG_FAST, IAudioStream::StreamClass::FAST_STREAM},
+    {AUDIO_OUTPUT_FLAG_ULTRA_FAST, IAudioStream::StreamClass::FAST_STREAM},
     {AUDIO_OUTPUT_FLAG_HWDECODING, IAudioStream::StreamClass::PA_STREAM},
 };
 
@@ -504,6 +506,11 @@ std::shared_ptr<AudioRendererPrivate> AudioRenderer::CreateAndInitRendererObject
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     return audioRenderer;
+}
+
+bool AudioRenderer::IsDeviceSupportUltraFast()
+{
+    return AudioPolicyManager::GetInstance().IsDeviceSupportUltraFast();
 }
 
 std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
@@ -1039,7 +1046,12 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
 IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRendererInfo(uint32_t flag)
 {
     IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
-    if (flag & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
+    if (flag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+        rendererInfo_.originalFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
+        rendererInfo_.rendererFlags = AUDIO_FLAG_TRUE_ULTRA_FAST;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_ULTRA_FAST;
+        ret = IAudioStream::StreamClass::FAST_STREAM;
+    } else if (flag & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_3DA_DIRECT;
     } else if (flag & AUDIO_OUTPUT_FLAG_FAST) {
@@ -1063,6 +1075,19 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
             rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
             rendererInfo_.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
         }
+    } else {
+        ret = DecideStreamClassAndUpdateRendererInfoExt(flag);
+    }
+    HILOG_COMM_INFO("[DecideStreamClassAndUpdateRendererInfo]Route flag: %{public}u, streamClass: %{public}d, "\
+        "rendererFlag: %{public}d, pipeType: %{public}d",
+        flag, ret, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
+    return ret;
+}
+ 
+IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRendererInfoExt(uint32_t flag)
+{
+    IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
+    if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
     } else if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_OFFLOAD;
@@ -1946,7 +1971,8 @@ int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
         ERROR_INVALID_PARAM, "loudnessGain set invalid");
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_TRUE_ULTRA_FAST,
         ERROR_UNSUPPORTED, "low latency mode not supported");
     return currentStream->SetLoudnessGain(loudnessGain);
 }
@@ -1962,7 +1988,8 @@ float AudioRendererPrivate::GetLoudnessGain() const
 
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_TRUE_ULTRA_FAST,
         0.0f, "low latency mode not supported");
 
     return currentStream->GetLoudnessGain();
