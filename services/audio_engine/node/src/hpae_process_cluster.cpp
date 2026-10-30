@@ -43,9 +43,8 @@ HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sink
         nodeInfo.frameLen = sinkInfo.samplingRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
     }
     nodeInfo.samplingRate = sinkInfo.samplingRate;
-    // nodeInfo is the first streamInfo, but mixerNode need formatConverterOutput's nodeInfo.
-    // so we need to make a prediction here on the output of the formatConverter node.
-    // don't worry, Nodeinfo will still be modified during DoProcess.
+    // nodeInfo is the first streamInfo; mixerNode input is the mixer converter output (mixer-side format),
+    // predicted here and corrected at runtime via CheckUpdateInfo during DoProcess
     if (nodeInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE || nodeInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
         HpaeNodeInfo tempNodeInfo(nodeInfo);
         tempNodeInfo.channels = sinkInfo.channels;
@@ -93,6 +92,9 @@ bool HpaeProcessCluster::Reset()
     for (auto converterNode : idConverterMap_) {
         converterNode.second->Reset();
     }
+    for (auto mixerConverterNode : idMixerConverterMap_) {
+        mixerConverterNode.second->Reset();
+    }
     for (auto gainNode : idGainMap_) {
         gainNode.second->Reset();
     }
@@ -129,6 +131,11 @@ int32_t HpaeProcessCluster::GetGainNodeCount()
 int32_t HpaeProcessCluster::GetConverterNodeCount()
 {
     return idConverterMap_.size();
+}
+
+int32_t HpaeProcessCluster::GetMixerConverterNodeCount()
+{
+    return idMixerConverterMap_.size();
 }
 
 int32_t HpaeProcessCluster::GetLoudnessGainNodeCount()
@@ -171,27 +178,44 @@ void HpaeProcessCluster::CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &
 
 void HpaeProcessCluster::CreateConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo)
 {
-    CHECK_AND_RETURN_LOG(!SafeGetMap(idConverterMap_, sessionId),
-        "sessionId %{public}d converterNode already exist", sessionId);
+    // output format follows the loudness/session-effect requirement, falls back to mixer format
+    CreateConverterNodeInto(idConverterMap_, sessionId, preNodeInfo, ConverterFormatQueryRole::DOWNSTREAM_ALGO);
+}
+
+void HpaeProcessCluster::CreateMixerConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo)
+{
+    // output format follows the mixer/render-effect requirement, uniform across streams
+    CreateConverterNodeInto(idMixerConverterMap_, sessionId, preNodeInfo, ConverterFormatQueryRole::MIXER_INPUT);
+}
+
+void HpaeProcessCluster::CreateConverterNodeInto(
+    std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> &nodeMap,
+    uint32_t sessionId, const HpaeNodeInfo &preNodeInfo, ConverterFormatQueryRole role)
+{
+    CHECK_AND_RETURN_LOG(!SafeGetMap(nodeMap, sessionId),
+        "sessionId %{public}u converter node (role %{public}d) already exist",
+        sessionId, static_cast<int32_t>(role));
     AudioBasicFormat basicFormat;
-    if (renderEffectNode_ != nullptr) {
-        renderEffectNode_->GetExpectedInputChannelInfo(basicFormat);
+    if (role == ConverterFormatQueryRole::MIXER_INPUT) {
+        GetMixerInputFormatInfo(sessionId, basicFormat);
+    } else {
+        GetNodeInputFormatInfo(sessionId, basicFormat);
     }
-    uint32_t channels = basicFormat.audioChannelInfo.numChannels;
-    AudioChannelLayout channelLayout = basicFormat.audioChannelInfo.channelLayout;
     HpaeNodeInfo outputNodeInfo = preNodeInfo;
-    outputNodeInfo.frameLen = mixerNode_->GetFrameLen();
-    outputNodeInfo.samplingRate = sinkInfo_.samplingRate;
+    // frameLen must follow the output rate: mixer frameLen is at sink rate, mismatch causes 2x drain
+    outputNodeInfo.frameLen = basicFormat.rate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
+    outputNodeInfo.samplingRate = basicFormat.rate;
     outputNodeInfo.format = sinkInfo_.format;
-    outputNodeInfo.channels = channels == 0 ? sinkInfo_.channels : static_cast<AudioChannel>(channels);
-    outputNodeInfo.channelLayout = channelLayout == 0 ? static_cast<AudioChannelLayout>(sinkInfo_.channelLayout) :
-        static_cast<AudioChannelLayout>(channelLayout);
-    idConverterMap_[sessionId] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
-    // if there is no loudness gain or effect, query information will not change
-    idConverterMap_[sessionId]->RegisterCallback(this);
+    outputNodeInfo.channels = basicFormat.audioChannelInfo.numChannels == 0 ? sinkInfo_.channels :
+        static_cast<AudioChannel>(basicFormat.audioChannelInfo.numChannels);
+    outputNodeInfo.channelLayout = basicFormat.audioChannelInfo.channelLayout == 0 ?
+        static_cast<AudioChannelLayout>(sinkInfo_.channelLayout) :
+        static_cast<AudioChannelLayout>(basicFormat.audioChannelInfo.channelLayout);
+    nodeMap[sessionId] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
+    nodeMap[sessionId]->RegisterCallback(this, role);
     // processCluster comes with outputCluster, which has a limiter, so for converter in process cluster,
     // downmix normalization can be disabled to preserve the loudness of input
-    idConverterMap_[sessionId]->SetDownmixNormalization(false);
+    nodeMap[sessionId]->SetDownmixNormalization(false);
 }
 
 void HpaeProcessCluster::CreateLoudnessGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo)
@@ -215,7 +239,9 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
         preNodeInfo.channels, preNodeInfo.nodeId, preNodeInfo.nodeName.c_str());
     
     ConnectMixerNode();
-    mixerNode_->Connect(idGainMap_[sessionId]);
+    // every stream enters the mixer at the uniform mixer input format: gain -> mixerConverter -> mixer
+    mixerNode_->Connect(idMixerConverterMap_[sessionId]);
+    idMixerConverterMap_[sessionId]->Connect(idGainMap_[sessionId]);
     idGainMap_[sessionId]->Connect(idLoudnessGainNodeMap_[sessionId]);
     auto seNode = SafeGetMap(idSessionEffectMap_, sessionId);
     if (seNode) {
@@ -248,7 +274,8 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
         }
         idConverterMap_[sessionId]->DisConnect(preNode);
         idGainMap_[sessionId]->DisConnect(idLoudnessGainNodeMap_[sessionId]);
-        mixerNode_->DisConnect(idGainMap_[sessionId]);
+        idMixerConverterMap_[sessionId]->DisConnect(idGainMap_[sessionId]);
+        mixerNode_->DisConnect(idMixerConverterMap_[sessionId]);
         AUDIO_INFO_LOG("Exist converterNode preOutNum is %{public}zu", mixerNode_->GetPreOutNum());
     }
     if (mixerNode_->GetPreOutNum() == 0) {
@@ -279,17 +306,18 @@ int32_t HpaeProcessCluster::CreateNodes(const std::shared_ptr<OutputNode<HpaePcm
     CreateConverterNode(sessionId, preNodeInfo);
     CreateLoudnessGainNode(sessionId, preNodeInfo);
     CreateGainNode(sessionId, preNodeInfo);
-    AUDIO_INFO_LOG("SessionId %{public}u, Success create all nodes: "
-        "converterNodeId %{public}u, loudnessGainNodeId %{public}u, gainNodeId %{public}u",
+    CreateMixerConverterNode(sessionId, preNodeInfo);
+    AUDIO_INFO_LOG("SessionId %{public}u, Success create all nodes: converterNodeId %{public}u, "
+        "loudnessGainNodeId %{public}u, gainNodeId %{public}u, mixerConverterNodeId %{public}u",
         sessionId, idConverterMap_[sessionId]->GetNodeId(), idLoudnessGainNodeMap_[sessionId]->GetNodeId(),
-        idGainMap_[sessionId]->GetNodeId());
+        idGainMap_[sessionId]->GetNodeId(), idMixerConverterMap_[sessionId]->GetNodeId());
     return SUCCESS;
 }
  
 int32_t HpaeProcessCluster::CheckNodes(uint32_t sessionId)
 {
     if (SafeGetMap(idConverterMap_, sessionId) && SafeGetMap(idLoudnessGainNodeMap_, sessionId) &&
-        SafeGetMap(idGainMap_, sessionId)) {
+        SafeGetMap(idGainMap_, sessionId) && SafeGetMap(idMixerConverterMap_, sessionId)) {
         return SUCCESS;
     }
     AUDIO_INFO_LOG("SessionId %{public}u, No nodes in this processcluster, cant connect or destroy", sessionId);
@@ -309,6 +337,7 @@ int32_t HpaeProcessCluster::DestroyNodes(uint32_t sessionId, SessionEffectCleanu
         idSessionEffectMap_.erase(sessionId);
     }
     idConverterMap_.erase(sessionId);
+    idMixerConverterMap_.erase(sessionId);
     idLoudnessGainNodeMap_.erase(sessionId);
     idGainMap_.erase(sessionId);
     AUDIO_INFO_LOG("SessionId %{public}u, Success destroy all nodes", sessionId);
@@ -321,6 +350,10 @@ void HpaeProcessCluster::Flush(uint32_t sessionId)
     auto converter = SafeGetMap(idConverterMap_, sessionId);
     if (converter != nullptr) {
         converter->FlushBuffers();
+    }
+    auto mixerConverter = SafeGetMap(idMixerConverterMap_, sessionId);
+    if (mixerConverter != nullptr) {
+        mixerConverter->FlushBuffers();
     }
     if (HasSessionEffectNode(sessionId)) {
         SessionEffectFlush(sessionId);
@@ -336,30 +369,36 @@ void HpaeProcessCluster::InitEffectBuffer(const uint32_t sessionId)
 
 int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
 {
-    // get format input from loundness gain node
-    if (SafeGetMap(idLoudnessGainNodeMap_, sessionId)) {
-        if (idLoudnessGainNodeMap_[sessionId]->IsLoudnessAlgoOn()) { // loundess algorithm needs 48k sample rate
-            basicFormat.rate = SAMPLE_RATE_48000;
-            basicFormat.audioChannelInfo.numChannels = sinkInfo_.channels;
-            basicFormat.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
-        } else { // if there is no algorithm, stream into loudness node should may need to be sinkoutput format
-            basicFormat.rate = sinkInfo_.samplingRate;
-            basicFormat.audioChannelInfo.numChannels = sinkInfo_.channels;
-            basicFormat.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
-        }
-    }
-    // get format info from effect node
-    int32_t ret = SUCCESS;
-    if (renderEffectNode_ != nullptr) {
-        ret = renderEffectNode_->GetExpectedInputChannelInfo(basicFormat);
-    }
-    // SessionEffectNode (AISS) requires 48kHz input
+    // SessionEffectNode (AISS) requires 48kHz stereo input
     if (SafeGetMap(idSessionEffectMap_, sessionId)) {
         basicFormat.rate = SAMPLE_RATE_48000;
         basicFormat.audioChannelInfo.numChannels = STEREO;
         basicFormat.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+        return SUCCESS;
     }
-    return ret;
+    // loudness algorithm needs 48k sample rate; algo requirement wins over render effect
+    // expected input when both apply: the converter feeds the algo first
+    auto loudnessGainNode = SafeGetMap(idLoudnessGainNodeMap_, sessionId);
+    if (loudnessGainNode && loudnessGainNode->IsLoudnessAlgoOn()) {
+        basicFormat.rate = SAMPLE_RATE_48000;
+        basicFormat.audioChannelInfo.numChannels = sinkInfo_.channels;
+        basicFormat.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
+        return SUCCESS;
+    }
+    // no special-format consumer on the algo side: target the mixer input (see GetMixerInputFormatInfo)
+    return GetMixerInputFormatInfo(sessionId, basicFormat);
+}
+
+int32_t HpaeProcessCluster::GetMixerInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
+{
+    // format is cluster-wide; sessionId kept for interface symmetry
+    if (renderEffectNode_ != nullptr) {
+        return renderEffectNode_->GetExpectedInputChannelInfo(basicFormat);
+    }
+    basicFormat.rate = sinkInfo_.samplingRate;
+    basicFormat.audioChannelInfo.numChannels = sinkInfo_.channels;
+    basicFormat.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
+    return SUCCESS;
 }
 
 int32_t HpaeProcessCluster::AudioRendererCreate(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo)
@@ -493,6 +532,11 @@ std::shared_ptr<HpaeAudioFormatConverterNode> HpaeProcessCluster::GetConverterNo
     return SafeGetMap(idConverterMap_, sessionId);
 }
 
+std::shared_ptr<HpaeAudioFormatConverterNode> HpaeProcessCluster::GetMixerConverterNodeById(uint32_t sessionId) const
+{
+    return SafeGetMap(idMixerConverterMap_, sessionId);
+}
+
 void HpaeProcessCluster::SetConnectedFlag(bool flag)
 {
     isConnectedToOutputCluster = flag;
@@ -530,6 +574,8 @@ uint64_t HpaeProcessCluster::GetLatency(uint32_t sessionId)
     uint64_t latency = 0;
 
     latency += SafeGetMap(idConverterMap_, sessionId) ? idConverterMap_[sessionId]->GetLatency() : 0;
+
+    latency += SafeGetMap(idMixerConverterMap_, sessionId) ? idMixerConverterMap_[sessionId]->GetLatency() : 0;
 
     latency += SafeGetMap(idSessionEffectMap_, sessionId) ? idSessionEffectMap_[sessionId]->GetLatency(sessionId) : 0;
 
@@ -606,6 +652,7 @@ int32_t HpaeProcessCluster::BeginDestroySessionEffectNode(uint32_t sessionId, ui
     node->StopPreheatThread();
     // Pipeline latency the wet output lags behind upstream dry = SE + the converter immediately
     // upstream of the SE insert point. Flush it; the manager rewinds SinkInputNode by this total.
+    // mixer converter (idMixerConverterMap_) intentionally excluded: it sits downstream of the SE tap point
     outLatency = node->GetLatency(sessionId);
     auto converterNode = SafeGetMap(idConverterMap_, sessionId);
     if (converterNode != nullptr) {

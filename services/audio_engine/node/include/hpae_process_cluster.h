@@ -45,6 +45,7 @@ public:
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     int32_t GetGainNodeCount();
     int32_t GetConverterNodeCount();
+    int32_t GetMixerConverterNodeCount();
     int32_t GetLoudnessGainNodeCount();
     int32_t GetPreOutNum();
     int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
@@ -58,8 +59,10 @@ public:
     bool HasDeferredStop() const { return hasPendingStop_; }
     uint32_t GetDeferredStopSessionId() const { return pendingStopSessionId_; }
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
+    int32_t GetMixerInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
     std::shared_ptr<HpaeGainNode> GetGainNodeById(uint32_t id) const;
     std::shared_ptr<HpaeAudioFormatConverterNode> GetConverterNodeById(uint32_t id) const;
+    std::shared_ptr<HpaeAudioFormatConverterNode> GetMixerConverterNodeById(uint32_t sessionId) const;
     void SetConnectedFlag(bool flag);
     bool GetConnectedFlag() const;
     int32_t SetupAudioLimiter();
@@ -107,12 +110,17 @@ private:
     void ClearDeferredStop();
     void CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     void CreateConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
+    void CreateMixerConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
+    void CreateConverterNodeInto(std::unordered_map<uint32_t,
+        std::shared_ptr<HpaeAudioFormatConverterNode>> &nodeMap, uint32_t sessionId,
+        const HpaeNodeInfo &preNodeInfo, ConverterFormatQueryRole role);
     void CreateLoudnessGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     bool CheckNeedNotifyEffectNode(const HpaeSinkInfo &sinkInfo);
     std::shared_ptr<HpaeMixerNode> mixerNode_;
     std::shared_ptr<HpaeRenderEffectNode> renderEffectNode_ = nullptr;
     std::shared_ptr<HpaeRenderEffectNode> renderNoneEffectNode_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> idConverterMap_;
+    std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> idMixerConverterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeGainNode>> idGainMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeLoudnessGainNode>> idLoudnessGainNodeMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSessionEffectNode>> idSessionEffectMap_;

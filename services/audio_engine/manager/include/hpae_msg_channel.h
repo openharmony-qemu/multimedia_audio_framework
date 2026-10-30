@@ -20,6 +20,7 @@
 #include "hpae_info.h"
 #include "audio_pipe_types.h"
 #include "hpae_pcm_buffer.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -223,6 +224,11 @@ struct HpaeNodeInfo : HpaeDfxNodeInfo {
 class INodeFormatInfoCallback {
 public:
     virtual int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) = 0;
+    // Target format at mixer input: render effect expected input, else sink format. Default: not supported
+    virtual int32_t GetMixerInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
+    {
+        return ERR_NOT_SUPPORTED;
+    }
 };
 
 } // namespace HPAE

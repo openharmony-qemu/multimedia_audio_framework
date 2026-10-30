@@ -1180,6 +1180,10 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
         if (converter != nullptr) {
             converter->FlushBuffers();
         }
+        auto mixerConverter = sceneClusterMap_[sceneType]->GetMixerConverterNodeById(sessionId);
+        if (mixerConverter != nullptr) {
+            mixerConverter->FlushBuffers();
+        }
         CHECK_AND_RETURN_LOG(isNeedInitEffectBufferFlagMap_.find(sessionId) != isNeedInitEffectBufferFlagMap_.end(),
             "isNeedInitEffectBufferFlagMap no find sessionId %{public}u", sessionId);
         if (isNeedInitEffectBufferFlagMap_[sessionId] == true) {
