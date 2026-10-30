@@ -711,10 +711,7 @@ int32_t OHAudioSuiteEngine::CreatePipeline(
     OH_AudioSuitePipeline **audioSuitePipeline, OH_AudioSuite_PipelineWorkMode ohWorkMode)
 {
     CHECK_AND_RETURN_RET_LOG(audioSuitePipeline != nullptr, ERR_INVALID_PARAM, "CreatePipeline pipeline is nullptr");
-    CHECK_AND_RETURN_RET_LOG(
-        ohWorkMode == AUDIOSUITE_PIPELINE_EDIT_MODE || ohWorkMode == AUDIOSUITE_PIPELINE_REALTIME_MODE,
-        ERR_INVALID_PARAM, "CreatePipeline failed, invalid workMode: %{public}d.",
-        static_cast<int32_t>(ohWorkMode));
+
     std::lock_guard<std::mutex> lock(engineMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST,
         "CreatePipeline failed, engine not initialized.");
