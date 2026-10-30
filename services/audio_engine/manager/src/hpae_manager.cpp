@@ -310,11 +310,14 @@ int32_t HpaeManager::DeInit()
     hpaeNoLockQueue_.HandleRequests();  // todo suspend
     // Destroy and unregister: lazy re-creation takes a fresh index, so old entries must go.
     if (auto virtualSink = SafeGetMap(rendererManagerMap_, VIRTUAL_SINK_NAME)) {
-        uint32_t virtualSinkIndex = sinkNameSinkIdMap_[VIRTUAL_SINK_NAME];
+        auto idxItr = sinkNameSinkIdMap_.find(VIRTUAL_SINK_NAME);
+        uint32_t virtualSinkIndex = idxItr != sinkNameSinkIdMap_.end() ? idxItr->second : UINT32_MAX;
         virtualSink->DeInit();  // stops Virtual_Render thread
         rendererManagerMap_.erase(VIRTUAL_SINK_NAME);
-        sinkIdSinkNameMap_.erase(virtualSinkIndex);
-        sinkNameSinkIdMap_.erase(VIRTUAL_SINK_NAME);
+        if (virtualSinkIndex != UINT32_MAX) {
+            sinkIdSinkNameMap_.erase(virtualSinkIndex);
+            sinkNameSinkIdMap_.erase(VIRTUAL_SINK_NAME);
+        }
     }
     coreSink_ = "";  // avoid stale sink name across DeInit/Init cycles
     isInit_.store(false);
@@ -537,8 +540,7 @@ void HpaeManager::CreateCoreSourceManager()
 
 void HpaeManager::EnsureVirtualSinkManager()
 {
-    CHECK_AND_RETURN_LOG(!SafeGetMap(rendererManagerMap_, VIRTUAL_SINK_NAME),
-        "virtual sink manager already exists");
+    CHECK_AND_RETURN(!SafeGetMap(rendererManagerMap_, VIRTUAL_SINK_NAME));
     uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
     sinkSourceIndex_.fetch_add(1);
     auto rendererManager = std::make_shared<HpaeVirtualRendererManager>();
