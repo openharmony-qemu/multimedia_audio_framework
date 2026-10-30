@@ -102,6 +102,18 @@ static void DeviceBlockStatusCallback(OH_AudioDeviceDescriptorArray *audioDevice
     }
 }
 
+static int32_t OtherPreferredOutputDeviceChangedCallback(OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
+{
+    (void)audioDeviceDescriptorArray;
+    return 0;
+}
+
+static int32_t OtherPreferredInputDeviceChangedCallback(OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
+{
+    (void)audioDeviceDescriptorArray;
+    return 0;
+}
+
 /**
  * @tc.name  : Test OH_AudioRoutingManager_GetAvailableDevices with null audioRoutingManager.
  * @tc.number: OH_AudioRoutingManager_GetAvailableDevices_001
@@ -673,6 +685,352 @@ HWTEST(OHAudioRoutingManagerUnitTest, ConvertDesc_002, TestSize.Level0)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc(MORETHAN_MAX_VALID_SIZE);
     OH_AudioDeviceDescriptorArray *result = manager.ConvertDesc(desc);
     EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredOutputDeviceChangeCallback_001
+ * @tc.desc  : Test UnsetPreferredOutputDeviceChangeCallback when audioRoutingManager_ is null.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredOutputDeviceChangeCallback_001, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    AudioRoutingManager *saved = mgr->audioRoutingManager_;
+    mgr->audioRoutingManager_ = nullptr;
+    result = OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback(
+        audioRoutingManager, PreferredOutputDeviceChangedCallback);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
+    mgr->audioRoutingManager_ = saved;
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredOutputDeviceChangeCallback_002
+ * @tc.desc  : Test UnsetPreferredOutputDeviceChangeCallback with null callback triggers RemoveAll.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredOutputDeviceChangeCallback_002, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    mgr->preferredOutputDeviceCallbackList_.clear();
+    result = OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback(
+        audioRoutingManager, nullptr);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(mgr->preferredOutputDeviceCallbackList_.size(), 0u);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredOutputDeviceChangeCallback_003
+ * @tc.desc  : Test UnsetPreferredOutputDeviceChangeCallback with empty list returns INVALID_PARAM.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredOutputDeviceChangeCallback_003, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    mgr->preferredOutputDeviceCallbackList_.clear();
+    result = OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback(
+        audioRoutingManager, PreferredOutputDeviceChangedCallback);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+    EXPECT_EQ(mgr->preferredOutputDeviceCallbackList_.size(), 0u);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredOutputDeviceChangeCallback_004
+ * @tc.desc  : Test UnsetPreferredOutputDeviceChangeCallback when callback not registered.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredOutputDeviceChangeCallback_004, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    mgr->preferredOutputDeviceCallbackList_.clear();
+    auto notMatched = std::make_shared<OHAudioPreferredOutputDeviceChangedCallback>(
+        OtherPreferredOutputDeviceChangedCallback);
+    OHAudioRoutingManager::PreferredOutputCallbackInfo info = {0, STREAM_USAGE_MUSIC};
+    mgr->preferredOutputDeviceCallbackList_.push_back(std::make_pair(notMatched, info));
+
+    result = OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback(
+        audioRoutingManager, PreferredOutputDeviceChangedCallback);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+    EXPECT_EQ(mgr->preferredOutputDeviceCallbackList_.size(), 1u);
+    mgr->preferredOutputDeviceCallbackList_.clear();
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredOutputDeviceChangeCallback_005
+ * @tc.desc  : Test UnsetPreferredOutputDeviceChangeCallback erases a registered callback.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredOutputDeviceChangeCallback_005, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    mgr->preferredOutputDeviceCallbackList_.clear();
+    auto matched = std::make_shared<OHAudioPreferredOutputDeviceChangedCallback>(
+        PreferredOutputDeviceChangedCallback);
+    OHAudioRoutingManager::PreferredOutputCallbackInfo info = {0, STREAM_USAGE_MUSIC};
+    mgr->preferredOutputDeviceCallbackList_.push_back(std::make_pair(matched, info));
+    EXPECT_EQ(mgr->preferredOutputDeviceCallbackList_.size(), 1u);
+
+    result = OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback(
+        audioRoutingManager, PreferredOutputDeviceChangedCallback);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(mgr->preferredOutputDeviceCallbackList_.size(), 0u);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredOutputDeviceChangeCallback_006
+ * @tc.desc  : Test UnsetPreferredOutputDeviceChangeCallback erases all entries when the same
+ *             callback is registered under multiple streamUsages (UAF regression scenario).
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredOutputDeviceChangeCallback_006, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    mgr->preferredOutputDeviceCallbackList_.clear();
+    auto matched = std::make_shared<OHAudioPreferredOutputDeviceChangedCallback>(
+        PreferredOutputDeviceChangedCallback);
+    OHAudioRoutingManager::PreferredOutputCallbackInfo info1 = {0, STREAM_USAGE_MUSIC};
+    OHAudioRoutingManager::PreferredOutputCallbackInfo info2 = {0, STREAM_USAGE_NOTIFICATION};
+    mgr->preferredOutputDeviceCallbackList_.push_back(std::make_pair(matched, info1));
+    mgr->preferredOutputDeviceCallbackList_.push_back(std::make_pair(matched, info2));
+    EXPECT_EQ(mgr->preferredOutputDeviceCallbackList_.size(), 2u);
+
+    result = OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback(
+        audioRoutingManager, PreferredOutputDeviceChangedCallback);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(mgr->preferredOutputDeviceCallbackList_.size(), 0u);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredOutputDeviceChangeCallback_007
+ * @tc.desc  : Test UnsetPreferredOutputDeviceChangeCallback only erases matching entries.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredOutputDeviceChangeCallback_007, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    mgr->preferredOutputDeviceCallbackList_.clear();
+    auto matched = std::make_shared<OHAudioPreferredOutputDeviceChangedCallback>(
+        PreferredOutputDeviceChangedCallback);
+    auto notMatched = std::make_shared<OHAudioPreferredOutputDeviceChangedCallback>(
+        OtherPreferredOutputDeviceChangedCallback);
+    OHAudioRoutingManager::PreferredOutputCallbackInfo info = {0, STREAM_USAGE_MUSIC};
+    mgr->preferredOutputDeviceCallbackList_.push_back(std::make_pair(notMatched, info));
+    mgr->preferredOutputDeviceCallbackList_.push_back(std::make_pair(matched, info));
+    mgr->preferredOutputDeviceCallbackList_.push_back(std::make_pair(notMatched, info));
+    EXPECT_EQ(mgr->preferredOutputDeviceCallbackList_.size(), 3u);
+
+    result = OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback(
+        audioRoutingManager, PreferredOutputDeviceChangedCallback);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(mgr->preferredOutputDeviceCallbackList_.size(), 2u);
+    mgr->preferredOutputDeviceCallbackList_.clear();
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredInputDeviceChangeCallback_001
+ * @tc.desc  : Test UnsetPreferredInputDeviceChangeCallback when audioRoutingManager_ is null.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredInputDeviceChangeCallback_001, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    AudioRoutingManager *saved = mgr->audioRoutingManager_;
+    mgr->audioRoutingManager_ = nullptr;
+    result = OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback(
+        audioRoutingManager, PreferredInputDeviceChangedCallback);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
+    mgr->audioRoutingManager_ = saved;
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredInputDeviceChangeCallback_002
+ * @tc.desc  : Test UnsetPreferredInputDeviceChangeCallback with null callback triggers RemoveAll.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredInputDeviceChangeCallback_002, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    mgr->preferredInputDeviceCallbackList_.clear();
+    result = OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback(
+        audioRoutingManager, nullptr);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(mgr->preferredInputDeviceCallbackList_.size(), 0u);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredInputDeviceChangeCallback_003
+ * @tc.desc  : Test UnsetPreferredInputDeviceChangeCallback with empty list returns INVALID_PARAM.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredInputDeviceChangeCallback_003, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    mgr->preferredInputDeviceCallbackList_.clear();
+    result = OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback(
+        audioRoutingManager, PreferredInputDeviceChangedCallback);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+    EXPECT_EQ(mgr->preferredInputDeviceCallbackList_.size(), 0u);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredInputDeviceChangeCallback_004
+ * @tc.desc  : Test UnsetPreferredInputDeviceChangeCallback when callback not registered.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredInputDeviceChangeCallback_004, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    mgr->preferredInputDeviceCallbackList_.clear();
+    auto notMatched = std::make_shared<OHAudioPreferredInputDeviceChangedCallback>(
+        OtherPreferredInputDeviceChangedCallback);
+    OHAudioRoutingManager::PreferredInputCallbackInfo info = {0, SOURCE_TYPE_MIC};
+    mgr->preferredInputDeviceCallbackList_.push_back(std::make_pair(notMatched, info));
+
+    result = OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback(
+        audioRoutingManager, PreferredInputDeviceChangedCallback);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+    EXPECT_EQ(mgr->preferredInputDeviceCallbackList_.size(), 1u);
+    mgr->preferredInputDeviceCallbackList_.clear();
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredInputDeviceChangeCallback_005
+ * @tc.desc  : Test UnsetPreferredInputDeviceChangeCallback erases a registered callback.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredInputDeviceChangeCallback_005, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    mgr->preferredInputDeviceCallbackList_.clear();
+    auto matched = std::make_shared<OHAudioPreferredInputDeviceChangedCallback>(
+        PreferredInputDeviceChangedCallback);
+    OHAudioRoutingManager::PreferredInputCallbackInfo info = {0, SOURCE_TYPE_MIC};
+    mgr->preferredInputDeviceCallbackList_.push_back(std::make_pair(matched, info));
+    EXPECT_EQ(mgr->preferredInputDeviceCallbackList_.size(), 1u);
+
+    result = OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback(
+        audioRoutingManager, PreferredInputDeviceChangedCallback);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(mgr->preferredInputDeviceCallbackList_.size(), 0u);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredInputDeviceChangeCallback_006
+ * @tc.desc  : Test UnsetPreferredInputDeviceChangeCallback erases all entries when the same
+ *             callback is registered under multiple sourceTypes (UAF regression scenario).
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredInputDeviceChangeCallback_006, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    mgr->preferredInputDeviceCallbackList_.clear();
+    auto matched = std::make_shared<OHAudioPreferredInputDeviceChangedCallback>(
+        PreferredInputDeviceChangedCallback);
+    OHAudioRoutingManager::PreferredInputCallbackInfo info1 = {0, SOURCE_TYPE_MIC};
+    OHAudioRoutingManager::PreferredInputCallbackInfo info2 = {0, SOURCE_TYPE_VOICE_COMMUNICATION};
+    mgr->preferredInputDeviceCallbackList_.push_back(std::make_pair(matched, info1));
+    mgr->preferredInputDeviceCallbackList_.push_back(std::make_pair(matched, info2));
+    EXPECT_EQ(mgr->preferredInputDeviceCallbackList_.size(), 2u);
+
+    result = OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback(
+        audioRoutingManager, PreferredInputDeviceChangedCallback);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(mgr->preferredInputDeviceCallbackList_.size(), 0u);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback.
+ * @tc.number: UnsetPreferredInputDeviceChangeCallback_007
+ * @tc.desc  : Test UnsetPreferredInputDeviceChangeCallback only erases matching entries.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, UnsetPreferredInputDeviceChangeCallback_007, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioRoutingManager, nullptr);
+    auto *mgr = reinterpret_cast<OHAudioRoutingManager *>(audioRoutingManager);
+
+    mgr->preferredInputDeviceCallbackList_.clear();
+    auto matched = std::make_shared<OHAudioPreferredInputDeviceChangedCallback>(
+        PreferredInputDeviceChangedCallback);
+    auto notMatched = std::make_shared<OHAudioPreferredInputDeviceChangedCallback>(
+        OtherPreferredInputDeviceChangedCallback);
+    OHAudioRoutingManager::PreferredInputCallbackInfo info = {0, SOURCE_TYPE_MIC};
+    mgr->preferredInputDeviceCallbackList_.push_back(std::make_pair(notMatched, info));
+    mgr->preferredInputDeviceCallbackList_.push_back(std::make_pair(matched, info));
+    mgr->preferredInputDeviceCallbackList_.push_back(std::make_pair(notMatched, info));
+    EXPECT_EQ(mgr->preferredInputDeviceCallbackList_.size(), 3u);
+
+    result = OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback(
+        audioRoutingManager, PreferredInputDeviceChangedCallback);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(mgr->preferredInputDeviceCallbackList_.size(), 2u);
+    mgr->preferredInputDeviceCallbackList_.clear();
 }
 } // namespace AudioStandard
 } // namespace OHOS
