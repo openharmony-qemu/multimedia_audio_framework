@@ -1947,6 +1947,18 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
     return audioEffectChain;
 }
 
+std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChain(const std::string &sceneType)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    sceneTypeToSpecialEffectSet_.insert(sceneType);
+#ifdef SENSOR_ENABLE
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+    return audioEffectChain;
+}
+
 // LCOV_EXCL_START
 int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType)
 {
@@ -2351,8 +2363,7 @@ int32_t AudioEffectChainManager::NotifyAndCreateAudioEffectChain(
     std::string sceneTypeAndDeviceKey = GenerateEffectChainKey(sceneType, deviceType, renderId);
     const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
 
-    bool isPriorScene = std::find(priorSceneList_.begin(), priorSceneList_.end(), sceneType) != priorSceneList_.end();
-    audioEffectChain = CreateAudioEffectChain(sceneType, isPriorScene);
+    audioEffectChain = CreateAudioEffectChain(sceneType);
 
     if (sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) &&
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr &&
@@ -2370,8 +2381,7 @@ int32_t AudioEffectChainManager::NotifyAndCreateAudioEffectChain(
         return ERROR;
     }
     std::string effectMode = audioSupportedSceneModes.find(EFFECT_DEFAULT)->second;
-    std::string createSceneType = (isPriorScene || sceneTypeToSpecialEffectSet_.count(sceneType) > 0) ?
-        sceneType : DEFAULT_SCENE_TYPE;
+    std::string createSceneType = sceneType;
     if (SetAudioEffectChainDynamic(createSceneType, effectMode, deviceType, renderId) != SUCCESS) {
         return ERROR;
     }
