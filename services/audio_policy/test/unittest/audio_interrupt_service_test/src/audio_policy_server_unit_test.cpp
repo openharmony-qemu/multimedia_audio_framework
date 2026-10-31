@@ -4141,7 +4141,7 @@ HWTEST(AudioPolicyUnitTest, GetAudioZoneForApp_006, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     AudioZoneContext mainContext;
-    mainContext.userId_ = AudioZoneContext::INVALID_USER_ID;
+    mainContext.userId_ = INVALID_USER_ID;
     AudioZoneService::GetInstance().UpdateContextForAudioZone(DEFAULT_ZONEID, mainContext);
 
     std::vector<int32_t> userIds = {100};
@@ -4149,7 +4149,7 @@ HWTEST(AudioPolicyUnitTest, GetAudioZoneForApp_006, TestSize.Level1)
     int32_t ret = server->GetAudioZoneForApp(userIds, retUserIds);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(retUserIds.size(), 1);
-    EXPECT_EQ(retUserIds[0], AudioZoneContext::INVALID_USER_ID);
+    EXPECT_EQ(retUserIds[0], INVALID_USER_ID);
 }
 
 /**
