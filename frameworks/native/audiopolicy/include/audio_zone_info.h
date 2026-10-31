@@ -24,6 +24,7 @@
 #include "audio_device_descriptor.h"
 
 #define ZONE_MAX_DEVICE_SIZE    128
+static constexpr int32_t INVALID_USER_ID = -1;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -69,7 +70,6 @@ enum class AudioZoneSupportType {
 
 class AudioZoneContext : public Parcelable {
 public:
-    static constexpr int32_t INVALID_USER_ID = -1;
 
     AudioZoneFocusStrategy focusStrategy_ = AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY;
     MediaBackStrategy backStrategy_ = MediaBackStrategy::STOP;
@@ -114,7 +114,7 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> preferDevice_;
     int32_t initMode_;
     int32_t supportType_ = static_cast<int32_t>(AudioZoneSupportType::PLAY_AND_RECORD);
-    int32_t userId_ = -1;
+    int32_t userId_ = INVALID_USER_ID;
 
     AudioZoneDescriptor() = default;
 
