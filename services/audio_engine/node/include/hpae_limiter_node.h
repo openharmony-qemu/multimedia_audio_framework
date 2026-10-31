@@ -45,6 +45,8 @@ private:
     std::unique_ptr<AudioLimiter> limiter_ = nullptr;
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer limiterOutput_;
+    // edge-triggered gates: log first hit + 5s heartbeat while the state persists
+    AudioEdgeLogGate inputsEmptyGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 };
 
 }  // namespace HPAE

@@ -123,8 +123,14 @@ void HpaeSinkOutputNode::DoProcess()
 {
     Trace trace(processTraceName_);
     if (audioRendererSink_ == nullptr) {
-        AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+        if (sinkNullGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+        }
         return;
+    }
+    if (sinkNullGate_.IsActive()) {
+        AUDIO_WARNING_LOG("audioRendererSink_ recovered, sessionId:%{public}u, frames:%{public}u",
+            GetSessionId(), sinkNullGate_.Reset());
     }
     if (GetNodeInfo().routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
         return;
@@ -143,7 +149,9 @@ void HpaeSinkOutputNode::DoProcess()
     renderFrameTimes_ += FRAME_LEN_20MS;
     auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
     if (ret != SUCCESS || writeLen != renderSize_) {
-        AUDIO_ERR_LOG("RenderFrame failed");
+        if (renderFailGate_.ShouldLog()) {
+            AUDIO_ERR_LOG("RenderFrame failed");
+        }
         if (!IsRemoteDeviceClass(GetDeviceClass())) {
             periodTimer_.Stop();
             uint64_t usedTimeUs = static_cast<uint64_t>(periodTimer_.Elapsed<std::chrono::microseconds>());
@@ -151,6 +159,9 @@ void HpaeSinkOutputNode::DoProcess()
         }
         collRenderFrameFailedCount_.fetch_add(1);
     } else {
+        if (renderFailGate_.IsActive()) {
+            AUDIO_WARNING_LOG("RenderFrame recovered after %{public}u failed frames", renderFailGate_.Reset());
+        }
         collRenderFrameFailedCount_.store(0);
     }
 

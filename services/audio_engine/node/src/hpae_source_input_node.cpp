@@ -222,7 +222,9 @@ void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferTy
 {
     AUDIO_DEBUG_LOG("DoProcessMicInner, replyBytes: %{public}" PRIu64, replyBytes);
     if (isInjecting_ && replyBytes == 0 && audioCapturerSource_->GetArmUsbDeviceStatus() != 1) {
-        AUDIO_WARNING_LOG("HpaeSourceInputNode::DoProcessMicInner injecting need sleep");
+        if (injectIdleGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("HpaeSourceInputNode::DoProcessMicInner injecting need sleep");
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(FRAME_DURATION_DEFAULT));
         return;
     }

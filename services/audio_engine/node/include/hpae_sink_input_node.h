@@ -123,6 +123,8 @@ private:
     float loudnessGain_ = 0.0f;
     float speed_ = 1.0f;
     std::atomic<uint64_t> hdiFramePosition_ = 0;
+    // edge-triggered gate: log first hit + 5s heartbeat while the state persists
+    AudioEdgeLogGate offloadDisabledGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
     std::atomic<uint64_t> rewindTime_ = 0;
     uint32_t standbyCounter_ = 0;
     bool isLowLatency_ = false;

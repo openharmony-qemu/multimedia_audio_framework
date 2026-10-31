@@ -82,6 +82,9 @@ private:
 
     // Cached DoProcess trace name; rebuilt in ctor and whenever node info changes
     std::string processTraceName_;
+    // edge-triggered gates: log first hit + 5s heartbeat while the state persists
+    AudioEdgeLogGate sinkNullGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate renderFailGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 };
 
 }  // namespace HPAE

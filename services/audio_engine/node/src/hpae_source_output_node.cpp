@@ -246,8 +246,12 @@ void HpaeSourceOutputNode::ProcessAudioData(HpaePcmBuffer *outputData, bool isMu
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
     }
     if (GetNodeInfo().sourceType == SOURCE_TYPE_VOICE_DOWNLINK) {
-        AUDIO_WARNING_LOG("Use downlink call");
+        if (downlinkActiveGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("Use downlink call");
+        }
         CopyRightToLeft((uint8_t *)sourceOutputData_.data(), sourceOutputData_.size(), GetNodeInfo().format);
+    } else if (downlinkActiveGate_.IsActive()) {
+        AUDIO_WARNING_LOG("downlink call ended after %{public}u frames", downlinkActiveGate_.Reset());
     }
 }
 
@@ -261,9 +265,15 @@ void HpaeSourceOutputNode::WriteDataAndUpdateFrames()
         .requestDataLen = sourceOutputData_.size(),
     };
     if (auto readCallback = readCallback_.lock()) {
+        if (readCbNullGate_.IsActive()) {
+            AUDIO_ERR_LOG("readCallback recovered, sessionId:%{public}u, frames:%{public}u",
+                GetSessionId(), readCbNullGate_.Reset());
+        }
         ret = readCallback->OnStreamData(streamInfo_);
     } else {
-        AUDIO_ERR_LOG("sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
+        if (readCbNullGate_.ShouldLog()) {
+            AUDIO_ERR_LOG("sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
+        }
         return;
     }
     if (ret == ERR_WRITE_FAILED) {

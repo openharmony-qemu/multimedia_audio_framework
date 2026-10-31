@@ -18,6 +18,7 @@
 
 #include <memory>
 #include "hpae_plugin_node.h"
+#include "audio_log.h"
 #include "sink/i_audio_render_sink.h"
 #include "manager/hdi_adapter_manager.h"
 
@@ -49,6 +50,8 @@ private:
     void SetSinkVolume(float gainVolume);
     uint32_t renderId_ = HDI_INVALID_ID;
     bool isInnerCapturerOrInjector_ = false;
+    // edge-triggered gate: log first hit + 5s heartbeat while the state persists
+    AudioEdgeLogGate inputsEmptyGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 };
 
 }  // namespace HPAE

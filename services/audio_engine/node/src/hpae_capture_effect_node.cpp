@@ -97,8 +97,14 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
 {
     Trace trace(traceName_);
     if (inputs.empty()) {
-        AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
+        if (inputsEmptyGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
+        }
         return nullptr;
+    }
+    if (inputsEmptyGate_.IsActive()) {
+        AUDIO_WARNING_LOG("inputs size empty recovered, SessionId:%{public}d, frames:%{public}u",
+            GetSessionId(), inputsEmptyGate_.Reset());
     }
 
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();

@@ -17,6 +17,7 @@
 #define HPAE_RENDER_EFFECT_NODE_H
 
 #include "hpae_plugin_node.h"
+#include "audio_log.h"
 #include "audio_info.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
@@ -116,6 +117,11 @@ private:
 
     // Cached SignalProcess trace name; rebuilt in ctor and whenever node info changes
     std::string traceName_;
+    // edge-triggered gates: log first hit + 5s heartbeat while the state persists
+    AudioEdgeLogGate inputsEmptyGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate insufficientGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate dequeueFailGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate effectFailGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 };
 
 } // namespace HPAE

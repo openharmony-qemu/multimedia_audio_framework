@@ -114,8 +114,14 @@ void HpaeDirectSinkOutputNode::DoProcess()
 {
     Trace trace(processTraceName_);
     if (audioRendererSink_ == nullptr) {
-        AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+        if (sinkNullGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+        }
         return;
+    }
+    if (sinkNullGate_.IsActive()) {
+        AUDIO_WARNING_LOG("audioRendererSink_ recovered, sessionId:%{public}u, frames:%{public}u",
+            GetSessionId(), sinkNullGate_.Reset());
     }
 
     CHECK_AND_RETURN(ReadDataAndConvertFormat());
@@ -129,10 +135,14 @@ void HpaeDirectSinkOutputNode::DoProcess()
 #endif
     int32_t ret = audioRendererSink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
     if (ret != SUCCESS || writeLen != renderSize_) {
-        AUDIO_ERR_LOG("RenderFrame failed, write len:%{public}" PRIu64 "", writeLen);
+        if (renderFailGate_.ShouldLog()) {
+            AUDIO_ERR_LOG("RenderFrame failed, write len:%{public}" PRIu64 "", writeLen);
+        }
         periodTimer_.Stop();
         uint64_t usedTimeUs = static_cast<uint64_t>(periodTimer_.Elapsed<std::chrono::microseconds>());
         usleep(SLEEP_TIME_IN_US > usedTimeUs ? SLEEP_TIME_IN_US - usedTimeUs : 0);
+    } else if (renderFailGate_.IsActive()) {
+        AUDIO_WARNING_LOG("RenderFrame recovered after %{public}u failed frames", renderFailGate_.Reset());
     }
     periodTimer_.Start();
 

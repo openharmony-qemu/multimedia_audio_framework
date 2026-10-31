@@ -158,8 +158,14 @@ bool HpaePcmBuffer::GetFrameData(std::vector<float> &frameData)
     }
 
     if (curFrames_.load() <= 0) {
-        AUDIO_WARNING_LOG("GetFrameData vector frames is empty");
+        if (getVecEmptyGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("GetFrameData vector frames is empty");
+        }
         return false;
+    }
+    if (getVecEmptyGate_.IsActive()) {
+        AUDIO_WARNING_LOG("GetFrameData vector frames empty recovered after %{public}u frames",
+            getVecEmptyGate_.Reset());
     }
     int32_t ret = memcpy_s(frameData.data(),
         sizeof(float) * frameData.size(),
@@ -180,8 +186,14 @@ bool HpaePcmBuffer::GetFrameData(HpaePcmBuffer &frameData)
     }
 
     if (curFrames_.load() <= 0) {
-        AUDIO_WARNING_LOG("GetFrameData HpaePcmBuffer frames is empty");
+        if (getBufEmptyGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("GetFrameData HpaePcmBuffer frames is empty");
+        }
         return false;
+    }
+    if (getBufEmptyGate_.IsActive()) {
+        AUDIO_WARNING_LOG("GetFrameData HpaePcmBuffer frames empty recovered after %{public}u frames",
+            getBufEmptyGate_.Reset());
     }
     int32_t ret = memcpy_s(frameData.GetPcmDataBuffer(),
         sizeof(float) * frameData.Size(),
@@ -202,13 +214,21 @@ bool HpaePcmBuffer::PushFrameData(std::vector<float> &frameData)
     }
 
     if (curFrames_.load() >= GetFrames()) {
-        AUDIO_WARNING_LOG("PushFrameData vector frames is full");
+        if (pushVecFullGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("PushFrameData vector frames is full");
+        }
         return false;
+    }
+    if (pushVecFullGate_.IsActive()) {
+        AUDIO_WARNING_LOG("PushFrameData vector frames full recovered after %{public}u frames",
+            pushVecFullGate_.Reset());
     }
     int32_t ret = memcpy_s(pcmProcessVec_[writePos_.load()].Begin(), frameByteSize_,
         frameData.data(), sizeof(float) * frameData.size());
     if (ret != 0) {
-        AUDIO_ERR_LOG("memcpy failed when PushFrameData");
+        if (pushVecCpyGate_.ShouldLog()) {
+            AUDIO_ERR_LOG("memcpy failed when PushFrameData");
+        }
         return false;
     }
     writePos_.store((writePos_.load() + 1) % GetFrames());
@@ -223,13 +243,21 @@ bool HpaePcmBuffer::PushFrameData(HpaePcmBuffer &frameData)
     }
 
     if (curFrames_.load() >= GetFrames()) {
-        AUDIO_WARNING_LOG("PushFrameData HpaePcmBuffer frames is full");
+        if (pushBufFullGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("PushFrameData HpaePcmBuffer frames is full");
+        }
         return false;
+    }
+    if (pushBufFullGate_.IsActive()) {
+        AUDIO_WARNING_LOG("PushFrameData HpaePcmBuffer frames full recovered after %{public}u frames",
+            pushBufFullGate_.Reset());
     }
     int32_t ret = memcpy_s(pcmProcessVec_[writePos_.load()].Begin(), frameByteSize_,
         frameData.GetPcmDataBuffer(), frameData.Size());
     if (ret != 0) {
-        AUDIO_ERR_LOG("memcpy failed when PushFrameData");
+        if (pushBufCpyGate_.ShouldLog()) {
+            AUDIO_ERR_LOG("memcpy failed when PushFrameData");
+        }
         return false;
     }
     writePos_.store((writePos_.load() + 1) % GetFrames());

@@ -83,8 +83,14 @@ HpaePcmBuffer *HpaeVolumeSyncNode::SignalProcess(const std::vector<HpaePcmBuffer
     // This node does not perform actual gain calculation
     // It only syncs volume to render sink when volume changes
     if (inputs.empty()) {
-        AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}u", GetSessionId());
+        if (inputsEmptyGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}u", GetSessionId());
+        }
         return nullptr;
+    }
+    if (inputsEmptyGate_.IsActive()) {
+        AUDIO_WARNING_LOG("inputs size empty recovered, SessionId:%{public}u, frames:%{public}u",
+            GetSessionId(), inputsEmptyGate_.Reset());
     }
 
     // Get current and history volume, reference from HpaeGainNode::DoGain

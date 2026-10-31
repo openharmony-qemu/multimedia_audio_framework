@@ -121,8 +121,14 @@ void HpaeRemoteSinkOutputNode::DoProcess()
 {
     Trace trace(processTraceName_);
     if (audioRendererSink_ == nullptr) {
-        AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+        if (sinkNullGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+        }
         return;
+    }
+    if (sinkNullGate_.IsActive()) {
+        AUDIO_WARNING_LOG("audioRendererSink_ recovered, sessionId:%{public}u, frames:%{public}u",
+            GetSessionId(), sinkNullGate_.Reset());
     }
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     for (auto &outputData : outputVec) {
@@ -148,7 +154,9 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         auto ret = audioRendererSink_->SplitRenderFrame(*renderFrameData, renderFrameData_.size(),
             writeLen, splitStreamType);
         if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
-            AUDIO_ERR_LOG("RenderFrame failed, SplitStreamType %{public}d", splitStreamType);
+            if (renderFailGate_.ShouldLog()) {
+                AUDIO_ERR_LOG("RenderFrame failed, SplitStreamType %{public}d", splitStreamType);
+            }
         }
     }
     HandleRemoteTiming(); // used to control remote RenderFrame tempo.
