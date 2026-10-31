@@ -179,28 +179,24 @@ void HpaeProcessCluster::CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &
 void HpaeProcessCluster::CreateConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo)
 {
     // output format follows the loudness/session-effect requirement, falls back to mixer format
-    CreateConverterNodeInto(idConverterMap_, sessionId, preNodeInfo, ConverterFormatQueryRole::DOWNSTREAM_ALGO);
+    CreateConverterNodeInto(idConverterMap_, sessionId, preNodeInfo, algoFormatQuery_);
 }
 
 void HpaeProcessCluster::CreateMixerConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo)
 {
     // output format follows the mixer/render-effect requirement, uniform across streams
-    CreateConverterNodeInto(idMixerConverterMap_, sessionId, preNodeInfo, ConverterFormatQueryRole::MIXER_INPUT);
+    CreateConverterNodeInto(idMixerConverterMap_, sessionId, preNodeInfo, mixFormatQuery_);
 }
 
 void HpaeProcessCluster::CreateConverterNodeInto(
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> &nodeMap,
-    uint32_t sessionId, const HpaeNodeInfo &preNodeInfo, ConverterFormatQueryRole role)
+    uint32_t sessionId, const HpaeNodeInfo &preNodeInfo, INodeFormatInfoCallback &formatQuery)
 {
     CHECK_AND_RETURN_LOG(!SafeGetMap(nodeMap, sessionId),
-        "sessionId %{public}u converter node (role %{public}d) already exist",
-        sessionId, static_cast<int32_t>(role));
+        "sessionId %{public}u converter node already exist", sessionId);
+    // the same query provides the creation-time format and the per-frame runtime format
     AudioBasicFormat basicFormat;
-    if (role == ConverterFormatQueryRole::MIXER_INPUT) {
-        GetMixerInputFormatInfo(sessionId, basicFormat);
-    } else {
-        GetNodeInputFormatInfo(sessionId, basicFormat);
-    }
+    formatQuery.GetNodeInputFormatInfo(sessionId, basicFormat);
     HpaeNodeInfo outputNodeInfo = preNodeInfo;
     // frameLen must follow the output rate: mixer frameLen is at sink rate, mismatch causes 2x drain
     outputNodeInfo.frameLen = basicFormat.rate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
@@ -212,7 +208,7 @@ void HpaeProcessCluster::CreateConverterNodeInto(
         static_cast<AudioChannelLayout>(sinkInfo_.channelLayout) :
         static_cast<AudioChannelLayout>(basicFormat.audioChannelInfo.channelLayout);
     nodeMap[sessionId] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
-    nodeMap[sessionId]->RegisterCallback(this, role);
+    nodeMap[sessionId]->RegisterCallback(&formatQuery);
     // processCluster comes with outputCluster, which has a limiter, so for converter in process cluster,
     // downmix normalization can be disabled to preserve the loudness of input
     nodeMap[sessionId]->SetDownmixNormalization(false);
@@ -367,7 +363,7 @@ void HpaeProcessCluster::InitEffectBuffer(const uint32_t sessionId)
     AUDIO_INFO_LOG("init sessionId: %{public}u", sessionId);
 }
 
-int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
+int32_t HpaeProcessCluster::QueryAlgoInputFormat(uint32_t sessionId, AudioBasicFormat &basicFormat)
 {
     // SessionEffectNode (AISS) requires 48kHz stereo input
     if (SafeGetMap(idSessionEffectMap_, sessionId)) {
@@ -385,13 +381,13 @@ int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasi
         basicFormat.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
         return SUCCESS;
     }
-    // no special-format consumer on the algo side: target the mixer input (see GetMixerInputFormatInfo)
-    return GetMixerInputFormatInfo(sessionId, basicFormat);
+    // no special-format consumer on the algo side: target the mixer input (see QueryMixInputFormat)
+    return QueryMixInputFormat(sessionId, basicFormat);
 }
 
-int32_t HpaeProcessCluster::GetMixerInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
+int32_t HpaeProcessCluster::QueryMixInputFormat(uint32_t sessionId, AudioBasicFormat &basicFormat)
 {
-    // format is cluster-wide; sessionId kept for interface symmetry
+    // format is cluster-wide; sessionId kept for query-signature symmetry
     if (renderEffectNode_ != nullptr) {
         return renderEffectNode_->GetExpectedInputChannelInfo(basicFormat);
     }

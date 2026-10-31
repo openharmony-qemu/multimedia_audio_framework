@@ -113,11 +113,9 @@ HpaeAudioFormatConverterNode::~HpaeAudioFormatConverterNode()
 #endif
 }
 
-void HpaeAudioFormatConverterNode::RegisterCallback(INodeFormatInfoCallback *callback,
-    ConverterFormatQueryRole role)
+void HpaeAudioFormatConverterNode::RegisterCallback(INodeFormatInfoCallback *callback)
 {
     nodeFormatInfoCallback_ = callback;
-    formatQueryRole_ = role;
 }
 
 void HpaeAudioFormatConverterNode::DoProcess()
@@ -323,12 +321,8 @@ void HpaeAudioFormatConverterNode::ResolveDownstreamOutFormat(uint32_t &numChann
     AudioBasicFormat basicFormat;
     basicFormat.rate = preNodeInfo_.samplingRate;
 
-    // dispatch by role: algo-side (loudness/SE) or mixer-side (render effect/sink) requirement
-    if (formatQueryRole_ == ConverterFormatQueryRole::MIXER_INPUT) {
-        nodeFormatInfoCallback_->GetMixerInputFormatInfo(preNodeInfo_.sessionId, basicFormat);
-    } else {
-        nodeFormatInfoCallback_->GetNodeInputFormatInfo(preNodeInfo_.sessionId, basicFormat);
-    }
+    // the registered callback decides what output format this position needs
+    nodeFormatInfoCallback_->GetNodeInputFormatInfo(preNodeInfo_.sessionId, basicFormat);
 
     numChannels = basicFormat.audioChannelInfo.numChannels;
     channelLayout = basicFormat.audioChannelInfo.channelLayout;
