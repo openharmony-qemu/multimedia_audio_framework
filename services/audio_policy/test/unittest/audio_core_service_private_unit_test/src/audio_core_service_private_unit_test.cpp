@@ -5933,5 +5933,75 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleDirectPipeConflictForVoipDirect_003,
     EXPECT_EQ(pipeInfos.size(), 0u);
     EXPECT_EQ(audioCoreService->pipeManager_->GetPipeList().size(), 1u);
 }
+
+/**
+ * @tc.name  : BuildDefaultArmModuleInfo_S16leFormat
+ * @tc.desc  : BuildDefaultArmModuleInfo preserves s16le format and computes correct bufferSize
+ */
+HWTEST_F(AudioCoreServicePrivateTest, BuildDefaultArmModuleInfo_S16leFormat, TestSize.Level1)
+{
+    AudioModuleInfo src;
+    src.format = "s16le";
+    src.rate = "96000";
+    src.channels = "1";
+    src.channelLayout = "1";
+
+    auto info = AudioCoreService::BuildDefaultArmModuleInfo(src);
+    EXPECT_EQ(info.rate, std::to_string(SAMPLE_RATE_48000));
+    EXPECT_EQ(info.channels, "2");
+    EXPECT_EQ(info.channelLayout, std::to_string(CH_LAYOUT_STEREO));
+    EXPECT_EQ(info.format, "s16le");
+    uint32_t expected = static_cast<uint32_t>(SAMPLE_RATE_48000) * STEREO *
+        AudioPolicyUtils::GetInstance().PcmFormatToBytes(SAMPLE_S16LE) * DEFAULT_PERIOD_IN_MS / AUDIO_MS_PER_SECOND;
+    EXPECT_EQ(info.bufferSize, std::to_string(expected));
+}
+
+/**
+ * @tc.name  : BuildDefaultArmModuleInfo_S24leFormat
+ * @tc.desc  : BuildDefaultArmModuleInfo preserves s24le format and computes correct bufferSize
+ */
+HWTEST_F(AudioCoreServicePrivateTest, BuildDefaultArmModuleInfo_S24leFormat, TestSize.Level1)
+{
+    AudioModuleInfo src;
+    src.format = "s24le";
+
+    auto info = AudioCoreService::BuildDefaultArmModuleInfo(src);
+    EXPECT_EQ(info.format, "s24le");
+    uint32_t expected = static_cast<uint32_t>(SAMPLE_RATE_48000) * STEREO *
+        AudioPolicyUtils::GetInstance().PcmFormatToBytes(SAMPLE_S24LE) * DEFAULT_PERIOD_IN_MS / AUDIO_MS_PER_SECOND;
+    EXPECT_EQ(info.bufferSize, std::to_string(expected));
+}
+
+/**
+ * @tc.name  : BuildDefaultArmModuleInfo_S32leFormat
+ * @tc.desc  : BuildDefaultArmModuleInfo preserves s32le format and computes correct bufferSize
+ */
+HWTEST_F(AudioCoreServicePrivateTest, BuildDefaultArmModuleInfo_S32leFormat, TestSize.Level1)
+{
+    AudioModuleInfo src;
+    src.format = "s32le";
+
+    auto info = AudioCoreService::BuildDefaultArmModuleInfo(src);
+    EXPECT_EQ(info.format, "s32le");
+    uint32_t expected = static_cast<uint32_t>(SAMPLE_RATE_48000) * STEREO *
+        AudioPolicyUtils::GetInstance().PcmFormatToBytes(SAMPLE_S32LE) * DEFAULT_PERIOD_IN_MS / AUDIO_MS_PER_SECOND;
+    EXPECT_EQ(info.bufferSize, std::to_string(expected));
+}
+
+/**
+ * @tc.name  : BuildDefaultArmModuleInfo_UnknownFormat
+ * @tc.desc  : BuildDefaultArmModuleInfo with unknown format defaults to s16le bytes for bufferSize
+ */
+HWTEST_F(AudioCoreServicePrivateTest, BuildDefaultArmModuleInfo_UnknownFormat, TestSize.Level1)
+{
+    AudioModuleInfo src;
+    src.format = "";
+
+    auto info = AudioCoreService::BuildDefaultArmModuleInfo(src);
+    EXPECT_EQ(info.format, "");
+    uint32_t expected = static_cast<uint32_t>(SAMPLE_RATE_48000) * STEREO *
+        AudioPolicyUtils::GetInstance().PcmFormatToBytes(SAMPLE_S16LE) * DEFAULT_PERIOD_IN_MS / AUDIO_MS_PER_SECOND;
+    EXPECT_EQ(info.bufferSize, std::to_string(expected));
+}
 } // namespace AudioStandard
 } // namespace OHOS

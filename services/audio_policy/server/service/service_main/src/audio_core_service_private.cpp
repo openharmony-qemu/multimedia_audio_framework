@@ -3167,15 +3167,16 @@ void AudioCoreService::UpdateFastState(std::shared_ptr<AudioPipeInfo> pipeInfo)
     fastCloseCondition_.notify_all();
 }
 
-static AudioModuleInfo BuildDefaultArmModuleInfo(const AudioModuleInfo &src)
+AudioModuleInfo AudioCoreService::BuildDefaultArmModuleInfo(const AudioModuleInfo &src)
 {
     AudioModuleInfo info = src;
     info.rate = std::to_string(SAMPLE_RATE_48000);
-    info.format = "s16le";
     info.channels = "2";
     info.channelLayout = std::to_string(CH_LAYOUT_STEREO);
+    AudioSampleFormat format = AudioDefinitionPolicyUtils::formatStrToEnum[info.format];
+    format = format == SAMPLE_U8 ? SAMPLE_S16LE : format;
     info.bufferSize = std::to_string(static_cast<uint32_t>(SAMPLE_RATE_48000) * STEREO *
-        AudioPolicyUtils::GetInstance().PcmFormatToBytes(SAMPLE_S16LE) * DEFAULT_PERIOD_IN_MS / AUDIO_MS_PER_SECOND);
+        AudioPolicyUtils::GetInstance().PcmFormatToBytes(format) * DEFAULT_PERIOD_IN_MS / AUDIO_MS_PER_SECOND);
     return info;
 }
 

@@ -137,6 +137,7 @@ void AudioArmDeviceBehaviorUnitTest::TearDown(void)
     RemoveUsbIOHandle(TEST_USB_SOURCE_MODULE_NAME);
     SetEcFeatureEnable(false);
     ClearUsbModuleInfo();
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
 }
 
 /**
@@ -412,7 +413,7 @@ HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_NoStreamHalHighest,
         {SAMPLE_RATE_44100, SAMPLE_RATE_48000, SAMPLE_RATE_192000});
     AudioModuleInfo moduleInfo = MakeUsbSinkModuleInfo();
     armDeviceBehavior_.UpdateArmModuleInfo(deviceDesc, moduleInfo);
-    EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_192000));
+    EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_48000));
 }
 
 HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_NoStreamSingleRate, TestSize.Level1)
@@ -435,7 +436,8 @@ HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_WithHighSpecStream,
     AddStreamToPipeManager(streamDesc);
     AudioModuleInfo moduleInfo = MakeUsbSinkModuleInfo();
     armDeviceBehavior_.UpdateArmModuleInfo(deviceDesc, moduleInfo);
-    EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_192000));
+    EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_48000));
+    EXPECT_EQ(moduleInfo.format, "s24le");
 }
 
 HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_WithVoipStream, TestSize.Level1)
@@ -476,8 +478,8 @@ HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_UnknownLayoutKept, 
     moduleInfo.channels = "4";
     moduleInfo.channelLayout = "5";
     armDeviceBehavior_.UpdateArmModuleInfo(deviceDesc, moduleInfo);
-    EXPECT_EQ(moduleInfo.channels, "4");
-    EXPECT_EQ(moduleInfo.channelLayout, "5");
+    EXPECT_EQ(moduleInfo.channels, "2");
+    EXPECT_EQ(moduleInfo.channelLayout, "3");
     EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_48000));
     EXPECT_EQ(moduleInfo.format, "s16le");
 }
@@ -490,8 +492,82 @@ HWTEST_F(AudioArmDeviceBehaviorUnitTest, UpdateArmModuleInfo_InCallScene, TestSi
     AudioModuleInfo moduleInfo = MakeUsbSinkModuleInfo();
     armDeviceBehavior_.UpdateArmModuleInfo(deviceDesc, moduleInfo);
     EXPECT_EQ(moduleInfo.rate, std::to_string(SAMPLE_RATE_48000));
-    EXPECT_EQ(moduleInfo.format, "s16le");
+    EXPECT_EQ(moduleInfo.format, "s24le");
     EXPECT_EQ(moduleInfo.channels, "2");
+}
+
+/**
+ * @tc.name: DetermineArmUsbFormat_OutputNo48kRate
+ * @tc.desc: Test DetermineArmUsbFormat with OUTPUT_DEVICE and no 48k in rates
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, DetermineArmUsbFormat_OutputNo48kRate, TestSize.Level1)
+{
+    auto deviceDesc = MakeArmUsbDeviceDesc(TEST_USB_ADDR,
+        {SAMPLE_RATE_44100, SAMPLE_RATE_96000}, SAMPLE_S24LE);
+    DeviceStreamInfo deviceStreamInfo = deviceDesc->GetAudioStreamInfo().back();
+    auto selected = armDeviceBehavior_.DetermineArmUsbFormat(deviceDesc, deviceStreamInfo);
+    EXPECT_EQ(selected.rate, SAMPLE_RATE_96000);
+    EXPECT_EQ(selected.format, SAMPLE_S24LE);
+    EXPECT_EQ(selected.channelLayout, CH_LAYOUT_STEREO);
+}
+
+/**
+ * @tc.name: DetermineArmUsbFormat_Output48kInRates
+ * @tc.desc: Test DetermineArmUsbFormat with OUTPUT_DEVICE and 48k present in rates
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, DetermineArmUsbFormat_Output48kInRates, TestSize.Level1)
+{
+    auto deviceDesc = MakeArmUsbDeviceDesc(TEST_USB_ADDR,
+        {SAMPLE_RATE_44100, SAMPLE_RATE_48000, SAMPLE_RATE_96000}, SAMPLE_S32LE);
+    DeviceStreamInfo deviceStreamInfo = deviceDesc->GetAudioStreamInfo().back();
+    auto selected = armDeviceBehavior_.DetermineArmUsbFormat(deviceDesc, deviceStreamInfo);
+    EXPECT_EQ(selected.rate, SAMPLE_RATE_48000);
+    EXPECT_EQ(selected.format, SAMPLE_S32LE);
+    EXPECT_EQ(selected.channelLayout, CH_LAYOUT_STEREO);
+}
+
+/**
+ * @tc.name: DetermineArmUsbFormat_InputDevice
+ * @tc.desc: Test DetermineArmUsbFormat with INPUT_DEVICE uses HAL default path
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, DetermineArmUsbFormat_InputDevice, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceRole_ = INPUT_DEVICE;
+    deviceDesc->macAddress_ = TEST_USB_ADDR;
+    DeviceStreamInfo cap;
+    cap.samplingRate.insert(SAMPLE_RATE_48000);
+    cap.samplingRate.insert(SAMPLE_RATE_96000);
+    cap.format = SAMPLE_S24LE;
+    cap.channelLayout.insert(CH_LAYOUT_STEREO);
+    deviceDesc->audioStreamInfo_.push_back(cap);
+
+    DeviceStreamInfo deviceStreamInfo = deviceDesc->GetAudioStreamInfo().back();
+    auto selected = armDeviceBehavior_.DetermineArmUsbFormat(deviceDesc, deviceStreamInfo);
+    EXPECT_EQ(selected.rate, SAMPLE_RATE_96000);
+    EXPECT_EQ(selected.format, SAMPLE_S24LE);
+    EXPECT_EQ(selected.channelLayout, CH_LAYOUT_STEREO);
+}
+
+/**
+ * @tc.name: DetermineArmUsbFormat_OutputInCallScene
+ * @tc.desc: Test DetermineArmUsbFormat with OUTPUT_DEVICE in call scene returns 48k
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, DetermineArmUsbFormat_OutputInCallScene, TestSize.Level1)
+{
+    auto deviceDesc = MakeArmUsbDeviceDesc(TEST_USB_ADDR,
+        {SAMPLE_RATE_96000, SAMPLE_RATE_192000}, SAMPLE_S24LE);
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    DeviceStreamInfo deviceStreamInfo = deviceDesc->GetAudioStreamInfo().back();
+    auto selected = armDeviceBehavior_.DetermineArmUsbFormat(deviceDesc, deviceStreamInfo);
+    EXPECT_EQ(selected.rate, SAMPLE_RATE_48000);
+    EXPECT_EQ(selected.format, SAMPLE_S24LE);
+    EXPECT_EQ(selected.channelLayout, CH_LAYOUT_STEREO);
 }
 
 } // namespace AudioStandard
