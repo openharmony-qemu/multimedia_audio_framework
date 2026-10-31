@@ -31,8 +31,7 @@ enum class SessionEffectCleanupMode {
     DETACH_FOR_RELOAD,
 };
 
-class HpaeProcessCluster : public OutputNode<HpaePcmBuffer*>, public InputNode<HpaePcmBuffer*>,
-    public INodeFormatInfoCallback {
+class HpaeProcessCluster : public OutputNode<HpaePcmBuffer*>, public InputNode<HpaePcmBuffer*> {
 public:
     HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo);
     virtual ~HpaeProcessCluster();
@@ -58,8 +57,6 @@ public:
     bool ExecuteDeferredStopFor(uint32_t sessionId);
     bool HasDeferredStop() const { return hasPendingStop_; }
     uint32_t GetDeferredStopSessionId() const { return pendingStopSessionId_; }
-    int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
-    int32_t GetMixerInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
     std::shared_ptr<HpaeGainNode> GetGainNodeById(uint32_t id) const;
     std::shared_ptr<HpaeAudioFormatConverterNode> GetConverterNodeById(uint32_t id) const;
     std::shared_ptr<HpaeAudioFormatConverterNode> GetMixerConverterNodeById(uint32_t sessionId) const;
@@ -113,12 +110,35 @@ private:
     void CreateMixerConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     void CreateConverterNodeInto(std::unordered_map<uint32_t,
         std::shared_ptr<HpaeAudioFormatConverterNode>> &nodeMap, uint32_t sessionId,
-        const HpaeNodeInfo &preNodeInfo, ConverterFormatQueryRole role);
+        const HpaeNodeInfo &preNodeInfo, INodeFormatInfoCallback &formatQuery);
     void CreateLoudnessGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     bool CheckNeedNotifyEffectNode(const HpaeSinkInfo &sinkInfo);
+    // Position-specific format policies: algo side answers per-session needs and falls back to
+    // the mixer entry format; mix side answers the cluster-uniform mixer entry format
+    int32_t QueryAlgoInputFormat(uint32_t sessionId, AudioBasicFormat &basicFormat);
+    int32_t QueryMixInputFormat(uint32_t sessionId, AudioBasicFormat &basicFormat);
+
+    // Binds one cluster query to the generic converter callback contract
+    class FormatQueryAdapter final : public INodeFormatInfoCallback {
+    public:
+        using Query = int32_t (HpaeProcessCluster::*)(uint32_t, AudioBasicFormat &);
+        FormatQueryAdapter(HpaeProcessCluster &owner, Query query) : owner_(owner), query_(query) {}
+        int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override
+        {
+            return (owner_.*query_)(sessionId, basicFormat);
+        }
+    private:
+        HpaeProcessCluster &owner_;
+        Query query_;
+    };
+
     std::shared_ptr<HpaeMixerNode> mixerNode_;
     std::shared_ptr<HpaeRenderEffectNode> renderEffectNode_ = nullptr;
     std::shared_ptr<HpaeRenderEffectNode> renderNoneEffectNode_ = nullptr;
+    // adapters are declared before the node maps so reverse-order destruction releases the
+    // converters (which hold raw callback pointers into the adapters) before the adapters die
+    FormatQueryAdapter algoFormatQuery_{*this, &HpaeProcessCluster::QueryAlgoInputFormat};
+    FormatQueryAdapter mixFormatQuery_{*this, &HpaeProcessCluster::QueryMixInputFormat};
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> idConverterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> idMixerConverterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeGainNode>> idGainMap_;

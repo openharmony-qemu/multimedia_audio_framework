@@ -24,18 +24,12 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-// Which downstream requirement an output-format query resolves
-enum class ConverterFormatQueryRole {
-    DOWNSTREAM_ALGO, // loudness / session-effect input requirement
-    MIXER_INPUT,     // mixer / render-effect input requirement
-};
 class HpaeAudioFormatConverterNode : public HpaePluginNode {
 public:
     HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo);
     virtual ~HpaeAudioFormatConverterNode();
-    // Register once before streaming; role is read on the process thread
-    void RegisterCallback(INodeFormatInfoCallback *callback,
-        ConverterFormatQueryRole role = ConverterFormatQueryRole::DOWNSTREAM_ALGO);
+    // Register once before streaming; callback is read on the process thread
+    void RegisterCallback(INodeFormatInfoCallback *callback);
     void DoProcess() override;
     void ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode, HpaeNodeInfo &nodeInfo) override;
     void DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
@@ -91,10 +85,8 @@ private:
     std::unique_ptr<Resampler> resampler_ = nullptr;
     ChannelConverter channelConverter_;
     HpaePcmBuffer tmpOutBuf_; // cache between resample and converter
-    // downstream format query target; interpretation depends on formatQueryRole_
+    // downstream target of the output format query; must outlive this node
     INodeFormatInfoCallback *nodeFormatInfoCallback_ = nullptr;
-    // which side the format query resolves: algo input (loudness/SE) or mixer input
-    ConverterFormatQueryRole formatQueryRole_ = ConverterFormatQueryRole::DOWNSTREAM_ALGO;
 
     // Unprocessed input accumulation buffer (interleaved float, input sample rate)
     std::vector<float> unprocessedBuffer_;
