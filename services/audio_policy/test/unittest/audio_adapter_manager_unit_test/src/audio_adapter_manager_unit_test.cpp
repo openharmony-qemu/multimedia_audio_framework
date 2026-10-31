@@ -1605,6 +1605,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_002, TestSize
     audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_RING, isMuted, volumeLevel, volumeDb);
     EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
 
+    audioAdapterManager->SetAbsVolumeScene(macAddress, true, TEST_VOLUME_LEVEL);
     audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_MUSIC, isMuted, volumeLevel, volumeDb);
     EXPECT_EQ(volumeDb, ABS_VOLUME_DB_VALUE);
 }
