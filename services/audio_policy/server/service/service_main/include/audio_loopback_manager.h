@@ -73,6 +73,8 @@ private:
     sptr<ILoopbackCallback> globalHandlerCallback_;
     int32_t handlerPid_ = -1;
     AudioLoopbackStatus globalHandlerState_ = LOOPBACK_UNAVAILABLE_SCENE;
+    // last status value reported by GetStatus log; sentinel outside AudioLoopbackStatus range
+    int32_t lastReportedStatus_ = -100;
 
     std::map<int32_t, sptr<LoopbackInServer>> globalControls_;
     std::map<int32_t, sptr<ILoopbackCallback>> globalControlCallbacks_;
