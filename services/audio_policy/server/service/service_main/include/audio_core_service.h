@@ -781,6 +781,7 @@ private:
             const std::string &moduleName);
     void DelayReloadArmPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void CancelArmReload(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    static AudioModuleInfo BuildDefaultArmModuleInfo(const AudioModuleInfo &src);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     bool HandleMuteBeforeDeviceSwitch(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,

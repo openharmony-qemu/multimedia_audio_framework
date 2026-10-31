@@ -160,30 +160,24 @@ SelectedDeviceFormat AudioArmDeviceBehavior::DetermineArmUsbFormat(
     const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
     const DeviceStreamInfo &deviceStreamInfo)
 {
-    auto pipeManager = AudioPipeManager::GetPipeManager();
-    if (pipeManager != nullptr) {
-        auto allStreams = pipeManager->GetAllOutputStreamDescs();
-        std::string macAddr = deviceDesc->GetMacAddress();
+    if (deviceDesc->getRole() == OUTPUT_DEVICE) {
         if (AudioSceneManager::GetInstance().GetAudioScene() != AUDIO_SCENE_DEFAULT) {
-            AUDIO_INFO_LOG("ArmUsb call scene active, use 48k fixed format");
-            return {AudioSamplingRate::SAMPLE_RATE_48000, AudioSampleFormat::SAMPLE_S16LE,
+            AUDIO_INFO_LOG("ArmUsb call scene active, use 48k fixed format %{public}s",
+                AudioDefinitionPolicyUtils::enumToFormatStr[deviceStreamInfo.format].c_str());
+            return {AudioSamplingRate::SAMPLE_RATE_48000, deviceStreamInfo.format,
                 AudioChannelLayout::CH_LAYOUT_STEREO};
         }
-        AudioStreamInfo highestInfo;
-        if (AudioDefinitionPolicyUtils::FindHighestFormatStreamOnDevice(macAddr, allStreams, nullptr, highestInfo)) {
-            auto sel = AudioDefinitionPolicyUtils::SelectBestOutputFormat(highestInfo,
-                deviceDesc->GetAudioStreamInfo());
-            AUDIO_INFO_LOG("ArmUsb highest stream: rate=%{public}u, format=%{public}u",
-                static_cast<uint32_t>(sel.rate), static_cast<uint32_t>(sel.format));
-            return sel;
-        }
+        AudioSamplingRate rate = deviceStreamInfo.samplingRate.count(SAMPLE_RATE_48000) ? SAMPLE_RATE_48000 :
+            *deviceStreamInfo.samplingRate.rbegin();
+        AUDIO_INFO_LOG("ArmUsb select rate=%{public}u, format=%{public}u", static_cast<uint32_t>(rate),
+            static_cast<uint32_t>(deviceStreamInfo.format));
+        return {rate, deviceStreamInfo.format, AudioChannelLayout::CH_LAYOUT_STEREO};
     }
     SelectedDeviceFormat selected;
     selected.rate = static_cast<AudioSamplingRate>(*deviceStreamInfo.samplingRate.rbegin());
     selected.format = deviceStreamInfo.format;
     selected.channelLayout = deviceStreamInfo.GetMainChannelLayout();
-    AUDIO_INFO_LOG("ArmUsb no running stream, use HAL default: rate=%{public}u",
-        static_cast<uint32_t>(selected.rate));
+    AUDIO_INFO_LOG("ArmUsb input, use HAL default: rate=%{public}u", static_cast<uint32_t>(selected.rate));
     return selected;
 }
 
