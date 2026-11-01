@@ -47,7 +47,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
     for (auto &router : mediaRenderRouters_) {
         RouterType usedType = router->GetRouterType();
         if (bypassTypeSet.count(usedType)) {
-            AUDIO_INFO_LOG("bypass %{public}d", usedType);
+            AUDIO_DEBUG_LOG("bypass %{public}d", usedType);
             continue;
         }
         shared_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID, streamId);
@@ -762,8 +762,8 @@ bool AudioRouterCenter::IsBlockedDeviceForTransferCall(shared_ptr<AudioDeviceDes
         type == DEVICE_TYPE_NEARLINK ||
         type == DEVICE_TYPE_REMOTE_CAST ||
         desc->networkId_ != LOCAL_NETWORK_ID) {
-        AUDIO_INFO_LOG("Transfer call/ring blocked device: %{public}d, networkId: %{public}s",
-            type, desc->networkId_.c_str());
+        AUDIO_DEBUG_LOG("Transfer call/ring blocked device: %{public}d, networkId: %{public}s",
+            type, GetEncryptStr(desc->networkId_).c_str());
         return true;
     }
     return false;
