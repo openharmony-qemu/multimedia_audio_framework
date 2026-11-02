@@ -305,6 +305,7 @@ audio_ohos_library("hpae_engine_manager") {
     "manager/src/i_hpae_renderer_manager.cpp",
     "manager/src/hpae_virtual_capturer_manager.cpp",
     "manager/src/hpae_injector_renderer_manager.cpp",
+    "manager/src/hpae_virtual_renderer_manager.cpp",
   ]
 
   deps = [

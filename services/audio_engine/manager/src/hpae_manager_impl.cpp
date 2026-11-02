@@ -243,17 +243,6 @@ bool HpaeManagerImpl::IsMsgProcessing()
 }
 
 // async interface
-int32_t HpaeManagerImpl::SetDefaultSink(std::string name)
-{
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
-            "manager is nullptr", false),
-        "manager is nullptr");
-    return manager_->SetDefaultSink(std::move(name));
-}
-
 int32_t HpaeManagerImpl::SetDefaultSource(std::string name)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,

@@ -276,13 +276,11 @@ void HpaeManagerFuzzTest::StreamSetUp()
 
     AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
     hpaeManager_->OpenAudioPort(sinkAudioModuleInfo);
-    hpaeManager_->SetDefaultSink(sinkAudioModuleInfo.name);
     WaitForMsgProcessing(hpaeManager_);
     sinkPortId_ = callback->GetPortId();
 
     AudioModuleInfo sinkAudioModuleInfo2 = GetSinkAudioModeInfo("Speaker_File1");
     hpaeManager_->OpenAudioPort(sinkAudioModuleInfo2);
-    hpaeManager_->SetDefaultSink(sinkAudioModuleInfo2.name);
     WaitForMsgProcessing(hpaeManager_);
     sinkPortId2_ = callback->GetPortId();
 

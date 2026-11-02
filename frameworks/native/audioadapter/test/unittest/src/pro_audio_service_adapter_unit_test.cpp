@@ -154,20 +154,6 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_CloseAudioPort_002, TestSize.
 }
 
 /**
- * @tc.name: Pro_Audio_SetDefaultSink_001
- * @tc.desc: test set default sink
- * @tc.type: FUNC
- */
-HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_SetDefaultSink_001, TestSize.Level1)
-{
-    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
-    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
-    EXPECT_GE(0, portId);
-    int32_t ret = impl_->SetDefaultSink(moduleInfo.name);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
  * @tc.name: Pro_Audio_SetDefaultSource_001
  * @tc.desc: test set default source
  * @tc.type: FUNC

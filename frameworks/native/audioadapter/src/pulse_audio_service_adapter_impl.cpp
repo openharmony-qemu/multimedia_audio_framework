@@ -321,25 +321,6 @@ bool PulseAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool
     return true;
 }
 
-int32_t PulseAudioServiceAdapterImpl::SetDefaultSink(string name)
-{
-    PaLockGuard palock(mMainLoop);
-    if (mContext == nullptr) {
-        AUDIO_ERR_LOG("mContext is nullptr");
-        return ERROR;
-    }
-
-    pa_operation *operation = pa_context_set_default_sink(mContext, name.c_str(), nullptr, nullptr);
-    if (operation == nullptr) {
-        AUDIO_ERR_LOG("pa_context_set_default_sink failed!");
-        return ERR_OPERATION_FAILED;
-    }
-    isSetDefaultSink_ = true;
-    pa_operation_unref(operation);
-
-    return SUCCESS;
-}
-
 int32_t PulseAudioServiceAdapterImpl::SetDefaultSource(string name)
 {
     PaLockGuard palock(mMainLoop);

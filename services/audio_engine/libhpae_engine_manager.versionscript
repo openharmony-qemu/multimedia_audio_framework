@@ -30,6 +30,7 @@
     *HpaeCapturerManager*;
     *HpaeFastCapturerManager*;
     *HpaeVirtualCapturerManager*;
+    *HpaeVirtualRendererManager*;
     *HpaeInnerCapturerManager*;
     *SessionEffectManager*;
     *EffectInstance*;
