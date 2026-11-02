@@ -582,8 +582,6 @@ int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo
     rendererManagerMap_[audioModuleInfo.name] = rendererManager;
     sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
     sinkIdSinkNameMap_[sinkSourceIndex] = audioModuleInfo.name;
-    // ensure fallback target exists even if this is the first port ever opened
-    EnsureVirtualSinkManager();
     rendererManagerMap_[audioModuleInfo.name]->Init();
     AUDIO_INFO_LOG("OpenAudioPort name: %{public}s end sinkIndex is %{public}u",
         audioModuleInfo.name.c_str(),
