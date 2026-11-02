@@ -37,19 +37,38 @@ AudioCapturerAdapter* AudioCapturerAdapter::GetInstance()
 shared_ptr<AudioCapturer> AudioCapturerAdapter::GetAudioCapturerById(SLuint32 id)
 {
     AUDIO_INFO_LOG("AudioCapturerAdapter::GetAudioCapturerById: %{public}lu", id);
+    // Single locked lookup: the former code did a second unlocked find and dereferenced it,
+    // which crashes on end() if the entry is erased between the two lookups. Copying the
+    // shared_ptr under the lock keeps the capturer alive for unlocked use by the caller.
+    std::lock_guard<std::mutex> lock(adapterMutex_);
     auto it = captureMap_.find(id);
     if (it == captureMap_.end()) {
         AUDIO_ERR_LOG("GetAudioCapturerById: %{public}lu not found", id);
         return nullptr;
     }
-    return captureMap_.find(id)->second;
+    return it->second;
 }
 
 void AudioCapturerAdapter::EraseAudioCapturerById(SLuint32 id)
 {
     AUDIO_INFO_LOG("AudioCapturerAdapter::EraseAudioCapturerById: %{public}lu", id);
-    captureMap_.erase(id);
-    callbackMap_.erase(id);
+    // Detach the entries under the lock and let the shared_ptr holders die after releasing it:
+    // ~AudioCapturer may run arbitrary teardown and must not execute with adapterMutex_ held.
+    std::shared_ptr<AudioCapturer> capturerHolder;
+    std::shared_ptr<ReadOrWriteCallbackAdapter> callbackHolder;
+    {
+        std::lock_guard<std::mutex> lock(adapterMutex_);
+        auto it = captureMap_.find(id);
+        if (it != captureMap_.end()) {
+            capturerHolder = std::move(it->second);
+            captureMap_.erase(it);
+        }
+        auto callbackIt = callbackMap_.find(id);
+        if (callbackIt != callbackMap_.end()) {
+            callbackHolder = std::move(callbackIt->second);
+            callbackMap_.erase(callbackIt);
+        }
+    }
 }
 
 SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSource *dataSource,
@@ -74,7 +93,12 @@ SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSou
     capturerHolder->SetParams(capturerParams);
     AUDIO_INFO_LOG("CreateAudioCapturerAdapter ID: %{public}lu", id);
     capturerHolder->SetCaptureMode(CAPTURE_MODE_CALLBACK);
-    captureMap_.insert(make_pair(id, capturerHolder));
+    // CreateCapturer/SetCaptureMode above are heavy and stay unlocked; only the shared map
+    // insertion is guarded.
+    {
+        std::lock_guard<std::mutex> lock(adapterMutex_);
+        captureMap_.insert(make_pair(id, capturerHolder));
+    }
     return SL_RESULT_SUCCESS;
 }
 
@@ -196,9 +220,14 @@ SLresult AudioCapturerAdapter::RegisterCallbackAdapter(SLOHBufferQueueItf itf,
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, SL_RESULT_RESOURCE_ERROR,
         "invalid id.");
 
-    callbackPtr_ = make_shared<ReadOrWriteCallbackAdapter>(callback, itf, pContext);
-    audioCapturer->SetCapturerReadCallback(static_pointer_cast<AudioCapturerReadCallback>(callbackPtr_));
-    callbackMap_.insert(make_pair(thiz->mId, callbackPtr_));
+    // Local holder instead of the former shared member: the member was overwritten by every
+    // recorder's registration (an unlocked cross-thread write) and kept the last adapter alive.
+    auto callbackAdapter = make_shared<ReadOrWriteCallbackAdapter>(callback, itf, pContext);
+    audioCapturer->SetCapturerReadCallback(static_pointer_cast<AudioCapturerReadCallback>(callbackAdapter));
+    {
+        std::lock_guard<std::mutex> lock(adapterMutex_);
+        callbackMap_.insert(make_pair(thiz->mId, callbackAdapter));
+    }
     return SL_RESULT_SUCCESS;
 }
 

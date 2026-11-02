@@ -36,6 +36,9 @@ AudioPlayerAdapter* AudioPlayerAdapter::GetInstance()
 
 shared_ptr<AudioRenderer> AudioPlayerAdapter::GetAudioRenderById(SLuint32 id)
 {
+    // Copy the shared_ptr under the lock; callers then use the renderer outside the lock and
+    // the reference count keeps it alive even if the entry is erased concurrently.
+    std::lock_guard<std::mutex> lock(adapterMutex_);
     auto it = renderMap_.find(id);
     if (it == renderMap_.end()) {
         return nullptr;
@@ -46,8 +49,23 @@ shared_ptr<AudioRenderer> AudioPlayerAdapter::GetAudioRenderById(SLuint32 id)
 void AudioPlayerAdapter::EraseAudioRenderById(SLuint32 id)
 {
     AUDIO_INFO_LOG("AudioPlayerAdapter::EraseAudioRenderById: %{public}lu", id);
-    renderMap_.erase(id);
-    callbackMap_.erase(id);
+    // Detach the entries under the lock and let the shared_ptr holders die after releasing it:
+    // ~AudioRenderer may run arbitrary teardown and must not execute with adapterMutex_ held.
+    std::shared_ptr<AudioRenderer> rendererHolder;
+    std::shared_ptr<ReadOrWriteCallbackAdapter> callbackHolder;
+    {
+        std::lock_guard<std::mutex> lock(adapterMutex_);
+        auto it = renderMap_.find(id);
+        if (it != renderMap_.end()) {
+            rendererHolder = std::move(it->second);
+            renderMap_.erase(it);
+        }
+        auto callbackIt = callbackMap_.find(id);
+        if (callbackIt != callbackMap_.end()) {
+            callbackHolder = std::move(callbackIt->second);
+            callbackMap_.erase(callbackIt);
+        }
+    }
     return;
 }
 
@@ -76,7 +94,12 @@ SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
     }
     AUDIO_INFO_LOG("AudioPlayerAdapter::CreateAudioPlayer ID: %{public}lu", id);
     rendererHolder->SetRenderMode(RENDER_MODE_CALLBACK);
-    renderMap_.insert(make_pair(id, rendererHolder));
+    // CreateRenderer/SetRenderMode above are heavy and stay unlocked; only the shared map
+    // insertion is guarded.
+    {
+        std::lock_guard<std::mutex> lock(adapterMutex_);
+        renderMap_.insert(make_pair(id, rendererHolder));
+    }
     return SL_RESULT_SUCCESS;
 }
 
@@ -244,9 +267,14 @@ SLresult AudioPlayerAdapter::RegisterCallbackAdapter
         return SL_RESULT_RESOURCE_ERROR;
     }
 
-    callbackPtr_ = make_shared<ReadOrWriteCallbackAdapter>(callback, itf, pContext);
-    audioRenderer->SetRendererWriteCallback(static_pointer_cast<AudioRendererWriteCallback>(callbackPtr_));
-    callbackMap_.insert(make_pair(thiz->mId, callbackPtr_));
+    // Local holder instead of the former shared member: the member was overwritten by every
+    // player's registration (an unlocked cross-thread write) and kept the last adapter alive.
+    auto callbackAdapter = make_shared<ReadOrWriteCallbackAdapter>(callback, itf, pContext);
+    audioRenderer->SetRendererWriteCallback(static_pointer_cast<AudioRendererWriteCallback>(callbackAdapter));
+    {
+        std::lock_guard<std::mutex> lock(adapterMutex_);
+        callbackMap_.insert(make_pair(thiz->mId, callbackAdapter));
+    }
     return SL_RESULT_SUCCESS;
 }
 
