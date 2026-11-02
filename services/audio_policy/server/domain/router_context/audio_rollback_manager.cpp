@@ -41,6 +41,15 @@ static bool IsNearlinkBtOutput(const AudioDeviceDescriptor &desc)
         (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.deviceRole_ == OUTPUT_DEVICE);
 }
 
+static bool CheckScene(const AudioDeviceDescriptor &desc)
+{
+    if (AudioSceneManager::GetInstance().IsInAudioCallScene()) {
+        return desc.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP;
+    } else {
+        return desc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO;
+    }
+}
+
 AudioRollbackManager& AudioRollbackManager::GetInstance()
 {
     static AudioRollbackManager instance;
@@ -59,6 +68,7 @@ void AudioRollbackManager::OnDeviceNewConnect(const AudioDeviceDescriptor &desc)
         SetConnectLostRollback(desc);
         return;
     }
+    CHECK_AND_RETURN(CheckScene(desc));
     selectionRollbacks_.clear();
     if (!rollbackInfo_) {
         rollbackInfo_ = std::make_unique<RollbackInfo>();
@@ -76,6 +86,7 @@ void AudioRollbackManager::OnDeviceNewConnect(const AudioDeviceDescriptor &desc)
 
 void AudioRollbackManager::SetConnectLostRollback(const AudioDeviceDescriptor &desc)
 {
+    CHECK_AND_RETURN(CheckScene(desc));
     auto deviceId = desc.deviceId_;
     AUDIO_INFO_LOG("id=%{public}d, type=%{public}d", deviceId, desc.deviceType_);
     selectionRollbacks_.clear();
@@ -287,7 +298,7 @@ void AudioRollbackManager::SetSelectionRollback(int32_t uid, SelectDeviceType ty
     rollbackInfo_.reset();
     selectionRollbacks_.erase(remove_if(
         selectionRollbacks_.begin(), selectionRollbacks_.end(), pred), selectionRollbacks_.end());
-    CHECK_AND_RETURN(!connectedSet_.contains(deviceId) && IsNearlinkBtOutput(desc));
+    CHECK_AND_RETURN(!connectedSet_.contains(deviceId) && IsNearlinkBtOutput(desc) && CheckScene(desc));
     if (type == SelectDeviceType::MEDIA_OUTPUT && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         CHECK_AND_RETURN(!AudioDeviceManager::GetAudioDeviceManager().IsScoConnected(desc.macAddress_));
     }

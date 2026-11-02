@@ -29,6 +29,7 @@
 #include "audio_router_center.h"
 #include "audio_router_infra.h"
 #include "audio_router_select_strategy.h"
+#include "audio_scene_manager.h"
 
 using namespace testing::ext;
 
@@ -67,6 +68,7 @@ void AudioRollbackManagerTest::TearDown()
 {
     AudioRouterContextTestBase::TearDown();
     ClearRollbackState();
+    AudioSceneManager::GetInstance().SetAudioSceneOwnerUid(0);
 }
 
 void AudioRollbackManagerTest::ClearRollbackState()
@@ -714,6 +716,191 @@ HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_CallOutputA2dpProceedsWh
     rollback.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, a2dpDev, "ut");
     EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::CALL_OUTPUT), a2dpDev->deviceId_);
     EXPECT_TRUE(HasSelectionRollback(a2dpDev->deviceId_));
+}
+
+/**
+ * @tc.name  : OnDeviceNewConnect_A2dpBlockedInCallScene
+ * @tc.type  : FUNC
+ * @tc.desc  : In audio call scene, OnDeviceNewConnect skips A2DP (CheckScene rejects A2DP).
+ */
+HWTEST_F(AudioRollbackManagerTest, OnDeviceNewConnect_A2dpBlockedInCallScene, TestSize.Level1)
+{
+    auto &scene = AudioSceneManager::GetInstance();
+    scene.SetAudioSceneOwnerUid(TEST_APP_UID_10001);
+
+    auto baseline = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:E1");
+    SetOutputBaseline(baseline);
+    auto a2dp = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:E1", VIRTUAL_CONNECTED);
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.OnDeviceNewConnect(*a2dp);
+    EXPECT_FALSE(HasRollbackInfo());
+
+    scene.SetAudioSceneOwnerUid(0);
+}
+
+/**
+ * @tc.name  : OnDeviceNewConnect_ScoBlockedInNonCallScene
+ * @tc.type  : FUNC
+ * @tc.desc  : Not in call scene, OnDeviceNewConnect skips SCO output (CheckScene rejects SCO).
+ */
+HWTEST_F(AudioRollbackManagerTest, OnDeviceNewConnect_ScoBlockedInNonCallScene, TestSize.Level1)
+{
+    auto baseline = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:E2");
+    SetOutputBaseline(baseline);
+    auto sco = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:E2", VIRTUAL_CONNECTED);
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.OnDeviceNewConnect(*sco);
+    EXPECT_FALSE(HasRollbackInfo());
+}
+
+/**
+ * @tc.name  : OnDeviceNewConnect_ScoAllowedInCallScene
+ * @tc.type  : FUNC
+ * @tc.desc  : In audio call scene, OnDeviceNewConnect accepts SCO output (CheckScene allows SCO).
+ */
+HWTEST_F(AudioRollbackManagerTest, OnDeviceNewConnect_ScoAllowedInCallScene, TestSize.Level1)
+{
+    auto &scene = AudioSceneManager::GetInstance();
+    scene.SetAudioSceneOwnerUid(TEST_APP_UID_10001);
+
+    auto baseline = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:E3");
+    SetOutputBaseline(baseline);
+    auto sco = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:E3", VIRTUAL_CONNECTED);
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.OnDeviceNewConnect(*sco);
+    EXPECT_TRUE(HasRollbackInfo());
+    EXPECT_EQ(RollbackDeviceId(), sco->deviceId_);
+
+    scene.SetAudioSceneOwnerUid(0);
+}
+
+/**
+ * @tc.name  : SetConnectLostRollback_A2dpBlockedInCallScene
+ * @tc.type  : FUNC
+ * @tc.desc  : In audio call scene, SetConnectLostRollback skips A2DP (CheckScene rejects A2DP).
+ */
+HWTEST_F(AudioRollbackManagerTest, SetConnectLostRollback_A2dpBlockedInCallScene, TestSize.Level1)
+{
+    auto &scene = AudioSceneManager::GetInstance();
+    scene.SetAudioSceneOwnerUid(TEST_APP_UID_10001);
+
+    auto baseline = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:E4");
+    SetOutputBaseline(baseline);
+    auto a2dp = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:E4", CONNECTED);
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetConnectLostRollback(*a2dp);
+    EXPECT_FALSE(HasRollbackInfo());
+
+    scene.SetAudioSceneOwnerUid(0);
+}
+
+/**
+ * @tc.name  : SetConnectLostRollback_ScoBlockedInNonCallScene
+ * @tc.type  : FUNC
+ * @tc.desc  : Not in call scene, SetConnectLostRollback skips SCO output (CheckScene rejects SCO).
+ */
+HWTEST_F(AudioRollbackManagerTest, SetConnectLostRollback_ScoBlockedInNonCallScene, TestSize.Level1)
+{
+    auto baseline = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:E5");
+    SetOutputBaseline(baseline);
+    auto sco = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:E5", CONNECTED);
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetConnectLostRollback(*sco);
+    EXPECT_FALSE(HasRollbackInfo());
+}
+
+/**
+ * @tc.name  : SetConnectLostRollback_ScoAllowedInCallScene
+ * @tc.type  : FUNC
+ * @tc.desc  : In audio call scene, SetConnectLostRollback accepts SCO output (CheckScene allows SCO).
+ */
+HWTEST_F(AudioRollbackManagerTest, SetConnectLostRollback_ScoAllowedInCallScene, TestSize.Level1)
+{
+    auto &scene = AudioSceneManager::GetInstance();
+    scene.SetAudioSceneOwnerUid(TEST_APP_UID_10001);
+
+    auto baseline = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:E6");
+    SetOutputBaseline(baseline);
+    auto sco = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:E6", CONNECTED);
+
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetConnectLostRollback(*sco);
+    EXPECT_TRUE(HasRollbackInfo());
+    EXPECT_EQ(RollbackDeviceId(), sco->deviceId_);
+
+    scene.SetAudioSceneOwnerUid(0);
+}
+
+/**
+ * @tc.name  : SetSelectionRollback_A2dpBlockedInCallScene
+ * @tc.type  : FUNC
+ * @tc.desc  : In audio call scene, force-select A2DP applies immediately but records no
+ *             selection rollback (CheckScene rejects A2DP).
+ */
+HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_A2dpBlockedInCallScene, TestSize.Level1)
+{
+    auto &scene = AudioSceneManager::GetInstance();
+    scene.SetAudioSceneOwnerUid(TEST_APP_UID_10001);
+
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:E7");
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto a2dp = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:E7", SUSPEND_CONNECTED);
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, a2dp);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), a2dp->deviceId_);
+    EXPECT_FALSE(HasSelectionRollback(a2dp->deviceId_));
+
+    scene.SetAudioSceneOwnerUid(0);
+}
+
+/**
+ * @tc.name  : SetSelectionRollback_ScoBlockedInNonCallScene
+ * @tc.type  : FUNC
+ * @tc.desc  : Not in call scene, force-select SCO output applies immediately but records no
+ *             selection rollback (CheckScene rejects SCO).
+ */
+HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_ScoBlockedInNonCallScene, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:E8");
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto sco = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:E8", SUSPEND_CONNECTED);
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, sco);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), sco->deviceId_);
+    EXPECT_FALSE(HasSelectionRollback(sco->deviceId_));
+}
+
+/**
+ * @tc.name  : SetSelectionRollback_ScoAllowedInCallScene
+ * @tc.type  : FUNC
+ * @tc.desc  : In audio call scene, force-select SCO output applies immediately and records
+ *             selection rollback (CheckScene allows SCO).
+ */
+HWTEST_F(AudioRollbackManagerTest, SetSelectionRollback_ScoAllowedInCallScene, TestSize.Level1)
+{
+    auto &scene = AudioSceneManager::GetInstance();
+    scene.SetAudioSceneOwnerUid(TEST_APP_UID_10001);
+
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:E9");
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto sco = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:00:00:00:0B:E9", SUSPEND_CONNECTED);
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, sco);
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), sco->deviceId_);
+    EXPECT_TRUE(HasSelectionRollback(sco->deviceId_));
+
+    scene.SetAudioSceneOwnerUid(0);
 }
 
 /**
