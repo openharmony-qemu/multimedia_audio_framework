@@ -1665,6 +1665,7 @@ void HpaeRendererManager::Process()
 
 void HpaeRendererManager::UpdateAppsUid()
 {
+    CHECK_AND_RETURN_LOG(outputCluster_ != nullptr, "outputCluster_ is nullptr");
     appsUid_.clear();
     for (const auto &sinkInputNodePair : sinkInputNodeMap_) {
         if (sinkInputNodePair.second->GetState() == HPAE_SESSION_RUNNING) {
@@ -2144,6 +2145,7 @@ int32_t HpaeRendererManager::HandleSyncId(uint32_t sessionId, int32_t syncId)
     if (!SafeGetMap(sinkInputNodeMap_, sessionId) || sinkInfo_.deviceClass != "primary") {
         return ERR_INVALID_OPERATION;
     }
+    CHECK_AND_RETURN_RET_LOG(outputCluster_ != nullptr, ERR_INVALID_OPERATION, "outputCluster_ is nullptr");
     return outputCluster_->SetSyncId(syncId);
 }
 
@@ -2242,6 +2244,9 @@ void HpaeRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
         CHECK_AND_RETURN(IsRemoteDevice());
+        // IsRemoteDevice() only reflects sinkInfo_.deviceClass; after a failed reload the
+        // device class is unchanged while outputCluster_ has been reset to null.
+        CHECK_AND_RETURN_LOG(outputCluster_ != nullptr, "outputCluster_ is nullptr");
         appsUid_.clear();
         for (const auto &sinkInputNodePair : sinkInputNodeMap_) {
             if (sinkInputNodePair.second->GetState() == HPAE_SESSION_RUNNING ||
