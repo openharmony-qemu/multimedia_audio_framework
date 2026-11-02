@@ -292,6 +292,9 @@
         }                                                 \
     } while (0)
 
+// guard the C++ gate helper: this header is also included from C sources
+// (e.g. audio_proresampler_process.c), which cannot parse namespace/class.
+#ifdef __cplusplus
 namespace OHOS {
 namespace AudioStandard {
 // 5s heartbeat at the 20ms engine tick
@@ -339,5 +342,6 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
+#endif // __cplusplus
 
 #endif // OHOS_AUDIO_LOG_H
