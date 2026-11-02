@@ -1519,8 +1519,15 @@ void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result)
 
 void HpaeManager::HandleInitSourceResult(SourceType sourceType)
 {
-    if (sourceType == SOURCE_TYPE_LIVE && (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
-        const std::string combinedParam = "live_effect_enable=" + effectLiveState_;
+    // Snapshot under the leaf lock: this runs on the HpaeManagerThread while IPC threads may
+    // write effectLiveState_ concurrently (SetEffectLiveParameter/LoadEffectLive bypass SendRequest).
+    std::string liveState;
+    {
+        std::lock_guard<std::mutex> lock(effectLiveMutex_);
+        liveState = effectLiveState_;
+    }
+    if (sourceType == SOURCE_TYPE_LIVE && (liveState == "NROFF" || liveState == "NRON")) {
+        const std::string combinedParam = "live_effect_enable=" + liveState;
         HpaePolicyManager::GetInstance().SetAudioParameter("primary",
             AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
     }
@@ -1746,9 +1753,15 @@ bool HpaeManager::SetMovingCaptureStreamState(uint32_t sessionId, HpaeSessionSta
             serviceCallback->HandleSourceAudioStreamRemoved(sessionId);
         }
     } else if (operation == OPERATION_STARTED) {
+        // Snapshot under the leaf lock: same cross-thread access as HandleInitSourceResult.
+        std::string liveState;
+        {
+            std::lock_guard<std::mutex> lock(effectLiveMutex_);
+            liveState = effectLiveState_;
+        }
         if (capturerInfoIt->second.streamInfo.sourceType == SOURCE_TYPE_LIVE &&
-            (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
-            const std::string combinedParam = "live_effect_enable=" + effectLiveState_;
+            (liveState == "NROFF" || liveState == "NRON")) {
+            const std::string combinedParam = "live_effect_enable=" + liveState;
             HpaePolicyManager::GetInstance().SetAudioParameter("primary",
                 AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
         }
@@ -2859,6 +2872,8 @@ void HpaeManager::NotifyAccountsChanged()
 
 void HpaeManager::LoadEffectLive()
 {
+    // Runs on IPC threads (NotifySettingsDataReady/SetEffectLiveParameter/GetEffectLiveParameter);
+    // effectLiveState_ writes are short locked assignments, all provider/policy IO stays outside.
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = ERROR;
     if (!settingProvider.CheckOsAccountReady()) {
@@ -2867,21 +2882,30 @@ void HpaeManager::LoadEffectLive()
         std::string configValue;
         ret = settingProvider.GetStringValue("live_effect_enable", configValue, "system");
         if (ret == SUCCESS && !configValue.empty()) {
+            std::lock_guard<std::mutex> lock(effectLiveMutex_);
             effectLiveState_ = configValue;
             return;
         }
     }
     std::string state = HpaePolicyManager::GetInstance().GetAudioParameter(
         "primary", AudioParamKey::PARAM_KEY_STATE, "live_effect_supported");
-    HILOG_COMM_INFO("[LoadEffectLive]EffectLive %{public}s", effectLiveState_.c_str());
+    std::string liveState;
+    {
+        std::lock_guard<std::mutex> lock(effectLiveMutex_);
+        liveState = effectLiveState_;
+    }
+    HILOG_COMM_INFO("[LoadEffectLive]EffectLive %{public}s", liveState.c_str());
     if (state != "true") {
+        std::lock_guard<std::mutex> lock(effectLiveMutex_);
         effectLiveState_ = "NoSupport";
         return;
     } else {
+        std::lock_guard<std::mutex> lock(effectLiveMutex_);
         effectLiveState_ = "NROFF";
+        liveState = effectLiveState_;
     }
     if (settingProvider.CheckOsAccountReady()) {
-        settingProvider.PutStringValue("live_effect_enable", effectLiveState_, "system");
+        settingProvider.PutStringValue("live_effect_enable", liveState, "system");
     }
 }
 
@@ -2899,18 +2923,28 @@ bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string
         return false;
     }
 
-    if (effectLiveState_ == "") {
+    std::string liveState;
+    {
+        std::lock_guard<std::mutex> lock(effectLiveMutex_);
+        liveState = effectLiveState_;
+    }
+    if (liveState == "") {
         LoadEffectLive();
+        std::lock_guard<std::mutex> lock(effectLiveMutex_);
+        liveState = effectLiveState_;
     }
 
-    if (effectLiveState_ == "NoSupport") {
+    if (liveState == "NoSupport") {
         AUDIO_ERR_LOG("effectLive not supported");
         return false;
     }
 
     const std::string combinedParam = paramKey + "=" + paramValue;
     HpaePolicyManager::GetInstance().SetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
-    effectLiveState_ = paramValue;
+    {
+        std::lock_guard<std::mutex> lock(effectLiveMutex_);
+        effectLiveState_ = paramValue;
+    }
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     if (!settingProvider.CheckOsAccountReady()) {
         HILOG_COMM_INFO("[SetEffectLiveParameter]OS account not ready");
@@ -2933,12 +2967,21 @@ bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys
         AUDIO_ERR_LOG("Parameter Error");
         return false;
     }
-    if (effectLiveState_ != "") {
-        result.emplace_back(targetKey, effectLiveState_);
+    std::string liveState;
+    {
+        std::lock_guard<std::mutex> lock(effectLiveMutex_);
+        liveState = effectLiveState_;
+    }
+    if (liveState != "") {
+        result.emplace_back(targetKey, liveState);
         return true;
     }
     LoadEffectLive();
-    result.emplace_back(targetKey, effectLiveState_);
+    {
+        std::lock_guard<std::mutex> lock(effectLiveMutex_);
+        liveState = effectLiveState_;
+    }
+    result.emplace_back(targetKey, liveState);
     return true;
 }
 

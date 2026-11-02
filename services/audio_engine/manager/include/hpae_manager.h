@@ -406,7 +406,13 @@ private:
     std::weak_ptr<AudioServiceHpaeDumpCallback> dumpCallback_;
     std::unordered_map<std::string, std::string> deviceDumpSinkInfoMap_;
     std::unordered_map<HpaeMsgCode, std::function<void(const std::any &)>> handlers_;
+    // effectLiveState_ is written from IPC threads (SetEffectLiveParameter/LoadEffectLive run
+    // on binder threads, not via SendRequest) and read on the HpaeManagerThread
+    // (HandleInitSourceResult / SetMovingCaptureStreamState). effectLiveMutex_ is a leaf lock:
+    // it only guards the string assignment/copy; all IPC/IO stays outside it. Do not reuse
+    // mutex_ here - that is the worker Run-loop lock taken on every wakeup.
     std::string effectLiveState_ = "";
+    std::mutex effectLiveMutex_;
     std::mutex mutex_;
 
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkVirtualOutputNode>> sinkVirtualOutputNodeMap_;
