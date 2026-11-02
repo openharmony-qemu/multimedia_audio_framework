@@ -35,6 +35,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B85
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {
