@@ -1732,3 +1732,18 @@ HWTEST_F(HpaeDirectSinkOutputNodeTest, getRenderSinkInstance_NullSink_001, TestS
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
+
+/**
+ * @tc.name  : doProcess_SinkNull_EdgeLog_002
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectSinkOutputNodeTest_EdgeLog_002
+ * @tc.desc  : Sink null twice then restore mock sink: edge gate first/sustained/recovery
+ */
+HWTEST_F(HpaeDirectSinkOutputNodeTest, doProcess_SinkNull_EdgeLog_002, TestSize.Level0)
+{
+    directNode_->audioRendererSink_ = nullptr;
+    directNode_->DoProcess(); // first gate hit
+    directNode_->DoProcess(); // sustained hit
+    directNode_->audioRendererSink_ = mockSink_; // restore sink from SetUp
+    directNode_->DoProcess(); // recovery line; no input connected so RenderFrame is not called
+}

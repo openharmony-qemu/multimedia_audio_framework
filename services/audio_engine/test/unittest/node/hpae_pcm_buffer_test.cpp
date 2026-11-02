@@ -328,3 +328,68 @@ HWTEST_F(HpaePcmBufferTest, positionWrapping, TestSize.Level0)
     EXPECT_EQ(buffer.GetReadPos(), 0); // (1 + 1) % 2 = 0
 }
 }
+/**
+ * @tc.name  : empty/full edge gates log first hit, sustain, then recover
+ * @tc.type  : FUNC
+ * @tc.number: EdgeLogGate_EmptyFull_Recovered_001
+ */
+HWTEST_F(HpaePcmBufferTest, edgeLogGateEmptyFullRecovered, TestSize.Level0)
+{
+    PcmBufferInfo multiInfo = CreateBufferInfo(NUM_TWO, true);
+    HpaePcmBuffer buffer(multiInfo);
+    PcmBufferInfo singleInfo = CreateBufferInfo(1);
+    HpaePcmBuffer singleBuffer(singleInfo);
+    std::vector<float> frame = CreateTestVector(5.0f);
+    std::vector<float> out(DEFAULT_FRAME_SIZE, 0.0f);
+
+    // vector overload: empty gate first hit + sustained, recovery on next successful read
+    EXPECT_FALSE(buffer.GetFrameData(out)); // first hit
+    EXPECT_FALSE(buffer.GetFrameData(out)); // sustained
+    EXPECT_TRUE(buffer.PushFrameData(frame));
+    EXPECT_TRUE(buffer.GetFrameData(out)); // recovery line
+    EXPECT_FLOAT_EQ(out[0], 5.0f);
+
+    // vector overload: full gate first hit + sustained, recovery after drain
+    EXPECT_TRUE(buffer.PushFrameData(frame));
+    EXPECT_FALSE(buffer.PushFrameData(frame)); // first hit
+    EXPECT_FALSE(buffer.PushFrameData(frame)); // sustained
+    EXPECT_TRUE(buffer.GetFrameData(out)); // drain one frame
+    EXPECT_TRUE(buffer.PushFrameData(frame)); // recovery line
+
+    // HpaePcmBuffer overload: empty gate then recovery
+    EXPECT_TRUE(buffer.GetFrameData(singleBuffer)); // drain to empty again
+    EXPECT_FALSE(buffer.GetFrameData(singleBuffer)); // first hit
+    EXPECT_FALSE(buffer.GetFrameData(singleBuffer)); // sustained
+    EXPECT_TRUE(buffer.PushFrameData(frame));
+    EXPECT_TRUE(buffer.GetFrameData(singleBuffer)); // recovery line
+
+    // HpaePcmBuffer overload: full gate then recovery
+    EXPECT_TRUE(buffer.PushFrameData(frame));
+    EXPECT_FALSE(buffer.PushFrameData(singleBuffer)); // first hit
+    EXPECT_FALSE(buffer.PushFrameData(singleBuffer)); // sustained
+    EXPECT_TRUE(buffer.GetFrameData(singleBuffer)); // drain
+    EXPECT_TRUE(buffer.PushFrameData(singleBuffer)); // recovery line
+}
+
+/**
+ * @tc.name  : AudioEdgeLogGate first/heartbeat/reset sequence
+ * @tc.type  : FUNC
+ * @tc.number: AudioEdgeLogGate_Sequence_001
+ */
+HWTEST_F(HpaePcmBufferTest, audioEdgeLogGateSequence, TestSize.Level0)
+{
+    AudioEdgeLogGate gate(NUM_THREE); // heartbeat every 3 hits
+    EXPECT_FALSE(gate.IsActive());
+    EXPECT_TRUE(gate.ShouldLog()); // first hit activates
+    EXPECT_TRUE(gate.IsActive());
+    EXPECT_FALSE(gate.ShouldLog()); // hit 2
+    EXPECT_TRUE(gate.ShouldLog()); // hit 3: heartbeat
+    EXPECT_FALSE(gate.ShouldLog()); // hit 4
+    EXPECT_FALSE(gate.ShouldLog()); // hit 5
+    EXPECT_TRUE(gate.ShouldLog()); // hit 6: heartbeat
+    EXPECT_EQ(gate.Reset(), 6u); // total hits since activation
+    EXPECT_FALSE(gate.IsActive());
+    EXPECT_TRUE(gate.ShouldLog()); // re-activates after reset
+    EXPECT_EQ(gate.Reset(), 1u);
+    EXPECT_FALSE(gate.IsActive());
+}

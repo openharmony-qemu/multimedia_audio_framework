@@ -2730,6 +2730,32 @@ HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_PcmOffloadStopReleasePro
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+/**
+ * @tc.name  : testSignalProcess_EmptySustainedThenRecover_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderEffectNodeTest_EdgeLog_001
+ * @tc.desc  : Empty inputs hit the edge gate twice, then a valid frame recovers
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, testSignalProcess_EdgeLog_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    std::vector<HpaePcmBuffer *> emptyInputs;
+    EXPECT_EQ(hpaeRenderEffectNode->SignalProcess(emptyInputs), nullptr); // first gate hit
+    EXPECT_EQ(hpaeRenderEffectNode->SignalProcess(emptyInputs), nullptr); // sustained hit
+
+    PcmBufferInfo pcmBufferInfo(MONO, TEST_FRAMELEN1, SAMPLE_RATE_44100);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    std::vector<HpaePcmBuffer *> inputs = {&hpaePcmBuffer};
+    hpaeRenderEffectNode->SignalProcess(inputs); // recovery line
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -1005,3 +1005,29 @@ HWTEST_F(HpaeGainNodeTest, HasPendingFade_CoversAllFadeLifecycleStates, TestSize
     EXPECT_EQ(hpaeGainNode->HasPendingFade(), false);
 }
 }  // namespace
+
+/**
+ * @tc.name  : SignalProcess empty inputs hit edge gate then recover
+ * @tc.type  : FUNC
+ * @tc.number: HpaeGainNodeTest_EdgeLog_001
+ */
+HWTEST_F(HpaeGainNodeTest, signalProcessEmptyInputsEdgeLog, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    std::vector<HpaePcmBuffer *> emptyInputs = {};
+    EXPECT_EQ(hpaeGainNode->SignalProcess(emptyInputs), nullptr); // first gate hit
+    EXPECT_EQ(hpaeGainNode->SignalProcess(emptyInputs), nullptr); // sustained hit
+
+    PcmBufferInfo bufInfo(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer inputBuf(bufInfo);
+    std::vector<HpaePcmBuffer *> inputs = {&inputBuf};
+    EXPECT_NE(hpaeGainNode->SignalProcess(inputs), nullptr); // recovery line
+}

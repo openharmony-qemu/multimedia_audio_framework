@@ -329,3 +329,41 @@ HWTEST_F(HpaeCoBufferNodeUnitTest, ProcessOutputFrameInner_DequeueFailure_001, T
 }
 }
 }
+/**
+ * @tc.name  : Test Process edge log gates (enqueue stop / insufficient recover)
+ * @tc.type  : FUNC
+ * @tc.number: Process_EdgeLog_002
+ * @tc.desc  : Enqueue-stop and insufficient states hit their edge gates twice then recover
+ */
+HWTEST_F(HpaeCoBufferNodeUnitTest, Process_EdgeLog_002, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    coBufferNode->SetLatency(TEST_LATENCY_MS);
+    coBufferNode->SetNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeSinkOutputNode> sinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    sinkOutputNode->Connect(coBufferNode);
+    std::string deviceClass = "file_io";
+    std::string deviceNetId = "LocalDevice";
+    EXPECT_EQ(sinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
+
+    // enqueue stopped while output cluster connected: first hit + sustained, resume recovers
+    coBufferNode->isOutputClusterConnected_ = true;
+    sinkOutputNode->DoProcess(); // first gate hit
+    sinkOutputNode->DoProcess(); // sustained hit
+    coBufferNode->enqueueRunning_ = true;
+    sinkOutputNode->DoProcess(); // recovery line: enqueue resumed
+
+    // insufficient data: first hit + sustained, enqueue data to recover
+    coBufferNode->ringCache_->ResetBuffer();
+    coBufferNode->isOutputClusterConnected_ = false;
+    coBufferNode->ProcessOutputFrameInner(); // first insufficient hit
+    coBufferNode->ProcessOutputFrameInner(); // sustained hit
+    PcmBufferInfo pcmBufferInfo;
+    pcmBufferInfo.ch = STEREO;
+    pcmBufferInfo.frameLen = TEST_FRAME_LEN;
+    HpaePcmBuffer pcmBuffer(pcmBufferInfo);
+    coBufferNode->Enqueue(&pcmBuffer);
+    coBufferNode->ProcessOutputFrameInner(); // recovery line: data available
+    EXPECT_EQ(coBufferNode->ResetAll(), true);
+}

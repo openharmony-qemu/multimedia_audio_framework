@@ -1164,3 +1164,23 @@ HWTEST_F(HpaeSinkInputNodeTest, SetStreamSilentMode_001, TestSize.Level0)
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
+/**
+ * @tc.name  : readToAudioBuffer offload-disabled hits edge gate first and sustained
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSinkInputNodeTest_EdgeLog_001
+ */
+HWTEST_F(HpaeSinkInputNodeTest, testReadToAudioBufferEdgeLog, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = NORMAL_ID;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.deviceClass = "offload";
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    sinkInputNode->offloadEnable_ = false;
+    int32_t ret = 0;
+    sinkInputNode->ReadToAudioBuffer(ret); // first gate hit
+    sinkInputNode->ReadToAudioBuffer(ret); // sustained hit
+}

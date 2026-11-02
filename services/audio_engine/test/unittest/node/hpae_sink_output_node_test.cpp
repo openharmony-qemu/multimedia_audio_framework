@@ -3021,3 +3021,21 @@ HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_EmptyMacAddress, TestSize
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
+/**
+ * @tc.name  : doProcess sink-null hits edge gate then recovers on sink ready
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSinkOutputNodeTest_EdgeLog_001
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, doProcessSinkNullEdgeLog, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.sessionId = 10001;
+    std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    hpaeSinkOutputNode->DoProcess(); // first gate hit: sink not created yet
+    hpaeSinkOutputNode->DoProcess(); // sustained hit
+    std::string deviceClass = "file_io";
+    std::string deviceNetId = "LocalDevice";
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
+    hpaeSinkOutputNode->DoProcess(); // recovery line: sink ready, no input connected yet
+}

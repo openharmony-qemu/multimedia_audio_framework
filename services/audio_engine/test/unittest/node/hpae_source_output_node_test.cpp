@@ -1078,3 +1078,44 @@ HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_voiceDownlink_001, TestSize.
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
+
+/**
+ * @tc.name  : doProcess edge gates: downlink active + missing read callback
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSourceOutputNodeTest_EdgeLog_001
+ * @tc.desc  : Downlink branch and null readCallback hit their edge gates, register recovers
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, doProcessEdgeLogDownlinkAndNoCallback, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC;
+    nodeInfo.sourceType = SOURCE_TYPE_VOICE_DOWNLINK;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSoruceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    std::string deviceClass = "file_io";
+    std::string deviceNetId = "LocalDevice";
+    std::string sourceName = "mic";
+    EXPECT_EQ(hpaeSoruceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId,
+        SOURCE_TYPE_VOICE_DOWNLINK, sourceName), 0);
+    IAudioSourceAttr attr;
+    GetTestAudioSourceAttr(attr);
+    std::shared_ptr<HpaeSourceOutputNode> hpaeSoruceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
+    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceInit(attr), SUCCESS);
+    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStart(), 0);
+    hpaeSoruceOutputNode->Connect(hpaeSoruceInputNode);
+
+    // no read callback: null gate first hit + sustained; register then recovers
+    hpaeSoruceOutputNode->DoProcess(); // readCb null first hit + downlink first hit
+    hpaeSoruceOutputNode->DoProcess(); // both sustained
+    std::shared_ptr<TestReadDataCb> testReadDataCb = std::make_shared<TestReadDataCb>();
+    hpaeSoruceOutputNode->RegisterReadCallback(testReadDataCb);
+    hpaeSoruceOutputNode->DoProcess(); // readCb recovery line
+
+    hpaeSoruceOutputNode->DisConnect(hpaeSoruceInputNode);
+    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStop(), 0);
+}
