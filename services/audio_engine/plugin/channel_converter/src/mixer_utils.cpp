@@ -24,6 +24,9 @@
 #include <new>
 #include "audio_engine_log.h"
 #include "securec.h"
+// C facade declarations (pulled in via mixer_utils.h too; included directly to keep
+// the dependency explicit).
+#include "pcm_mixer_c_api.h"
 // USE_ARM_NEON for the PcmLimiter NEON paths below is defined by architecture in this
 // header (also pulled in by mixer_utils.h; included directly to keep the dependency explicit).
 #include "audio_proresampler_process.h"
