@@ -2039,7 +2039,11 @@ int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCo
 void HpaeRendererManager::OnDisConnectCoBufferWaitFadeOutDone()
 {
     auto request = [this]() {
-        CHECK_AND_RETURN_LOG(defaultCoBufferNode_ != nullptr, "defaultCoBufferNode_ is nullptr");
+        // Same guard as Connect/DisConnectCoBufferNode: outputCluster_ can be null here — the
+        // request is queued and only runs after the co-buffer fadeout (hundreds of ms), while
+        // StopOuputNode/reload may already have reset it (hpae_renderer_manager.cpp:1327-1329).
+        CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (defaultCoBufferNode_ != nullptr),
+            "outputCluster or defaultCoBufferNode is nullptr");
         CHECK_AND_RETURN_LOG(defaultCoBufferNode_->IsOutputClusterConnected() == false,
             "defaultCoBufferNode_ is connect, dont allow disconnect");
         outputCluster_->DisConnect(defaultCoBufferNode_);
