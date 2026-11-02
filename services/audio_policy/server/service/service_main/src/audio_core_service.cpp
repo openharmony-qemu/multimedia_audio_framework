@@ -644,21 +644,6 @@ bool AudioCoreService::GetMicRefFeatureEnable()
     return isMicRefFeatureEnable_;
 }
 
-bool AudioCoreService::GetSupportReload(const std::string &networkId)
-{
-    std::lock_guard<std::mutex> lock(isSupportReloadMutex_);
-    auto it = isSupportReloadMap_.find(networkId);
-    return it != isSupportReloadMap_.end() ? it->second : true;
-}
-
-void AudioCoreService::RemoveSupportReload(const std::string &networkId)
-{
-    std::lock_guard<std::mutex> lock(isSupportReloadMutex_);
-    isSupportReloadMap_.erase(networkId);
-    AUDIO_INFO_LOG("networkId [%{public}s], map size %{public}zu", GetEncryptStr(networkId).c_str(),
-        isSupportReloadMap_.size());
-}
-
 uint64_t AudioCoreService::GetOpenedNormalSourceSessionId()
 {
     return sessionIdUsedToOpenSource_;

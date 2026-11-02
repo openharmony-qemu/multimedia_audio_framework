@@ -564,8 +564,6 @@ public:
     int32_t GetActiveStreamRendererInfosForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         std::vector<AudioRendererInfo> &rendererInfos);
-    bool GetSupportReload(const std::string &networkId);
-    void RemoveSupportReload(const std::string &networkId);
 
 private:
     void UpdateEnhanceEffectState(SourceType source);
@@ -979,8 +977,6 @@ private:
 
     bool hearingAidCallFlag_ = false;
     bool hearingAidReloadFlag_ = false;
-    std::map<std::string, bool> isSupportReloadMap_;
-    std::mutex isSupportReloadMutex_;
     bool callTransferCreated_ = false;
     std::shared_ptr<HPAE::IHpaeSoftLink> softLink_ = nullptr;
 

@@ -960,16 +960,20 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::FindConnectedDeviceById(co
     return it == connectedDevices_.cend() ? nullptr : *it;
 }
 
-shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetRemoteDeviceByNetworkId(const std::string &networkId,
-    DeviceType deviceType, DeviceRole deviceRole)
+bool AudioDeviceManager::SetSupportReload(const std::string &networkId, DeviceType deviceType,
+    DeviceRole deviceRole, bool isSupportReload)
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     auto it = std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(),
-        [&networkId, &deviceType, &deviceRole](auto &desc) {
+        [&networkId, &deviceType, &deviceRole] (auto &desc) {
             return desc != nullptr && desc->networkId_ == networkId && desc->deviceType_ == deviceType &&
                 desc->deviceRole_ == deviceRole;
         });
-    return it == connectedDevices_.cend() ? nullptr : *it;
+    CHECK_AND_RETURN_RET(it != connectedDevices_.cend(), false);
+    (*it)->isSupportReload_ = isSupportReload;
+    AUDIO_INFO_LOG("set audio device, isSupportReload: %{public}d, networkId [%{public}s]", isSupportReload,
+        GetEncryptStr(networkId).c_str());
+    return true;
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetActiveScoDevice(std::string scoMac, DeviceRole role)

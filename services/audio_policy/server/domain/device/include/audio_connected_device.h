@@ -60,6 +60,8 @@ public:
         std::string macAddress);
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         DeviceRole deviceRole);
+    bool SetSupportReload(const std::string &networkId, DeviceType deviceType, DeviceRole deviceRole,
+        bool isSupportReload);
     void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType);
