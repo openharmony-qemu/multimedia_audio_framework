@@ -427,19 +427,23 @@ void HpaeSoftLink::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "stream already released");
     CHECK_AND_RETURN_LOG(streamIndex == rendererStreamInfo_.sessionId || streamIndex == capturerStreamInfo_.sessionId,
         "invalid streamIndex");
+    // streamStateMap_ is written here on the engine worker thread and read by Start() on the
+    // caller thread after callbackCV_ wakes up; both sides must hold callbackMutex_.
+    // Never take stateMutex_ here: Start() holds it across callbackCV_.wait_for, so this
+    // worker callback could not acquire it and the handshake would self-deadlock.
+    std::lock_guard<std::mutex> lock(callbackMutex_);
     if (operation == OPERATION_STARTED) {
         streamStateMap_[streamIndex] = HpaeSoftLinkState::RUNNING;
     } else if (operation == OPERATION_STOPPED) {
         streamStateMap_[streamIndex] = HpaeSoftLinkState::STOPPED;
         if (streamIndex == capturerStreamInfo_.sessionId) {
+            // FlushRingCache only takes AudioRingCache's internal cacheMutex_ (short critical
+            // section); the order callbackMutex_ -> cacheMutex_ is one-way, no reverse path.
             FlushRingCache();
         }
-    } else if (operation == OPERATION_RELEASED) {
-        streamStateMap_[streamIndex] = HpaeSoftLinkState::RELEASED;
     } else {
         return;
     }
-    std::lock_guard<std::mutex> lock(callbackMutex_);
     isStreamOperationFinish_ |=
         (streamIndex == rendererStreamInfo_.sessionId ? SOFTLINK_RENDERER_OPERATION : SOFTLINK_CAPTURER_OPERATION);
     callbackCV_.notify_all();
@@ -548,7 +552,8 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackCapturerStreamInfo& callbackStre
 // for test
 HpaeSoftLinkState HpaeSoftLink::GetStreamStateById(uint32_t sessionId)
 {
-    std::lock_guard<std::mutex> lock(stateMutex_);
+    // Same lock as OnStatusUpdate/Start: streamStateMap_ is guarded by callbackMutex_.
+    std::lock_guard<std::mutex> lock(callbackMutex_);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         streamStateMap_.find(sessionId) != streamStateMap_.end(), HpaeSoftLinkState::INVALID,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),

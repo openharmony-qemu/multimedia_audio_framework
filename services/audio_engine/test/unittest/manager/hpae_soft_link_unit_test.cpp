@@ -148,6 +148,9 @@ void HpaeSoftLinkForTest::OnStatusUpdate(IOperation operation, uint32_t streamIn
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "stream already released");
     CHECK_AND_RETURN_LOG(streamIndex == rendererStreamInfo_.sessionId || streamIndex == capturerStreamInfo_.sessionId,
         "invalid streamIndex");
+    // Keep the same lock scope as HpaeSoftLink::OnStatusUpdate: streamStateMap_ writes stay
+    // inside callbackMutex_ so they are serialized against Start()'s post-wakeup reads.
+    std::lock_guard<std::mutex> lock(callbackMutex_);
     if (operation == OPERATION_STARTED) {
         if ((streamIndex == rendererStreamInfo_.sessionId && !rendererFail_) ||
             (streamIndex == capturerStreamInfo_.sessionId && !capturerFail_)) {
@@ -158,13 +161,9 @@ void HpaeSoftLinkForTest::OnStatusUpdate(IOperation operation, uint32_t streamIn
         if (streamIndex == capturerStreamInfo_.sessionId) {
             FlushRingCache();
         }
-    } else if (operation == OPERATION_RELEASED) {
-        streamStateMap_[streamIndex] = HpaeSoftLinkState::RELEASED;
     } else {
         return;
     }
-
-    std::lock_guard<std::mutex> lock(callbackMutex_);
     isStreamOperationFinish_ |=
         (streamIndex == rendererStreamInfo_.sessionId ? SOFTLINK_RENDERER_OPERATION : SOFTLINK_CAPTURER_OPERATION);
     callbackCV_.notify_all();
