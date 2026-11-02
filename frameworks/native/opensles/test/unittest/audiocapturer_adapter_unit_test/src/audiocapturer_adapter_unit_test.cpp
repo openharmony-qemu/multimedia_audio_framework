@@ -56,6 +56,26 @@ HWTEST(AudioCapturerAdapterUnitTest, GetAudioCapturerById_001, TestSize.Level0)
 }
 
 /**
+* @tc.name  : Test AudioCapturerAdapter API
+* @tc.type  : FUNC
+* @tc.number: EraseAudioCapturerById_001
+* @tc.desc  : Test EraseAudioCapturerById with absent and existing entries.
+*/
+HWTEST(AudioCapturerAdapterUnitTest, EraseAudioCapturerById_001, TestSize.Level0)
+{
+    SLuint32 id = 1;
+    AudioCapturerAdapter::GetInstance()->captureMap_.clear();
+    // Erasing an absent id must be crash-free (guards only detach existing entries).
+    EXPECT_NO_FATAL_FAILURE(AudioCapturerAdapter::GetInstance()->EraseAudioCapturerById(id));
+    AppInfo appInfo = {};
+    AudioStreamType audioStreamType = STREAM_MUSIC;
+    auto audioCapturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerAdapter::GetInstance()->captureMap_[id] = audioCapturer;
+    EXPECT_NO_FATAL_FAILURE(AudioCapturerAdapter::GetInstance()->EraseAudioCapturerById(id));
+    EXPECT_EQ(AudioCapturerAdapter::GetInstance()->captureMap_.size(), 0);
+}
+
+/**
 * @tc.name  : Test AudioCapturerAdapter APIPf
 * @tc.number: SlToOhosSampelFormat_001
 * @tc.desc  : Test SlToOhosSampelFormat interface.

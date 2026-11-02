@@ -23,6 +23,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static std::string g_rootPath = "/data/";
+// Offset that yields a session id owned by neither the renderer nor the capturer stream.
+static constexpr uint32_t SESSION_ID_TEST_OFFSET = 100;
 class HpaeSoftLinkTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -203,6 +205,38 @@ TEST_F(HpaeSoftLinkTest, testSoftLink)
     EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::STOPPED);
 
     EXPECT_EQ(softLink_->Stop(), SUCCESS); // stop after stop
+
+    EXPECT_EQ(softLink_->Release(), SUCCESS);
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::RELEASED);
+}
+
+TEST_F(HpaeSoftLinkTest, testOnStatusUpdateGuardAndState)
+{
+    std::shared_ptr<HpaeSoftLink> softLink_ =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_EQ(softLink_->Init(), SUCCESS);
+    uint32_t rendererId = softLink_->rendererStreamInfo_.sessionId;
+    uint32_t capturerId = softLink_->capturerStreamInfo_.sessionId;
+    EXPECT_NE(rendererId, capturerId);
+
+    // RELEASED is rejected up front, before any map access.
+    EXPECT_NO_FATAL_FAILURE(softLink_->OnStatusUpdate(OPERATION_RELEASED, rendererId));
+    // Unknown operation falls through the else branch without touching the state map.
+    EXPECT_NO_FATAL_FAILURE(softLink_->OnStatusUpdate(OPERATION_FLUSHED, rendererId));
+    EXPECT_EQ(softLink_->GetStreamStateById(rendererId), HpaeSoftLinkState::PREPARED);
+    // Session id that belongs to neither the renderer nor the capturer stream.
+    const uint32_t unknownSessionId = rendererId + SESSION_ID_TEST_OFFSET;
+    // Unknown streamIndex is rejected.
+    EXPECT_NO_FATAL_FAILURE(softLink_->OnStatusUpdate(OPERATION_STARTED, unknownSessionId));
+    EXPECT_EQ(softLink_->GetStreamStateById(rendererId), HpaeSoftLinkState::PREPARED);
+    // STARTED/STOPPED update the map under callbackMutex_.
+    EXPECT_NO_FATAL_FAILURE(softLink_->OnStatusUpdate(OPERATION_STARTED, rendererId));
+    EXPECT_EQ(softLink_->GetStreamStateById(rendererId), HpaeSoftLinkState::RUNNING);
+    EXPECT_NO_FATAL_FAILURE(softLink_->OnStatusUpdate(OPERATION_STOPPED, capturerId));
+    EXPECT_EQ(softLink_->GetStreamStateById(capturerId), HpaeSoftLinkState::STOPPED);
+    EXPECT_EQ(softLink_->GetStreamStateById(rendererId), HpaeSoftLinkState::RUNNING);
+    // Unknown session maps to INVALID.
+    EXPECT_EQ(softLink_->GetStreamStateById(unknownSessionId), HpaeSoftLinkState::INVALID);
 
     EXPECT_EQ(softLink_->Release(), SUCCESS);
     EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::RELEASED);
