@@ -39,6 +39,11 @@ ohos_unittest("audio_router_context_test") {
 
   cflags_cc = cflags
 
+  defines = []
+  if (audio_framework_feature_wireless_default_exclude) {
+    defines += [ "WIRELESS_DEFAULT_EXCLUDE" ]
+  }
+
   sanitize = {
     cfi = true
     cfi_cross_dso = true

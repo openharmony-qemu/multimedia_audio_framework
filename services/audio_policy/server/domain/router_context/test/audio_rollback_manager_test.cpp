@@ -22,6 +22,7 @@
 #include <thread>
 #include "audio_router_context_test_base.h"
 #include "audio_rollback_manager.h"
+#include "audio_device_common.h"
 #include "audio_device_manager.h"
 #include "audio_device_descriptor.h"
 #include "audio_info.h"
@@ -59,6 +60,7 @@ public:
     std::shared_ptr<AudioDeviceSimpleDescriptor> ToSimple(
         const std::shared_ptr<AudioDeviceDescriptor> &device);
     bool ContainsSelection(const std::vector<Selection> &sels, int32_t deviceId);
+    bool ContainsConnectedSet(int32_t deviceId);
 };
 
 void AudioRollbackManagerTest::TearDown()
@@ -113,6 +115,13 @@ bool AudioRollbackManagerTest::HasVirtualSelect(int32_t deviceId)
         }
     }
     return false;
+}
+
+bool AudioRollbackManagerTest::ContainsConnectedSet(int32_t deviceId)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+    std::lock_guard<std::mutex> lg(rb.mutex_);
+    return rb.connectedSet_.find(deviceId) != rb.connectedSet_.end();
 }
 
 int32_t AudioRollbackManagerTest::VirtualSelectDeviceId(int32_t uid, SelectDeviceType type, uint32_t streamId)
@@ -1123,6 +1132,129 @@ HWTEST_F(AudioRollbackManagerTest, HandleVirtualConnected_SameDeviceIdReturnsTru
     EXPECT_EQ(VirtualSelectCount(), 1);
     EXPECT_EQ(VirtualSelectDeviceId(SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, INVALID_STREAM_ID), devId);
 }
+
+#ifdef WIRELESS_DEFAULT_EXCLUDE
+/**
+ * @tc.name  : UpdateConnectedSet_ConnectedWirelessOutput_Added
+ * @tc.type  : FUNC
+ * @tc.desc  : UpdateConnectedSet inserts connected A2DP/SCO(output)/NEARLINK devices into connectedSet_.
+ */
+HWTEST_F(AudioRollbackManagerTest, UpdateConnectedSet_ConnectedWirelessOutput_Added, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+
+    auto a2dp = CreateDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, "00:00:00:00:0D:01");
+    rb.UpdateConnectedSet(*a2dp);
+    EXPECT_TRUE(ContainsConnectedSet(a2dp->deviceId_));
+
+    auto sco = CreateDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, "00:00:00:00:0D:02");
+    rb.UpdateConnectedSet(*sco);
+    EXPECT_TRUE(ContainsConnectedSet(sco->deviceId_));
+
+    auto nearlink = CreateDeviceDescriptor(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE, "00:00:00:00:0D:03");
+    rb.UpdateConnectedSet(*nearlink);
+    EXPECT_TRUE(ContainsConnectedSet(nearlink->deviceId_));
+}
+
+/**
+ * @tc.name  : UpdateConnectedSet_NotConnected_Skipped
+ * @tc.type  : FUNC
+ * @tc.desc  : UpdateConnectedSet skips devices whose connectState is not CONNECTED.
+ */
+HWTEST_F(AudioRollbackManagerTest, UpdateConnectedSet_NotConnected_Skipped, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+
+    auto dev = CreateDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, "00:00:00:00:0D:10");
+    dev->connectState_ = VIRTUAL_CONNECTED;
+    rb.UpdateConnectedSet(*dev);
+    EXPECT_FALSE(ContainsConnectedSet(dev->deviceId_));
+
+    dev->connectState_ = SUSPEND_CONNECTED;
+    rb.UpdateConnectedSet(*dev);
+    EXPECT_FALSE(ContainsConnectedSet(dev->deviceId_));
+}
+
+/**
+ * @tc.name  : UpdateConnectedSet_Disabled_Skipped
+ * @tc.type  : FUNC
+ * @tc.desc  : UpdateConnectedSet skips devices with isEnable_ false even when connectState is CONNECTED.
+ */
+HWTEST_F(AudioRollbackManagerTest, UpdateConnectedSet_Disabled_Skipped, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+
+    auto dev = CreateDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, "00:00:00:00:0D:20");
+    dev->isEnable_ = false;
+    rb.UpdateConnectedSet(*dev);
+    EXPECT_FALSE(ContainsConnectedSet(dev->deviceId_));
+}
+
+/**
+ * @tc.name  : UpdateConnectedSet_NonWireless_Skipped
+ * @tc.type  : FUNC
+ * @tc.desc  : UpdateConnectedSet skips non-wireless output devices (e.g. speaker, wired headset).
+ */
+HWTEST_F(AudioRollbackManagerTest, UpdateConnectedSet_NonWireless_Skipped, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+
+    auto speaker = CreateDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:0D:30");
+    rb.UpdateConnectedSet(*speaker);
+    EXPECT_FALSE(ContainsConnectedSet(speaker->deviceId_));
+
+    auto wired = CreateDeviceDescriptor(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE, "00:00:00:00:0D:31");
+    rb.UpdateConnectedSet(*wired);
+    EXPECT_FALSE(ContainsConnectedSet(wired->deviceId_));
+}
+
+/**
+ * @tc.name  : UpdateConnectedSet_ScoInput_Skipped
+ * @tc.type  : FUNC
+ * @tc.desc  : UpdateConnectedSet skips SCO input devices (IsNearlinkBtOutput requires OUTPUT role for SCO).
+ */
+HWTEST_F(AudioRollbackManagerTest, UpdateConnectedSet_ScoInput_Skipped, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+
+    auto scoIn = CreateDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:0D:40");
+    rb.UpdateConnectedSet(*scoIn);
+    EXPECT_FALSE(ContainsConnectedSet(scoIn->deviceId_));
+}
+
+/**
+ * @tc.name  : UpdateConnectedSet_Idempotent
+ * @tc.type  : FUNC
+ * @tc.desc  : UpdateConnectedSet is idempotent; repeated calls with the same device do not duplicate.
+ */
+HWTEST_F(AudioRollbackManagerTest, UpdateConnectedSet_Idempotent, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+    auto dev = CreateDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, "00:00:00:00:0D:50");
+    rb.UpdateConnectedSet(*dev);
+    EXPECT_TRUE(ContainsConnectedSet(dev->deviceId_));
+    rb.UpdateConnectedSet(*dev);
+    rb.UpdateConnectedSet(*dev);
+
+    std::lock_guard<std::mutex> lg(rb.mutex_);
+    EXPECT_EQ(rb.connectedSet_.count(dev->deviceId_), 1u);
+}
+
+/**
+ * @tc.name  : NeedUpdatePreferredDevice_TriggersUpdateConnectedSet
+ * @tc.type  : FUNC
+ * @tc.desc  : NeedUpdatePreferredDevice returns false for connected wireless output devices and
+ *             triggers UpdateConnectedSet so the device id is recorded in connectedSet_.
+ */
+HWTEST_F(AudioRollbackManagerTest, NeedUpdatePreferredDevice_TriggersUpdateConnectedSet, TestSize.Level1)
+{
+    auto dev = CreateDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, "00:00:00:00:0D:60");
+    dev->connectState_ = CONNECTED;
+
+    EXPECT_FALSE(AudioDeviceCommon::GetInstance().NeedUpdatePreferredDevice(*dev));
+    EXPECT_TRUE(ContainsConnectedSet(dev->deviceId_));
+}
+#endif
 
 // ---------------------------------------------------------------------------
 // StepTimer unit tests
