@@ -34,6 +34,7 @@ add_library(entry SHARED
     timeline/Timeline_napi.cpp
     callback/RegisterCallbackNapi.cpp
     cloudRomDownload/CloudRomDownloadNapi.cpp
+    formatConversionForAutoTest/FormatConversionForAutoTest.cpp
 )
 
 target_link_libraries(entry PUBLIC libace_napi.z.so libohaudio.so libhilog_ndk.z.so libnative_media_codecbase.so libohfileuri.so libohaudiosuite.so libnative_media_avdemuxer.so libnative_media_avsource.so libnative_media_core.so)

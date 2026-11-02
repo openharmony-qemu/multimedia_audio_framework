@@ -47,6 +47,7 @@
 #include "AudioRenderer.h"
 #include "audioRecord/AudioRecord.h"
 #include "timeline/Timeline_napi.h"
+#include "formatConversionForAutoTest/FormatConversionForAutoTest.h"
 #include "cloudRomDownload/CloudRomDownloadNapi.h"
 #include <multimedia/player_framework/native_avdemuxer.h>
 #include <multimedia/player_framework/native_avsource.h>
@@ -1479,6 +1480,7 @@ static napi_value Init(napi_env env, napi_value exports)
     desc.insert(desc.end(), otherDescriptors.begin(), otherDescriptors.end());
     desc.insert(desc.end(), cloudRomDownloadDescriptors.begin(), cloudRomDownloadDescriptors.end());
     napi_define_properties(env, exports, desc.size(), desc.data());
+    FormatConversionForAutoTestRegister(env, exports);
     return exports;
 }
 

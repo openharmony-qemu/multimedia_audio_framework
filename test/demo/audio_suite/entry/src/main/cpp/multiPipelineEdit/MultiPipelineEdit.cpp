@@ -223,7 +223,7 @@ void UpdateAudioBuffers(char* firAudioData, char* secAudioData)
 
 OH_AudioSuite_Result MultiPipelineRenderFrame()
 {
-    OH_AudioSuitePipeline* threadPipeline = g_threadPipelineManager->audioSuitePipeline;
+    OH_AudioSuitePipeline *threadPipeline = g_threadPipelineManager->audioSuitePipeline;
     OH_AudioFormat threadAudioFormatOutput = g_threadPipelineManager->audioFormatOutput;
 
     OH_AudioSuite_Result result = StartPipelineAndCheckState(threadPipeline);
@@ -481,13 +481,14 @@ napi_value AudioEditNodeInitMultiPipeline(napi_env env, napi_callback_info info)
         g_engineInitedFlag = true;
         result = OH_AudioSuiteEngine_Create(&g_multiAudioSuiteEngine);
     }
-    OH_AudioSuite_PipelineWorkMode workMode;
+    OH_AudioSuite_PipelineWorkMode workMode = OH_AudioSuite_PipelineWorkMode::AUDIOSUITE_PIPELINE_EDIT_MODE;
 
     // Create Pipeline
     result = OH_AudioSuiteEngine_CreatePipeline(g_multiAudioSuiteEngine,
         &g_multiAudioSuitePipeline[g_initedPipelineNum], workMode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-                 "audioEditTest OH_AudioEditEngine_CreatePipeline result: %{public}d", static_cast<int>(result));
+                 "audioEditTest OH_AudioEditEngine_CreatePipeline result: %{public}d workmode:%{public}d",
+                 static_cast<int>(result), workMode);
     // Instantiate PipelineManager
     std::shared_ptr<NodeManager> nodeManager =
         std::make_shared<NodeManager>(g_multiAudioSuitePipeline[g_initedPipelineNum]);
