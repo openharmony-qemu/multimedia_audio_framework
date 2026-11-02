@@ -75,6 +75,9 @@ public:
     void OnConnectStateUpdate(const AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
     void OnAppDied(int32_t uid);
     void ExcludeSelection(SelectDeviceType type, const AudioDeviceDescriptor &desc);
+#ifdef WIRELESS_DEFAULT_EXCLUDE
+    void UpdateConnectedSet(const AudioDeviceDescriptor &desc);
+#endif
 
     void SetMediaInputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);

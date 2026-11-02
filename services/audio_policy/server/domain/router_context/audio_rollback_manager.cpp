@@ -345,6 +345,17 @@ void AudioRollbackManager::ExcludeSelection(SelectDeviceType type, const AudioDe
     RemoveSelection([deviceId, type](Selection &s) { return s.deviceId == deviceId && s.type == type; });
 }
 
+#ifdef WIRELESS_DEFAULT_EXCLUDE
+void AudioRollbackManager::UpdateConnectedSet(const AudioDeviceDescriptor &desc)
+{
+    if (IsConnected(desc) && IsNearlinkBtOutput(desc)) {
+        AUDIO_INFO_LOG("id=%{public}d, type=%{public}d", desc.deviceId_, desc.deviceType_);
+        std::lock_guard lg(mutex_);
+        connectedSet_.insert(desc.deviceId_);
+    }
+}
+#endif
+
 void AudioRollbackManager::OnAppDied(int32_t uid)
 {
     std::lock_guard lg(mutex_);
