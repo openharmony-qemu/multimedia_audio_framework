@@ -1586,7 +1586,7 @@ void CapturerInServer::OnPrivacyAuthorityResult(bool isAllowed)
     }
 }
  
-int32_t CapturerInServer::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice)
+int32_t CapturerInServer::ReportPlaybackCaptureUserAllowed(uint32_t sessionId, bool choice)
 {
     uint32_t curSessionId = 0;
     int32_t ret = GetSessionId(curSessionId);
@@ -1598,7 +1598,7 @@ int32_t CapturerInServer::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bo
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_QUERY_INVALID_PARAM, "illegal sessionId", false),
         "illegal sessionId ");
-    AUDIO_INFO_LOG("ReportPlaybackCaptureUserChoice choice:%{public}d", choice);
+    AUDIO_INFO_LOG("ReportPlaybackCaptureUserAllowed choice:%{public}d", choice);
     OnPrivacyAuthorityResult(choice);
     return SUCCESS;
 }

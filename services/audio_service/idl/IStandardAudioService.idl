@@ -147,7 +147,7 @@ interface IStandardAudioService {
     void SetCallbackHandleEnable([in] unsigned int callbackId, [in] boolean enable);
     void ReleaseActiveDeviceRoute([in] int deviceType, [in] int deviceFlag, [in] String networkId);
     void SetAuxiliarySinkEnable([in] boolean isEnabled);
-    void ReportPlaybackCaptureUserChoice([in] unsigned int sessionId, [in] boolean choice);
+    void ReportPlaybackCaptureUserAllowed([in] unsigned int sessionId, [in] boolean choice);
     [oneway] void ReportWakeupEvent([in] AudioWakeupTrackInfo audioWakeupTrackInfo);
     void SetAncoRecordingConfigChanged([in] List<String> bundleNameList);
     // WARNING: above functions correspond with AudioServerInterfaceCode

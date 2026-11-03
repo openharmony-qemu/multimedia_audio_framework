@@ -1467,18 +1467,18 @@ HWTEST_F(CapturerInServerSecondUnitTest, RefreshServerBufferForSpanSizeUpdate_00
 }
  
 /*
- * @tc.name  : Test ReportPlaybackCaptureUserChoice.
+ * @tc.name  : Test ReportPlaybackCaptureUserAllowed.
  * @tc.type  : FUNC
- * @tc.number: ReportPlaybackCaptureUserChoice_001
- * @tc.desc  : Test ReportPlaybackCaptureUserChoice interface.
+ * @tc.number: ReportPlaybackCaptureUserAllowed_001
+ * @tc.desc  : Test ReportPlaybackCaptureUserAllowed interface.
  */
-HWTEST_F(CapturerInServerSecondUnitTest, ReportPlaybackCaptureUserChoice_001, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, ReportPlaybackCaptureUserAllowed_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::shared_ptr<IStreamListener> iStreamListener_ = std::make_shared<ConcreteIStreamListener>();
     std::weak_ptr<IStreamListener> streamListener = iStreamListener_;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    auto result = capturerInServer_->ReportPlaybackCaptureUserChoice(1, true);
+    auto result = capturerInServer_->ReportPlaybackCaptureUserAllowed(1, true);
     capturerInServer_->OnPrivacyAuthorityResult(true);
     capturerInServer_->OnPrivacyAuthorityResult(false);
     EXPECT_NE(result, SUCCESS);
