@@ -1186,10 +1186,13 @@ HWTEST_F(AudioCoreServiceUnitTest, SelectInputDevice_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest SelectInputDevice_001 start");
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    ASSERT_NE(nullptr, audioCapturerFilter) << "audioCapturerFilter is nullptr."
     audioCapturerFilter->uid = -1;
     vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector;
-    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
-    auto inputDevice =  audioDeviceDescriptors[0];
+    auto audioDeviceDescriptors = GetServerPtr()->CoreService_->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
+    ASSERT_FALSE(audioDeviceDescriptors.empty()) << "no input device connected.";
+    auto inputDevice = audioDeviceDescriptors[0];
+    ASSERT_NE(nullptr,inputDevice) << "inputDevice is nullptr"
     inputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
     inputDevice->networkId_ = LOCAL_NETWORK_ID;
     deviceDescriptorVector.push_back(inputDevice);
