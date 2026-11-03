@@ -1009,6 +1009,16 @@ public:
     int32_t SetDuckFactor(int32_t duckFactor) const;
 
     /**
+     * @brief Start voip stream by uid
+     *
+     * @param appUid app Uid
+     * @return Returns {@link SUCCESS} if successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 26.1.0
+     */
+    int32_t StartVoipStreamByUid(const int32_t appUid);
+
+    /**
      * @brief registers the Interrupt callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
