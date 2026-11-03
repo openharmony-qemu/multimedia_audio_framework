@@ -374,6 +374,8 @@ void AudioRouterFollowStrategy::RefreshCallOutputDevice(int32_t uid, uint32_t st
     auto &routerInfra = AudioRouterInfra::GetInstance();
     bool isInCallScene = AudioSceneManager::GetInstance().IsInAudioCallScene();
     int32_t callOwnerUid = AudioSceneManager::GetInstance().GetAudioSceneOwnerUid();
+    auto systemUidCallOutput = routerInfra.GetAppSelectDevice(SelectDeviceType::CALL_OUTPUT, SYSTEM_UID);
+    bool hasSystemUidDevice = AudioRouterSelectStrategy::HasValidSelectDevice(systemUidCallOutput);
     if (uid == SYSTEM_UID) {
         if (isInCallScene) {
             routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::CALL_OUTPUT);
@@ -381,7 +383,7 @@ void AudioRouterFollowStrategy::RefreshCallOutputDevice(int32_t uid, uint32_t st
         } else {
             routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::CALL_OUTPUT);
         }
-    } else if (isInCallScene && uid == callOwnerUid) {
+    } else if (isInCallScene && uid == callOwnerUid && hasSystemUidDevice) {
         routerInfra.RefreshSelectDevice(SelectDeviceType::CALL_OUTPUT, SYSTEM_UID, simpleDesc, deviceTokenId);
     }
 
