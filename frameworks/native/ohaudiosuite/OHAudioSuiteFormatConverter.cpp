@@ -215,19 +215,17 @@ OH_AudioConverter_Result OH_AudioConverter_Create(
     CHECK_AND_RETURN_RET_LOG(ValidateConverterFormat(outputFormat),
         AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT, "Create failed: output format validation failed");
 
-    AudioFormat inputFmt;
-    inputFmt.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(inputFormat->channelLayout);
-    inputFmt.audioChannelInfo.numChannels = 0;
-    inputFmt.format = static_cast<AudioSampleFormat>(inputFormat->sampleFormat);
-    inputFmt.rate = static_cast<AudioSamplingRate>(inputFormat->samplingRate);
-    inputFmt.encodingType = static_cast<AudioStreamEncodingType>(inputFormat->encodingType);
+    AudioConverterFormat inputFmt;
+    inputFmt.channelLayout = static_cast<AudioChannelLayout>(inputFormat->channelLayout);
+    inputFmt.channelCount = 0;
+    inputFmt.sampleFormat = static_cast<AudioSampleFormat>(inputFormat->sampleFormat);
+    inputFmt.sampleRate = static_cast<int32_t>(inputFormat->samplingRate);
 
-    AudioFormat outputFmt;
-    outputFmt.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(outputFormat->channelLayout);
-    outputFmt.audioChannelInfo.numChannels = 0;
-    outputFmt.format = static_cast<AudioSampleFormat>(outputFormat->sampleFormat);
-    outputFmt.rate = static_cast<AudioSamplingRate>(outputFormat->samplingRate);
-    outputFmt.encodingType = static_cast<AudioStreamEncodingType>(outputFormat->encodingType);
+    AudioConverterFormat outputFmt;
+    outputFmt.channelLayout = static_cast<AudioChannelLayout>(outputFormat->channelLayout);
+    outputFmt.channelCount = 0;
+    outputFmt.sampleFormat = static_cast<AudioSampleFormat>(outputFormat->sampleFormat);
+    outputFmt.sampleRate = static_cast<int32_t>(outputFormat->samplingRate);
 
     AUDIO_INFO_LOG("Create: src=[%{public}u %{public}u], dst=[%{public}u %{public}u]",
         inputFormat->samplingRate, static_cast<uint32_t>(inputFormat->channelLayout),
