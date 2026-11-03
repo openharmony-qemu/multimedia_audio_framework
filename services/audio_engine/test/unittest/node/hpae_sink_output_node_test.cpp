@@ -3018,9 +3018,6 @@ HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_EmptyMacAddress, TestSize
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
 
-} // namespace HPAE
-} // namespace AudioStandard
-} // namespace OHOS
 /**
  * @tc.name  : doProcess sink-null hits edge gate then recovers on sink ready
  * @tc.type  : FUNC
@@ -3039,3 +3036,6 @@ HWTEST_F(HpaeSinkOutputNodeTest, doProcessSinkNullEdgeLog, TestSize.Level0)
     EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(HdiIdInfoParam{deviceClass, "", deviceNetId}), 0);
     hpaeSinkOutputNode->DoProcess(); // recovery line: sink ready, no input connected yet
 }
+} // namespace HPAE
+} // namespace AudioStandard
+} // namespace OHOS

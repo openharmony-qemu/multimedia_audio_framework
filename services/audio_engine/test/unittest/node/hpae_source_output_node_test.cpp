@@ -1320,9 +1320,6 @@ HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_Clamp_005, TestSize.Level1)
     }
 }
 
-} // namespace HPAE
-} // namespace AudioStandard
-} // namespace OHOS
 
 /**
  * @tc.name  : doProcess edge gates: downlink active + missing read callback
@@ -1364,3 +1361,6 @@ HWTEST_F(HpaeSourceOutputNodeTest, doProcessEdgeLogDownlinkAndNoCallback, TestSi
     hpaeSoruceOutputNode->DisConnect(hpaeSoruceInputNode);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStop(), 0);
 }
+} // namespace HPAE
+} // namespace AudioStandard
+} // namespace OHOS

@@ -1210,9 +1210,6 @@ HWTEST_F(HpaeSinkInputNodeTest, SetStreamSilentMode_001, TestSize.Level0)
     EXPECT_FALSE(node_->GetStreamSilentMode());
 }
 
-} // namespace HPAE
-} // namespace AudioStandard
-} // namespace OHOS
 /**
  * @tc.name  : readToAudioBuffer offload-disabled hits edge gate first and sustained
  * @tc.type  : FUNC
@@ -1233,3 +1230,6 @@ HWTEST_F(HpaeSinkInputNodeTest, testReadToAudioBufferEdgeLog, TestSize.Level0)
     sinkInputNode->ReadToAudioBuffer(ret); // first gate hit
     sinkInputNode->ReadToAudioBuffer(ret); // sustained hit
 }
+} // namespace HPAE
+} // namespace AudioStandard
+} // namespace OHOS

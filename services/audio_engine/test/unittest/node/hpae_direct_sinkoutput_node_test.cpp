@@ -1729,9 +1729,6 @@ HWTEST_F(HpaeDirectSinkOutputNodeTest, getRenderSinkInstance_NullSink_001, TestS
     EXPECT_EQ(ret, ERROR);
     EXPECT_EQ(node->audioRendererSink_, nullptr);
 }
-} // namespace HPAE
-} // namespace AudioStandard
-} // namespace OHOS
 
 /**
  * @tc.name  : doProcess_SinkNull_EdgeLog_002
@@ -1747,3 +1744,6 @@ HWTEST_F(HpaeDirectSinkOutputNodeTest, doProcess_SinkNull_EdgeLog_002, TestSize.
     directNode_->audioRendererSink_ = mockSink_; // restore sink from SetUp
     directNode_->DoProcess(); // recovery line; no input connected so RenderFrame is not called
 }
+} // namespace HPAE
+} // namespace AudioStandard
+} // namespace OHOS

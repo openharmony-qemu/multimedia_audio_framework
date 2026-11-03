@@ -469,9 +469,6 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, GetRenderSinkInstance_NullSinkPath_001, T
     EXPECT_EQ(node->audioRendererSink_, nullptr); // confirms the null path ran
 }
 
-}  // namespace HPAE
-}  // namespace AudioStandard
-}  // namespace OHOS
 /**
  * @tc.name  : doProcess sink-null hits edge gate first and sustained
  * @tc.type  : FUNC
@@ -492,3 +489,6 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, doProcessSinkNullEdgeLog, TestSize.Level0
     hpaeRemoteSinkOutputNode->DoProcess(); // first gate hit: sink not created yet
     hpaeRemoteSinkOutputNode->DoProcess(); // sustained hit
 }
+}  // namespace HPAE
+}  // namespace AudioStandard
+}  // namespace OHOS
