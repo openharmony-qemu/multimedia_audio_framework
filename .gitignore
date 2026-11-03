@@ -6,3 +6,10 @@ tags*
 
 out/
 build/
+
+# ODK bridge workspaces
+codespec/
+openspec/
+docs/superpowers/
+matspec/
+.matspec-cli/

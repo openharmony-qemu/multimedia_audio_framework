@@ -869,7 +869,7 @@ bool RendererInClientInner::WriteCallbackFunc()
 bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached)
 {
     speedCached = false;
-#ifdef SONIC_ENABLE
+#if defined(SONIC_ENABLE) || defined(AUDIO_SPEED_ALGO_ENABLE)
     std::lock_guard lockSpeed(speedMutex_);
     if (speedEnable_.load()) {
         Trace trace(traceTag_ + " ProcessSpeed" + std::to_string(speed_));
@@ -891,7 +891,7 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
         bufferSize = static_cast<size_t>(outBufferSize);
         speedCached = true;
     }
-#endif
+#endif // defined(SONIC_ENABLE) || defined(AUDIO_SPEED_ALGO_ENABLE)
     return true;
 }
 

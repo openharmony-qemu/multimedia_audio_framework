@@ -3274,7 +3274,7 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
-#ifdef SONIC_ENABLE
+#if defined(SONIC_ENABLE) || defined(AUDIO_SPEED_ALGO_ENABLE)
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     audioStream_->SetSpeed(speed);
 #endif
@@ -3305,7 +3305,7 @@ int32_t AudioRendererPrivate::SetSonicPitch(float pitch)
     if (callbackLoopTid_ != gettid()) {
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
-#ifdef SONIC_ENABLE
+#if defined(SONIC_ENABLE) || defined(AUDIO_SPEED_ALGO_ENABLE)
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     audioStream_->SetSonicPitch(pitch);
 #endif
@@ -3342,7 +3342,7 @@ float AudioRendererPrivate::GetSpeed()
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
     }
-#ifdef SONIC_ENABLE
+#if defined(SONIC_ENABLE) || defined(AUDIO_SPEED_ALGO_ENABLE)
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return audioStream_->GetSpeed();
 #endif

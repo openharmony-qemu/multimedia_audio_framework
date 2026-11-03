@@ -42,6 +42,10 @@ ohos_shared_library("audio_utils") {
     "../../../services/audio_service/server/include",
   ]
 
+  if (audio_speed_algo_enable == true) {
+    include_dirs += [ "../../../interfaces/inner_api/native/audio_suite_generic/include" ]
+  }
+
   sources = [
     "./src/async_action_handler.cpp",
     "./src/audio_channel_blend.cpp",
@@ -83,6 +87,11 @@ ohos_shared_library("audio_utils") {
 
   if (sonic_enable == true) {
     external_deps += [ "sonic:sonic" ]
+  }
+
+  if (audio_speed_algo_enable == true) {
+    defines += [ "AUDIO_SPEED_ALGO_ENABLE" ]
+    external_deps += [ "audio_framework:audio_suite_generic" ]
   }
 
   defines = []

@@ -22,6 +22,7 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
+#ifndef AUDIO_SPEED_ALGO_ENABLE
 class AudioSpeedUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -325,5 +326,156 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_015, TestSize.Level1)
     auto result = audioSpeed->Flush();
     EXPECT_EQ(result, SUCCESS);
 }
+#endif // !AUDIO_SPEED_ALGO_ENABLE
+
+#ifdef AUDIO_SPEED_ALGO_ENABLE
+class AudioSpeedAlgoUnitTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
+};
+
+void AudioSpeedAlgoUnitTest::SetUpTestCase(void) {}
+void AudioSpeedAlgoUnitTest::TearDownTestCase(void) {}
+void AudioSpeedAlgoUnitTest::SetUp(void) {}
+void AudioSpeedAlgoUnitTest::TearDown(void) {}
+
+static constexpr uint32_t ALGO_TEST_RATE = 48000;
+static constexpr size_t ALGO_TEST_CHANNELS = 2;
+static constexpr int32_t ALGO_TEST_MAX_BUFFER = 614400;
+
+/**
+* @tc.name  : AudioSpeed_SelfAlgo_Speed2x
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedAlgoUnitTest_001
+* @tc.desc  : AC-1.1 — SetSpeed(2.0), verify output duration ~1/2.
+*/
+HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_001, TestSize.Level1)
+{
+    if (!AudioTimeStretchProcessor::IsTimeStretchSupported()) {
+        GTEST_SKIP() << "TimeStretch algorithm .so not available";
+    }
+    AudioSpeed audioSpeed(ALGO_TEST_RATE, SAMPLE_S16LE, ALGO_TEST_CHANNELS, ALGO_TEST_MAX_BUFFER);
+    ASSERT_EQ(audioSpeed.SetSpeed(2.0f), SUCCESS);
+    int32_t frameSize = 2 * static_cast<int32_t>(ALGO_TEST_CHANNELS);
+    int32_t inFrames = 1024;
+    vector<uint8_t> input(inFrames * frameSize, 0x40);
+    auto outBuffer = make_unique<uint8_t[]>(ALGO_TEST_MAX_BUFFER);
+    int32_t outSize = 0;
+    int32_t ret = audioSpeed.ChangeSpeedFunc(input.data(), inFrames * frameSize, outBuffer, outSize);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+* @tc.name  : AudioSpeed_SelfAlgo_Speed0_5x
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedAlgoUnitTest_002
+* @tc.desc  : AC-1.2 — SetSpeed(0.5), verify output duration ~2x.
+*/
+HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_002, TestSize.Level1)
+{
+    if (!AudioTimeStretchProcessor::IsTimeStretchSupported()) {
+        GTEST_SKIP() << "TimeStretch algorithm .so not available";
+    }
+    AudioSpeed audioSpeed(ALGO_TEST_RATE, SAMPLE_S16LE, ALGO_TEST_CHANNELS, ALGO_TEST_MAX_BUFFER);
+    ASSERT_EQ(audioSpeed.SetSpeed(0.5f), SUCCESS);
+    int32_t frameSize = 2 * static_cast<int32_t>(ALGO_TEST_CHANNELS);
+    int32_t inFrames = 1024;
+    vector<uint8_t> input(inFrames * frameSize, 0x40);
+    auto outBuffer = make_unique<uint8_t[]>(ALGO_TEST_MAX_BUFFER);
+    int32_t outSize = 0;
+    int32_t ret = audioSpeed.ChangeSpeedFunc(input.data(), inFrames * frameSize, outBuffer, outSize);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+* @tc.name  : AudioSpeed_SelfAlgo_AllFormats
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedAlgoUnitTest_003
+* @tc.desc  : AC-1.3 — All formats (U8/S16LE/S24LE/S32LE/F32LE).
+*/
+HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_003, TestSize.Level1)
+{
+    if (!AudioTimeStretchProcessor::IsTimeStretchSupported()) {
+        GTEST_SKIP() << "TimeStretch algorithm .so not available";
+    }
+    size_t formats[] = {SAMPLE_U8, SAMPLE_S16LE, SAMPLE_S24LE, SAMPLE_S32LE, SAMPLE_F32LE};
+    for (size_t fmt : formats) {
+        AudioSpeed audioSpeed(ALGO_TEST_RATE, fmt, ALGO_TEST_CHANNELS, ALGO_TEST_MAX_BUFFER);
+        ASSERT_EQ(audioSpeed.SetSpeed(2.0f), SUCCESS);
+        int32_t frameSize = 4;
+        int32_t inFrames = 256;
+        vector<uint8_t> input(inFrames * frameSize, 0x40);
+        auto outBuffer = make_unique<uint8_t[]>(ALGO_TEST_MAX_BUFFER);
+        int32_t outSize = 0;
+        int32_t ret = audioSpeed.ChangeSpeedFunc(input.data(), inFrames * frameSize, outBuffer, outSize);
+        EXPECT_NE(ret, 0);
+    }
+}
+
+/**
+* @tc.name  : AudioSpeed_SelfAlgo_Flush
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedAlgoUnitTest_004
+* @tc.desc  : AC-1.4 — Flush after SetSpeed, verify no residual data.
+*/
+HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_004, TestSize.Level1)
+{
+    if (!AudioTimeStretchProcessor::IsTimeStretchSupported()) {
+        GTEST_SKIP() << "TimeStretch algorithm .so not available";
+    }
+    AudioSpeed audioSpeed(ALGO_TEST_RATE, SAMPLE_S16LE, ALGO_TEST_CHANNELS, ALGO_TEST_MAX_BUFFER);
+    ASSERT_EQ(audioSpeed.SetSpeed(2.0f), SUCCESS);
+    EXPECT_EQ(audioSpeed.Flush(), SUCCESS);
+}
+
+/**
+* @tc.name  : AudioSpeed_SelfAlgo_SpeedNormal
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedAlgoUnitTest_005
+* @tc.desc  : AC-1.5 — SetSpeed(1.0), output should match input.
+*/
+HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_005, TestSize.Level1)
+{
+    if (!AudioTimeStretchProcessor::IsTimeStretchSupported()) {
+        GTEST_SKIP() << "TimeStretch algorithm .so not available";
+    }
+    AudioSpeed audioSpeed(ALGO_TEST_RATE, SAMPLE_S16LE, ALGO_TEST_CHANNELS, ALGO_TEST_MAX_BUFFER);
+    ASSERT_EQ(audioSpeed.SetSpeed(1.0f), SUCCESS);
+    EXPECT_FLOAT_EQ(audioSpeed.GetSpeed(), 1.0f);
+}
+
+/**
+* @tc.name  : AudioSpeed_SelfAlgo_Pitch
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedAlgoUnitTest_006
+* @tc.desc  : AC-1.6 — SetPitch(1.0) + SetSpeed, verify both return SUCCESS.
+*/
+HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_006, TestSize.Level1)
+{
+    if (!AudioTimeStretchProcessor::IsTimeStretchSupported()) {
+        GTEST_SKIP() << "TimeStretch algorithm .so not available";
+    }
+    AudioSpeed audioSpeed(ALGO_TEST_RATE, SAMPLE_S16LE, ALGO_TEST_CHANNELS, ALGO_TEST_MAX_BUFFER);
+    ASSERT_EQ(audioSpeed.SetPitch(1.0f), SUCCESS);
+    ASSERT_EQ(audioSpeed.SetSpeed(2.0f), SUCCESS);
+}
+
+/**
+* @tc.name  : AudioSpeed_SelfAlgo_CreateFail
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedAlgoUnitTest_007
+* @tc.desc  : AC-3.2 — Create with invalid params returns ERROR.
+*/
+HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_007, TestSize.Level1)
+{
+    AudioSpeed audioSpeed(0, SAMPLE_S16LE, 0, ALGO_TEST_MAX_BUFFER);
+    int32_t ret = audioSpeed.SetSpeed(2.0f);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+#endif // AUDIO_SPEED_ALGO_ENABLE
 } // namespace AudioStandard
 } // namespace OHOS

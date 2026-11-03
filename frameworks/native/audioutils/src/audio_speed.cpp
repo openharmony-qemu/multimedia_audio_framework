@@ -20,7 +20,9 @@
 #include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
+#ifndef AUDIO_SPEED_ALGO_ENABLE
 #include "sonic.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,24 +40,40 @@ AudioSpeed::AudioSpeed(size_t rate, size_t format, size_t channels, int32_t maxS
 AudioSpeed::~AudioSpeed()
 {
     AUDIO_INFO_LOG("~AudioSpeed destroy");
+#ifdef AUDIO_SPEED_ALGO_ENABLE
+    processor_.reset();
+#else
     if (sonicStream_ != nullptr) {
         sonicDestroyStream(sonicStream_);
         sonicStream_ = nullptr;
         AUDIO_INFO_LOG("Sonic stream destroy");
     }
+#endif
 }
 
 int32_t AudioSpeed::Init()
 {
+#ifdef AUDIO_SPEED_ALGO_ENABLE
+    return InitAlgoPath();
+#else
     sonicStream_ = sonicCreateStream(rate_, channels_);
     CHECK_AND_RETURN_RET_LOG(sonicStream_ != nullptr, ERROR, "sonicCreateStream failed.");
     LoadChangeSpeedFunc();
 
     return SUCCESS;
+#endif
 }
 
 int32_t AudioSpeed::LoadChangeSpeedFunc()
 {
+#ifdef AUDIO_SPEED_ALGO_ENABLE
+    ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)-> int32_t {
+            return this->ChangeSpeedAlgo(buffer, bufferSize, outBuffer, outBufferSize);
+        };
+    AUDIO_INFO_LOG("load change speed algo func");
+    return SUCCESS;
+#else
     switch (format_) {
         case SAMPLE_U8:
             formatSize_ = 1; // size is 1
@@ -102,22 +120,39 @@ int32_t AudioSpeed::LoadChangeSpeedFunc()
     }
     AUDIO_INFO_LOG("load change speed func for format %{public}zu", format_);
     return SUCCESS;
+#endif
 }
 
 int32_t AudioSpeed::SetSpeed(float speed)
 {
     AUDIO_INFO_LOG("SetSpeed %{public}f", speed);
     speed_ = speed;
+#ifdef AUDIO_SPEED_ALGO_ENABLE
+    if (processor_ == nullptr) {
+        AUDIO_ERR_LOG("processor_ is nullptr");
+        return ERROR;
+    }
+    return processor_->SetSpeed(speed_);
+#else
     sonicSetSpeed(sonicStream_, speed_);
     return SUCCESS;
+#endif
 }
 
 int32_t AudioSpeed::SetPitch(float pitch)
 {
     AUDIO_INFO_LOG("SetPitch %{public}f", pitch);
+#ifdef AUDIO_SPEED_ALGO_ENABLE
+    if (processor_ == nullptr) {
+        AUDIO_ERR_LOG("processor_ is nullptr");
+        return ERROR;
+    }
+    return processor_->SetPitch(pitch);
+#else
     sonicSetPitch(sonicStream_, pitch);
     sonicSetRate(sonicStream_, 1.0f);
     return SUCCESS;
+#endif
 }
 
 float AudioSpeed::GetPitchForSpeed(float speed)
@@ -139,6 +174,7 @@ float AudioSpeed::GetSpeed()
     return speed_;
 }
 
+#ifndef AUDIO_SPEED_ALGO_ENABLE
 int32_t AudioSpeed::ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
     std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
 {
@@ -245,9 +281,60 @@ int32_t AudioSpeed::ChangeSpeedForFloat(float *buffer, int32_t bufferSize,
     outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
     return bufferSize;
 }
+#endif // !AUDIO_SPEED_ALGO_ENABLE
+
+#ifdef AUDIO_SPEED_ALGO_ENABLE
+int32_t AudioSpeed::InitAlgoPath()
+{
+    AudioSampleFormat format = static_cast<AudioSampleFormat>(format_);
+    processor_ = AudioTimeStretchProcessor::Create(
+        static_cast<uint32_t>(rate_), static_cast<uint32_t>(channels_), format);
+    CHECK_AND_RETURN_RET_LOG(processor_ != nullptr, ERROR, "AudioTimeStretchProcessor::Create failed.");
+    LoadChangeSpeedFunc();
+    return SUCCESS;
+}
+
+int32_t AudioSpeed::ChangeSpeedAlgo(uint8_t *buffer, int32_t bufferSize,
+    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
+{
+    if (processor_ == nullptr) {
+        AUDIO_ERR_LOG("processor_ is nullptr");
+        return 0;
+    }
+    int32_t outSize = 0;
+    int32_t ret = processor_->Process(buffer, bufferSize, outBuffer.get(), maxSpeedBufferSize_, outSize);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("TimeStretch Process failed: %{public}d", ret);
+        return 0;
+    }
+    outBufferSize = outSize;
+    return bufferSize;
+}
+
+int32_t AudioSpeed::FlushAlgo()
+{
+    if (processor_ == nullptr) {
+        return SUCCESS;
+    }
+    int32_t outSize = 0;
+    int32_t residualFrames = 0;
+    std::unique_ptr<uint8_t[]> tmpBuffer = std::make_unique<uint8_t[]>(maxSpeedBufferSize_);
+    do {
+        int32_t ret = processor_->Flush(tmpBuffer.get(), maxSpeedBufferSize_, outSize, residualFrames);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("TimeStretch Flush failed: %{public}d", ret);
+            break;
+        }
+    } while (residualFrames > 0);
+    return SUCCESS;
+}
+#endif // AUDIO_SPEED_ALGO_ENABLE
 
 int32_t AudioSpeed::Flush()
 {
+#ifdef AUDIO_SPEED_ALGO_ENABLE
+    return FlushAlgo();
+#else
     Trace trace("AudioSpeed::Flush");
     sonicFlushStream(sonicStream_);
     std::unique_ptr<uint8_t[]> tmpBuffer = std::make_unique<uint8_t[]>(maxSpeedBufferSize_);
@@ -280,6 +367,7 @@ int32_t AudioSpeed::Flush()
         }
     } while (samplesWritten > 0);
     return SUCCESS;
+#endif // AUDIO_SPEED_ALGO_ENABLE
 }
 } // namespace AudioStandard
 } // namespace OHOS

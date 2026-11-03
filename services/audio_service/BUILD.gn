@@ -203,6 +203,9 @@ config("audio_client_public_config") {
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
   }
+  if (audio_speed_algo_enable == true) {
+    cflags += [ "-DAUDIO_SPEED_ALGO_ENABLE" ]
+  }
   external_deps = [
     "ipc:ipc_core",
     "samgr:samgr_proxy",

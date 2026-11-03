@@ -16,11 +16,15 @@
 #define AUDIO_SPEED_H
 
 #include <cstdint>
-#include <string>
+#include <memory>
 #include "audio_info.h"
 
 struct sonicStreamStruct;
 using sonicStream = sonicStreamStruct*;
+
+#ifdef AUDIO_SPEED_ALGO_ENABLE
+#include "audio_time_stretch_process.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -64,7 +68,15 @@ private:
     AudioStreamParams streamParam_;
     size_t formatSize_ = 1;
     size_t channels_ = 2;
+#ifdef AUDIO_SPEED_ALGO_ENABLE
+    std::shared_ptr<AudioTimeStretchProcessor> processor_ = nullptr;
+    int32_t InitAlgoPath();
+    int32_t ChangeSpeedAlgo(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t FlushAlgo();
+#else
     sonicStream sonicStream_ = nullptr;
+#endif
     int32_t maxSpeedBufferSize_;
 };
 } // namespace AudioStandard
