@@ -62,6 +62,8 @@ private:
     CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
     bool effectCollabDoFadeOutState_ = false;
     bool stopRunning_ = false;
+    AudioEdgeLogGate insufficientGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate dequeueFailGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 };
 
 class HpaeRenderEffectNode : public HpaePluginNode, public HpaeTempEffectBuffer {
@@ -119,8 +121,6 @@ private:
     std::string traceName_;
     // edge-triggered gates: log first hit + 5s heartbeat while the state persists
     AudioEdgeLogGate inputsEmptyGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
-    AudioEdgeLogGate insufficientGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
-    AudioEdgeLogGate dequeueFailGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
     AudioEdgeLogGate effectFailGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 };
 
