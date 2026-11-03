@@ -900,12 +900,12 @@ int32_t AudioInterruptService::StartVoipStreamByUid(const int32_t appUid)
             }
             AUDIO_INFO_LOG("Reactivating voip stream, sessionId=%{public}d", iter->first.sessionId);
             hasRestored = true;
+            InterruptEventInternal resumeEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 1.0f};
             if (iter->second == PAUSE) {
-                InterruptEventInternal interruptEvent {INTERRUPT_TYPE_END,
-                    INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 1.0f};
-                SendInterruptEventCallback(interruptEvent, iter->first.sessionId, iter->first);
+                SendInterruptEventCallback(resumeEvent, iter->first.sessionId, iter->first);
                 iter = tmpFocusInfoList.erase(iter);
                 hasRemoved = true;
+                continue;
             } else {
                 bool tempUpdateScene = false;
                 ActivateAudioInterruptCoreProcedure(zoneId, iter->first, true, tempUpdateScene);
