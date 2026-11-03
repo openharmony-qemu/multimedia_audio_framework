@@ -58,9 +58,9 @@ HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
     dlHandle_ = dlopen(LOUDNESSGAIN_PATH.c_str(), 1);
     if (!dlHandle_) {
         AUDIO_ERR_LOG("<log error> dlopen lib %{public}s Fail", LOUDNESSGAIN_PATH.c_str());
-    } else {
-        AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", LOUDNESSGAIN_PATH.c_str());
+        return;
     }
+    AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", LOUDNESSGAIN_PATH.c_str());
     dlerror();
 
     audioEffectLibHandle_ = static_cast<AudioEffectLibrary *>(dlsym(dlHandle_,
@@ -69,6 +69,7 @@ HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
         AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s", dlerror());
         dlclose(dlHandle_);
         dlHandle_ = nullptr;
+        return;
     }
     AUDIO_INFO_LOG("<log info> dlsym lib %{public}s successful", LOUDNESSGAIN_PATH.c_str());
 
