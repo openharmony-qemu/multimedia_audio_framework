@@ -316,17 +316,56 @@ napi_value NapiAudioDeviceEnhanceManager::SelectInputDeviceForAudioCapturer(napi
 
 napi_value NapiAudioDeviceEnhanceManager::GetSoundCardInfo(napi_env env, napi_callback_info info)
 {
-#ifdef INPUT_FEATURE_INDEPENDENT_MODE
-    NapiAudioError::ThrowError(env, "GetSoundCardInfo is unavailable", NAPI_ERR_UNAVAILABLE_ON_DEVICE);
-    return NapiParamUtils::GetUndefinedValue(env);
-#else
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), NapiAudioError::ThrowErrorAndReturn(
-        env, "not system app", NAPI_ERR_PERMISSION_DENIED), "No system permission");
-
     auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("GetSoundCardInfo failed : no memory");
-        NapiAudioError::ThrowError(env, "allocate memory failed", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "GetSoundCardInfo failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    // Execute logic: get sound card info
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+
+        // Get the NAPI object
+        auto obj = reinterpret_cast<NapiAudioDeviceEnhanceManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckDeviceEnhanceManagerStatus(napiManager, context),
+            "device enhance manager state is error.");
+
+        // Call the C++ interface to get sound card info
+        context->audioManagerError = napiManager->audioDeviceEnhanceMngr_->GetSoundCardInfo(context->soundCardInfo);
+    };
+
+    // Complete logic: check error code and convert SoundCardInfo to JS object
+    auto complete = [env, context](napi_value &output) {
+        // Check the error code returned from the service side
+        if (NapiAudioError::HandleAudioManagerError(context, context->audioManagerError)) {
+            return;
+        }
+
+        // Convert SoundCardInfo to JS object
+        napi_value jsObj = nullptr;
+        napi_status status = NapiParamUtils::ConvertSoundCardInfoToJs(env, context->soundCardInfo, jsObj);
+        if (status != napi_ok) {
+            context->SignError(NAPI_ERR_SYSTEM, "Failed to convert SoundCardInfo to JS object");
+            return;
+        }
+        output = jsObj;
+    };
+
+    return NapiAsyncWork::Enqueue(env, context, "GetSoundCardInfo", executor, complete);
+}
+
+napi_value NapiAudioDeviceEnhanceManager::GetSoundCardInfoList(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetSoundCardInfoList failed : no memory");
+        NapiAudioError::ThrowError(env, "GetSoundCardInfoList failed : no memory", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -334,25 +373,32 @@ napi_value NapiAudioDeviceEnhanceManager::GetSoundCardInfo(napi_env env, napi_ca
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+
         auto obj = reinterpret_cast<NapiAudioDeviceEnhanceManager*>(context->native);
         ObjectRefMap objectGuard(obj);
         auto *napiManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckDeviceEnhanceManagerStatus(napiManager, context),
             "device enhance manager state is error.");
-        context->soundCardInfo = napiManager->audioDeviceEnhanceMngr_->GetSoundCardInfo();
+
+        // Get sound card list from service side, permission check and feature switch check are done there
+        context->audioManagerError =
+            napiManager->audioDeviceEnhanceMngr_->GetSoundCardInfoList(context->soundCardInfoList);
     };
+
     auto complete = [env, context](napi_value &output) {
-        napi_value jsObj = nullptr;
-        napi_status status = NapiParamUtils::ConvertSoundCardInfoToJs(env, context->soundCardInfo, jsObj);
-        if (status != napi_ok) {
-            NapiAudioError::ThrowError(env, "Fail to convert SoundCardInfo to Js object", NAPI_ERR_SYSTEM);
-            output = NapiParamUtils::GetUndefinedValue(env);
+        // Check the error code returned from the service side
+        if (NapiAudioError::HandleAudioManagerError(context, context->audioManagerError)) {
             return;
         }
-        output = jsObj;
+
+        napi_status status = NapiParamUtils::ConvertSoundCardInfoListToJs(env, context->soundCardInfoList, output);
+        if (status != napi_ok) {
+            context->SignError(NAPI_ERR_SYSTEM, "Failed to convert SoundCardInfoList to JS array");
+            return;
+        }
     };
-    return NapiAsyncWork::Enqueue(env, context, "GetSoundCardInfo", executor, complete);
-#endif
+
+    return NapiAsyncWork::Enqueue(env, context, "GetSoundCardInfoList", executor, complete);
 }
 
 napi_value NapiAudioDeviceEnhanceManager::Init(napi_env env, napi_value exports)
@@ -367,6 +413,7 @@ napi_value NapiAudioDeviceEnhanceManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("selectOutputDeviceForAudioRenderer", SelectOutputDeviceForAudioRenderer),
         DECLARE_NAPI_FUNCTION("selectInputDeviceForAudioCapturer", SelectInputDeviceForAudioCapturer),
         DECLARE_NAPI_FUNCTION("getSoundCardInfo", GetSoundCardInfo),
+        DECLARE_NAPI_FUNCTION("getSoundCardInfoList", GetSoundCardInfoList),
     };
 
     napi_value constructor = nullptr;

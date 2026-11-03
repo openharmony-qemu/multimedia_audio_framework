@@ -16,6 +16,7 @@
 #define NAPI_AUDIO_ERROR_H
 
 #include <map>
+#include <memory>
 #include <string>
 #include "napi/native_api.h"
 #include "napi/native_common.h"
@@ -24,6 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+struct ContextBase;
 
 constexpr int32_t NAPI_ERROR_INVALID_PARAM = 6800101;
 constexpr int32_t NAPI_ERR_NO_PERMISSION = 201;
@@ -50,6 +52,7 @@ public:
     static napi_value ThrowErrorAndReturnDoNotUse(napi_env env, int32_t errCode, const std::string &errMessage);
     static napi_value ThrowErrorAndReturn(napi_env env, const char *napiMessage, int32_t napiCode);
     static std::string GetMessageByCode(int32_t &code);
+    static bool HandleAudioManagerError(std::shared_ptr<ContextBase> context, int32_t audioManagerError);
 };
 } // namespace AudioStandard
 } // namespace OHOS

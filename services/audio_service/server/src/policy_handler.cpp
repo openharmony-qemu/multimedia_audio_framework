@@ -282,5 +282,19 @@ void PolicyHandler::NotifyUpdatePersonalizedSpatializationStateResult(int32_t re
     CHECK_AND_RETURN_LOG(iPolicyProvider_ != nullptr, "iPolicyProvider_ is nullptr!");
     iPolicyProvider_->NotifyUpdatePersonalizedSpatializationStateResult(ret);
 }
+
+int32_t PolicyHandler::GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList)
+{
+#ifdef USB_ENABLE
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    int32_t ret = ERROR;
+    int32_t ipcRet = iPolicyProvider_->GetUsbSoundCardInfoList(usbSoundCardList, ret);
+    CHECK_AND_RETURN_RET_LOG(ipcRet == SUCCESS, ipcRet, "GetUsbSoundCardInfoList ipc failed: %{public}d", ipcRet);
+    return ret;
+#else
+    AUDIO_ERR_LOG("USB audio feature is not supported on this device.");
+    return ERR_NOT_SUPPORTED;
+#endif
+}
 } // namespace AudioStandard
 } // namespace OHOS

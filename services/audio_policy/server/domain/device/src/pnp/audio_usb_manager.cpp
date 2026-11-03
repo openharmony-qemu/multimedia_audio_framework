@@ -39,6 +39,8 @@ constexpr int32_t MAX_RETRY = 10;
 constexpr int32_t DELAY_MS = 10;
 constexpr int32_t MAX_RETRY_USB_DEVICE_NUM = 10;
 constexpr std::string_view DEV_DIRECTORY = "/dev";
+constexpr uint8_t USB_AUDIO_CLASS = 1;    // USB audio class
+constexpr uint8_t USB_AUDIO_SUBCLASS = 1; // USB audio control subclass
 
 static void FillSoundCard(const string &path, SoundCard &card)
 {
@@ -185,11 +187,11 @@ static UsbAddr GetUsbAddr(const string &usbBus)
     return {static_cast<uint8_t>(busNum), static_cast<uint8_t>(devAddr)};
 }
 
-static bool IsAudioDevice(USB::UsbDevice &usbDevice)
+bool AudioUsbManager::IsAudioDevice(USB::UsbDevice &usbDevice)
 {
     for (auto &usbConfig : usbDevice.GetConfigs()) {
-        for (auto &usbInterface : usbConfig.GetInterfaces()) {
-            if (usbInterface.GetClass() == 1 && usbInterface.GetSubClass() == 1) {
+        for (const auto &usbInterface : usbConfig.GetInterfaces()) {
+            if (usbInterface.GetClass() == USB_AUDIO_CLASS && usbInterface.GetSubClass() == USB_AUDIO_SUBCLASS) {
                 return true;
             }
         }
@@ -445,7 +447,7 @@ void AudioUsbManager::EventSubscriber::OnReceiveEvent(const EventFwk::CommonEven
     CHECK_AND_RETURN_LOG(devJson, "Create devJson error");
     USB::UsbDevice usbDevice(devJson);
     cJSON_Delete(devJson);
-    if (!IsAudioDevice(usbDevice)) {
+    if (!AudioUsbManager::IsAudioDevice(usbDevice)) {
         return;
     }
     UsbAudioDevice device = {

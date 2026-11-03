@@ -276,6 +276,8 @@ public:
 
     int32_t NotifyAudioPolicyReady() override;
 
+    int32_t GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList, int32_t &ret) override;
+
     int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;
     int32_t ReleaseCaptureLimit(int32_t innerCapId) override;

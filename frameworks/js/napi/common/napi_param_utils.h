@@ -240,6 +240,8 @@ public:
         const std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo, napi_value &result);
     static napi_status ConvertSoundCardInfoToJs(const napi_env &env,
         const SoundCardInfo &info, napi_value &result);
+    static napi_status ConvertSoundCardInfoListToJs(const napi_env &env,
+        const std::vector<SoundCardInfo> &infoList, napi_value &result);
 };
 } // namespace AudioStandard
 } // namespace OHOS

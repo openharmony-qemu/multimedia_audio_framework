@@ -192,6 +192,13 @@ ohos_unittest("pair_device_router_unit_test") {
     "../../../../../audio_service:audio_common",
   ]
 
+  defines = []
+ 
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
+  }
+
   if (bluetooth_part_enable == true) {
     deps +=
         [ "../../../../../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
