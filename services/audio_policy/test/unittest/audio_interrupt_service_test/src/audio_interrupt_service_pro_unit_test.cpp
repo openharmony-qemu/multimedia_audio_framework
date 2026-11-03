@@ -1327,7 +1327,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, StartVoipStreamByUid_001, TestSize.Level
     int32_t zoneId = 123;
     AudioInterrupt audioInterrupt;
     audioInterrupt.uid = appUid;
-    audioInterrupt.sessionId = 20001;
+    audioInterrupt.streamId = 20001;
     audioInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
 
     audioInterruptService->zonesMap_[zoneId] = zone;
@@ -1376,12 +1376,12 @@ HWTEST_F(AudioInterruptServiceUnitTest, StartVoipStreamByUid_002, TestSize.Level
     int32_t zoneId = 123;
     AudioInterrupt skipInterrupt;
     skipInterrupt.uid = appUid + 1;
-    skipInterrupt.sessionId = 20002;
+    skipInterrupt.streamId = 20002;
     skipInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
 
     AudioInterrupt pausedInterrupt;
     pausedInterrupt.uid = appUid;
-    pausedInterrupt.sessionId = 20003;
+    pausedInterrupt.streamId = 20003;
     pausedInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
 
     auto zone = std::make_shared<AudioInterruptZone>();
@@ -1392,7 +1392,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, StartVoipStreamByUid_002, TestSize.Level
 
     EXPECT_EQ(audioInterruptService->StartVoipStreamByUid(appUid), SUCCESS);
     EXPECT_EQ(zone->audioFocusInfoList.size(), 1);
-    EXPECT_EQ(zone->audioFocusInfoList.front().first.sessionId, skipInterrupt.sessionId);
+    EXPECT_EQ(zone->audioFocusInfoList.front().first.streamId, skipInterrupt.streamId);
 }
 } // namespace AudioStandard
 } // namespace OHOS
