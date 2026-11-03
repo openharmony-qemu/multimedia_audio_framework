@@ -327,7 +327,6 @@ HWTEST_F(HpaePcmBufferTest, positionWrapping, TestSize.Level0)
     EXPECT_EQ(buffer.GetWritePos(), 1);
     EXPECT_EQ(buffer.GetReadPos(), 0); // (1 + 1) % 2 = 0
 }
-}
 /**
  * @tc.name  : empty/full edge gates log first hit, sustain, then recover
  * @tc.type  : FUNC
@@ -392,4 +391,5 @@ HWTEST_F(HpaePcmBufferTest, audioEdgeLogGateSequence, TestSize.Level0)
     EXPECT_TRUE(gate.ShouldLog()); // re-activates after reset
     EXPECT_EQ(gate.Reset(), 1u);
     EXPECT_FALSE(gate.IsActive());
+}
 }

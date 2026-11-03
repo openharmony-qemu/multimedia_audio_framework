@@ -1004,7 +1004,6 @@ HWTEST_F(HpaeGainNodeTest, HasPendingFade_CoversAllFadeLifecycleStates, TestSize
     hpaeGainNode->collFadeOutState_ = FadeOutState::NO_FADEOUT;
     EXPECT_EQ(hpaeGainNode->HasPendingFade(), false);
 }
-}  // namespace
 
 /**
  * @tc.name  : SignalProcess empty inputs hit edge gate then recover
@@ -1031,3 +1030,4 @@ HWTEST_F(HpaeGainNodeTest, signalProcessEmptyInputsEdgeLog, TestSize.Level0)
     std::vector<HpaePcmBuffer *> inputs = {&inputBuf};
     EXPECT_NE(hpaeGainNode->SignalProcess(inputs), nullptr); // recovery line
 }
+}  // namespace

@@ -326,9 +326,6 @@ HWTEST_F(HpaeCoBufferNodeUnitTest, ProcessOutputFrameInner_DequeueFailure_001, T
     // Verify the node handled the potential failure gracefully
     EXPECT_EQ(coBufferNode->IsOutputClusterConnected(), true);
 }
-}
-}
-}
 /**
  * @tc.name  : Test Process edge log gates (enqueue stop / insufficient recover)
  * @tc.type  : FUNC
@@ -366,4 +363,7 @@ HWTEST_F(HpaeCoBufferNodeUnitTest, Process_EdgeLog_002, TestSize.Level0)
     coBufferNode->Enqueue(&pcmBuffer);
     coBufferNode->ProcessOutputFrameInner(); // recovery line: data available
     EXPECT_EQ(coBufferNode->ResetAll(), true);
+}
+}
+}
 }

@@ -414,8 +414,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, Destructor_001, TestSize.Level1)
     manager = nullptr;
     EXPECT_EQ(manager, nullptr);
 }
-}
-}
 HWTEST_F(AudioLoopbackManagerUnitTest, GetStatus_GlobalControl_EdgeLog_001, TestSize.Level1)
 {
     sptr<IRemoteObject> handlerLoopback;
@@ -437,4 +435,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, GetStatus_GlobalControl_EdgeLog_001, Test
         static_cast<int32_t>(LOOPBACK_AVAILABLE_RUNNING), 1001), SUCCESS);
     EXPECT_EQ(manager_->GetStatus(LOOPBACK_TYPE_GLOBAL_CONTROL, status, 1002), SUCCESS); // changed-value branch
     EXPECT_EQ(status, static_cast<int>(LOOPBACK_AVAILABLE_RUNNING));
+}
+}
 }
