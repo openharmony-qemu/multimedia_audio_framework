@@ -63,6 +63,9 @@ public:
     bool IsValidNetworkIdForSendEffectParam(const std::string &networkId) override;
 
     int32_t NotifyUpdatePersonalizedSpatializationStateResult(int32_t ret) override { return SUCCESS; }
+#ifdef USB_ENABLE
+    int32_t GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList) override;
+#endif
 
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
@@ -148,6 +151,13 @@ bool MockPolicyProvider::IsValidNetworkIdForSendEffectParam(const std::string &n
 {
     return false;
 }
+
+#ifdef USB_ENABLE
+int32_t MockPolicyProvider::GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList)
+{
+    return SUCCESS;
+}
+#endif
 
 class PolicyProviderStubUnitTest : public ::testing::Test {
 public:
