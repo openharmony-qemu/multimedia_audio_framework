@@ -282,6 +282,8 @@ public:
 
     int32_t SetDuckFactor(int32_t duckFactor);
 
+    int32_t StartVoipStreamByUid(const int32_t appUid);
+
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);
