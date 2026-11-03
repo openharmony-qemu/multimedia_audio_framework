@@ -1113,6 +1113,18 @@ void AudioPolicyUtils::FilterDevicesByTokenId(
         audioDeviceDescriptors.end());
 }
 
+void AudioPolicyUtils::FilterSystemDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    audioDeviceDescriptors.erase(
+        std::remove_if(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(),
+            [](const auto &device) {
+                bool filter = device != nullptr && device->IsSystemVisibility();
+                return filter;
+            }),
+        audioDeviceDescriptors.end());
+}
+
 bool AudioPolicyUtils::IsDeviceMatch(const std::shared_ptr<AudioDeviceDescriptor> &desc,
     const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {

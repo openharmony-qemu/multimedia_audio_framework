@@ -1224,6 +1224,7 @@ void AudioDeviceStatus::AddDevice(const PolicyAdapterInfo &adapterInfo, const Ad
     AUDIO_INFO_LOG("add device name: '%{public}s' addr: '%{public}s'",
         deviceInfo.name_.c_str(), deviceInfo.address_.c_str());
     audioDescriptor->SetDeviceInfo(deviceInfo.name_, deviceInfo.address_);
+    audioDescriptor->deviceVisibility_ = deviceInfo.deviceVisibility_;
     std::list<DeviceStreamInfo> streamInfos = {};
     for (const auto &pipe : adapterInfo.pipeInfos) {
         CHECK_AND_CONTINUE(pipe != nullptr);

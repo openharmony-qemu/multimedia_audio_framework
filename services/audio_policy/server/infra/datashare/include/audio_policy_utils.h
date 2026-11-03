@@ -106,6 +106,7 @@ public:
     bool IsDeclaredByApp(const std::string &bundleName, DeviceType deviceType);
     bool IsSupportedDevice(const std::string &bundleName, DeviceType deviceType, bool hasSystemPermission);
     void FilterDevicesByTokenId(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    void FilterSystemDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     bool ShouldUseSystemPreferredDeviceForVolume(const std::string &bundleName);
 
     bool IsWirelessDevice(DeviceType deviceType);

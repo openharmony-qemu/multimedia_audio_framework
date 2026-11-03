@@ -26,6 +26,7 @@
 #include "audio_bundle_manager.h"
 #include "audio_active_device.h"
 #include "audio_zone_service.h"
+#include "audio_policy_utils.h"
 #include "audio_info.h"
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
@@ -902,6 +903,12 @@ void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::Inn
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         if (it->second && eventContextObj->deviceChangeAction.deviceDescriptors.size() > 0) {
             DeviceChangeAction deviceChangeAction = eventContextObj->deviceChangeAction;
+#ifdef MULTI_BUS_ENABLE
+            if (!(it->second->hasSystemPermission_)) {
+                AudioPolicyUtils::GetInstance().FilterSystemDevices(deviceChangeAction.deviceDescriptors);
+                CHECK_AND_CONTINUE(deviceChangeAction.deviceDescriptors.size() > 0);
+            }
+#endif
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().
                     UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
@@ -977,6 +984,11 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
         DeviceChangeAction deviceChangeAction = eventContextObj->deviceChangeAction;
         deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
             DeviceFilterByUsageInner(it->first.second, deviceChangeAction.deviceDescriptors);
+#ifdef MULTI_BUS_ENABLE
+        if (it->second && !(it->second->hasSystemPermission_)) {
+            AudioPolicyUtils::GetInstance().FilterSystemDevices(deviceChangeAction.deviceDescriptors);
+        }
+#endif
         if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().

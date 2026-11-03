@@ -1828,5 +1828,150 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetBackgroundMuteCallback_001, TestSiz
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+ * @tc.name  : Test VerifyUsageForAvailableDevices with MEDIA_OUTPUT_DEVICES.
+ * @tc.number: VerifyUsageForAvailableDevices_001
+ * @tc.desc  : Test AudioPolicyServer::VerifyUsageForAvailableDevices returns true for MEDIA_OUTPUT_DEVICES.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, VerifyUsageForAvailableDevices_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    EXPECT_TRUE(server->VerifyUsageForAvailableDevices(MEDIA_OUTPUT_DEVICES));
+}
+
+/**
+ * @tc.name  : Test VerifyUsageForAvailableDevices with MEDIA_INPUT_DEVICES.
+ * @tc.number: VerifyUsageForAvailableDevices_002
+ * @tc.desc  : Test AudioPolicyServer::VerifyUsageForAvailableDevices returns true for MEDIA_INPUT_DEVICES.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, VerifyUsageForAvailableDevices_002, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    EXPECT_TRUE(server->VerifyUsageForAvailableDevices(MEDIA_INPUT_DEVICES));
+}
+
+/**
+ * @tc.name  : Test VerifyUsageForAvailableDevices with ALL_MEDIA_DEVICES.
+ * @tc.number: VerifyUsageForAvailableDevices_003
+ * @tc.desc  : Test AudioPolicyServer::VerifyUsageForAvailableDevices returns true for ALL_MEDIA_DEVICES.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, VerifyUsageForAvailableDevices_003, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    EXPECT_TRUE(server->VerifyUsageForAvailableDevices(ALL_MEDIA_DEVICES));
+}
+
+/**
+ * @tc.name  : Test VerifyUsageForAvailableDevices with CALL_OUTPUT_DEVICES.
+ * @tc.number: VerifyUsageForAvailableDevices_004
+ * @tc.desc  : Test AudioPolicyServer::VerifyUsageForAvailableDevices returns true for CALL_OUTPUT_DEVICES.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, VerifyUsageForAvailableDevices_004, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    EXPECT_TRUE(server->VerifyUsageForAvailableDevices(CALL_OUTPUT_DEVICES));
+}
+
+/**
+ * @tc.name  : Test VerifyUsageForAvailableDevices with CALL_INPUT_DEVICES.
+ * @tc.number: VerifyUsageForAvailableDevices_005
+ * @tc.desc  : Test AudioPolicyServer::VerifyUsageForAvailableDevices returns true for CALL_INPUT_DEVICES.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, VerifyUsageForAvailableDevices_005, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    EXPECT_TRUE(server->VerifyUsageForAvailableDevices(CALL_INPUT_DEVICES));
+}
+
+/**
+ * @tc.name  : Test VerifyUsageForAvailableDevices with ALL_CALL_DEVICES.
+ * @tc.number: VerifyUsageForAvailableDevices_006
+ * @tc.desc  : Test AudioPolicyServer::VerifyUsageForAvailableDevices returns true for ALL_CALL_DEVICES.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, VerifyUsageForAvailableDevices_006, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    EXPECT_TRUE(server->VerifyUsageForAvailableDevices(ALL_CALL_DEVICES));
+}
+
+/**
+ * @tc.name  : Test VerifyUsageForAvailableDevices with D_ALL_DEVICES.
+ * @tc.number: VerifyUsageForAvailableDevices_007
+ * @tc.desc  : Test AudioPolicyServer::VerifyUsageForAvailableDevices returns true for D_ALL_DEVICES.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, VerifyUsageForAvailableDevices_007, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    EXPECT_TRUE(server->VerifyUsageForAvailableDevices(D_ALL_DEVICES));
+}
+
+/**
+ * @tc.name  : Test VerifyUsageForAvailableDevices with ALL_OUTPUT_DEVICES.
+ * @tc.number: VerifyUsageForAvailableDevices_008
+ * @tc.desc  : Test AudioPolicyServer::VerifyUsageForAvailableDevices returns false for ALL_OUTPUT_DEVICES.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, VerifyUsageForAvailableDevices_008, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    EXPECT_FALSE(server->VerifyUsageForAvailableDevices(ALL_OUTPUT_DEVICES));
+}
+
+/**
+ * @tc.name  : Test VerifyUsageForAvailableDevices with ALL_INPUT_DEVICES.
+ * @tc.number: VerifyUsageForAvailableDevices_009
+ * @tc.desc  : Test AudioPolicyServer::VerifyUsageForAvailableDevices returns false for ALL_INPUT_DEVICES.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, VerifyUsageForAvailableDevices_009, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    EXPECT_FALSE(server->VerifyUsageForAvailableDevices(ALL_INPUT_DEVICES));
+}
+
+/**
+ * @tc.name  : Test VerifyUsageForAvailableDevices with zero usage.
+ * @tc.number: VerifyUsageForAvailableDevices_010
+ * @tc.desc  : Test AudioPolicyServer::VerifyUsageForAvailableDevices returns false for zero usage.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, VerifyUsageForAvailableDevices_010, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioDeviceUsage zeroUsage = static_cast<AudioDeviceUsage>(0);
+    EXPECT_FALSE(server->VerifyUsageForAvailableDevices(zeroUsage));
+}
+
+/**
+ * @tc.name  : Test VerifyUsageForAvailableDevices with out-of-range usage.
+ * @tc.number: VerifyUsageForAvailableDevices_011
+ * @tc.desc  : Test AudioPolicyServer::VerifyUsageForAvailableDevices returns false for out-of-range usage.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, VerifyUsageForAvailableDevices_011, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioDeviceUsage invalidUsage = static_cast<AudioDeviceUsage>(D_ALL_DEVICES + 1);
+    EXPECT_FALSE(server->VerifyUsageForAvailableDevices(invalidUsage));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
