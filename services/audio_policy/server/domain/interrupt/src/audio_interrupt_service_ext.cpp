@@ -888,32 +888,35 @@ int32_t AudioInterruptService::StartVoipStreamByUid(const int32_t appUid)
     bool hasRestored = false;
     for (auto &[zoneId, audioInterruptZone] : zonesMap_) {
         CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
-        auto tmpFocusInfoList = audioInterruptZone->audioFocusInfoList;
-        bool hasRemoved = false;
-        for (auto iter = tmpFocusInfoList.begin(); iter != tmpFocusInfoList.end();) {
-            if (iter->first.uid != appUid ||
-                iter->second == ACTIVE ||
-                (iter->first.audioFocusType.streamType != STREAM_VOICE_COMMUNICATION &&
-                iter->first.audioFocusType.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION)) {
-                ++iter;
+        std::vector<AudioInterrupt> pausedInterrupts;
+        std::vector<AudioInterrupt> reactivateInterrupts;
+        for (const auto &[interrupt, state] : audioInterruptZone->audioFocusInfoList) {
+            if (interrupt.uid != appUid ||
+                state == ACTIVE ||
+                (interrupt.audioFocusType.streamType != STREAM_VOICE_COMMUNICATION &&
+                interrupt.audioFocusType.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION)) {
                 continue;
             }
-            AUDIO_INFO_LOG("Reactivating voip stream, sessionId=%{public}d", iter->first.sessionId);
+            AUDIO_INFO_LOG("Reactivating voip stream, streamId=%{public}u", interrupt.streamId);
             hasRestored = true;
-            InterruptEventInternal resumeEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 1.0f};
-            if (iter->second == PAUSE) {
-                SendInterruptEventCallback(resumeEvent, iter->first.sessionId, iter->first);
-                iter = tmpFocusInfoList.erase(iter);
-                hasRemoved = true;
-                continue;
+            if (state == PAUSE) {
+                pausedInterrupts.emplace_back(interrupt);
             } else {
-                bool tempUpdateScene = false;
-                ActivateAudioInterruptCoreProcedure(zoneId, iter->first, true, tempUpdateScene);
-                ++iter;
+                reactivateInterrupts.emplace_back(interrupt);
             }
         }
-        if (hasRemoved) {
-            audioInterruptZone->audioFocusInfoList = tmpFocusInfoList;
+        for (const auto &interrupt : pausedInterrupts) {
+            InterruptEventInternal interruptEvent(INTERRUPT_TYPE_END, INTERRUPT_FORCE,
+                INTERRUPT_HINT_RESUME, 1.0f);
+            SendInterruptEventCallback(interruptEvent, interrupt.streamId, interrupt);
+            audioInterruptZone->audioFocusInfoList.remove_if(
+                [&interrupt](const auto &focusInfo) {
+                    return focusInfo.first.streamId == interrupt.streamId;
+                });
+        }
+        for (const auto &interrupt : reactivateInterrupts) {
+            bool tempUpdateScene = false;
+            ActivateAudioInterruptCoreProcedure(zoneId, interrupt, true, tempUpdateScene);
         }
     }
     CHECK_AND_RETURN_RET_LOG(hasRestored, ERROR_ILLEGAL_STATE,
