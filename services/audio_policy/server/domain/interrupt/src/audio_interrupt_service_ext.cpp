@@ -880,5 +880,45 @@ void AudioInterruptService::StartPausedStreamMonitor(const int32_t zoneId,
     AUDIO_INFO_LOG("streamId %{public}u pause monitor started, duration %{public}d s",
         streamId, pauseTimeout);
 }
+
+int32_t AudioInterruptService::StartVoipStreamByUid(const int32_t appUid)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_INFO_LOG("StartVoipStreamByUid enter, appUid=%{public}d", appUid);
+    bool hasRestored = false;
+    for (auto &[zoneId, audioInterruptZone] : zonesMap_) {
+        CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
+        auto tmpFocusInfoList = audioInterruptZone->audioFocusInfoList;
+        bool hasRemoved = false;
+        for (auto iter = tmpFocusInfoList.begin(); iter != tmpFocusInfoList.end();) {
+            if (iter->first.uid != appUid ||
+                iter->second == ACTIVE ||
+                (iter->first.audioFocusType.streamType != STREAM_VOICE_COMMUNICATION &&
+                iter->first.audioFocusType.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION)) {
+                ++iter;
+                continue;
+            }
+            AUDIO_INFO_LOG("Reactivating voip stream, sessionId=%{public}d", iter->first.sessionId);
+            hasRestored = true;
+            if (iter->second == PAUSE) {
+                InterruptEventInternal interruptEvent {INTERRUPT_TYPE_END,
+                    INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 1.0f};
+                SendInterruptEventCallback(interruptEvent, iter->first.sessionId, iter->first);
+                iter = tmpFocusInfoList.erase(iter);
+                hasRemoved = true;
+            } else {
+                bool tempUpdateScene = false;
+                ActivateAudioInterruptCoreProcedure(zoneId, iter->first, true, tempUpdateScene);
+                ++iter;
+            }
+        }
+        if (hasRemoved) {
+            audioInterruptZone->audioFocusInfoList = tmpFocusInfoList;
+        }
+    }
+    CHECK_AND_RETURN_RET_LOG(hasRestored, ERROR_ILLEGAL_STATE,
+        "StartVoipStreamByUid: no voip focus restored, appUid=%{public}d", appUid);
+    return SUCCESS;
+}
 }
 } // namespace OHOS
