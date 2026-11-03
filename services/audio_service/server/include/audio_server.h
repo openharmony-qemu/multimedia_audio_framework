@@ -562,7 +562,7 @@ private:
     static std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> audioParameterKeys;
 
     pthread_t m_paDaemonThread;
-    std::shared_ptr<SoundCardInfo> cacheSoundCardInfo_;
+    std::shared_ptr<SoundCardInfo> cachedSoundCardInfo_;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::string playTaskId_ = "0"; // only use by homemusic
 
