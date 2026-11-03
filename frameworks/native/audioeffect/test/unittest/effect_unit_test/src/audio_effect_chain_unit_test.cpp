@@ -1012,5 +1012,45 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_039, TestSize.Level1)
         EXPECT_EQ(bufOut[i], 0.0f); // tail is zero-filled, no stale data
     }
 }
+namespace {
+int32_t FakeEffectCommandForParamEdge(AudioEffectHandle self, uint32_t cmdCode, AudioEffectTransInfo *cmdInfo,
+    AudioEffectTransInfo *replyInfo)
+{
+    (void)self;
+    (void)cmdCode;
+    (void)cmdInfo;
+    (void)replyInfo;
+    return 0;
+}
+} // namespace
+
+/**
+ * @tc.name  : Test AudioEffectChain param dump value edge
+ * @tc.type  : FUNC
+ * @tc.number: SetEffectParamValueEdge_001
+ * @tc.desc  : First push logs the baseline dump, identical re-push is suppressed,
+ *             a param change re-arms the dump
+ */
+HWTEST(AudioEffectChainUnitTest, SetEffectParamValueEdge_001, TestSize.Level1)
+{
+    std::string sceneType = "SCENE_MUSIC";
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+    ASSERT_NE(audioEffectChain, nullptr);
+
+    AudioEffectInterface iface = {};
+    iface.command = FakeEffectCommandForParamEdge;
+    AudioEffectInterface *ifacePtr = &iface;
+    AudioEffectHandle handle = &ifacePtr;
+    audioEffectChain->standByEffectHandles_ = std::vector<AudioEffectHandle>(1, handle);
+
+    // first push = baseline snapshot (changed branch)
+    EXPECT_EQ(audioEffectChain->UpdateEffectParam(), SUCCESS);
+    // identical re-push = suppressed (unchanged branch)
+    EXPECT_EQ(audioEffectChain->UpdateEffectParam(), SUCCESS);
+    // param change re-arms the dump (changed branch again)
+    audioEffectChain->SetFinalVolume(0.5f);
+    EXPECT_EQ(audioEffectChain->UpdateEffectParam(), SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

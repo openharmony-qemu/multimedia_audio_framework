@@ -2730,6 +2730,25 @@ HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_PcmOffloadStopReleasePro
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_no_offload_scene_returnsEarly, TestSize.Level1)
+{
+    // sinkInfo not remote_offload + bt offload disabled -> OffloadRendererCheckNotifyEffect
+    // returns false at the "no effect offload scene" branch.
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID + 210;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "spk";
+
+    EXPECT_NE(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_NE(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), 0);
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

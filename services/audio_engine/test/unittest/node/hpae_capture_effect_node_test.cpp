@@ -543,6 +543,32 @@ HWTEST_F(HpaeCaptureEffectNodeTest, FaultCode_SignalProcess_001, TestSize.Level1
     inputs.emplace_back(&ecBuffer);
     EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), hpaeCaptureEffectNode->outPcmBuffer_.get());
 }
+/*
+ * @tc.name  : Test SignalProcess mic-null log gate
+ * @tc.type  : FUNC
+ * @tc.number: FaultCode_SignalProcess_GateSequence_001
+ * @tc.desc  : processLength==0 frames hit the ERR+DFX gate once, the repeat is
+ *             suppressed (apply path unreachable while processLength stays 0)
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, FaultCode_SignalProcess_GateSequence_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode =
+        std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate);
+    hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+
+    std::vector<HpaePcmBuffer *> inputs;
+    HpaePcmBuffer ecBuffer(pcmBufferInfo);
+    ecBuffer.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_EC);
+    inputs.emplace_back(&ecBuffer);
+    // first null frame: gate first-hit (ERR + DFX once)
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), hpaeCaptureEffectNode->outPcmBuffer_.get());
+    // second null frame: suppressed by the gate
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), hpaeCaptureEffectNode->outPcmBuffer_.get());
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
