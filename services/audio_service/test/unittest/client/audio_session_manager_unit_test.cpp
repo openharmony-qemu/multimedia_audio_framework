@@ -45,7 +45,7 @@ HWTEST(AudioSessionManagerUnitTest, ActivateAudioSession_001, TestSize.Level1)
     strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
 
     int32_t result = AudioSessionManager::GetInstance()->ActivateAudioSession(strategy);
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 
     result = AudioSessionManager::GetInstance()->SetDefaultOutputDevice(DEVICE_TYPE_INVALID);
     EXPECT_EQ(result, ERROR_INVALID_PARAM);
@@ -63,7 +63,7 @@ HWTEST(AudioSessionManagerUnitTest, ActivateAudioSession_001, TestSize.Level1)
 HWTEST(AudioSessionManagerUnitTest, UnsetAudioSessionStateChangeCallback_001, TestSize.Level1)
 {
     int32_t result = AudioSessionManager::GetInstance()->UnsetAudioSessionStateChangeCallback();
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -75,7 +75,7 @@ HWTEST(AudioSessionManagerUnitTest, UnsetAudioSessionStateChangeCallback_001, Te
 HWTEST(AudioSessionManagerUnitTest, UnsetAudioSessionCurrentDeviceChangeCallback_001, TestSize.Level1)
 {
     int32_t result = AudioSessionManager::GetInstance()->UnsetAudioSessionCurrentDeviceChangeCallback();
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
