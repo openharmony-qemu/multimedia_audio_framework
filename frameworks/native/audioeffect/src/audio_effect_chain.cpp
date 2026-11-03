@@ -223,16 +223,16 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         }
         effectParamLogInitialized_ = true;
         AUDIO_INFO_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
-        "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, spatializationSceneType: "
-        "%{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d, absVolumeState: %{public}d, "
-        "earphoneProduct: %{public}d, outdoorMode: %{public}d, superLoudnessMode: %{public}d, "
-        "systemLoadState: %{public}d, frontendAppType: %{public}d, personalizedSpatitalizationEnabled: %{public}d, "
-        "lowPowerParam: %{public}d",
-        data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
-        data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
-        data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE], data[EARPHONE_PRODUCT],
-        data[OUTDOOR_MODE], data[SUPER_LOUDNESS_MODE], data[SYSTEMLOAD_STATE_INDEX], data[FRONTEND_APP_TYPE],
-        data[PERSONALIZED_SPATIALIZATION_ENABLED], data[LOW_POWER_INDEX]);
+            "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, spatializationSceneType: "
+            "%{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d, absVolumeState: %{public}d, "
+            "earphoneProduct: %{public}d, outdoorMode: %{public}d, superLoudnessMode: %{public}d, "
+            "systemLoadState: %{public}d, frontendAppType: %{public}d, personalizedSpatitalizationEnabled: %{public}d, "
+            "lowPowerParam: %{public}d",
+            data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
+            data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
+            data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE], data[EARPHONE_PRODUCT],
+            data[OUTDOOR_MODE], data[SUPER_LOUDNESS_MODE], data[SYSTEMLOAD_STATE_INDEX], data[FRONTEND_APP_TYPE],
+            data[PERSONALIZED_SPATIALIZATION_ENABLED], data[LOW_POWER_INDEX]);
     }
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
