@@ -44,7 +44,6 @@
 #include "audio_device_parser.h"
 #ifdef USB_ENABLE
 #include "audio_device_enhance_manager.h"
-#include "audio_usb_manager.h"
 #endif
 #include "audio_state_manager.h"
 #include "audio_pnp_server.h"
