@@ -410,6 +410,11 @@ enum VisibleMode {
     SYSTEM_SERVICE_VISIBLE = 2,
 };
 
+enum DeviceVisibility {
+    PUBLIC_VISIBILITY = 0,
+    SYSTEM_VISIBILITY = 1,
+};
+
 enum VolumeControlMode {
     DEFAULT_MODE = 0,
     LOCAL_MODE = DEFAULT_MODE,

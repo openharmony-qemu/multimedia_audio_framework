@@ -338,6 +338,7 @@ void AudioDeviceDescriptor::CopyExtendedFields(const AudioDeviceDescriptor &devi
     isSupportReload_ = deviceDescriptor.isSupportReload_;
     isPriorityReduced_ = deviceDescriptor.isPriorityReduced_;
     isSupportCommunicationSharing_ = deviceDescriptor.isSupportCommunicationSharing_;
+    deviceVisibility_ = deviceDescriptor.deviceVisibility_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -883,6 +884,10 @@ bool AudioDeviceDescriptor::IsA2dpOffload() const
     return deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag_ == A2DP_OFFLOAD;
 }
 
+bool AudioDeviceDescriptor::IsSystemVisibility() const
+{
+    return deviceVisibility_ == SYSTEM_VISIBILITY;
+}
 
 bool AudioDeviceDescriptor::IsSpeakerOrEarpiece() const
 {

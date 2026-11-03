@@ -1186,5 +1186,133 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_UpdateTimestampAfterUn
     EXPECT_FALSE(desc1->isPriorityReduced_);
     EXPECT_FALSE(desc1->connectTimeStamp_ < updated->connectTimeStamp_);
 }
+
+/**
+ * @tc.name  : Test FilterSystemDevices API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_FilterSystemDevices_001
+ * @tc.desc  : Test FilterSystemDevices with empty input (no crash, stays empty)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_FilterSystemDevices_001, TestSize.Level1)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    AudioPolicyUtils::GetInstance().FilterSystemDevices(devices);
+    EXPECT_EQ(devices.size(), 0);
+}
+
+/**
+ * @tc.name  : Test FilterSystemDevices API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_FilterSystemDevices_002
+ * @tc.desc  : Test FilterSystemDevices keeps all non-system devices
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_FilterSystemDevices_002, TestSize.Level1)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    auto device1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    auto device2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    devices.push_back(device1);
+    devices.push_back(device2);
+
+    AudioPolicyUtils::GetInstance().FilterSystemDevices(devices);
+
+    EXPECT_EQ(devices.size(), 2);
+    EXPECT_FALSE(devices[0]->IsSystemVisibility());
+    EXPECT_FALSE(devices[1]->IsSystemVisibility());
+}
+
+/**
+ * @tc.name  : Test FilterSystemDevices API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_FilterSystemDevices_003
+ * @tc.desc  : Test FilterSystemDevices removes all system devices (result empty)
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_FilterSystemDevices_003, TestSize.Level1)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    auto device1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    device1->deviceVisibility_ = SYSTEM_VISIBILITY;
+    auto device2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    device2->deviceVisibility_ = SYSTEM_VISIBILITY;
+    devices.push_back(device1);
+    devices.push_back(device2);
+
+    AudioPolicyUtils::GetInstance().FilterSystemDevices(devices);
+
+    EXPECT_EQ(devices.size(), 0);
+}
+
+/**
+ * @tc.name  : Test FilterSystemDevices API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_FilterSystemDevices_004
+ * @tc.desc  : Test FilterSystemDevices keeps only non-system devices from mixed list, order preserved
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_FilterSystemDevices_004, TestSize.Level1)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    auto systemDev1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_HEADSET, OUTPUT_DEVICE);
+    systemDev1->deviceVisibility_ = SYSTEM_VISIBILITY;
+    auto normalDev1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    auto systemDev2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE);
+    systemDev2->deviceVisibility_ = SYSTEM_VISIBILITY;
+    auto normalDev2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    devices.push_back(systemDev1);
+    devices.push_back(normalDev1);
+    devices.push_back(systemDev2);
+    devices.push_back(normalDev2);
+
+    AudioPolicyUtils::GetInstance().FilterSystemDevices(devices);
+
+    EXPECT_EQ(devices.size(), 2);
+    EXPECT_EQ(devices[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(devices[1]->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+}
+
+/**
+ * @tc.name  : Test FilterSystemDevices API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_FilterSystemDevices_005
+ * @tc.desc  : Test FilterSystemDevices keeps nullptr entries and non-system, removes only system devices
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_FilterSystemDevices_005, TestSize.Level1)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    auto systemDev = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_HEADSET, OUTPUT_DEVICE);
+    systemDev->deviceVisibility_ = SYSTEM_VISIBILITY;
+    auto normalDev = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    devices.push_back(systemDev);
+    devices.push_back(nullptr);
+    devices.push_back(normalDev);
+
+    AudioPolicyUtils::GetInstance().FilterSystemDevices(devices);
+
+    EXPECT_EQ(devices.size(), 2);
+    EXPECT_EQ(devices[0], nullptr);
+    EXPECT_NE(devices[1], nullptr);
+    EXPECT_EQ(devices[1]->deviceType_, DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name  : Test FilterSystemDevices API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_FilterSystemDevices_006
+ * @tc.desc  : Test FilterSystemDevices does not modify original non-system device flags
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_FilterSystemDevices_006, TestSize.Level1)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    auto normalDev = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    auto systemDev = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    systemDev->deviceVisibility_ = SYSTEM_VISIBILITY;
+    devices.push_back(normalDev);
+    devices.push_back(systemDev);
+
+    AudioPolicyUtils::GetInstance().FilterSystemDevices(devices);
+
+    EXPECT_EQ(devices.size(), 1);
+    EXPECT_FALSE(devices[0]->IsSystemVisibility());
+    EXPECT_EQ(devices[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+}
 } // namespace AudioStandard
 } // namespace OHOS

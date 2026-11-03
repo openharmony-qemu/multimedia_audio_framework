@@ -455,6 +455,9 @@ void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode
             std::string isSimulated;
             curNode->GetProp("isSimulated", isSimulated);
             deviceInfo.isSimulated_ = isSimulated == "true";
+            std::string visibility;
+            curNode->GetProp("visibility", visibility);
+            deviceInfo.deviceVisibility_ = visibility == "system" ? SYSTEM_VISIBILITY : PUBLIC_VISIBILITY;
 
             deviceInfos.push_back(std::make_shared<AdapterDeviceInfo>(deviceInfo));
         }
