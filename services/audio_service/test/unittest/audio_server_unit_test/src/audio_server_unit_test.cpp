@@ -3521,15 +3521,15 @@ HWTEST_F(AudioServerUnitTest, AudioServerRestoreRenderSink_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test ReportPlaybackCaptureUserChoice
+ * @tc.name  : Test ReportPlaybackCaptureUserAllowed
  * @tc.type  : FUNC
- * @tc.number: ReportPlaybackCaptureUserChoice_001
- * @tc.desc  : Test ReportPlaybackCaptureUserChoice with params
+ * @tc.number: ReportPlaybackCaptureUserAllowed_001
+ * @tc.desc  : Test ReportPlaybackCaptureUserAllowed with params
  */
-HWTEST_F(AudioServerUnitTest, ReportPlaybackCaptureUserChoice_001, TestSize.Level1)
+HWTEST_F(AudioServerUnitTest, ReportPlaybackCaptureUserAllowed_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    int32_t ret = audioServer->ReportPlaybackCaptureUserChoice(1, false);
+    int32_t ret = audioServer->ReportPlaybackCaptureUserAllowed(1, false);
     EXPECT_NE(ret, 0);
 }
 

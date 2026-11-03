@@ -126,7 +126,7 @@ public:
     void RenderersCheckForAudioWorkgroup(int32_t pid);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId);
-    int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
+    int32_t ReportPlaybackCaptureUserAllowed(uint32_t sessionId, bool choice);
     void SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList);
     void NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted);
     int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo);

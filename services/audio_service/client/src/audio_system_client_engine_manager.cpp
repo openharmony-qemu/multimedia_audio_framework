@@ -172,11 +172,11 @@ int32_t AudioSystemClientEngineManager::GenerateSessionId(uint32_t &sessionId)
     return 0;
 }
 
-int32_t AudioSystemClientEngineManager::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice)
+int32_t AudioSystemClientEngineManager::ReportPlaybackCaptureUserAllowed(uint32_t sessionId, bool choice)
 {
     const sptr<IStandardAudioService> gasp = AudioServiceProxy::GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-    int32_t res = gasp->ReportPlaybackCaptureUserChoice(sessionId, choice);
+    int32_t res = gasp->ReportPlaybackCaptureUserAllowed(sessionId, choice);
     return res;
 }
 

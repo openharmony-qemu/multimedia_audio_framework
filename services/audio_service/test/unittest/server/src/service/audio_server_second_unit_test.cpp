@@ -989,16 +989,16 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerSetAuxiliarySinkEnable_001, TestS
 }
 
 /**
- * @tc.name  : Test ReportPlaybackCaptureUserChoice API
+ * @tc.name  : Test ReportPlaybackCaptureUserAllowed API
  * @tc.type  : FUNC
- * @tc.number: AudioServerReportPlaybackCaptureUserChoice_001
- * @tc.desc  : Test ReportPlaybackCaptureUserChoice interface.
+ * @tc.number: AudioServerReportPlaybackCaptureUserAllowed_001
+ * @tc.desc  : Test ReportPlaybackCaptureUserAllowed interface.
  */
-HWTEST_F(AudioServerSecondUnitTest, AudioServerReportPlaybackCaptureUserChoice_001, TestSize.Level1)
+HWTEST_F(AudioServerSecondUnitTest, AudioServerReportPlaybackCaptureUserAllowed_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    int32_t ret = audioServer->ReportPlaybackCaptureUserChoice(0, true);
+    int32_t ret = audioServer->ReportPlaybackCaptureUserAllowed(0, true);
     EXPECT_EQ(ERR_SYSTEM_PERMISSION_DENIED, ret);
 }
 

@@ -336,7 +336,7 @@ public:
     int32_t GetRemoteAudioParameter(const std::string& networkId, int32_t key,
         const std::string& condition, std::string& value) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
-    int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice) override;
+    int32_t ReportPlaybackCaptureUserAllowed(uint32_t sessionId, bool choice) override;
     int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo) override;
     int32_t SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList) override;
     int32_t NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted) override;

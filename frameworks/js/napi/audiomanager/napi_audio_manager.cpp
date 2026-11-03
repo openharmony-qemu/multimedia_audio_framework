@@ -144,8 +144,8 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("disableSafeMediaVolume", DisableSafeMediaVolume),
         DECLARE_NAPI_FUNCTION("getCollaborativeManager", GetCollaborativeManager),
         DECLARE_NAPI_FUNCTION("getRecordingManager", GetRecordingManager),
-        DECLARE_NAPI_FUNCTION("reportPlaybackCaptureUserChoice", ReportPlaybackCaptureUserChoice),
-        DECLARE_NAPI_FUNCTION("reportPlaybackCaptureUserAllowed", ReportPlaybackCaptureUserChoice),
+        DECLARE_NAPI_FUNCTION("reportPlaybackCaptureUserChoice", ReportPlaybackCaptureUserAllowed),
+        DECLARE_NAPI_FUNCTION("reportPlaybackCaptureUserAllowed", ReportPlaybackCaptureUserAllowed),
         DECLARE_NAPI_FUNCTION("getDeviceEnhanceManager", GetDeviceEnhanceManager),
         DECLARE_NAPI_FUNCTION("getDebuggingManager", GetDebuggingManager),
         DECLARE_NAPI_FUNCTION("getSuiteDownloadManager", GetSuiteDownloadManager),
@@ -1637,7 +1637,7 @@ napi_value NapiAudioManager::GetRecordingManager(napi_env env, napi_callback_inf
     return NapiAudioRecordController::CreateAudioRecordController(env, info);
 }
 
-napi_value NapiAudioManager::ReportPlaybackCaptureUserChoice(napi_env env, napi_callback_info info)
+napi_value NapiAudioManager::ReportPlaybackCaptureUserAllowed(napi_env env, napi_callback_info info)
 {
 #ifndef CROSS_PLATFORM
     size_t argc = PARAM2;
@@ -1670,13 +1670,13 @@ napi_value NapiAudioManager::ReportPlaybackCaptureUserChoice(napi_env env, napi_
     napi_get_value_uint32(env, args[0], &sessionId);
     napi_get_value_bool(env, args[1], &choice);
 
-    int32_t ret = AudioSystemClientEngineManager::GetInstance().ReportPlaybackCaptureUserChoice(sessionId, choice);
+    int32_t ret = AudioSystemClientEngineManager::GetInstance().ReportPlaybackCaptureUserAllowed(sessionId, choice);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("ReportPlaybackCaptureUserChoice failed: %{public}d", ret);
+        AUDIO_ERR_LOG("ReportPlaybackCaptureUserAllowed failed: %{public}d", ret);
         if (ret == ERR_PERMISSION_DENIED) {
             NapiAudioError::ThrowError(env, "Permission denied", NAPI_ERR_NO_PERMISSION);
         } else {
-            NapiAudioError::ThrowError(env, "ReportPlaybackCaptureUserChoice failed", NAPI_ERR_SYSTEM);
+            NapiAudioError::ThrowError(env, "ReportPlaybackCaptureUserAllowed failed", NAPI_ERR_SYSTEM);
         }
         return NapiParamUtils::GetUndefinedValue(env);
     }

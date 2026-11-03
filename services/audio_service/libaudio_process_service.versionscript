@@ -88,7 +88,7 @@
     *GetModuleInfo*;
     *SetEndpointMuteForSwitchDevice*;
     *RequestUserPrivacyAuthority*;
-    *ReportPlaybackCaptureUserChoice*;
+    *ReportPlaybackCaptureUserAllowed*;
     *ReportWakeupEvent*;
     *RegisterWakeupEventCallback*;
     *SetAncoRecordingConfigChanged*;
