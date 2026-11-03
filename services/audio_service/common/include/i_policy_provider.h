@@ -146,6 +146,10 @@ public:
     virtual int32_t GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList) = 0;
 #endif
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> f130f11d64c323dc5bb7b8e1ddcdb9ca1403c9a4
     virtual ~IPolicyProvider() = default;
 
     static bool GetVolumeIndex(AudioVolumeType streamType, DeviceGroup deviceGroup, size_t &index)
