@@ -29,6 +29,7 @@ class HpaeAudioFormatConverterNode : public HpaePluginNode {
 public:
     HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo);
     virtual ~HpaeAudioFormatConverterNode();
+    // Register once before streaming; callback is read on the process thread
     void RegisterCallback(INodeFormatInfoCallback *callback);
     void DoProcess() override;
     void ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode, HpaeNodeInfo &nodeInfo) override;
@@ -85,7 +86,7 @@ private:
     std::unique_ptr<Resampler> resampler_ = nullptr;
     ChannelConverter channelConverter_;
     HpaePcmBuffer tmpOutBuf_; // cache between resample and converter
-    // if there is render effect, the effect node decides the output format of converter node
+    // downstream target of the output format query; must outlive this node
     INodeFormatInfoCallback *nodeFormatInfoCallback_ = nullptr;
 
     // Unprocessed input accumulation buffer (interleaved float, input sample rate)

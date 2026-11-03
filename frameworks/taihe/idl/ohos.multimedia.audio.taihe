@@ -1227,6 +1227,10 @@ interface AudioRenderer {
   @gen_promise("release")
   ReleaseSync(): void;
 
+  @gen_async("standby")
+  @gen_promise("standby")
+  StandbySync(on: bool): void;
+
   @gen_async("getBufferSize")
   @gen_promise("getBufferSize")
   GetBufferSizeSync(): i64;

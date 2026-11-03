@@ -595,6 +595,8 @@ private:
 
     bool IsHigherPrioritySourceType(SourceType newSource, SourceType currentSource);
     void HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+    void HandleTrueUltraFastFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+    void HandleLegacyUltraFastFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     void UpdateAudioFlagForFastStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t GetPipeBaseDebugInfo(const std::shared_ptr<AudioPipeInfo> &pipe, AudioDebugInfo &debugInfo);
@@ -777,6 +779,9 @@ private:
         const std::string &moduleName, int32_t delayMs);
     int32_t ReleaseFastPipeInner(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
             const std::string &moduleName);
+    void DelayReloadArmPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void CancelArmReload(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    static AudioModuleInfo BuildDefaultArmModuleInfo(const AudioModuleInfo &src);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     bool HandleMuteBeforeDeviceSwitch(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
@@ -1038,6 +1043,12 @@ private:
     std::map<std::string, bool> isFastOpenedMap_;
     std::map<std::string, bool> isFastInReleaseMap_;
 
+    // Arm USB pipe delay reload to 48k
+    std::mutex armReloadMutex_;
+    std::condition_variable armReloadCondition_;
+    std::map<std::string, bool> isArmReopenedMap_;
+    std::map<std::string, bool> isArmReloadPendingMap_;
+
     // route update callback
     std::unordered_map<uint32_t, RouteUpdateCallbackInfo> routeUpdateCallback_;
     std::mutex routeUpdateCallbackMutex_;
@@ -1078,6 +1089,7 @@ private:
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     bool isSupportUltraFast_ = 0;
     bool isSupportArmUsbUltraFast_ = 0;
+    bool isSupportTrueUltraFast_ = 0;
 
     MultiConditionNotifier readyConditionNotifier_;
 };

@@ -116,16 +116,19 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
 {
     AUDIO_INFO_LOG("CreateStream sessionId %{public}u deviceName %{public}s,channel:%{public}u,rate:%{public}u",
         streamInfo.sessionId, sourceInfo_.deviceName.c_str(), streamInfo.channels, streamInfo.samplingRate);
-    // Defense-in-depth for unprocessed VA (streamInfo.channels is already the concat total): the
+    // Defense-in-depth for unprocessed VA (streamInfo.channels is the total channel count): the
     // main gate in CreateStream rejects this synchronously; kept here for direct in-process callers.
     CHECK_AND_RETURN_RET_LOG(streamInfo.sourceType != SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT ||
         static_cast<uint32_t>(streamInfo.channels) <= CHANNEL_16, ERROR,
-        "unprocessed VA concat total channels[%{public}u] exceed max 16", streamInfo.channels);
+        "unprocessed VA total channels[%{public}u] exceed max 16", streamInfo.channels);
     HpaeNodeInfo nodeInfo;
     ConfigNodeInfo(nodeInfo, streamInfo);
     HpaeProcessorType sceneType = TransSourceTypeToSceneType(streamInfo.sourceType);
     nodeInfo.sceneType = sceneType;
     nodeInfo.sourceType = sourceInfo_.sourceType;
+    nodeInfo.routeFlag = sourceInfo_.routeFlag;
+    nodeInfo.deviceType = sourceInfo_.deviceType;
+    nodeInfo.captureAdapterType = AudioTypeUtils::HalNameToType(sourceInfo_.adapterName);
     nodeInfo.micInChannels = sourceInfo_.micInChannels;
     nodeInfo.appMicInChannelCount = streamInfo.appMicInChannelCount;
     if (streamInfo.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE) {
@@ -320,7 +323,7 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
     // was created and would dereference a null map entry on rejection.
     CHECK_AND_RETURN_RET_LOG(streamInfo.sourceType != SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT ||
         static_cast<uint32_t>(streamInfo.channels) <= CHANNEL_16, ERROR,
-        "unprocessed VA concat total channels[%{public}u] exceed max 16", streamInfo.channels);
+        "unprocessed VA total channels[%{public}u] exceed max 16", streamInfo.channels);
     auto request = [this, streamInfo]() {
         int32_t ret = CreateOutputSession(streamInfo);
         // Skip state/notify when no node was created, otherwise map lookups dereference null.
@@ -1168,6 +1171,9 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
     nodeInfo.sourceType = sourceInfo_.sourceType;
+    nodeInfo.routeFlag = sourceInfo_.routeFlag;
+    nodeInfo.deviceType = sourceInfo_.deviceType;
+    nodeInfo.captureAdapterType = AudioTypeUtils::HalNameToType(sourceInfo_.adapterName);
     nodeInfo.micInChannels = sourceInfo_.micInChannels;
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;

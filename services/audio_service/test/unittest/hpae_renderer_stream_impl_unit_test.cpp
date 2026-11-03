@@ -145,6 +145,27 @@ HWTEST_F(HpaeRendererStreamUnitTest, ConvertFadeStrategyToFadeType_001, TestSize
 }
 
 /**
+ * @tc.name  : Test HasCachedHistoryData updated via OnHistoryCacheUpdate
+ * @tc.type  : FUNC
+ * @tc.number: HasCachedHistoryData_001
+ * @tc.desc  : Callback is the sole update source of the cached query state.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HasCachedHistoryData_001, TestSize.Level0)
+{
+    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl = CreateHpaeRendererStreamImpl();
+    ASSERT_NE(rendererStreamImpl, nullptr);
+
+    // Default before any callback
+    EXPECT_FALSE(rendererStreamImpl->HasCachedHistoryData());
+
+    rendererStreamImpl->OnHistoryCacheUpdate(true);
+    EXPECT_TRUE(rendererStreamImpl->HasCachedHistoryData());
+
+    rendererStreamImpl->OnHistoryCacheUpdate(false);
+    EXPECT_FALSE(rendererStreamImpl->HasCachedHistoryData());
+}
+
+/**
  * @tc.name  : Test HpaeRendererStreamImpl Construct
  * @tc.type  : FUNC
  * @tc.number: HpaeRendererStreamImplConstruct_001

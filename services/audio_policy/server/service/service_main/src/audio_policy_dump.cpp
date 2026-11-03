@@ -548,6 +548,9 @@ void AudioPolicyDump::AudioStreamDump(std::string &dumpString)
         AppendFormat(dumpString, " - streamUsage : %d\n", (*it)->rendererInfo.streamUsage);
         AppendFormat(dumpString, " - samplingRate : %d\n", (*it)->rendererInfo.samplingRate);
         AppendFormat(dumpString, " - pipeType : %d\n", (*it)->rendererInfo.pipeType);
+        AppendFormat(dumpString, " - rendererFlags : %d\n", (*it)->rendererInfo.rendererFlags);
+        AppendFormat(dumpString, " - routeFlag : %u\n", (*it)->rendererInfo.audioFlag);
+        AppendFormat(dumpString, " - ultraFastFlag : %u\n", (*it)->rendererInfo.ultraFastFlag);
         AppendFormat(dumpString, " - rendererState : %d\n", (*it)->rendererState);
         AppendFormat(dumpString, " - appVolume : %d\n", (*it)->appVolume);
     }

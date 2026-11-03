@@ -20,7 +20,6 @@
 #include "audio_suite_base.h"
 #include "audio_suite_format_conversion.h"
 #include "audio_format_converter.h"
-#include "audio_suite_raw_format_conversion.h"
 #include "audio_errors.h"
 #include <functional>
 #include <memory>
@@ -68,9 +67,7 @@ public:
     int32_t SetInputCallback(std::shared_ptr<FormatConverterDataCallback> callback) override;
     int32_t Process(void* outputData, uint32_t outputCapacity, uint32_t* outputSize) override;
 
-    AudioConvertResult SyncProcess(const uint8_t* inData, uint32_t inBytes) override;
     size_t GetDelayDataSize() override;
-
     void Destroy() override;
 
 private:
@@ -99,9 +96,6 @@ private:
     int32_t ProcessCachedOutputData(void* audioData, uint32_t outputCapacity, uint32_t &totalOutputSize);
     int32_t ProcessDataBlocks(void* audioData, uint32_t &totalOutputSize, uint32_t &remainingCapacit);
     int32_t ProcessConversion(void* audioData, uint32_t outputCapacity, uint32_t* outputSize);
-    AudioConvertResult ValidateBasicParams(const uint8_t* inData, uint32_t inBytes);
-    AudioConvertResult ValidateSampleRateParams(uint32_t inBytes);
-    AudioConvertResult ExecuteConversion(const uint8_t* inData, uint32_t inputBytes);
 
     std::mutex mutex_;
     // for callback
@@ -118,7 +112,6 @@ private:
     PcmBufferFormat inputFormat_;
     PcmBufferFormat outputFormat_;
     AudioSuiteFormatConversion formatConversion_;
-    AudioSuiteRawFormatConversion rawFormatConversion_;
     uint32_t processMinMs_ = 0;
     uint32_t processMinInBytes_ = 0;
     // input Bit depth byptes * channels

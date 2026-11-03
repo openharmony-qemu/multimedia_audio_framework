@@ -723,6 +723,26 @@ bool AudioPolicyManager::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, St
     return support;
 }
 
+bool AudioPolicyManager::IsUltraFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
+
+    bool support = false;
+    gsp->IsUltraFastPlaybackSupported(streamInfo, static_cast<int32_t>(usage), support);
+    return support;
+}
+
+bool AudioPolicyManager::IsDeviceSupportUltraFast()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
+
+    bool support = false;
+    gsp->IsDeviceSupportUltraFast(support);
+    return support;
+}
+
 bool AudioPolicyManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -731,6 +751,23 @@ bool AudioPolicyManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, S
     bool support = false;
     gsp->IsFastRecordingSupported(streamInfo, static_cast<int32_t>(source), support);
     return support;
+}
+
+bool AudioPolicyManager::IsUltraFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
+{
+    const sptr<IAudioPolicy> proxy = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(proxy != nullptr, false);
+    bool supported = false;
+    return proxy->IsUltraFastRecordingSupported(streamInfo, static_cast<int32_t>(source), supported) == SUCCESS &&
+        supported;
+}
+
+bool AudioPolicyManager::IsUltraFastRecordingPlatformSupported()
+{
+    const sptr<IAudioPolicy> proxy = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(proxy != nullptr, false);
+    bool supported = false;
+    return proxy->IsUltraFastRecordingPlatformSupported(supported) == SUCCESS && supported;
 }
 
 bool AudioPolicyManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)

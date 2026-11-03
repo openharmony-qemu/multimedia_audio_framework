@@ -41,6 +41,9 @@ public:
     virtual bool OnQueryUnderrun() { return false; };
     virtual void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos){};
     virtual void TriggerClientWake() {}
+    // History buffer cache state flip: true when rewind makes cached frames available,
+    // false when drained or flushed away
+    virtual void OnHistoryCacheUpdate(bool available) {}
 };
 
 class IRendererStream : public IStream {
@@ -92,6 +95,7 @@ public:
     }
     virtual void TriggerAppsUidUpdate() { return; }
     virtual uint32_t GetRouteFlag() const noexcept { return 0; }
+    virtual bool HasCachedHistoryData() const noexcept { return false; }
 };
 
 struct CaptureInfo {

@@ -1399,6 +1399,9 @@ void RendererInServer::UpdateStreamStatusByRendererState()
 
 int32_t RendererInServer::GetRendererFlagsByRoute(uint32_t routeFlag)
 {
+    if (routeFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+        return AUDIO_FLAG_TRUE_ULTRA_FAST;
+    }
     if (routeFlag & AUDIO_OUTPUT_FLAG_FAST) {
         if (routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
             return AUDIO_FLAG_VOIP_FAST;
@@ -1409,23 +1412,34 @@ int32_t RendererInServer::GetRendererFlagsByRoute(uint32_t routeFlag)
     return AUDIO_FLAG_NORMAL;
 }
 
+FastStatus RendererInServer::GetFastStatusFromRendererFlags(int32_t rendererFlags)
+{
+    if (rendererFlags == AUDIO_FLAG_NORMAL) {
+        return FASTSTATUS_NORMAL;
+    }
+    if (rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST) {
+        return FASTSTATUS_ULTRA_FAST;
+    }
+    return FASTSTATUS_FAST;
+}
+
 int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener)
 {
     std::lock_guard<std::mutex> lock(writeLock_);
-    AUDIO_INFO_LOG("RefreshServerBufferForSpanSizeUpdate begin, sessionId:%{public}u oldSpan:%{public}zu",
-        streamIndex_, spanSizeInFrame_);
     
     size_t newSpanSizeInFrame = 0;
     stream_->GetSpanSizePerFrame(newSpanSizeInFrame);
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
-    AUDIO_INFO_LOG("New spanSize from stream: %{public}zu", newSpanSizeInFrame);
+    AUDIO_INFO_LOG("New spanSize from stream: %{public}zu, sessionId:%{public}u oldSpan:%{public}zu",
+        newSpanSizeInFrame, streamIndex_, spanSizeInFrame_);
     
     uint32_t newRouteFlag = stream_->GetRouteFlag();
     int32_t rendererFlags = GetRendererFlagsByRoute(newRouteFlag);
 
     size_t newEngineSizeInFrame = newSpanSizeInFrame;
     if (rendererFlags != AUDIO_FLAG_MMAP &&
-        rendererFlags != AUDIO_FLAG_VOIP_FAST) {
+        rendererFlags != AUDIO_FLAG_VOIP_FAST &&
+        rendererFlags != AUDIO_FLAG_TRUE_ULTRA_FAST) {
         newEngineSizeInFrame = newSpanSizeInFrame * DEFAULT_SPAN_SIZE;
     }
     
@@ -1440,8 +1454,8 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
         AUDIO_INFO_LOG("SetPendingSpanSize: sessionId:%{public}u spanSize:%{public}zu engineSize:%{public}zu "
             "routeFlag:%{public}u isLowLatency:%{public}d",
             streamIndex_, newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag,
-            rendererFlags == AUDIO_FLAG_MMAP ||
-            rendererFlags == AUDIO_FLAG_VOIP_FAST);
+            rendererFlags == AUDIO_FLAG_MMAP || rendererFlags == AUDIO_FLAG_VOIP_FAST ||
+            rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST);
         audioServerBuffer_->SetPendingSpanSize(newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag);
     }
 
@@ -1449,8 +1463,8 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
         AUDIO_INFO_LOG("Update processConfig_.rendererInfo.rendererFlags from %{public}u to %{public}u",
             processConfig_.rendererInfo.rendererFlags, rendererFlags);
         processConfig_.rendererInfo.rendererFlags = rendererFlags;
-        stateListener->OnOperationHandled(UPDATE_SPANSIZE, rendererFlags == AUDIO_FLAG_NORMAL ?
-            FASTSTATUS_NORMAL : FASTSTATUS_FAST);
+        stateListener->OnOperationHandled(UPDATE_SPANSIZE,
+            GetFastStatusFromRendererFlags(rendererFlags));
     }
 
     spanSizeInFrame_ = newSpanSizeInFrame;
@@ -1609,7 +1623,7 @@ int32_t RendererInServer::StartInner(bool hasNoCallback)
             PLAY_START_OPERATION_FAILED, "Policy start client failed", false),
         HILOG_COMM_ERROR("[StartInner]Policy start client failed, reason: %{public}d", ret));
 
-    if (!(processConfig_.rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST)) {
+    if (!(processConfig_.rendererInfo.audioFlag & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST))) {
         // Bluetooth connection may take a long time, which may cause the data before and after the connection
         // are not continuous, resulting in pop sounds. To avoid the problem,
         // WaitForDataConnection() needs to be called after UpdateSessionOperation(), where device is activated,
@@ -3648,7 +3662,7 @@ int32_t RendererInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_
     if (cacheSizeInFrame > spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT) {
         cacheSizeInFrame = spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT;
     }
-    if (processConfig_.rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST) {
+    if (processConfig_.rendererInfo.audioFlag & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST)) {
         cacheCount = FAST_ROUTE_CACHE_COUNT;
         AUDIO_INFO_LOG("CalculateCacheCount: cacheSizeInFrame=%{public}u, spanSizeInFrame_=%{public}zu, "
             "cacheCount=%{public}u", cacheSizeInFrame, spanSizeInFrame_, cacheCount);
@@ -3682,6 +3696,13 @@ int32_t RendererInServer::PostSilentAction(std::shared_ptr<AsyncActionHandler::A
     bool postRet = asyncHandler_->PostAsyncAction(desc);
     CHECK_AND_RETURN_RET_LOG(postRet, ERR_INVALID_HANDLE, "Post failed for sessionId %{public}u", streamIndex_);
     return SUCCESS;
+}
+
+void RendererInServer::SetExplicitStandbyState(bool on)
+{
+    AUDIO_INFO_LOG("[%{public}u] SetExplicitStandbyState on:%{public}d", streamIndex_, on);
+    CHECK_AND_RETURN_LOG(audioStreamChecker_ != nullptr, "audioStreamChecker_ is nullptr");
+    audioStreamChecker_->SetExplicitStandbyState(on);
 }
 } // namespace AudioStandard
 } // namespace OHOS

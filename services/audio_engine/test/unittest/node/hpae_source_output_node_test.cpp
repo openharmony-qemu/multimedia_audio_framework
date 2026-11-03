@@ -20,6 +20,7 @@
 #include "hpae_source_output_node.h"
 #include "test_case_common.h"
 #include "audio_errors.h"
+#include "audio_highpass_filter.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -1073,6 +1074,250 @@ HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_voiceDownlink_001, TestSize.
     // sourceType == VOICE_DOWNLINK -> cpp:234 TRUE (CopyRightToLeft).
     node->ProcessAudioData(&outBuf, false);  // private; -fno-access-control
     SUCCEED();
+}
+
+/**
+ * @tc.name: SetNodeInfo_004
+ * @tc.type: FUNC
+ * @tc.number: SetNodeInfo_004
+ * @tc.desc: SetNodeInfo rebuilds injector-path buffers (mixedOutput_/tmpOutput_/silenceData_)
+ *           with the new geometry instead of keeping ctor-sized buffers.
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, SetNodeInfo_004, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.frameLen = 160;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    HpaeNodeInfo newNodeInfo = nodeInfo;
+    newNodeInfo.frameLen = 240;
+    node->SetNodeInfo(newNodeInfo);
+
+    EXPECT_EQ(node->mixedOutput_.GetFrameLen(), newNodeInfo.frameLen);
+    EXPECT_EQ(node->tmpOutput_.GetFrameLen(), newNodeInfo.frameLen);
+    EXPECT_EQ(node->silenceData_.GetFrameLen(), newNodeInfo.frameLen);
+    EXPECT_EQ(node->mixedOutput_.GetChannelCount(), newNodeInfo.channels);
+}
+
+/**
+ * @tc.name: ProcessAudioData_Clamp_001
+ * @tc.type: FUNC
+ * @tc.number: ProcessAudioData_Clamp_001
+ * @tc.desc: ProcessAudioData clamps reads to the upstream buffer capacity (upstream converter
+ *           frozen at a smaller frameLen) and zeroes the unconverted tail.
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_Clamp_001, TestSize.Level1)
+{
+    const uint32_t upstreamFrameLen = 3840; // cached converter span, 80ms@48k
+    const uint32_t nodeFrameLen = 4800;     // session span, 100ms@48k
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.frameLen = nodeFrameLen;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    PcmBufferInfo upstreamInfo(nodeInfo.channels, upstreamFrameLen, nodeInfo.samplingRate);
+    HpaePcmBuffer upstream(upstreamInfo);
+    float *upstreamData = upstream.GetPcmDataBuffer();
+    ASSERT_NE(upstreamData, nullptr);
+    std::fill(upstreamData, upstreamData + upstreamFrameLen * nodeInfo.channels, 1.0f);
+
+    std::fill(node->sourceOutputData_.begin(), node->sourceOutputData_.end(), 0xFF);
+    node->ProcessAudioData(&upstream, false); // must not read past upstream capacity
+
+    size_t totalBytes = static_cast<size_t>(nodeFrameLen) * nodeInfo.channels
+        * GetSizeFromFormat(nodeInfo.format);
+    size_t convertedBytes = static_cast<size_t>(upstreamFrameLen) * nodeInfo.channels
+        * GetSizeFromFormat(nodeInfo.format);
+    ASSERT_EQ(node->sourceOutputData_.size(), totalBytes);
+    bool headNonZero = false;
+    for (size_t i = 0; i < convertedBytes; i++) {
+        headNonZero = headNonZero || (node->sourceOutputData_[i] != 0);
+    }
+    EXPECT_TRUE(headNonZero); // converted head from the 1.0f input
+    for (size_t i = convertedBytes; i < totalBytes; i++) {
+        EXPECT_EQ(node->sourceOutputData_[i], 0); // zeroed tail, not stale 0xFF
+    }
+}
+
+/**
+ * @tc.name: ProcessAudioData_Clamp_002
+ * @tc.type: FUNC
+ * @tc.number: ProcessAudioData_Clamp_002
+ * @tc.desc: ProcessAudioData with a full-size upstream buffer converts the whole frame
+ *           (clamp must not engage when geometry matches).
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_Clamp_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.frameLen = 4800; // 5 for 100ms@48k
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    PcmBufferInfo upstreamInfo(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate);
+    HpaePcmBuffer upstream(upstreamInfo);
+    float *upstreamData = upstream.GetPcmDataBuffer();
+    ASSERT_NE(upstreamData, nullptr);
+    std::fill(upstreamData, upstreamData + nodeInfo.frameLen * nodeInfo.channels, 1.0f);
+
+    std::fill(node->sourceOutputData_.begin(), node->sourceOutputData_.end(), 0);
+    node->ProcessAudioData(&upstream, false);
+
+    for (size_t i = 0; i < node->sourceOutputData_.size(); i++) {
+        EXPECT_EQ(node->sourceOutputData_[i] != 0, true); // fully converted, no zeroed tail
+    }
+}
+
+/**
+ * @tc.name: ProcessAudioData_Mute_001
+ * @tc.type: FUNC
+ * @tc.number: ProcessAudioData_Mute_001
+ * @tc.desc: ProcessAudioData with isMute true zeroes the whole output regardless of the input.
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_Mute_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.frameLen = 480; // 480 for 10ms@48k
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    PcmBufferInfo upstreamInfo(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate);
+    HpaePcmBuffer upstream(upstreamInfo);
+    float *upstreamData = upstream.GetPcmDataBuffer();
+    ASSERT_NE(upstreamData, nullptr);
+    std::fill(upstreamData, upstreamData + nodeInfo.frameLen * nodeInfo.channels, 1.0f);
+
+    std::fill(node->sourceOutputData_.begin(), node->sourceOutputData_.end(), 0xFF);
+    node->ProcessAudioData(&upstream, true); // mute path must not convert anything
+
+    for (size_t i = 0; i < node->sourceOutputData_.size(); i++) {
+        EXPECT_EQ(node->sourceOutputData_[i], 0); // fully zeroed by the mute path
+    }
+}
+
+/**
+ * @tc.name: ProcessAudioData_Clamp_003
+ * @tc.type: FUNC
+ * @tc.number: ProcessAudioData_Clamp_003
+ * @tc.desc: ProcessAudioData clamps and still applies the highpass branch when the node supports
+ *           it: safeFrameCount passed to ApplyHighpassFilter is the clamped upstream span.
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_Clamp_003, TestSize.Level1)
+{
+    // 2 for nbSamples = 2 * 1920 == 3840 keeps the device-side filter chain alive end to end
+    const uint32_t upstreamFrameLen = 1920;
+    const uint32_t nodeFrameLen = 4800; // 5 for 100ms@48k, larger than upstream so clamp engages
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.frameLen = nodeFrameLen;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    // Force the ultrasonic support bits: on PC UT the filter .so is absent so ApplyFilter returns
+    // ERR_INVALID_HANDLE and ApplyHighpassFilter returns early safely; on device the full chain
+    // runs with nbSamples == 3840. Both paths must keep the clamp semantics below.
+    node->isSupportHighpassFilter_ = true;
+    node->filterChannelCount_ = static_cast<int32_t>(nodeInfo.channels);
+    node->highpassFilter_ = std::make_unique<AudioHighPassFilter>();
+    node->highpassFilter_->InitFilter(node->filterChannelCount_); // init on device; fails safely on PC
+
+    PcmBufferInfo upstreamInfo(nodeInfo.channels, upstreamFrameLen, nodeInfo.samplingRate);
+    HpaePcmBuffer upstream(upstreamInfo);
+    float *upstreamData = upstream.GetPcmDataBuffer();
+    ASSERT_NE(upstreamData, nullptr);
+    std::fill(upstreamData, upstreamData + upstreamFrameLen * nodeInfo.channels, 1.0f);
+
+    std::fill(node->sourceOutputData_.begin(), node->sourceOutputData_.end(), 0xFF);
+    node->ProcessAudioData(&upstream, false); // clamp + highpass branch, must stay safe on both envs
+
+    size_t totalBytes = static_cast<size_t>(nodeFrameLen) * nodeInfo.channels
+        * GetSizeFromFormat(nodeInfo.format);
+    size_t convertedBytes = static_cast<size_t>(upstreamFrameLen) * nodeInfo.channels
+        * GetSizeFromFormat(nodeInfo.format);
+    ASSERT_EQ(node->sourceOutputData_.size(), totalBytes);
+    bool headNonZero = false;
+    for (size_t i = 0; i < convertedBytes; i++) {
+        headNonZero = headNonZero || (node->sourceOutputData_[i] != 0);
+    }
+    EXPECT_TRUE(headNonZero); // converted head from the 1.0f input
+    for (size_t i = convertedBytes; i < totalBytes; i++) {
+        EXPECT_EQ(node->sourceOutputData_[i], 0); // zeroed tail, not stale 0xFF
+    }
+}
+
+/**
+ * @tc.name: ProcessAudioData_Clamp_004
+ * @tc.type: FUNC
+ * @tc.number: ProcessAudioData_Clamp_004
+ * @tc.desc: ProcessAudioData aligns safeSamples down to whole frames of the node channel count:
+ *           3 upstream samples against a stereo node convert exactly 2 samples.
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_Clamp_004, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.frameLen = 4800; // 5 for 100ms@48k
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    const uint32_t upstreamChannels = 3; // 3 samples total: 3 % 2 == 1, alignment drops one
+    const uint32_t upstreamFrameLen = 1;
+    PcmBufferInfo upstreamInfo(upstreamChannels, upstreamFrameLen, nodeInfo.samplingRate);
+    HpaePcmBuffer upstream(upstreamInfo);
+    float *upstreamData = upstream.GetPcmDataBuffer();
+    ASSERT_NE(upstreamData, nullptr);
+    std::fill(upstreamData, upstreamData + upstreamChannels * upstreamFrameLen, 1.0f);
+
+    std::fill(node->sourceOutputData_.begin(), node->sourceOutputData_.end(), 0xFF);
+    node->ProcessAudioData(&upstream, false);
+
+    size_t bytesPerSample = GetSizeFromFormat(nodeInfo.format);
+    size_t totalBytes = static_cast<size_t>(nodeInfo.frameLen) * nodeInfo.channels
+        * bytesPerSample;
+    for (size_t i = 0; i < 2 * bytesPerSample; i++) {
+        EXPECT_NE(node->sourceOutputData_[i], 0); // exactly 2 aligned samples converted
+    }
+    for (size_t i = 2 * bytesPerSample; i < totalBytes; i++) {
+        EXPECT_EQ(node->sourceOutputData_[i], 0); // misaligned third sample dropped, tail zeroed
+    }
+}
+
+/**
+ * @tc.name: ProcessAudioData_Clamp_005
+ * @tc.type: FUNC
+ * @tc.number: ProcessAudioData_Clamp_005
+ * @tc.desc: ProcessAudioData with an empty upstream (0 frameLen) clamps safeSamples to 0: no
+ *           highpass call, no conversion, the whole output stays zeroed.
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_Clamp_005, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.frameLen = 4800; // 5 for 100ms@48k
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+    node->isSupportHighpassFilter_ = true; // must still be skipped: safeSamples == 0
+
+    PcmBufferInfo upstreamInfo(nodeInfo.channels, 0, nodeInfo.samplingRate);
+    HpaePcmBuffer upstream(upstreamInfo);
+
+    std::fill(node->sourceOutputData_.begin(), node->sourceOutputData_.end(), 0xFF);
+    node->ProcessAudioData(&upstream, false); // empty span: everything skipped, output zeroed
+
+    for (size_t i = 0; i < node->sourceOutputData_.size(); i++) {
+        EXPECT_EQ(node->sourceOutputData_[i], 0); // zero-fill path, nothing converted
+    }
 }
 
 } // namespace HPAE

@@ -75,6 +75,7 @@ private:
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
     void InitAudioSampleAttr(struct AudioSampleAttributes &param);
     void InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc);
+    uint32_t GetRenderOffset() const;
     void DoSetOutputRoute(std::vector<DeviceType> &outputDevices);
     int32_t CreateRender(void);
     void UpdateSinkState(bool started);
@@ -103,6 +104,8 @@ private:
 #endif
 
     std::string halName_ = "";
+    std::string logTag_ = "";
+    bool isSinkUltraMode_ = false;
     IAudioSinkAttr attr_ = {};
     bool sinkInited_ = false;
     bool started_ = false;

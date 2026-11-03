@@ -282,11 +282,15 @@ bool CheckHpaeNodeInfoIsSame(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &curNodeInf
 std::string TransNodeInfoToStringKey(HpaeNodeInfo& nodeInfo)
 {
     uint32_t effectiveRate = nodeInfo.GetEffectiveSampleRate();
+    // frameLen is part of the key: converter/output buffers are sized by frameLen, so sessions
+    // with identical rate/channels/format but different spans must not share a cached converter
+    // frozen at another session's frameLen (cross-session buffer overrun).
     std::string nodeKey = std::to_string(nodeInfo.sourceBufferType) + "_" +
                           std::to_string(effectiveRate) + "_" +
                           std::to_string(nodeInfo.channels) + "_" +
                           std::to_string(nodeInfo.format) + "_" +
-                          std::to_string(nodeInfo.channelLayout);
+                          std::to_string(nodeInfo.channelLayout) + "_" +
+                          std::to_string(nodeInfo.frameLen);
     return nodeKey;
 }
 
@@ -368,7 +372,7 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.fixedLatency = static_cast<uint32_t>(StringToNum(audioModuleInfo.fixedLatency));
     sinkInfo.deviceName = audioModuleInfo.name;
     sinkInfo.routeFlag = audioModuleInfo.routeFlag;
-    sinkInfo.isUltraFast = (sinkInfo.deviceClass.find("ultra_fast") != std::string::npos) ? true : false;
+    sinkInfo.isUltraFast = (ULTRA_FAST_DEVICE_CLASSES.count(sinkInfo.deviceClass) > 0);
     if (audioModuleInfo.needEmptyChunk) {
         sinkInfo.needEmptyChunk = audioModuleInfo.needEmptyChunk.value();
     }
@@ -427,6 +431,7 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     sourceInfo.micInFormat = TransFormatFromStringToEnum(audioModuleInfo.micInFormat);
     sourceInfo.micInChannels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.micInChannels));
     sourceInfo.routeFlag = audioModuleInfo.routeFlag;
+    sourceInfo.isUltraFast = (audioModuleInfo.routeFlag & AUDIO_INPUT_FLAG_ULTRA_FAST) != 0;
     return SUCCESS;
 }
 
@@ -533,7 +538,9 @@ void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSess
                 .privacyType = sessionInfo.streamInfo.privacyType,
                 .config = config,
                 .state = sessionInfo.state,
-                .startTime = sessionInfo.startTime
+                .startTime = sessionInfo.startTime,
+                .pipeType = sessionInfo.streamInfo.pipeType,
+                .spanSizeInFrame = static_cast<uint32_t>(sessionInfo.streamInfo.frameLen)
             };
         });
 }

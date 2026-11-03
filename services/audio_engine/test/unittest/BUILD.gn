@@ -188,6 +188,36 @@ ohos_unittest("hpae_virtual_capturer_manager_test") {
   resource_config_file = "./resource/ohos_test.xml"
 }
 
+ohos_unittest("hpae_virtual_renderer_manager_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "manager/hpae_virtual_renderer_manager_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:hpae_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/audioutils:audio_utils",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
+  external_deps = engine_test_external_deps
+}
+
 ohos_unittest("hpae_manager_test") {
   module_out_path = module_output_path
   sources = [

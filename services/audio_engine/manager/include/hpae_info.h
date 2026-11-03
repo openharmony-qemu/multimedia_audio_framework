@@ -21,6 +21,8 @@ namespace AudioStandard {
 namespace HPAE {
 
 namespace {
+// Sink identity of the permanent virtual render sink; shared by manager and stream-move logic.
+const char* VIRTUAL_RENDER_SINK_NAME = "Virtual_Render";
 constexpr int32_t ULTRA_FAST_DEVICE_TYPE_SPEAKER = 1;
 constexpr int32_t ULTRA_FAST_DEVICE_TYPE_EARPIECE = 2;
 static const std::set<int32_t> gHpaeUltraFastDevicesSet = {
@@ -199,6 +201,7 @@ struct HpaeSourceInfo {
     AudioSampleFormat micInFormat = INVALID_WIDTH;
     AudioChannel micInChannels = CHANNEL_UNKNOW;
     uint32_t routeFlag = 0;
+    bool isUltraFast = false;
 };
 
 static inline int32_t GetSizeFromFormat(int32_t format)

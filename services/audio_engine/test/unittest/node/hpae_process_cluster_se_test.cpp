@@ -698,8 +698,8 @@ HWTEST_F(HpaeProcessClusterSeDataflowTest, pauseFlushStart_fromIdle, TestSize.Le
     EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 }
 
-// RATE-1: GetNodeInputFormatInfo returns 48kHz when SessionEffectNode is present
-HWTEST_F(HpaeProcessClusterSeTest, GetNodeInputFormatInfo_forces48kWhenSE, TestSize.Level0)
+// RATE-1: QueryAlgoInputFormat returns 48kHz when SessionEffectNode is present
+HWTEST_F(HpaeProcessClusterSeTest, QueryAlgoInputFormat_forces48kWhenSE, TestSize.Level0)
 {
     // Setup: cluster with sink rate = 96kHz, loudness OFF
     HpaeNodeInfo nodeInfo = MakeTestNodeInfo();
@@ -715,7 +715,7 @@ HWTEST_F(HpaeProcessClusterSeTest, GetNodeInputFormatInfo_forces48kWhenSE, TestS
 
     // Without SE node, renderEffectNode clamps rate to 48k
     AudioBasicFormat fmt;
-    cluster->GetNodeInputFormatInfo(TEST_SESSION_ID, fmt);
+    cluster->QueryAlgoInputFormat(TEST_SESSION_ID, fmt);
     EXPECT_EQ(fmt.rate, SAMPLE_RATE_48000);
 
     // Create SE node
@@ -724,8 +724,96 @@ HWTEST_F(HpaeProcessClusterSeTest, GetNodeInputFormatInfo_forces48kWhenSE, TestS
     cluster->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
 
     // With SE node, rate should be forced to 48k
-    cluster->GetNodeInputFormatInfo(TEST_SESSION_ID, fmt);
+    cluster->QueryAlgoInputFormat(TEST_SESSION_ID, fmt);
     EXPECT_EQ(fmt.rate, SAMPLE_RATE_48000);
+}
+
+// RATE-2: with per-stream SE divergence, the mixer converter keeps mixer input format uniform (bug repro)
+HWTEST_F(HpaeProcessClusterSeTest, MixerConverterUniformFormatWithSE, TestSize.Level0)
+{
+    // SCENE_EXTRA cluster, sink 96kHz: no render effect, mixer format = sink format
+    HpaeNodeInfo nodeInfoA = MakeTestNodeInfo();
+    nodeInfoA.sceneType = HPAE_SCENE_EFFECT_NONE;
+    HpaeNodeInfo nodeInfoB = MakeTestNodeInfo();
+    nodeInfoB.sessionId = TEST_SESSION_ID + 1;
+    nodeInfoB.nodeId = TEST_NODE_ID + 1;
+    nodeInfoB.sceneType = HPAE_SCENE_EFFECT_NONE;
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.samplingRate = SAMPLE_RATE_96000;
+    sinkInfo.channels = STEREO;
+    sinkInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfoA, sinkInfo);
+    auto sinkInputA = std::make_shared<HpaeSinkInputNode>(nodeInfoA);
+    auto sinkInputB = std::make_shared<HpaeSinkInputNode>(nodeInfoB);
+    ASSERT_EQ(cluster->CreateNodes(sinkInputA), SUCCESS);
+    ASSERT_EQ(cluster->CreateNodes(sinkInputB), SUCCESS);
+    cluster->Connect(sinkInputA);
+    cluster->Connect(sinkInputB);
+    EXPECT_EQ(cluster->GetMixerConverterNodeCount(), 2);
+    EXPECT_EQ(cluster->GetPreOutNum(), 2); // both streams wired into the mixer via their mixer converters
+
+    // SE only on stream A: the per-frame format queries now diverge (48k vs 96k) -- the old bug input
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("test_effect", config_);
+    ASSERT_EQ(cluster->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    AudioBasicFormat fmtA;
+    AudioBasicFormat fmtB;
+    fmtA.rate = SAMPLE_RATE_44100; // sentinel: 48000 equals the default, so a no-write query cannot pass vacuously
+    EXPECT_EQ(cluster->QueryAlgoInputFormat(TEST_SESSION_ID, fmtA), SUCCESS);
+    EXPECT_EQ(fmtA.rate, SAMPLE_RATE_48000); // SE forces 48k for A's conv#1
+    EXPECT_EQ(cluster->QueryAlgoInputFormat(TEST_SESSION_ID + 1, fmtB), SUCCESS);
+    EXPECT_EQ(fmtB.rate, SAMPLE_RATE_96000); // B falls back to mixer format
+
+    // mixer-side target and the mixer converter output are uniform at sink rate for both streams
+    EXPECT_EQ(cluster->QueryMixInputFormat(TEST_SESSION_ID, fmtA), SUCCESS);
+    EXPECT_EQ(fmtA.rate, SAMPLE_RATE_96000);
+    ASSERT_NE(cluster->GetMixerConverterNodeById(TEST_SESSION_ID), nullptr);
+    ASSERT_NE(cluster->GetMixerConverterNodeById(TEST_SESSION_ID + 1), nullptr);
+    EXPECT_EQ(cluster->GetMixerConverterNodeById(TEST_SESSION_ID)->GetSampleRate(), SAMPLE_RATE_96000);
+    EXPECT_EQ(cluster->GetMixerConverterNodeById(TEST_SESSION_ID + 1)->GetSampleRate(), SAMPLE_RATE_96000);
+    // 20ms frameLen at the 96k mixer-input rate (pins the 2x-drain defect fix)
+    EXPECT_EQ(cluster->GetMixerConverterNodeById(TEST_SESSION_ID)->GetFrameLen(), 1920u);
+    EXPECT_EQ(cluster->GetMixerConverterNodeById(TEST_SESSION_ID + 1)->GetFrameLen(), 1920u);
+}
+
+// RATE-3: adapters deliver position-specific formats live, no re-registration needed
+HWTEST_F(HpaeProcessClusterSeTest, FormatQueryAdapterLiveUpdate, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = MakeTestNodeInfo();
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.samplingRate = SAMPLE_RATE_96000;
+    sinkInfo.channels = STEREO;
+    sinkInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    auto sinkInput = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    ASSERT_EQ(cluster->CreateNodes(sinkInput), SUCCESS);
+
+    auto converter = cluster->GetConverterNodeById(TEST_SESSION_ID);
+    auto mixerConverter = cluster->GetMixerConverterNodeById(TEST_SESSION_ID);
+    ASSERT_NE(converter, nullptr);
+    ASSERT_NE(mixerConverter, nullptr);
+    // both converters start at the sink format (no special algo requirement yet)
+    EXPECT_EQ(converter->GetSampleRate(), SAMPLE_RATE_96000);
+    EXPECT_EQ(mixerConverter->GetSampleRate(), SAMPLE_RATE_96000);
+
+    // SE created after node creation: the algo-side adapter answers 48k on the next
+    // per-frame query through the same registered callback, no re-registration
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("test_effect", config_);
+    ASSERT_EQ(cluster->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    EXPECT_TRUE(converter->CheckUpdateOutInfo()); // algo adapter now answers 48k stereo
+    EXPECT_EQ(converter->GetSampleRate(), SAMPLE_RATE_48000);
+    EXPECT_EQ(converter->GetFrameLen(), 960u); // frameLen rescales with the rate (20ms kept)
+    EXPECT_FALSE(mixerConverter->CheckUpdateOutInfo()); // mix adapter still answers sink format
+    EXPECT_EQ(mixerConverter->GetSampleRate(), SAMPLE_RATE_96000);
 }
 
 // DESTROY-1: DestroyNodes cleans idSessionEffectMap_ when SE node exists

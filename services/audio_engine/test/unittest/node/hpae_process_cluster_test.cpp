@@ -669,7 +669,7 @@ HWTEST_F(HpaeProcessClusterTest, DeferredStop_005, TestSize.Level0)
     cluster->AudioRendererRelease(nodeInfoY, sinkInfo);
 }
 
-HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
+HWTEST_F(HpaeProcessClusterTest, testQueryAlgoInputFormat, TestSize.Level0)
 {
     // test processCluster without effectnode and loundess algorithm handle
     HpaeNodeInfo nodeInfo;
@@ -696,7 +696,7 @@ HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
     
     AudioBasicFormat basicFormat;
     hpaeProcessCluster->SetLoudnessGain(DEFAULT_NODEID_NUM_FIRST, 0.0f);
-    int32_t ret = hpaeProcessCluster->GetNodeInputFormatInfo(nodeInfo.sessionId, basicFormat);
+    int32_t ret = hpaeProcessCluster->QueryAlgoInputFormat(nodeInfo.sessionId, basicFormat);
 
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(basicFormat.audioChannelInfo.channelLayout, CH_LAYOUT_STEREO);
@@ -713,10 +713,202 @@ HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
     EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), SUCCESS);
     
     hpaeProcessCluster->SetLoudnessGain(DEFAULT_NODEID_NUM_FIRST, LOUDNESS_GAIN);
-    ret = hpaeProcessCluster->GetNodeInputFormatInfo(nodeInfo.sessionId, basicFormat);
+    ret = hpaeProcessCluster->QueryAlgoInputFormat(nodeInfo.sessionId, basicFormat);
     EXPECT_EQ(basicFormat.audioChannelInfo.channelLayout, CH_LAYOUT_STEREO);
     EXPECT_EQ(basicFormat.audioChannelInfo.numChannels, static_cast<uint32_t>(STEREO));
     EXPECT_EQ(basicFormat.rate, SAMPLE_RATE_48000);
+}
+
+HWTEST_F(HpaeProcessClusterTest, testQueryMixInputFormat, TestSize.Level0)
+{
+    // SCENE_EXTRA cluster (renderEffectNode_ == nullptr): mixer format = sink format
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_44100;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.samplingRate = SAMPLE_RATE_96000;
+    sinkInfo.channels = STEREO;
+    sinkInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    AudioBasicFormat fmt;
+    EXPECT_EQ(cluster->QueryMixInputFormat(nodeInfo.sessionId, fmt), SUCCESS);
+    EXPECT_EQ(fmt.rate, SAMPLE_RATE_96000);
+    EXPECT_EQ(fmt.audioChannelInfo.numChannels, static_cast<uint32_t>(STEREO));
+    EXPECT_EQ(fmt.audioChannelInfo.channelLayout, CH_LAYOUT_STEREO);
+
+    // MUSIC cluster (renderEffectNode_ != nullptr): mixer format = render effect expected input
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    auto effectCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    fmt.rate = SAMPLE_RATE_44100;
+    effectCluster->QueryMixInputFormat(nodeInfo.sessionId, fmt);
+    // GetExpectedInputChannelInfo always sets rate before querying the chain
+    EXPECT_EQ(fmt.rate, SAMPLE_RATE_48000);
+}
+
+HWTEST_F(HpaeProcessClusterTest, testQueryAlgoInputFormatFallbackToMix, TestSize.Level0)
+{
+    // algo off + no SE -> conv#1 target falls back to mixer format (48k via render effect)
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_44100;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.samplingRate = SAMPLE_RATE_96000;
+    sinkInfo.channels = STEREO;
+    sinkInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    auto sinkInput = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    ASSERT_EQ(cluster->CreateNodes(sinkInput), SUCCESS);
+    cluster->Connect(sinkInput);
+
+    AudioBasicFormat fmt;
+    fmt.rate = SAMPLE_RATE_44100;
+    cluster->QueryAlgoInputFormat(nodeInfo.sessionId, fmt);
+    EXPECT_EQ(fmt.rate, SAMPLE_RATE_48000); // fallback -> render effect 48k, not sink 96k
+}
+
+HWTEST_F(HpaeProcessClusterTest, mixerConverterNodeLifecycle, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.samplingRate = SAMPLE_RATE_96000;
+    sinkInfo.channels = STEREO;
+    sinkInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(cluster->GetMixerConverterNodeCount(), 0);
+
+    auto sinkInputA = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    ASSERT_EQ(cluster->CreateNodes(sinkInputA), SUCCESS);
+    EXPECT_EQ(cluster->GetMixerConverterNodeCount(), 1);
+    // creation-time output format comes from QueryMixInputFormat -> sink 96k
+    ASSERT_NE(cluster->GetMixerConverterNodeById(nodeInfo.sessionId), nullptr);
+    EXPECT_EQ(cluster->GetMixerConverterNodeById(nodeInfo.sessionId)->GetSampleRate(), SAMPLE_RATE_96000);
+
+    // duplicate CreateNodes for the same session must not grow the map (guards early-return)
+    ASSERT_EQ(cluster->CreateNodes(sinkInputA), SUCCESS);
+    EXPECT_EQ(cluster->GetMixerConverterNodeCount(), 1);
+
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_SECOND;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST + 1;
+    auto sinkInputB = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    ASSERT_EQ(cluster->CreateNodes(sinkInputB), SUCCESS);
+    EXPECT_EQ(cluster->GetMixerConverterNodeCount(), 2);
+
+    // Reset() must reset nodes but not erase map entries
+    cluster->Reset();
+    EXPECT_EQ(cluster->GetMixerConverterNodeCount(), 2);
+    EXPECT_NE(cluster->GetMixerConverterNodeById(DEFAULT_SESSIONID_NUM_FIRST), nullptr);
+
+    // CheckNodes/DestroyNodes cover the mixer converter together with the other per-stream nodes
+    EXPECT_EQ(cluster->CheckNodes(DEFAULT_SESSIONID_NUM_FIRST), SUCCESS);
+    EXPECT_EQ(cluster->DestroyNodes(DEFAULT_SESSIONID_NUM_FIRST), SUCCESS);
+    EXPECT_EQ(cluster->GetMixerConverterNodeCount(), 1);
+    EXPECT_EQ(cluster->CheckNodes(DEFAULT_SESSIONID_NUM_FIRST), ERROR);
+    EXPECT_EQ(cluster->DestroyNodes(DEFAULT_SESSIONID_NUM_SECOND), SUCCESS);
+    EXPECT_EQ(cluster->GetMixerConverterNodeCount(), 0);
+    EXPECT_EQ(cluster->GetMixerConverterNodeById(DEFAULT_SESSIONID_NUM_FIRST), nullptr);
+}
+
+HWTEST_F(HpaeProcessClusterTest, mixerConverterConnectAndLatency, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.channels = STEREO;
+    sinkInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    auto sinkInput = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    ASSERT_EQ(cluster->CreateNodes(sinkInput), SUCCESS);
+
+    // not connected yet: mixer has no input
+    EXPECT_EQ(cluster->GetPreOutNum(), 0);
+    cluster->Connect(sinkInput);
+    // mixer now pulls the mixer converter instead of gain directly
+    EXPECT_EQ(cluster->GetPreOutNum(), 1);
+    auto mixerConverter = cluster->GetMixerConverterNodeById(nodeInfo.sessionId);
+    ASSERT_NE(mixerConverter, nullptr);
+    // the mixer converter itself must be wired to gain (its own input port count)
+    EXPECT_EQ(mixerConverter->GetPreOutNum(), 1);
+
+    // latency accounting covers the mixer converter without crash
+    EXPECT_GE(cluster->GetLatency(nodeInfo.sessionId), mixerConverter->GetLatency());
+
+    // Flush covers the mixer converter buffers without crash
+    cluster->Flush(nodeInfo.sessionId);
+
+    cluster->DisConnect(sinkInput);
+    EXPECT_EQ(cluster->GetPreOutNum(), 0);
+    EXPECT_EQ(mixerConverter->GetPreOutNum(), 0);
+}
+
+HWTEST_F(HpaeProcessClusterTest, converterNodeInitialOutputFormat, TestSize.Level0)
+{
+    // MUSIC cluster: conv#1 initial output rate = 48k (mixer fallback), not sink 96k as before
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    // 1024 matches neither 960 nor 1920, so both halves prove frameLen comes from the output rate
+    nodeInfo.frameLen = 1024;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_44100;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.samplingRate = SAMPLE_RATE_96000;
+    sinkInfo.channels = STEREO;
+    sinkInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    auto sinkInput = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    ASSERT_EQ(cluster->CreateNodes(sinkInput), SUCCESS);
+    // at creation the algo is off and no SE exists -> fallback = mixer format = 48k
+    ASSERT_NE(cluster->GetConverterNodeById(nodeInfo.sessionId), nullptr);
+    EXPECT_EQ(cluster->GetConverterNodeById(nodeInfo.sessionId)->GetSampleRate(), SAMPLE_RATE_48000);
+    // frameLen must be 20ms at the output rate (960 @ 48k), not the sink-rate mixer frameLen (1920)
+    EXPECT_EQ(cluster->GetConverterNodeById(nodeInfo.sessionId)->GetFrameLen(), 960u);
+
+    // SCENE_EXTRA cluster: conv#1 initial output = sink format
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_SECOND;
+    auto extraCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    auto sinkInput2 = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    ASSERT_EQ(extraCluster->CreateNodes(sinkInput2), SUCCESS);
+    ASSERT_NE(extraCluster->GetConverterNodeById(nodeInfo.sessionId), nullptr);
+    EXPECT_EQ(extraCluster->GetConverterNodeById(nodeInfo.sessionId)->GetSampleRate(), SAMPLE_RATE_96000);
+    EXPECT_EQ(extraCluster->GetConverterNodeById(nodeInfo.sessionId)->GetFrameLen(), 1920u);
+    EXPECT_EQ(extraCluster->GetConverterNodeById(nodeInfo.sessionId)->GetChannelCount(), STEREO);
 }
 
 /**

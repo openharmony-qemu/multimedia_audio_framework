@@ -312,7 +312,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_PcDevice_NullBuff
     auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
     ASSERT_NE(node, nullptr);
 
-    node->ApplyHighpassFilter(nullptr);
+    node->ApplyHighpassFilter(nullptr, 0);
     SUCCEED();
 }
 
@@ -325,7 +325,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_PcDevice_NullPcmD
     if (node->isSupportHighpassFilter_) {
         auto pcmBuffer = CreateTestPcmBuffer();
 
-        node->ApplyHighpassFilter(pcmBuffer.get());
+        node->ApplyHighpassFilter(pcmBuffer.get(), pcmBuffer->GetFrameLen());
         SUCCEED();
     }
 }
@@ -346,7 +346,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_PcDevice_ValidDat
                                                     static_cast<uint32_t>(node->filterChannelCount_),
                                                     480);
 
-        node->ApplyHighpassFilter(pcmBuffer.get());
+        node->ApplyHighpassFilter(pcmBuffer.get(), pcmBuffer->GetFrameLen());
         SUCCEED();
     }
 }
@@ -365,7 +365,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_PcDevice_LargeDat
         std::vector<float> pcmData(sampleCount, 0.3f);
         auto pcmBuffer = CreateTestPcmBufferWithData(pcmData, STEREO, 960);
 
-        node->ApplyHighpassFilter(pcmBuffer.get());
+        node->ApplyHighpassFilter(pcmBuffer.get(), pcmBuffer->GetFrameLen());
         SUCCEED();
     }
 }
@@ -526,7 +526,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, EdgeCase_PcDevice_ZeroFrameLength_001
     if (node->isSupportHighpassFilter_) {
         auto pcmBuffer = CreateTestPcmBuffer(STEREO, 0);
 
-        node->ApplyHighpassFilter(pcmBuffer.get());
+        node->ApplyHighpassFilter(pcmBuffer.get(), pcmBuffer->GetFrameLen());
         SUCCEED();
     }
 }
@@ -544,7 +544,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, EdgeCase_PcDevice_OneFrame_001, TestS
         std::vector<float> testData = {0.5f};
         auto pcmBuffer = CreateTestPcmBufferWithData(testData, STEREO, 1);
 
-        node->ApplyHighpassFilter(pcmBuffer.get());
+        node->ApplyHighpassFilter(pcmBuffer.get(), pcmBuffer->GetFrameLen());
         SUCCEED();
     }
 }
@@ -613,6 +613,31 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, MemoryAllocation_PcDevice_001, TestSi
             ASSERT_EQ(node->isSupportHighpassFilter_, false);
             ASSERT_EQ(node->highpassFilter_, nullptr);
         }
+    }
+}
+
+/**
+ * @tc.name: ApplyHighpassFilter_FrameCountZero_001
+ * @tc.type: FUNC
+ * @tc.number: ApplyHighpassFilter_FrameCountZero_001
+ * @tc.desc: Zero safeFrameCount returns before any copy: the two-argument signature rejects an
+ *           empty span early and leaves the input buffer untouched.
+ */
+HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_FrameCountZero_001, TestSize.Level1)
+{
+    auto node = CreateTestNode(SOURCE_TYPE_MIC);
+    ASSERT_NE(node, nullptr);
+
+    auto pcmBuffer = CreateTestPcmBuffer();
+    ASSERT_NE(pcmBuffer, nullptr);
+    float *pcmData = pcmBuffer->GetPcmDataBuffer();
+    ASSERT_NE(pcmData, nullptr);
+    const size_t sentinelCount = static_cast<size_t>(DEFAULT_FRAME_LENGTH) * STEREO;
+    std::fill(pcmData, pcmData + sentinelCount, 0.5f); // sentinel: early return must not touch it
+
+    node->ApplyHighpassFilter(pcmBuffer.get(), 0); // 0 frame span is rejected before any copy
+    for (size_t i = 0; i < sentinelCount; i++) {
+        EXPECT_EQ(pcmData[i], 0.5f); // untouched: the guard fires before the first memcpy
     }
 }
 } // namespace HPAE

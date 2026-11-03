@@ -42,6 +42,7 @@ group("audio_policy_unittest_packages") {
     ":audio_device_common_unit_test",
     ":audio_device_lock_unit_test",
     ":audio_device_status_unit_test",
+    ":audio_definition_policy_utils_unit_test",
     ":audio_effect_config_parser_test",
     ":audio_effect_config_parser_unit_test",
     ":audio_effect_service_test",
@@ -5095,6 +5096,37 @@ ohos_unittest("audio_device_status_unit_test") {
   ]
 
   sources = [ "./unittest/audio_device_status_unit_test/src/audio_device_status_unit_test.cpp" ]
+
+  deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../audio_policy:audio_policy_service_static",
+  ]
+}
+
+ohos_unittest("audio_definition_policy_utils_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include/",
+    "./unittest/audio_definition_policy_utils_unit_test/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "hilog:libhilog",
+  ]
+
+  sources = [ "./unittest/audio_definition_policy_utils_unit_test/src/audio_definition_policy_utils_unit_test.cpp" ]
 
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",

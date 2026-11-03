@@ -1884,6 +1884,67 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateModuleInfoWithDevice_001, TestSize.Lev
     EXPECT_EQ(moduleInfo.rate, "96000");
 }
 
+/** @tc.desc: ARM USB ultra fast configuration keeps reported profiles and a 2.5 ms source buffer. */
+HWTEST_F(AudioPipeSelectorUnitTest, ArmUsbUltraFastPipeProfile_001, TestSize.Level1)
+{
+    auto selector = AudioPipeSelector::GetPipeSelector();
+    auto stream = MakeRecordStream(TEST_STREAM_1_SESSION_ID, SOURCE_TYPE_MIC, DEVICE_TYPE_USB_ARM_HEADSET);
+    stream->routeFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+    auto device = stream->newDeviceDescs_.front();
+    DeviceStreamInfo reported;
+    reported.samplingRate = {SAMPLE_RATE_16000};
+    reported.format = SAMPLE_S32LE;
+    reported.channelLayout = {CH_LAYOUT_MONO};
+    device->audioStreamInfo_ = {reported};
+    auto prop = std::make_shared<PipeStreamPropInfo>();
+    prop->sampleRate_ = SAMPLE_RATE_16000;
+    prop->format_ = SAMPLE_S32LE;
+    prop->channels_ = MONO;
+    prop->channelLayout_ = CH_LAYOUT_MONO;
+    prop->bufferSize_ = 160;
+    auto pipe = std::make_shared<AdapterPipeInfo>();
+    pipe->name_ = "usb_ultra_fast_input";
+    pipe->role_ = PIPE_ROLE_INPUT;
+    auto adapter = std::make_shared<PolicyAdapterInfo>();
+    adapter->adapterName = "usb";
+    pipe->adapterInfo_ = adapter;
+    prop->pipeInfo_ = pipe;
+    // A different selected profile must not overwrite the hardware-reported device capabilities.
+    auto xmlProp = std::make_shared<PipeStreamPropInfo>();
+    xmlProp->sampleRate_ = SAMPLE_RATE_48000;
+    xmlProp->format_ = SAMPLE_S16LE;
+    xmlProp->channels_ = STEREO;
+    xmlProp->channelLayout_ = CH_LAYOUT_STEREO;
+    selector->UpdateDeviceStreamInfo(stream, xmlProp);
+    EXPECT_EQ(device->audioStreamInfo_.back().samplingRate, reported.samplingRate);
+    EXPECT_EQ(device->audioStreamInfo_.back().format, reported.format);
+    EXPECT_EQ(device->audioStreamInfo_.back().channelLayout, reported.channelLayout);
+    AudioPipeInfo info;
+    selector->ConvertStreamDescToPipeInfo(stream, prop, info);
+    EXPECT_EQ(info.moduleInfo_.rate, "16000");
+    EXPECT_EQ(info.moduleInfo_.format, "s32le");
+    EXPECT_EQ(info.moduleInfo_.channels, "1");
+    EXPECT_EQ(info.moduleInfo_.channelLayout, std::to_string(CH_LAYOUT_MONO));
+    EXPECT_EQ(info.moduleInfo_.bufferSize, "160");
+    selector->UpdatePipeInfoFromStreamProp(stream, prop, info);
+    EXPECT_EQ(info.moduleInfo_.rate, "16000");
+    EXPECT_EQ(info.moduleInfo_.format, "s32le");
+    EXPECT_EQ(info.moduleInfo_.channels, "1");
+    EXPECT_EQ(info.moduleInfo_.bufferSize, "160");
+    stream->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    selector->UpdatePipeInfoFromStreamProp(stream, prop, info);
+    EXPECT_EQ(info.moduleInfo_.bufferSize, "1280");
+    stream->routeFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+
+    device->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    selector->UpdateDeviceStreamInfo(stream, xmlProp);
+    EXPECT_EQ(device->audioStreamInfo_.back().samplingRate, std::set<AudioSamplingRate>{SAMPLE_RATE_48000});
+    stream->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    device->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    selector->UpdateDeviceStreamInfo(stream, xmlProp);
+    EXPECT_EQ(device->audioStreamInfo_.back().format, SAMPLE_S16LE);
+}
+
 /**
  * @tc.name: UpdateModuleInfoWithDevice_002
  * @tc.desc: Test UpdateModuleInfoWithDevice
@@ -1921,7 +1982,8 @@ HWTEST_F(AudioPipeSelectorUnitTest, MatchFastArmusbPipe_001, TestSize.Level1)
     auto pipeInfo = MakeTestPipe(PIPE_ROLE_OUTPUT, "primary", AUDIO_OUTPUT_FLAG_FAST);
     pipeInfo->name_ = "primary_output";
     pipeInfo->moduleInfo_.macAddress = "old_addr";
-    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamDesc);
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamPropInfo, streamDesc);
     EXPECT_EQ(pipeInfo->moduleInfo_.macAddress, "old_addr");
 }
 
@@ -1943,7 +2005,9 @@ HWTEST_F(AudioPipeSelectorUnitTest, MatchFastArmusbPipe_002, TestSize.Level1)
     deviceDesc->macAddress_ = "same_addr";
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
-    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamDesc);
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->sampleRate_ = 8000;
+    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamPropInfo, streamDesc);
     EXPECT_EQ(pipeInfo->moduleInfo_.macAddress, "same_addr");
     EXPECT_EQ(pipeInfo->moduleInfo_.rate, "8000");
 }
@@ -1970,7 +2034,8 @@ HWTEST_F(AudioPipeSelectorUnitTest, MatchFastArmusbPipe_003, TestSize.Level1)
     deviceDesc->audioStreamInfo_.push_back(deviceStreamInfo);
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
-    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamDesc);
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    audioPipeSelector->MatchFastArmusbPipe(pipeInfo, streamPropInfo, streamDesc);
     EXPECT_EQ(pipeInfo->moduleInfo_.macAddress, "new_addr");
     EXPECT_EQ(pipeInfo->moduleInfo_.rate, "96000");
 }

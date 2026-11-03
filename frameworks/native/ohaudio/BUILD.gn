@@ -95,6 +95,7 @@ ohos_shared_library("ohaudio") {
     "../audiocapturer:audio_capturer",
     "../audiorenderer:audio_renderer",
     "../audioaccessory:audio_accessory",
+    "../audioutils:audio_utils",
   ]
   cflags = [
     "-Werror",

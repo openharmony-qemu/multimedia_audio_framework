@@ -26,6 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr uint32_t PARAM_VALUE_LENGTH = 1024;
 typedef IAudioSinkCallback IAudioAdapterCallback;
 class IDeviceManagerCallback {
 public:

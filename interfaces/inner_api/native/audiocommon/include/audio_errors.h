@@ -368,6 +368,7 @@ enum class BusinessScenario : uint8_t {
     CONFIG = 0x0C,
     RENDER = 0x0D,
     CONTROL = 0x0E,
+    STANDBY = 0x0F,
 };
 
 constexpr int32_t BuildErrorCode(ProblemCategory category, OperationType operationType,
@@ -462,6 +463,12 @@ constexpr int32_t PLAY_CONFIG_NULL_POINTER = BuildErrorCode(ProblemCategory::FAU
     OperationType::PLAY, BusinessScenario::CONFIG, ERR_NULL_POINTER);
 constexpr int32_t PLAY_CONFIG_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT,
     OperationType::PLAY, BusinessScenario::CONFIG, ERR_ILLEGAL_STATE);
+
+// PLAY_STANDBY
+constexpr int32_t PLAY_STANDBY_ILLEGAL_STATE = BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT,
+    OperationType::PLAY, BusinessScenario::STANDBY, ERR_ILLEGAL_STATE);
+constexpr int32_t PLAY_STANDBY_NULL_POINTER = BuildErrorCode(ProblemCategory::FAULT_GENERAL,
+    OperationType::PLAY, BusinessScenario::STANDBY, ERR_NULL_POINTER);
 
 // HDPLAY Error Codes
 // CREATE scenario

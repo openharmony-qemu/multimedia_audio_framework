@@ -354,7 +354,11 @@ static void TransHpaeInputOutputInfoToStr(const HpaeInputOutputInfo &info, const
         << "  - stream can be captured: " << (info.privacyType == 0 ? "true" : "false") << "\n"
         << "  - Stream Configuration: " << info.config << "\n"
         << "  - Status: " << (info.state == HPAE_SESSION_RUNNING ? "RUNNING" : "STOPPED/PAUSED") << "\n"
-        << "  - Stream Start Time: " << TransTimeToString(info.startTime) << "\n\n";
+        << "  - Stream Start Time: " << TransTimeToString(info.startTime) << "\n"
+        << "  - Pipe Type: " << static_cast<int32_t>(info.pipeType) << "\n"
+        << "  - Route Flag: " << info.routeFlag << "\n"
+        << "  - Span Size (frames): " << info.spanSizeInFrame << "\n"
+        << "  - Underflow Count: " << info.underflowCount << "\n\n";
     tempDumpStr += oss.str();
 }
 

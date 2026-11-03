@@ -380,6 +380,10 @@ public:
 
     virtual int32_t SetOffloadDataCallbackState(int32_t cbState) { return 0; };
 
+    virtual int32_t SetStandby(bool on) { return 0; }
+
+    virtual bool IsStandby() const { return false; }
+
     virtual bool GetStopFlag() const = 0;
 
     virtual void ResetFirstFrameState() {}

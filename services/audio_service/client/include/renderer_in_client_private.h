@@ -239,6 +239,8 @@ public:
     void SetCallbackLoopTid(int32_t tid) override;
     int32_t GetCallbackLoopTid() override;
     int32_t SetOffloadDataCallbackState(int32_t cbState) override;
+    int32_t SetStandby(bool on) override;
+    bool IsStandby() const override;
     void NotifyRouteUpdate(const StreamFlagInfo &flagInfo, const std::string &networkId) override;
     bool GetStopFlag() const override;
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
@@ -261,10 +263,12 @@ public:
     void ReportExceptionForInterval();
     void ReportPreferredFrameSizeOutOfRange(int32_t frameSize, size_t minByte, size_t maxByte);
     void CheckAndReportTimestamp();
+    void ReportUltraFastUsage();
 
     bool IsFastStream() const
     {
-        return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST) != 0;
+        return (rendererInfo_.audioFlag & (AUDIO_OUTPUT_FLAG_FAST |
+            AUDIO_OUTPUT_FLAG_ULTRA_FAST)) != 0;
     }
 
     void UpdateLogTag()
@@ -275,8 +279,11 @@ public:
 
     bool IsUltraFastStream() const
     {
-        return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
+        return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED) ||
+            rendererInfo_.rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST;
     }
+
+    bool IsTrueUltraFastStream() const;
 
     bool IsUltraFastStreamRequested() const;
 
@@ -412,6 +419,7 @@ private:
     uint64_t fullTokenId_ = 0;
     int64_t lastTriggerTime_ = 0;
     bool logStopCallCount_ = false;
+    int64_t streamStartTime_ = 0;
 
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 
@@ -477,6 +485,7 @@ private:
     std::atomic<StreamFocusState> streamFocusState_ = FOCUS_INVALID;
     std::mutex focusStatusMutex_;
     std::atomic<State> state_ = INVALID;
+    std::atomic<bool> isStandby_ = false;
     // using this lock when change status_
     std::mutex statusMutex_;
     // for status operation wait and notify

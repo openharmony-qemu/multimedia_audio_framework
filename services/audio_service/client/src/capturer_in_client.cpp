@@ -595,6 +595,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
     if (capturerInfo_.capturerFlags != AUDIO_FLAG_NORMAL &&
         capturerInfo_.capturerFlags != AUDIO_FLAG_MMAP &&
+        capturerInfo_.capturerFlags != AUDIO_FLAG_ULTRA_FAST &&
         capturerInfo_.capturerFlags != AUDIO_FLAG_VOIP_FAST) {
         AUDIO_WARNING_LOG("ConstructConfig find Capturer flag invalid:%{public}d", capturerInfo_.capturerFlags);
         capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
@@ -1115,6 +1116,16 @@ void CapturerInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     // Calculate buffer size based on duration.
     cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * streamParams_.samplingRate / AUDIO_US_PER_S) *
         sizePerFrameInByte_;
+    if (capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST) {
+        // The application block size is independent of the hardware span after a device switch.
+        const uint64_t spanFrames = static_cast<uint64_t>(streamParams_.samplingRate) *
+            ULTRA_FAST_CAPTURE_PERIOD_US / AUDIO_US_PER_S;
+        const bool supportedFormat = streamParams_.encoding == ENCODING_PCM && spanFrames > 0 &&
+            spanFrames * AUDIO_US_PER_S == static_cast<uint64_t>(streamParams_.samplingRate) *
+            ULTRA_FAST_CAPTURE_PERIOD_US;
+        const size_t frames = supportedFormat ? spanFrames : 4096;
+        cbBufferSize_ = frames * sizePerFrameInByte_;
+    }
     AUDIO_INFO_LOG("InitCallbackBuffer with duration %{public}" PRIu64", size: %{public}zu", bufferDurationInUs,
         cbBufferSize_);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
@@ -1129,13 +1140,13 @@ void CapturerInClientInner::InitCallbackLoop()
     cbThreadReleased_ = false;
     auto weakRef = weak_from_this();
 
-    // OS_AudioWriteCB
+    // OS_AudioReadCb
     ResetCallbackLoopTid();
     callbackLoop_ = std::thread([weakRef] {
         bool keepRunning = true;
         std::shared_ptr<CapturerInClientInner> strongRef = weakRef.lock();
-        strongRef->SetCallbackLoopTid(gettid());
         if (strongRef != nullptr) {
+            strongRef->SetCallbackLoopTid(gettid());
             strongRef->cbThreadCv_.notify_one();
             AUDIO_INFO_LOG("Thread start, sessionID :%{public}d", strongRef->sessionId_);
         } else {
@@ -1950,9 +1961,13 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 RECORD_SEND_DATA_ILLEGAL_STATE, "ipcStream_ is null", true), "ipcStream_ is null");
+        ThreadPriorityConfig prioLevel = THREAD_PRIORITY_QOS_7;
+        if (capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST) {
+            prioLevel = THREAD_PRIORITY_ULTRA_FAST_4;
+        }
         ipcStream_->RegisterThreadPriority(gettid(),
             AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid),
-            METHOD_WRITE_OR_READ, THREAD_PRIORITY_QOS_7);
+            METHOD_WRITE_OR_READ, prioLevel);
         needSetThreadPriority_ = false;
     }
 
@@ -2223,6 +2238,9 @@ bool CapturerInClientInner::GetHighResolutionEnabled()
 
 IAudioStream::StreamClass CapturerInClientInner::GetStreamClass()
 {
+    if (capturerInfo_.capturerFlags == AUDIO_FLAG_ULTRA_FAST) {
+        return IAudioStream::StreamClass::FAST_STREAM;
+    }
     if (capturerInfo_.capturerFlags == AUDIO_FLAG_MMAP || capturerInfo_.capturerFlags == AUDIO_FLAG_VOIP_FAST) {
         return IAudioStream::StreamClass::FAST_STREAM;
     }
@@ -2308,6 +2326,9 @@ int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
 
 FastStatus CapturerInClientInner::GetFastStatus()
 {
+    if (capturerInfo_.capturerFlags == AUDIO_FLAG_ULTRA_FAST) {
+        return FASTSTATUS_ULTRA_FAST;
+    }
     if (capturerInfo_.capturerFlags == AUDIO_FLAG_MMAP || capturerInfo_.capturerFlags == AUDIO_FLAG_VOIP_FAST) {
         return FASTSTATUS_FAST;
     }
@@ -2322,11 +2343,15 @@ void CapturerInClientInner::SetFastStatusChangeCallback(const std::function<void
 
 void CapturerInClientInner::NotifyFastStatusChange(FastStatus status)
 {
-    if (status != FASTSTATUS_FAST && status != FASTSTATUS_NORMAL) {
+    if (status != FASTSTATUS_FAST && status != FASTSTATUS_NORMAL && status != FASTSTATUS_ULTRA_FAST) {
         AUDIO_WARNING_LOG("Invalid fast status:%{public}d", status);
         return;
     }
     fastStatus_.store(status);
+    if (capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST) {
+        capturerInfo_.capturerFlags = status == FASTSTATUS_ULTRA_FAST ? AUDIO_FLAG_ULTRA_FAST :
+            (status == FASTSTATUS_FAST ? AUDIO_FLAG_MMAP : AUDIO_FLAG_NORMAL);
+    }
 
     std::function<void(FastStatus)> callback;
     {
@@ -2374,7 +2399,8 @@ void CapturerInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
 
 RestoreStatus CapturerInClientInner::CheckRestoreStatus()
 {
-    bool restoreFlag = (GetFastStatus() == FASTSTATUS_FAST) && (readCb_ == nullptr);
+    bool restoreFlag = (GetFastStatus() == FASTSTATUS_FAST || GetFastStatus() == FASTSTATUS_ULTRA_FAST) &&
+        (readCb_ == nullptr);
     if (restoreFlag) {
         AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
         capturerMode_ = CAPTURE_MODE_NORMAL;
@@ -2571,7 +2597,12 @@ void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrIn
     } else {
         AUDIO_ERR_LOG("Invalid span size %{public}u, skip update", attr.spanSizeInFrame);
     }
-    if ((attr.routeFlag & AUDIO_INPUT_FLAG_FAST) == 0) {
+    if ((attr.routeFlag & AUDIO_INPUT_FLAG_ULTRA_FAST) != 0 &&
+        static_cast<uint64_t>(attr.spanSizeInFrame) * AUDIO_US_PER_S ==
+        static_cast<uint64_t>(streamParams_.samplingRate) * ULTRA_FAST_CAPTURE_PERIOD_US) {
+        capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
+        NotifyFastStatusChange(FASTSTATUS_ULTRA_FAST);
+    } else if ((attr.routeFlag & AUDIO_INPUT_FLAG_FAST) == 0) {
         AUDIO_INFO_LOG("NotifyFastStatusChange to NORMAL, sessionId:%{public}u", sessionId_);
         capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
         NotifyFastStatusChange(FASTSTATUS_NORMAL);
@@ -2603,7 +2634,7 @@ bool CapturerInClientInner::SyncCapturerAttrFromSpan()
 bool CapturerInClientInner::JudgeFastStreamByCapturerAttr()
 {
     SyncCapturerAttrFromSpan();
-    bool isFast = (fastStatus_ == FASTSTATUS_FAST);
+    bool isFast = (GetFastStatus() == FASTSTATUS_FAST || GetFastStatus() == FASTSTATUS_ULTRA_FAST);
     return isFast;
 }
 

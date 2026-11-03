@@ -502,6 +502,11 @@ public:
         return sharedAudioRenderer_->StopDataCallback();
     }
 
+    int32_t Standby(bool on) override
+    {
+        return sharedAudioRenderer_->Standby(on);
+    }
+
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override
     {
         return sharedAudioRenderer_->SetInterruptEventCallbackType(callbackType);

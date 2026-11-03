@@ -123,6 +123,19 @@ bool OH_AudioStreamManager_IsFastPlaybackSupported(
     OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_Usage usage);
 
 /**
+ * @brief Checks whether the ultra fast playback is supported.
+ *
+ * @param streamManager The {@link OH_AudioStreamManager} handle
+ *     returned by {@link OH_AudioManager_GetAudioStreamManager}.
+ * @param streamInfo The pointer to {@link OH_AudioStreamInfo}, indicates the audio stream info.
+ * @param usage The {@link OH_AudioStream_Usage}, indicates the audio stream usage.
+ * @return Returns <b>true</b> if the ultra fast playback is supported; returns <b>false</b> otherwise.
+ * @since 26.1.0
+ */
+bool OH_AudioStreamManager_IsUltraFastPlaybackSupported(OH_AudioStreamManager *streamManager,
+    OH_AudioStreamInfo *streamInfo, OH_AudioStream_Usage usage);
+
+/**
  * @brief Return if fast recording is supported for the specific audio stream info and source type
  *     in current device situation.
  *
@@ -134,6 +147,22 @@ bool OH_AudioStreamManager_IsFastPlaybackSupported(
  * @since 20
  */
 bool OH_AudioStreamManager_IsFastRecordingSupported(
+    OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_SourceType source);
+
+/**
+ * @brief Queries independent 2.5 ms recording support for the current input device.
+ * @param streamManager Handle returned by OH_AudioManager_GetAudioStreamManager.
+ * @param streamInfo Non-null PCM client stream information matched against the configured ultra-fast input profile.
+ * Mono follows the existing fast-input stereo-layout matching rule. USB ARM source parameters follow the device profile.
+ * @param source Recording source used to select the current input device.
+ * @return true if the device is supported; otherwise false.
+ * Device support follows the XML device-to-pipe association and AUDIO_INPUT_FLAG_ULTRA_FAST configuration,
+ * independently of adapter, pipe and device names or whether the caller is a system or third-party app.
+ * This query does not check permissions, available stream slots or whether Generate will succeed.
+ * @syscap SystemCapability.Multimedia.Audio.StreamManager
+ * @since 26.1.0
+ */
+bool OH_AudioStreamManager_IsUltraFastRecordingSupported(
     OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_SourceType source);
 
 /**

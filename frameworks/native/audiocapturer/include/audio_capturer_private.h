@@ -204,7 +204,7 @@ private:
     void HandleAudioInterruptWhenServerDied(CapturerState previousState);
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
-    FastStatus GetFastStatusInner();
+    FastStatus GetFastStatusInner() const;
     void FastStatusChangeCallback(FastStatus status);
     void NotifyFastStatusChange(FastStatus status);
     void SetInnerStreamFastStatusChangeCallback(const std::shared_ptr<IAudioStream> &audioStream);

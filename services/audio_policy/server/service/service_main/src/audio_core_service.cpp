@@ -469,6 +469,7 @@ void AudioCoreService::Init()
     }
     isSupportUltraFast_ = pipeManager_->GetUltraFastFlag();
     isSupportArmUsbUltraFast_ = pipeManager_->GetArmUsbUltraFastFlag();
+    isSupportTrueUltraFast_ = AudioCoreConfigManager::GetInstance().GetTrueUltraFastFlag();
 }
 
 void AudioCoreService::DeInit()
@@ -828,6 +829,16 @@ int32_t AudioCoreService::CreateCapturerClient(
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "streamDesc is nullptr");
 
     // Check interphone capturer conflict with VoIP/Cellular streams
+    if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST ||
+        streamDesc->capturerInfo_.capturerFlags == AUDIO_FLAG_ULTRA_FAST) {
+        CHECK_AND_RETURN_RET(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
+            IPCSkeleton::GetCallingTokenID()), ERR_PERMISSION_DENIED);
+        CHECK_AND_RETURN_RET(AudioCoreConfigManager::GetInstance().GetUltraFastFlag("primary", PIPE_ROLE_INPUT) ||
+            AudioCoreConfigManager::GetInstance().GetUltraFastFlag("usb", PIPE_ROLE_INPUT),
+            ERROR_UNSUPPORTED_ULTRA_FAST);
+        streamDesc->appInfo_.appTokenId = IPCSkeleton::GetCallingTokenID();
+        streamDesc->capturerInfo_.originalFlag = AUDIO_FLAG_ULTRA_FAST;
+    }
     int32_t ret = CheckCapturerStreamConflicts(streamDesc);
     if (ret != SUCCESS) {
         return ret;
@@ -1155,9 +1166,11 @@ void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioS
         case AUDIO_FLAG_VOIP_DIRECT:
             streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
             return;
+        case AUDIO_FLAG_TRUE_ULTRA_FAST:
+            HandleTrueUltraFastFlag(streamDesc, isCreateProcess);
+            return;
         case AUDIO_FLAG_ULTRA_FAST:
-            streamDesc->ResetUltraFastFlag();
-            GetFlagForUltraFastStream(streamDesc, isCreateProcess);
+            HandleLegacyUltraFastFlag(streamDesc, isCreateProcess);
             break;
         default:
             break;
@@ -1165,6 +1178,44 @@ void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioS
     isCreateProcess_ = isCreateProcess;
     streamDesc->audioFlag_ = SetFlagForSpecialStream(streamDesc, isCreateProcess);
     isCreateProcess_ = false;
+}
+
+void AudioCoreService::HandleTrueUltraFastFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    bool isCreateProcess)
+{
+    if (isCreateProcess) {
+        if (!PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
+            IPCSkeleton::GetCallingTokenID())) {
+            AUDIO_INFO_LOG("No ultra fast permission, downgrade to FAST");
+            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+            return;
+        }
+        if (!PermissionUtil::VerifyIsSystemApp() &&
+            streamDesc->GetMainNewDeviceType() != DEVICE_TYPE_USB_ARM_HEADSET) {
+            AUDIO_INFO_LOG("Non-system app on non-USB-ARM device, downgrade to FAST");
+            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+            return;
+        }
+    }
+
+    if (!isSupportTrueUltraFast_) {
+        AUDIO_INFO_LOG("No true ultra-fast pipe, downgrade to FAST");
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+        return;
+    }
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_ULTRA_FAST;
+}
+
+void AudioCoreService::HandleLegacyUltraFastFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    bool isCreateProcess)
+{
+    if (isSupportTrueUltraFast_) {
+        AUDIO_INFO_LOG("True ultra-fast pipe exists, downgrade flag=11 to FAST");
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+        return;
+    }
+    streamDesc->ResetUltraFastFlag();
+    GetFlagForUltraFastStream(streamDesc, isCreateProcess);
 }
 
 AudioFlag AudioCoreService::GetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
@@ -1247,6 +1298,23 @@ bool AudioCoreService::RecordIsForcedNormal(std::shared_ptr<AudioStreamDescripto
 
 void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
+    if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_ULTRA_FAST &&
+        streamDesc->capturerInfo_.capturerFlags != AUDIO_FLAG_FORCED_NORMAL) {
+        // Always reconsider the request on a route change, including a return to a capable headset.
+        streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        CHECK_AND_RETURN(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION,
+            streamDesc->appInfo_.appTokenId));
+        const auto &info = streamDesc->streamInfo_;
+        CHECK_AND_RETURN(info.encoding == ENCODING_PCM);
+        if (IsStreamSupportMmap(streamDesc)) {
+            streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
+        }
+        if (AudioCoreConfigManager::GetInstance().IsUltraFastRecordingDeviceSupported(
+            streamDesc->streamInfo_, streamDesc->newDeviceDescs_)) {
+            streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+        }
+        return;
+    }
     auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
     if (sourceStrategyMap != nullptr) {
         auto strategyIt = sourceStrategyMap->find(streamDesc->capturerInfo_.sourceType);
@@ -1322,9 +1390,14 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
 void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool forceUpdate)
 {
     if (!forceUpdate) {
+        // pause/stop/release stream event don't trigger update sco state during ringing or in a call
         CHECK_AND_RETURN(!audioSceneManager_.IsVoiceCallRelatedScene());
     }
-    if (audioDeviceManager_.HasScoDevicesRealConnected()) {
+    // not-running stream (not from pause/stop/release stream event) don't trigger update sco state even it selects sco
+    bool skipUpdateScoState = forceUpdate && streamDesc != nullptr &&
+        streamDesc->streamStatus_ != STREAM_STATUS_STARTED &&
+        streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_BLUETOOTH_SCO;
+    if (!skipUpdateScoState && audioDeviceManager_.HasScoDevicesRealConnected()) {
         auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModemCopy();
         auto inputStreamDescs = pipeManager_->GetAllInputStreamDescsCopy();
         FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
@@ -1504,7 +1577,8 @@ void AudioCoreService::ForceStopInterphoneStreamsIfNecessary(const std::shared_p
 void AudioCoreService::CheckFastToNormalForPlayback(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     SessionOperationMsg opMsg)
 {
-    if (opMsg == SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL && (streamDesc->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST)) {
+    if (opMsg == SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL &&
+        (streamDesc->routeFlag_ & (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_ULTRA_FAST))) {
         streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
         AUDIO_INFO_LOG("fast playback need to change to FORCED_NORMAL");
     }
@@ -1537,7 +1611,8 @@ int32_t AudioCoreService::StartClientForPlayback(uint32_t sessionId,
 void AudioCoreService::CheckFastToNormalForRecord(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     SessionOperationMsg opMsg)
 {
-    if (opMsg == SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL && (streamDesc->routeFlag_ & AUDIO_INPUT_FLAG_FAST)) {
+    if (opMsg == SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL &&
+        (streamDesc->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST))) {
         streamDesc->capturerInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
         AUDIO_INFO_LOG("fast record need to change to FORCED_NORMAL");
     }
@@ -3840,7 +3915,8 @@ bool AudioCoreService::HandleNormalInputPipes(const std::vector<std::shared_ptr<
             continue;
         }
 
-        uint32_t flagMask = AUDIO_INPUT_FLAG_AI | AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP_FAST |
+        uint32_t flagMask = AUDIO_INPUT_FLAG_AI | AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST |
+            AUDIO_INPUT_FLAG_VOIP_FAST |
             AUDIO_INPUT_FLAG_WAKEUP | AUDIO_INPUT_FLAG_UNPROCESS | AUDIO_INPUT_FLAG_ULTRASONIC |
             AUDIO_INPUT_FLAG_VOICE_RECOGNITION | AUDIO_INPUT_FLAG_RAW_AI | AUDIO_INPUT_FLAG_INTERPHONE |
             AUDIO_INPUT_FLAG_LIVE;
@@ -4113,7 +4189,7 @@ int32_t AudioCoreService::ReloadCaptureSession(uint32_t sessionId, SessionOperat
     }
     uint32_t targetSessionId = sessionId;
     if (newStreamDesc == nullptr || specialSourceTypeSet_.count(newStreamDesc->capturerInfo_.sourceType) != 0 ||
-        (newStreamDesc->routeFlag_ & AUDIO_INPUT_FLAG_FAST)) {
+        (newStreamDesc->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST))) {
         AUDIO_ERR_LOG("The session of %{public}u is special or no stream, no need reload.", sessionId);
         return ERROR;
     }

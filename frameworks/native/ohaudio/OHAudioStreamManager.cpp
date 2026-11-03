@@ -138,6 +138,26 @@ bool OH_AudioStreamManager_IsFastPlaybackSupported(
     return ohAudioStreamManager->IsFastPlaybackSupported(audioStreamInfo, streamUsage);
 }
 
+bool OH_AudioStreamManager_IsUltraFastPlaybackSupported(
+    OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_Usage usage)
+{
+    OHAudioStreamManager* ohAudioStreamManager = convertManager(streamManager);
+    if (ohAudioStreamManager == nullptr || streamInfo == nullptr || !VALID_OH_STREAM_USAGES.count(usage)) {
+        AUDIO_ERR_LOG("Invalid params!");
+        return false;
+    }
+
+    StreamUsage streamUsage = static_cast<StreamUsage>(usage);
+    AudioStreamInfo audioStreamInfo = {
+        (AudioSamplingRate)streamInfo->samplingRate,
+        (AudioEncodingType)streamInfo->encodingType,
+        (AudioSampleFormat)streamInfo->sampleFormat,
+        AudioChannel::STEREO,
+        (AudioChannelLayout)streamInfo->channelLayout
+    };
+    return ohAudioStreamManager->IsUltraFastPlaybackSupported(audioStreamInfo, streamUsage);
+}
+
 bool OH_AudioStreamManager_IsFastRecordingSupported(
     OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_SourceType source)
 {
@@ -168,6 +188,15 @@ bool OH_AudioStreamManager_IsIntelligentNoiseReductionEnabledForCurrentDevice(
         false, "sourceType is invalid");
     SourceType sourceType = static_cast<SourceType>(source);
     return ohAudioStreamManager->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
+}
+
+bool OH_AudioStreamManager_IsUltraFastRecordingSupported(
+    OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_SourceType source)
+{
+    auto manager = convertManager(streamManager);
+    CHECK_AND_RETURN_RET(manager != nullptr && streamInfo != nullptr && VALID_OH_SOURCE_TYPES.count(source), false);
+    AudioStreamInfo info = convertStreamInfo(streamInfo);
+    return manager->IsUltraFastRecordingSupported(info, static_cast<SourceType>(source));
 }
 
 bool OH_AudioStreamManager_IsMultichannelPlaybackSupported(
@@ -264,10 +293,22 @@ bool OHAudioStreamManager::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, 
     return audioStreamManager_->IsFastPlaybackSupported(streamInfo, usage);
 }
 
+bool OHAudioStreamManager::IsUltraFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
+{
+    CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
+    return audioStreamManager_->IsUltraFastPlaybackSupported(streamInfo, usage);
+}
+
 bool OHAudioStreamManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
 {
     CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
     return audioStreamManager_->IsFastRecordingSupported(streamInfo, source);
+}
+
+bool OHAudioStreamManager::IsUltraFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
+{
+    CHECK_AND_RETURN_RET(audioStreamManager_ != nullptr, false);
+    return audioStreamManager_->IsUltraFastRecordingSupported(streamInfo, source);
 }
 
 bool OHAudioStreamManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType)

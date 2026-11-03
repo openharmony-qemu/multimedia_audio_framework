@@ -63,6 +63,9 @@ public:
     void RecordOverflowTime(bool isStart);
     void UpdateAppState(bool isBackground);
 
+    void SetExplicitStandbyState(bool on);
+    void CheckExplicitStandbyTimeout();
+
     std::atomic<bool> isNeedCreateThread_ = true;
     void SetVolume(float volume);
     float GetVolume();
@@ -84,6 +87,12 @@ private:
     AudioProcessConfig streamConfig_;
     std::atomic<float> curVolume_ = 1.0f;
     float preVolume_ = 1.0f;
+
+    bool explicitStandbyEnable_ = false;
+    int64_t explicitStandbyStartTime_ = 0;
+    int64_t explicitStandbyBackgroundStartTime_ = 0;
+    bool explicitStandbyTimeoutReported_ = false;
+    std::mutex standbyLock_;
 };
 }
 }

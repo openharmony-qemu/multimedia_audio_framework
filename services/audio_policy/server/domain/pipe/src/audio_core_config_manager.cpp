@@ -23,6 +23,7 @@
 #include "audio_policy_config_parser.h"
 #include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
+#include "audio_device_utils.h"
 #include "audio_core_service.h"
 #include "audio_bus_selector.h"
 
@@ -111,8 +112,23 @@ void AudioCoreConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
         "Parse audio policy xml failed, received data is empty");
 
     audioPolicyConfig_.Reorganize();
-
+    CheckTrueUltraFastPipe();
     isAdapterInfoMap_.store(true);
+}
+
+void AudioCoreConfigManager::CheckTrueUltraFastPipe()
+{
+    supportTrueUltraFast_ = false;
+    for (auto &adapterIt : audioPolicyConfig_.adapterInfoMap) {
+        for (auto &pipeInfo : adapterIt.second->pipeInfos) {
+            if (pipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+                supportTrueUltraFast_ = true;
+                break;
+            }
+        }
+        if (supportTrueUltraFast_) { break; }
+    }
+    AUDIO_INFO_LOG("supportTrueUltraFast_ = %{public}d", supportTrueUltraFast_);
 }
 
 void AudioCoreConfigManager::OnXmlParsingCompleted(
@@ -531,9 +547,82 @@ bool AudioCoreConfigManager::GetUltraFastFlag()
     return supportUltraFast_;
 }
 
+bool AudioCoreConfigManager::GetTrueUltraFastFlag()
+{
+    return supportTrueUltraFast_;
+}
+
+bool AudioCoreConfigManager::CheckDeviceSupportUltraFast(DeviceType deviceType, AudioPipeRole role)
+{
+    AUDIO_INFO_LOG("Device type: %{public}d", deviceType);
+    auto it = g_trueUltraFastDeviceToAdapter.find(deviceType);
+    if (it == g_trueUltraFastDeviceToAdapter.end()) {
+        return false;
+    }
+    for (auto &adapterIt : audioPolicyConfig_.adapterInfoMap) {
+        if (adapterIt.second->adapterName != it->second) {
+            continue;
+        }
+        for (auto &pipeInfo : adapterIt.second->pipeInfos) {
+            if (pipeInfo->role_ == role && (pipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool AudioCoreConfigManager::GetArmUsbUltraFastFlag()
 {
     return supportArmUsbUltraFast_;
+}
+
+bool AudioCoreConfigManager::GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role)
+{
+    CHECK_AND_RETURN_RET(role == PIPE_ROLE_INPUT && (adapterName == "primary" || adapterName == "usb"), false);
+    auto adapter = audioPolicyConfig_.GetAdapterInfo(PolicyAdapterInfo::GetAdapterType(adapterName));
+    CHECK_AND_RETURN_RET(adapter != nullptr, false);
+    for (const auto &pipe : adapter->pipeInfos) {
+        if (pipe != nullptr && pipe->role_ == role && pipe->supportFlags_ == AUDIO_INPUT_FLAG_ULTRA_FAST) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioCoreConfigManager::IsUltraFastRecordingDeviceSupported(const AudioStreamInfo &streamInfo,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
+{
+    CHECK_AND_RETURN_RET(streamInfo.encoding == ENCODING_PCM, false);
+    for (const auto &device : devices) {
+        CHECK_AND_CONTINUE(device != nullptr && device->deviceRole_ == INPUT_DEVICE &&
+            device->networkId_ == LOCAL_NETWORK_ID);
+        auto deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(device->deviceType_, INPUT_DEVICE,
+            device->networkId_, AUDIO_INPUT_FLAG_ULTRA_FAST, 0, "", device->isUnidirectional_);
+        CHECK_AND_CONTINUE(deviceInfo != nullptr && !deviceInfo->isSimulated_);
+        auto pipe = deviceInfo->supportPipeMap_.find(AUDIO_INPUT_FLAG_ULTRA_FAST);
+        CHECK_AND_CONTINUE(pipe != deviceInfo->supportPipeMap_.end() && pipe->second != nullptr &&
+            pipe->second->role_ == PIPE_ROLE_INPUT &&
+            pipe->second->supportFlags_ == AUDIO_INPUT_FLAG_ULTRA_FAST);
+        if (device->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+            // ARM USB source parameters are reported by the device and negotiated when opening the pipe.
+            return true;
+        }
+        AudioSampleFormat tempFormat = streamInfo.format;
+        CHECK_AND_RETURN_RET(tempFormat == SAMPLE_S16LE, false);
+        AudioChannelLayout tempLayout = streamInfo.channelLayout;
+        if (tempLayout == CH_LAYOUT_UNKNOWN) {
+            tempLayout = ConvertAudioChannelToLayout(streamInfo.channels);
+        }
+        CHECK_AND_CONTINUE(tempLayout != CH_LAYOUT_UNKNOWN);
+        tempLayout = (tempLayout == CH_LAYOUT_MONO) ? CH_LAYOUT_STEREO : tempLayout;
+        for (const auto &prop : pipe->second->streamPropInfos_) {
+            CHECK_AND_CONTINUE(prop != nullptr);
+            CHECK_AND_CONTINUE(prop->sampleRate_ == streamInfo.samplingRate && prop->channelLayout_ == tempLayout);
+            return true;
+        }
+    }
+    return false;
 }
 
 bool AudioCoreConfigManager::IsFastStreamSupported(AudioStreamInfo &streamInfo,
@@ -626,6 +715,11 @@ uint32_t AudioCoreConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescrip
         newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_,
         "", newDeviceDesc->isUnidirectional_);
     CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, flag, "Find device failed; use none flag");
+
+    if (desc->audioMode_ == AUDIO_MODE_RECORD && desc->audioFlag_ == AUDIO_INPUT_FLAG_ULTRA_FAST) {
+        return deviceInfo->supportPipeMap_.count(AUDIO_INPUT_FLAG_ULTRA_FAST) != 0 ?
+            AUDIO_INPUT_FLAG_ULTRA_FAST : AUDIO_INPUT_FLAG_NORMAL;
+    }
 
     for (auto &pipeIt : deviceInfo->supportPipeMap_) {
         if ((desc->audioMode_ == static_cast<AudioMode>(pipeIt.second->role_)) && (desc->audioFlag_ & pipeIt.first)) {
@@ -731,15 +825,51 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetAvailableStreamPr
     return streamPropInfos.front();
 }
 
+std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetArmUsbUltraFastRecordProp(
+    const std::shared_ptr<AudioDeviceDescriptor> &device, const std::shared_ptr<AdapterPipeInfo> &pipe)
+{
+    const auto &streamInfos = device->GetAudioStreamInfo();
+    CHECK_AND_RETURN_RET_LOG(!streamInfos.empty(), nullptr, "ARM USB stream info is empty");
+    auto deviceInfo = streamInfos.back();
+    CHECK_AND_RETURN_RET_LOG(!deviceInfo.samplingRate.empty(), nullptr, "ARM USB sampling rate is empty");
+    const uint64_t sampleRate = *deviceInfo.samplingRate.begin();
+    const auto layout = deviceInfo.GetMainChannelLayout();
+    const auto channels = ConvertLayoutToAudioChannel(layout);
+    CHECK_AND_RETURN_RET_LOG(AudioDefinitionPolicyUtils::enumToFormatStr.count(deviceInfo.format) != 0,
+        nullptr, "Invalid ARM USB sample format");
+    const auto bytesPerSample = AudioPolicyUtils::GetInstance().PcmFormatToBytes(deviceInfo.format);
+    const uint64_t spanFrames = sampleRate * ULTRA_FAST_CAPTURE_PERIOD_US / AUDIO_US_PER_S;
+    CHECK_AND_RETURN_RET_LOG(layout != CH_LAYOUT_UNKNOWN && channels > CHANNEL_UNKNOW && bytesPerSample > 0 &&
+        spanFrames > 0 && spanFrames * AUDIO_US_PER_S == sampleRate * ULTRA_FAST_CAPTURE_PERIOD_US,
+        nullptr, "Invalid ARM USB ultra fast stream info: rate=%{public}" PRIu64
+        ", format=%{public}u, channels=%{public}u, layout=%{public}" PRIu64
+        ", sampleBytes=%{public}u, spanFrames=%{public}" PRIu64,
+        sampleRate, static_cast<uint32_t>(deviceInfo.format), static_cast<uint32_t>(channels),
+        static_cast<uint64_t>(layout), bytesPerSample, spanFrames);
+    auto prop = GetAvailableStreamPropInfoForDevice(pipe->streamPropInfos_, device->deviceType_);
+    CHECK_AND_RETURN_RET_LOG(prop != nullptr, nullptr, "ARM USB ultra fast stream prop is empty");
+    auto result = std::make_shared<PipeStreamPropInfo>(*prop);
+    result->sampleRate_ = static_cast<uint32_t>(sampleRate);
+    result->format_ = deviceInfo.format;
+    result->channelLayout_ = layout;
+    result->channels_ = channels;
+    result->bufferSize_ = spanFrames * channels * bytesPerSample;
+    return result;
+}
+
 void AudioCoreConfigManager::GetStreamPropInfoForRecord(
     std::shared_ptr<AudioStreamDescriptor> desc, std::shared_ptr<AdapterPipeInfo> adapterPipeInfo,
     std::shared_ptr<PipeStreamPropInfo> &info, const AudioStreamInfo &streamInfo)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "stream desc is nullptr");
     CHECK_AND_RETURN_LOG(adapterPipeInfo != nullptr, "adapterPipeInfo is nullptr");
-    if (desc->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
+    if (desc->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_ULTRA_FAST)) {
         AudioStreamInfo temp(streamInfo.samplingRate, ENCODING_PCM, desc->streamInfo_.format, streamInfo.channels);
-        auto fastStreamPropinfo = GetStreamPropInfoFromPipe(adapterPipeInfo, temp);
+        const bool isArmUsbUltraFast = desc->routeFlag_ == AUDIO_INPUT_FLAG_ULTRA_FAST &&
+            desc->GetMainNewDeviceType() == DEVICE_TYPE_USB_ARM_HEADSET;
+        auto fastStreamPropinfo = isArmUsbUltraFast ?
+            GetArmUsbUltraFastRecordProp(desc->newDeviceDescs_.front(), adapterPipeInfo) :
+            GetStreamPropInfoFromPipe(adapterPipeInfo, temp);
         if (fastStreamPropinfo != nullptr) {
             AUDIO_INFO_LOG("Find fast streamPropInfo from %{public}s", adapterPipeInfo->name_.c_str());
             // Use *ptr to get copy and avoid modify the source data from XML
@@ -1004,7 +1134,7 @@ void AudioCoreConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStreamDe
         streamInfo.channels = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
     }
 
-    if (desc->routeFlag_ == AUDIO_INPUT_FLAG_FAST) {
+    if (desc->routeFlag_ == AUDIO_INPUT_FLAG_FAST || desc->routeFlag_ == AUDIO_INPUT_FLAG_ULTRA_FAST) {
         streamInfo.channels = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
     }
 
@@ -1015,7 +1145,7 @@ void AudioCoreConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStreamDe
         return;
     }
 
-    if (desc->routeFlag_ == AUDIO_OUTPUT_FLAG_FAST) {
+    if (desc->routeFlag_ == AUDIO_OUTPUT_FLAG_FAST || desc->routeFlag_ == AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
         std::shared_ptr<PipeStreamPropInfo> propInfo = pipeInfo->streamPropInfos_.front();
         if (propInfo == nullptr) {
             AUDIO_WARNING_LOG("propInfo is null!");

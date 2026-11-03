@@ -1052,8 +1052,9 @@ void RendererInClientInner::InitCallbackLoop()
             
             strongRef->cbThreadCv_.notify_one();
             AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d, IsFastStream:%{public}d, "
-                "IsUltraFastStream:%{public}d", strongRef->sessionId_, strongRef->JudgeFastStreamByRendererAttr(),
-                strongRef->IsUltraFastStream());
+                "IsUltraFastStream:%{public}d, IsTrueUltraFastStream: %{public}d",
+                strongRef->sessionId_, strongRef->JudgeFastStreamByRendererAttr(),
+                strongRef->IsUltraFastStream(), strongRef->IsTrueUltraFastStream());
         } else {
             HILOG_COMM_WARN("[InitCallbackLoop]Strong ref is nullptr, could cause error");
         }
@@ -1078,7 +1079,10 @@ void RendererInClientInner::SetupFastStreamThreadPriority()
 {
     ThreadPriorityConfig threadPriority = THREAD_PRIORITY_QOS_7;
 
-    if (IsUltraFastStream()) {
+    if (IsTrueUltraFastStream()) {
+        BindBigAndMidCore();
+        threadPriority = THREAD_PRIORITY_ULTRA_FAST_4;
+    } else if (IsUltraFastStream()) {
         BindBigAndMidCore();
         threadPriority = THREAD_PRIORITY_4;
     } else {
@@ -1434,6 +1438,8 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
 
     HILOG_COMM_INFO("[StartAudioStream]Start SUCCESS, sessionId: %{public}d, uid: %{public}d",
         sessionId_, clientUid_);
+    streamStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
     UpdateTracker("RUNNING");
     FlushBeforeStart();
     offloadStartReadPos_ = 0;
@@ -1535,6 +1541,35 @@ void RendererInClientInner::ReportExceptionForInterval()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
+void RendererInClientInner::ReportUltraFastUsage()
+{
+    int64_t stopTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    int32_t durationMs = streamStartTime_ > 0 ? static_cast<int32_t>(stopTime - streamStartTime_) : 0;
+    std::string adapterName = (defaultOutputDevice_ == DEVICE_TYPE_USB_ARM_HEADSET) ? "usb" : "primary";
+
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::UNDERRUN_ISSUE,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("ISSUE_TYPE", TYPE_ULTRA_FAST_USAGE);
+    bean->Add("STREAM_INFO_1", std::to_string(sessionId_));
+    bean->Add("STREAM_INFO_2", std::to_string(clientUid_));
+    bean->Add("STREAM_INFO_3", 1);
+    bean->Add("STREAM_INFO_4", static_cast<int32_t>(defaultOutputDevice_));
+    bean->Add("APP_INFO_1", adapterName);
+    bean->Add("APP_INFO_2", std::to_string(rendererInfo_.originalFlag));
+    bean->Add("APP_INFO_3", static_cast<int32_t>(fastStatus_.load()));
+    bean->Add("EXCEPTION_INFO_1", std::to_string(rendererInfo_.audioFlag));
+    bean->Add("EXCEPTION_INFO_2", std::to_string(static_cast<int32_t>(rendererInfo_.pipeType)));
+    bean->Add("EXCEPTION_INFO_3", DFX_INVALID_EXCEPTION_INFO);
+    bean->Add("EXCEPTION_INFO_4", static_cast<int32_t>(GetUnderflowCount()));
+    bean->Add("DEVICE_INFO_1", std::to_string(GetOverflowCount()));
+    bean->Add("DEVICE_INFO_2", durationMs);
+    bean->Add("SYSTEM_INFO_1", static_cast<int32_t>(streamStartTime_ / 1000)); // report in seconds (1000ms -> 1s)
+    bean->Add("SYSTEM_INFO_2", static_cast<int32_t>(stopTime / 1000)); // report in seconds (1000ms -> 1s)
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 void RendererInClientInner::ReportPreferredFrameSizeOutOfRange(int32_t frameSize, size_t minByte, size_t maxByte)
 {
     std::string appName = AppBundleManager::GetSelfBundleName();
@@ -1559,6 +1594,9 @@ void RendererInClientInner::HandleStopSuccess()
     if (logStopCallCount_) {
         ReportExceptionForInterval();
         logStopCallCount_ = false;
+    }
+    if (IsTrueUltraFastStream()) {
+        ReportUltraFastUsage();
     }
 }
 
@@ -1757,6 +1795,8 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
     CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERR_INVALID_OPERATION, "Write with meta: not supported");
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
+    CHECK_AND_RETURN_RET_LOG(!isStandby_.load(std::memory_order_acquire), ERR_INVALID_OPERATION,
+        "Write: not allowed in standby state");
     int32_t ret = WriteInner(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
     return ret <= 0 ? ret : static_cast<int32_t>(pcmBufferSize);
 }
@@ -1766,6 +1806,8 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
     CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERR_INVALID_OPERATION, "Write: not supported");
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
+    CHECK_AND_RETURN_RET_LOG(!isStandby_.load(std::memory_order_acquire), ERR_INVALID_OPERATION,
+        "Write: not allowed in standby state");
     return WriteInner(buffer, bufferSize);
 }
 
@@ -2315,10 +2357,14 @@ int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
 
 FastStatus RendererInClientInner::GetFastStatus()
 {
-    if (JudgeFastStreamByRendererAttr()) {
+    SyncRendererAttrFromSpan();
+    if (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST) {
         return FASTSTATUS_FAST;
+    } else if (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+        return FASTSTATUS_ULTRA_FAST;
+    } else {
+        return FASTSTATUS_NORMAL;
     }
-    return FASTSTATUS_NORMAL;
 }
 
 void RendererInClientInner::SetFastStatusChangeCallback(const std::function<void(FastStatus)> &callback)
@@ -2329,7 +2375,7 @@ void RendererInClientInner::SetFastStatusChangeCallback(const std::function<void
 
 void RendererInClientInner::NotifyFastStatusChange(FastStatus status)
 {
-    if (status != FASTSTATUS_FAST && status != FASTSTATUS_NORMAL) {
+    if (status != FASTSTATUS_FAST && status != FASTSTATUS_NORMAL && status != FASTSTATUS_ULTRA_FAST) {
         AUDIO_WARNING_LOG("Invalid fast status:%{public}d", status);
         return;
     }
@@ -2357,6 +2403,11 @@ void RendererInClientInner::CheckAndReportTimestamp()
         logStopCallCount_ = true;
     }
     lastTriggerTime_ = currentTime;
+}
+
+bool RendererInClientInner::IsTrueUltraFastStream() const
+{
+    return rendererInfo_.rendererFlags == AUDIO_FLAG_TRUE_ULTRA_FAST;
 }
 
 bool RendererInClientInner::IsUltraFastStreamRequested() const
@@ -2511,6 +2562,29 @@ int32_t RendererInClientInner::SetOffloadDataCallbackState(int cbState)
     Trace trace("RendererInClientInner::SetOffloadDataCallbackState: " + std::to_string(cbState));
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
     return ipcStream_->SetOffloadDataCallbackState(cbState);
+}
+
+int32_t RendererInClientInner::SetStandby(bool on)
+{
+    AUDIO_INFO_LOG("[SetStandby] on:%{public}d, current standby:%{public}d",
+        static_cast<int>(on), static_cast<int>(isStandby_.load()));
+    bool expected = !on;
+    if (!isStandby_.compare_exchange_strong(expected, on)) {
+        AUDIO_WARNING_LOG("[SetStandby] Already in target state, on:%{public}d", static_cast<int>(on));
+    }
+    if (!on) {
+        std::unique_lock<std::mutex> stateLock(statusMutex_);
+        cbThreadCv_.notify_all();
+    }
+    if (ipcStream_ != nullptr) {
+        ipcStream_->SetStandbyState(on);
+    }
+    return SUCCESS;
+}
+
+bool RendererInClientInner::IsStandby() const
+{
+    return isStandby_.load(std::memory_order_acquire);
 }
 
 bool RendererInClientInner::GetStopFlag() const

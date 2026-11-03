@@ -55,8 +55,10 @@ class MockNodeFormatInfoCallback : public INodeFormatInfoCallback {
 public:
     virtual ~MockNodeFormatInfoCallback() = default;
     AudioBasicFormat formatToReturn_;
+    int32_t queryCount_ = 0;
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override
     {
+        queryCount_++;
         basicFormat = formatToReturn_;
         return 0;
     }
@@ -3155,7 +3157,27 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_NullInputWithProcess, TestS
     EXPECT_NE(converterNode->outputStream_.PullOutputData(), nullptr);
 }
 
+/**
+ * @tc.name  : RegisterCallbackQueryTest_001
+ * @tc.type  : FUNC
+ * @tc.number: RegisterCallbackQueryTest_001.
+ * @tc.desc  : CheckUpdateOutInfo queries the registered callback for the target format
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, RegisterCallbackQueryTest_001, TestSize.Level0)
+{
+    auto converterNode = CreateStdConverter(); // 48k stereo -> 48k stereo
+    MockNodeFormatInfoCallback callback;
+    callback.formatToReturn_.rate = SAMPLE_RATE_44100;
+    callback.formatToReturn_.audioChannelInfo.numChannels = static_cast<uint32_t>(STEREO);
+    callback.formatToReturn_.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    converterNode->RegisterCallback(&callback);
+    EXPECT_TRUE(converterNode->CheckUpdateOutInfo());
+
+    EXPECT_EQ(converterNode->GetSampleRate(), SAMPLE_RATE_44100);
+    EXPECT_EQ(callback.queryCount_, 1);
 }
+
 /**
  * @tc.name  : signalProcess inputs size != 1 hits edge gate then recovers
  * @tc.type  : FUNC
@@ -3178,4 +3200,6 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, signalProcessInputsSizeEdgeLog, TestS
     converterNode->SignalProcess(twoInputs); // sustained hit
     std::vector<HpaePcmBuffer *> oneInput = {&input};
     converterNode->SignalProcess(oneInput); // recovery line: size back to 1
+}
+
 }

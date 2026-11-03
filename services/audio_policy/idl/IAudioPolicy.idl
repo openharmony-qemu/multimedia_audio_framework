@@ -392,4 +392,8 @@ interface IAudioPolicy {
     void SetSupportReload([in] boolean isSupportReload, [in] String networkId);
     void CheckAudioRendererStreamInfoSupport([in] AudioStreamInfo streamInfo, [out] boolean support);
     void AddDeviceTagToAudioZone([in] int zoneId, [in] String deviceTag);
+    void IsUltraFastPlaybackSupported([in] AudioStreamInfo streamInfo, [in] int usage, [out] boolean retSupported);
+    void IsDeviceSupportUltraFast([out] boolean retSupported);
+    void IsUltraFastRecordingSupported([in] AudioStreamInfo streamInfo, [in] int source, [out] boolean supported);
+    void IsUltraFastRecordingPlatformSupported([out] boolean supported);
 }

@@ -111,6 +111,9 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
         case HDI_ID_TYPE_FAST:
             sink = std::make_shared<FastAudioRenderSink>();
             break;
+        case HDI_ID_TYPE_ULTRA_FAST:
+            sink = std::make_shared<FastAudioRenderSink>();
+            break;
         case HDI_ID_TYPE_FILE:
             sink = std::make_shared<FileAudioRenderSink>();
             break;
@@ -160,6 +163,9 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint
             source = std::make_shared<WakeupAudioCaptureSource>(captureId);
             break;
         case HDI_ID_TYPE_FAST:
+            source = std::make_shared<FastAudioCaptureSource>();
+            break;
+        case HDI_ID_TYPE_ULTRA_FAST:
             source = std::make_shared<FastAudioCaptureSource>();
             break;
         case HDI_ID_TYPE_FILE:

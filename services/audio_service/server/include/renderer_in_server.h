@@ -137,6 +137,7 @@ public:
     int32_t SetSpeed(float speed);
     int32_t SetPitch(float pitch);
     int32_t SetOffloadDataCallbackState(int32_t state);
+    void SetExplicitStandbyState(bool on);
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);
@@ -198,6 +199,7 @@ public:
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
     int32_t RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener);
     int32_t GetRendererFlagsByRoute(uint32_t routeFlag);
+    static FastStatus GetFastStatusFromRendererFlags(int32_t rendererFlags);
 
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId);
 

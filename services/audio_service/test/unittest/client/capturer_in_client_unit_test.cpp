@@ -248,6 +248,8 @@ public:
 
     virtual int32_t SetOffloadDataCallbackState(int32_t state) override { return 0; }
 
+    virtual ErrCode SetStandbyState(bool on) override { return SUCCESS; }
+
     virtual int32_t SetSpeed(float speed) override { return 0; }
 
     virtual sptr<IRemoteObject> AsObject() override { return nullptr; }

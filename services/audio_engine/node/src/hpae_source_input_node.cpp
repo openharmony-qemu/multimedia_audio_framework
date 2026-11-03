@@ -87,11 +87,6 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
 void HpaeSourceInputNode::UpdateSourceInputMapCancatMicEc()
 {
     CHECK_AND_RETURN(concatMicEcFlag_);
-    // Defensive gate: concat total must not exceed engine multichannel limit.
-    uint32_t concatTotalChannels = static_cast<uint32_t>(nodeInfoMap_[HPAE_SOURCE_BUFFER_TYPE_MIC].channels) +
-        static_cast<uint32_t>(nodeInfoMap_[HPAE_SOURCE_BUFFER_TYPE_EC].channels);
-    CHECK_AND_RETURN_LOG(concatTotalChannels <= static_cast<uint32_t>(CHANNEL_16),
-        "concat total channels[%{public}u] exceed max 16", concatTotalChannels);
     HpaeSourceBufferType micType = HPAE_SOURCE_BUFFER_TYPE_MIC;
     HpaeSourceBufferType ecType = HPAE_SOURCE_BUFFER_TYPE_EC;
     HpaeNodeInfo micInfo = nodeInfoMap_[micType];

@@ -250,9 +250,19 @@ bool AudioStreamManager::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, St
     return AudioPolicyManager::GetInstance().IsFastPlaybackSupported(streamInfo, usage);
 }
 
+bool AudioStreamManager::IsUltraFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
+{
+    return AudioPolicyManager::GetInstance().IsUltraFastPlaybackSupported(streamInfo, usage);
+}
+
 bool AudioStreamManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
 {
     return AudioPolicyManager::GetInstance().IsFastRecordingSupported(streamInfo, source);
+}
+
+bool AudioStreamManager::IsUltraFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
+{
+    return AudioPolicyManager::GetInstance().IsUltraFastRecordingSupported(streamInfo, source);
 }
 
 bool AudioStreamManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)

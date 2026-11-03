@@ -91,11 +91,25 @@ typedef enum {
     AUDIOSTREAM_ERROR_UNSUPPORTED_FORMAT = 4,
 
     /**
+     * @error Permission denied for ultra fast playback.
+     *
+     * @since 26.1.0
+     */
+    AUDIOSTREAM_ERROR_PERMISSION_DENIED_ULTRA_FAST = 201,
+
+    /**
      * @error Unsupported audio stream ability, including function and configuration.
      *
      * @since 26.0.0
      */
     AUDIOSTREAM_ERROR_UNSUPPORTED_ABILITY = 6800104,
+
+    /**
+     * @error Ultra fast playback is not supported.
+     *
+     * @since 26.1.0
+     */
+    AUDIOSTREAM_ERROR_UNSUPPORTED_ULTRA_FAST = 6800107,
 
     /**
      * @error Audio server process died.
@@ -335,10 +349,15 @@ typedef enum {
      */
     AUDIOSTREAM_LATENCY_MODE_FAST = 1,
     /**
-     * This is an ultra low latency audio scene.
+     * This is an ultra low latency audio scene (true concurrent).
      *
+     * @since 26.1.0
      */
-    AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST = 11,
+    AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST = 2,
+    /**
+     * This is an ultra low latency audio scene (legacy).
+     */
+    AUDIOSTREAM_LATENCY_MODE_ULTRA_FAST_LITE = 11,
 } OH_AudioStream_LatencyMode;
 
 /**
@@ -664,7 +683,9 @@ typedef enum {
     /**
      * fast status
      */
-    AUDIOSTREAM_FASTSTATUS_FAST = 1
+    AUDIOSTREAM_FASTSTATUS_FAST = 1,
+    /** Ultra fast runtime status. @since 26.1.0 */
+    AUDIOSTREAM_FASTSTATUS_ULTRA_FAST = 2,
 } OH_AudioStream_FastStatus;
 
 /**

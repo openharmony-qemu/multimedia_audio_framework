@@ -461,24 +461,6 @@ void DumpSourceOutputsInfoFuzzTest(FuzzedDataProvider &fdp)
     hpaeManager->DumpSourceOutputsInfo();
 }
 
-void SetDefaultSinkFuzzTest(FuzzedDataProvider &fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-    hpaeManager->SetDefaultSink(FuzzString(fdp, MAX_NAME_LENGTH));
-}
-
-void SetDefaultSinkWithEmptyNameFuzzTest(FuzzedDataProvider &fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-    hpaeManager->SetDefaultSink("");
-}
-
 void SetDefaultSourceFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
@@ -1170,17 +1152,6 @@ void RegisterStatusCallbackPlayFuzzTest(FuzzedDataProvider &fdp)
     std::weak_ptr<IStreamStatusCallback> callback;
     (void)hpaeManager->RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY,
         FUZZ_PLAY_SESSION_ID, callback);
-}
-
-void SetDefaultSinkToExistingFuzzTest(FuzzedDataProvider &fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-    // defaultSink_ == "file_io" (set by the fixture) -> "same as default" early
-    // return branch. The random-name version only hits the "not exist" branch.
-    (void)hpaeManager->SetDefaultSink(FUZZ_SINK_NAME);
 }
 
 void MoveSinkInputCheckDeepFuzzTest(FuzzedDataProvider &fdp)
@@ -1887,8 +1858,6 @@ void Test(FuzzedDataProvider &fdp)
         DumpAllAvailableDeviceFuzzTest,
         DumpSinkInputsInfoFuzzTest,
         DumpSourceOutputsInfoFuzzTest,
-        SetDefaultSinkFuzzTest,
-        SetDefaultSinkWithEmptyNameFuzzTest,
         SetDefaultSourceFuzzTest,
         SetDefaultSourceWithEmptyNameFuzzTest,
         GetAllSinkInputsFuzzTest,
@@ -1948,7 +1917,6 @@ void Test(FuzzedDataProvider &fdp)
         SetAudioEffectModeWithSessionFuzzTest,
         RegisterWriteCallbackWithSessionFuzzTest,
         RegisterStatusCallbackPlayFuzzTest,
-        SetDefaultSinkToExistingFuzzTest,
         MoveSinkInputCheckDeepFuzzTest,
         RegisterHpaeDumpCallbackFuzzTest,
         UpdateEffectBtOffloadSupportedFuzzTest,

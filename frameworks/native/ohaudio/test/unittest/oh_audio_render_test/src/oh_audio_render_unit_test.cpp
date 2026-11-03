@@ -1799,5 +1799,168 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_036, TestSize.Level0)
     size_t length = 0;
     oHAudioRendererModeCallback->OnWriteData(length);
 }
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_Standby API via legal state.
+ * @tc.number: Audio_Renderer_Standby_001
+ * @tc.desc  : Test OH_AudioRenderer_Standby interface. Start then Standby(true), returns SUCCESS.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Renderer_Standby_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Standby(audioRenderer, true);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioRenderer_Release(audioRenderer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_Standby API via illegal state.
+ * @tc.number: Audio_Renderer_Standby_002
+ * @tc.desc  : Test OH_AudioRenderer_Standby interface. Standby(true) without Start, returns ILLEGAL_STATE.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Renderer_Standby_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    result = OH_AudioRenderer_Standby(audioRenderer, true);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+
+    OH_AudioRenderer_Release(audioRenderer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_Standby exit standby.
+ * @tc.number: Audio_Renderer_Standby_003
+ * @tc.desc  : Test OH_AudioRenderer_Standby interface. Start, Standby(true), Standby(false), returns SUCCESS.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Renderer_Standby_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Standby(audioRenderer, true);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Standby(audioRenderer, false);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioRenderer_Release(audioRenderer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_Standby with nullptr.
+ * @tc.number: Audio_Renderer_Standby_004
+ * @tc.desc  : Test OH_AudioRenderer_Standby interface. nullptr renderer, returns INVALID_PARAM.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Renderer_Standby_004, TestSize.Level0)
+{
+    OH_AudioStream_Result result = OH_AudioRenderer_Standby(nullptr, true);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_Standby then Stop then Start fails.
+ * @tc.number: Audio_Renderer_Standby_005
+ * @tc.desc  : Test standby -> stop -> start should fail with ILLEGAL_STATE.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Renderer_Standby_005, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Standby(audioRenderer, true);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Stop(audioRenderer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+
+    OH_AudioRenderer_Release(audioRenderer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_Standby exit without enter.
+ * @tc.number: Audio_Renderer_Standby_006
+ * @tc.desc  : Test Standby(false) without Standby(true), returns ILLEGAL_STATE.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Renderer_Standby_006, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Standby(audioRenderer, false);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+
+    OH_AudioRenderer_Release(audioRenderer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_Standby with non-media stream type.
+ * @tc.number: Audio_Renderer_Standby_007
+ * @tc.desc  : Test Standby with VOICE_COMMUNICATION stream type returns ILLEGAL_STATE.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Renderer_Standby_007, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder_SetRendererInfo(builder, AUDIOSTREAM_USAGE_VOICE_COMMUNICATION);
+
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Standby(audioRenderer, true);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+
+    OH_AudioRenderer_Release(audioRenderer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_Standby double enter.
+ * @tc.number: Audio_Renderer_Standby_008
+ * @tc.desc  : Test Standby(true) twice, second returns ILLEGAL_STATE.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Renderer_Standby_008, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Standby(audioRenderer, true);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Standby(audioRenderer, true);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+
+    OH_AudioRenderer_Release(audioRenderer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
 } // namespace AudioStandard
 } // namespace OHOS

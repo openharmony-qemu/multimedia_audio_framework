@@ -116,7 +116,7 @@ void AudioPipeInfo::DumpCommonAttrs(std::string &dumpString)
 void AudioPipeInfo::DumpOutputAttrs(std::string &dumpString)
 {
     AppendFormat(dumpString, "  - RenderInIdleState: %s\n", moduleInfo_.renderInIdleState.c_str());
-    if (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+    if ((routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST)) {
         AppendFormat(dumpString, " - UltraFastPipe: %d\n", ultraFastPipe_);
     }
 }

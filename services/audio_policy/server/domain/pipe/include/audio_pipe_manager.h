@@ -22,6 +22,7 @@
 #include <shared_mutex>
 #include <set>
 #include <unordered_set>
+#include <unordered_map>
 #include <vector>
 
 #include "audio_stream_descriptor.h"
@@ -51,7 +52,9 @@ public:
 
     bool Init();
     bool GetUltraFastFlag();
+    bool GetUltraFastFlag(const std::string &adapterName, AudioPipeRole role);
     bool GetArmUsbUltraFastFlag();
+    bool GetTrueUltraFastFlag();
     bool PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc);
     uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName,
         const std::string &networkId);
@@ -207,6 +210,8 @@ public:
     StreamUsage GetLastestRunningCallStreamUsage();
     bool HasUltraFastPipe();
     bool IsUltraFastSupportedDevice(DeviceType deviceType);
+    bool IsTrueUltraFastSupportedDevice(DeviceType deviceType);
+    uint32_t GetUltraFastStreamCount();
     bool IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::vector<std::string> GetNoRunningPipeModuleName();
     bool CheckNoRunningCondition(std::shared_ptr<AudioPipeInfo> pipeInfo);

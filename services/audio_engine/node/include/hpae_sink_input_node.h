@@ -58,6 +58,8 @@ public:
 
     int32_t GetCurrentPosition(uint64_t &framePosition, std::vector<uint64_t> &timestamp);
     void RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFramePosition = 0);
+    // Notify stream of history buffer cache state flips (rewind available / drained) via write callback
+    void NotifyHistoryCacheUpdate(bool available);
     // Ensure history buffer is at least preheatFrames for AISS (non-Offload path)
     void EnsureHistoryBufferForAiss(uint32_t preheatFrames);
 
@@ -118,6 +120,7 @@ private:
     int32_t appUid_ = -1;
     bool isSystemApp_ = false;
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
+    std::atomic<bool> historyCacheNotified_ = false;
     bool offloadEnable_ = false;
     int32_t offloadType_ = OFFLOAD_DEFAULT;
     float loudnessGain_ = 0.0f;

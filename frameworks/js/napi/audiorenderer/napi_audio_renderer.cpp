@@ -94,6 +94,7 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("pause", Pause),
         DECLARE_NAPI_FUNCTION("stop", Stop),
         DECLARE_NAPI_FUNCTION("release", Release),
+        DECLARE_NAPI_FUNCTION("standby", Standby),
         DECLARE_NAPI_FUNCTION("getBufferSize", GetBufferSize),
         DECLARE_NAPI_FUNCTION("getBufferSizeSync", GetBufferSizeSync),
         DECLARE_NAPI_FUNCTION("getAudioStreamId", GetAudioStreamId),
@@ -1100,6 +1101,46 @@ napi_value NapiAudioRenderer::Release(napi_env env, napi_callback_info info)
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "Release", executor, complete);
+}
+
+napi_value NapiAudioRenderer::Standby(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("Standby failed : no memory");
+        NapiAudioError::ThrowError(env, "Standby failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        bool on = false;
+        context->status = NapiParamUtils::GetValueBoolean(env, on, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get boolean param failed",
+            NAPI_ERR_INVALID_PARAM);
+        context->intValue = on ? 1 : 0;
+    };
+
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRenderer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        bool on = context->intValue != 0;
+        context->intValue = napiAudioRenderer->audioRenderer_->Standby(on);
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_ILLEGAL_STATE, AudioStandard::ErrMessage(context->intValue));
+        }
+    };
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "Standby", executor, complete);
 }
 
 napi_value NapiAudioRenderer::GetBufferSize(napi_env env, napi_callback_info info)

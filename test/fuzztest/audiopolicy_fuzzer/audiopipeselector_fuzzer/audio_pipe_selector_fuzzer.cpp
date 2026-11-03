@@ -45,7 +45,6 @@ const uint32_t MAX_SESSION_ID = 100000;
 const int32_t MAX_TEST_ID = 10000;
 const uint32_t MAX_PIPE_BUFFER_SIZE = 4096;
 const uint32_t MAX_CONCURRENCY_ACTION = 3;
-const uint32_t DEVICE_SUPPORT_MMAP = 1;
 const std::string DEFAULT_MAC_ADDRESS = "00:11:22:33:44:55";
 const std::string PIPE_CHANNELS = "2";
 
@@ -213,7 +212,12 @@ std::shared_ptr<AudioDeviceDescriptor> MakeDeviceDescriptor(FuzzedDataProvider& 
     desc->networkId_ = fdp.ConsumeBool() ? LOCAL_NETWORK_ID : REMOTE_NETWORK_ID;
     desc->macAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
     desc->deviceId_ = fdp.ConsumeIntegralInRange<int32_t>(0, MAX_TEST_ID);
-    desc->SetDeviceSupportMmap(fdp.ConsumeBool() ? DEVICE_SUPPORT_MMAP : 0);
+    if (fdp.ConsumeBool()) {
+        DeviceStreamInfo mmapCap;
+        mmapCap.fastSamplingRate.insert(AudioSamplingRate::SAMPLE_RATE_48000);
+        mmapCap.ufastSamplingRate.insert(AudioSamplingRate::SAMPLE_RATE_48000);
+        desc->audioStreamInfo_.push_back(mmapCap);
+    }
     return desc;
 }
 

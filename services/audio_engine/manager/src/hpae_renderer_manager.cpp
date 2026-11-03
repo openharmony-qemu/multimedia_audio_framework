@@ -1180,6 +1180,10 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
         if (converter != nullptr) {
             converter->FlushBuffers();
         }
+        auto mixerConverter = sceneClusterMap_[sceneType]->GetMixerConverterNodeById(sessionId);
+        if (mixerConverter != nullptr) {
+            mixerConverter->FlushBuffers();
+        }
         CHECK_AND_RETURN_LOG(isNeedInitEffectBufferFlagMap_.find(sessionId) != isNeedInitEffectBufferFlagMap_.end(),
             "isNeedInitEffectBufferFlagMap no find sessionId %{public}u", sessionId);
         if (isNeedInitEffectBufferFlagMap_[sessionId] == true) {
@@ -1694,6 +1698,8 @@ void HpaeRendererManager::SetStreamSilentMode(uint32_t sessionId, bool silentMod
         auto inputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(inputNode != nullptr, "sessionId %{public}u not exist", sessionId);
         inputNode->SetStreamSilentMode(silentMode);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId,
+            ConvertHpaeToRendererState(inputNode->GetState()), inputNode->GetAppUid());
     };
     SendRequest(request, __func__);
 }

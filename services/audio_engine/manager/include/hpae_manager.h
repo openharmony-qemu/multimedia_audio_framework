@@ -21,6 +21,7 @@
 #include "audio_module_info.h"
 #include "hpae_capturer_manager.h"
 #include "hpae_virtual_capturer_manager.h"
+#include "hpae_virtual_renderer_manager.h"
 #include "hpae_renderer_manager.h"
 #include "hpae_inner_capturer_manager.h"
 #include "hpae_msg_channel.h"
@@ -107,7 +108,6 @@ public:
     bool IsRunning() override;
     bool IsMsgProcessing() override;
     // async interface
-    int32_t SetDefaultSink(std::string name) override;
     int32_t SetDefaultSource(std::string name) override;
     int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
     int32_t StopAudioPort(const std::string &audioPortName) override;
@@ -340,12 +340,13 @@ private:
         HpaeSessionState status, HpaeSessionState state, IOperation operation);
     bool SetMovingPlayStreamState(uint32_t sessionId, HpaeSessionState state, IOperation operation);
     bool SetMovingCaptureStreamState(uint32_t sessionId, HpaeSessionState state, IOperation operation);
-    void AddPreferSinkForDefaultChange(bool isAdd, const std::string &sinkName);
+    void MarkClosingSinkPrefer(const std::string &sinkName);
     void OnCallbackOpenOrReloadFailed(bool isReload);
     bool ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId);
     bool CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName);
     bool CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName);
     void CreateCoreSourceManager();
+    void EnsureVirtualSinkManager();
     void DequeuePendingTransition(uint32_t sessionId);
     void EnqueuePendingTransition(uint32_t sessionId, HpaeSessionState state, IOperation operation);
     bool IsValidUpdateStatus(IOperation operation, HpaeSessionState currentState);
@@ -355,7 +356,6 @@ private:
     std::vector<std::shared_ptr<HpaeSinkInputNode>> GetPerferSinkInputs(
         const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs);
     std::vector<HpaeCaptureMoveInfo> GetUsedMoveInfos(std::vector<HpaeCaptureMoveInfo> &moveInfos);
-    std::vector<uint32_t> GetAllRenderSession(const std::string &name);
     std::vector<uint32_t> GetAllCaptureSession(const std::string &name);
     std::shared_ptr<IHpaeRendererManager> GetAuxiliaryRendererManager();
     void UpdateBypassSpatializationForStereo(bool bypass);
@@ -388,10 +388,9 @@ private:
     std::unordered_map<std::string, uint32_t> sinkNameSinkIdMap_;  // todo
     std::unordered_map<uint32_t, std::string> sinkIdSinkNameMap_;
     std::unordered_map<uint32_t, HpaeSessionState> movingIds_;
-    std::string defaultSink_ = "";
-    std::string coreSink_ = "";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;
     std::unordered_map<uint32_t, std::string> sourceIdSourceNameMap_;
+    std::string coreSink_ = "";
     std::string defaultSource_ = "";
     std::string coreSource_ = "";
     std::atomic<int32_t> sinkSourceIndex_ = 0;

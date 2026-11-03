@@ -21,6 +21,7 @@
 #include "va_device_controller_stub_impl.h"
 #include "iv_a_device_broker.h"
 #include "iservice_registry.h"
+#include "system_ability_definition.h"
 
 #include "audio_errors.h"
 #include "audio_policy_log.h"

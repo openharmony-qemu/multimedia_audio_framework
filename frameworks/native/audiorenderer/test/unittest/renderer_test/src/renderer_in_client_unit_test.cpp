@@ -166,6 +166,8 @@ public:
 
     virtual int32_t SetOffloadDataCallbackState(int32_t state) override { return 0; }
 
+    virtual ErrCode SetStandbyState(bool on) override { return SUCCESS; }
+
     virtual sptr<IRemoteObject> AsObject() override { return nullptr; }
 
     virtual int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
@@ -4301,6 +4303,7 @@ public:
     int32_t SetDefaultOutputDevice(int32_t defaultOuputDevice, bool skipForce) override { return SUCCESS; }
     int32_t SetSourceDuration(int64_t duration) override { return SUCCESS; }
     int32_t SetOffloadDataCallbackState(int32_t state) override { return SUCCESS; }
+    ErrCode SetStandbyState(bool on) override { return SUCCESS; }
     int32_t SetSpeed(float speed) override { return SUCCESS; }
     int32_t SetPitch(float pitch) override { return SUCCESS; }
     sptr<IRemoteObject> AsObject() override { return nullptr; }
@@ -5358,5 +5361,65 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_101, TestSize.Level1
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
+/**
+ * @tc.name  : Test SetStandby and IsStandby API
+ * @tc.type  : FUNC
+ * @tc.number: SetStandby_001
+ * @tc.desc  : Test RendererInClientInner::SetStandby enter standby, IsStandby returns true
+ */
+HWTEST(RendererInClientInnerUnitTest, SetStandby_001, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    EXPECT_FALSE(ptrRendererInClientInner->IsStandby());
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(true), SUCCESS);
+    EXPECT_TRUE(ptrRendererInClientInner->IsStandby());
+}
+
+/**
+ * @tc.name  : Test SetStandby exit standby
+ * @tc.type  : FUNC
+ * @tc.number: SetStandby_002
+ * @tc.desc  : Test RendererInClientInner::SetStandby exit standby, IsStandby returns false
+ */
+HWTEST(RendererInClientInnerUnitTest, SetStandby_002, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->SetStandby(true);
+    EXPECT_TRUE(ptrRendererInClientInner->IsStandby());
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(false), SUCCESS);
+    EXPECT_FALSE(ptrRendererInClientInner->IsStandby());
+}
+
+/**
+ * @tc.name  : Test SetStandby idempotent
+ * @tc.type  : FUNC
+ * @tc.number: SetStandby_003
+ * @tc.desc  : Test RendererInClientInner::SetStandby repeated calls are safe
+ */
+HWTEST(RendererInClientInnerUnitTest, SetStandby_003, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(true), SUCCESS);
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(true), SUCCESS);
+    EXPECT_TRUE(ptrRendererInClientInner->IsStandby());
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(false), SUCCESS);
+    EXPECT_EQ(ptrRendererInClientInner->SetStandby(false), SUCCESS);
+    EXPECT_FALSE(ptrRendererInClientInner->IsStandby());
+}
+
+/**
+ * @tc.name  : Test Write rejected in standby state
+ * @tc.type  : FUNC
+ * @tc.number: Write_Standby_Rejected_001
+ * @tc.desc  : Test RendererInClientInner::Write returns ERR_INVALID_OPERATION in standby
+ */
+HWTEST(RendererInClientInnerUnitTest, Write_Standby_Rejected_001, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    uint8_t buffer[1024] = {0};
+    ptrRendererInClientInner->SetStandby(true);
+    int32_t ret = ptrRendererInClientInner->Write(buffer, sizeof(buffer));
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
 } // namespace AudioStandard
 } // namespace OHOS

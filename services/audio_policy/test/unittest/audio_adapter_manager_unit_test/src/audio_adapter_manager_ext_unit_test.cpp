@@ -17,6 +17,8 @@
 #include "audio_stream_descriptor.h"
 #include "audio_interrupt_service.h"
 #include "audio_adapter_manager_handler.h"
+#include "audio_volume_info.h"
+#include "parameters.h"
 #include "mock_os_account.h"
 
 using namespace testing::ext;
@@ -940,53 +942,61 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateVolumeDataForUserSwitch_Flow, Tes
 
 /**
  * @tc.name: SaveBootAnimationVolumeToLocal
- * @tc.desc: Test SaveBootAnimationVolumeToLocal
+ * @tc.desc: Test SaveBootAnimationVolumeToLocal with different pc/device/volumeType/mute
  * @tc.type: FUNC
  * @tc.require: #ICDC94
  */
 HWTEST_F(AudioAdapterManagerExtUnitTest, SaveBootAnimationVolumeToLocal, TestSize.Level4)
 {
     AudioAdapterManager adapterManager;
+    const std::string volumeKey = "persist.multimedia.audio.ringtonevolume";
+
+    // device is nullptr: function should return directly without crash.
+    std::shared_ptr<AudioDeviceDescriptor> nullDevice = nullptr;
+    adapterManager.SaveBootAnimationVolumeToLocal(nullDevice, STREAM_NOTIFICATION);
+
     auto device = std::make_shared<AudioDeviceDescriptor>();
-    VolumeUtils::SetPCVolumeEnable(false);
-    device->deviceType_ = DEVICE_TYPE_SPEAKER;
-    AudioVolumeType volumeType = STREAM_NOTIFICATION;
-    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
- 
-    volumeType = STREAM_SYSTEM;
-    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
-    
-    VolumeUtils::SetPCVolumeEnable(true);
-    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    volumeType = STREAM_SYSTEM;
-    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
- 
-    device->deviceType_ = DEVICE_TYPE_SPEAKER;
-    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
- 
-    volumeType = STREAM_NOTIFICATION;
-    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
- 
-    device->deviceType_ = DEVICE_TYPE_SPEAKER;
-    volumeType = STREAM_MUSIC;
-    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
- 
-    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
- 
-    device->deviceType_ = DEVICE_TYPE_SPEAKER;
-    volumeType = STREAM_NOTIFICATION;
-    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
- 
-    device->deviceType_ = DEVICE_TYPE_SPEAKER;
-    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
- 
-    VolumeUtils::SetPCVolumeEnable(false);
-    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    volumeType = STREAM_NOTIFICATION;
-    adapterManager.SaveBootAnimationVolumeToLocal(device, volumeType);
- 
     ASSERT_NE(device, nullptr);
+
+    VolumeUtils::SetPCVolumeEnable(false);
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    constexpr int32_t TEST_VOLUME_LEVEL = 3;
+    VolumeScale volume{TEST_VOLUME_LEVEL, TEST_VOLUME_LEVEL};
+    adapterManager.volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_NOTIFICATION, volume);
+    adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_NOTIFICATION);
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
+
+    adapterManager.volumeDataMaintainer_.SaveMuteToMap(device, STREAM_NOTIFICATION, true);
+    adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_NOTIFICATION);
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::string("0"));
+    adapterManager.volumeDataMaintainer_.SaveMuteToMap(device, STREAM_NOTIFICATION, false);
+
+    adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_SYSTEM);
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::string("0"));
+
+    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    adapterManager.volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_NOTIFICATION, volume);
+    adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_NOTIFICATION);
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
+
+    VolumeUtils::SetPCVolumeEnable(true);
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    adapterManager.volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_SYSTEM, volume);
+    adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_SYSTEM);
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
+
+    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_SYSTEM);
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
+
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_NOTIFICATION);
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
+
+    adapterManager.SaveBootAnimationVolumeToLocal(device, STREAM_MUSIC);
+    EXPECT_EQ(system::GetParameter(volumeKey, std::string("0")), std::to_string(TEST_VOLUME_LEVEL));
+
+    VolumeUtils::SetPCVolumeEnable(false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

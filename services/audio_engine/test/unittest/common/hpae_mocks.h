@@ -152,6 +152,7 @@ public:
     MockStreamCallback() = default;
     virtual ~MockStreamCallback() = default;
     MOCK_METHOD(int32_t, OnStreamData, (AudioCallBackStreamInfo&), (override));
+    MOCK_METHOD(void, OnHistoryCacheUpdate, (bool available), (override));
     MOCK_METHOD(bool, OnQueryUnderrun, (), (override));
 };
 

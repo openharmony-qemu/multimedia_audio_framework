@@ -405,6 +405,10 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
     if (fastVoipSource != nullptr && fastVoipSource->IsInited()) {
         fastVoipSource->UpdateActiveDevice(type);
     }
+    auto ultraFastSource = GetSourceByProp(HDI_ID_TYPE_ULTRA_FAST, HDI_ID_INFO_DEFAULT);
+    if (ultraFastSource != nullptr && ultraFastSource->IsInited()) {
+        ultraFastSource->UpdateActiveDevice(type);
+    }
 #endif
     std::shared_ptr<IAudioCaptureSource> aiSource = GetSourceByProp(HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
     if (aiSource != nullptr && aiSource->IsInited()) {
@@ -2997,6 +3001,10 @@ int32_t AudioServer::CheckInnerRecorderPermission(const AudioProcessConfig &conf
 bool AudioServer::CheckRecorderPermission(AudioProcessConfig &config)
 {
     Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
+    if (config.capturerInfo.originalFlag == AUDIO_FLAG_ULTRA_FAST ||
+        config.capturerInfo.capturerFlags == AUDIO_FLAG_ULTRA_FAST) {
+        CHECK_AND_RETURN_RET(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION, tokenId), false);
+    }
     SourceType sourceType = config.capturerInfo.sourceType;
     CHECK_AND_RETURN_RET_LOG(VALID_SOURCE_TYPE.count(sourceType), false, "invalid source type:%{public}d", sourceType);
 
@@ -3740,6 +3748,7 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
 bool AudioServer::NeedDelayCreateSource(const uint32_t idBase, const uint32_t idType, const std::string &idInfo)
 {
     CHECK_AND_RETURN_RET(idBase == HDI_ID_BASE_CAPTURE, false);
+    CHECK_AND_RETURN_RET(idType != HDI_ID_TYPE_ULTRA_FAST, false);
     if (HDI_ID_TYPE_FAST == idType || HDI_ID_INFO_MMAP == idInfo || HDI_ID_INFO_USB == idInfo) {
         AUDIO_INFO_LOG("delay create");
         return true;

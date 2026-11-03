@@ -52,7 +52,7 @@ constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
 constexpr int32_t AUDIO_FLAG_INVALID = -1;
 constexpr int32_t AUDIO_FLAG_NORMAL = 0;
 constexpr int32_t AUDIO_FLAG_MMAP = 1;
-constexpr int32_t AUDIO_FLAG_VOIP_FAST = 2;
+constexpr int32_t AUDIO_FLAG_TRUE_ULTRA_FAST = 2;
 constexpr int32_t AUDIO_FLAG_DIRECT = 3;
 constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
 constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
@@ -60,6 +60,7 @@ constexpr int32_t AUDIO_FLAG_3DA_DIRECT = 6;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_FLAG_ULTRA_FAST = 11;
 constexpr int32_t AUDIO_FLAG_INTERPHONE_VOIP = 12;
+constexpr int32_t AUDIO_FLAG_VOIP_FAST = 13;
 constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
 constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_FLAG_VKB_ALL_RING = 1026;
@@ -91,6 +92,8 @@ constexpr uint64_t AUDIO_US_PER_S = 1000000;
 constexpr uint64_t AUDIO_MS_PER_S = 1000;
 
 constexpr uint64_t DEFAULT_FAST_CBBUF_IN_USEC = 5000;
+constexpr uint64_t ULTRA_FAST_CAPTURE_PERIOD_US = 2500;
+constexpr uint32_t MAX_ULTRA_FAST_CAPTURE_STREAMS = 2;
 constexpr uint64_t MAX_CBBUF_IN_USEC = 100000;
 constexpr uint64_t MIN_CBBUF_IN_USEC = 20000;
 constexpr uint64_t MIN_FAST_CBBUF_IN_USEC = 2500;
@@ -109,6 +112,7 @@ const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_
 const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
 const char* INJECT_PLAYBACK_TO_AUDIO_CAPTURE_PERMISSION = "ohos.permission.INJECT_PLAYBACK_TO_AUDIO_CAPTURE";
 const char* VOIP_CAPTURE_CONCURRENCY_PERMISSION = "ohos.permission.VOIP_CAPTURE_CONCURRENCY";
+const char* USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION = "ohos.permission.USE_ULTRA_FAST_AUDIO_STREAM";
 const char* AUDIO_USER_MICROPHONE_INDICATOR_PERMISSION = "ohos.permission.AUDIO_USER_MICROPHONE_INDICATOR";
 
 const char* PRIMARY_WAKEUP = "Built_in_wakeup";
@@ -119,6 +123,12 @@ const char* DUP_STREAM = "DupStream";
 const char* VIRTUAL_INJECTOR = "Virtual_Injector";
 inline constexpr std::string_view PRIMARY_ZONE_NAME = "primary_zone";
 constexpr int32_t PLAYBACKCAPTURER_RECORD_ALL = -1;
+static const std::unordered_map<DeviceType, std::string> g_trueUltraFastDeviceToAdapter = {
+    {DEVICE_TYPE_SPEAKER, "primary"},
+    {DEVICE_TYPE_EARPIECE, "primary"},
+    {DEVICE_TYPE_USB_HEADSET, "primary"},
+    {DEVICE_TYPE_USB_ARM_HEADSET, "usb"},
+};
 
 // For ipc
 constexpr uint32_t MAX_COMMON_IPC_ARRAY_SIZE = 1000;
@@ -306,6 +316,7 @@ enum AudioErrors {
     ERROR_UNSUPPORTED   = 6800104,
     ERROR_TIMEOUT       = 6800105,
     ERROR_UNSUPPORTED_FORMAT = 6800106,
+    ERROR_UNSUPPORTED_ULTRA_FAST = 6800107,
     /**
      * Audio specific errors.
      */
@@ -1640,7 +1651,9 @@ enum FastStatus {
     /** Normal status */
     FASTSTATUS_NORMAL,
     /** Fast status */
-    FASTSTATUS_FAST
+    FASTSTATUS_FAST,
+    /** Ultra Fast status */
+    FASTSTATUS_ULTRA_FAST = 2
 };
 
 enum PlaybackCaptureStartState {
@@ -2519,6 +2532,7 @@ enum ThreadPriorityConfig : uint32_t {
     THREAD_PRIORITY_QOS_7 = 0,
     THREAD_PRIORITY_4,
     THREAD_PRIORITY_VIP_10,
+    THREAD_PRIORITY_ULTRA_FAST_4,
 };
 
 enum XperfEventId : int32_t {

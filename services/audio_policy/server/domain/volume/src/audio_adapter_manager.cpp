@@ -46,6 +46,7 @@ namespace OHOS {
 namespace AudioStandard {
 static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
 static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
+
 constexpr const char *APP_INDIVIDUAL_VOLUME_ENABLE = "app_individual_volume_enable";
 constexpr const char *CLONE_STATE_TIME = "clone_state_time";
 constexpr const int32_t CLONE_STATE_CLONING = 1;
@@ -1434,7 +1435,8 @@ bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
 bool AudioAdapterManager::IsLowLatencyRoute(uint32_t routeFlag)
 {
     return (routeFlag & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag & AUDIO_OUTPUT_FLAG_VOIP_FAST) ||
-        (routeFlag & AUDIO_INPUT_FLAG_FAST) || (routeFlag & AUDIO_INPUT_FLAG_VOIP_FAST);
+        (routeFlag & AUDIO_INPUT_FLAG_FAST) || (routeFlag & AUDIO_INPUT_FLAG_VOIP_FAST) ||
+        (routeFlag & AUDIO_INPUT_FLAG_ULTRA_FAST) || (routeFlag & AUDIO_OUTPUT_FLAG_ULTRA_FAST);
 }
 
 void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
@@ -1658,6 +1660,9 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
                 (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP_FAST)) {
                 AUDIO_INFO_LOG("Use voip mmap");
                 attr.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
+            } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+                AUDIO_INFO_LOG("Use true ultra fast");
+                attr.audioStreamFlag = AUDIO_FLAG_TRUE_ULTRA_FAST;
             } else {
                 attr.audioStreamFlag = AUDIO_FLAG_MMAP;
             }
@@ -1674,12 +1679,6 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
         } else {
             std::string deviceClass = pipeInfo->moduleInfo_.className;
             idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
-            // 3DA direct pipe: converge to the cabin sink (renderId from GetId(RENDER,
-            // AUDIO_VIVID_3DA_DIRECT, "3DA")). Without this, a primary-profile sink is
-            // created and HAL rejects the vivid channel mask ("CheckRenderCaptureParams
-            // failed"). busAddress is matched by the exact 3da token (any bus number)
-            // because the play-time new pipe may not carry the 3DA route flag yet at
-            // port-open time.
             if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_3DA_DIRECT) ||
                 Match3daBusToken(pipeInfo->moduleInfo_.busAddress)) {
                 ConvergeTo3daSink(pipeInfo->moduleInfo_, deviceClass, idInfo);
@@ -1688,9 +1687,12 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
         }
     } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
         std::string idInfo = GetHdiSourceIdInfo(pipeInfo->moduleInfo_);
+        pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
         IAudioSourceAttr attr = GetAudioSourceAttr(pipeInfo->moduleInfo_);
         if (IsLowLatencyRoute(pipeInfo->routeFlag_)) {
-            if ((pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP)) {
+            if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_ULTRA_FAST) {
+                attr.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
+            } else if ((pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP)) {
                 AUDIO_INFO_LOG("Use voip mmap");
                 attr.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
             } else {
@@ -1770,7 +1772,9 @@ AudioIOHandle AudioAdapterManager::OpenNotPaAudioPort(std::shared_ptr<AudioPipeI
         GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
         IAudioSourceAttr attr = GetAudioSourceAttr(pipeInfo->moduleInfo_);
         if (IsLowLatencyRoute(pipeInfo->routeFlag_)) {
-            if ((pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) ||
+            if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_ULTRA_FAST) {
+                attr.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
+            } else if ((pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) ||
                 (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP_FAST)) {
                 AUDIO_INFO_LOG("Use voip mmap");
                 attr.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
@@ -1809,14 +1813,13 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
     if (pipeInfo->adapterName_ == "primary") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;
-            if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
-                idInfo = HDI_ID_INFO_VOIP;
-            }
+            if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) { idInfo = HDI_ID_INFO_VOIP; }
+        } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+            idType = HDI_ID_TYPE_ULTRA_FAST;
+            idInfo = HDI_ID_INFO_DEFAULT;
         } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT) {
             idType = HDI_ID_TYPE_PRIMARY;
-            if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
-                idInfo = HDI_ID_INFO_VOIP;
-            }
+            if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_VOIP) { idInfo = HDI_ID_INFO_VOIP; }
         } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_INTERPHONE) {
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_INTERPHONE;
@@ -1835,6 +1838,9 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;
             idInfo = HDI_ID_INFO_USB;
+        } else if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_ULTRA_FAST) {
+            idType = HDI_ID_TYPE_ULTRA_FAST;
+            idInfo = HDI_ID_INFO_USB;
         }
     } else if (pipeInfo->adapterName_ == "hdmi") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
@@ -1847,6 +1853,11 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
 void AudioAdapterManager::GetSourceIdInfoAndIdType(
     std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType)
 {
+    if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_ULTRA_FAST) {
+        idType = HDI_ID_TYPE_ULTRA_FAST;
+        idInfo = pipeInfo->adapterName_ == "usb" ? HDI_ID_INFO_USB : HDI_ID_INFO_DEFAULT;
+        return;
+    }
     if (pipeInfo->adapterName_ == "primary") {
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;
@@ -2457,13 +2468,17 @@ void AudioAdapterManager::FillSinkLatencyAttr(IAudioSinkAttr &attr,
 void AudioAdapterManager::FillUltraFastPeriod(IAudioSinkAttr &attr,
     const AudioModuleInfo &audioModuleInfo) const
 {
-    if (audioModuleInfo.className == "ultra_fast" || audioModuleInfo.className == "usb_arm_ultra_fast") {
+    if (ULTRA_FAST_DEVICE_CLASSES.count(audioModuleInfo.className) > 0) {
         uint32_t formatByteSize = GetFormatByteSize(attr.format);
         attr.period = static_cast<uint32_t>(
             static_cast<float>(attr.sampleRate * attr.channel * formatByteSize) *
             ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
         AUDIO_INFO_LOG("GetAudioSinkAttr: ultra_fast period=%{public}u (2.5ms latency)", attr.period);
-        attr.isUltraFast = true;
+        if (audioModuleInfo.className.find(TRUE_ULTRA_FAST_CLASS) != std::string::npos) {
+            attr.isTrueUltraFast = true;
+        } else {
+            attr.isUltraFast = true;
+        }
     }
 }
 
@@ -2492,6 +2507,9 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
     attr.format = ParseSourceAudioSampleFormat(audioModuleInfo.format);
     if (!audioModuleInfo.rate.empty()) {
         attr.sampleRate = static_cast<uint32_t>(std::stoul(audioModuleInfo.rate));
+    }
+    if ((audioModuleInfo.routeFlag & AUDIO_INPUT_FLAG_ULTRA_FAST) != 0) {
+        attr.audioStreamFlag = AUDIO_FLAG_ULTRA_FAST;
     }
     if (!audioModuleInfo.channels.empty()) {
         attr.channel = static_cast<uint32_t>(std::stoul(audioModuleInfo.channels));

@@ -59,7 +59,7 @@ public:
     void SetNodeInfo(HpaeNodeInfo &nodeInfo) override;
 private:
     uint64_t GetTimestamp();
-    void ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer);
+    void ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer, uint32_t safeFrameCount);
     HpaePcmBuffer *GetAndValidateOutput();
     HpaePcmBuffer *SelectOutputData(const std::vector<HpaePcmBuffer *> &outputVec);
     HpaePcmBuffer *MixInputs(const std::vector<HpaePcmBuffer *> &inputs);

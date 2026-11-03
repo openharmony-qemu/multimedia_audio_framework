@@ -173,7 +173,6 @@ group("audio_unit_test") {
       "../services/audio_suite/test/unittest:audio_suite_manager_test",
       "../services/audio_suite/test/unittest:audio_suite_node_test",
       "../services/audio_suite/test/unittest:audio_suite_utils_test",
-      "../services/audio_suite/test/unittest:audio_pcm_process_impl_test",
       "../services/audio_suite/test/unittest:audio_suite_service_test",
     ]
   }

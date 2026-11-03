@@ -68,9 +68,11 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
     usedSampleRate_ = processConfig.streamInfo.customSampleRate == 0 ?
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) : processConfig.streamInfo.customSampleRate;
     
-    if (processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_FAST &&
+    if ((processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_FAST ||
+        processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_ULTRA_FAST) &&
         processConfig_.isInnerCapturer == false && deviceName != "FastDpRendererSink" && isCallbackMode) {
-        if (processConfig_.ultraFastFlag & ULTRA_IMPLEMENTED) {
+        if ((processConfig_.ultraFastFlag & ULTRA_IMPLEMENTED) ||
+            (processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_ULTRA_FAST)) {
             // If the server uses ultra fast route, spanInMs should be 2.5ms regardless of whether the client request
             spanSizeInFrame_ = static_cast<size_t>(FRAME_LEN_2_5MS_IN_MS * usedSampleRate_ / AUDIO_MS_PER_S);
             AUDIO_INFO_LOG("ultra fast for spanSizeInFrame_ to 2.5ms: %{public}zu", spanSizeInFrame_);
@@ -84,6 +86,7 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
             usedSampleRate_, spanSizeInFrame_);
     }
     if ((processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_FAST ||
+        processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_ULTRA_FAST ||
         processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_VOIP_FAST ||
         processConfig_.rendererInfo.ultraFastFlag != ULTRA_NONE) &&
         processConfig_.isInnerCapturer == false) {
@@ -793,6 +796,11 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
                            : HandleWriteBufferData(callBackStreamInfo);
 }
 
+void HpaeRendererStreamImpl::OnHistoryCacheUpdate(bool available)
+{
+    hasCachedHistoryData_.store(available);
+}
+
 int32_t HpaeRendererStreamImpl::HandleCallbackBufferData(AudioCallBackStreamInfo &callBackStreamInfo)
 {
     auto requestDataLen = callBackStreamInfo.requestDataLen;
@@ -1369,6 +1377,11 @@ void HpaeRendererStreamImpl::TriggerClientWake()
 uint32_t HpaeRendererStreamImpl::GetRouteFlag() const noexcept
 {
     return routeFlag_.load();
+}
+
+bool HpaeRendererStreamImpl::HasCachedHistoryData() const noexcept
+{
+    return hasCachedHistoryData_.load();
 }
 } // namespace AudioStandard
 } // namespace OHOS

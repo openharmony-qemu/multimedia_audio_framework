@@ -34,8 +34,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-const int32_t FAST_DURATION_MS = 5; // 5ms
-const int32_t NORMAL_DURAION_MS = 20; // 20ms
+const double FAST_DURATION_MS = 5.0; // 5ms
+const double ULTRA_FAST_DURATION_MS = 2.5; // 2.5ms
+const double NORMAL_DURAION_MS = 20.0; // 20ms
 }
 
 AudioPerformanceMonitor &AudioPerformanceMonitor::GetInstance()
@@ -190,8 +191,16 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence, uin
             AUTO_CTRACE("Audio FWK detect SILENCE_EVENT, pipeType %d, PreState: %s",
                 silenceDetectMap_[sessionId].pipeType, printStr.c_str());
             AudioPipeType pipeType = silenceDetectMap_[sessionId].pipeType;
+            double durationMs;
+            if (pipeType == PIPE_TYPE_OUT_ULTRA_FAST) {
+                durationMs = ULTRA_FAST_DURATION_MS;
+            } else if (pipeType == PIPE_TYPE_OUT_LOWLATENCY) {
+                durationMs = FAST_DURATION_MS;
+            } else {
+                durationMs = NORMAL_DURAION_MS;
+            }
             int32_t periodMs = static_cast<int32_t>(silenceDetectMap_[sessionId].silenceStateCount *
-                (pipeType == PIPE_TYPE_OUT_LOWLATENCY ? FAST_DURATION_MS : NORMAL_DURAION_MS));
+                durationMs);
             ReportEvent(SILENCE_EVENT, periodMs, pipeType, ADAPTER_TYPE_UNKNOWN, uid, sessionId);
             silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
             silenceDetectMap_[sessionId].historyStateDeque.clear();

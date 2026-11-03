@@ -171,9 +171,9 @@ std::string LocalDeviceManager::GetAudioParameter(const std::string &adapterName
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "", "adapter %{public}s is nullptr",
         adapterName.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
-    char value[DumpFileUtil::PARAM_VALUE_LENTH];
+    char value[PARAM_VALUE_LENGTH];
     int32_t ret = wrapper->adapter_->GetExtraParams(wrapper->adapter_, hdiKey, condition.c_str(), value,
-        DumpFileUtil::PARAM_VALUE_LENTH);
+        PARAM_VALUE_LENGTH);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "get param fail, error code: %{public}d", ret);
     return std::string(value);
 }
