@@ -621,7 +621,7 @@ int32_t AudioEnhanceChain::ApplyEnhanceChain(const EnhanceTransBuffer &transBuf)
             CHECK_AND_RETURN_RET_LOG(cacheChainInputDataRet == SUCCESS, ERROR, "cache chain input data fail");
         } else {
             chainNotReadyCount_++;
-            if (!chainNotReadyLogActive_ || chainNotReadyCount_ % CHAIN_NOT_READY_LOG_HEARTBEAT_FRAMES == 0) {
+            if (!chainNotReadyLogActive_ || chainNotReadyCount_ % chainNotReadyLogHeartbeatFrames == 0) {
                 AUDIO_INFO_LOG("chain is not ready, passthrough data");
             }
             chainNotReadyLogActive_ = true;

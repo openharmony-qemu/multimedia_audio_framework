@@ -126,7 +126,7 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
     }
     if (processLength == 0) {
         micNullLogCount_++;
-        if (!micNullLogActive_ || micNullLogCount_ % CAPTURE_LOG_HEARTBEAT_FRAMES == 0) {
+        if (!micNullLogActive_ || micNullLogCount_ % captureLogHeartbeatFrames == 0) {
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
                     BusinessScenario::QUERY, ERR_INVALID_PARAM), "main mic data is null", false);
@@ -144,7 +144,7 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
     }
     if (ret != SUCCESS) {
         applyFailLogCount_++;
-        if (!applyFailLogActive_ || applyFailLogCount_ % CAPTURE_LOG_HEARTBEAT_FRAMES == 0) {
+        if (!applyFailLogActive_ || applyFailLogCount_ % captureLogHeartbeatFrames == 0) {
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
                     ERR_OPERATION_FAILED), "effect apply failed", false);

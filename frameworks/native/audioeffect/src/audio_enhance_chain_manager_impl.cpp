@@ -442,7 +442,7 @@ int32_t AudioEnhanceChainManagerImpl::ApplyEnhanceChainById(uint64_t sceneKeyCod
     auto chain = ChainPool::GetInstance().GetChainById(sceneKeyCode);
     if (chain == nullptr) {
         chainMissingLogCount_++;
-        if (!chainMissingLogActive_ || chainMissingLogCount_ % CHAIN_MISSING_LOG_HEARTBEAT_FRAMES == 0) {
+        if (!chainMissingLogActive_ || chainMissingLogCount_ % chainMissingLogHeartbeatFrames == 0) {
             AUDIO_ERR_LOG("chain: %{public}" PRIu64 " is not found", sceneKeyCode);
         }
         chainMissingLogActive_ = true;
@@ -469,7 +469,7 @@ int32_t AudioEnhanceChainManagerImpl::GetChainOutputDataById(uint64_t sceneKeyCo
     auto chain = ChainPool::GetInstance().GetChainById(sceneKeyCode);
     if (chain == nullptr) {
         chainMissingLogCount_++;
-        if (!chainMissingLogActive_ || chainMissingLogCount_ % CHAIN_MISSING_LOG_HEARTBEAT_FRAMES == 0) {
+        if (!chainMissingLogActive_ || chainMissingLogCount_ % chainMissingLogHeartbeatFrames == 0) {
             AUDIO_ERR_LOG("chain: %{public}" PRIu64 " is not found", sceneKeyCode);
         }
         chainMissingLogActive_ = true;

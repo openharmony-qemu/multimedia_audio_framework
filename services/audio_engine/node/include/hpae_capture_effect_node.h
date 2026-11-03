@@ -71,7 +71,7 @@ private:
     std::string traceName_;
 
     // Edge-trigger state for per-frame ERR+DFX on the capture enhance path
-    static constexpr uint32_t CAPTURE_LOG_HEARTBEAT_FRAMES = 250; // ~5s at the 20ms engine tick
+    static constexpr uint32_t captureLogHeartbeatFrames = 250; // ~5s at the 20ms engine tick
     bool micNullLogActive_ = false;
     uint32_t micNullLogCount_ = 0;
     bool applyFailLogActive_ = false;
