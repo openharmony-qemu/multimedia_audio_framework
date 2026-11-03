@@ -43,6 +43,8 @@ private:
         std::shared_ptr<AudioRenderer> audioRenderer = nullptr;
         std::shared_ptr<AudioCapturer> audioCapturer = nullptr;
         SoundCardInfo soundCardInfo;
+        std::vector<SoundCardInfo> soundCardInfoList;
+        int32_t audioManagerError = SUCCESS;
     };
     static bool CheckContextStatus(std::shared_ptr<AudioDeviceEnhanceManagerAsyncContext> context);
     static bool CheckDeviceEnhanceManagerStatus(
@@ -55,6 +57,7 @@ private:
     static napi_value SelectOutputDeviceForAudioRenderer(napi_env env, napi_callback_info info);
     static napi_value SelectInputDeviceForAudioCapturer(napi_env env, napi_callback_info info);
     static napi_value GetSoundCardInfo(napi_env env, napi_callback_info info);
+    static napi_value GetSoundCardInfoList(napi_env env, napi_callback_info info);
 private:
     AudioDeviceEnhanceManager *audioDeviceEnhanceMngr_;
     napi_env env_;

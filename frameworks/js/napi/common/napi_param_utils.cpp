@@ -1871,6 +1871,8 @@ napi_status NapiParamUtils::ConvertSoundCardInfoToJs(const napi_env &env,
 {
     napi_status status = napi_create_object(env, &result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Create napi_create_object failed");
+    status = SetValueString(env, "cardId", info.cardId, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set cardId failed");
     status = SetValueString(env, "name", info.name, result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set name failed");
     status = SetValueString(env, "vendor", info.vendor, result);
@@ -1881,6 +1883,26 @@ napi_status NapiParamUtils::ConvertSoundCardInfoToJs(const napi_env &env,
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set busAddress failed");
     status = SetValueString(env, "driver", info.driver, result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set driver failed");
+    status = SetValueInt32(env, "cardType", static_cast<int32_t>(info.cardType), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set cardType failed");
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::ConvertSoundCardInfoListToJs(const napi_env &env,
+    const std::vector<SoundCardInfo> &infoList, napi_value &result)
+{
+    napi_status status = napi_create_array(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Create napi_create_array failed");
+
+    uint32_t index = 0;
+    for (const auto &info : infoList) {
+        napi_value jsObj = nullptr;
+        status = ConvertSoundCardInfoToJs(env, info, jsObj);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ConvertSoundCardInfoToJs failed");
+        status = napi_set_element(env, result, index, jsObj);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set element failed");
+        index++;
+    }
     return napi_ok;
 }
 

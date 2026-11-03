@@ -2251,6 +2251,7 @@ ohos_unittest("audio_policy_server_unit_test") {
 
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
   }
 
   if (audio_framework_feature_input) {
@@ -4628,6 +4629,12 @@ ohos_unittest("audio_adapter_manager_ext_unit_test") {
   ]
 
   defines = []
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
+  }
+
+  defines = []
   if (audio_framework_feature_input) {
     defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
     external_deps += [ "input:libmmi-client" ]
@@ -5050,6 +5057,12 @@ ohos_unittest("audio_concurrency_manager_unit_test") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../audio_policy:audio_policy_service_static",
   ]
+
+  defines = []
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
+  }
 }
 
 ohos_unittest("audio_device_status_unit_test") {
@@ -5322,6 +5335,12 @@ ohos_unittest("power_state_listener_unit_test") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../audio_policy:audio_policy_service_static",
   ]
+
+  defines = []
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
+  }
 }
 
 ohos_unittest("audio_usb_manager_unit_test") {
@@ -5374,6 +5393,12 @@ ohos_unittest("audio_usb_manager_unit_test") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../audio_policy:audio_policy_service_static",
   ]
+
+  defines = []
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
+  }
 }
 
 ohos_unittest("audio_usr_select_manager_unit_test") {
@@ -7107,6 +7132,12 @@ ohos_unittest("user_select_router_ext_unit_test") {
   if (audio_framework_feature_device_manager) {
     defines += [ "FEATURE_DEVICE_MANAGER" ]
     external_deps += [ "device_manager:devicemanagersdk" ]
+  }
+
+  defines = []
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
   }
 }
 

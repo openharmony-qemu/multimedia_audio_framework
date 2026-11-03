@@ -21,6 +21,7 @@
 
 #include "audio_info.h"
 #include "audio_device_descriptor.h"
+#include "audio_device_enhance_manager.h"
 #include "audio_shared_memory.h"
 
 namespace OHOS {
@@ -140,6 +141,10 @@ public:
     virtual bool IsValidNetworkIdForSendEffectParam(const std::string &networkId) = 0;
 
     virtual int32_t NotifyUpdatePersonalizedSpatializationStateResult(int32_t ret) = 0;
+
+#ifdef USB_ENABLE
+    virtual int32_t GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList) = 0;
+#endif
 
     virtual ~IPolicyProvider() = default;
 

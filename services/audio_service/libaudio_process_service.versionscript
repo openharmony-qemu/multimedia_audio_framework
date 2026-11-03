@@ -96,6 +96,7 @@
     *IsValidNetworkIdForSendEffectParam*;
     *NotifyDeviceStateChange*;
     *NotifyUpdatePersonalizedSpatializationStateResult*;
+    *GetUsbSoundCardInfoList*;
     *NotifySensitiveRecordPermit*;
   local:
     *;

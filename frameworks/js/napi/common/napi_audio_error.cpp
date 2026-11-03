@@ -14,6 +14,7 @@
  */
 
 #include "napi_audio_error.h"
+#include "napi_async_work.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -140,6 +141,22 @@ std::string NapiAudioError::GetMessageByCode(int32_t &code)
             break;
     }
     return errMessage;
+}
+
+bool NapiAudioError::HandleAudioManagerError(std::shared_ptr<ContextBase> context, int32_t audioManagerError)
+{
+    // Map the error code returned by the service side to the NAPI error code.
+    if (audioManagerError == ERR_PERMISSION_DENIED) {
+        context->SignError(NAPI_ERR_PERMISSION_DENIED, "Not system app");
+        return true;
+    } else if (audioManagerError == ERR_NO_PERMISSION) {
+        context->SignError(NAPI_ERR_NO_PERMISSION, "Permission denied");
+        return true;
+    } else if (audioManagerError == ERR_NOT_SUPPORTED) {
+        context->SignError(NAPI_ERR_UNAVAILABLE_ON_DEVICE, "Capability not supported");
+        return true;
+    }
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

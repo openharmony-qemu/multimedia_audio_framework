@@ -20,6 +20,9 @@
 #include <vector>
 #include "common_event_subscriber.h"
 #include "idevice_status_observer.h"
+#ifdef USB_ENABLE
+#include "usb_srv_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -75,6 +78,9 @@ public:
     static AudioUsbManager &GetInstance();
     static map<UsbAddr, SoundCard> GetUsbSoundCardMap(bool &hdfAudioDeviceTag);
     static int32_t GetUsbAudioDevices(vector<UsbAudioDevice> &result);
+#ifdef USB_ENABLE
+    static bool IsAudioDevice(USB::UsbDevice &usbDevice);
+#endif
 
     void Init(std::shared_ptr<IDeviceStatusObserver> observer, uint8_t flag);
     void Deinit();

@@ -20,6 +20,7 @@ sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioDeviceDescriptor;
 sequenceable audio_shared_memory..OHOS.AudioStandard.AudioSharedMemory;
 sequenceable audio_stream_info..OHOS.AudioStandard.AudioStreamInfo;
 sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioCapturerInfo;
+sequenceable audio_device_enhance_manager..OHOS.AudioStandard.SoundCardInfo;
 
 interface IPolicyProviderIpc {
     [ipccode 0] void GetProcessDeviceInfo([in] AudioProcessConfig config, [in] boolean lockFlag, [out] AudioDeviceDescriptor deviceInfo);
@@ -41,4 +42,5 @@ interface IPolicyProviderIpc {
     void ClearAudioFocusBySessionID([in] int sessionID);
     void IsValidNetworkIdForSendEffectParam([in] String networkId, [out] boolean ret);
     void NotifyUpdatePersonalizedSpatializationStateResult([in] int ret);
+    void GetUsbSoundCardInfoList([out] List<SoundCardInfo> usbSoundCardList, [out] int ret); // [macrodef USB_ENABLE]
 }

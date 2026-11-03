@@ -178,8 +178,13 @@ HWTEST_F(AudioDeviceEnhanceManagerUnitTest, SelectInputDeviceForAudioCapturer_00
 HWTEST_F(AudioDeviceEnhanceManagerUnitTest, GetSoundCardInfo_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest GetSoundCardInfo_001 start");
-    SoundCardInfo info = AudioDeviceEnhanceManager::GetInstance().GetSoundCardInfo();
-    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest GetSoundCardInfo_001 info.name:%{public}s", info.name.c_str());
+    SoundCardInfo info;
+    int32_t result = AudioDeviceEnhanceManager::GetInstance().GetSoundCardInfo(info);
+    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest GetSoundCardInfo_001 result:%{public}d", result);
+#ifndef AUDIO_FRAMEWORK_FEATURE_SOUNDCARD_INFO
+    // Feature switch is off: should return 801
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+#endif
     // When service is not available, should return empty info
     EXPECT_TRUE(info.IsEmpty());
 }
@@ -305,11 +310,107 @@ HWTEST_F(AudioDeviceEnhanceManagerUnitTest, GetSoundCardInfo_002, TestSize.Level
 {
     AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest GetSoundCardInfo_002 start");
     // When service proxy is not available, GetSoundCardInfo returns empty info
-    SoundCardInfo info = AudioDeviceEnhanceManager::GetInstance().GetSoundCardInfo();
-    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest GetSoundCardInfo_002 info.name:%{public}s", info.name.c_str());
+    SoundCardInfo info;
+    int32_t result = AudioDeviceEnhanceManager::GetInstance().GetSoundCardInfo(info);
+    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest GetSoundCardInfo_002 result:%{public}d", result);
     // In unit test environment, service is not available
     // GetSoundCardInfo() should return empty info
     EXPECT_TRUE(info.IsEmpty());  // Service not available, should return empty info
+#ifndef AUDIO_FRAMEWORK_FEATURE_SOUNDCARD_INFO
+    // Feature switch is off: the out param must not be modified, error code is 801
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+#endif
+}
+
+/**
+ * @tc.name   : Test GetSoundCardInfoList API
+ * @tc.type  : FUNC
+ * @tc.number: GetSoundCardInfoList_001
+ * @tc.desc  : Test GetSoundCardInfoList when feature switch is off.
+ */
+HWTEST_F(AudioDeviceEnhanceManagerUnitTest, GetSoundCardInfoList_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest GetSoundCardInfoList_001 start");
+    std::vector<SoundCardInfo> soundCardList;
+    int32_t result = AudioDeviceEnhanceManager::GetInstance().GetSoundCardInfoList(soundCardList);
+    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest GetSoundCardInfoList_001 result:%{public}d", result);
+#ifndef AUDIO_FRAMEWORK_FEATURE_SOUNDCARD_INFO
+    // Feature switch is off: should return 801 and keep the list empty
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+#endif
+    EXPECT_TRUE(soundCardList.empty());
+}
+
+/**
+ * @tc.name   : Test GetSoundCardInfoList API
+ * @tc.type  : FUNC
+ * @tc.number: GetSoundCardInfoList_002
+ * @tc.desc  : Test GetSoundCardInfoList out param is not modified when feature switch is off.
+ */
+HWTEST_F(AudioDeviceEnhanceManagerUnitTest, GetSoundCardInfoList_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest GetSoundCardInfoList_002 start");
+    std::vector<SoundCardInfo> soundCardList;
+    soundCardList.push_back(SoundCardInfo());
+    // Caller pre-filled the list, feature off should not touch it
+    int32_t result = AudioDeviceEnhanceManager::GetInstance().GetSoundCardInfoList(soundCardList);
+    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest GetSoundCardInfoList_002 result:%{public}d", result);
+#ifndef AUDIO_FRAMEWORK_FEATURE_SOUNDCARD_INFO
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+#endif
+    EXPECT_EQ(soundCardList.size(), 1);
+}
+
+/**
+ * @tc.name   : Test SoundCardInfo IsEmpty with only cardId filled
+ * @tc.type  : FUNC
+ * @tc.number: SoundCardInfo_IsEmpty_003
+ * @tc.desc  : Test SoundCardInfo IsEmpty when only cardId is set.
+ */
+HWTEST_F(AudioDeviceEnhanceManagerUnitTest, SoundCardInfo_IsEmpty_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest SoundCardInfo_IsEmpty_003 start");
+    SoundCardInfo info;
+    info.cardId = "ONBOARD\\VEN_test&platform&card0";
+    bool result = info.IsEmpty();
+    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest SoundCardInfo_IsEmpty_003 result:%{public}d", result);
+    // cardId participates in IsEmpty(): cardId filled means not empty
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name   : Test SoundCardInfo default cardType
+ * @tc.type  : FUNC
+ * @tc.number: SoundCardInfo_CardType_001
+ * @tc.desc  : Test SoundCardInfo default cardType is ONBOARD and USB can be assigned.
+ */
+HWTEST_F(AudioDeviceEnhanceManagerUnitTest, SoundCardInfo_CardType_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest SoundCardInfo_CardType_001 start");
+    SoundCardInfo info;
+    // Default card type is ONBOARD
+    EXPECT_EQ(info.cardType, SoundCardType::ONBOARD);
+    // USB card type can be assigned
+    info.cardType = SoundCardType::USB;
+    EXPECT_EQ(info.cardType, SoundCardType::USB);
+}
+
+/**
+ * @tc.name   : Test SoundCardInfo USB cardId assignment
+ * @tc.type  : FUNC
+ * @tc.number: SoundCardInfo_CardId_001
+ * @tc.desc  : Test SoundCardInfo with USB cardId filled is not empty.
+ */
+HWTEST_F(AudioDeviceEnhanceManagerUnitTest, SoundCardInfo_CardId_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest SoundCardInfo_CardId_001 start");
+    SoundCardInfo info;
+    info.cardId = "USB\\VID_1234&PID_5678\\3&2";
+    info.cardType = SoundCardType::USB;
+    bool result = info.IsEmpty();
+    AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest SoundCardInfo_CardId_001 result:%{public}d", result);
+    EXPECT_FALSE(result);
+    EXPECT_EQ(info.cardType, SoundCardType::USB);
 }
 
 } // namespace AudioStandard
