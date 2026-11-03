@@ -34,6 +34,7 @@ class BluetoothScoManagerTest : public testing::Test {
 public:
     void SetUp(void) override
     {
+        BluetoothScoManager::GetInstance().Init();
         BluetoothHfpMockInterface::mockInterface_ = std::make_shared<BluetoothHfpMockInterface>();
     }
 
