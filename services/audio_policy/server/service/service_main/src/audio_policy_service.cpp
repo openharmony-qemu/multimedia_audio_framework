@@ -1379,6 +1379,7 @@ USB::UsbDevice *FindUsbAudioDevice(uint8_t busNum, uint8_t devAddr, std::vector<
 
 int32_t AudioPolicyService::GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList)
 {
+    bool hdfAudioDeviceTag = false;
     auto cardMap = AudioUsbManager::GetUsbSoundCardMap(hdfAudioDeviceTag);
     std::vector<USB::UsbDevice> usbDeviceList;
     auto usbRet = USB::UsbSrvClient::GetInstance().GetDevices(usbDeviceList);
