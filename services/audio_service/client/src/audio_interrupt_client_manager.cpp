@@ -153,6 +153,13 @@ int32_t AudioInterruptClientManager::SetDuckFactor(int32_t duckFactor)
     return AudioPolicyManager::GetInstance().SetDuckFactor(duckFactor);
 }
 
+int32_t AudioInterruptClientManager::StartVoipStreamByUid(const int32_t appUid)
+{
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "StartVoipStreamByUid: No system permission");
+    return AudioPolicyManager::GetInstance().StartVoipStreamByUid(appUid);
+}
+
 int32_t AudioInterruptClientManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
 {
     AUDIO_DEBUG_LOG("stub implementation");
