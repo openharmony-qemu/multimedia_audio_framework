@@ -704,6 +704,11 @@ int32_t AudioSystemManager::SetDuckFactor(int32_t duckFactor) const
     return AudioInterruptClientManager::GetInstance().SetDuckFactor(duckFactor);
 }
 
+int32_t AudioSystemManager::StartVoipStreamByUid(const int32_t appUid)
+{
+    return AudioInterruptClientManager::GetInstance().StartVoipStreamByUid(appUid);
+}
+
 int32_t AudioSystemManager::SetForegroundList(const std::vector<std::string> &list)
 {
     return AudioSystemClientEngineManager::GetInstance().SetForegroundList(list);
