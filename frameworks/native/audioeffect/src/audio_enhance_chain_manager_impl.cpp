@@ -209,7 +209,7 @@ int32_t AudioEnhanceChainManagerImpl::ParseSceneKeyCode(uint64_t sceneKeyCode, s
     if (item != audioEnhanceSupportedSceneTypes.end()) {
         sceneType = item->second;
     } else {
-        AUDIO_ERR_LOG("scene[%{public}d] not be supported", scene);
+        AUDIO_INFO_LOG("scene[%{public}d] not be supported", scene);
         return ERROR;
     }
     uint32_t captureId = (sceneKeyCode & CAPTURER_ID_MASK) >> CAPTURER_ID_OFFSET;
@@ -217,7 +217,7 @@ int32_t AudioEnhanceChainManagerImpl::ParseSceneKeyCode(uint64_t sceneKeyCode, s
     if (capItem != captureIdToDeviceMap_.end()) {
         capturerDevice = capItem->second;
     } else {
-        AUDIO_ERR_LOG("can't find captureId[%{public}u] in captureIdToDeviceMap_", captureId);
+        AUDIO_INFO_LOG("can't find captureId[%{public}u] in captureIdToDeviceMap_", captureId);
         return ERROR;
     }
 
@@ -227,19 +227,19 @@ int32_t AudioEnhanceChainManagerImpl::ParseSceneKeyCode(uint64_t sceneKeyCode, s
     if (deviceItem != supportDeviceType.end()) {
         if ((capturerDevice == DEVICE_TYPE_INVALID) || (capturerDevice == DEVICE_TYPE_NONE)) {
             capturerDeviceStr = "DEVICE_TYPE_MIC";
-            AUDIO_ERR_LOG("capturerDevice not availd");
+            AUDIO_INFO_LOG("capturerDevice not availd");
         } else {
             capturerDeviceStr = deviceItem->second;
         }
     } else {
-        AUDIO_ERR_LOG("capturerDevice[%{public}d] not in supportDeviceType", capturerDevice);
+        AUDIO_INFO_LOG("capturerDevice[%{public}d] not in supportDeviceType", capturerDevice);
         return ERROR;
     }
     deviceItem = supportDeviceType.find(rendererDevice);
     if (deviceItem != supportDeviceType.end()) {
         rendererDeviceStr = deviceItem->second;
     } else {
-        AUDIO_ERR_LOG("rendererDevice[%{public}d] not in supportDeviceType", rendererDevice);
+        AUDIO_INFO_LOG("rendererDevice[%{public}d] not in supportDeviceType", rendererDevice);
         return ERROR;
     }
     return SUCCESS;
@@ -441,8 +441,18 @@ int32_t AudioEnhanceChainManagerImpl::ApplyEnhanceChainById(uint64_t sceneKeyCod
 {
     auto chain = ChainPool::GetInstance().GetChainById(sceneKeyCode);
     if (chain == nullptr) {
-        AUDIO_ERR_LOG("chain: %{public}" PRIu64 " is not found", sceneKeyCode);
+        chainMissingLogCount_++;
+        if (!chainMissingLogActive_ || chainMissingLogCount_ % CHAIN_MISSING_LOG_HEARTBEAT_FRAMES == 0) {
+            AUDIO_ERR_LOG("chain: %{public}" PRIu64 " is not found", sceneKeyCode);
+        }
+        chainMissingLogActive_ = true;
         return ERROR;
+    }
+    if (chainMissingLogActive_) {
+        AUDIO_INFO_LOG("chain: %{public}" PRIu64 " found again after %{public}u missing calls", sceneKeyCode,
+            chainMissingLogCount_);
+        chainMissingLogActive_ = false;
+        chainMissingLogCount_ = 0;
     }
 
     auto applyChainRet = chain->ApplyEnhanceChain(transBuf);
@@ -458,8 +468,18 @@ int32_t AudioEnhanceChainManagerImpl::GetChainOutputDataById(uint64_t sceneKeyCo
 {
     auto chain = ChainPool::GetInstance().GetChainById(sceneKeyCode);
     if (chain == nullptr) {
-        AUDIO_ERR_LOG("chain: %{public}" PRIu64 " is not found", sceneKeyCode);
+        chainMissingLogCount_++;
+        if (!chainMissingLogActive_ || chainMissingLogCount_ % CHAIN_MISSING_LOG_HEARTBEAT_FRAMES == 0) {
+            AUDIO_ERR_LOG("chain: %{public}" PRIu64 " is not found", sceneKeyCode);
+        }
+        chainMissingLogActive_ = true;
         return ERROR;
+    }
+    if (chainMissingLogActive_) {
+        AUDIO_INFO_LOG("chain: %{public}" PRIu64 " found again after %{public}u missing calls", sceneKeyCode,
+            chainMissingLogCount_);
+        chainMissingLogActive_ = false;
+        chainMissingLogCount_ = 0;
     }
 
     auto getChainOutputRet = chain->GetOutputDataFromChain(buf, bufSize);

@@ -213,7 +213,16 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     effectParam->valueSize = 0;
     int32_t *data = &(effectParam->data[0]);
     BuildEffectParamData(data);
-    AUDIO_INFO_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
+    bool effectParamChanged = !effectParamLogInitialized_;
+    for (int32_t i = 0; !effectParamChanged && i < MAX_PARAM_INDEX; i++) {
+        effectParamChanged = lastLoggedEffectParam_[i] != data[i];
+    }
+    if (effectParamChanged) {
+        for (int32_t i = 0; i < MAX_PARAM_INDEX; i++) {
+            lastLoggedEffectParam_[i] = data[i];
+        }
+        effectParamLogInitialized_ = true;
+        AUDIO_INFO_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, spatializationSceneType: "
         "%{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d, absVolumeState: %{public}d, "
         "earphoneProduct: %{public}d, outdoorMode: %{public}d, superLoudnessMode: %{public}d, "
@@ -224,6 +233,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE], data[EARPHONE_PRODUCT],
         data[OUTDOOR_MODE], data[SUPER_LOUDNESS_MODE], data[SYSTEMLOAD_STATE_INDEX], data[FRONTEND_APP_TYPE],
         data[PERSONALIZED_SPATIALIZATION_ENABLED], data[LOW_POWER_INDEX]);
+    }
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     replyData = replyDatas[0];
@@ -237,9 +247,11 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
 
     ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
     ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig.outputCfg.channelLayout;
-    AUDIO_INFO_LOG("[%{public}s] with mode [%{public}s], output channels: %{public}u, channelLayout: %{public}" PRIu64,
-        sceneType_.c_str(), effectMode_.c_str(), ioBufferConfig_.outputCfg.channels,
-        ioBufferConfig_.outputCfg.channelLayout);
+    if (effectParamChanged) {
+        AUDIO_INFO_LOG("[%{public}s] with mode [%{public}s], output channels: %{public}u, channelLayout: %{public}"
+            PRIu64, sceneType_.c_str(), effectMode_.c_str(), ioBufferConfig_.outputCfg.channels,
+            ioBufferConfig_.outputCfg.channelLayout);
+    }
 
     return SUCCESS;
 }

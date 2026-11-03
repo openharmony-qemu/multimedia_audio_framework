@@ -142,6 +142,9 @@ private:
     int32_t superLoudnessMode_ = 0;
     int32_t frontendAppType_ = 0;
     bool personalizedSpatializationEnabled_ = false;
+    // Edge-trigger state for the 18-param dump: suppresses identical re-pushes
+    int32_t lastLoggedEffectParam_[MAX_PARAM_INDEX] = {};
+    bool effectParamLogInitialized_ = false;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

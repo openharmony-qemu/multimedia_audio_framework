@@ -116,6 +116,11 @@ private:
     std::set<std::string> priorSceneSet_;
     AudioEnhanceParamAdapter enhancePara_ {};
     std::mutex chainManagerMutex_;
+
+    // Edge-trigger state for chain-missing ERR logs on per-frame query paths
+    static constexpr uint32_t CHAIN_MISSING_LOG_HEARTBEAT_FRAMES = 250; // ~5s at the 20ms engine tick
+    bool chainMissingLogActive_ = false;
+    uint32_t chainMissingLogCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
