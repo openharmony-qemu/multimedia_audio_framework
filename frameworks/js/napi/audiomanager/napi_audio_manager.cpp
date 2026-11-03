@@ -144,7 +144,6 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("disableSafeMediaVolume", DisableSafeMediaVolume),
         DECLARE_NAPI_FUNCTION("getCollaborativeManager", GetCollaborativeManager),
         DECLARE_NAPI_FUNCTION("getRecordingManager", GetRecordingManager),
-        DECLARE_NAPI_FUNCTION("reportPlaybackCaptureUserChoice", ReportPlaybackCaptureUserAllowed),
         DECLARE_NAPI_FUNCTION("reportPlaybackCaptureUserAllowed", ReportPlaybackCaptureUserAllowed),
         DECLARE_NAPI_FUNCTION("getDeviceEnhanceManager", GetDeviceEnhanceManager),
         DECLARE_NAPI_FUNCTION("getDebuggingManager", GetDebuggingManager),
