@@ -1034,7 +1034,12 @@ int32_t FakeEffectCommandForParamEdge(AudioEffectHandle self, uint32_t cmdCode, 
 HWTEST(AudioEffectChainUnitTest, SetEffectParamValueEdge_001, TestSize.Level1)
 {
     std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
     std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
     ASSERT_NE(audioEffectChain, nullptr);
 
     AudioEffectInterface iface = {};
