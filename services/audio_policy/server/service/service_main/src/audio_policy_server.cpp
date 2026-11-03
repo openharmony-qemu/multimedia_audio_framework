@@ -3263,6 +3263,34 @@ int32_t AudioPolicyServer::VerifyUidAndPid(const int32_t uid, const int32_t pid)
     return SUCCESS;
 }
 
+bool AudioPolicyServer::VerifySystemStreamPermission(const AudioInterrupt &audioInterrupt)
+{
+    static const std::vector<AudioStreamType> SYSTEM_STREAMTYPE = {
+        STREAM_VOICE_CALL,
+        STREAM_INTERNAL_FORCE_STOP,
+        STREAM_SYSTEM,
+        STREAM_DTMF,
+        STREAM_ULTRASONIC,
+        STREAM_VOICE_CALL_ASSISTANT,
+        STREAM_ANNOUNCEMENT,
+        STREAM_EMERGENCY,
+        STREAM_VOICE_ASSISTANT_SYSTEM
+    };
+    static const std::vector<SourceType> SYSTEM_SOURCETYPE = {
+        SOURCE_TYPE_WAKEUP,
+        SOURCE_TYPE_VOICE_CALL,
+        SOURCE_TYPE_VOICE_TRANSCRIPTION,
+        SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT
+    };
+    auto streamPos = std::find(SYSTEM_STREAMTYPE.begin(), SYSTEM_STREAMTYPE.end(),
+        audioInterrupt.audioFocusType.streamType);
+    auto sourcePos = std::find(SYSTEM_SOURCETYPE.begin(), SYSTEM_SOURCETYPE.end(),
+        audioInterrupt.audioFocusType.sourceType);
+    CHECK_AND_RETURN_RET(!(streamPos == SYSTEM_STREAMTYPE.end() && sourcePos == SYSTEM_SOURCETYPE.end()), true);
+    CHECK_AND_RETURN_RET(PermissionUtil::VerifySystemPermission(), false);
+    return true;
+}
+
 int32_t AudioPolicyServer::ValidateAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
     bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
@@ -3279,6 +3307,12 @@ int32_t AudioPolicyServer::ValidateAudioInterrupt(const AudioInterrupt &audioInt
             isRecord ? RECORD_INTERRUPT_START_INVALID_PARAM : INTERRUPT_START_INVALID_PARAM,
             "ActivateAudioInterrupt VerifyUidAndPid failed", false),
         "VerifyUidAndPid failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(VerifySystemStreamPermission(audioInterrupt) == true,
+        ERR_UNKNOWN,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(audioInterrupt.uid,
+            isRecord ? RECORD_INTERRUPT_START_INVALID_PARAM : INTERRUPT_START_INVALID_PARAM,
+            "ActivateAudioInterrupt VerifySystemStreamPermission failed", false),
+        "VerifySystemStreamPermission failed");
     return SUCCESS;
 }
 
