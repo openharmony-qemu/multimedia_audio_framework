@@ -719,8 +719,8 @@ HWTEST_F(AudioProResamplerTest, GetDelayFramesTest_007, TestSize.Level1)
  */
 HWTEST_F(AudioProResamplerTest, InitTest_002, TestSize.Level0)
 {
-    constexpr uint32_t SAMPLE_RATE_OVER_MAX = 5644801;
-    constexpr uint32_t SAMPLE_RATE_UNDER_MIN = 7999;
+    constexpr uint32_t sampleRateOverMax = 5644801;
+    constexpr uint32_t sampleRateUnderMin = 7999;
 
     // 8k -> 5.6448M upsample accepted, buffer sized for 20ms at output rate
     ProResampler resampler(SAMPLE_RATE_8000, SAMPLE_RATE_5644800, STEREO, QUALITY_ONE);
@@ -739,11 +739,11 @@ HWTEST_F(AudioProResamplerTest, InitTest_002, TestSize.Level0)
     EXPECT_NE(resampler2.state_, nullptr);
 
     // out of range rejected
-    ProResampler resampler3(SAMPLE_RATE_OVER_MAX, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    ProResampler resampler3(sampleRateOverMax, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
     EXPECT_EQ(resampler3.state_, nullptr);
-    ProResampler resampler4(SAMPLE_RATE_UNDER_MIN, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    ProResampler resampler4(sampleRateUnderMin, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
     EXPECT_EQ(resampler4.state_, nullptr);
-    ProResampler resampler5(SAMPLE_RATE_48000, SAMPLE_RATE_OVER_MAX, STEREO, QUALITY_ONE);
+    ProResampler resampler5(SAMPLE_RATE_48000, sampleRateOverMax, STEREO, QUALITY_ONE);
     EXPECT_EQ(resampler5.state_, nullptr);
 }
 
@@ -788,7 +788,7 @@ HWTEST_F(AudioProResamplerTest, ProcessTest_005, TestSize.Level0)
  */
 HWTEST_F(AudioProResamplerTest, UpdateRatesTest_007, TestSize.Level0)
 {
-    constexpr uint32_t SAMPLE_RATE_OVER_MAX = 5644801;
+    constexpr uint32_t sampleRateOverMax = 5644801;
 
     ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_5644800, STEREO, QUALITY_ONE);
     EXPECT_NE(resampler.state_, nullptr);
@@ -804,7 +804,7 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_007, TestSize.Level0)
     EXPECT_EQ(resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen), EOK);
 
     // update to invalid rate frees the state
-    int32_t ret = resampler.UpdateRates(SAMPLE_RATE_48000, SAMPLE_RATE_OVER_MAX);
+    int32_t ret = resampler.UpdateRates(SAMPLE_RATE_48000, sampleRateOverMax);
     EXPECT_EQ(ret, RESAMPLER_ERR_INVALID_ARG);
     EXPECT_EQ(resampler.state_, nullptr);
 
