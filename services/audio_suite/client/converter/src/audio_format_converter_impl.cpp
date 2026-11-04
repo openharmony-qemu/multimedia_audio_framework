@@ -75,9 +75,20 @@ AudioFormatConverterImpl::~AudioFormatConverterImpl()
 }
 
 std::shared_ptr<AudioFormatConverter> AudioFormatConverter::Create(
-    const AudioFormat &inputFormat, const AudioFormat &outputFormat,
+    const AudioConverterFormat &converterInputFormat, const AudioConverterFormat &converterOutputFormat,
     const uint32_t resampleQuality, bool enableDataAlignment)
 {
+    AudioFormat inputFormat;
+    AudioFormat outputFormat;
+    inputFormat.audioChannelInfo.channelLayout = converterInputFormat.channelLayout ;
+    inputFormat.audioChannelInfo.numChannels = converterInputFormat.channelCount;
+    inputFormat.rate = static_cast<AudioSamplingRate>(converterInputFormat.sampleRate);
+    inputFormat.format = converterInputFormat.sampleFormat;
+    outputFormat.audioChannelInfo.channelLayout = converterOutputFormat.channelLayout;
+    outputFormat.audioChannelInfo.numChannels = converterOutputFormat.channelCount;
+    outputFormat.rate = static_cast<AudioSamplingRate>(converterOutputFormat.sampleRate);
+    outputFormat.format = converterOutputFormat.sampleFormat;
+
     auto inLayoutIt = LAYOUT_TO_CHANNEL.find(inputFormat.audioChannelInfo.channelLayout);
     CHECK_AND_RETURN_RET_LOG(inLayoutIt != LAYOUT_TO_CHANNEL.end(), nullptr,
         "Create: unsupported input channel layout");

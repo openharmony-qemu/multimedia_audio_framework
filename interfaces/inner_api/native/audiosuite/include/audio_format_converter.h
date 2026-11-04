@@ -56,7 +56,7 @@ public:
     virtual ~AudioFormatConverter() = default;
 
     static std::shared_ptr<AudioFormatConverter> Create(
-        const AudioFormat &inputFormat, const AudioFormat &outputFormat,
+        const AudioConverterFormat &converterInputFormat, const AudioConverterFormat &converterOutputFormat,
         const uint32_t resampleQuality = 1, const bool enableDataAlignment = false);
 
     // Input data is passed using a callback method, the output data and the original data are aligned in position.
