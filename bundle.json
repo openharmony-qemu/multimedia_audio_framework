@@ -381,13 +381,18 @@
               }
             },
             {
-              "type": "none",
+              "type": "so",
               "name": "//foundation/multimedia/audio_framework/services/audio_engine:audio_common_algorithm",
               "header": {
                 "header_files": [
-                  "audio_proresampler_process.h"
+                  "./resample/include/resampler.h",
+                  "./resample/include/audio_proresampler_process.h",
+                  "./resample/include/audio_proresampler.h",
+                  "./channel_converter/include/mixer_utils.h",
+                  "./channel_converter/include/channel_converter.h",
+                  "./channel_converter/include/down_mixer.h"
                 ],
-                "header_base": "//foundation/multimedia/audio_framework/services/audio_engine/plugin/resample/include"
+                "header_base": "//foundation/multimedia/audio_framework/services/audio_engine/plugin"
               }
             }
           ],

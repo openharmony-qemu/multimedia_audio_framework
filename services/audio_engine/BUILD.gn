@@ -90,6 +90,8 @@ ohos_shared_library("audio_common_algorithm") {
   }
   install_enable = true
 
+  innerapi_tags = [ "chipsetsdk" ]
+
   sources = [
     "plugin/channel_converter/src/channel_converter.cpp",
     "plugin/channel_converter/src/down_mixer.cpp",
