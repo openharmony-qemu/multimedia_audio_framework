@@ -21,18 +21,14 @@
 #include <ability_manager_client.h>
 #include "iservice_registry.h"
 #include "audio_policy_log.h"
+#include "audio_policy_server_handler.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "audio_router_center.h"
 
-#ifdef BLUETOOTH_ENABLE
-#include "audio_server_death_recipient.h"
-#include "audio_bluetooth_manager.h"
-#include "bluetooth_device_manager.h"
-#endif
-
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
+#include "bluetooth_device_manager.h"
 #include "sle_audio_device_manager.h"
 #include "audio_pipe_manager.h"
 #include "audio_zone_service.h"
@@ -164,6 +160,17 @@ float AudioActiveDevice::GetMaxAmplitude(const int32_t deviceId, AudioInterrupt 
     return 0;
 }
 
+void AudioActiveDevice::SendUserSelectionEventAsync(DeviceType devType, const std::string &macAddress,
+    int32_t eventType)
+{
+    auto task = [devType, macAddress, eventType]() {
+        Bluetooth::SendUserSelectionEvent(devType, macAddress, eventType);
+    };
+    auto handler = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    JUDGE_AND_ERR_LOG(handler == nullptr || !handler->PostTask(task, "SendUserSelectionEvent"),
+        "PostTask SendUserSelectionEvent failed");
+}
+
 void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
     StreamUsage streamUsage)
 {
@@ -181,7 +188,7 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
 
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
+        SendUserSelectionEventAsync(audioDeviceDescriptor->deviceType_,
             audioDeviceDescriptor->macAddress_, USER_SELECT_SLE);
     }
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_NEARLINK) {
@@ -198,7 +205,7 @@ void AudioActiveDevice::NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDev
     AUDIO_INFO_LOG("UserDisSelection start");
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "deviceDesc is nullptr");
 #ifdef BLUETOOTH_ENABLE
-    Bluetooth::SendUserSelectionEvent(
+    SendUserSelectionEventAsync(
         audioDeviceDescriptor->deviceType_, audioDeviceDescriptor->macAddress_, USER_NOT_SELECT_SLE);
 #endif
     SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor, streamUsage, USER_NOT_SELECT_SLE);
@@ -282,7 +289,7 @@ void AudioActiveDevice::DecideActionForSingleWirelessOutputDevice(
 #ifdef BLUETOOTH_ENABLE
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
-            Bluetooth::SendUserSelectionEvent(deviceDesc->deviceType_,
+            SendUserSelectionEventAsync(deviceDesc->deviceType_,
                 deviceDesc->macAddress_, USER_NOT_SELECT_SLE);
             break;
 #endif
@@ -303,7 +310,7 @@ void AudioActiveDevice::NotifyNewDeviceSelected(
 #ifdef BLUETOOTH_ENABLE
     if (newSelectedDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         newSelectedDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        Bluetooth::SendUserSelectionEvent(
+        SendUserSelectionEventAsync(
             newSelectedDevice->deviceType_, newSelectedDevice->macAddress_, USER_SELECT_SLE);
     }
 #endif
@@ -347,7 +354,7 @@ void AudioActiveDevice::DecideActionForSingleWirelessInputDevice(
 #ifdef BLUETOOTH_ENABLE
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP_IN:
-            Bluetooth::SendUserSelectionEvent(deviceDesc->deviceType_,
+            SendUserSelectionEventAsync(deviceDesc->deviceType_,
                 deviceDesc->macAddress_, USER_NOT_SELECT_SLE);
             break;
 #endif
@@ -368,7 +375,7 @@ void AudioActiveDevice::NotifyNewInputDeviceSelected(
 #ifdef BLUETOOTH_ENABLE
     if (newSelectedDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         newSelectedDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-        Bluetooth::SendUserSelectionEvent(newSelectedDevice->deviceType_,
+        SendUserSelectionEventAsync(newSelectedDevice->deviceType_,
             newSelectedDevice->macAddress_, USER_SELECT_SLE);
     }
 #endif
@@ -394,7 +401,7 @@ void AudioActiveDevice::NotifyUserSelectionEventForInput(std::shared_ptr<AudioDe
 
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-        Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
+        SendUserSelectionEventAsync(audioDeviceDescriptor->deviceType_,
             audioDeviceDescriptor->macAddress_, USER_SELECT_SLE);
     }
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
