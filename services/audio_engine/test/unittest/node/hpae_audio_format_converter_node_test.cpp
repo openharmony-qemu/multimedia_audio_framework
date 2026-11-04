@@ -3200,6 +3200,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, signalProcessInputsSizeEdgeLog, TestS
     converterNode->SignalProcess(twoInputs); // sustained hit
     std::vector<HpaePcmBuffer *> oneInput = {&input};
     converterNode->SignalProcess(oneInput); // recovery line: size back to 1
+    SUCCEED(); // gate-path coverage: no observable return value to assert
 }
 
 }

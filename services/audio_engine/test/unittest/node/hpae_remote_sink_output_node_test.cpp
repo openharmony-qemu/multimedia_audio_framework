@@ -488,6 +488,7 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, doProcessSinkNullEdgeLog, TestSize.Level0
         std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->DoProcess(); // first gate hit: sink not created yet
     hpaeRemoteSinkOutputNode->DoProcess(); // sustained hit
+    SUCCEED(); // gate-path coverage: void DoProcess has no observable return
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

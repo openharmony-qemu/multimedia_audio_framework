@@ -1229,6 +1229,7 @@ HWTEST_F(HpaeSinkInputNodeTest, testReadToAudioBufferEdgeLog, TestSize.Level0)
     int32_t ret = 0;
     sinkInputNode->ReadToAudioBuffer(ret); // first gate hit
     sinkInputNode->ReadToAudioBuffer(ret); // sustained hit
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED); // offload-disabled branch keeps ret deterministic
 }
 } // namespace HPAE
 } // namespace AudioStandard
