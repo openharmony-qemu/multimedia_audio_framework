@@ -29,6 +29,7 @@ using namespace std;
 
 constexpr chrono::milliseconds CONTINUE_TIMEOUT_MS(2000);
 constexpr chrono::milliseconds ROLLBACK_TIMEOUT_MS(1000);
+constexpr chrono::milliseconds VCONNECT_TIMEOUT_MS(20000);
 
 static bool IsConnected(const AudioDeviceDescriptor &desc)
 {
@@ -58,30 +59,45 @@ AudioRollbackManager& AudioRollbackManager::GetInstance()
 
 void AudioRollbackManager::OnDeviceNewConnect(const AudioDeviceDescriptor &desc)
 {
-    CHECK_AND_RETURN(IsNearlinkBtOutput(desc));
+    CHECK_AND_RETURN(IsNearlinkBtOutput(desc) && desc.connectState_ != VIRTUAL_CONNECTED);
     auto deviceId = desc.deviceId_;
     AUDIO_INFO_LOG("id=%{public}d, type=%{public}d, role=%{public}d, connState=%{public}d, enable=%{public}d",
         deviceId, desc.deviceType_, desc.deviceRole_, desc.connectState_, desc.isEnable_);
+    bool isConnected = IsConnected(desc);
     std::lock_guard lg(mutex_);
-    if (IsConnected(desc)) {
+    if (isConnected) {
         connectedSet_.insert(deviceId);
-        SetConnectLostRollback(desc);
-        return;
     }
-    CHECK_AND_RETURN(CheckScene(desc));
-    selectionRollbacks_.clear();
-    if (!rollbackInfo_) {
-        rollbackInfo_ = std::make_unique<RollbackInfo>();
+#ifdef WIRELESS_DEFAULT_EXCLUDE
+    if (find_if(virtualSelectDevices_.begin(), virtualSelectDevices_.end(),
+        [deviceId](auto &item) {
+            return item.deviceId == deviceId;
+        }) != virtualSelectDevices_.end())
+#endif
+    {
+        if (isConnected) {
+            SetConnectLostRollback(desc);
+        } else {
+            CHECK_AND_RETURN(CheckScene(desc));
+            selectionRollbacks_.clear();
+            if (!rollbackInfo_) {
+                rollbackInfo_ = std::make_unique<RollbackInfo>();
+            }
+            rollbackInfo_->type = NEW_CONNECT_ROLLBACK;
+            rollbackInfo_->deviceId = deviceId;
+            rollbackInfo_->selections = AudioRouterInfra::GetInstance().GetSelections(
+                {SelectDeviceType::CALL_OUTPUT, SelectDeviceType::MEDIA_OUTPUT});
+            if (rollbackInfo_->selections.empty()) {
+                rollbackInfo_.reset();
+            } else {
+                timer_.SetTimeout(CONTINUE_TIMEOUT_MS, [deviceId, this]() {
+                    CHECK_AND_RETURN(RollbackNewConnect(deviceId, NEW_CONNECT_ROLLBACK));
+                    AudioDeviceCommon::FetchAndRoute("RollbackNewConnect");
+                });
+            }
+        }
+        ContinueSetDevice(desc);
     }
-    rollbackInfo_->type = NEW_CONNECT_ROLLBACK;
-    rollbackInfo_->deviceId = deviceId;
-    rollbackInfo_->selections = AudioRouterInfra::GetInstance().GetSelections(
-        {SelectDeviceType::CALL_OUTPUT, SelectDeviceType::MEDIA_OUTPUT});
-    CHECK_AND_CALL_FUNC_RETURN(!rollbackInfo_->selections.empty(), rollbackInfo_.reset());
-    timer_.SetTimeout(CONTINUE_TIMEOUT_MS, [deviceId, this]() {
-        CHECK_AND_RETURN(RollbackNewConnect(deviceId, NEW_CONNECT_ROLLBACK));
-        AudioDeviceCommon::FetchAndRoute("RollbackNewConnect");
-    });
 }
 
 void AudioRollbackManager::SetConnectLostRollback(const AudioDeviceDescriptor &desc)
@@ -114,9 +130,21 @@ void AudioRollbackManager::ContinueSetDevice(const AudioDeviceDescriptor &desc)
 {
     auto deviceId = desc.deviceId_;
     AUDIO_INFO_LOG("id=%{public}d, type=%{public}d", deviceId, desc.deviceType_);
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
     for (auto it = virtualSelectDevices_.begin(); it != virtualSelectDevices_.end();) {
         if (it->deviceId == deviceId) {
-            RollbackSelection(*it);
+            switch (it->type) {
+                case SelectDeviceType::MEDIA_OUTPUT:
+                    strategy.SetMediaOutputDevice(it->uid, it->streamId,
+                        make_shared<AudioDeviceDescriptor>(desc));
+                    break;
+                case SelectDeviceType::CALL_OUTPUT:
+                    strategy.SetCallOutputDevice(it->uid, it->streamId,
+                        make_shared<AudioDeviceDescriptor>(desc), "ContinueSetDevice");
+                    break;
+                default:
+                    AUDIO_ERR_LOG("Error: invalid type");
+            }
             it = virtualSelectDevices_.erase(it);
         } else {
             it++;
@@ -274,7 +302,7 @@ bool AudioRollbackManager::HandleVirtualConnected(int32_t uid, SelectDeviceType 
     }
     AUDIO_INFO_LOG("uid=%{public}d, sType=%{public}d, stream=%{public}d, id=%{public}d, type=%{public}d",
         uid, type, streamId, deviceId, desc.deviceType_);
-    timer_.SetTimeout(CONTINUE_TIMEOUT_MS, [uid, type, streamId, deviceId, this]() {
+    timer_.SetTimeout(VCONNECT_TIMEOUT_MS, [uid, type, streamId, deviceId, this]() {
         std::lock_guard lg(mutex_);
         virtualSelectDevices_.erase(remove_if(virtualSelectDevices_.begin(), virtualSelectDevices_.end(),
             [uid, type, streamId, deviceId] (Selection &e) {
@@ -356,16 +384,15 @@ void AudioRollbackManager::ExcludeSelection(SelectDeviceType type, const AudioDe
     RemoveSelection([deviceId, type](Selection &s) { return s.deviceId == deviceId && s.type == type; });
 }
 
-#ifdef WIRELESS_DEFAULT_EXCLUDE
-void AudioRollbackManager::UpdateConnectedSet(const AudioDeviceDescriptor &desc)
+bool AudioRollbackManager::IsVirtualSelectDevice(const AudioDeviceDescriptor &desc)
 {
-    if (IsConnected(desc) && IsNearlinkBtOutput(desc)) {
-        AUDIO_INFO_LOG("id=%{public}d, type=%{public}d", desc.deviceId_, desc.deviceType_);
-        std::lock_guard lg(mutex_);
-        connectedSet_.insert(desc.deviceId_);
-    }
+    auto deviceId = desc.deviceId_;
+    std::lock_guard lg(mutex_);
+    return find_if(virtualSelectDevices_.begin(), virtualSelectDevices_.end(),
+        [deviceId](auto &item) {
+            return item.deviceId == deviceId;
+        }) != virtualSelectDevices_.end();
 }
-#endif
 
 void AudioRollbackManager::OnAppDied(int32_t uid)
 {
