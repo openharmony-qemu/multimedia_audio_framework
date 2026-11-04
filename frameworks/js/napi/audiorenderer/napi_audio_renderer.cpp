@@ -1114,11 +1114,11 @@ napi_value NapiAudioRenderer::Standby(napi_env env, napi_callback_info info)
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
-            NAPI_ERR_INVALID_PARAM);
+            NAPI_ERR_INPUT_INVALID);
         bool on = false;
         context->status = NapiParamUtils::GetValueBoolean(env, on, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get boolean param failed",
-            NAPI_ERR_INVALID_PARAM);
+            NAPI_ERR_INPUT_INVALID);
         context->intValue = on ? 1 : 0;
     };
 
