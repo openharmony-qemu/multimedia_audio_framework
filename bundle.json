@@ -395,7 +395,7 @@
               "name": "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite_generic",
               "header": {
                 "header_files": [
-                  "audio_time_stretch_process.h"
+                  "audio_suite_time_stretch.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audio_suite_generic/include"
               }
