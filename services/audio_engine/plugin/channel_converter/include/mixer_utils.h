@@ -22,8 +22,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 constexpr uint32_t MAX_CHANNELS = 16;
-// max framelength is sample rate 192000, 10s
-constexpr uint32_t MAX_CHANNEL_CONVERT_FRAME_LENGTH = SAMPLE_RATE_192000 * 10;
 constexpr float COEF_ZERO_F = 0.0f;
 constexpr float COEF_0DB_F = 1.0f;
 constexpr float COEF_M3DB_F = 0.7071f;
