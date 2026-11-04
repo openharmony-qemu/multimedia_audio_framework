@@ -95,6 +95,9 @@ private:
     // Cached DoProcess trace names (mute/unmute); rebuilt in ctor and whenever node info changes
     std::string muteTraceName_;
     std::string unmuteTraceName_;
+    // edge-triggered gates: log first hit + 5s heartbeat while the state persists
+    AudioEdgeLogGate downlinkActiveGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate readCbNullGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 };
 
 }  // namespace HPAE

@@ -16,6 +16,7 @@
 #define HPAE_AUDIOFORMAT_CONVERTER_H
 #include "audio_stream_info.h"
 #include "hpae_plugin_node.h"
+#include "audio_log.h"
 #include "channel_converter.h"
 #include "audio_proresampler.h"
 #ifdef ENABLE_HOOK_PCM
@@ -116,6 +117,9 @@ private:
 
     // Cached DoProcess trace name; rebuilt in ctor and whenever node info changes
     std::string processTraceName_;
+    // edge-triggered gates: log first hit + 5s heartbeat while the state persists
+    AudioEdgeLogGate inputsBadSizeGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate resamplerNullGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif

@@ -72,6 +72,10 @@ private:
     bool isOutputClusterConnected_ = false;
     std::set<HpaeProcessorType> connectedProcessCluster_;
     int32_t waitCountThreshold_ = 0;
+    // edge-triggered gates: log first hit + 5s heartbeat while the state persists
+    AudioEdgeLogGate enqueueStopGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate insufficientGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate dequeueFailGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_ = nullptr;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;

@@ -2248,6 +2248,11 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
     }
 
     deviceDescs = eventEntry_->GetDevices(deviceFlag);
+#ifdef MULTI_BUS_ENABLE
+    if (!hasSystemPermission) {
+        AudioPolicyUtils::GetInstance().FilterSystemDevices(deviceDescs);
+    }
+#endif
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
     audioPolicyService_.SyncInputDeviceScoId(deviceDescs);
     AudioDeviceDescriptor::MapInputDeviceType(deviceDescs);
@@ -4525,11 +4530,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvaila
 #endif
 }
 
-int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+bool AudioPolicyServer::VerifyUsageForAvailableDevices(AudioDeviceUsage usage)
 {
-    AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(usageIn);
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     switch (usage) {
         case MEDIA_OUTPUT_DEVICES:
         case MEDIA_INPUT_DEVICES:
@@ -4538,13 +4540,26 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
         case CALL_INPUT_DEVICES:
         case ALL_CALL_DEVICES:
         case D_ALL_DEVICES:
-            break;
+            return true;
         default:
-            AUDIO_ERR_LOG("Invalid device usage:%{public}d", usage);
-            return ERR_INVALID_PARAM;
+            return false;
     }
+}
+
+int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(usageIn);
+    CHECK_AND_RETURN_RET_LOG(VerifyUsageForAvailableDevices(usage), ERR_INVALID_PARAM,
+        "Invalid device usage:%{public}d", usage);
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
 
     descs = GetAvailableDevicesInner(usage);
+#ifdef MULTI_BUS_ENABLE
+    if (!hasSystemPermission) {
+        AudioPolicyUtils::GetInstance().FilterSystemDevices(descs);
+    }
+#endif
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(descs);
     audioPolicyService_.SyncInputDeviceScoId(descs);
     AudioDeviceDescriptor::MapInputDeviceType(descs);
@@ -4588,19 +4603,8 @@ int32_t AudioPolicyServer::SetAvailableDeviceChangeCallback(int32_t /*clientId*/
     AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(usageIn);
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "SetAvailableDeviceChangeCallback set listener object is nullptr");
-    switch (usage) {
-        case MEDIA_OUTPUT_DEVICES:
-        case MEDIA_INPUT_DEVICES:
-        case ALL_MEDIA_DEVICES:
-        case CALL_OUTPUT_DEVICES:
-        case CALL_INPUT_DEVICES:
-        case ALL_CALL_DEVICES:
-        case D_ALL_DEVICES:
-            break;
-        default:
-            AUDIO_ERR_LOG("Invalid AudioDeviceUsage");
-            return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(VerifyUsageForAvailableDevices(usage), ERR_INVALID_PARAM,
+        "Invalid AudioDeviceUsage");
 
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();

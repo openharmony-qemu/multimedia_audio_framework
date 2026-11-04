@@ -76,6 +76,8 @@ private:
     uint32_t micNullLogCount_ = 0;
     bool applyFailLogActive_ = false;
     uint32_t applyFailLogCount_ = 0;
+    // edge-triggered gates: log first hit + 5s heartbeat while the state persists
+    AudioEdgeLogGate inputsEmptyGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

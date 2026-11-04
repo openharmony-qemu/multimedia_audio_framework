@@ -171,7 +171,7 @@ public:
      * @param choice The user choice
      * @since 24
      */
-    int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
+    int32_t ReportPlaybackCaptureUserAllowed(uint32_t sessionId, bool choice);
 
     /**
      * @brief Report wakeup stage, result and errCode.

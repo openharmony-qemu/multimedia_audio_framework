@@ -88,12 +88,18 @@ HpaePcmBuffer *HpaeLimiterNode::SignalProcess(const std::vector<HpaePcmBuffer *>
     Trace trace("HpaeLimiterNode::SignalProcess");
     limiterOutput_.Reset();
     if (inputs.empty() || !inputs[0]) {
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-                BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "limiter input is empty", false);
-        AUDIO_WARNING_LOG("NodeId %{public}d, sessionId %{public}d input is empty", GetNodeId(), GetSessionId());
+        if (inputsEmptyGate_.ShouldLog()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
+                    BusinessScenario::QUERY, ERR_NULL_POINTER),
+                "limiter input is empty", false);
+            AUDIO_WARNING_LOG("NodeId %{public}d, sessionId %{public}d input is empty", GetNodeId(), GetSessionId());
+        }
         return &limiterOutput_;
+    }
+    if (inputsEmptyGate_.IsActive()) {
+        AUDIO_WARNING_LOG("limiter input recovered, nodeId:%{public}d, frames:%{public}u",
+            GetNodeId(), inputsEmptyGate_.Reset());
     }
     CHECK_AND_RETURN_RET(inputs[0]->IsValid(), inputs[0]);
     if (limiter_ == nullptr) {

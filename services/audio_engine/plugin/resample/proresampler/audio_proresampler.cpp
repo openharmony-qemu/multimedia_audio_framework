@@ -62,7 +62,8 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     
     SingleStagePolyphaseResamplerSkipHalfTaps(state_);
     AUDIO_INFO_LOG("Init success inRate: %{public}d, outRate: %{public}d, channels: %{public}d, "
-        "quality: %{public}d.", inRate_, outRate_, channels_, quality_);
+        "quality: %{public}d, tmpOutBuf size: %{public}zu.", inRate_, outRate_, channels_, quality_,
+        tmpOutBuf_.size());
 }
 
 int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameLen, float *outBuffer,
@@ -121,8 +122,11 @@ int32_t ProResampler::CheckRateAndChannelParam()
 
 int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
 {
-    AUDIO_INFO_LOG("ProResampler inRate update: %{public}d -> %{public}d, outRate update: %{public}d -> %{public}d",
-        inRate_, inRate, outRate_, outRate);
+    // log only when a rate really changes; same-value calls are no-ops
+    if (inRate != inRate_ || outRate != outRate_) {
+        AUDIO_INFO_LOG("ProResampler inRate update: %{public}d -> %{public}d, outRate update: %{public}d "
+            "-> %{public}d", inRate_, inRate, outRate_, outRate);
+    }
     inRate_ = inRate;
     outRate_ = outRate;
 

@@ -178,8 +178,13 @@ void HpaeRenderEffectNode::DoProcess()
 HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
     if (inputs.empty()) {
-        AUDIO_WARNING_LOG("inputs size is empty");
+        if (inputsEmptyGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("inputs size is empty");
+        }
         return nullptr;
+    }
+    if (inputsEmptyGate_.IsActive()) {
+        AUDIO_WARNING_LOG("inputs size empty recovered after %{public}u frames", inputsEmptyGate_.Reset());
     }
     Trace trace(traceName_);
 
@@ -213,15 +218,20 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
             ReconfigOutputBuffer(outchannels, outChannelLayout);
             return inputs[0];
         case ERROR:
-            AUDIO_ERR_LOG("apply audio effect chain fail, ret: %{public}d", ret);
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-                BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED), "apply audio effect chain fail", false);
+            if (effectFailGate_.ShouldLog()) {
+                AUDIO_ERR_LOG("apply audio effect chain fail, ret: %{public}d", ret);
+                StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                    BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                    BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED), "apply audio effect chain fail", false);
+            }
             return inputs[0];
         default:
             break;
     }
 
+    if (effectFailGate_.IsActive()) {
+        AUDIO_WARNING_LOG("apply audio effect chain recovered after %{public}u frames", effectFailGate_.Reset());
+    }
     effectOutput_.SetBufferState(inputs[0]->GetBufferState());
     effectOutput_.SetBufferValid(true);
     return &effectOutput_;
@@ -720,17 +730,24 @@ void HpaeTempEffectBuffer::ReadDataDequeueRingCache(HpaePcmBuffer* buffer)
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "get readable size failed");
 
     if (result.size < requestDataLen) {
-        AUDIO_WARNING_LOG("Insufficient data: %{public}zu < %{public}zu, outputting silence",
-            result.size, requestDataLen);
+        if (insufficientGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("Insufficient data: %{public}zu < %{public}zu, outputting silence",
+                result.size, requestDataLen);
+        }
         SetSilenceData(buffer);
     } else {
+        if (insufficientGate_.IsActive()) {
+            AUDIO_WARNING_LOG("Insufficient data recovered after %{public}u frames", insufficientGate_.Reset());
+        }
         CHECK_AND_RETURN_LOG(tempOutput_ != nullptr, "tempOutput_ is null");
         float *tempOutput = tempOutput_->GetPcmDataBuffer();
         // read buffer
         BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(tempOutput), requestDataLen};
         result = ringCache_->Dequeue(bufferWrap);
         if (result.ret != OPERATION_SUCCESS) {
-            AUDIO_INFO_LOG("Dequeue data failed");
+            if (dequeueFailGate_.ShouldLog()) {
+                AUDIO_INFO_LOG("Dequeue data failed");
+            }
             SetSilenceData(buffer);
         } else {
             SetTempBufferData(buffer, tempOutput);

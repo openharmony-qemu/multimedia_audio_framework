@@ -1401,7 +1401,7 @@ int32_t AudioService::RequestUserPrivacyAuthority(uint32_t sessionId)
     return capturerInServer->RequestUserPrivacyAuthority(sessionId);
 }
 
-int32_t AudioService::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice)
+int32_t AudioService::ReportPlaybackCaptureUserAllowed(uint32_t sessionId, bool choice)
 {
     std::shared_ptr<CapturerInServer> capturerInServer = nullptr;
     std::unique_lock<std::mutex> lock(capturerMapMutex_);
@@ -1413,7 +1413,7 @@ int32_t AudioService::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool c
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_QUERY_ILLEGAL_STATE, "sessionid not in allCapturerMap", false),
         "sessionid not in allCapturerMap");
-    return capturerInServer->ReportPlaybackCaptureUserChoice(sessionId, choice);
+    return capturerInServer->ReportPlaybackCaptureUserAllowed(sessionId, choice);
 }
 
 void AudioService::SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList)

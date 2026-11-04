@@ -121,7 +121,9 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
     if ((GetDeviceClass() == DEVICE_CLASS_OFFLOAD || GetDeviceClass() == DEVICE_CLASS_REMOTE_OFFLOAD) &&
         !offloadEnable_) {
         ret = ERR_OPERATION_FAILED;
-        AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
+        if (offloadDisabledGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
+        }
     } else {
         ret = GetDataFromSharedBuffer();
         // if historyBuffer has enough data, write to outputStream

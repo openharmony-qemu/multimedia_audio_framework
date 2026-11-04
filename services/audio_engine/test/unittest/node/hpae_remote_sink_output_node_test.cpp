@@ -469,6 +469,26 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, GetRenderSinkInstance_NullSinkPath_001, T
     EXPECT_EQ(node->audioRendererSink_, nullptr); // confirms the null path ran
 }
 
+/**
+ * @tc.name  : doProcess sink-null hits edge gate first and sustained
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRemoteSinkOutputNodeTest_EdgeLog_001
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, doProcessSinkNullEdgeLog, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = 1001; // 1001: node id
+    nodeInfo.frameLen = 960; // 960: frameLen
+    nodeInfo.sessionId = 123456; // 123456: sessionId
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeRemoteSinkOutputNode> hpaeRemoteSinkOutputNode =
+        std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+    hpaeRemoteSinkOutputNode->DoProcess(); // first gate hit: sink not created yet
+    hpaeRemoteSinkOutputNode->DoProcess(); // sustained hit
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

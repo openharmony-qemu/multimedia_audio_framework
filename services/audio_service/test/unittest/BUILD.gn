@@ -459,7 +459,6 @@ ohos_unittest("audio_service_unit_test") {
     "./client/audio_system_manager_unit_test.cpp",
     "./client/audio_wakeup_manager_unit_test.cpp",
     "./client/audio_workgroup_manager_unit_test.cpp",
-    "./client/audio_session_manager_unit_test.cpp",
     "./common/audio_common_converter_unit_test.cpp",
     "./common/audio_down_mix_stereo_unit_test.cpp",
     "./common/audio_static_buffer_provider_unit_test.cpp",
@@ -520,6 +519,106 @@ ohos_unittest("audio_service_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "access_token:libtokensetproc_shared", 
+    "resource_schedule_service:ressched_client",
+  ]
+
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
+  if (audio_framework_feature_inner_capturer) {
+    deps +=
+        [ "../../../../frameworks/native/playbackcapturer:playback_capturer" ]
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
+
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
+  }
+
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
+}
+
+ohos_unittest("audio_session_manager_unit_test") {
+  module_out_path = "audio_framework/audio_framework_focus/audio_session"
+
+  configs = [ ":module_private_config" ]
+
+  include_dirs = [
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/common/include/limiter",
+    "../../../../services/audio_service/common/include/dfx",
+    "../../../../services/audio_service/common/src",
+    "../../../../services/audio_service/common/src/limiter",
+    "../../../../services/audio_service/server/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../frameworks/native/audioinnercall/include",
+    "../../../../frameworks/native/audiopolicy/include",
+    "../../../../frameworks/native/hdiadapter_new/include",
+    "../../../../frameworks/native/playbackcapturer/include",
+    "../../../../frameworks/native/audioclock/include",
+    "../../../../services/audio_policy/server/include",
+    "../../../../services/audio_engine/manager/include",
+    "../../../../services/audio_engine/plugin/resample/include",
+  ]
+
+  sources = [
+    "./client/audio_session_manager_unit_test.cpp",
+  ]
+
+  deps = [
+    "../../../../frameworks/native/audioclock:audio_clock",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/audioschedule:audio_schedule",
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_policy:audio_foundation",
+    "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
+    "../../../../services/audio_service:audio_common",
+    "../../../../services/audio_service:audio_process_service",
+    "../../../../services/audio_service:audio_service_static",
+  ]
+
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = [ "-std=c++20" ]
+
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libprivacy_sdk",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "ipc:ipc_core",
+    "qos_manager:concurrent_task_client",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "access_token:libtokensetproc_shared",
     "resource_schedule_service:ressched_client",
   ]
 
@@ -2782,7 +2881,7 @@ ohos_unittest("audio_server_extra_unit_test") {
 
 ohos_unittest("audio_service_second_unit_test") {
   testonly = true
-  module_out_path = "audio_framework/audio_service/audio_service_second"
+  module_out_path = "audio_framework/audio_framework_route/audio_service_second"
 
   cflags = [ "-fno-access-control" ]
 

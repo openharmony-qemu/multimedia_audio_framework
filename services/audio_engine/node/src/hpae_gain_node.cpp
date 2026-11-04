@@ -88,13 +88,24 @@ HpaeGainNode::~HpaeGainNode()
 HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
     if (inputs.empty()) {
-        AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
+        if (inputsEmptyGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
+        }
         return nullptr;
+    }
+    if (inputsEmptyGate_.IsActive()) {
+        AUDIO_WARNING_LOG("inputs size empty recovered, SessionId:%{public}d, frames:%{public}u",
+            GetSessionId(), inputsEmptyGate_.Reset());
     }
     Trace trace(traceName_);
     if (fadeOutState_ == FadeOutState::DONE_FADEOUT) {
-        AUDIO_INFO_LOG("fadeout done, set session %{public}d silence", GetSessionId());
+        if (fadeoutSilenceGate_.ShouldLog()) {
+            AUDIO_INFO_LOG("fadeout done, set session %{public}d silence", GetSessionId());
+        }
         SilenceData(inputs[0]);
+    } else if (fadeoutSilenceGate_.IsActive()) {
+        AUDIO_INFO_LOG("fadeout silence ended, SessionId:%{public}d, frames:%{public}u",
+            GetSessionId(), fadeoutSilenceGate_.Reset());
     }
     float *inputData = (float *)inputs[0]->GetPcmDataBuffer();
     uint32_t frameLen = inputs[0]->GetFrameLen();
@@ -157,7 +168,8 @@ void HpaeGainNode::ResetVolume()
     }
     audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
     audioVolume->Monitor(GetSessionId(), true);
-    AUDIO_INFO_LOG("curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
+    AUDIO_INFO_LOG("curSystemGain:%{public}f streamType :%{public}d sessionId:%{public}u", curSystemGain,
+        GetStreamType(), GetSessionId());
 }
 
 void HpaeGainNode::ClearFadeState()

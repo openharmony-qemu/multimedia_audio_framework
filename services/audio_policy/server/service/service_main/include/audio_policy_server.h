@@ -947,6 +947,7 @@ private:
     int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
         const int32_t pid = INVALID_PID, bool isInternal = false);
     bool VerifySessionId(uint32_t sessionId, uint32_t clientUid);
+    bool VerifyUsageForAvailableDevices(AudioDeviceUsage usage);
 
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT

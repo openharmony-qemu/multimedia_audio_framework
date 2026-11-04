@@ -222,7 +222,10 @@ int32_t AudioLoopbackManager::GetStatus(LoopbackType type, int &status, int32_t 
             return ERROR_LOOPBACK_HANDLER_NOT_EXIST;
         }
         status = static_cast<int>(globalHandlerState_);
-        AUDIO_INFO_LOG("get status current is %{public}d", status);
+        if (status != lastReportedStatus_) {
+            AUDIO_INFO_LOG("get status current is %{public}d", status);
+            lastReportedStatus_ = status;
+        }
         globalHandlerCallback_->OnCommandResult(LOOPBACK_CMD_GETSTATUS, true, SUCCESS);
         return SUCCESS;
     }

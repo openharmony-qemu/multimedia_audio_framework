@@ -81,7 +81,7 @@ public:
     bool TurnOffMicIndicator(CapturerState capturerState);
     void TurnOnRemoteMicIndicator();
     void TurnOffRemoteMicIndicator();
-    int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
+    int32_t ReportPlaybackCaptureUserAllowed(uint32_t sessionId, bool choice);
     int32_t GetAppUid() const {return processConfig_.appInfo.appUid;};
     void HandleMultiAncoCapturer(const std::vector<std::string> &bundleNameList);
     void NotifySensitiveRecordPermit(const bool isPermitted);

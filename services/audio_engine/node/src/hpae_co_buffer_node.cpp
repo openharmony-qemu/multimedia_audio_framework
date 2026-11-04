@@ -95,10 +95,15 @@ void HpaeCoBufferNode::DoProcess()
     // return if enqueue is not running
     if (enqueueRunning_ == false && isOutputClusterConnected_ == true) {
         outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
-        AUDIO_INFO_LOG("Dequeue failed, Enqueue is not running");
+        if (enqueueStopGate_.ShouldLog()) {
+            AUDIO_INFO_LOG("Dequeue failed, Enqueue is not running");
+        }
         return;
     }
-    
+    if (enqueueStopGate_.IsActive()) {
+        AUDIO_INFO_LOG("Enqueue resumed after %{public}u frames", enqueueStopGate_.Reset());
+    }
+
     // process output buffer
     ProcessOutputFrameInner();
     
@@ -244,8 +249,10 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get readable size failed");
     
     if (result.size < requestDataLen) {
-        AUDIO_WARNING_LOG("Insufficient data: %{public}zu < %{public}zu, outputting silence",
-            result.size, requestDataLen);
+        if (insufficientGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("Insufficient data: %{public}zu < %{public}zu, outputting silence",
+                result.size, requestDataLen);
+        }
         if (isOutputClusterConnected_ == false) {
             auto defaultRendererManagerCallBackTemp = defaultRendererManagerCallBack_.lock();
             if (defaultRendererManagerCallBackTemp != nullptr) {
@@ -255,11 +262,17 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
         }
         outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
     } else {
+        if (insufficientGate_.IsActive()) {
+            AUDIO_WARNING_LOG("Insufficient data recovered after %{public}u frames",
+                insufficientGate_.Reset());
+        }
         // read buffer
         BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), requestDataLen};
         result = ringCache_->Dequeue(bufferWrap);
         if (result.ret != OPERATION_SUCCESS) {
-            AUDIO_INFO_LOG("Dequeue data failed");
+            if (dequeueFailGate_.ShouldLog()) {
+                AUDIO_INFO_LOG("Dequeue data failed");
+            }
             outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
         } else {
             outputStream_.WriteDataToOutput(&coBufferOut_);

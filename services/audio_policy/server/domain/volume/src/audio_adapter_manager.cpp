@@ -293,7 +293,23 @@ void AudioAdapterManager::LoadVolumeValueMapFromDb()
         DEVICE_TYPE_LINE_DIGITAL
     };
 
-    for (auto deviceType : DEVICE_TYPE_LIST_FOR_EACH_GROUP) {
+    const std::list<DeviceType> PC_DEVICE_TYPE_LIST_FOR_EACH_GROUP = {
+        DEVICE_TYPE_EARPIECE,
+        DEVICE_TYPE_SPEAKER,
+        DEVICE_TYPE_DP,
+        DEVICE_TYPE_HDMI,
+        DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_HEARING_AID,
+        DEVICE_TYPE_WIRED_HEADSET,
+        DEVICE_TYPE_WIRED_HEADPHONES,
+        DEVICE_TYPE_USB_HEADSET,
+        DEVICE_TYPE_USB_ARM_HEADSET,
+        DEVICE_TYPE_REMOTE_CAST,
+        DEVICE_TYPE_LINE_DIGITAL
+    };
+    const std::list<DeviceType> &deviceTypeList = VolumeUtils::IsPCVolumeEnable() ?
+        PC_DEVICE_TYPE_LIST_FOR_EACH_GROUP : DEVICE_TYPE_LIST_FOR_EACH_GROUP;
+    for (auto deviceType : deviceTypeList) {
         auto desc = audioConnectedDevice_.GetOutputDeviceByDeviceType(deviceType);
         volumeDataMaintainer_.SaveLoadFlagToMap(desc, VolumeKeyType::LEVEL, false);
         volumeDataMaintainer_.SaveLoadFlagToMap(desc, VolumeKeyType::MUTE, false);

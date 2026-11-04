@@ -37,6 +37,7 @@ constexpr uint32_t SLEEP_TIME_IN_US = 20000;
 static constexpr int64_t WAIT_CLOSE_PA_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_PA_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
+static constexpr int64_t SINK_OP_SLOW_ELAPSED_MS = 100; // print sink op elapsed only when slow
 static const std::string BT_SINK_NAME = "a2dp";
 static const std::string USB_SINK_NAME = "usb";
 constexpr size_t DEFAULT_COLL_RENDER_FAILED_FRAME = 3;
@@ -122,8 +123,14 @@ void HpaeSinkOutputNode::DoProcess()
 {
     Trace trace(processTraceName_);
     if (audioRendererSink_ == nullptr) {
-        AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+        if (sinkNullGate_.ShouldLog()) {
+            AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+        }
         return;
+    }
+    if (sinkNullGate_.IsActive()) {
+        AUDIO_WARNING_LOG("audioRendererSink_ recovered, sessionId:%{public}u, frames:%{public}u",
+            GetSessionId(), sinkNullGate_.Reset());
     }
     if (GetNodeInfo().routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
         return;
@@ -142,7 +149,9 @@ void HpaeSinkOutputNode::DoProcess()
     renderFrameTimes_ += FRAME_LEN_20MS;
     auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
     if (ret != SUCCESS || writeLen != renderSize_) {
-        AUDIO_ERR_LOG("RenderFrame failed");
+        if (renderFailGate_.ShouldLog()) {
+            AUDIO_ERR_LOG("RenderFrame failed");
+        }
         if (!IsRemoteDeviceClass(GetDeviceClass())) {
             periodTimer_.Stop();
             uint64_t usedTimeUs = static_cast<uint64_t>(periodTimer_.Elapsed<std::chrono::microseconds>());
@@ -150,6 +159,9 @@ void HpaeSinkOutputNode::DoProcess()
         }
         collRenderFrameFailedCount_.fetch_add(1);
     } else {
+        if (renderFailGate_.IsActive()) {
+            AUDIO_WARNING_LOG("RenderFrame recovered after %{public}u failed frames", renderFailGate_.Reset());
+        }
         collRenderFrameFailedCount_.store(0);
     }
 
@@ -326,7 +338,8 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64 " ms ret: %{public}d",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64 " ms ret: %{public}d",
         sinkOutAttr_.adapterName.c_str(), interval, ret);
     std::string adapterName = sinkOutAttr_.adapterName;
 #endif
@@ -376,7 +389,8 @@ int32_t HpaeSinkOutputNode::RenderSinkDeInit(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
@@ -457,7 +471,8 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
@@ -491,7 +506,8 @@ int32_t HpaeSinkOutputNode::RenderSinkStop(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
 

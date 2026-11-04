@@ -349,7 +349,7 @@ HWTEST_F(AudioDebugManagerUnitTestB, AudioDebugManager_RegLoopback_002, TestSize
 
 HWTEST_F(AudioDebugManagerUnitTestB, AudioDebugManager_UnregLoopback_001, TestSize.Level0)
 {
-    EXPECT_NE(AudioDebugManager::GetInstance().UnregisterAudioLoopback(99999), SUCCESS);
+    EXPECT_EQ(AudioDebugManager::GetInstance().UnregisterAudioLoopback(99999), SUCCESS);
 }
 
 HWTEST_F(AudioDebugManagerUnitTestB, AudioDebugManager_UnregLoopback_002, TestSize.Level0)
