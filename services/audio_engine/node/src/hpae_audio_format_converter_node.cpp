@@ -35,27 +35,30 @@ constexpr uint32_t FRAME_LEN_100MS = 100;
 constexpr uint32_t UNPROCESSED_BUFFER_CAPACITY_MULTIPLIER = 2;
 constexpr uint32_t PROCESSED_BUFFER_CAPACITY_MULTIPLIER = 2;
 constexpr uint32_t PROCESSED_BUFFER_COMPACTION_DIVISOR = 2;
+
+// zero-capacity info for lazy buffers; frames=0 keeps InitPcmProcess allocation empty
+// non-const ref: HpaePcmBuffer ctor takes PcmBufferInfo& (never modified through this handle)
+PcmBufferInfo &ZeroPcmBufferInfo()
+{
+    static PcmBufferInfo zeroInfo(0, 0, 0, 0, 0);
+    return zeroInfo;
+}
 }
 HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
-    converterOutput_(pcmBufferInfo_), preNodeInfo_(preNodeInfo), tmpOutBuf_(pcmBufferInfo_)
+    converterOutput_(ZeroPcmBufferInfo()), preNodeInfo_(preNodeInfo), tmpOutBuf_(ZeroPcmBufferInfo())
 {
     frameLenInMs_ = static_cast<float>(nodeInfo.frameLen * MILLISECOND_PER_SECOND) /
         static_cast<float>(nodeInfo.samplingRate);
+    inRate_ = preNodeInfo.customSampleRate == 0 ? static_cast<uint32_t>(preNodeInfo.samplingRate) :
+        static_cast<uint32_t>(preNodeInfo.customSampleRate);
+    outRate_ = static_cast<uint32_t>(nodeInfo.samplingRate);
+    inputFrameLen_ = static_cast<uint32_t>(preNodeInfo.frameLen);
     converterOutput_.SetSplitStreamType(preNodeInfo.GetSplitStreamType());
 
     uint32_t inCh = static_cast<uint32_t>(preNodeInfo.channels);
     uint32_t outCh = static_cast<uint32_t>(nodeInfo.channels);
-    // resampler always runs on the smaller side (downmix-then-resample / resample-then-upmix)
-    uint32_t resamplerChannels = std::min(inCh, outCh);
-
-    // use ProResamppler as default
-    resampler_ = std::make_unique<ProResampler>(preNodeInfo.customSampleRate == 0 ? preNodeInfo.samplingRate :
-        preNodeInfo.customSampleRate, nodeInfo.samplingRate, resamplerChannels, REASAMPLE_QUAILTY);
-
-    UpdateTmpOutPcmBufferInfo(pcmBufferInfo_);
-
     AudioChannelInfo inChannelInfo = {
         .channelLayout = preNodeInfo.channelLayout,
         .numChannels = inCh,
@@ -67,16 +70,18 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
 
     // for now, work at float32le by default
     channelConverter_.SetParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, true);
-    InitDualBuffer();
+    // lazy resources: decide the initial mode, then acquire only what that mode needs
+    processMode_ = ComputeProcessMode();
+    ApplyModeResources();
 
     AUDIO_INFO_LOG("node id %{public}d, sessionid %{public}d, "
         "input: bitformat %{public}d, frameLen %{public}d, sample rate %{public}d, channels %{public}d,"
         "channelLayout %{public}" PRIu64 ", output: bitformat %{public}d, frameLen %{public}d, sample rate %{public}d,"
-        "channels %{public}d, channelLayout %{public}" PRIu64 "", GetNodeId(), GetSessionId(),
+        "channels %{public}d, channelLayout %{public}" PRIu64 ", mode %{public}d", GetNodeId(), GetSessionId(),
         preNodeInfo.format, preNodeInfo.frameLen, preNodeInfo.customSampleRate == 0 ? preNodeInfo.samplingRate :
         preNodeInfo.customSampleRate, inChannelInfo.numChannels,
         inChannelInfo.channelLayout, nodeInfo.format, nodeInfo.frameLen, nodeInfo.samplingRate,
-        outChannelInfo.numChannels, outChannelInfo.channelLayout);
+        outChannelInfo.numChannels, outChannelInfo.channelLayout, static_cast<int32_t>(processMode_));
 
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeAudioFormatConverterNode");
@@ -124,36 +129,113 @@ void HpaeAudioFormatConverterNode::DoProcess()
     std::vector<HpaePcmBuffer *> &preOutputs = inputStream_.ReadPreOutputData();
     bool hasPreOutput = !preOutputs.empty() && preOutputs[0] != nullptr;
     bool hasValidInput = hasPreOutput && preOutputs[0]->IsValid();
-    AUDIO_DEBUG_LOG("NodeId %{public}d: hasValidInput=%{public}d, enableProcess=%{public}d, "
-        "processedFrames=%{public}u, outputFrameLen20ms=%{public}u, unprocessedFrames=%{public}u, "
-        "credit=%{public}u/%{public}u, threshold=%{public}u",
-        GetNodeId(), hasValidInput, enableProcess_, processedFrames_, outputFrameLen20ms_,
-        unprocessedFrames_, pullAheadCredit_, pullAheadMaxCredit_, resamplerInputThreshold_);
-    if (resampler_ == nullptr) {
-        if (resamplerNullGate_.ShouldLog()) {
-            AUDIO_ERR_LOG("NodeId %{public}d resampler_ is nullptr", GetNodeId());
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
-                    BusinessScenario::QUERY, ERR_NULL_POINTER), "resampler_ is nullptr", false);
-        }
-        outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
-        return;
-    }
+    AUDIO_DEBUG_LOG("NodeId %{public}d: hasValidInput=%{public}d, enableProcess=%{public}d, mode=%{public}d, "
+        "processedFrames=%{public}u, unprocessedFrames=%{public}u, credit=%{public}u/%{public}u",
+        GetNodeId(), hasValidInput, enableProcess_, static_cast<int32_t>(processMode_), processedFrames_,
+        unprocessedFrames_, pullAheadCredit_, pullAheadMaxCredit_);
     if (hasPreOutput) {
         // make sure size of silenceData_, tmpOutput_, and ConverterOutput_ is correct
         CheckAndUpdateInfo(preOutputs[0]);
     }
+    if (NeedsResampler() && resampler_ == nullptr) {
+        ReportConverterFault("resampler_ is nullptr");
+        return;
+    }
     if (hasValidInput && enableProcess_) {
-        HpaePcmBuffer *tempOut = SignalProcess(preOutputs);
+        HpaePcmBuffer *tempOut = ProcessByMode(preOutputs);
         outputStream_.WriteDataToOutput(tempOut);
         return;
     }
-    if (DrainProcessedBufferToOutput(preOutputs, hasPreOutput)) {
+    if (processMode_ == ConverterProcessMode::ACCUMULATE &&
+        DrainProcessedBufferToOutput(preOutputs, hasPreOutput)) {
         return;
     }
     AUDIO_DEBUG_LOG("NodeId %{public}d: output silence, "
         "hasValidInput=%{public}d, enableProcess=%{public}d, processedFrames=%{public}u",
         GetNodeId(), hasValidInput, enableProcess_, processedFrames_);
+    outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
+}
+
+// inputs is guaranteed non-empty with a valid first element by the DoProcess guards
+HpaePcmBuffer *HpaeAudioFormatConverterNode::ProcessByMode(const std::vector<HpaePcmBuffer *> &inputs)
+{
+    if (inputs.size() != 1) {
+        AUDIO_WARNING_LOG("error inputs size is not eqaul to 1, SessionId:%{public}d", GetSessionId());
+    }
+    HpaePcmBuffer *output = nullptr;
+    switch (processMode_) {
+        case ConverterProcessMode::PASSTHROUGH:
+            output = ProcessPassthrough(inputs[0]);
+            break;
+        case ConverterProcessMode::DIRECT_PROCESS:
+            output = ProcessDirectFrame(inputs[0]);
+            break;
+        default:
+            output = SignalProcess(inputs);
+            break;
+    }
+    DumpConverterOutput(output);
+    return output;
+}
+
+// ENABLE_HOOK_PCM: unified output dump shared by passthrough/direct/accumulate paths
+void HpaeAudioFormatConverterNode::DumpConverterOutput(HpaePcmBuffer *output)
+{
+#ifdef ENABLE_HOOK_PCM
+    if (output == nullptr) {
+        return;
+    }
+    if (outputPcmDumper_ == nullptr) {
+        outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
+            "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
+            "_nodeId_" + std::to_string(GetNodeId()) + "_ch_" + std::to_string(GetChannelCount()) +
+            "_rate_" + std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
+    }
+    outputPcmDumper_->CheckAndReopenHandle();
+    outputPcmDumper_->Dump((int8_t *)output->GetPcmDataBuffer(),
+        output->GetFrameLen() * sizeof(float) * output->GetChannelCount());
+#else
+    (void)output;
+#endif
+}
+
+HpaePcmBuffer *HpaeAudioFormatConverterNode::ProcessPassthrough(HpaePcmBuffer *input)
+{
+    // CONTRACT: passthrough forwards the upstream carrier itself, so downstream consumers
+    // must NOT write the received buffer in place (same rule as session effect node forwarding)
+    if (input->GetFrameLen() == 0) {
+        return PrepareSilenceBuffer(silenceData_);  // degenerate upstream frame
+    }
+    // unconditional store keeps tag semantics identical to converterOutput_-based output
+    input->SetSourceBufferType(configuredSourceBufferType_);
+    return input;
+}
+
+HpaePcmBuffer *HpaeAudioFormatConverterNode::ProcessDirectFrame(HpaePcmBuffer *input)
+{
+    if (input->GetFrameLen() == 0) {
+        return PrepareSilenceBuffer(silenceData_);  // degenerate upstream frame
+    }
+    int32_t ret = ResampleWithChannelConversion(input->GetPcmDataBuffer(), input->GetFrameLen(),
+        converterOutput_.GetPcmDataBuffer(), converterOutput_.GetFrameLen());
+    if (ret != EOK) {
+        AUDIO_ERR_LOG("NodeId %{public}d: direct convert failed, code %{public}d", GetNodeId(), ret);
+        return PrepareSilenceBuffer(silenceData_);
+    }
+    converterOutput_.SetBufferState(input->GetBufferState());
+    return &converterOutput_;
+}
+
+void HpaeAudioFormatConverterNode::ReportConverterFault(const char *reason)
+{
+    // report the event once per degraded episode; silence keeps flowing every cycle
+    if (!converterFaultReported_) {
+        converterFaultReported_ = true;
+        AUDIO_ERR_LOG("NodeId %{public}d %{public}s", GetNodeId(), reason);
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
+                BusinessScenario::QUERY, ERR_NULL_POINTER), reason, false);
+    }
     outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
 }
 
@@ -180,6 +262,11 @@ bool HpaeAudioFormatConverterNode::DrainProcessedBufferToOutput(const std::vecto
 
 void HpaeAudioFormatConverterNode::AccumulateInputAndPullAhead(HpaePcmBuffer *input)
 {
+    if (resampler_ == nullptr) {
+        // defensive: accumulate mode is guaranteed a resampler by the DoProcess gate
+        AUDIO_ERR_LOG("NodeId %{public}d resampler_ is nullptr", GetNodeId());
+        return;
+    }
     float *srcData = input->GetPcmDataBuffer();
     uint32_t inputFrameLen = input->GetFrameLen();
     uint32_t inputChannels = input->GetChannelCount();
@@ -199,8 +286,7 @@ void HpaeAudioFormatConverterNode::AccumulateInputAndPullAhead(HpaePcmBuffer *in
         inChannelInfo.numChannels, outChannelInfo.numChannels, inputFrameLen,
         unprocessedFrames_, resamplerInputThreshold_, pullAheadCredit_, pullAheadMaxCredit_,
         needsAccumulation);
-    if (resampler_ != nullptr && pullAheadCredit_ > 0 &&
-        unprocessedFrames_ < resamplerInputThreshold_ && needsAccumulation) {
+    if (pullAheadCredit_ > 0 && unprocessedFrames_ < resamplerInputThreshold_ && needsAccumulation) {
         PullAheadUntilThresholdOrFailure(inputFrameLen);
     }
 
@@ -229,36 +315,12 @@ HpaePcmBuffer* HpaeAudioFormatConverterNode::ProcessAndExtractOutput(HpaePcmBuff
         "extracted %{public}u frames, remaining processedFrames=%{public}u",
         GetNodeId(), outputFrameLen20ms_, processedFrames_);
 
-#ifdef ENABLE_HOOK_PCM
-    if (outputPcmDumper_ != nullptr) {
-        outputPcmDumper_->CheckAndReopenHandle();
-        outputPcmDumper_->Dump((int8_t *)converterOutput_.GetPcmDataBuffer(),
-            converterOutput_.GetFrameLen() * sizeof(float) * converterOutput_.GetChannelCount());
-    }
-#endif
     converterOutput_.SetBufferState(input->GetBufferState());
     return &converterOutput_;
 }
 
 HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    if (inputs.size() != 1) {
-        if (inputsBadSizeGate_.ShouldLog()) {
-            AUDIO_WARNING_LOG("error inputs size is not eqaul to 1, SessionId:%{public}d", GetSessionId());
-        }
-    } else if (inputsBadSizeGate_.IsActive()) {
-        AUDIO_WARNING_LOG("inputs size back to 1, SessionId:%{public}d, frames:%{public}u",
-            GetSessionId(), inputsBadSizeGate_.Reset());
-    }
-#ifdef ENABLE_HOOK_PCM
-    if (!outputPcmDumper_) {
-        outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-            "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) + "_nodeId_" + std::to_string(GetNodeId()) +
-            "_ch_" + std::to_string(GetChannelCount()) +
-            "_rate_" + std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
-    }
-#endif
-
     AccumulateInputAndPullAhead(inputs[0]);
     return ProcessAndExtractOutput(inputs[0]);
 }
@@ -277,8 +339,8 @@ bool HpaeAudioFormatConverterNode::UpdateOutChannelInfo(uint32_t numChannels, Au
             BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::GENERAL, BusinessScenario::SEND_DATA,
                 ERR_ILLEGAL_STATE), "Fail to set output channel info", false),
         "NodeId: %{public}d, Fail to set output channel info from effectNode!", GetNodeId());
-    uint32_t resampleChannels = std::min(channelConverter_.GetInChannelInfo().numChannels, numChannels);
-    if (resampleChannels != resampler_->GetChannels()) {
+    uint32_t resampleChannels = ResamplerWorkChannels();
+    if (resampler_ != nullptr && resampleChannels != resampler_->GetChannels()) {
         AUDIO_INFO_LOG("NodeId: %{public}d, Update resampler work channel from effectNode!", GetNodeId());
         resampler_->UpdateChannels(resampleChannels);
     }
@@ -299,7 +361,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
 
     AudioChannelInfo curOutChannelInfo = channelConverter_.GetOutChannelInfo();
     if ((curOutChannelInfo.numChannels == numChannels) && (curOutChannelInfo.channelLayout == channelLayout) &&
-        (sampleRate == resampler_->GetOutRate())) {
+        (sampleRate == outRate_)) {
         return false;
     }
     // update channel info
@@ -309,11 +371,14 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
         }
     }
     // update sample rate
-    uint32_t oldOutRate = resampler_->GetOutRate();
+    uint32_t oldOutRate = outRate_;
     if (oldOutRate != sampleRate) {
-        HILOG_COMM_INFO("[CheckUpdateOutInfo]NodeId: %{public}d, update output sample rate: "
+        AUDIO_INFO_LOG("NodeId: %{public}d, update output sample rate: "
             "%{public}d -> %{public}d", GetNodeId(), oldOutRate, sampleRate);
-        resampler_->UpdateRates(resampler_->GetInRate(), sampleRate);
+        outRate_ = sampleRate;
+        if (resampler_ != nullptr) {
+            resampler_->UpdateRates(resampler_->GetInRate(), sampleRate);
+        }
     }
 
     UpdateNodeInfoOnOutChange(numChannels, channelLayout, oldOutRate);
@@ -350,7 +415,7 @@ void HpaeAudioFormatConverterNode::UpdateNodeInfoOnOutChange(uint32_t numChannel
     HpaeNodeInfo nodeInfo = GetNodeInfo();
     nodeInfo.channels = static_cast<AudioChannel>(numChannels);
     nodeInfo.channelLayout = (AudioChannelLayout)channelLayout;
-    uint32_t newOutRate = resampler_->GetOutRate();
+    uint32_t newOutRate = outRate_;
     nodeInfo.samplingRate = (AudioSamplingRate)newOutRate;
     // Proportionally update frameLen when output rate changes to preserve time duration
     if (oldOutRate != 0 && oldOutRate != newOutRate) {
@@ -366,58 +431,54 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     uint32_t numChannels = input->GetChannelCount();
     uint64_t channelLayout = input->GetChannelLayout();
     uint32_t sampleRate = input->GetSampleRate();
-    AudioChannelInfo curInChannelInfo = channelConverter_.GetInChannelInfo();
-    bool isInfoUpdated = false;
-    // update channels and channelLayout
-    if ((curInChannelInfo.numChannels != numChannels) || (curInChannelInfo.channelLayout != channelLayout)) {
-        HILOG_COMM_INFO("[CheckUpdateInInfo]NodeId %{public}d: Update innput channel info from pcmBufferInfo, "
-            "channels: %{public}d -> %{public}d, channellayout: %{public}" PRIu64 " -> %{public}" PRIu64 ".",
-            GetNodeId(), curInChannelInfo.numChannels, numChannels, curInChannelInfo.channelLayout, channelLayout);
-
-        AudioChannelInfo newInChannelInfo = {
-            .channelLayout = (AudioChannelLayout)channelLayout,
-            .numChannels = numChannels,
-        };
-        channelConverter_.SetInChannelInfo(newInChannelInfo);
-        preNodeInfo_.channelLayout = (AudioChannelLayout)channelLayout;
-        preNodeInfo_.channels = (AudioChannel)numChannels;
-
-        uint32_t resampleChannels = std::min(numChannels, channelConverter_.GetOutChannelInfo().numChannels);
-        if (resampleChannels != resampler_->GetChannels()) {
-            AUDIO_INFO_LOG("NodeId %{public}d: Update resampler work channel from effectNode!", GetNodeId());
-            resampler_->UpdateChannels(resampleChannels);
+    uint32_t inputFrameLen = input->GetFrameLen();
+    bool isInfoUpdated = UpdateInChannelInfo(numChannels, channelLayout);
+    // update sample rate
+    if (sampleRate != inRate_) {
+        AUDIO_INFO_LOG("NodeId %{public}d: Update resampler input sample rate: "
+            "%{public}d -> %{public}d", GetNodeId(), inRate_, sampleRate);
+        preNodeInfo_.samplingRate = (AudioSamplingRate)sampleRate;
+        preNodeInfo_.frameLen = CalculateFrameLenBySampleRate(sampleRate);
+        inRate_ = sampleRate;
+        if (resampler_ != nullptr) {
+            resampler_->UpdateRates(sampleRate, resampler_->GetOutRate());
         }
         isInfoUpdated = true;
     }
-    // update sample rate
-    if (sampleRate != resampler_->GetInRate()) {
-        HILOG_COMM_INFO("[CheckUpdateInInfo]NodeId %{public}d: Update resampler input sample rate: "
-            "%{public}d -> %{public}d", GetNodeId(), resampler_->GetInRate(), sampleRate);
-        preNodeInfo_.samplingRate = (AudioSamplingRate)sampleRate;
-        preNodeInfo_.frameLen = CalculateFrameLenBySampleRate(sampleRate);
-        resampler_->UpdateRates(sampleRate, resampler_->GetOutRate());
+    // track the actual upstream frame length; zero-length buffers keep the last valid value
+    if (inputFrameLen != 0 && inputFrameLen != inputFrameLen_) {
+        AUDIO_INFO_LOG("NodeId %{public}d: Update input frameLen: "
+            "%{public}d -> %{public}d", GetNodeId(), inputFrameLen_, inputFrameLen);
+        inputFrameLen_ = inputFrameLen;
         isInfoUpdated = true;
     }
     return isInfoUpdated;
 }
 
-void HpaeAudioFormatConverterNode::UpdateTmpOutPcmBufferInfo(const PcmBufferInfo &outPcmBufferInfo)
+bool HpaeAudioFormatConverterNode::UpdateInChannelInfo(uint32_t numChannels, uint64_t channelLayout)
 {
-    uint32_t inChannels = static_cast<uint32_t>(preNodeInfo_.channels);
-    if (outPcmBufferInfo.ch == inChannels || outPcmBufferInfo.rate == resampler_->GetInRate()) {
-        // do not need tmpOutput Buffer
-        return;
+    AudioChannelInfo curInChannelInfo = channelConverter_.GetInChannelInfo();
+    if ((curInChannelInfo.numChannels == numChannels) && (curInChannelInfo.channelLayout == channelLayout)) {
+        return false;
     }
-    PcmBufferInfo tmpOutPcmBufferInfo = outPcmBufferInfo;
-    if (outPcmBufferInfo.ch < inChannels) { // downmix, then resample
-        tmpOutPcmBufferInfo.rate = resampler_->GetInRate();
-        tmpOutPcmBufferInfo.frameLen = preNodeInfo_.frameLen;
-    } else { // resample, then upmix
-        tmpOutPcmBufferInfo.ch = inChannels;
+    HILOG_COMM_INFO("[CheckUpdateInInfo]NodeId %{public}d: Update innput channel info from pcmBufferInfo, "
+            "channels: %{public}d -> %{public}d, channellayout: %{public}" PRIu64 " -> %{public}" PRIu64 ".",
+            GetNodeId(), curInChannelInfo.numChannels, numChannels, curInChannelInfo.channelLayout, channelLayout);
+
+    AudioChannelInfo newInChannelInfo = {
+        .channelLayout = (AudioChannelLayout)channelLayout,
+        .numChannels = numChannels,
+    };
+    channelConverter_.SetInChannelInfo(newInChannelInfo);
+    preNodeInfo_.channelLayout = (AudioChannelLayout)channelLayout;
+    preNodeInfo_.channels = (AudioChannel)numChannels;
+
+    uint32_t resampleChannels = ResamplerWorkChannels();
+    if (resampler_ != nullptr && resampleChannels != resampler_->GetChannels()) {
+        AUDIO_INFO_LOG("NodeId: %{public}d, Update resampler work channel from effectNode!", GetNodeId());
+        resampler_->UpdateChannels(resampleChannels);
     }
-    AUDIO_INFO_LOG("NodeId: %{public}d, updated tmp buffer rate %{public}d, frameLen %{public}d, channels %{public}d",
-        GetNodeId(), tmpOutPcmBufferInfo.rate, tmpOutPcmBufferInfo.frameLen, tmpOutPcmBufferInfo.ch);
-    tmpOutBuf_.ReConfig(tmpOutPcmBufferInfo);
+    return true;
 }
 
 void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
@@ -427,38 +488,20 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
     if ((!isInfoUpdated) && (!isOutInfoUpdated)) {
         return;
     }
-
-    AudioChannelInfo outChannelInfo = channelConverter_.GetOutChannelInfo();
-    PcmBufferInfo outPcmBufferInfo = pcmBufferInfo_; // isMultiFrames_ and frame_ are inheritated from sinkInputNode
-    outPcmBufferInfo.ch = outChannelInfo.numChannels;
-    outPcmBufferInfo.rate = resampler_->GetOutRate();
-    {
-        uint32_t curInRate = resampler_->GetInRate();
-        uint32_t curOutRate = resampler_->GetOutRate();
-        outPcmBufferInfo.frameLen = (curInRate == curOutRate) ? GetFrameLen() :
-            static_cast<uint32_t>(curOutRate * frameLenInMs_ / MILLISECOND_PER_SECOND);
-    }
-    outPcmBufferInfo.channelLayout = outChannelInfo.channelLayout;
-
-    AUDIO_INFO_LOG("NodeId %{public}d: output or input format info is changed, update tmp PCM buffer info!",
+    AUDIO_INFO_LOG("NodeId %{public}d: output or input format info is changed, re-decide process mode!",
         GetNodeId());
-    UpdateTmpOutPcmBufferInfo(outPcmBufferInfo);
-    InitDualBuffer();
-
+    if (!DecideProcessMode()) {
+        ApplyModeResources();  // same-mode format change: resize resources only
+    }
     if (isOutInfoUpdated) {
-        ReconfigOutputBuffers(outPcmBufferInfo);
+        NotifyOutFormatChangedDfx();
     }
 }
 
-// reconfig the output-side buffers (converterOutput_/silenceData_) after an output format change
-void HpaeAudioFormatConverterNode::ReconfigOutputBuffers(const PcmBufferInfo &outPcmBufferInfo)
+// hidump notify and pcm dumper refresh after an output format change
+void HpaeAudioFormatConverterNode::NotifyOutFormatChangedDfx()
 {
     AUDIO_INFO_LOG("NodeId %{public}d: output format info is changed, update output PCM buffer info!", GetNodeId());
-    converterOutput_.ReConfig(outPcmBufferInfo);
-    silenceData_.ReConfig(outPcmBufferInfo);
-    // reconfig need reset valid
-    silenceData_.SetBufferValid(false);
-    silenceData_.SetBufferSilence(true);
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callBack = GetNodeStatusCallback().lock()) {
         callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), GetNodeInfo());
@@ -468,25 +511,181 @@ void HpaeAudioFormatConverterNode::ReconfigOutputBuffers(const PcmBufferInfo &ou
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
         "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
-        + "_nodeId_" + std::to_string(GetNodeId()) +
+        "_nodeId_" + std::to_string(GetNodeId()) +
         "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
         std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
 #endif
 }
 
+// ---- process mode state machine: decisions happen only at ctor and format events ----
+
+// returns true when the mode changed and resources were already re-applied
+bool HpaeAudioFormatConverterNode::DecideProcessMode()
+{
+    ConverterProcessMode newMode = ComputeProcessMode();
+    if (newMode == processMode_) {
+        return false;
+    }
+    AUDIO_INFO_LOG("NodeId %{public}d: process mode %{public}d -> %{public}d", GetNodeId(),
+        static_cast<int32_t>(processMode_), static_cast<int32_t>(newMode));
+    ReleaseModeResources();
+    processMode_ = newMode;
+    ApplyModeResources();
+    return true;
+}
+
+ConverterProcessMode HpaeAudioFormatConverterNode::ComputeProcessMode() const
+{
+    uint32_t inCh = channelConverter_.GetInChannelInfo().numChannels;
+    uint32_t outCh = channelConverter_.GetOutChannelInfo().numChannels;
+    if (inRate_ == outRate_ && inCh == outCh && inputFrameLen_ == GetFrameLen()) {
+        return ConverterProcessMode::PASSTHROUGH;
+    }
+    bool standardRate = inRate_ != 0 && inRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES == 0;
+    if (standardRate && outRate_ != 0 && GetFrameLen() != 0 && IsExactDirectRatio()) {
+        return ConverterProcessMode::DIRECT_PROCESS;
+    }
+    if (standardRate && inRate_ != outRate_) {
+        AUDIO_INFO_LOG("NodeId %{public}d: frame ratio not exact (in %{public}u -> out %{public}u, "
+            "inframeLen %{public}u, outframeLen %{public}zu), fall back to accumulate",
+            GetNodeId(), inRate_, outRate_, inputFrameLen_, GetFrameLen());
+    }
+    return ConverterProcessMode::ACCUMULATE;
+}
+
+bool HpaeAudioFormatConverterNode::IsExactDirectRatio() const
+{
+    uint64_t outSamples = static_cast<uint64_t>(inputFrameLen_) * outRate_;
+    if (outSamples % inRate_ != 0) {
+        return false;
+    }
+    return static_cast<uint32_t>(outSamples / inRate_) == GetFrameLen();
+}
+
+bool HpaeAudioFormatConverterNode::NeedsResampler() const
+{
+    if (processMode_ == ConverterProcessMode::ACCUMULATE) {
+        return true;
+    }
+    return processMode_ == ConverterProcessMode::DIRECT_PROCESS && inRate_ != outRate_;
+}
+
+uint32_t HpaeAudioFormatConverterNode::ResamplerWorkChannels() const
+{
+    return std::min(channelConverter_.GetInChannelInfo().numChannels,
+        channelConverter_.GetOutChannelInfo().numChannels);
+}
+
+std::unique_ptr<Resampler> HpaeAudioFormatConverterNode::CreateResampler(uint32_t inRate, uint32_t outRate,
+    uint32_t channels)
+{
+    return std::make_unique<ProResampler>(inRate, outRate, channels, REASAMPLE_QUAILTY);
+}
+
+// acquire or resize the resources required by the current mode; event-time only and idempotent
+void HpaeAudioFormatConverterNode::ApplyModeResources()
+{
+    if (processMode_ == ConverterProcessMode::PASSTHROUGH) {
+        // silence frames must still match the node output format after a format round-trip
+        silenceData_.ReConfig(BuildOutPcmBufferInfo());
+        silenceData_.SetBufferValid(false);
+        silenceData_.SetBufferSilence(true);
+        return;
+    }
+    if (NeedsResampler() && resampler_ == nullptr) {
+        resampler_ = CreateResampler(inRate_, outRate_, ResamplerWorkChannels());
+        if (resampler_ == nullptr) {
+            // degraded: silence frames must still carry the negotiated output format
+            AUDIO_ERR_LOG("NodeId %{public}d: create resampler failed, degraded until next format event",
+                GetNodeId());
+            silenceData_.ReConfig(BuildOutPcmBufferInfo());
+            silenceData_.SetBufferValid(false);
+            silenceData_.SetBufferSilence(true);
+            return;
+        }
+        converterFaultReported_ = false;
+    }
+    PcmBufferInfo outPcmBufferInfo = BuildOutPcmBufferInfo();
+    converterOutput_.ReConfig(outPcmBufferInfo);
+    silenceData_.ReConfig(outPcmBufferInfo);
+    // reconfig need reset valid
+    silenceData_.SetBufferValid(false);
+    silenceData_.SetBufferSilence(true);
+    if (processMode_ == ConverterProcessMode::DIRECT_PROCESS) {
+        ConfigureDirectTmpBuffer();
+        return;
+    }
+    InitDualBuffer();
+}
+
+// release all intermediate resources; silenceData_ stays for the silence path
+void HpaeAudioFormatConverterNode::ReleaseModeResources()
+{
+    resampler_.reset();
+    converterFaultReported_ = false;
+    std::vector<float>().swap(unprocessedBuffer_);
+    std::vector<float>().swap(processedBuffer_);
+    std::vector<float>().swap(resamplerOutBuf_);
+    converterOutput_.ReConfig(ZeroPcmBufferInfo());
+    tmpOutBuf_.ReConfig(ZeroPcmBufferInfo());
+    unprocessedFrames_ = 0;
+    processedFrames_ = 0;
+    processedReadPos_ = 0;
+    pullAheadCredit_ = 0;
+    pullAheadMaxCredit_ = 0;
+    resamplerInputThreshold_ = 0;
+    outputFrameLen20ms_ = 0;
+}
+
+// tmp staging is only needed for the combined two-stage conversion (rate and channels differ)
+void HpaeAudioFormatConverterNode::ConfigureDirectTmpBuffer()
+{
+    uint32_t inCh = channelConverter_.GetInChannelInfo().numChannels;
+    uint32_t outCh = channelConverter_.GetOutChannelInfo().numChannels;
+    if (inCh == outCh || inRate_ == outRate_) {
+        return;
+    }
+    ReconfigTmpOutForChannelConversion(inCh, outCh, inputFrameLen_, GetFrameLen());
+}
+
+PcmBufferInfo HpaeAudioFormatConverterNode::BuildOutPcmBufferInfo() const
+{
+    AudioChannelInfo outChannelInfo = channelConverter_.GetOutChannelInfo();
+    // isMultiFrames_ and frame_ are inheritated from sinkInputNode
+    PcmBufferInfo outPcmBufferInfo = pcmBufferInfo_;
+    outPcmBufferInfo.ch = outChannelInfo.numChannels;
+    outPcmBufferInfo.rate = outRate_;
+    outPcmBufferInfo.frameLen = ComputeOutFrameLen();
+    outPcmBufferInfo.channelLayout = outChannelInfo.channelLayout;
+    return outPcmBufferInfo;
+}
+
+// exact output frame length: integer math for DIRECT (eligibility guarantees it equals GetFrameLen()),
+// legacy float duration math for ACCUMULATE to keep the historical sizing unchanged
+uint32_t HpaeAudioFormatConverterNode::ComputeOutFrameLen() const
+{
+    if (inRate_ == outRate_) {
+        return GetFrameLen();
+    }
+    if (processMode_ == ConverterProcessMode::DIRECT_PROCESS) {
+        return static_cast<uint32_t>(static_cast<uint64_t>(inputFrameLen_) * outRate_ / inRate_);
+    }
+    return static_cast<uint32_t>(outRate_ * frameLenInMs_ / MILLISECOND_PER_SECOND);
+}
+
 void HpaeAudioFormatConverterNode::ReconfigTmpOutForChannelConversion(uint32_t inCh, uint32_t outCh,
-    uint32_t maxOutFrames)
+    uint32_t inFrameLen, uint32_t maxOutFrames)
 {
     PcmBufferInfo tmpOutPcmBufferInfo;
     if (inCh > outCh) {
         // Downmix first, then resample: tmpOutBuf_ holds downmixed input at inRate
         tmpOutPcmBufferInfo.ch = inCh;
-        tmpOutPcmBufferInfo.rate = resampler_->GetInRate();
-        tmpOutPcmBufferInfo.frameLen = resamplerInputThreshold_;
+        tmpOutPcmBufferInfo.rate = inRate_;
+        tmpOutPcmBufferInfo.frameLen = inFrameLen;
     } else {
         // Resample first, then upmix: tmpOutBuf_ holds resampled output at outRate
         tmpOutPcmBufferInfo.ch = inCh;
-        tmpOutPcmBufferInfo.rate = resampler_->GetOutRate();
+        tmpOutPcmBufferInfo.rate = outRate_;
         tmpOutPcmBufferInfo.frameLen = maxOutFrames;
     }
     tmpOutPcmBufferInfo.channelLayout = static_cast<uint64_t>(channelConverter_.GetInChannelInfo().channelLayout);
@@ -518,7 +717,7 @@ void HpaeAudioFormatConverterNode::InitDualBuffer()
 
     // Resize tmpOutBuf_ for channel conversion paths
     if (inCh != outCh) {
-        ReconfigTmpOutForChannelConversion(inCh, outCh, maxOutFrames);
+        ReconfigTmpOutForChannelConversion(inCh, outCh, resamplerInputThreshold_, maxOutFrames);
     }
 
     AUDIO_INFO_LOG("NodeId %{public}d: InitDualBuffer threshold=%{public}u, outputFrameLen20ms=%{public}u, "
@@ -680,8 +879,7 @@ void HpaeAudioFormatConverterNode::ProcessSameRateChannelConversion(uint32_t inC
         }
 
         int32_t ret = ResampleWithChannelConversion(
-            inPtr, inFrameLen, resamplerOutBuf_.data(), outFrameLen,
-            resampler_->GetChannels());
+            inPtr, inFrameLen, resamplerOutBuf_.data(), outFrameLen);
         if (ret != EOK) {
             AUDIO_ERR_LOG("NodeId %{public}d: Same-rate channel conversion "
                 "failed, code %{public}d", GetNodeId(), ret);
@@ -717,8 +915,7 @@ void HpaeAudioFormatConverterNode::ProcessDiffRateResample(uint32_t inCh, uint32
         }
 
         int32_t ret = ResampleWithChannelConversion(
-            inPtr, inFrameLen, resamplerOutBuf_.data(), outFrameLen,
-            resampler_->GetChannels());
+            inPtr, inFrameLen, resamplerOutBuf_.data(), outFrameLen);
         if (ret != EOK) {
             AUDIO_ERR_LOG("NodeId %{public}d: Resample failed with code %{public}d",
                 GetNodeId(), ret);
@@ -772,12 +969,12 @@ void HpaeAudioFormatConverterNode::ProcessResampleLoop()
 }
 
 int32_t HpaeAudioFormatConverterNode::ResampleWithChannelConversion(float *srcData, uint32_t inFrameLen,
-    float *dstData, uint32_t outFrameLen, uint32_t resamplerChannels)
+    float *dstData, uint32_t outFrameLen)
 {
     AudioChannelInfo inChannelInfo = channelConverter_.GetInChannelInfo();
     AudioChannelInfo outChannelInfo = channelConverter_.GetOutChannelInfo();
-    uint32_t inRate = resampler_->GetInRate();
-    uint32_t outRate = resampler_->GetOutRate();
+    uint32_t inRate = inRate_;
+    uint32_t outRate = outRate_;
     int32_t ret = EOK;
 
     const char *pathDesc = "unknown";
@@ -915,6 +1112,7 @@ void HpaeAudioFormatConverterNode::MoveUnprocessedToProcessed(uint32_t channels)
 
 void HpaeAudioFormatConverterNode::SetSourceBufferType(HpaeSourceBufferType type)
 {
+    configuredSourceBufferType_ = type;
     converterOutput_.SetSourceBufferType(type);
 }
 
@@ -922,6 +1120,8 @@ void HpaeAudioFormatConverterNode::ConnectWithInfo(const std::shared_ptr<OutputN
     HpaeNodeInfo &nodeInfo)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort(nodeInfo));
+    // keep the passthrough tag in sync with the connect-time tag (MIC/EC/MICREF chains)
+    configuredSourceBufferType_ = nodeInfo.sourceBufferType;
     converterOutput_.SetSourceBufferType(nodeInfo.sourceBufferType);
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -942,6 +1142,9 @@ void HpaeAudioFormatConverterNode::DisConnectWithInfo(const std::shared_ptr<Outp
 
 uint64_t HpaeAudioFormatConverterNode::GetLatency(uint32_t sessionId)
 {
+    if (processMode_ != ConverterProcessMode::ACCUMULATE) {
+        return 0; // passthrough and direct paths never stage frames
+    }
     if (resampler_ == nullptr) {
         return 0;
     }
