@@ -1282,4 +1282,31 @@ HWTEST_F(HpaeVolumeSyncNodeTest, setSinkVolume_validSink_failure_001, TestSize.L
 
     HdiAdapterManager::GetInstance().renderSinks_.erase(id);  // cleanup singleton cache
 }
+
+/**
+ * @tc.name  : signalProcess_EmptyThenRecover_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeVolumeSyncNodeTest_007
+ * @tc.desc  : Empty inputs hit the edge gate twice, then a valid frame recovers
+ */
+HWTEST_F(HpaeVolumeSyncNodeTest, signalProcess_EmptyThenRecover_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.deviceClass = "primary";
+    std::shared_ptr<HpaeVolumeSyncNode> volumeSyncNode = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
+
+    std::vector<HpaePcmBuffer *> emptyInputs;
+    EXPECT_EQ(volumeSyncNode->SignalProcess(emptyInputs), nullptr); // first gate hit
+    EXPECT_EQ(volumeSyncNode->SignalProcess(emptyInputs), nullptr); // sustained hit
+
+    PcmBufferInfo bufInfo(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000);
+    HpaePcmBuffer inputBuf(bufInfo);
+    std::vector<HpaePcmBuffer *> inputs = {&inputBuf};
+    EXPECT_EQ(volumeSyncNode->SignalProcess(inputs), &inputBuf); // recovery line
+}
 }  // namespace

@@ -114,6 +114,8 @@ private:
 
     // Cached DoProcess trace name; rebuilt in ctor and whenever node info changes
     std::string processTraceName_;
+    // edge-triggered gate: log first hit + 5s heartbeat while the state persists
+    AudioEdgeLogGate injectIdleGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 #ifdef ENABLE_HOOK_PCM
     std::unordered_map<HpaeSourceBufferType, std::unique_ptr<HpaePcmDumper>> inputPcmDumperMap_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;

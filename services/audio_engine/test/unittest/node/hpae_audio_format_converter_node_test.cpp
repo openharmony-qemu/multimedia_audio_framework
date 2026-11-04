@@ -3178,4 +3178,28 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, RegisterCallbackQueryTest_001, TestSi
     EXPECT_EQ(callback.queryCount_, 1);
 }
 
+/**
+ * @tc.name  : signalProcess inputs size != 1 hits edge gate then recovers
+ * @tc.type  : FUNC
+ * @tc.number: HpaeAudioFormatConverterNodeTest_EdgeLog_001
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, signalProcessInputsSizeEdgeLog, TestSize.Level0)
+{
+    HpaeNodeInfo preNodeInfo;
+    preNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    preNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    preNodeInfo.channels = STEREO;
+    HpaeNodeInfo outputNodeInfo;
+    auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
+    PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_FRAMELEN_SECOND, SAMPLE_RATE_48000);
+    HpaePcmBuffer input(pcmBufferInfo);
+    HpaePcmBuffer input2(pcmBufferInfo);
+
+    std::vector<HpaePcmBuffer *> twoInputs = {&input, &input2};
+    converterNode->SignalProcess(twoInputs); // first gate hit: size != 1
+    converterNode->SignalProcess(twoInputs); // sustained hit
+    std::vector<HpaePcmBuffer *> oneInput = {&input};
+    converterNode->SignalProcess(oneInput); // recovery line: size back to 1
+}
+
 }

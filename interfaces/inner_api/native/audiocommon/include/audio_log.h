@@ -292,4 +292,56 @@
         }                                                 \
     } while (0)
 
+// guard the C++ gate helper: this header is also included from C sources
+// (e.g. audio_proresampler_process.c), which cannot parse namespace/class.
+#ifdef __cplusplus
+namespace OHOS {
+namespace AudioStandard {
+// 5s heartbeat at the 20ms engine tick
+constexpr uint32_t AUDIO_LOG_HEARTBEAT_FRAMES = 250;
+
+// Edge-triggered logging gate for per-frame hot paths: lets the first hit and
+// every heartbeatFrames_-th hit through, so a persistent abnormal state stays
+// visible (original log text repeats at low rate) without flooding the buffer.
+// Call Reset() when the gated condition clears and log the returned hit count
+// on the recovery line.
+class AudioEdgeLogGate {
+public:
+    explicit AudioEdgeLogGate(uint32_t heartbeatFrames) : heartbeatFrames_(heartbeatFrames) {}
+
+    // Returns true on the first hit and on every heartbeatFrames_-th hit after it.
+    bool ShouldLog()
+    {
+        if (!isActive_) {
+            isActive_ = true;
+            hitCount_ = 1;
+            return true;
+        }
+        hitCount_++;
+        return hitCount_ % heartbeatFrames_ == 0;
+    }
+
+    // Call when the gated condition clears; returns total hits since activation.
+    uint32_t Reset()
+    {
+        uint32_t total = hitCount_;
+        isActive_ = false;
+        hitCount_ = 0;
+        return total;
+    }
+
+    bool IsActive() const
+    {
+        return isActive_;
+    }
+
+private:
+    uint32_t heartbeatFrames_;
+    bool isActive_ = false;
+    uint32_t hitCount_ = 0;
+};
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // __cplusplus
+
 #endif // OHOS_AUDIO_LOG_H

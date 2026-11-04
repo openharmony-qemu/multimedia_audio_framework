@@ -543,6 +543,31 @@ HWTEST_F(HpaeCaptureEffectNodeTest, FaultCode_SignalProcess_001, TestSize.Level1
     inputs.emplace_back(&ecBuffer);
     EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), hpaeCaptureEffectNode->outPcmBuffer_.get());
 }
+/*
+ * tc.name   : Test empty inputs edge gate then recovery
+ * tc.type   : FUNC
+ * tc.number : HpaeCaptureEffectNodeTest_EdgeLog_001
+ * tc.desc   : Empty inputs hit the edge gate twice, then a valid frame recovers
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_EdgeLog_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
+    nodeInfo.statusCallback = testStatuscallback;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
+
+    std::vector<HpaePcmBuffer *> emptyInputs = {};
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(emptyInputs), nullptr); // first gate hit
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(emptyInputs), nullptr); // sustained hit
+
+    PcmBufferInfo bufInfo(STEREO, DEFAULT_FRAME_LENGTH, SAMPLE_RATE_48000);
+    HpaePcmBuffer inputBuf(bufInfo);
+    std::vector<HpaePcmBuffer *> inputs = {&inputBuf};
+    hpaeCaptureEffectNode->SignalProcess(inputs); // recovery line
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

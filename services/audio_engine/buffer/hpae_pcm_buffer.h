@@ -22,6 +22,7 @@
 #include "audio_stream_info.h"
 #include "audio_info.h"
 #include "hpae_pcm_process.h"
+#include "audio_log.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -298,6 +299,13 @@ private:
     SplitStreamType splitStreamType_ = STREAM_TYPE_DEFAULT;
     AudioStreamType streamType_ = STREAM_DEFAULT;
     StreamUsage streamUsage_ = STREAM_USAGE_INVALID;
+    // edge-triggered gates: log first hit + 5s heartbeat while empty/full persists
+    AudioEdgeLogGate getVecEmptyGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate getBufEmptyGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate pushVecFullGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate pushBufFullGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate pushVecCpyGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
+    AudioEdgeLogGate pushBufCpyGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

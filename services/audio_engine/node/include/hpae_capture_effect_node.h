@@ -69,6 +69,8 @@ private:
 
     // Cached SignalProcess trace name; rebuilt in ctor and when input count changes
     std::string traceName_;
+    // edge-triggered gates: log first hit + 5s heartbeat while the state persists
+    AudioEdgeLogGate inputsEmptyGate_{AUDIO_LOG_HEARTBEAT_FRAMES};
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

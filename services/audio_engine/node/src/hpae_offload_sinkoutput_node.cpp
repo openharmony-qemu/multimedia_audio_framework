@@ -50,6 +50,7 @@ namespace {
     constexpr uint32_t OFFLOAD_SET_BUFFER_SIZE_NUM = 5;
     constexpr uint32_t POLICY_STATE_DELAY_IN_SEC = 3;
     static constexpr float EPSILON = 1e-6f;
+    static constexpr int64_t SINK_OP_SLOW_ELAPSED_MS = 100; // print sink op elapsed only when slow
 
     const std::string DEVICE_CLASS_OFFLOAD = "offload";
     const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
@@ -230,7 +231,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return ret;
@@ -255,7 +257,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkDeInit(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return SUCCESS;
@@ -285,7 +288,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkFlush(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkFlush Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkFlush Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return ret;
@@ -319,7 +323,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStart(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     SetSinkState(STREAM_MANAGER_RUNNING);
@@ -352,7 +357,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStop(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
+    AUDIO_LIMIT_INFO_LOG(interval > SINK_OP_SLOW_ELAPSED_MS,
+        "name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
 

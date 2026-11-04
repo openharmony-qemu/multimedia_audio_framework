@@ -909,3 +909,29 @@ HWTEST_F(HpaeLimiterNodeTest, initAudioLimiter_Mono_VariousConfigs, TestSize.Lev
         EXPECT_TRUE(hpaeLimiterNode->IsLimiterInited());
     }
 }
+
+/**
+ * @tc.name  : signalProcess empty inputs hit edge gate then recover
+ * @tc.type  : FUNC
+ * @tc.number: HpaeLimiterNodeTest_EdgeLog_001
+ */
+HWTEST_F(HpaeLimiterNodeTest, signalProcessEmptyInputsEdgeLog, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = DEFAULT_SAMPLE_RATE;
+    nodeInfo.channels = DEFAULT_CHANNELS;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.deviceClass = "primary";
+    std::shared_ptr<HpaeLimiterNode> hpaeLimiterNode = std::make_shared<HpaeLimiterNode>(nodeInfo);
+
+    std::vector<HpaePcmBuffer *> emptyInputs = {};
+    EXPECT_NE(hpaeLimiterNode->SignalProcess(emptyInputs), nullptr); // first gate hit, returns limiterOutput_
+    EXPECT_NE(hpaeLimiterNode->SignalProcess(emptyInputs), nullptr); // sustained hit
+
+    PcmBufferInfo bufInfo(DEFAULT_CHANNELS, DEFAULT_FRAME_LEN, DEFAULT_SAMPLE_RATE);
+    HpaePcmBuffer inputBuf(bufInfo);
+    std::vector<HpaePcmBuffer *> inputs = {&inputBuf};
+    EXPECT_EQ(hpaeLimiterNode->SignalProcess(inputs), &inputBuf); // recovery line; limiter not setup
+}
