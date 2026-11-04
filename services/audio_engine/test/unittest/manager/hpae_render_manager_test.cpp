@@ -6650,11 +6650,11 @@ HWTEST_F(HpaeRendererManagerTest, SetStreamSilentMode_001, TestSize.Level1)
 {
     EXPECT_FALSE(sinkInputNode_->GetStreamSilentMode());
     hpaeRendererManager_->SetStreamSilentMode(1, true);
-    WaitForMsgProcessing(hpaeRendererManager_);
+    hpaeRendererManager_->hpaeNoLockQueue_.HandleRequests();
     EXPECT_TRUE(sinkInputNode_->GetStreamSilentMode());
 
     hpaeRendererManager_->SetStreamSilentMode(1, false);
-    WaitForMsgProcessing(hpaeRendererManager_);
+    hpaeRendererManager_->hpaeNoLockQueue_.HandleRequests();
     EXPECT_FALSE(sinkInputNode_->GetStreamSilentMode());
 }
 
@@ -6668,7 +6668,7 @@ HWTEST_F(HpaeRendererManagerTest, SetStreamSilentMode_001, TestSize.Level1)
 HWTEST_F(HpaeRendererManagerTest, SetStreamSilentMode_UnknownSession_002, TestSize.Level1)
 {
     hpaeRendererManager_->SetStreamSilentMode(999, true);
-    WaitForMsgProcessing(hpaeRendererManager_);
+    hpaeRendererManager_->hpaeNoLockQueue_.HandleRequests();
     EXPECT_FALSE(sinkInputNode_->GetStreamSilentMode());
 }
 
@@ -6688,13 +6688,13 @@ HWTEST_F(HpaeRendererManagerTest, SetStreamSilentMode_NotifySink_003, TestSize.L
     EXPECT_CALL(*mockRenderSink, NotifyStreamChangeToSink(
         STREAM_CHANGE_TYPE_STATE_CHANGE, 1, testing::_, testing::_, testing::_, true)).Times(1);
     hpaeRendererManager_->SetStreamSilentMode(1, true);
-    WaitForMsgProcessing(hpaeRendererManager_);
+    hpaeRendererManager_->hpaeNoLockQueue_.HandleRequests();
     EXPECT_TRUE(sinkInputNode_->GetStreamSilentMode());
 
     EXPECT_CALL(*mockRenderSink, NotifyStreamChangeToSink(
         STREAM_CHANGE_TYPE_STATE_CHANGE, 1, testing::_, testing::_, testing::_, false)).Times(1);
     hpaeRendererManager_->SetStreamSilentMode(1, false);
-    WaitForMsgProcessing(hpaeRendererManager_);
+    hpaeRendererManager_->hpaeNoLockQueue_.HandleRequests();
     EXPECT_FALSE(sinkInputNode_->GetStreamSilentMode());
 }
 
