@@ -278,14 +278,46 @@ void InitStreamInfo(HpaeStreamInfo &streamInfo)
 // forward declaration
 static void WaitForMsgProcessing(std::shared_ptr<HpaeCapturerManager> &capturerManager);
 
-std::shared_ptr<HpaeCapturerManager> CreateAndInitManager()
+// 进程级共享 capturerManager：整个进程只 Init 一次。原先每用例 Init/DeInit 每轮 spawn
+// 一个 detached QoS 线程(SetThreadQosLevelAsync)，进程退出时撞 ConcurrentTaskClient
+// 静态析构 heap-use-after-free；共享后全局只 1 个，Init 后毫秒级结束。与
+// hpaerenderermanageradd_fuzzer 的 g_sharedRendererMgr 同配方：mgr 存储在文件级
+// g_sharedCapturerMgr，守卫为函数级 static（注册必然晚于文件级存储构造，逆序析构时
+// 守卫先跑），守卫直读 g_sharedCapturerMgr，绝不走本函数的再初始化分支。
+// 例外：DeactivateThreadFuzzTest / DeInitFuzzTest /
+// DeInitWithCapturerSourceStopForRemoteFuzzTest 专门 fuzz 拆除本身，保留局部自建自拆。
+static std::shared_ptr<HpaeCapturerManager> g_sharedCapturerMgr;
+
+class SharedCapturerManagerCleanupGuard {
+public:
+    ~SharedCapturerManagerCleanupGuard()
+    {
+        // Read g_sharedCapturerMgr DIRECTLY -- never via GetSharedCapturerManager().
+        // Re-entering the create+Init branch at static-destruction time would spawn
+        // worker threads (and consume fuzz input through GetData) during exit.
+        if (g_sharedCapturerMgr != nullptr) {
+            g_sharedCapturerMgr->DeactivateThread();
+        }
+    }
+};
+
+std::shared_ptr<HpaeCapturerManager> &GetSharedCapturerManager()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
-    return mgr;
+    if (g_sharedCapturerMgr == nullptr || !g_sharedCapturerMgr->IsInit()) {
+        // Stop the previous (failed or DeInit'd) manager's worker before replacing it:
+        // Init() spawns the worker unconditionally, so a re-entry would otherwise
+        // leak one parked worker per call.
+        if (g_sharedCapturerMgr != nullptr) {
+            g_sharedCapturerMgr->DeactivateThread();
+        }
+        HpaeSourceInfo sourceInfo;
+        InitSourceInfo(sourceInfo);
+        g_sharedCapturerMgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
+        g_sharedCapturerMgr->Init();
+        WaitForMsgProcessing(g_sharedCapturerMgr);
+    }
+    static SharedCapturerManagerCleanupGuard guard;
+    return g_sharedCapturerMgr;
 }
 
 void GetFuzzNodeInfo(HpaeNodeInfo &nodeInfo)
@@ -390,11 +422,9 @@ void StateControlTest(std::shared_ptr<HpaeCapturerManager> &capturerManager, Hpa
 
 void HpaeCapturerManagerFuzzTest1()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
+
     capturerManager->IsInit();
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -405,14 +435,13 @@ void HpaeCapturerManagerFuzzTest1()
 
     StateControlTest(capturerManager, streamInfo, sourceOutputInfo);
     capturerManager->OnNotifyQueue();
-    capturerManager->DeInit();
 }
 
 void HpaeCapturerManagerFuzzTest2()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
+
     capturerManager->IsInit();
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -422,16 +451,13 @@ void HpaeCapturerManagerFuzzTest2()
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
     StateControlFuzzTest(capturerManager, streamInfo, sourceOutputInfo);
     capturerManager->OnNotifyQueue();
-    capturerManager->DeInit();
 }
 
 void HpaeCapturerManagerFuzzTest3()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
+
     capturerManager->IsInit();
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -441,7 +467,6 @@ void HpaeCapturerManagerFuzzTest3()
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
 
     StateControlFuzzTest(capturerManager, streamInfo, sourceOutputInfo);
-    capturerManager->DeInit();
     capturerManager->OnNotifyQueue();
 }
 
@@ -451,9 +476,8 @@ void HpaeCapturerManagerReloadFuzzTest1()
     HpaeSourceInfo newSourceInfo;
     InitReloadSourceInfo(sourceInfo, newSourceInfo);
 
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
     capturerManager->GetThreadName();
     capturerManager->IsInit();
     HpaeStreamInfo streamInfo;
@@ -465,9 +489,9 @@ void HpaeCapturerManagerReloadFuzzTest1()
     capturerManager->ReloadCaptureManager(newSourceInfo);
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
-    capturerManager->DeInit();
 }
 
+// 保留局部 manager：本用例专门 fuzz 未 Init 管理器上的 reload（不建 worker/不派 QoS 线程，无 exit 风险），不入共享。
 void HpaeCapturerManagerReloadFuzzTest2()
 {
     HpaeSourceInfo sourceInfo;
@@ -495,9 +519,8 @@ void HpaeCapturerManagerReloadFuzzTest3()
     HpaeSourceInfo newSourceInfo;
     InitReloadSourceInfo(sourceInfo, newSourceInfo);
 
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
     capturerManager->GetThreadName();
     capturerManager->IsInit();
     HpaeStreamInfo streamInfo;
@@ -509,111 +532,91 @@ void HpaeCapturerManagerReloadFuzzTest3()
     capturerManager->ReloadCaptureManager(newSourceInfo);
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
-    capturerManager->DeInit();
 }
 
 void MoveStreamFuzzTest()
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    capturerManager->Init();
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
     uint32_t sessionId = GetData<uint32_t>();
     std::string sourceName = sourceInfo.sourceName;
     capturerManager->MoveStream(sessionId, sourceName);
     std::vector<uint32_t> sessionIds = {GetData<uint32_t>(), GetData<uint32_t>(), GetData<uint32_t>()};
     capturerManager->MoveAllStream(sourceName, sessionIds);
-    capturerManager->DeInit();
 }
 
 void GetSourceInfoFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    capturerManager->Init();
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
+
     capturerManager->GetSourceInfo();
     capturerManager->GetAllSourceOutputsInfo();
-    capturerManager->DeInit();
 }
 
 void OnRequestLatencyFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    capturerManager->Init();
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
+
     uint32_t sessionId = GetData<uint32_t>();
     uint64_t latency = 0;
     capturerManager->OnRequestLatency(sessionId, latency);
-    capturerManager->DeInit();
 }
 
 void AddNodeToSourceFuzzTest1()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    capturerManager->Init();
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
+
     HpaeCaptureMoveInfo moveInfo;
     capturerManager->AddNodeToSource(moveInfo);
-    capturerManager->DeInit();
 }
 
 void AddNodeToSourceFuzzTest2()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    capturerManager->Init();
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
+
     HpaeCaptureMoveInfo moveInfo = GetHpaeCaptureMoveInfo();
     capturerManager->AddNodeToSource(moveInfo);
-    capturerManager->DeInit();
 }
 
 void AddAllNodesToSourceFuzzTest1()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    capturerManager->Init();
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
+
     std::vector<HpaeCaptureMoveInfo> moveInfos;
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
-    capturerManager->DeInit();
 }
 
 void AddAllNodesToSourceFuzzTest2()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    capturerManager->Init();
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
+
     std::vector<HpaeCaptureMoveInfo> moveInfos = {GetHpaeCaptureMoveInfo(),
         GetHpaeCaptureMoveInfo(), GetHpaeCaptureMoveInfo()};
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
-    capturerManager->DeInit();
 }
 
 void GetDeviceHDFDumpInfoFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    capturerManager->Init();
+    auto &capturerManager = GetSharedCapturerManager();
+    CHECK_AND_RETURN(capturerManager != nullptr);
+
     capturerManager->GetDeviceHDFDumpInfo();
-    capturerManager->DeInit();
 }
 
 void CaptureEffectCreateFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     std::vector<uint32_t> sessionIds;
 
@@ -629,21 +632,12 @@ void CaptureEffectCreateFuzzTest()
         capturerManager->DestroyStream(sessionId);
     }
 
-    capturerManager->DeInit();
 }
 
 void StartWithEcAndMicRefFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-
-    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
-    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
-
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -658,9 +652,9 @@ void StartWithEcAndMicRefFuzzTest()
 
     capturerManager->Stop(streamInfo.sessionId);
     capturerManager->Release(streamInfo.sessionId);
-    capturerManager->DeInit();
 }
 
+// 保留局部 manager 自建自拆：本用例专门 fuzz 拆除本身，不入共享（见 GetSharedCapturerManager 注释）。
 void DeInitWithCapturerSourceStopForRemoteFuzzTest()
 {
     HpaeSourceInfo sourceInfo;
@@ -679,20 +673,12 @@ void DeInitWithCapturerSourceStopForRemoteFuzzTest()
 
 void PrepareCapturerEcFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-
-    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
-    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
-
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
 
-    capturerManager->Init();
-
-    capturerManager->DeInit();
 }
 
+// 保留局部 manager 自建自拆：本用例专门 fuzz 拆除本身，不入共享（见 GetSharedCapturerManager 注释）。
 void DeactivateThreadFuzzTest()
 {
     HpaeSourceInfo sourceInfo;
@@ -708,13 +694,8 @@ void DeactivateThreadFuzzTest()
 
 void RegisterReadCallbackFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -729,18 +710,12 @@ void RegisterReadCallbackFuzzTest()
     uint32_t invalidSessionId = GetData<uint32_t>();
     capturerManager->RegisterReadCallback(invalidSessionId, callback);
 
-    capturerManager->DeInit();
 }
 
 void CheckIfAnyStreamRunningFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -755,30 +730,20 @@ void CheckIfAnyStreamRunningFuzzTest()
     InitSourceInfo(newSourceInfo);
     capturerManager->ReloadCaptureManager(newSourceInfo);
 
-    capturerManager->DeInit();
 }
 
 void DumpSourceInfoFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
+
     capturerManager->DumpSourceInfo();
-    capturerManager->DeInit();
 }
 
 void AddAllNodesToSourceAdvancedFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     std::vector<HpaeCaptureMoveInfo> moveInfos;
 
@@ -797,22 +762,12 @@ void AddAllNodesToSourceAdvancedFuzzTest()
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
 
-    capturerManager->DeInit();
 }
 
 void DisConnectSceneClusterFromSourceInputClusterFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-
-    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
-    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
-
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -828,22 +783,12 @@ void DisConnectSceneClusterFromSourceInputClusterFuzzTest()
     capturerManager->Stop(streamInfo.sessionId);
     capturerManager->Release(streamInfo.sessionId);
 
-    capturerManager->DeInit();
 }
 
 void ConnectOutputSessionFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-
-    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
-    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
-
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -855,19 +800,12 @@ void ConnectOutputSessionFuzzTest()
 
     capturerManager->Start(streamInfo.sessionId);
 
-    capturerManager->DeInit();
 }
 
 void PauseFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -881,19 +819,12 @@ void PauseFuzzTest()
 
     capturerManager->Pause(streamInfo.sessionId);
 
-    capturerManager->DeInit();
 }
 
 void SetStreamMuteFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -909,7 +840,6 @@ void SetStreamMuteFuzzTest()
     uint32_t invalidSessionId = GetData<uint32_t>();
     bool isMute2 = GetData<bool>();
     capturerManager->SetStreamMute(invalidSessionId, isMute2);
-    capturerManager->DeInit();
 }
 
 void ReloadCaptureManagerFuzzTest()
@@ -917,11 +847,8 @@ void ReloadCaptureManagerFuzzTest()
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
 
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -932,9 +859,9 @@ void ReloadCaptureManagerFuzzTest()
 
     capturerManager->ReloadCaptureManager(sourceInfo);
 
-    capturerManager->DeInit();
 }
 
+// 保留局部 manager 自建自拆：本用例专门 fuzz 拆除本身，不入共享（见 GetSharedCapturerManager 注释）。
 void DeInitFuzzTest()
 {
     HpaeSourceInfo sourceInfo;
@@ -961,16 +888,8 @@ void DeInitFuzzTest()
 
 void GetSourceOutputInfoFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    RoundVal(sourceInfo.ecType, VALID_EC_TYPES);
-    RoundVal(sourceInfo.micRef, VALID_MIC_REF_SWITCHES);
-
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -981,23 +900,12 @@ void GetSourceOutputInfoFuzzTest()
 
     HpaeSourceOutputInfo sourceOutputInfo;
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
-    capturerManager->DeInit();
 }
 
 void MicRefSourceInitFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-    sourceInfo.micRef = HPAE_REF_ON;
-    sourceInfo.ecType = GetData<bool>() ? HPAE_EC_TYPE_DIFF_ADAPTER : HPAE_EC_TYPE_NONE;
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
 
     HpaeStreamInfo streamInfo;
     InitStreamInfo(streamInfo);
@@ -1008,23 +916,12 @@ void MicRefSourceInitFuzzTest()
     mgr->Stop(streamInfo.sessionId);
     WaitForMsgProcessing(mgr);
     mgr->DestroyStream(streamInfo.sessionId);
-    mgr->DeInit();
 }
 
 void EcDiffAdapterFullFlowFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-    sourceInfo.ecType = HPAE_EC_TYPE_DIFF_ADAPTER;
-    sourceInfo.micRef = GetData<bool>() ? HPAE_REF_ON : HPAE_REF_OFF;
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
 
     HpaeStreamInfo streamInfo;
     InitStreamInfo(streamInfo);
@@ -1035,12 +932,11 @@ void EcDiffAdapterFullFlowFuzzTest()
     mgr->Stop(streamInfo.sessionId);
     WaitForMsgProcessing(mgr);
     mgr->DestroyStream(streamInfo.sessionId);
-    mgr->DeInit();
 }
 
 void DeleteOutputSessionWithActiveClusterFuzzTest()
 {
-    auto mgr = CreateAndInitManager();
+    auto &mgr = GetSharedCapturerManager();
     HpaeStreamInfo streamInfo;
     InitStreamInfo(streamInfo);
     mgr->CreateStream(streamInfo);
@@ -1049,12 +945,11 @@ void DeleteOutputSessionWithActiveClusterFuzzTest()
     WaitForMsgProcessing(mgr);
     mgr->DestroyStream(streamInfo.sessionId);
     WaitForMsgProcessing(mgr);
-    mgr->DeInit();
 }
 
 void MoveStreamWithValidSessionFuzzTest()
 {
-    auto mgr = CreateAndInitManager();
+    auto &mgr = GetSharedCapturerManager();
     HpaeStreamInfo streamInfo;
     InitStreamInfo(streamInfo);
     mgr->CreateStream(streamInfo);
@@ -1063,23 +958,13 @@ void MoveStreamWithValidSessionFuzzTest()
     WaitForMsgProcessing(mgr);
     mgr->MoveStream(streamInfo.sessionId, "test_source");
     WaitForMsgProcessing(mgr);
-    mgr->DeInit();
 }
 
 void DisConnectSceneClusterFullFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-    sourceInfo.ecType = HPAE_EC_TYPE_DIFF_ADAPTER;
-    sourceInfo.micRef = HPAE_REF_ON;
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
+
     HpaeStreamInfo streamInfo;
     InitStreamInfo(streamInfo);
     mgr->CreateStream(streamInfo);
@@ -1089,23 +974,13 @@ void DisConnectSceneClusterFullFuzzTest()
     mgr->Stop(streamInfo.sessionId);
     WaitForMsgProcessing(mgr);
     mgr->Release(streamInfo.sessionId);
-    mgr->DeInit();
 }
 
 void ConnectOutputSessionWithEcMicRefFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-    sourceInfo.ecType = HPAE_EC_TYPE_DIFF_ADAPTER;
-    sourceInfo.micRef = HPAE_REF_ON;
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
+
     HpaeStreamInfo streamInfo;
     InitStreamInfo(streamInfo);
     mgr->CreateStream(streamInfo);
@@ -1114,12 +989,11 @@ void ConnectOutputSessionWithEcMicRefFuzzTest()
     WaitForMsgProcessing(mgr);
     mgr->Stop(streamInfo.sessionId);
     WaitForMsgProcessing(mgr);
-    mgr->DeInit();
 }
 
 void AddSingleNodeRunningStateFuzzTest()
 {
-    auto mgr = CreateAndInitManager();
+    auto &mgr = GetSharedCapturerManager();
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = GetData<uint32_t>();
     nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
@@ -1134,24 +1008,12 @@ void AddSingleNodeRunningStateFuzzTest()
     moveInfo.sessionInfo.state = HPAE_SESSION_RUNNING;
     bool isConnect = GetData<bool>();
     mgr->AddAllNodesToSource({moveInfo}, isConnect);
-    mgr->DeInit();
 }
 
 void EcSameAdapterFullFlowFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-    sourceInfo.ecType = HPAE_EC_TYPE_SAME_ADAPTER;
-    sourceInfo.micRef = HPAE_REF_OFF;
-
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -1163,24 +1025,12 @@ void EcSameAdapterFullFlowFuzzTest()
     WaitForMsgProcessing(mgr);
     mgr->DestroyStream(streamInfo.sessionId);
     WaitForMsgProcessing(mgr);
-    mgr->DeInit();
 }
 
 void EcDiffAdapterWithMicRefFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-    sourceInfo.ecType = HPAE_EC_TYPE_DIFF_ADAPTER;
-    sourceInfo.micRef = HPAE_REF_ON;
-
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -1192,22 +1042,12 @@ void EcDiffAdapterWithMicRefFuzzTest()
     WaitForMsgProcessing(mgr);
     mgr->DestroyStream(streamInfo.sessionId);
     WaitForMsgProcessing(mgr);
-    mgr->DeInit();
 }
 
 void ConnectOutputSessionSceneRecordFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -1220,22 +1060,12 @@ void ConnectOutputSessionSceneRecordFuzzTest()
     WaitForMsgProcessing(mgr);
     mgr->DestroyStream(streamInfo.sessionId);
     WaitForMsgProcessing(mgr);
-    mgr->DeInit();
 }
 
 void DisConnectOutputSessionFullFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -1247,22 +1077,12 @@ void DisConnectOutputSessionFullFuzzTest()
     WaitForMsgProcessing(mgr);
     mgr->DestroyStream(streamInfo.sessionId);
     WaitForMsgProcessing(mgr);
-    mgr->DeInit();
 }
 
 void ReloadCaptureManagerRunningFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -1281,22 +1101,12 @@ void ReloadCaptureManagerRunningFuzzTest()
 
     mgr->ReloadCaptureManager(newSourceInfo);
     WaitForMsgProcessing(mgr);
-    mgr->DeInit();
 }
 
 void MultiStreamCapturerFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
 
     HpaeStreamInfo streamInfo1;
     InitReloadStreamInfo(streamInfo1);
@@ -1324,22 +1134,12 @@ void MultiStreamCapturerFuzzTest()
     WaitForMsgProcessing(mgr);
     mgr->DestroyStream(streamInfo2.sessionId);
     WaitForMsgProcessing(mgr);
-    mgr->DeInit();
 }
 
 void CapturerSourceStartStopCycleFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -1358,22 +1158,12 @@ void CapturerSourceStartStopCycleFuzzTest()
 
     mgr->DestroyStream(streamInfo.sessionId);
     WaitForMsgProcessing(mgr);
-    mgr->DeInit();
 }
 
 void FlushDrainCapturerFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -1391,22 +1181,12 @@ void FlushDrainCapturerFuzzTest()
     WaitForMsgProcessing(mgr);
     mgr->DestroyStream(streamInfo.sessionId);
     WaitForMsgProcessing(mgr);
-    mgr->DeInit();
 }
 
 void DeleteOutputSessionFullFuzzTest()
 {
-    HpaeSourceInfo sourceInfo;
-    sourceInfo.deviceNetId = "LocalDevice";
-    sourceInfo.deviceClass = "file_io";
-    sourceInfo.deviceName = "Built_in_mic";
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-
-    auto mgr = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    mgr->Init();
-    WaitForMsgProcessing(mgr);
+    auto &mgr = GetSharedCapturerManager();
+    CHECK_AND_RETURN(mgr != nullptr);
 
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
@@ -1416,7 +1196,6 @@ void DeleteOutputSessionFullFuzzTest()
     WaitForMsgProcessing(mgr);
     mgr->DestroyStream(streamInfo.sessionId);
     WaitForMsgProcessing(mgr);
-    mgr->DeInit();
 }
 
 typedef void (*TestFuncs)();
