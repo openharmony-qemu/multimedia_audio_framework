@@ -24,7 +24,6 @@
 #include <unistd.h>
 #include "audio_errors.h"
 #include "test_case_common.h"
-#include "hpae_audio_service_dump_callback_unit_test.h"
 #include "securec.h"
 
 namespace OHOS {
@@ -270,8 +269,8 @@ void HpaeManagerFuzzTest::StreamSetUp()
 
     std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
-    std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback =
-        std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
+    std::shared_ptr<HpaeAudioServiceDumpCallbackFuzzTest> dumpCallback =
+        std::make_shared<HpaeAudioServiceDumpCallbackFuzzTest>();
     hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
 
     AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
