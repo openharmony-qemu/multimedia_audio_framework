@@ -197,6 +197,7 @@ private:
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
     std::mutex audioFocusInfoCallbackMutex_;
     std::mutex audioInterruptCallbackMutex_;
+    std::mutex cbMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

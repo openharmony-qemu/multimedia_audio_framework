@@ -257,6 +257,7 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
 
 bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const AudioCapturerInfo &capturerInfo)
 {
+    std::unique_lock<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("start check capturer focus, zoneId:%{public}d, sourceType:%{public}d",
         zoneId, capturerInfo.sourceType);
     AudioInterrupt incomingInterrupt;
