@@ -1588,8 +1588,8 @@ HWTEST(CapturerInClientUnitTest, Enqueue_003, TestSize.Level1)
     BufferDesc bufferDesc;
     bufferDesc.bufLength = 16;
     bufferDesc.dataLength = 16;
-    uint8_t buffer_ = 1;
-    bufferDesc.buffer = &buffer_;
+    uint8_t buffer = 1;
+    bufferDesc.buffer = &buffer;
     int32_t ret = capturerInClientInner->Enqueue(bufferDesc);
     EXPECT_EQ(ret, SUCCESS);
 
@@ -2299,7 +2299,7 @@ HWTEST(CapturerInClientUnitTest, StopAudioStream_WakeBlockingReader_001, TestSiz
     size_t readSize = 0;
     size_t userSize = sizeof(buffer);
     std::atomic<bool> readerReturned = false;
-    std::thread reader([&]() {
+    std::thread reader([&capturerInClientInner, &readSize, &userSize, &buffer, &readerReturned]() {
         capturerInClientInner->HandleCapturerRead(readSize, userSize, buffer[0], true);
         readerReturned = true;
     });
@@ -2333,7 +2333,7 @@ HWTEST(CapturerInClientUnitTest, ReleaseCallbackResources_WakeBlockingReader_001
     size_t readSize = 0;
     size_t userSize = sizeof(buffer);
     std::atomic<bool> readerReturned = false;
-    std::thread reader([&]() {
+    std::thread reader([&capturerInClientInner, &readSize, &userSize, &buffer, &readerReturned]() {
         capturerInClientInner->HandleCapturerRead(readSize, userSize, buffer[0], true);
         readerReturned = true;
     });
