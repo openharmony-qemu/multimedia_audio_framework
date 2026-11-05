@@ -118,6 +118,13 @@ struct AudioFormat {
     AudioStreamEncodingType encodingType = ENCODING_TYPE_RAW;
 };
 
+struct AudioConverterFormat {
+    int32_t sampleRate = 48000;
+    uint32_t channelCount = 0;
+    AudioChannelLayout channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
+    AudioSampleFormat sampleFormat = INVALID_WIDTH;
+};
+
 typedef enum {
     AUDIO_NODE_DEFAULT_OUTPORT_TYPE = 0,
     AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE = 1,

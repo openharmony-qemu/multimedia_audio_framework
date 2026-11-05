@@ -388,8 +388,8 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
 
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     UpdateDeviceAfterConnectAndAddtoList(audioDescriptor);
-    CHECK_AND_RETURN(NeedUpdatePreferredDevice(*audioDescriptor));
     AudioRollbackManager::GetInstance().OnDeviceNewConnect(*audioDescriptor);
+    CHECK_AND_RETURN(NeedUpdatePreferredDevice(updatedDesc));
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
     DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
     FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "updateConnectedDescWhenCon_1", ROUTER_TYPE_USER_SELECT };
@@ -458,7 +458,6 @@ bool AudioDeviceCommon::NeedUpdatePreferredDevice(const AudioDeviceDescriptor &d
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_NEARLINK:
             AUDIO_INFO_LOG("The device is wireless device, no need to update preferred device");
-            AudioRollbackManager::GetInstance().UpdateConnectedSet(desc);
             return false;
         default:
             return true;
@@ -711,6 +710,11 @@ int32_t AudioDeviceCommon::OpenRemoteAudioDevice(std::string networkId, DeviceRo
 void AudioDeviceCommon::CheckAndNotifyUserSelectedDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    if (deviceDescriptor &&
+        AudioRollbackManager::GetInstance().IsVirtualSelectDevice(*deviceDescriptor)) {
+        audioActiveDevice_.NotifyUserSelectionEventToBt(deviceDescriptor);
+        return;
+    }
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
     shared_ptr<AudioDeviceDescriptor> userSelectedMediaDevice =
         strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID);

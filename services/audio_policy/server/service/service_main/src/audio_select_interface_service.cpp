@@ -132,7 +132,7 @@ void AudioSelectInterfaceService::HandleNegtiveBtOriginalLogic(DeviceType device
     auto currentOutputDevice = !descs.empty() && *descs.begin() ? *(*descs.begin()) : AudioDeviceDescriptor();
     if (currentOutputDevice.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+        AudioActiveDevice::GetInstance().SendUserSelectionEventAsync(DEVICE_TYPE_BLUETOOTH_SCO,
             currentOutputDevice.macAddress_, USER_NOT_SELECT_SLE);
     }
     if (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
@@ -158,7 +158,7 @@ void AudioSelectInterfaceService::HandleNegtiveBtEnhancedRouting(DeviceType devi
         bool deviceStillNeeded = AudioActiveDevice::GetInstance().IsDeviceInWirelessNeeds(desc, wirelessDeviceNeeds);
         CHECK_AND_CONTINUE(!deviceStillNeeded);
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-            Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+            AudioActiveDevice::GetInstance().SendUserSelectionEventAsync(DEVICE_TYPE_BLUETOOTH_SCO,
                 desc->macAddress_, USER_NOT_SELECT_SLE);
         }
         if (desc->deviceType_ == DEVICE_TYPE_NEARLINK && deviceType == DEVICE_TYPE_NEARLINK) {
@@ -185,12 +185,12 @@ void AudioSelectInterfaceService::HandleActiveBtOriginalLogic(DeviceType deviceT
     auto currentOutputDevice = !descs.empty() && *descs.begin() ? *(*descs.begin()) : AudioDeviceDescriptor();
     if (currentOutputDevice.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
-        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+        AudioActiveDevice::GetInstance().SendUserSelectionEventAsync(DEVICE_TYPE_BLUETOOTH_SCO,
             currentOutputDevice.macAddress_, USER_NOT_SELECT_SLE);
     }
     if (currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
         deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+        AudioActiveDevice::GetInstance().SendUserSelectionEventAsync(DEVICE_TYPE_BLUETOOTH_SCO,
             macAddress, USER_SELECT_SLE);
     }
     if (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
@@ -221,7 +221,7 @@ void AudioSelectInterfaceService::HandleActiveBtEnhancedRouting(DeviceType devic
         bool deviceStillNeeded = AudioActiveDevice::GetInstance().IsDeviceInWirelessNeeds(desc, wirelessDeviceNeeds);
         CHECK_AND_CONTINUE(!deviceStillNeeded);
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+            AudioActiveDevice::GetInstance().SendUserSelectionEventAsync(DEVICE_TYPE_BLUETOOTH_SCO,
                 desc->macAddress_, USER_NOT_SELECT_SLE);
         }
         if (desc->deviceType_ == DEVICE_TYPE_NEARLINK) {
@@ -230,7 +230,8 @@ void AudioSelectInterfaceService::HandleActiveBtEnhancedRouting(DeviceType devic
         }
     }
     if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO, macAddress, USER_SELECT_SLE);
+        AudioActiveDevice::GetInstance().SendUserSelectionEventAsync(DEVICE_TYPE_BLUETOOTH_SCO,
+            macAddress, USER_SELECT_SLE);
     }
     if (deviceType == DEVICE_TYPE_NEARLINK) {
         AudioDeviceDescriptor desc;

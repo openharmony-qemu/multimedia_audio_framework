@@ -81,6 +81,7 @@ public:
         StreamUsage streamUsage);
     void NotifyUserSelectionEventForInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
         SourceType sourceType = SOURCE_TYPE_INVALID);
+    void SendUserSelectionEventAsync(DeviceType devType, const std::string &macAddress, int32_t eventType);
     void NotifyUserSelectionEventToRemote(std::shared_ptr<AudioDeviceDescriptor> desc);
     void NotifyUserDisSelectionEventToRemote(std::shared_ptr<AudioDeviceDescriptor> desc);
 

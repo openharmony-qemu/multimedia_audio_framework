@@ -35,6 +35,7 @@ if (audio_framework_feature_audiosuite_support) {
       "../../client/converter/include",
       "../../client/node/include",
       "../../client/utils/include",
+      "../../client/generic/include",
       "../../client/stub/include",
       "../../server/include",
       "../../server/include",
@@ -46,6 +47,7 @@ if (audio_framework_feature_audiosuite_support) {
       "../../../../interfaces/inner_api/native/audiocommon/include",
       "../../../../interfaces/inner_api/native/audiosuite/include",
       "../../../../interfaces/inner_api/native/offlineaudioeffect/include",
+      "../../../../interfaces/inner_api/native/audio_suite_generic/include",
       "../../../../interfaces/kits/c/audio_suite/",
       "../../../../interfaces/kits/c/common",
       "../../../../frameworks/native/ohaudiosuite",
@@ -193,6 +195,36 @@ if (audio_framework_feature_audiosuite_support) {
       "bounds_checking_function:libsec_shared",
     ]
     resource_config_file = "./resource/ohos_test.xml"
+  }
+
+  ohos_unittest("audio_suite_generic_test") {
+    module_out_path = module_output_path
+    sources = [
+      "generic/audio_suite_time_stretch_test.cpp",
+    ]
+ 
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
+ 
+    configs = [ ":audio_suite_unit_config" ]
+ 
+    deps = [
+      "../../:audio_suite_generic",
+    ]
+ 
+    external_deps = [
+      "bounds_checking_function:libsec_shared",
+      "c_utils:utils",
+      "googletest:gtest",
+      "hilog:libhilog",
+    ]
   }
 
   ohos_unittest("audio_suite_service_test") {
