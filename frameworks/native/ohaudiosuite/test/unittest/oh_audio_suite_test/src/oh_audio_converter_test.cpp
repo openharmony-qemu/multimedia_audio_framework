@@ -14,6 +14,7 @@
  */
 
 #include "native_audio_suite_engine.h"
+#include "native_audio_converter.h"
 #include "oh_audio_converter_test.h"
 #include "OHAudioSuiteFormatConverter.h"
 #include "audio_suite_log.h"
@@ -48,6 +49,28 @@ constexpr int32_t LOOP_COUNT_10 = 10;
 constexpr int32_t SIGNAL_AMPLITUDE_1000 = 1000;
 constexpr int32_t SIGNAL_AMPLITUDE_5000 = 5000;
 constexpr int32_t SIGNAL_AMPLITUDE_3000 = 3000;
+
+// Ex-mode test constants (defined at file scope for visibility across all test cases)
+constexpr int32_t EX_TEST_IN_RATE = 44100;
+constexpr int32_t EX_TEST_OUT_RATE = 48000;
+constexpr uint32_t EX_TEST_FRAME_BYTES = 4; // S16LE * 2 channels
+// gcd(44100, 48000) = 300 → minInFrames=147, minOutFrames=160
+constexpr uint32_t EX_TEST_MIN_IN_BYTES = 147u * EX_TEST_FRAME_BYTES; // 588
+constexpr uint32_t EX_TEST_MIN_OUT_BYTES = 160u * EX_TEST_FRAME_BYTES; // 640
+constexpr uint32_t EX_TEST_OUTPUT_CAP = 50000;
+constexpr int32_t EX_RATE_OUT_OF_RANGE_LOW = 7990;
+constexpr int32_t EX_RATE_OUT_OF_RANGE_HIGH = 5644810;
+constexpr int32_t EX_RATE_NOT_MULTIPLE_OF_TEN = 48001;
+constexpr int32_t EX_RATE_EXEMPTED_11025 = 11025;
+
+static void SetupExConverterFormat(OH_AudioSuite_ConverterFormatEx& format, int32_t rate,
+    OH_AudioChannelLayout layout, OH_Audio_SampleFormat sampleFormat)
+{
+    format.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    format.samplingRate = rate;
+    format.channelLayout = layout;
+    format.sampleFormat = sampleFormat;
+}
 
 static int32_t g_requestDataCallCount = 0;
 
@@ -507,7 +530,41 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_SetInputCallback_005, TestSize.
     OH_AudioConverter_Destroy(converter);
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_ERROR_NOT_INITIALIZED);
- 
+
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioConverter_SetInputCallback.
+ * @tc.number: OH_AudioConverter_SetInputCallback_006
+ * @tc.desc  : Test SetInputCallback after DirectProcess (runtime mutex) returns UNSUPPORTED_OPERATION.
+ *             Covers impl directProcessMode_ check (direction B: DirectProcess first, then SetInputCallback).
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioConverter_SetInputCallback_006, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    // Lock direct mode first via a successful DirectProcess
+    std::vector<uint8_t> inputData(EX_TEST_MIN_IN_BYTES, 1);
+    std::vector<uint8_t> outputData(EX_TEST_OUTPUT_CAP, 0);
+    OH_AudioSuite_ConverterInputInfo inDesc = {inputData.data(), EX_TEST_MIN_IN_BYTES};
+    OH_AudioSuite_ConverterOutputInfo outDesc = {outputData.data(), EX_TEST_OUTPUT_CAP, 0};
+    ASSERT_EQ(OH_AudioSuite_ConverterDirectProcess(converter, &inDesc, &outDesc),
+        AUDIOCONVERTER_SUCCESS);
+
+    // DirectProcess already locked → SetInputCallback → UNSUPPORTED_OPERATION
+    OH_AudioConverter_Result ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback, nullptr);
+    EXPECT_EQ(ret, AUDIOCONVERTER_ERROR_UNSUPPORTED_OPERATION);
+
     OH_AudioConverter_Destroy(converter);
 }
 
@@ -1661,7 +1718,45 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_037, TestSize.Level0)
     OH_AudioConverter_Destroy(converter);
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_ERROR_NOT_INITIALIZED);
-    
+
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioConverter_Process.
+ * @tc.number: OH_AudioConverter_Process_038
+ * @tc.desc  : Test Process after DirectProcess (runtime mutex) returns CALLBACK_NOT_SET.
+ *             Process has no explicit mutex guard; with no callback set it returns CALLBACK_NOT_SET
+ *             (impl ReadAndCacheInputData dataCallback_==nullptr implicit detection).
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_038, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    // Lock direct mode first via a successful DirectProcess
+    std::vector<uint8_t> inputData(EX_TEST_MIN_IN_BYTES, 1);
+    std::vector<uint8_t> outputData(EX_TEST_OUTPUT_CAP, 0);
+    OH_AudioSuite_ConverterInputInfo inDesc = {inputData.data(), EX_TEST_MIN_IN_BYTES};
+    OH_AudioSuite_ConverterOutputInfo outDesc = {outputData.data(), EX_TEST_OUTPUT_CAP, 0};
+    ASSERT_EQ(OH_AudioSuite_ConverterDirectProcess(converter, &inDesc, &outDesc),
+        AUDIOCONVERTER_SUCCESS);
+
+    // DirectProcess already locked, no callback set → Process → CALLBACK_NOT_SET
+    uint8_t processOutput[LARGE_BUFFER_SIZE] = {0};
+    int32_t outputSize = 0;
+    OH_AudioConverter_Result ret = OH_AudioConverter_Process(
+        converter, processOutput, sizeof(processOutput), &outputSize);
+    EXPECT_EQ(ret, AUDIOCONVERTER_ERROR_CALLBACK_NOT_SET);
+
     OH_AudioConverter_Destroy(converter);
 }
 
@@ -1975,6 +2070,724 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Destroy_002, TestSize.Level0)
     ASSERT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     ASSERT_TRUE(converter2 != nullptr);
     OH_AudioConverter_Destroy(converter2);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterCreateEx.
+ * @tc.number: OH_AudioSuite_ConverterCreateEx_001
+ * @tc.desc  : Test success path.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterCreateEx_001, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    OH_AudioConverter_Result ret = OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter);
+    EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
+    EXPECT_NE(converter, nullptr);
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterCreateEx.
+ * @tc.number: OH_AudioSuite_ConverterCreateEx_002
+ * @tc.desc  : Test nullptr converter output pointer.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterCreateEx_002, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    EXPECT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, nullptr),
+        AUDIOCONVERTER_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterCreateEx.
+ * @tc.number: OH_AudioSuite_ConverterCreateEx_003
+ * @tc.desc  : Test nullptr inputFormat / outputFormat.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterCreateEx_003, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    EXPECT_EQ(OH_AudioSuite_ConverterCreateEx(nullptr, &outputFormat, &converter),
+        AUDIOCONVERTER_ERROR_INVALID_PARAM);
+    EXPECT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, nullptr, &converter),
+        AUDIOCONVERTER_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterCreateEx.
+ * @tc.number: OH_AudioSuite_ConverterCreateEx_004
+ * @tc.desc  : Test invalid encoding type (non-PCM).
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterCreateEx_004, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    inputFormat.encodingType = static_cast<OH_Audio_EncodingType>(999); // invalid
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    EXPECT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterCreateEx.
+ * @tc.number: OH_AudioSuite_ConverterCreateEx_005
+ * @tc.desc  : Test sample rate out of range (low and high).
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterCreateEx_005, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_RATE_OUT_OF_RANGE_LOW,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    EXPECT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT);
+
+    SetupExConverterFormat(inputFormat, EX_RATE_OUT_OF_RANGE_HIGH,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    EXPECT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterCreateEx.
+ * @tc.number: OH_AudioSuite_ConverterCreateEx_006
+ * @tc.desc  : Test sample rate not multiple of 10 (and not 11025).
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterCreateEx_006, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_RATE_NOT_MULTIPLE_OF_TEN,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    EXPECT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterCreateEx.
+ * @tc.number: OH_AudioSuite_ConverterCreateEx_007
+ * @tc.desc  : Test invalid sample format.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterCreateEx_007, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, static_cast<OH_Audio_SampleFormat>(999));
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    EXPECT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterCreateEx.
+ * @tc.number: OH_AudioSuite_ConverterCreateEx_008
+ * @tc.desc  : Test invalid channel layout.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterCreateEx_008, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        static_cast<OH_AudioChannelLayout>(999), AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    EXPECT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterCreateEx.
+ * @tc.number: OH_AudioSuite_ConverterCreateEx_009
+ * @tc.desc  : Test 11025 exempted rate succeeds.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterCreateEx_009, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_RATE_EXEMPTED_11025,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    OH_AudioConverter_Result ret = OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter);
+    EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
+    if (converter != nullptr) {
+        OH_AudioConverter_Destroy(converter);
+    }
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterGetMinInOutSizes.
+ * @tc.number: OH_AudioSuite_ConverterGetMinInOutSizes_001
+ * @tc.desc  : Test success path.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterGetMinInOutSizes_001, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    uint32_t inputMinSize = 0;
+    uint32_t outputMinSize = 0;
+    OH_AudioConverter_Result ret = OH_AudioSuite_ConverterGetMinInOutSizes(converter, &inputMinSize, &outputMinSize);
+    EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
+    EXPECT_GT(inputMinSize, 0u);
+    EXPECT_GT(outputMinSize, 0u);
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterGetMinInOutSizes.
+ * @tc.number: OH_AudioSuite_ConverterGetMinInOutSizes_002
+ * @tc.desc  : Test nullptr converter / output pointers.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterGetMinInOutSizes_002, TestSize.Level0)
+{
+    EXPECT_EQ(OH_AudioSuite_ConverterGetMinInOutSizes(nullptr, nullptr, nullptr),
+        AUDIOCONVERTER_ERROR_INVALID_PARAM);
+
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+    EXPECT_EQ(OH_AudioSuite_ConverterGetMinInOutSizes(converter, nullptr, nullptr),
+        AUDIOCONVERTER_ERROR_INVALID_PARAM);
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterGetMinInOutSizes.
+ * @tc.number: OH_AudioSuite_ConverterGetMinInOutSizes_003
+ * @tc.desc  : Test converter not active (destroyed) returns INVALID_PARAM.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterGetMinInOutSizes_003, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+    OH_AudioConverter_Destroy(converter);
+    uint32_t inputMinSize = 0;
+    uint32_t outputMinSize = 0;
+    EXPECT_EQ(OH_AudioSuite_ConverterGetMinInOutSizes(converter, &inputMinSize, &outputMinSize),
+        AUDIOCONVERTER_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterGetMinInOutSizes.
+ * @tc.number: OH_AudioSuite_ConverterGetMinInOutSizes_004
+ * @tc.desc  : Test min size calculation for high sample rate combinations.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterGetMinInOutSizes_004, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, 3528000,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, 48000,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    uint32_t inputMinSize = 0;
+    uint32_t outputMinSize = 0;
+    EXPECT_EQ(OH_AudioSuite_ConverterGetMinInOutSizes(converter, &inputMinSize, &outputMinSize),
+        AUDIOCONVERTER_SUCCESS);
+    EXPECT_EQ(inputMinSize, 588u);
+    EXPECT_EQ(outputMinSize, 8u);
+    OH_AudioConverter_Destroy(converter);
+
+    SetupExConverterFormat(inputFormat, 5644800,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    SetupExConverterFormat(outputFormat, 48000,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    inputMinSize = 0;
+    outputMinSize = 0;
+    EXPECT_EQ(OH_AudioSuite_ConverterGetMinInOutSizes(converter, &inputMinSize, &outputMinSize),
+        AUDIOCONVERTER_SUCCESS);
+    EXPECT_EQ(inputMinSize, 2352u);
+    EXPECT_EQ(outputMinSize, 20u);
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterGetDelaySize.
+ * @tc.number: OH_AudioSuite_ConverterGetDelaySize_001
+ * @tc.desc  : Test nullptr converter.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterGetDelaySize_001, TestSize.Level0)
+{
+    uint32_t delaySize = 0;
+    EXPECT_EQ(OH_AudioSuite_ConverterGetDelaySize(nullptr, &delaySize),
+        AUDIOCONVERTER_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterGetDelaySize.
+ * @tc.number: OH_AudioSuite_ConverterGetDelaySize_002
+ * @tc.desc  : Test nullptr delaySize output.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterGetDelaySize_002, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+    EXPECT_EQ(OH_AudioSuite_ConverterGetDelaySize(converter, nullptr),
+        AUDIOCONVERTER_ERROR_INVALID_PARAM);
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterGetDelaySize.
+ * @tc.number: OH_AudioSuite_ConverterGetDelaySize_003
+ * @tc.desc  : Test converter not active (destroyed) returns INVALID_PARAM.
+ *             Covers GetAudioSuiteConverter if-false branch (converter not found).
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterGetDelaySize_003, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+    OH_AudioConverter_Destroy(converter);
+    // After destroy: converter not in registry → GetAudioSuiteConverter returns nullptr
+    uint32_t delaySize = 0;
+    EXPECT_EQ(OH_AudioSuite_ConverterGetDelaySize(converter, &delaySize), AUDIOCONVERTER_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterGetDelaySize.
+ * @tc.number: OH_AudioSuite_ConverterGetDelaySize_004
+ * @tc.desc  : Test before first process returns SUCCESS with delaySize 0.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterGetDelaySize_004, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE, OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE, OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter), AUDIOCONVERTER_SUCCESS);
+    uint32_t delaySize = 1;
+    EXPECT_EQ(OH_AudioSuite_ConverterGetDelaySize(converter, &delaySize), AUDIOCONVERTER_SUCCESS);
+    EXPECT_EQ(delaySize, 0u);
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterGetDelaySize.
+ * @tc.number: OH_AudioSuite_ConverterGetDelaySize_005
+ * @tc.desc  : Test after first DirectProcess returns SUCCESS with delay > 0.
+ *             Covers ConvertConverterError(SUCCESS) branch.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterGetDelaySize_005, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    std::vector<uint8_t> inputData(EX_TEST_MIN_IN_BYTES, 1);
+    std::vector<uint8_t> outputData(EX_TEST_OUTPUT_CAP, 0);
+    OH_AudioSuite_ConverterInputInfo inDesc = {inputData.data(), EX_TEST_MIN_IN_BYTES};
+    OH_AudioSuite_ConverterOutputInfo outDesc = {outputData.data(), EX_TEST_OUTPUT_CAP, 0};
+    ASSERT_EQ(OH_AudioSuite_ConverterDirectProcess(converter, &inDesc, &outDesc),
+        AUDIOCONVERTER_SUCCESS);
+
+    uint32_t delaySize = 0;
+    EXPECT_EQ(OH_AudioSuite_ConverterGetDelaySize(converter, &delaySize),
+        AUDIOCONVERTER_SUCCESS);
+    EXPECT_GT(delaySize, 0);
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterDirectProcess.
+ * @tc.number: OH_AudioSuite_ConverterDirectProcess_001
+ * @tc.desc  : Test nullptr converter.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterDirectProcess_001, TestSize.Level0)
+{
+    std::vector<uint8_t> inputData(EX_TEST_MIN_IN_BYTES, 1);
+    std::vector<uint8_t> outputData(EX_TEST_OUTPUT_CAP, 0);
+    OH_AudioSuite_ConverterInputInfo inDesc = {inputData.data(), EX_TEST_MIN_IN_BYTES};
+    OH_AudioSuite_ConverterOutputInfo outDesc = {outputData.data(), EX_TEST_OUTPUT_CAP, 0};
+    EXPECT_EQ(OH_AudioSuite_ConverterDirectProcess(nullptr, &inDesc, &outDesc),
+        AUDIOCONVERTER_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterDirectProcess.
+ * @tc.number: OH_AudioSuite_ConverterDirectProcess_004
+ * @tc.desc  : Test converter not active (destroyed) returns INVALID_PARAM.
+ *             Covers GetAudioSuiteConverter if-false branch.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterDirectProcess_002, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+    OH_AudioConverter_Destroy(converter);
+
+    std::vector<uint8_t> inputData(EX_TEST_MIN_IN_BYTES, 1);
+    std::vector<uint8_t> outputData(EX_TEST_OUTPUT_CAP, 0);
+    OH_AudioSuite_ConverterInputInfo inDesc = {inputData.data(), EX_TEST_MIN_IN_BYTES};
+    OH_AudioSuite_ConverterOutputInfo outDesc = {outputData.data(), EX_TEST_OUTPUT_CAP, 0};
+    EXPECT_EQ(OH_AudioSuite_ConverterDirectProcess(converter, &inDesc, &outDesc), AUDIOCONVERTER_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterDirectProcess.
+ * @tc.number: OH_AudioSuite_ConverterDirectProcess_005
+ * @tc.desc  : Test input not multiple of minInBytes returns INVALID_PARAM.
+ *             Covers ConvertConverterError(ERR_INVALID_PARAM) branch.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterDirectProcess_003, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    // EX_TEST_MIN_IN_BYTES + 1 is not a multiple of minInBytes
+    std::vector<uint8_t> inputData(EX_TEST_MIN_IN_BYTES + 1u, 1);
+    std::vector<uint8_t> outputData(EX_TEST_OUTPUT_CAP, 0);
+    OH_AudioSuite_ConverterInputInfo inDesc = {inputData.data(), EX_TEST_MIN_IN_BYTES + 1u};
+    OH_AudioSuite_ConverterOutputInfo outDesc = {outputData.data(), EX_TEST_OUTPUT_CAP, 0u};
+    EXPECT_EQ(OH_AudioSuite_ConverterDirectProcess(converter, &inDesc, &outDesc),
+        AUDIOCONVERTER_ERROR_INVALID_PARAM);
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterDirectProcess.
+ * @tc.number: OH_AudioSuite_ConverterDirectProcess_006
+ * @tc.desc  : Test output buffer too small returns BUFFER_TOO_SMALL.
+ *             Covers ConvertConverterError(ERR_BUFFER_TOO_SMALL) branch.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterDirectProcess_004, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    uint32_t inputMultiple = EX_TEST_MIN_IN_BYTES * 10u;
+    std::vector<uint8_t> inputData(inputMultiple, 1);
+    uint32_t smallCap = EX_TEST_MIN_OUT_BYTES; // too small for 10× input
+    std::vector<uint8_t> outputData(smallCap, 0);
+    OH_AudioSuite_ConverterInputInfo inDesc = {inputData.data(), inputMultiple};
+    OH_AudioSuite_ConverterOutputInfo outDesc = {outputData.data(), smallCap, 0};
+    EXPECT_EQ(OH_AudioSuite_ConverterDirectProcess(converter, &inDesc, &outDesc),
+        AUDIOCONVERTER_ERROR_BUFFER_TOO_SMALL);
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterDirectProcess.
+ * @tc.number: OH_AudioSuite_ConverterDirectProcess_007
+ * @tc.desc  : Test success path covers ConvertConverterError(SUCCESS).
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterDirectProcess_005, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    std::vector<uint8_t> inputData(EX_TEST_MIN_IN_BYTES, 1);
+    std::vector<uint8_t> outputData(EX_TEST_OUTPUT_CAP, 0);
+    OH_AudioSuite_ConverterInputInfo inDesc = {inputData.data(), EX_TEST_MIN_IN_BYTES};
+    OH_AudioSuite_ConverterOutputInfo outDesc = {outputData.data(), EX_TEST_OUTPUT_CAP, 0};
+    EXPECT_EQ(OH_AudioSuite_ConverterDirectProcess(converter, &inDesc, &outDesc),
+        AUDIOCONVERTER_SUCCESS);
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterDirectProcess.
+ * @tc.number: OH_AudioSuite_ConverterDirectProcess_006
+ * @tc.desc  : Test DirectProcess after SetInputCallback (runtime mutex) returns UNSUPPORTED_OPERATION.
+ *             Covers impl dataCallback_ check (direction SetInputCallback first, then DirectProcess).
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterDirectProcess_006, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    // Lock callback mode first via a successful SetInputCallback
+    ASSERT_EQ(OH_AudioConverter_SetInputCallback(converter, RequestDataCallback, nullptr),
+        AUDIOCONVERTER_SUCCESS);
+
+    // Callback already set → DirectProcess → UNSUPPORTED_OPERATION
+    std::vector<uint8_t> inputData(EX_TEST_MIN_IN_BYTES, 1);
+    std::vector<uint8_t> outputData(EX_TEST_OUTPUT_CAP, 0);
+    OH_AudioSuite_ConverterInputInfo inDesc = {inputData.data(), EX_TEST_MIN_IN_BYTES};
+    OH_AudioSuite_ConverterOutputInfo outDesc = {outputData.data(), EX_TEST_OUTPUT_CAP, 0};
+    EXPECT_EQ(OH_AudioSuite_ConverterDirectProcess(converter, &inDesc, &outDesc),
+        AUDIOCONVERTER_ERROR_UNSUPPORTED_OPERATION);
+
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterDirectProcess.
+ * @tc.number: OH_AudioSuite_ConverterDirectProcess_007
+ * @tc.desc  : Test DirectProcess on public-API-created (non-Ex) converter succeeds.
+ *             Covers impl runtime-mutex relaxation: OH_AudioConverter_Create instances can use
+ *             the direct stream (no static isExMode_ gate anymore).
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterDirectProcess_007, TestSize.Level0)
+{
+    OH_AudioConverter_Format inputFormat;
+    inputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    inputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
+    inputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+    inputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE;
+
+    OH_AudioConverter_Format outputFormat;
+    outputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    outputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_44100;
+    outputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+    outputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE;
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    // Public API created (non-Ex) + DirectProcess → SUCCESS
+    // Input is 48000/2ch/S16LE: gcd(48000,44100)=300, minInFrames=48000/300=160,
+    // minInBytes = 160 * 4B = 640 (not EX_TEST_MIN_IN_BYTES which is for a 44100 input).
+    constexpr uint32_t minInBytes48000To44100 = 640;
+    std::vector<uint8_t> inputData(minInBytes48000To44100, 1);
+    std::vector<uint8_t> outputData(EX_TEST_OUTPUT_CAP, 0);
+    OH_AudioSuite_ConverterInputInfo inDesc = {inputData.data(), minInBytes48000To44100};
+    OH_AudioSuite_ConverterOutputInfo outDesc = {outputData.data(), EX_TEST_OUTPUT_CAP, 0};
+    OH_AudioConverter_Result ret = OH_AudioSuite_ConverterDirectProcess(converter, &inDesc, &outDesc);
+    EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
+
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterFlush.
+ * @tc.number: OH_AudioSuite_ConverterFlush_001
+ * @tc.desc  : Test nullptr converter returns INVALID_PARAM.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterFlush_001, TestSize.Level0)
+{
+    EXPECT_EQ(OH_AudioSuite_ConverterFlush(nullptr), AUDIOCONVERTER_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterFlush.
+ * @tc.number: OH_AudioSuite_ConverterFlush_002
+ * @tc.desc  : Test converter not active (destroyed) returns INVALID_PARAM.
+ *             Covers GetAudioSuiteConverter if-false branch.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterFlush_002, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+    OH_AudioConverter_Destroy(converter);
+    EXPECT_EQ(OH_AudioSuite_ConverterFlush(converter), AUDIOCONVERTER_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterFlush.
+ * @tc.number: OH_AudioSuite_ConverterFlush_003
+ * @tc.desc  : Test Flush after process succeeds.
+ *             Covers ConvertConverterError(SUCCESS) branch via Flush path.
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterFlush_003, TestSize.Level0)
+{
+    OH_AudioSuite_ConverterFormatEx inputFormat;
+    SetupExConverterFormat(inputFormat, EX_TEST_IN_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+    OH_AudioSuite_ConverterFormatEx outputFormat;
+    SetupExConverterFormat(outputFormat, EX_TEST_OUT_RATE,
+        OH_AudioChannelLayout::CH_LAYOUT_STEREO, AUDIO_SAMPLE_S16LE);
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioSuite_ConverterCreateEx(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    // Process first to initialize internal state
+    std::vector<uint8_t> inputData(EX_TEST_MIN_IN_BYTES, 1);
+    std::vector<uint8_t> outputData(EX_TEST_OUTPUT_CAP, 0);
+    OH_AudioSuite_ConverterInputInfo inDesc = {inputData.data(), EX_TEST_MIN_IN_BYTES};
+    OH_AudioSuite_ConverterOutputInfo outDesc = {outputData.data(), EX_TEST_OUTPUT_CAP, 0};
+    ASSERT_EQ(OH_AudioSuite_ConverterDirectProcess(converter, &inDesc, &outDesc), AUDIOCONVERTER_SUCCESS);
+
+    // Flush should succeed
+    EXPECT_EQ(OH_AudioSuite_ConverterFlush(converter), AUDIOCONVERTER_SUCCESS);
+
+    uint32_t delaySize = 1;
+    EXPECT_EQ(OH_AudioSuite_ConverterGetDelaySize(converter, &delaySize), AUDIOCONVERTER_SUCCESS);
+    EXPECT_EQ(delaySize, 0u);
+
+    // Process again after flush should succeed
+    std::vector<uint8_t> inputData2(EX_TEST_MIN_IN_BYTES, 2);
+    OH_AudioSuite_ConverterInputInfo inDesc2 = {inputData2.data(), EX_TEST_MIN_IN_BYTES};
+    OH_AudioSuite_ConverterOutputInfo outDesc2 = {outputData.data(), EX_TEST_OUTPUT_CAP, 0};
+    EXPECT_EQ(OH_AudioSuite_ConverterDirectProcess(converter, &inDesc2, &outDesc2), AUDIOCONVERTER_SUCCESS);
+    OH_AudioConverter_Destroy(converter);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuite_ConverterFlush.
+ * @tc.number: OH_AudioSuite_ConverterFlush_004
+ * @tc.desc  : Test Flush on public-API-created (non-Ex) converter succeeds.
+ *             Covers impl runtime-mutex relaxation: OH_AudioConverter_Create instances can Flush
+ *             (no static isExMode_ gate anymore).
+ */
+HWTEST_F(OHAudioConverterTest, OH_AudioSuite_ConverterFlush_004, TestSize.Level0)
+{
+    OH_AudioConverter_Format inputFormat;
+    inputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    inputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
+    inputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+    inputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE;
+
+    OH_AudioConverter_Format outputFormat;
+    outputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    outputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_44100;
+    outputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+    outputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE;
+
+    OH_AudioConverter* converter = nullptr;
+    ASSERT_EQ(OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter),
+        AUDIOCONVERTER_SUCCESS);
+
+    // Public API created (non-Ex) + Flush → SUCCESS
+    OH_AudioConverter_Result ret = OH_AudioSuite_ConverterFlush(converter);
+    EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
+
+    OH_AudioConverter_Destroy(converter);
 }
 
 }
