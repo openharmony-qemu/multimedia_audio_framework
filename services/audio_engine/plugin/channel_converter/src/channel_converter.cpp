@@ -20,7 +20,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-static constexpr uint32_t MAX_FRAME_LENGTH = SAMPLE_RATE_192000 * 10; // max framelength is sample rate 192000, 10s
+// Per-call frame guard, aligned with ProResampler MAX_FRAME_LEN: 384000 * 10 frames covers
+// 680 ms at 5644.8 kHz; the byte-size math in Process stays within uint32 (3840000 * 16ch * 4B < 2^32).
+static constexpr uint32_t MAX_FRAME_LENGTH = SAMPLE_RATE_384000 * 10;
 
 static uint32_t GetFormatSize(AudioSampleFormat format)
 {

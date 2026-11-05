@@ -47,6 +47,7 @@ constexpr uint32_t FRAME_LEN_100MS = (100 * SOURCE_PERIOD_SIZE); // used for tes
 
 constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t SAMPLE_RATE_48010 = 48010;
+constexpr uint32_t SAMPLE_RATE_5644800 = 5644800;
 constexpr uint32_t INVALID_SAMPLE_RATE = 2;
 constexpr uint32_t INVALID_CHANNELS = 100;
 constexpr uint32_t INVALID_CHANNELS2 = 0;
@@ -708,6 +709,109 @@ HWTEST_F(AudioProResamplerTest, GetDelayFramesTest_007, TestSize.Level1)
     ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
     EXPECT_EQ(ret, EOK);
     EXPECT_EQ(resampler.GetDelayFrames(), 0);
+}
+
+/*
+ * @tc.name  : Test Init boundary for 5644800 extension.
+ * @tc.type  : FUNC
+ * @tc.number: InitTest_002.
+ * @tc.desc  : Test 5644800 boundary acceptance and out-of-range rejection.
+ */
+HWTEST_F(AudioProResamplerTest, InitTest_002, TestSize.Level0)
+{
+    constexpr uint32_t sampleRateOverMax = 5644801;
+    constexpr uint32_t sampleRateUnderMin = 7999;
+
+    // 8k -> 5.6448M upsample accepted, buffer sized for 20ms at output rate
+    ProResampler resampler(SAMPLE_RATE_8000, SAMPLE_RATE_5644800, STEREO, QUALITY_ONE);
+    EXPECT_NE(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_8000 * FRAME_LEN_20MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_5644800 * FRAME_LEN_20MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO);
+
+    // 5.6448M -> 48k downsample accepted
+    ProResampler resampler1(SAMPLE_RATE_5644800, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    EXPECT_NE(resampler1.state_, nullptr);
+    EXPECT_EQ(resampler1.expectedInFrameLen_, SAMPLE_RATE_5644800 * FRAME_LEN_20MS / MS_PER_SECOND);
+
+    // 44.1k -> 5.6448M (exact 1:128 phases) accepted
+    ProResampler resampler2(SAMPLE_RATE_44100, SAMPLE_RATE_5644800, STEREO, QUALITY_ONE);
+    EXPECT_NE(resampler2.state_, nullptr);
+
+    // out of range rejected
+    ProResampler resampler3(sampleRateOverMax, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler3.state_, nullptr);
+    ProResampler resampler4(sampleRateUnderMin, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler4.state_, nullptr);
+    ProResampler resampler5(SAMPLE_RATE_48000, sampleRateOverMax, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler5.state_, nullptr);
+}
+
+/*
+ * @tc.name  : Test Process API at 5644800.
+ * @tc.type  : FUNC
+ * @tc.number: ProcessTest_005.
+ * @tc.desc  : Test Process in both directions with 5644800 Hz.
+ */
+HWTEST_F(AudioProResamplerTest, ProcessTest_005, TestSize.Level0)
+{
+    // upsample 44100 -> 5644800 (1:128)
+    ProResampler upExact(SAMPLE_RATE_44100, SAMPLE_RATE_5644800, STEREO, QUALITY_ONE);
+    EXPECT_NE(upExact.state_, nullptr);
+    uint32_t inFrameLen = SAMPLE_RATE_44100 * FRAME_LEN_20MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_5644800 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO, 0.5f);
+    std::vector<float> out(outFrameLen * STEREO, 0.0f);
+    EXPECT_EQ(upExact.Process(in.data(), inFrameLen, out.data(), outFrameLen), EOK);
+
+    // upsample 48000 -> 5644800 (30:3528)
+    ProResampler upQuant(SAMPLE_RATE_48000, SAMPLE_RATE_5644800, STEREO, QUALITY_ONE);
+    EXPECT_NE(upQuant.state_, nullptr);
+    inFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> inUp(inFrameLen * STEREO, 0.5f);
+    EXPECT_EQ(upQuant.Process(inUp.data(), inFrameLen, out.data(), outFrameLen), EOK);
+
+    // downsample 5644800 -> 48000
+    ProResampler down(SAMPLE_RATE_5644800, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    EXPECT_NE(down.state_, nullptr);
+    uint32_t downOutFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> inDown(outFrameLen * STEREO, 0.5f);
+    std::vector<float> outDown(downOutFrameLen * STEREO, 0.0f);
+    EXPECT_EQ(down.Process(inDown.data(), outFrameLen, outDown.data(), downOutFrameLen), EOK);
+}
+
+/*
+ * @tc.name  : Test UpdateRates at large ratios.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateRatesTest_007.
+ * @tc.desc  : Test UpdateRates across 5644800 boundaries, including invalid and recovery.
+ */
+HWTEST_F(AudioProResamplerTest, UpdateRatesTest_007, TestSize.Level0)
+{
+    constexpr uint32_t sampleRateOverMax = 5644801;
+
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_5644800, STEREO, QUALITY_ONE);
+    EXPECT_NE(resampler.state_, nullptr);
+
+    // large ratio switch down to 44100
+    resampler.UpdateRates(SAMPLE_RATE_48000, SAMPLE_RATE_44100);
+    EXPECT_NE(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_44100);
+    uint32_t inFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_44100 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO, 0.5f);
+    std::vector<float> out(outFrameLen * STEREO, 0.0f);
+    EXPECT_EQ(resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen), EOK);
+
+    // update to invalid rate frees the state
+    int32_t ret = resampler.UpdateRates(SAMPLE_RATE_48000, sampleRateOverMax);
+    EXPECT_EQ(ret, RESAMPLER_ERR_INVALID_ARG);
+    EXPECT_EQ(resampler.state_, nullptr);
+
+    // recovery from invalid state
+    ret = resampler.UpdateRates(SAMPLE_RATE_48000, SAMPLE_RATE_5644800);
+    EXPECT_EQ(ret, RESAMPLER_ERR_SUCCESS);
+    EXPECT_NE(resampler.state_, nullptr);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

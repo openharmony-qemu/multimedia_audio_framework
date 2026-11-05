@@ -1122,3 +1122,180 @@ HWTEST_F(AudioPcmConvertTest, ConvertSaturate_001, TestSize.Level0)
     ASSERT_EQ(ConvertFloatToPcm(AUDIO_PCM_S24_LE, loud, 1, s24), AUDIO_PCM_ALGO_SUCCESS);
     EXPECT_EQ(s24[s24MsbIndex], s24TopByteClamped);
 }
+
+/*
+ * @tc.name  : Test large ratio init for 5.6448M extension
+ * @tc.type  : FUNC
+ * @tc.number: SingleStagePolyphaseResamplerInit_006
+ * @tc.desc  : Test init with 44100->5644800 (1:128) and 48000->5644800 (30:3528) ratios.
+ */
+HWTEST_F(AudioProResamplerProcessTest, SingleStagePolyphaseResamplerInit_006, TestSize.Level0)
+{
+    const uint32_t stereoChannels = 2;
+    int32_t err;
+
+    // 44100 -> 5644800 reduces to 1:128, exact polyphase phases at quality 1
+    SingleStagePolyphaseResamplerState* state = SingleStagePolyphaseResamplerInit(
+        stereoChannels, 1, 128, 1, &err);
+    EXPECT_NE(state, nullptr);
+    EXPECT_EQ(err, RESAMPLER_ERR_SUCCESS);
+    if (state != nullptr) {
+        EXPECT_EQ(state->decimateFactor, 1U);
+        EXPECT_EQ(state->interpolateFactor, 128U);
+        EXPECT_EQ(state->filterLength, 16U); // quality 1
+        EXPECT_EQ(state->polyphaseFactor, 128U); // 327680 / 16 >= 128, exact phases
+        EXPECT_EQ(state->gainCorrection, 0);
+        EXPECT_EQ(state->filterCoefficientsSize, 16U * 128U);
+        SingleStagePolyphaseResamplerFree(state);
+    }
+
+    // 48000 -> 5644800, pass intermediate 30:3528 (full gcd 9600 gives 5:588)
+    state = SingleStagePolyphaseResamplerInit(stereoChannels, 30, 3528, 1, &err);
+    EXPECT_NE(state, nullptr);
+    if (state != nullptr) {
+        EXPECT_EQ(state->interpolateFactor, 588U);
+        EXPECT_EQ(state->decimateFactor, 5U); // further reduced by gcd 6
+        EXPECT_EQ(state->polyphaseFactor, 588U);
+        EXPECT_EQ(state->gainCorrection, 0);
+        SingleStagePolyphaseResamplerFree(state);
+    }
+
+    // 5644800 -> 48000, pass intermediate 3528:30 (full gcd 9600 gives 588:5), downsample capped at 256 taps
+    state = SingleStagePolyphaseResamplerInit(stereoChannels, 3528, 30, 1, &err);
+    EXPECT_NE(state, nullptr);
+    if (state != nullptr) {
+        EXPECT_EQ(state->decimateFactor, 588U);
+        EXPECT_EQ(state->interpolateFactor, 5U);
+        EXPECT_EQ(state->filterLength, 256U); // MAX_DWNSMPLE_FILT_LEN cap
+        EXPECT_EQ(state->filterCoefficientsSize, 256U * 5U);
+        SingleStagePolyphaseResamplerFree(state);
+    }
+
+    // quality 10 upsample 8000 -> 5644800 (5:3528) forces phase quantization, memory bound holds
+    state = SingleStagePolyphaseResamplerInit(stereoChannels, 8000, 5644800, 10, &err);
+    EXPECT_NE(state, nullptr);
+    if (state != nullptr) {
+        EXPECT_EQ(state->decimateFactor, 5U);
+        EXPECT_EQ(state->interpolateFactor, 3528U);
+        EXPECT_EQ(state->filterLength, 256U);
+        EXPECT_EQ(state->polyphaseFactor, 1280U); // 327680 / 256, less than 3528
+        EXPECT_EQ(state->gainCorrection, 1);
+        EXPECT_EQ(state->filterCoefficientsSize, MAX_LIMIT_POLYNUM); // hard memory bound
+        SingleStagePolyphaseResamplerFree(state);
+    }
+}
+
+/*
+ * @tc.name  : Test stereo resampling 1:128
+ * @tc.type  : FUNC
+ * @tc.number: ResampleStereo_1to128_001
+ * @tc.desc  : Test stereo upsampling by 128 (44100 -> 5644800 equivalent).
+ */
+HWTEST_F(AudioProResamplerProcessTest, ResampleStereo_1to128_001, TestSize.Level0)
+{
+    const uint32_t stereoChannels = 2;
+    int32_t err;
+
+    SingleStagePolyphaseResamplerState* state = SingleStagePolyphaseResamplerInit(
+        stereoChannels, 1, 128, 1, &err);
+    ASSERT_NE(state, nullptr);
+
+    const uint32_t inputLen = 240;
+    const uint32_t outputLen = 240 * 128;
+    float* input = (float*)malloc(inputLen * stereoChannels * sizeof(float));
+    float* output = (float*)malloc(outputLen * stereoChannels * sizeof(float));
+    ASSERT_NE(input, nullptr);
+    ASSERT_NE(output, nullptr);
+
+    for (uint32_t i = 0; i < inputLen * stereoChannels; i++) {
+        input[i] = 0.5f;
+    }
+
+    uint32_t inLen = inputLen;
+    uint32_t outLen = outputLen;
+    int32_t ret = SingleStagePolyphaseResamplerProcess(state, input, &inLen, output, &outLen);
+
+    EXPECT_EQ(ret, RESAMPLER_ERR_SUCCESS);
+    EXPECT_EQ(inLen, inputLen);
+    EXPECT_EQ(outLen, outputLen);
+    // DC input passes through with unity gain
+    EXPECT_GT(output[0], 0.4f);
+    EXPECT_LT(output[0], 0.6f);
+    EXPECT_GT(output[outputLen * stereoChannels - 1], 0.4f);
+    EXPECT_LT(output[outputLen * stereoChannels - 1], 0.6f);
+
+    free(input);
+    free(output);
+    SingleStagePolyphaseResamplerFree(state);
+}
+
+/*
+ * @tc.name  : Test stereo resampling coprime high rate pair
+ * @tc.type  : FUNC
+ * @tc.number: ResampleStereo_CoprimeHighRate_001
+ * @tc.desc  : Test 8000:5644793 coprime ratio, huge interpolate factor with quantized phases.
+ */
+HWTEST_F(AudioProResamplerProcessTest, ResampleStereo_CoprimeHighRate_001, TestSize.Level0)
+{
+    const uint32_t stereoChannels = 2;
+    int32_t err;
+
+    SingleStagePolyphaseResamplerState* state = SingleStagePolyphaseResamplerInit(
+        stereoChannels, 8000, 5644793, 1, &err);
+    ASSERT_NE(state, nullptr);
+    // memory bound: filterLength 16 x polyphaseFactor 20480 = MAX_LIMIT_POLYNUM
+    EXPECT_EQ(state->filterCoefficientsSize, MAX_LIMIT_POLYNUM);
+
+    const uint32_t inputLen = 8;
+    const uint32_t outputLen = 5645; // floor(5644793 * 8 / 8000) + 1
+    float* input = (float*)malloc(inputLen * stereoChannels * sizeof(float));
+    float* output = (float*)malloc(outputLen * stereoChannels * sizeof(float));
+    ASSERT_NE(input, nullptr);
+    ASSERT_NE(output, nullptr);
+
+    for (uint32_t i = 0; i < inputLen * stereoChannels; i++) {
+        input[i] = 0.5f;
+    }
+
+    uint32_t inLen = inputLen;
+    uint32_t outLen = outputLen;
+    int32_t ret = SingleStagePolyphaseResamplerProcess(state, input, &inLen, output, &outLen);
+
+    EXPECT_EQ(ret, RESAMPLER_ERR_SUCCESS);
+    EXPECT_EQ(inLen, inputLen);
+    EXPECT_EQ(outLen, outputLen);
+
+    free(input);
+    free(output);
+    SingleStagePolyphaseResamplerFree(state);
+}
+
+/*
+ * @tc.name  : Test SetRate subfilterNum rescale overflow
+ * @tc.type  : FUNC
+ * @tc.number: SingleStagePolyphaseResamplerSetRate_07
+ * @tc.desc  : Test that subfilterNum rescale uses 64-bit intermediate for large ratios.
+ */
+HWTEST_F(AudioProResamplerProcessTest, SingleStagePolyphaseResamplerSetRate_07, TestSize.Level0)
+{
+    const uint32_t stereoChannels = 2;
+    int32_t err;
+
+    // 8000 -> 5644800 reduces to 5:3528 (gcd 1600)
+    SingleStagePolyphaseResamplerState* state = SingleStagePolyphaseResamplerInit(
+        stereoChannels, 8000, 5644800, 1, &err);
+    ASSERT_NE(state, nullptr);
+    EXPECT_EQ(state->interpolateFactor, 3528U);
+
+    // worst-case phase: 3527 * 5644793 = 19909184911 > UINT32_MAX
+    state->subfilterNum = 3527;
+    int32_t ret = SingleStagePolyphaseResamplerSetRate(state, 48000, 5644793);
+    EXPECT_EQ(ret, RESAMPLER_ERR_SUCCESS);
+    // gcd(48000, 5644793) == 1, so interpolateFactor stays 5644793
+    EXPECT_EQ(state->interpolateFactor, 5644793U);
+    // exact 64-bit rescale: 3527 * 5644793 / 3528 = 5643190
+    EXPECT_EQ(state->subfilterNum, static_cast<uint32_t>(3527ULL * 5644793ULL / 3528ULL));
+    EXPECT_LT(state->subfilterNum, state->interpolateFactor);
+
+    SingleStagePolyphaseResamplerFree(state);
+}
