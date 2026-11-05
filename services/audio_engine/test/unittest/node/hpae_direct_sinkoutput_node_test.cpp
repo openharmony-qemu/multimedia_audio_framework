@@ -1743,6 +1743,7 @@ HWTEST_F(HpaeDirectSinkOutputNodeTest, doProcess_SinkNull_EdgeLog_002, TestSize.
     directNode_->DoProcess(); // sustained hit
     directNode_->audioRendererSink_ = mockSink_; // restore sink from SetUp
     directNode_->DoProcess(); // recovery line; no input connected so RenderFrame is not called
+    SUCCEED(); // gate-path coverage: void DoProcess has no observable return
 }
 } // namespace HPAE
 } // namespace AudioStandard

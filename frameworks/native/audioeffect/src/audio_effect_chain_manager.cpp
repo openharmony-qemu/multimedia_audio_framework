@@ -480,7 +480,7 @@ std::string AudioEffectChainManager::GetEffectChainByMode(std::string effectChai
     const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
     std::string effectNone = audioSupportedSceneModes.find(EFFECT_NONE)->second;
     if (!sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
-        AUDIO_ERR_LOG("EffectChain key [%{public}s] does not exist, auto set to %{public}s",
+        AUDIO_INFO_LOG("EffectChain key [%{public}s] does not exist, auto set to %{public}s",
             effectChainKey.c_str(), effectNone.c_str());
         effectChain = effectNone;
     } else {
@@ -488,7 +488,7 @@ std::string AudioEffectChainManager::GetEffectChainByMode(std::string effectChai
     }
 
     if (effectChain != effectNone && !effectChainToEffectsMap_.count(effectChain)) {
-        AUDIO_ERR_LOG("EffectChain name [%{public}s] does not exist, auto set to %{public}s",
+        AUDIO_INFO_LOG("EffectChain name [%{public}s] does not exist, auto set to %{public}s",
             effectChain.c_str(), effectNone.c_str());
         effectChain = effectNone;
     }
@@ -1180,7 +1180,7 @@ int32_t AudioEffectChainManager::SetHdiParam(const AudioEffectScene &sceneType)
 {
     if (!isInitialized_) {
         if (initializedLogFlag_) {
-            AUDIO_ERR_LOG("audioEffectChainManager has not been initialized");
+            AUDIO_INFO_LOG("audioEffectChainManager has not been initialized");
             initializedLogFlag_ = false;
         }
         return ERROR;
@@ -2588,7 +2588,7 @@ bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &scen
 {
     if (!isInitialized_) {
         if (initializedLogFlag_) {
-            AUDIO_ERR_LOG("audioEffectChainManager has not been initialized");
+            AUDIO_INFO_LOG("audioEffectChainManager has not been initialized");
             initializedLogFlag_ = false;
         }
         return false;
@@ -2632,7 +2632,7 @@ bool AudioEffectChainManager::ExistAudioEffectChainWithDeviceTypeInner(const std
 {
     if (!isInitialized_) {
         if (initializedLogFlag_) {
-            AUDIO_ERR_LOG("audioEffectChainManager has not been initialized");
+            AUDIO_INFO_LOG("audioEffectChainManager has not been initialized");
             initializedLogFlag_ = false;
         }
         return false;
@@ -3062,8 +3062,6 @@ int32_t AudioEffectChainManager::SetAbsVolumeStateToEffectInner(const bool absVo
         EffectApAbsVolumeStateUpdate(absVolumeState);
         absVolumeState_ = absVolumeState;
         AUDIO_INFO_LOG("absVolumeStateUpdate absVolumeState: %{public}d", absVolumeState_);
-    } else {
-        AUDIO_INFO_LOG("absVolumeState is not changed");
     }
 
     return SUCCESS;

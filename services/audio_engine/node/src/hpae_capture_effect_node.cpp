@@ -125,18 +125,40 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
     }
 
     outPcmBuffer_->SetBufferValid(processLength != 0);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processLength != 0, outPcmBuffer_.get(),
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD, BusinessScenario::QUERY,
-                ERR_INVALID_PARAM), "main mic data is null", false),
-        "main mic data is null");
+    if (processLength != 0 && micNullLogActive_) {
+        AUDIO_INFO_LOG("main mic data recovered after %{public}u empty frames", micNullLogCount_);
+        micNullLogActive_ = false;
+        micNullLogCount_ = 0;
+    }
+    if (processLength == 0) {
+        micNullLogCount_++;
+        if (!micNullLogActive_ || micNullLogCount_ % captureLogHeartbeatFrames == 0) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                    BusinessScenario::QUERY, ERR_INVALID_PARAM), "main mic data is null", false);
+            AUDIO_ERR_LOG("main mic data is null");
+        }
+        micNullLogActive_ = true;
+        return outPcmBuffer_.get();
+    }
 
     int32_t ret = audioEnhanceChainManager->ApplyEnhanceChainById(sceneKeyCode_, transBuf);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, outPcmBuffer_.get(),
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
-                ERR_OPERATION_FAILED), "effect apply failed", false),
-        "effect apply failed, ret:%{public}d", ret);
+    if (ret == SUCCESS && applyFailLogActive_) {
+        AUDIO_INFO_LOG("effect apply recovered after %{public}u failed frames", applyFailLogCount_);
+        applyFailLogActive_ = false;
+        applyFailLogCount_ = 0;
+    }
+    if (ret != SUCCESS) {
+        applyFailLogCount_++;
+        if (!applyFailLogActive_ || applyFailLogCount_ % captureLogHeartbeatFrames == 0) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::RECORD, BusinessScenario::CREATE,
+                    ERR_OPERATION_FAILED), "effect apply failed", false);
+            AUDIO_ERR_LOG("effect apply failed, ret:%{public}d", ret);
+        }
+        applyFailLogActive_ = true;
+        return outPcmBuffer_.get();
+    }
     audioEnhanceChainManager->GetChainOutputDataById(sceneKeyCode_, outPcmBuffer_->GetPcmDataBuffer(),
         outPcmBuffer_->DataSize());
     return outPcmBuffer_.get();

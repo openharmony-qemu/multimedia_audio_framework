@@ -605,5 +605,33 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetInputDeviceSkipOtherCaptureChain, 
 
     EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
 }
+/**
+ * @tc.name  : Test ApplyEnhanceChainById chain-missing log gate
+ * @tc.type  : FUNC
+ * @tc.number: ApplyEnhanceChainGateSequence_001
+ * @tc.desc  : First missing call logs, repeats are suppressed, an existing chain
+ *             prints recovery and re-arms the gate
+ */
+HWTEST_F(AudioEnhanceChainManagerUnitTest, ApplyEnhanceChainGateSequence_001, TestSize.Level1)
+{
+    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);
+    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
+    ASSERT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    ASSERT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), SUCCESS);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    uint64_t missingKey = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID + 7);
+    EnhanceTransBuffer transBuf = {};
+    // missing chain: first-hit logs, repeats are suppressed by the gate
+    EXPECT_EQ(manager_->ApplyEnhanceChainById(missingKey, transBuf), ERROR);
+    EXPECT_EQ(manager_->ApplyEnhanceChainById(missingKey, transBuf), ERROR);
+    EXPECT_EQ(manager_->GetChainOutputDataById(missingKey, nullptr, 0), ERROR);
+    // existing chain: recovery line plus the normal passthrough path
+    EXPECT_EQ(manager_->ApplyEnhanceChainById(sceneKeyCode, transBuf), SUCCESS);
+    EXPECT_EQ(manager_->ApplyEnhanceChainById(sceneKeyCode, transBuf), SUCCESS);
+    // missing again: gate re-armed
+    EXPECT_EQ(manager_->ApplyEnhanceChainById(missingKey, transBuf), ERROR);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

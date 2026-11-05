@@ -202,11 +202,10 @@ int32_t HpaeLoudnessGainNode::ReleaseHandle(float loudnessGain)
 
 int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!IsFloatValueEqual(loudnessGain_, loudnessGain), SUCCESS,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY, BusinessScenario::CREATE,
-                ERR_INVALID_PARAM), "same loudnessGain, skip", false),
-        "SetLoudnessGain: Same loudnessGain: %{public}f", loudnessGain);
+    // Same-value set is a benign no-op: skip silently without DFX fault reporting.
+    if (IsFloatValueEqual(loudnessGain_, loudnessGain)) {
+        return SUCCESS;
+    }
     AUDIO_INFO_LOG("loudnessGain changed from %{public}f to %{public}f", loudnessGain_, loudnessGain);
     if (!dlHandle_ || !audioEffectLibHandle_) {
         linearGain_ = LoudnessDbToLinearGain(loudnessGain);

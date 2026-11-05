@@ -611,10 +611,20 @@ int32_t AudioEnhanceChain::ApplyEnhanceChain(const EnhanceTransBuffer &transBuf)
     {
         std::lock_guard<std::mutex> lock(chainMutex_);
         if (chainIsReady_) {
+            if (chainNotReadyLogActive_) {
+                AUDIO_INFO_LOG("enhance chain ready again after %{public}u passthrough frames",
+                    chainNotReadyCount_);
+                chainNotReadyLogActive_ = false;
+                chainNotReadyCount_ = 0;
+            }
             auto cacheChainInputDataRet = CacheChainInputData(transBuf);
             CHECK_AND_RETURN_RET_LOG(cacheChainInputDataRet == SUCCESS, ERROR, "cache chain input data fail");
         } else {
-            AUDIO_INFO_LOG("chain is not ready, passthrough data");
+            chainNotReadyCount_++;
+            if (!chainNotReadyLogActive_ || chainNotReadyCount_ % chainNotReadyLogHeartbeatFrames == 0) {
+                AUDIO_INFO_LOG("chain is not ready, passthrough data");
+            }
+            chainNotReadyLogActive_ = true;
             WriteChainOutputData(transBuf.micData, transBuf.micDataLen);
             return SUCCESS;
         }

@@ -138,6 +138,11 @@ private:
     AudioStreamInfo dfxStreamInfo_ {};
     mutable int64_t volumeDataCountIn_ { 0 };
     mutable int64_t volumeDataCountOut_ { 0 };
+
+    // Edge-trigger state for chain-not-ready passthrough logs (per-frame capture path)
+    static constexpr uint32_t chainNotReadyLogHeartbeatFrames = 250; // ~5s at the 20ms engine tick
+    bool chainNotReadyLogActive_ = false;
+    uint32_t chainNotReadyCount_ = 0;
 };
 
 } // namespace AudioStandard
