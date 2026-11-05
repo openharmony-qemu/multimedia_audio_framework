@@ -3688,6 +3688,86 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test TriggerAppsUidUpdate with null outputCluster_
+ * @tc.type  : FUNC
+ * @tc.number: TriggerAppsUidUpdateNullCluster_001
+ * @tc.desc  : Half-zombie state (outputCluster_ reset by failed reload) must early return.
+ */
+HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdateNullCluster_001, TestSize.Level1)
+{
+    // INTERPHONE route flag + no worker thread makes SendRequest run the lambda synchronously.
+    hpaeRendererManager_->hpaeSignalProcessThread_.reset();
+    hpaeRendererManager_->sinkInfo_.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+    hpaeRendererManager_->sinkInfo_.deviceClass = "remote";
+    hpaeRendererManager_->outputCluster_ = nullptr;
+    hpaeRendererManager_->appsUid_ = {123};
+    EXPECT_NO_FATAL_FAILURE(hpaeRendererManager_->TriggerAppsUidUpdate(1));
+    // Guard returns before appsUid_ is cleared.
+    EXPECT_EQ(hpaeRendererManager_->appsUid_.size(), 1);
+}
+
+/**
+ * @tc.name  : Test UpdateAppsUid with null and valid outputCluster_
+ * @tc.type  : FUNC
+ * @tc.number: UpdateAppsUidNullCluster_001
+ * @tc.desc  : Guard returns with null cluster; normal path rebuilds appsUid_.
+ */
+HWTEST_F(HpaeRendererManagerTest, UpdateAppsUidNullCluster_001, TestSize.Level1)
+{
+    hpaeRendererManager_->outputCluster_ = nullptr;
+    EXPECT_NO_FATAL_FAILURE(hpaeRendererManager_->UpdateAppsUid());
+    // Guard returns before appsUid_.clear().
+    EXPECT_EQ(hpaeRendererManager_->appsUid_.size(), 1);
+
+    hpaeRendererManager_->outputCluster_ = outputCluster_;
+    EXPECT_NO_FATAL_FAILURE(hpaeRendererManager_->UpdateAppsUid());
+    // Session 1 is RUNNING in the fixture, so one uid is collected.
+    EXPECT_EQ(hpaeRendererManager_->appsUid_.size(), 1);
+}
+
+/**
+ * @tc.name  : Test HandleSyncId guards
+ * @tc.type  : FUNC
+ * @tc.number: HandleSyncIdNullCluster_001
+ * @tc.desc  : Missing session / null cluster return error; valid cluster succeeds.
+ */
+HWTEST_F(HpaeRendererManagerTest, HandleSyncIdNullCluster_001, TestSize.Level1)
+{
+    hpaeRendererManager_->sinkInfo_.deviceClass = "primary";
+    EXPECT_EQ(hpaeRendererManager_->HandleSyncId(999, 1), ERR_INVALID_OPERATION);
+    // Half-zombie: session exists in map but outputCluster_ is null.
+    hpaeRendererManager_->outputCluster_ = nullptr;
+    EXPECT_EQ(hpaeRendererManager_->HandleSyncId(1, 1), ERR_INVALID_OPERATION);
+    hpaeRendererManager_->outputCluster_ = outputCluster_;
+    EXPECT_EQ(hpaeRendererManager_->HandleSyncId(1, 1), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OnDisConnectCoBufferWaitFadeOutDone with null outputCluster_
+ * @tc.type  : FUNC
+ * @tc.number: OnDisConnectCoBufferWaitFadeOutDoneNullCluster_001
+ * @tc.desc  : Queued fadeout-done request must early return when cluster is gone.
+ */
+HWTEST_F(HpaeRendererManagerTest, OnDisConnectCoBufferWaitFadeOutDoneNullCluster_001, TestSize.Level1)
+{
+    hpaeRendererManager_->hpaeSignalProcessThread_.reset();
+    hpaeRendererManager_->sinkInfo_.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+    hpaeRendererManager_->outputCluster_ = nullptr;
+
+    hpaeRendererManager_->defaultCoBufferNode_ = nullptr;
+    EXPECT_NO_FATAL_FAILURE(hpaeRendererManager_->OnDisConnectCoBufferWaitFadeOutDone());
+
+    // CoBufferNode alive while cluster is null: same early return, no dereference.
+    hpaeRendererManager_->defaultCoBufferNode_ = std::make_shared<HpaeCoBufferNode>();
+    hpaeRendererManager_->coBufferNodeIsConnected_ = true;
+    EXPECT_NO_FATAL_FAILURE(hpaeRendererManager_->OnDisConnectCoBufferWaitFadeOutDone());
+    // Early return keeps the connection state untouched.
+    EXPECT_EQ(hpaeRendererManager_->coBufferNodeIsConnected_, true);
+    hpaeRendererManager_->defaultCoBufferNode_ = nullptr;
+    hpaeRendererManager_->coBufferNodeIsConnected_ = false;
+}
+
+/**
  * @tc.name  : Test TriggerAppsUidUpdate
  * @tc.type  : FUNC
  * @tc.number: TriggerAppsUidUpdate_002

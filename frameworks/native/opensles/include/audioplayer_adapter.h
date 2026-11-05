@@ -20,6 +20,7 @@
 #include <OpenSLES_Platform.h>
 #include <iostream>
 #include <map>
+#include <mutex>
 #include <audio_renderer.h>
 #include <audio_system_manager.h>
 #include <readorwritecallback_adapter.h>
@@ -48,8 +49,11 @@ private:
     AudioPlayerAdapter();
     ~AudioPlayerAdapter();
     const float MAGNIFICATION = 2000;
+    // The OpenSL ES C API can be called from any app thread and all players share this
+    // singleton, so every renderMap_/callbackMap_ access must hold adapterMutex_. Heavy work
+    // (renderer creation, renderer calls, shared_ptr destruction) stays outside the lock.
+    std::mutex adapterMutex_;
     std::map<SLuint32, std::shared_ptr<AudioRenderer>> renderMap_;
-    std::shared_ptr<ReadOrWriteCallbackAdapter> callbackPtr_;
     std::map<SLuint32, std::shared_ptr<ReadOrWriteCallbackAdapter>> callbackMap_;
 
     void ConvertPcmFormat(SLDataFormat_PCM *slFormat, AudioRendererParams *rendererParams);

@@ -92,6 +92,13 @@ private:
     std::mutex stateMutex_;
     uint8_t isStreamOperationFinish_ = 0;
     uint8_t isDeviceOperationFinish_ = 0;
+    // Concurrency contract:
+    // - streamStateMap_ / isStreamOperationFinish_ are guarded by callbackMutex_ (written by
+    //   OnStatusUpdate on the engine worker thread, read by Start()/GetStreamStateById).
+    // - stateMutex_ only serializes the state_ lifecycle (Start/Stop/Release/Set*), it is held
+    //   across callbackCV_.wait_for so it must never be taken inside OnStatusUpdate.
+    // - streamStateMap_ entries are inserted once in CreateStream (Init, single-threaded phase
+    //   before any status callback can arrive) and never erased.
     std::unordered_map<uint32_t, std::atomic<HpaeSoftLinkState>> streamStateMap_;
     std::mutex callbackMutex_;
     std::condition_variable callbackCV_;

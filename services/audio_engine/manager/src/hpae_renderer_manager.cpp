@@ -1669,6 +1669,7 @@ void HpaeRendererManager::Process()
 
 void HpaeRendererManager::UpdateAppsUid()
 {
+    CHECK_AND_RETURN_LOG(outputCluster_ != nullptr, "outputCluster_ is nullptr");
     appsUid_.clear();
     for (const auto &sinkInputNodePair : sinkInputNodeMap_) {
         if (sinkInputNodePair.second->GetState() == HPAE_SESSION_RUNNING) {
@@ -2045,7 +2046,11 @@ int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCo
 void HpaeRendererManager::OnDisConnectCoBufferWaitFadeOutDone()
 {
     auto request = [this]() {
-        CHECK_AND_RETURN_LOG(defaultCoBufferNode_ != nullptr, "defaultCoBufferNode_ is nullptr");
+        // Same guard as Connect/DisConnectCoBufferNode: outputCluster_ can be null here — the
+        // request is queued and only runs after the co-buffer fadeout (hundreds of ms), while
+        // StopOuputNode/reload may already have reset it (hpae_renderer_manager.cpp:1327-1329).
+        CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (defaultCoBufferNode_ != nullptr),
+            "outputCluster or defaultCoBufferNode is nullptr");
         CHECK_AND_RETURN_LOG(defaultCoBufferNode_->IsOutputClusterConnected() == false,
             "defaultCoBufferNode_ is connect, dont allow disconnect");
         outputCluster_->DisConnect(defaultCoBufferNode_);
@@ -2146,6 +2151,7 @@ int32_t HpaeRendererManager::HandleSyncId(uint32_t sessionId, int32_t syncId)
     if (!SafeGetMap(sinkInputNodeMap_, sessionId) || sinkInfo_.deviceClass != "primary") {
         return ERR_INVALID_OPERATION;
     }
+    CHECK_AND_RETURN_RET_LOG(outputCluster_ != nullptr, ERR_INVALID_OPERATION, "outputCluster_ is nullptr");
     return outputCluster_->SetSyncId(syncId);
 }
 
@@ -2244,6 +2250,9 @@ void HpaeRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
         CHECK_AND_RETURN(IsRemoteDevice());
+        // IsRemoteDevice() only reflects sinkInfo_.deviceClass; after a failed reload the
+        // device class is unchanged while outputCluster_ has been reset to null.
+        CHECK_AND_RETURN_LOG(outputCluster_ != nullptr, "outputCluster_ is nullptr");
         appsUid_.clear();
         for (const auto &sinkInputNodePair : sinkInputNodeMap_) {
             if (sinkInputNodePair.second->GetState() == HPAE_SESSION_RUNNING ||

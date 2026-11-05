@@ -1083,6 +1083,28 @@ HWTEST_F(HpaeManagerUnitTest, SetEffectLiveParameter003, TestSize.Level0)
     EXPECT_EQ(result, false);
 }
 
+/**
+ * @tc.name  : Test SetEffectLiveParameter supported path
+ * @tc.type  : FUNC
+ * @tc.number: SetEffectLiveParameter004
+ * @tc.desc  : With a supported preloaded state the locked write updates effectLiveState_.
+ */
+HWTEST_F(HpaeManagerUnitTest, SetEffectLiveParameter004, TestSize.Level0)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    std::vector<std::pair<std::string, std::string>> params;
+    params.push_back({"live_effect_enable", "NRON"});
+    // Preload a supported state so the call passes the NoSupport gate and reaches the
+    // locked write; the write happens before persistence, so the state is updated even
+    // if the setting provider later fails.
+    hpaeManager_->effectLiveState_ = "NROFF";
+    EXPECT_NO_FATAL_FAILURE(hpaeManager_->SetEffectLiveParameter(params));
+    EXPECT_EQ(hpaeManager_->effectLiveState_, "NRON");
+}
+
 HWTEST_F(HpaeManagerUnitTest, GetEffectLiveParameter001, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);

@@ -20,6 +20,7 @@
 #include <OpenSLES_Platform.h>
 #include <iostream>
 #include <map>
+#include <mutex>
 #include <audio_capturer.h>
 #include <audio_system_manager.h>
 #include <readorwritecallback_adapter.h>
@@ -44,8 +45,11 @@ public:
 private:
     AudioCapturerAdapter();
     ~AudioCapturerAdapter();
+    // The OpenSL ES C API can be called from any app thread and all recorders share this
+    // singleton, so every captureMap_/callbackMap_ access must hold adapterMutex_. Heavy work
+    // (capturer creation, capturer calls, shared_ptr destruction) stays outside the lock.
+    std::mutex adapterMutex_;
     std::map<SLuint32, std::shared_ptr<AudioCapturer>> captureMap_;
-    std::shared_ptr<ReadOrWriteCallbackAdapter> callbackPtr_;
     std::map<SLuint32, std::shared_ptr<ReadOrWriteCallbackAdapter>> callbackMap_;
 
     void ConvertPcmFormat(SLDataFormat_PCM *slFormat, AudioCapturerParams *capturerParams);
