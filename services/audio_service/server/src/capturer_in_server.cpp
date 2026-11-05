@@ -64,6 +64,9 @@ namespace {
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     constexpr int32_t TOTAL_SIZE_5MS_TO_20MS = 4;
     static const uint32_t OVERFLOW_REPORT_INTERVAL_MS = 60000;
+#ifdef IS_EMULATOR
+    constexpr int32_t FRAME_LEN_20MS = 20;
+#endif
 #ifdef FEATURE_CALL_MANAGER
 static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
 #endif
@@ -347,6 +350,9 @@ void CapturerInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStr
     size_t newByteSizePerFrame = byteSizePerFrame_;
     stream_->GetSpanSizePerFrame(newSpanSizeInFrame);
     stream_->GetByteSizePerFrame(newByteSizePerFrame);
+#ifdef IS_EMULATOR
+    newSpanSizeInFrame = processConfig_.streamInfo.samplingRate * FRAME_LEN_20MS / AUDIO_MS_PER_S;
+#endif
     AUDIO_INFO_LOG("New spanSize from stream: %{public}zu, byteSizePerFrame:%{public}zu",
         newSpanSizeInFrame, newByteSizePerFrame);
 
@@ -391,7 +397,12 @@ void CapturerInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStr
     byteSizePerFrame_ = newByteSizePerFrame;
     spanSizeInBytes_ = newSpanSizeInBytes;
     if (ringCache_ != nullptr) {
+#ifdef IS_EMULATOR
+        // Emulator need more ringcachebuffer, 4 spansize is appropriate.
+        int32_t ret = InitCacheBuffer(4 * spanSizeInBytes_);
+#else
         int32_t ret = InitCacheBuffer(2 * spanSizeInBytes_);
+#endif
         CHECK_AND_RETURN_LOG(ret == SUCCESS,
             "RefreshServerBufferForSpanSizeUpdate: InitCacheBuffer failed, ret:%{public}d", ret);
     }
