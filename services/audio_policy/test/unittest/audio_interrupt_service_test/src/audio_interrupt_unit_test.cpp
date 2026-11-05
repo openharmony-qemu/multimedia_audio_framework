@@ -6813,26 +6813,6 @@ HWTEST_F(AudioInterruptUnitTest, NotifyFocusStateResume_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test verifySystemStreamPermission
- * @tc.number: verifySystemStreamPermission
- * @tc.desc  : Test verifySystemStreamPermission
- */
-HWTEST_F(AudioInterruptUnitTest, verifySystemStreamPermission, TestSize.Level1)
-{
-    auto interruptServiceTest = GetTnterruptServiceTest();
-    interruptServiceTest->Init(GetPolicyServerTest());
-    
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
-    AudioInterruptResult result;
-    auto ret = interruptServiceTest->verifySystemStreamPermission(audioInterrupt, result);
-    EXPECT_EQ(ret, false);
-    audioInterrupt.audioFocusType.streamType = STREAM_INTERNAL_FORCE_STOP;
-    ret = interruptServiceTest->verifySystemStreamPermission(audioInterrupt, result);
-    EXPECT_EQ(ret, false);
-}
-
-/**
  * @tc.name  : Test StopAudioFocusBySessionIds_001
  * @tc.number: StopAudioFocusBySessionIds_001
  * @tc.desc  : Test StopAudioFocusBySessionIds when IsActivated is false

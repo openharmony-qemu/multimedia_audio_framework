@@ -1023,6 +1023,7 @@ private:
     bool IsScreenOnAdjustVolume();
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
     int32_t VerifyUidAndPid(const int32_t uid, const int32_t pid);
+    bool VerifySystemStreamPermission(const AudioInterrupt &audioInterrupt);
     void FillDeviceTokenId(std::shared_ptr<AudioDeviceDescriptor> device);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
 
