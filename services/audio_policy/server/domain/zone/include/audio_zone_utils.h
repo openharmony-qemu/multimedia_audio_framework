@@ -16,23 +16,37 @@
 #ifndef ST_AUDIO_ZONE_UTILS_H
 #define ST_AUDIO_ZONE_UTILS_H
 
+#include <list>
+#include <mutex>
+#include <vector>
 #include "audio_interrupt_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioZoneUtils {
+enum class AudioFocusFilterType {
+    FILTER_REMOTE_FOCUS,
+    FILTER_LOCAL_FOCUS,
+};
+
+class AudioZoneFocusFilter {
 public:
-    static AudioZoneUtils& GetInstance()
+    static AudioZoneFocusFilter& GetInstance()
     {
-        static AudioZoneUtils instance;
+        static AudioZoneFocusFilter instance;
         return instance;
     }
 
-    void FilterRemoteAudioInterrupt(const std::shared_ptr<AudioInterruptService> &interruptService,
-        std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
+    void UpdateLocalSessionIds(const std::vector<uint32_t> &sessionIds);
+    void FilterAudioInterrupt(AudioFocusFilterType filterType,
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList,
+        const std::shared_ptr<AudioInterruptService> &interruptService);
 private:
-    AudioZoneUtils() {}
-    ~AudioZoneUtils() {}
+    AudioZoneFocusFilter() {}
+    ~AudioZoneFocusFilter() {}
+    std::vector<uint32_t> GetLocalSessionIds();
+
+    std::vector<uint32_t> localSessionIds_;
+    std::mutex localSessionIdsMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

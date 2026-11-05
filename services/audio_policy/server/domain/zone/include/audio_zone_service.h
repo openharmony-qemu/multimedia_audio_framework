@@ -113,6 +113,8 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
+    std::vector<uint32_t> GetLocalFocusSessionIds(int32_t zoneId,
+        const std::shared_ptr<AudioInterruptService> &interruptService);
     int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
     int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
     
@@ -183,8 +185,6 @@ private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FilterDevicesByUsage(AudioDeviceUsage usage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 #endif
-    std::vector<uint32_t> GetLocalSessionIds(const std::shared_ptr<AudioInterruptService> &interruptService,
-        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
     void WriteZoneDeviceChange(const std::string &zoneName, bool isBind,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
     void WriteZoneKeyChange(const std::string &zoneName, bool isBind, const AudioZoneBindKey &key);

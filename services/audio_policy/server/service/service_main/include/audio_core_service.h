@@ -940,6 +940,7 @@ private:
     void CheckNeedPreRemoveUnusedPipe(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos);
     bool IsUltraFastSupportedForDevice(DeviceType deviceType);
     void MutePrimarySinkByCollaborative(int32_t duration);
+    void UpdateLocalSessionIdsFromStreamDesc();
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;

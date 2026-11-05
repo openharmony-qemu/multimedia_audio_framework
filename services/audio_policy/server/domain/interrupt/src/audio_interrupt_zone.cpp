@@ -259,8 +259,6 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
             itOld++;
             continue;
         }
-        CHECK_AND_CONTINUE(std::find(bypassSessionIds.begin(), bypassSessionIds.end(),
-            itOld->first.streamId) == bypassSessionIds.end());
         auto isPresent = [itOld](const std::pair<AudioInterrupt, AudioFocuState> &item) {
             return item.first.streamId == itOld->first.streamId;
         };

@@ -4326,7 +4326,7 @@ uint32_t AudioInterruptService::GetRealSessionIdByAudioInterrupt(const AudioInte
     bool isActivated = sessionService_.IsAudioSessionFocusMode(callerPid);
     CHECK_AND_RETURN_RET(isActivated, realSessionId);
     const auto &streamsInSessionPair = sessionService_.GetStreams(callerPid);
-    CHECK_AND_RETURN_RET(streamsInSessionPair.size() > 0, realSessionId);
+    CHECK_AND_RETURN_RET(streamsInSessionPair.size() > 0, INVALID_STREAM_ID);
     realSessionId = streamsInSessionPair.front().first.streamId;
     return realSessionId;
 }

@@ -13,30 +13,43 @@
  * limitations under the License.
  */
 #undef LOG_TAG
-#define LOG_TAG "AudioZoneUtils"
+#define LOG_TAG "AudioZoneFocusFilter"
 
 #include "audio_zone_utils.h"
-#include "audio_pipe_manager.h"
+#include "audio_log.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
-void AudioZoneUtils::FilterRemoteAudioInterrupt(const std::shared_ptr<AudioInterruptService> &interruptService,
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
+void AudioZoneFocusFilter::UpdateLocalSessionIds(const std::vector<uint32_t> &sessionIds)
 {
-    CHECK_AND_RETURN_LOG(interruptService != nullptr, "interruptService is nullptr");
-    auto pipeManager = AudioPipeManager::GetPipeManager();
-    CHECK_AND_RETURN_LOG(pipeManager != nullptr, "pipeManager is nullptr");
+    std::lock_guard<std::mutex> lock(localSessionIdsMutex_);
+    localSessionIds_ = sessionIds;
+}
+
+std::vector<uint32_t> AudioZoneFocusFilter::GetLocalSessionIds()
+{
+    std::lock_guard<std::mutex> lock(localSessionIdsMutex_);
+    return localSessionIds_;
+}
+
+void AudioZoneFocusFilter::FilterAudioInterrupt(AudioFocusFilterType filterType,
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList,
+    const std::shared_ptr<AudioInterruptService> &interruptService)
+{
+    CHECK_AND_RETURN(interruptService != nullptr);
+    auto localSessionIds = GetLocalSessionIds();
     for (auto focus = focusList.begin(); focus != focusList.end();) {
-        uint32_t realSessionId = interruptService->GetRealSessionIdByAudioInterrupt(focus->first);
-        auto streamDesc = pipeManager->GetStreamDescById(realSessionId);
-        if (streamDesc != nullptr && streamDesc->IsDeviceRemote()) {
-            AUDIO_INFO_LOG("[Remotefocus]sessionId: %{public}d is remote", focus->first.streamId);
-            focus++;
-        } else {
-            AUDIO_INFO_LOG("[Remotefocus]sessionId: %{public}d is not remote", focus->first.streamId);
+        uint32_t realSessionId = focus->first.streamId;
+        realSessionId = interruptService->GetRealSessionIdByAudioInterrupt(focus->first);
+        bool isLocal = realSessionId != INVALID_STREAM_ID ? std::find(localSessionIds.begin(), localSessionIds.end(),
+            realSessionId) != localSessionIds.end() : true;
+        bool shouldErase = (filterType == AudioFocusFilterType::FILTER_REMOTE_FOCUS) ? isLocal : !isLocal;
+        if (shouldErase) {
             focus = focusList.erase(focus);
+        } else {
+            focus++;
         }
     }
 }
