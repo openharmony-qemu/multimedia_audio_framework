@@ -64,7 +64,9 @@ namespace {
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     constexpr int32_t TOTAL_SIZE_5MS_TO_20MS = 4;
     static const uint32_t OVERFLOW_REPORT_INTERVAL_MS = 60000;
+#ifdef IS_EMULATOR
     constexpr int32_t FRAME_LEN_20MS = 20;
+#endif
 #ifdef FEATURE_CALL_MANAGER
 static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
 #endif
