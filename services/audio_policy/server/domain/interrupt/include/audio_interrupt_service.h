@@ -126,6 +126,9 @@ public:
     int32_t ActivatePreemptMode();
     int32_t SetDuckPassthroughMode(bool enable);
     int32_t SetDuckFactor(int32_t duckFactor);
+
+    int32_t StartVoipStreamByUid(const int32_t appUid);
+
     // zone debug interfaces
     int32_t FindZoneByPid(int32_t pid);
     int32_t CreateAudioInterruptZone(const int32_t zoneId, const AudioZoneContext &context);

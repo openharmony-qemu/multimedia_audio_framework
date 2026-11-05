@@ -3431,6 +3431,16 @@ int32_t AudioPolicyServer::SetDuckFactor(int32_t duckFactor)
     return ERR_UNKNOWN;
 }
 
+int32_t AudioPolicyServer::StartVoipStreamByUid(const int32_t appUid)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "StartVoipStreamByUid permission denied");
+    if (interruptService_ != nullptr) {
+        return interruptService_->StartVoipStreamByUid(appUid);
+    }
+    return ERR_UNKNOWN;
+}
+
 void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t sessionID)
 {
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");

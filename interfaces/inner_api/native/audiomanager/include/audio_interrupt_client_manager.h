@@ -107,6 +107,15 @@ public:
     int32_t SetDuckFactor(int32_t duckFactor);
 
     /**
+     * @brief Start voip stream by uid
+     *
+     * @param appUid app Uid
+     * @return Returns {@link SUCCESS} if successful; returns an error code otherwise.
+     * @since 26.1.0
+     */
+    int32_t StartVoipStreamByUid(const int32_t appUid);
+
+    /**
      * @brief Deactivactivate audio Interrupt
      *
      * @param audioInterrupt audioInterrupt

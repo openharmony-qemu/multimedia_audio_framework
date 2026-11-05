@@ -345,6 +345,8 @@ public:
 
     int32_t SetDuckFactor(int32_t duckFactor) override;
 
+    int32_t StartVoipStreamByUid(const int32_t appUid) override;
+
     int32_t SetAudioManagerInterruptCallback(int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioManagerInterruptCallback(int32_t clientId) override;

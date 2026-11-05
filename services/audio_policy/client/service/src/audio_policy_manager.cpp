@@ -1486,6 +1486,13 @@ int32_t AudioPolicyManager::SetDuckFactor(int32_t duckFactor)
     return gsp->SetDuckFactor(duckFactor);
 }
 
+int32_t AudioPolicyManager::StartVoipStreamByUid(const int32_t appUid)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
+    return gsp->StartVoipStreamByUid(appUid);
+}
+
 int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clientId,
     const std::shared_ptr<AudioInterruptCallback> &callback)
 {

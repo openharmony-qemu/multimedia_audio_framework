@@ -880,5 +880,48 @@ void AudioInterruptService::StartPausedStreamMonitor(const int32_t zoneId,
     AUDIO_INFO_LOG("streamId %{public}u pause monitor started, duration %{public}d s",
         streamId, pauseTimeout);
 }
+
+int32_t AudioInterruptService::StartVoipStreamByUid(const int32_t appUid)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_INFO_LOG("StartVoipStreamByUid enter, appUid=%{public}d", appUid);
+    bool hasRestored = false;
+    for (auto &[zoneId, audioInterruptZone] : zonesMap_) {
+        CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
+        std::vector<AudioInterrupt> pausedInterrupts;
+        std::vector<AudioInterrupt> reactivateInterrupts;
+        for (const auto &[interrupt, state] : audioInterruptZone->audioFocusInfoList) {
+            if (interrupt.uid != appUid ||
+                state == ACTIVE ||
+                (interrupt.audioFocusType.streamType != STREAM_VOICE_COMMUNICATION &&
+                interrupt.audioFocusType.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION)) {
+                continue;
+            }
+            AUDIO_INFO_LOG("Reactivating voip stream, streamId=%{public}u", interrupt.streamId);
+            hasRestored = true;
+            if (state == PAUSE) {
+                pausedInterrupts.emplace_back(interrupt);
+            } else {
+                reactivateInterrupts.emplace_back(interrupt);
+            }
+        }
+        for (const auto &interrupt : pausedInterrupts) {
+            InterruptEventInternal interruptEvent(INTERRUPT_TYPE_END, INTERRUPT_FORCE,
+                INTERRUPT_HINT_RESUME, 1.0f);
+            SendInterruptEventCallback(interruptEvent, interrupt.streamId, interrupt);
+            audioInterruptZone->audioFocusInfoList.remove_if(
+                [&interrupt](const auto &focusInfo) {
+                    return focusInfo.first.streamId == interrupt.streamId;
+                });
+        }
+        for (const auto &interrupt : reactivateInterrupts) {
+            bool tempUpdateScene = false;
+            ActivateAudioInterruptCoreProcedure(zoneId, interrupt, true, tempUpdateScene);
+        }
+    }
+    CHECK_AND_RETURN_RET_LOG(hasRestored, ERROR_ILLEGAL_STATE,
+        "StartVoipStreamByUid: no voip focus restored, appUid=%{public}d", appUid);
+    return SUCCESS;
+}
 }
 } // namespace OHOS

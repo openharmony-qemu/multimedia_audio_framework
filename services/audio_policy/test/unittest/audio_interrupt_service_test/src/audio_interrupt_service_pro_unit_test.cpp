@@ -1311,5 +1311,88 @@ HWTEST_F(AudioInterruptServiceUnitTest, IsInterruptExist_001, TestSize.Level1)
     EXPECT_TRUE(audioInterruptService_->IsInterruptExist(10000, audioFocusInfoList, iter));
     EXPECT_FALSE(audioInterruptService_->IsInterruptExist(10001, audioFocusInfoList, iter));
 }
+
+/**
+* @tc.name  : Test StartVoipStreamByUid
+* @tc.number: StartVoipStreamByUid_001
+* @tc.desc  : Test StartVoipStreamByUid
+*/
+HWTEST_F(AudioInterruptServiceUnitTest, StartVoipStreamByUid_001, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+    auto zone = std::make_shared<AudioInterruptZone>();
+    ASSERT_NE(zone, nullptr);
+    int32_t appUid = 1001;
+    int32_t zoneId = 123;
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.uid = appUid;
+    audioInterrupt.streamId = 20001;
+    audioInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+
+    audioInterruptService->zonesMap_[zoneId] = zone;
+    EXPECT_EQ(audioInterruptService->StartVoipStreamByUid(appUid), ERROR_ILLEGAL_STATE);
+
+    audioInterruptService->zonesMap_.clear();
+    audioInterrupt.uid = appUid + 1;
+    zone->audioFocusInfoList.push_back({audioInterrupt, AudioFocuState::PAUSE});
+    audioInterruptService->zonesMap_[zoneId] = zone;
+    EXPECT_EQ(audioInterruptService->StartVoipStreamByUid(appUid), ERROR_ILLEGAL_STATE);
+
+    audioInterrupt.uid = appUid;
+    zone->audioFocusInfoList.back().first.uid = appUid;
+    zone->audioFocusInfoList.back().second = AudioFocuState::ACTIVE;
+    EXPECT_EQ(audioInterruptService->StartVoipStreamByUid(appUid), ERROR_ILLEGAL_STATE);
+
+    zone->audioFocusInfoList.back().second = AudioFocuState::PAUSE;
+    zone->audioFocusInfoList.back().first.audioFocusType.streamType = STREAM_MUSIC;
+    EXPECT_EQ(audioInterruptService->StartVoipStreamByUid(appUid), ERROR_ILLEGAL_STATE);
+
+    zone->audioFocusInfoList.back().first.audioFocusType.streamType = STREAM_MUSIC;
+    zone->audioFocusInfoList.back().first.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_EQ(audioInterruptService->StartVoipStreamByUid(appUid), ERROR_ILLEGAL_STATE);
+
+    zone->audioFocusInfoList.back().first.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+    zone->audioFocusInfoList.back().first.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    zone->audioFocusInfoList.back().second = AudioFocuState::PAUSE;
+    EXPECT_EQ(audioInterruptService->StartVoipStreamByUid(appUid), SUCCESS);
+    EXPECT_EQ(zone->audioFocusInfoList.size(), 0);
+
+    zone->audioFocusInfoList.push_back({audioInterrupt, AudioFocuState::DUCK});
+    EXPECT_EQ(audioInterruptService->StartVoipStreamByUid(appUid), SUCCESS);
+}
+
+/**
+* @tc.name  : Test StartVoipStreamByUid
+* @tc.number: StartVoipStreamByUid_002
+* @tc.desc  : Test StartVoipStreamByUid
+*/
+HWTEST_F(AudioInterruptServiceUnitTest, StartVoipStreamByUid_002, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    int32_t appUid = 1001;
+    int32_t zoneId = 123;
+    AudioInterrupt skipInterrupt;
+    skipInterrupt.uid = appUid + 1;
+    skipInterrupt.streamId = 20002;
+    skipInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+
+    AudioInterrupt pausedInterrupt;
+    pausedInterrupt.uid = appUid;
+    pausedInterrupt.streamId = 20003;
+    pausedInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+
+    auto zone = std::make_shared<AudioInterruptZone>();
+    ASSERT_NE(zone, nullptr);
+    zone->audioFocusInfoList.push_back({skipInterrupt, AudioFocuState::PAUSE});
+    zone->audioFocusInfoList.push_back({pausedInterrupt, AudioFocuState::PAUSE});
+    audioInterruptService->zonesMap_[zoneId] = zone;
+
+    EXPECT_EQ(audioInterruptService->StartVoipStreamByUid(appUid), SUCCESS);
+    EXPECT_EQ(zone->audioFocusInfoList.size(), 1);
+    EXPECT_EQ(zone->audioFocusInfoList.front().first.streamId, skipInterrupt.streamId);
+}
 } // namespace AudioStandard
 } // namespace OHOS
