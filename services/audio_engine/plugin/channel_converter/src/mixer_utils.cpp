@@ -1200,36 +1200,47 @@ extern "C" void AudioMixerDestroy(AudioMixHandle handle)
 // Converts interleaved mono <-> stereo PCM without a full remix stack: mono duplicates
 // each sample to L/R, stereo averages each L/R pair. Works in the float domain so every
 // supported format reuses the pcm<->float converters and their clamping.
-extern "C" int32_t AudioPcmConvertChannels(AudioPcmFormat format, int32_t srcChannels,
-    int32_t dstChannels, const void *inData, int32_t sampleCount, void *outData)
+extern "C" int32_t AudioPcmUpmixMonoToStereo(AudioPcmFormat format, const void *inData,
+    int32_t sampleCount, void *outData)
 {
-    bool toStereo = srcChannels == MIXER_CHANNEL_MONO && dstChannels == MIXER_CHANNEL_STEREO;
-    bool toMono = srcChannels == MIXER_CHANNEL_STEREO && dstChannels == MIXER_CHANNEL_MONO;
-    CHECK_AND_RETURN_RET_LOG(inData != nullptr && outData != nullptr && sampleCount > 0 && (toStereo || toMono),
+    CHECK_AND_RETURN_RET_LOG(inData != nullptr && outData != nullptr && sampleCount > 0,
         AUDIO_PCM_ALGO_ERR_INVALID_PARAM,
-        "AudioPcmConvertChannels invalid params, srcChannels: %{public}d, dstChannels: %{public}d",
-        srcChannels,
-        dstChannels);
+        "AudioPcmUpmixMonoToStereo invalid params, sampleCount: %{public}d", sampleCount);
 
-    int32_t inSamples = sampleCount * srcChannels;
-    int32_t outSamples = sampleCount * dstChannels;
-    std::vector<float> in(static_cast<size_t>(inSamples));
+    int32_t outSamples = sampleCount * MIXER_CHANNEL_STEREO;
+    std::vector<float> in(static_cast<size_t>(sampleCount));
     std::vector<float> out(static_cast<size_t>(outSamples));
-    int32_t ret = ConvertPcmToFloat(format, inData, inSamples, in.data());
+    int32_t ret = ConvertPcmToFloat(format, inData, sampleCount, in.data());
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_PCM_ALGO_SUCCESS, ret,
-        "AudioPcmConvertChannels convert input failed, ret: %{public}d", ret);
-    if (toStereo) {
-        for (int32_t i = 0; i < sampleCount; ++i) {
-            out[MIXER_CHANNEL_STEREO * i] = in[i];
-            out[MIXER_CHANNEL_STEREO * i + 1] = in[i];
-        }
-    } else {
-        for (int32_t i = 0; i < sampleCount; ++i) {
-            out[i] = (in[MIXER_CHANNEL_STEREO * i] + in[MIXER_CHANNEL_STEREO * i + 1]) * MONO_DOWNMIX_GAIN;
-        }
+        "AudioPcmUpmixMonoToStereo convert input failed, ret: %{public}d", ret);
+    for (int32_t i = 0; i < sampleCount; ++i) {
+        out[MIXER_CHANNEL_STEREO * i] = in[i];
+        out[MIXER_CHANNEL_STEREO * i + 1] = in[i];
     }
     ret = ConvertFloatToPcm(format, out.data(), outSamples, outData);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_PCM_ALGO_SUCCESS, ret,
-        "AudioPcmConvertChannels convert output failed, ret: %{public}d", ret);
+        "AudioPcmUpmixMonoToStereo convert output failed, ret: %{public}d", ret);
+    return AUDIO_PCM_ALGO_SUCCESS;
+}
+
+extern "C" int32_t AudioPcmDownmixStereoToMono(AudioPcmFormat format, const void *inData,
+    int32_t sampleCount, void *outData)
+{
+    CHECK_AND_RETURN_RET_LOG(inData != nullptr && outData != nullptr && sampleCount > 0,
+        AUDIO_PCM_ALGO_ERR_INVALID_PARAM,
+        "AudioPcmDownmixStereoToMono invalid params, sampleCount: %{public}d", sampleCount);
+
+    int32_t inSamples = sampleCount * MIXER_CHANNEL_STEREO;
+    std::vector<float> in(static_cast<size_t>(inSamples));
+    std::vector<float> out(static_cast<size_t>(sampleCount));
+    int32_t ret = ConvertPcmToFloat(format, inData, inSamples, in.data());
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_PCM_ALGO_SUCCESS, ret,
+        "AudioPcmDownmixStereoToMono convert input failed, ret: %{public}d", ret);
+    for (int32_t i = 0; i < sampleCount; ++i) {
+        out[i] = (in[MIXER_CHANNEL_STEREO * i] + in[MIXER_CHANNEL_STEREO * i + 1]) * MONO_DOWNMIX_GAIN;
+    }
+    ret = ConvertFloatToPcm(format, out.data(), sampleCount, outData);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_PCM_ALGO_SUCCESS, ret,
+        "AudioPcmDownmixStereoToMono convert output failed, ret: %{public}d", ret);
     return AUDIO_PCM_ALGO_SUCCESS;
 }

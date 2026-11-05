@@ -45,7 +45,6 @@ constexpr int32_t MIXER_MAX_BLOCK_MS = 60; // process contract: block no longer 
 constexpr int32_t MS_PER_SECOND = 1000;
 constexpr int32_t MIXER_ALIGN_DIVISOR = 4; // steers toward the 4-chunk limiter path; other
                                             // block lengths fall back to 3 / 2 / 1 chunks
-constexpr int32_t MIXER_CHANNEL_MONO_FUZZ = 1;
 constexpr int32_t MIXER_CHANNEL_STEREO_FUZZ = 2;
 
 template<class T>
@@ -106,18 +105,17 @@ static void ConvertFuzz(const uint8_t *data, size_t size)
     (void)ConvertFloatToPcm(format, floats.data(), sampleCount, back.data());
     (void)AudioFormatCalcMemLength(format, channels, sampleCount);
 
-    // mono <-> stereo conversion: exercise both directions plus the reject path.
-    // pcm holds sampleCount interleaved samples, so the stereo source has only
+    // mono <-> stereo conversion: exercise the direction matching the source
+    // geometry. pcm holds sampleCount interleaved samples, so the source has only
     // sampleCount / channels frames available.
     int32_t frameCount = sampleCount / channels;
-    if (frameCount > 0) {
-        int32_t dstChannels = (channels == 1) ? MIXER_CHANNEL_STEREO_FUZZ : MIXER_CHANNEL_MONO_FUZZ;
-        int32_t outSamples = frameCount * dstChannels;
+    if (frameCount > 0 && channels == 1) {
+        int32_t outSamples = frameCount * MIXER_CHANNEL_STEREO_FUZZ;
         vector<uint8_t> converted(static_cast<size_t>(outSamples) * bytesPerSample, 0);
-        (void)AudioPcmConvertChannels(format, channels, dstChannels, pcm.data(), frameCount,
-            converted.data());
-        (void)AudioPcmConvertChannels(format, channels, channels, pcm.data(), frameCount,
-            converted.data()); // same channels must be rejected
+        (void)AudioPcmUpmixMonoToStereo(format, pcm.data(), frameCount, converted.data());
+    } else if (frameCount > 0 && channels == MIXER_CHANNEL_STEREO_FUZZ) {
+        vector<uint8_t> converted(static_cast<size_t>(frameCount) * bytesPerSample, 0);
+        (void)AudioPcmDownmixStereoToMono(format, pcm.data(), frameCount, converted.data());
     }
 }
 

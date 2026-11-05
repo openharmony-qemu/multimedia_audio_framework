@@ -60,12 +60,17 @@ struct AudioMixResult AudioMixerProcess(AudioMixHandle handle, const struct Audi
 // Destroy the mixer and release the internally allocated buffers.
 void AudioMixerDestroy(AudioMixHandle handle);
 
-// Convert interleaved mono <-> stereo PCM in the float domain: mono duplicates each
-// sample to L/R; stereo averages each L/R pair. srcChannels/dstChannels: 1 or 2 and
-// must differ. sampleCount is frames per channel; outData must hold
-// sampleCount * dstChannels samples. Returns AUDIO_PCM_ALGO_* codes.
-int32_t AudioPcmConvertChannels(AudioPcmFormat format, int32_t srcChannels, int32_t dstChannels,
-    const void* inData, int32_t sampleCount, void* outData);
+// Convert interleaved mono PCM to stereo in the float domain: each input sample is
+// duplicated to L/R. sampleCount is frames per channel; outData must hold
+// sampleCount * 2 samples. Returns AUDIO_PCM_ALGO_* codes.
+int32_t AudioPcmUpmixMonoToStereo(AudioPcmFormat format, const void* inData,
+    int32_t sampleCount, void* outData);
+
+// Convert interleaved stereo PCM to mono in the float domain: each L/R pair is
+// averaged (0.5 * (L + R)). sampleCount is frames per channel; outData must hold
+// sampleCount samples. Returns AUDIO_PCM_ALGO_* codes.
+int32_t AudioPcmDownmixStereoToMono(AudioPcmFormat format, const void* inData,
+    int32_t sampleCount, void* outData);
 
 #ifdef __cplusplus
 }

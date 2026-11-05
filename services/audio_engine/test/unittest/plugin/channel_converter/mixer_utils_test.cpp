@@ -1595,44 +1595,28 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerArbitraryBlock_001, TestSize.Level0)
 }
 
 /**
- * @tc.name: AudioPcmConvertChannels_001
- * @tc.number: AudioPcmConvertChannels_001
+ * @tc.name: AudioPcmUpmixMonoToStereo_001
+ * @tc.number: AudioPcmUpmixMonoToStereo_001
  */
-HWTEST_F(AudioMixerFacadeTest, AudioPcmConvertChannels_001, TestSize.Level0)
+HWTEST_F(AudioMixerFacadeTest, AudioPcmUpmixMonoToStereo_001, TestSize.Level0)
 {
     constexpr int32_t mixerMono = 1;
     constexpr int32_t mixerStereo = 2;
-    constexpr int32_t badChannels = 3;
     constexpr int32_t sampleCount = 64;
     constexpr int32_t s24BytesPerSample = 3;
     constexpr int32_t s24MsbIndex = 2;
     constexpr int32_t s24Bit16 = 16;
     constexpr int32_t s24Bit8 = 8;
     constexpr int16_t upmixAmplitude = 0x2000;  // 0.25
-    constexpr int16_t leftAmplitude = 0x2000;   // (0.25 + 0.125) / 2 = 0.1875
-    constexpr int16_t rightAmplitude = 0x1000;  // -> 6144 = 0x1800 exactly in S16
-    constexpr int16_t downmixExpected = 0x1800;
 
     // mono -> stereo: each sample duplicated to L and R
     std::vector<int16_t> monoBlock = MakeS16Block(sampleCount, mixerMono, upmixAmplitude);
     std::vector<int16_t> stereoOut(static_cast<size_t>(sampleCount) * mixerStereo, 0);
-    ASSERT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S16_LE, mixerMono, mixerStereo, monoBlock.data(),
+    ASSERT_EQ(AudioPcmUpmixMonoToStereo(AUDIO_PCM_S16_LE, monoBlock.data(),
         sampleCount, stereoOut.data()), AUDIO_PCM_ALGO_SUCCESS);
     EXPECT_EQ(stereoOut[0], upmixAmplitude);
     EXPECT_EQ(stereoOut[1], upmixAmplitude);
     EXPECT_EQ(stereoOut[sampleCount * mixerStereo - 1], upmixAmplitude);
-
-    // stereo -> mono: each L/R pair averaged, exact in the float domain
-    std::vector<int16_t> stereoBlock(static_cast<size_t>(sampleCount) * mixerStereo, 0);
-    for (int32_t i = 0; i < sampleCount; ++i) {
-        stereoBlock[mixerStereo * i] = leftAmplitude;
-        stereoBlock[mixerStereo * i + 1] = rightAmplitude;
-    }
-    std::vector<int16_t> monoOut(sampleCount, 0);
-    ASSERT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S16_LE, mixerStereo, mixerMono, stereoBlock.data(),
-        sampleCount, monoOut.data()), AUDIO_PCM_ALGO_SUCCESS);
-    EXPECT_EQ(monoOut[0], downmixExpected);
-    EXPECT_EQ(monoOut[sampleCount - 1], downmixExpected);
 
     // S24 round trip keeps the sample value in both duplicated channels
     std::vector<uint8_t> s24In(static_cast<size_t>(sampleCount) * mixerMono * s24BytesPerSample, 0);
@@ -1640,7 +1624,7 @@ HWTEST_F(AudioMixerFacadeTest, AudioPcmConvertChannels_001, TestSize.Level0)
         s24In[i + s24MsbIndex] = 0x20; // 0x200000 = 0.25 full scale
     }
     std::vector<uint8_t> s24Out(static_cast<size_t>(sampleCount) * mixerStereo * s24BytesPerSample, 0);
-    ASSERT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S24_LE, mixerMono, mixerStereo, s24In.data(),
+    ASSERT_EQ(AudioPcmUpmixMonoToStereo(AUDIO_PCM_S24_LE, s24In.data(),
         sampleCount, s24Out.data()), AUDIO_PCM_ALGO_SUCCESS);
     uint32_t left = static_cast<uint32_t>(s24Out[s24MsbIndex]) << s24Bit16 |
         static_cast<uint32_t>(s24Out[1]) << s24Bit8 | static_cast<uint32_t>(s24Out[0]);
@@ -1650,13 +1634,40 @@ HWTEST_F(AudioMixerFacadeTest, AudioPcmConvertChannels_001, TestSize.Level0)
     EXPECT_EQ(left, 0x200000u);
     EXPECT_EQ(right, 0x200000u);
 
-    // invalid: same channels, unsupported channels, null data, non-positive count
-    EXPECT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S16_LE, mixerMono, mixerMono, monoBlock.data(),
+    // invalid: null data, non-positive count
+    EXPECT_EQ(AudioPcmUpmixMonoToStereo(AUDIO_PCM_S16_LE, nullptr,
         sampleCount, stereoOut.data()), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-    EXPECT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S16_LE, badChannels, mixerMono, monoBlock.data(),
-        sampleCount, stereoOut.data()), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-    EXPECT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S16_LE, mixerMono, mixerStereo, nullptr,
-        sampleCount, stereoOut.data()), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-    EXPECT_EQ(AudioPcmConvertChannels(AUDIO_PCM_S16_LE, mixerMono, mixerStereo, monoBlock.data(),
+    EXPECT_EQ(AudioPcmUpmixMonoToStereo(AUDIO_PCM_S16_LE, monoBlock.data(),
         0, stereoOut.data()), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name: AudioPcmDownmixStereoToMono_001
+ * @tc.number: AudioPcmDownmixStereoToMono_001
+ */
+HWTEST_F(AudioMixerFacadeTest, AudioPcmDownmixStereoToMono_001, TestSize.Level0)
+{
+    constexpr int32_t mixerStereo = 2;
+    constexpr int32_t sampleCount = 64;
+    constexpr int16_t leftAmplitude = 0x2000;   // (0.25 + 0.125) / 2 = 0.1875
+    constexpr int16_t rightAmplitude = 0x1000;  // -> 6144 = 0x1800 exactly in S16
+    constexpr int16_t downmixExpected = 0x1800;
+
+    // stereo -> mono: each L/R pair averaged, exact in the float domain
+    std::vector<int16_t> stereoBlock(static_cast<size_t>(sampleCount) * mixerStereo, 0);
+    for (int32_t i = 0; i < sampleCount; ++i) {
+        stereoBlock[mixerStereo * i] = leftAmplitude;
+        stereoBlock[mixerStereo * i + 1] = rightAmplitude;
+    }
+    std::vector<int16_t> monoOut(sampleCount, 0);
+    ASSERT_EQ(AudioPcmDownmixStereoToMono(AUDIO_PCM_S16_LE, stereoBlock.data(),
+        sampleCount, monoOut.data()), AUDIO_PCM_ALGO_SUCCESS);
+    EXPECT_EQ(monoOut[0], downmixExpected);
+    EXPECT_EQ(monoOut[sampleCount - 1], downmixExpected);
+
+    // invalid: null data, non-positive count
+    EXPECT_EQ(AudioPcmDownmixStereoToMono(AUDIO_PCM_S16_LE, nullptr,
+        sampleCount, monoOut.data()), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
+    EXPECT_EQ(AudioPcmDownmixStereoToMono(AUDIO_PCM_S16_LE, stereoBlock.data(),
+        0, monoOut.data()), AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
 }
