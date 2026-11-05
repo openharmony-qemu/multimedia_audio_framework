@@ -771,6 +771,10 @@ audio_ohos_library("audio_process_service") {
     ]
   }
 
+  if (is_emulator) {
+    defines += [ "IS_EMULATOR" ]
+  }
+
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
