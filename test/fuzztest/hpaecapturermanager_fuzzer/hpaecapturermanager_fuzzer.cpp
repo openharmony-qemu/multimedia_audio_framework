@@ -631,7 +631,6 @@ void CaptureEffectCreateFuzzTest()
     for (uint32_t sessionId : sessionIds) {
         capturerManager->DestroyStream(sessionId);
     }
-
 }
 
 void StartWithEcAndMicRefFuzzTest()
@@ -675,7 +674,6 @@ void PrepareCapturerEcFuzzTest()
 {
     auto &capturerManager = GetSharedCapturerManager();
     CHECK_AND_RETURN(capturerManager != nullptr);
-
 }
 
 // 保留局部 manager 自建自拆：本用例专门 fuzz 拆除本身，不入共享（见 GetSharedCapturerManager 注释）。
@@ -709,7 +707,6 @@ void RegisterReadCallbackFuzzTest()
 
     uint32_t invalidSessionId = GetData<uint32_t>();
     capturerManager->RegisterReadCallback(invalidSessionId, callback);
-
 }
 
 void CheckIfAnyStreamRunningFuzzTest()
@@ -729,7 +726,6 @@ void CheckIfAnyStreamRunningFuzzTest()
     HpaeSourceInfo newSourceInfo;
     InitSourceInfo(newSourceInfo);
     capturerManager->ReloadCaptureManager(newSourceInfo);
-
 }
 
 void DumpSourceInfoFuzzTest()
@@ -761,7 +757,6 @@ void AddAllNodesToSourceAdvancedFuzzTest()
 
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
-
 }
 
 void DisConnectSceneClusterFromSourceInputClusterFuzzTest()
@@ -782,7 +777,6 @@ void DisConnectSceneClusterFromSourceInputClusterFuzzTest()
 
     capturerManager->Stop(streamInfo.sessionId);
     capturerManager->Release(streamInfo.sessionId);
-
 }
 
 void ConnectOutputSessionFuzzTest()
@@ -799,7 +793,6 @@ void ConnectOutputSessionFuzzTest()
     WaitForMsgProcessing(capturerManager);
 
     capturerManager->Start(streamInfo.sessionId);
-
 }
 
 void PauseFuzzTest()
@@ -818,7 +811,6 @@ void PauseFuzzTest()
     WaitForMsgProcessing(capturerManager);
 
     capturerManager->Pause(streamInfo.sessionId);
-
 }
 
 void SetStreamMuteFuzzTest()
@@ -858,7 +850,6 @@ void ReloadCaptureManagerFuzzTest()
     WaitForMsgProcessing(capturerManager);
 
     capturerManager->ReloadCaptureManager(sourceInfo);
-
 }
 
 // 保留局部 manager 自建自拆：本用例专门 fuzz 拆除本身，不入共享（见 GetSharedCapturerManager 注释）。
@@ -1270,8 +1261,6 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
 
     return true;
 }
-
-
 } // namespace AudioStandard
 } // namesapce OHOS
 
