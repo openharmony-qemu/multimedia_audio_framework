@@ -34,7 +34,6 @@ class BluetoothScoManagerTest : public testing::Test {
 public:
     void SetUp(void) override
     {
-        BluetoothScoManager::GetInstance().Init();
         BluetoothHfpMockInterface::mockInterface_ = std::make_shared<BluetoothHfpMockInterface>();
     }
 
@@ -61,6 +60,7 @@ private:
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_001, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(1)
@@ -97,6 +97,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_001, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_002, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
@@ -120,6 +121,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_002, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_003, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
@@ -144,6 +146,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_003, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_004, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
@@ -168,6 +171,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_004, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_005, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
@@ -199,6 +203,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_005, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_006, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
@@ -245,6 +250,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_006, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_007, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(1)
@@ -272,6 +278,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_007, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_008, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
@@ -295,6 +302,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_008, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_009, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(1)
@@ -325,6 +333,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_009, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_010, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
@@ -351,6 +360,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_010, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_011, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(1)
@@ -374,6 +384,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_011, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_012, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(2)
@@ -402,6 +413,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_012, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_013, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
@@ -427,6 +439,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_013, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_014, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(1)
@@ -457,6 +470,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_014, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_020, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetCurrentCategory(_))
         .Times(1)
@@ -490,6 +504,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_020, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_021, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetCurrentCategory(_))
         .Times(1)
@@ -513,6 +528,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_021, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_022, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetCurrentCategory(_))
         .Times(1)
@@ -537,6 +553,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_022, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_023, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetCurrentCategory(_))
         .Times(1)
@@ -561,6 +578,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_023, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_024, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetScoState(_))
         .Times(1)
         .WillOnce(Return(AudioScoState::CONNECTED));
@@ -585,6 +603,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_024, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_025, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     SetDefaultExpectCall();
 
     BluetoothScoManager scoManager;
