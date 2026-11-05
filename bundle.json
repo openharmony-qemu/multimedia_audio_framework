@@ -389,6 +389,16 @@
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/services/audio_engine/plugin/resample/include"
               }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite_generic",
+              "header": {
+                "header_files": [
+                  "audio_suite_time_stretch.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audio_suite_generic/include"
+              }
             }
           ],
           "test": [

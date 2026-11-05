@@ -19,6 +19,7 @@ group("audio_suite_packages") {
   deps = [
     ":audio_suite",
     ":audio_suite_capabilities",
+    ":audio_suite_generic",
   ]
 
   if (audio_framework_feature_audiosuite_support) {
@@ -198,6 +199,49 @@ audio_ohos_library("audio_suite") {
   }
 
   version_script = "libaudio_suite.versionscript"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+audio_ohos_library("audio_suite_generic") {
+  branch_protector_ret = "pac_ret"
+  cflags = [
+    "-Os",
+    "-ffunction-sections",
+    "-fdata-sections",
+    "-fvisibility-inlines-hidden",
+  ]
+ 
+  ldflags = [
+    "-Wl,-gc-sections",
+  ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+  install_enable = true
+ 
+  include_dirs = [
+    "client/generic/include",
+    "../../interfaces/inner_api/native/audio_suite_generic/include",
+    "../../interfaces/inner_api/native/audiocommon/include",
+  ]
+ 
+  sources = [ "client/generic/src/audio_suite_time_stretch.cpp" ]
+ 
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "bounds_checking_function:libsec_shared",
+  ]
+ 
+  # innerapi_tags = [ "chipsetsdk" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
