@@ -619,6 +619,7 @@ HWTEST_F(ChannelConverterTest, ChannelConverter_UpmixGain_Idempotent_001, TestSi
     for (uint32_t i = 0; i < 6 * TEST_BUFFER_LEN; i++) {
         EXPECT_FLOAT_EQ(outRepeat[i], outOnce[i]);
     }
+}
 
 /**
  * @tc.name  : ChannelConverter_FrameLengthBoundary_001
