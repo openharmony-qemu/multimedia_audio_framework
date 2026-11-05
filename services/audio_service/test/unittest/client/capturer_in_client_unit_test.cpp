@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
+#include <atomic>
+#include <chrono>
 #include <functional>
+#include <thread>
 #include <gtest/gtest.h>
 
 #include "audio_service_log.h"
@@ -2270,6 +2273,81 @@ HWTEST(CapturerInClientUnitTest, StopAudioStream_003, TestSize.Level1)
     capturerInClientInner->ipcStream_ = nullptr;
     bool result = capturerInClientInner->StopAudioStream();
     EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test StopAudioStream Wakes Blocking Reader
+ * @tc.type  : FUNC
+ * @tc.number: StopAudioStream_WakeBlockingReader_001
+ * @tc.desc  : In sync mode (CAPTURE_MODE_NORMAL), StopAudioStream wakes a reader parked in
+ *             HandleCapturerRead's futex wait instead of letting it sit through the full
+ *             OPERATION_TIMEOUT_IN_MS * 100 read timeout.
+ */
+HWTEST(CapturerInClientUnitTest, StopAudioStream_WakeBlockingReader_001, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->ipcStream_ = sptr<IpcStreamTest>::MakeSptr();
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_NORMAL;
+    capturerInClientInner->state_ = State::RUNNING;
+    // Pre-satisfy the server stop confirmation so Stop reaches STOPPED without waiting.
+    capturerInClientInner->notifiedOperation_ = STOP_STREAM;
+    capturerInClientInner->notifiedResult_ = SUCCESS;
+
+    uint8_t buffer[1920] = {0};
+    size_t readSize = 0;
+    size_t userSize = sizeof(buffer);
+    std::atomic<bool> readerReturned = false;
+    std::thread reader([&]() {
+        capturerInClientInner->HandleCapturerRead(readSize, userSize, buffer[0], true);
+        readerReturned = true;
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    EXPECT_FALSE(readerReturned.load());
+
+    EXPECT_TRUE(capturerInClientInner->StopAudioStream());
+    for (int waitedMs = 0; waitedMs < 3000 && !readerReturned.load(); waitedMs += 50) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+    EXPECT_TRUE(readerReturned.load());
+    reader.join();
+}
+
+/**
+ * @tc.name  : Test ReleaseCallbackResources Wakes Blocking Reader
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseCallbackResources_WakeBlockingReader_001
+ * @tc.desc  : ReleaseCallbackResources wakes sync-mode readers too (previously callback
+ *             mode only), so a reader parked in HandleCapturerRead exits promptly.
+ */
+HWTEST(CapturerInClientUnitTest, ReleaseCallbackResources_WakeBlockingReader_001, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_NORMAL;
+    capturerInClientInner->state_ = State::RUNNING;
+
+    uint8_t buffer[1920] = {0};
+    size_t readSize = 0;
+    size_t userSize = sizeof(buffer);
+    std::atomic<bool> readerReturned = false;
+    std::thread reader([&]() {
+        capturerInClientInner->HandleCapturerRead(readSize, userSize, buffer[0], true);
+        readerReturned = true;
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    EXPECT_FALSE(readerReturned.load());
+
+    // ReleaseAudioStream sets RELEASED before ReleaseCallbackResources; mirror that.
+    capturerInClientInner->state_ = State::RELEASED;
+    capturerInClientInner->ReleaseCallbackResources(false);
+    for (int waitedMs = 0; waitedMs < 3000 && !readerReturned.load(); waitedMs += 50) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+    EXPECT_TRUE(readerReturned.load());
+    reader.join();
 }
 
 /**
