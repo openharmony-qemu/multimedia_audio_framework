@@ -556,7 +556,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneGetRendererInfos_NullGsp, TestSize.Level1)
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
     int32_t ret = mgr->GetCurrentRendererChangeInfosForZone(
         1, infos);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneGetInterruptByTag_NullGsp, TestSize.Level1)
