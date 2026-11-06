@@ -2504,7 +2504,16 @@ int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
             std::make_shared<AudioDeviceDescriptor>(audioRouterSelectStrategy_
             .Get1stCurrentOutputDevice(uid)), false, false);
     }
-    return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
+    int32_t ret = streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
+    if (mode == AUDIO_MODE_RECORD) {
+        CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ret, "pipeManager_ is nullptr");
+        auto streamDesc = pipeManager_->GetStreamDescById(streamChangeInfo.audioCapturerChangeInfo.sessionId);
+        CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ret, "streamDesc is nullptr");
+        auto inputDeviceInfo = streamDesc->GetMainNewDeviceDesc();
+        CHECK_AND_RETURN_RET_LOG(inputDeviceInfo != nullptr, ret, "inputDeviceInfo is nullptr");
+        streamCollector_.UpdateCapturerDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.sessionId, inputDeviceInfo);
+    }
+    return ret;
 }
 
 void AudioCoreService::MarkServerStreamCreated(uint32_t sessionId)
