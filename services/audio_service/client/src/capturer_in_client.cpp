@@ -1626,11 +1626,23 @@ bool CapturerInClientInner::StopAudioStream()
         AUDIO_ERR_LOG("Stop failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         UpdateStreamState(INVALID);
+        // Same rationale as the STOPPED wake below: release parked readers once the
+        // state leaves RUNNING.
+        if (clientBuffer_ != nullptr) {
+            clientBuffer_->WakeFutex();
+        }
         return false;
     }
     waitLock.unlock();
 
     UpdateStreamState(STOPPED);
+    // Wake blocking sync-mode readers parked in HandleCapturerRead: the futex predicate
+    // (writeFrame > readFrame || state_ != RUNNING) only rechecks on wake, and nothing
+    // else notifies after the server stops writing, so without this wake they sit through
+    // the full read timeout (OPERATION_TIMEOUT_IN_MS * 100) before noticing the stop.
+    if (clientBuffer_ != nullptr) {
+        clientBuffer_->WakeFutex();
+    }
     statusLock.unlock();
 
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
@@ -1681,6 +1693,12 @@ void CapturerInClientInner::ReleaseCallbackResources(bool releaseRunner)
         }
     }
 
+    // Wake blocking readers of every mode, not only CAPTURE_MODE_CALLBACK: sync-mode
+    // readers parked in HandleCapturerRead exit on the same futex predicate once the
+    // stream state leaves RUNNING (state_ is RELEASED on entry here).
+    if (clientBuffer_ != nullptr) {
+        clientBuffer_->WakeFutex();
+    }
     // clear write callback
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
         cbThreadReleased_ = true; // stop loop
@@ -1688,7 +1706,6 @@ void CapturerInClientInner::ReleaseCallbackResources(bool releaseRunner)
             cbBufferQueue_.PushNoWait({nullptr, 0, 0});
         }
         cbThreadCv_.notify_all();
-        clientBuffer_->WakeFutex();
         if (callbackLoop_.joinable()) {
             callbackLoop_.join();
         }

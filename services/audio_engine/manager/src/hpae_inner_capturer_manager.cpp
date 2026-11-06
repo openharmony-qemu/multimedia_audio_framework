@@ -766,6 +766,17 @@ int32_t HpaeInnerCapturerManager::CreateCapturerInputSessionInner(const HpaeStre
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    // The cluster produces one sink frameLen per tick, so the capturer-side nodes must run at
+    // the same cadence scaled by the capturer rate (mirror of AddSingleNodeToSinkInner).
+    // Otherwise a negotiated span that disagrees with the sink tick (e.g. a SOURCE_PERIOD_SIZE
+    // scaled span 4800 against a 960-per-tick chain) desyncs the capturer cadence and stretches
+    // the captured duration.
+    HpaeNodeInfo sinkNodeInfo = hpaeInnerCapSinkNode_->GetNodeInfo();
+    bool spanAdjusted = AdjustFrameLen(nodeInfo, sinkNodeInfo);
+    AUDIO_INFO_LOG("[InnerCapSpan] session:%{public}u spanAdjusted:%{public}d newSpan:%{public}u "
+        "sinkFrameLen:%{public}u sinkRate:%{public}u", streamInfo.sessionId, spanAdjusted,
+        static_cast<uint32_t>(nodeInfo.frameLen), static_cast<uint32_t>(sinkNodeInfo.frameLen),
+        static_cast<uint32_t>(sinkNodeInfo.samplingRate));
     AUDIO_INFO_LOG("nodeInfo.channels %{public}d, nodeInfo.format %{public}hhu, nodeInfo.frameLen %{public}d",
         nodeInfo.channels, nodeInfo.format, nodeInfo.frameLen);
     sourceOutputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
@@ -775,6 +786,12 @@ int32_t HpaeInnerCapturerManager::CreateCapturerInputSessionInner(const HpaeStre
         std::make_shared<HpaeAudioFormatConverterNode>(outputNodeInfo, nodeInfo);
     capturerAudioFormatConverterNodeMap_[streamInfo.sessionId]->SetSourceNode(true);
     capturerSessionNodeMap_[streamInfo.sessionId].sceneType = nodeInfo.sceneType;
+    // Notify the capturer stream impl of the sink-tick span: it re-computes spanSizeInFrame_ /
+    // minBufferSize_ and CapturerInServer rebuilds the server buffer (mirroring the move-in
+    // pairing on renderer managers). For inner capturers the ctor already pins the span to the
+    // bare 20ms sink tick, so this notification is normally a no-op kept as a safety net.
+    TriggerCallback(UPDATE_SPAN_SIZE, streamInfo.sessionId, static_cast<uint32_t>(nodeInfo.frameLen),
+        HPAE_STREAM_CLASS_TYPE_RECORD);
     return SUCCESS;
 }
 
