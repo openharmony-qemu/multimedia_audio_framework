@@ -67,7 +67,7 @@ HWTEST_F(AudioZoneInterruptReporterUnitTest, GetFocusList_001, TestSize.Level1)
 
     reporter_.interruptService_ = std::make_shared<AudioInterruptService>();
     reporter_.interruptService_->zonesMap_.clear();
-    reporter_.interruptService_->zonesMap_[0] = interruptZone;
+    reporter_.interruptService_->zonesMap_[1] = interruptZone;
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> focusList = {};
     focusList = reporter_.GetFocusList();
@@ -106,7 +106,7 @@ HWTEST_F(AudioZoneInterruptReporterUnitTest, GetFocusList_002, TestSize.Level1)
 
     reporter_.interruptService_ = std::make_shared<AudioInterruptService>();
     reporter_.interruptService_->zonesMap_.clear();
-    reporter_.interruptService_->zonesMap_[0] = interruptZone;
+    reporter_.interruptService_->zonesMap_[1] = interruptZone;
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> focusList = {};
     focusList = reporter_.GetFocusList();
@@ -128,7 +128,7 @@ HWTEST_F(AudioZoneInterruptReporterUnitTest, GetFocusList_002, TestSize.Level1)
 
     focusList = reporter_.GetFocusList();
     pipeList.pop_back();
-    EXPECT_EQ(focusList.size(), 1);
+    EXPECT_EQ(focusList.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS
