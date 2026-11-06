@@ -233,6 +233,8 @@ AudioSuiteTimeStretchImpl::~AudioSuiteTimeStretchImpl()
         dlclose(soHandle_);
         soHandle_ = nullptr;
     }
+
+    algoApi_ = nullptr;
 }
 
 int32_t AudioSuiteTimeStretchImpl::Initialize()
