@@ -75,6 +75,7 @@ private:
     AudioSampleFormat format_ = SAMPLE_S16LE;
     bool needFormatConvert_ = false;
     float speed_ = 1.0f;
+    int32_t maxFramesLimit_ = 0;
     TimeStretchAlgoApi algoApi_{};
     std::vector<float> floatInputBuffer_;
     std::vector<float> floatOutputBuffer_;
