@@ -457,6 +457,7 @@ void AudioRouterCenterStrategyFuzzTest(FuzzedDataProvider& fdp)
     center.NeedSkipSelectAudioOutputDeviceRefined(streamUsage, descs);
     center.GetBypassWithSco(scene);
     center.IsMediaFollowCallStrategy(scene);
+    center.IsMediaFollowRingStrategy(scene);
     center.IsAlarmFollowRingStrategy(scene, streamUsage);
     center.IsWirelessPrivacyDevice(device);
     center.IsVehicleDevice(device);

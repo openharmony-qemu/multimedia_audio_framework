@@ -2083,5 +2083,21 @@ HWTEST(AudioRouterCenterUnitTest, FetchOutputDevicesInner_BlockedDeviceFallback_
     EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_NONE);
 }
 
+/**
+ * @tc.name  : Test IsMediaFollowRingStrategy.
+ * @tc.number: IsMediaFollowRingStrategy_001
+ * @tc.desc  : Test IsMediaFollowRingStrategy interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, IsMediaFollowRingStrategy_001, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+
+    EXPECT_TRUE(audioRouterCenter.IsMediaFollowRingStrategy(AUDIO_SCENE_RINGING));
+    EXPECT_TRUE(audioRouterCenter.IsMediaFollowRingStrategy(AUDIO_SCENE_VOICE_RINGING));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowRingStrategy(AUDIO_SCENE_PHONE_CALL));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowRingStrategy(AUDIO_SCENE_PHONE_CHAT));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowRingStrategy(AUDIO_SCENE_DEFAULT));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

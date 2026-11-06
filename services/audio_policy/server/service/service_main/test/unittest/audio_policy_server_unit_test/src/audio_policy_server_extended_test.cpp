@@ -787,5 +787,221 @@ HWTEST_F(AudioPolicyServerUnitTest, SetAudioSceneInternal_002, TestSize.Level4)
     int32_t ret = audioPolicyServer_->SetAudioSceneInternal(AUDIO_SCENE_PHONE_CALL, 1, 1, false);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: CheckScoState_001
+ * @tc.desc  : Test CheckScoState with null streamDesc and forceUpdate=true does not crash.
+ */
+HWTEST_F(AudioPolicyServerUnitTest, CheckScoState_001, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
+    EXPECT_NO_THROW(audioPolicyServer_->coreService_->CheckScoState(streamDesc, true));
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: CheckScoState_002
+ * @tc.desc  : Test CheckScoState when !forceUpdate and scene is voice-call related.
+ */
+HWTEST_F(AudioPolicyServerUnitTest, CheckScoState_002, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+
+    auto &sm = AudioSceneManager::GetInstance();
+    auto backupScene = sm.audioScene_;
+    sm.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+
+    EXPECT_NO_THROW(audioPolicyServer_->coreService_->CheckScoState(streamDesc, false));
+
+    sm.audioScene_ = backupScene;
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: CheckScoState_003
+ * @tc.desc  : Test CheckScoState skips SCO update when forceUpdate=true and stream is not started
+ *             with BLUETOOTH_SCO device selected (the skipUpdateScoState guard).
+ */
+HWTEST_F(AudioPolicyServerUnitTest, CheckScoState_003, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+
+    auto &sm = AudioSceneManager::GetInstance();
+    auto backupScene = sm.audioScene_;
+    sm.audioScene_ = AUDIO_SCENE_DEFAULT;
+
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backupDevices = dm.connectedDevices_;
+    auto scoDev = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    scoDev->connectState_ = CONNECTED;
+    dm.connectedDevices_ = {scoDev};
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_NEW;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(device);
+
+    EXPECT_NO_THROW(audioPolicyServer_->coreService_->CheckScoState(streamDesc, true));
+
+    dm.connectedDevices_ = backupDevices;
+    sm.audioScene_ = backupScene;
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: CheckScoState_004
+ * @tc.desc  : Test CheckScoState proceeds with SCO update when forceUpdate=true and stream is started
+ *             with BLUETOOTH_SCO device (skipUpdateScoState is false).
+ */
+HWTEST_F(AudioPolicyServerUnitTest, CheckScoState_004, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+
+    auto &sm = AudioSceneManager::GetInstance();
+    auto backupScene = sm.audioScene_;
+    sm.audioScene_ = AUDIO_SCENE_DEFAULT;
+
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backupDevices = dm.connectedDevices_;
+    auto scoDev = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    scoDev->connectState_ = CONNECTED;
+    dm.connectedDevices_ = {scoDev};
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(device);
+
+    EXPECT_NO_THROW(audioPolicyServer_->coreService_->CheckScoState(streamDesc, true));
+
+    dm.connectedDevices_ = backupDevices;
+    sm.audioScene_ = backupScene;
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: CheckScoState_005
+ * @tc.desc  : Test CheckScoState does not skip SCO update when forceUpdate=true and stream is not
+ *             started but device is not BLUETOOTH_SCO (skipUpdateScoState is false).
+ */
+HWTEST_F(AudioPolicyServerUnitTest, CheckScoState_005, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+
+    auto &sm = AudioSceneManager::GetInstance();
+    auto backupScene = sm.audioScene_;
+    sm.audioScene_ = AUDIO_SCENE_DEFAULT;
+
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backupDevices = dm.connectedDevices_;
+    auto scoDev = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    scoDev->connectState_ = CONNECTED;
+    dm.connectedDevices_ = {scoDev};
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_NEW;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(device);
+
+    EXPECT_NO_THROW(audioPolicyServer_->coreService_->CheckScoState(streamDesc, true));
+
+    dm.connectedDevices_ = backupDevices;
+    sm.audioScene_ = backupScene;
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: CheckScoState_006
+ * @tc.desc  : Test CheckScoState cleanup path for record mode stream that is not started with
+ *             SCO-supporting source type (VOICE_RECOGNITION).
+ */
+HWTEST_F(AudioPolicyServerUnitTest, CheckScoState_006, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+
+    auto &sm = AudioSceneManager::GetInstance();
+    auto backupScene = sm.audioScene_;
+    sm.audioScene_ = AUDIO_SCENE_DEFAULT;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_NEW;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    streamDesc->sessionId_ = 9999;
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(device);
+
+    EXPECT_NO_THROW(audioPolicyServer_->coreService_->CheckScoState(streamDesc, true));
+
+    sm.audioScene_ = backupScene;
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: CheckScoState_007
+ * @tc.desc  : Test CheckScoState skips record cleanup when stream is started.
+ */
+HWTEST_F(AudioPolicyServerUnitTest, CheckScoState_007, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+
+    auto &sm = AudioSceneManager::GetInstance();
+    auto backupScene = sm.audioScene_;
+    sm.audioScene_ = AUDIO_SCENE_DEFAULT;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    streamDesc->sessionId_ = 9999;
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(device);
+
+    EXPECT_NO_THROW(audioPolicyServer_->coreService_->CheckScoState(streamDesc, true));
+
+    sm.audioScene_ = backupScene;
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: CheckScoState_008
+ * @tc.desc  : Test CheckScoState skips record cleanup when audioMode is playback.
+ */
+HWTEST_F(AudioPolicyServerUnitTest, CheckScoState_008, TestSize.Level1)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+
+    auto &sm = AudioSceneManager::GetInstance();
+    auto backupScene = sm.audioScene_;
+    sm.audioScene_ = AUDIO_SCENE_DEFAULT;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_NEW;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->sessionId_ = 9999;
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(device);
+
+    EXPECT_NO_THROW(audioPolicyServer_->coreService_->CheckScoState(streamDesc, true));
+
+    sm.audioScene_ = backupScene;
+}
 } // AudioStandard
 } // OHOS

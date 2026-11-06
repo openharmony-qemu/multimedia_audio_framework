@@ -269,6 +269,20 @@ bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
     return false;
 }
 
+bool AudioRouterCenter::IsMediaFollowRingStrategy(AudioScene audioScene)
+{
+    if (Util::IsEnhancedRoutingSupported()) {
+        return false;
+    }
+    if (audioScene == AUDIO_SCENE_RINGING) {
+        return true;
+    }
+    if (audioScene == AUDIO_SCENE_VOICE_RINGING) {
+        return true;
+    }
+    return false;
+}
+
 bool AudioRouterCenter::IsAlarmFollowRingStrategy(AudioScene audioScene, StreamUsage streamUsage)
 {
     if (Util::IsEnhancedRoutingSupported()) {
@@ -295,7 +309,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaOrToneRenderDevic
         AUDIO_INFO_LOG("replace usage %{public}d to %{public}d", bak.preStreamUsage, bak.streamUsage);
         desc = FetchCallRenderDevice(bak.streamUsage, clientUID, routerType, bak.bypassType,
             GetBypassWithSco(audioScene));
-    } else if (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) {
+    } else if (IsMediaFollowRingStrategy(audioScene)) {
         StreamUsage ringStreamUsage = (audioScene == AUDIO_SCENE_RINGING) ?
             STREAM_USAGE_RINGTONE : STREAM_USAGE_VOICE_RINGTONE;
         desc = MediaFollowRingStrategy(bak, ringStreamUsage, routerType, bak.bypassType, streamId);
