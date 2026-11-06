@@ -234,7 +234,7 @@ AudioSuiteTimeStretchImpl::~AudioSuiteTimeStretchImpl()
         soHandle_ = nullptr;
     }
 
-    algoApi_ = TimeStretchAlgoApi{}; 
+    algoApi_ = TimeStretchAlgoApi{};
 }
 
 int32_t AudioSuiteTimeStretchImpl::Initialize()
