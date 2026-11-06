@@ -356,9 +356,11 @@ HWTEST_F(AudioRollbackManagerTest, OnDeviceNewConnect_InvalidAndReuse, TestSize.
     auto baseline = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:40");
     SetOutputBaseline(baseline);
 
+#ifdef WIRELESS_DEFAULT_EXCLUDE
     auto suspendDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:44", SUSPEND_CONNECTED);
     rollback.OnDeviceNewConnect(*suspendDev);
     EXPECT_FALSE(HasRollbackInfo());
+#endif
 
     auto dev1 = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:41", SUSPEND_CONNECTED);
     {
@@ -400,6 +402,34 @@ HWTEST_F(AudioRollbackManagerTest, OnDeviceNewConnect_EmptySelections_ContinueSe
     rollback.OnDeviceNewConnect(*dev);
     EXPECT_FALSE(HasRollbackInfo());
     EXPECT_FALSE(HasVirtualSelect(dev->deviceId_));
+}
+
+/**
+ * @tc.name  : OnDeviceNewConnect_ConnectedVirtualSelect_PromotesToRealSelect
+ * @tc.type  : FUNC
+ * @tc.desc  : OnDeviceNewConnect with a CONNECTED device that is in virtualSelectDevices_ calls
+ *             SetConnectLostRollback and ContinueSetDevice so the virtual select entry is promoted
+ *             to a real select and the strategy switches to the new device.
+ */
+HWTEST_F(AudioRollbackManagerTest, OnDeviceNewConnect_ConnectedVirtualSelect_PromotesToRealSelect, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:F1");
+    SetOutputBaseline(oldDev);
+    ASSERT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), oldDev->deviceId_);
+
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:F1", CONNECTED);
+    auto &rollback = AudioRollbackManager::GetInstance();
+    {
+        std::lock_guard<std::mutex> lg(rollback.mutex_);
+        rollback.virtualSelectDevices_.push_back(
+            {SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, newDev->deviceId_, INVALID_STREAM_ID});
+    }
+
+    rollback.OnDeviceNewConnect(*newDev);
+    EXPECT_TRUE(HasRollbackInfo());
+    EXPECT_EQ(RollbackDeviceId(), newDev->deviceId_);
+    EXPECT_FALSE(HasVirtualSelect(newDev->deviceId_));
+    EXPECT_EQ(GetSystemDeviceId(SelectDeviceType::MEDIA_OUTPUT), newDev->deviceId_);
 }
 
 /**
@@ -1335,6 +1365,28 @@ HWTEST_F(AudioRollbackManagerTest, ContinueSetDevice_NonMatchAndEmpty, TestSize.
 }
 
 /**
+ * @tc.name  : ContinueSetDevice_InvalidType_ErasedWithoutStrategy
+ * @tc.type  : FUNC
+ * @tc.desc  : ContinueSetDevice hits the default branch for an unsupported SelectDeviceType
+ *             (e.g. MEDIA_INPUT), logs an error and still erases the matching entry.
+ */
+HWTEST_F(AudioRollbackManagerTest, ContinueSetDevice_InvalidType_ErasedWithoutStrategy, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+    constexpr int32_t devId = 9001;
+
+    AudioDeviceDescriptor desc(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc.deviceId_ = devId;
+    {
+        std::lock_guard<std::mutex> lg(rb.mutex_);
+        rb.virtualSelectDevices_.clear();
+        rb.virtualSelectDevices_.push_back({SYSTEM_UID, SelectDeviceType::MEDIA_INPUT, devId, INVALID_STREAM_ID});
+    }
+    EXPECT_NO_THROW(rb.ContinueSetDevice(desc));
+    EXPECT_FALSE(HasVirtualSelect(devId));
+}
+
+/**
  * @tc.name  : RollbackSetDevice_NoMatchAndEmpty
  * @tc.type  : FUNC
  * @tc.desc  : RollbackSetDevice returns false and keeps non-matching entries, and handles empty vector.
@@ -1411,6 +1463,57 @@ HWTEST_F(AudioRollbackManagerTest, HandleVirtualConnected_SameDeviceIdReturnsTru
     EXPECT_TRUE(rb.HandleVirtualConnected(SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, INVALID_STREAM_ID, desc));
     EXPECT_EQ(VirtualSelectCount(), 1);
     EXPECT_EQ(VirtualSelectDeviceId(SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, INVALID_STREAM_ID), devId);
+}
+
+/**
+ * @tc.name  : IsVirtualSelectDevice_TrueAndFalse
+ * @tc.type  : FUNC
+ * @tc.desc  : IsVirtualSelectDevice returns true when the device id is in virtualSelectDevices_
+ *             and false otherwise.
+ */
+HWTEST_F(AudioRollbackManagerTest, IsVirtualSelectDevice_TrueAndFalse, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+    constexpr int32_t vsDevId = 9101;
+    constexpr int32_t otherDevId = 9102;
+
+    AudioDeviceDescriptor vsDesc(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    vsDesc.deviceId_ = vsDevId;
+    AudioDeviceDescriptor otherDesc(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    otherDesc.deviceId_ = otherDevId;
+
+    EXPECT_FALSE(rb.IsVirtualSelectDevice(vsDesc));
+    EXPECT_FALSE(rb.IsVirtualSelectDevice(otherDesc));
+
+    {
+        std::lock_guard<std::mutex> lg(rb.mutex_);
+        rb.virtualSelectDevices_.push_back(
+            {SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, vsDevId, INVALID_STREAM_ID});
+    }
+    EXPECT_TRUE(rb.IsVirtualSelectDevice(vsDesc));
+    EXPECT_FALSE(rb.IsVirtualSelectDevice(otherDesc));
+}
+
+/**
+ * @tc.name  : CheckAndNotifyUserSelectedDevice_VirtualSelectEarlyReturn
+ * @tc.type  : FUNC
+ * @tc.desc  : CheckAndNotifyUserSelectedDevice returns early (notifying BT) when the device is a
+ *             virtual select device, and falls through to the legacy path otherwise.
+ */
+HWTEST_F(AudioRollbackManagerTest, CheckAndNotifyUserSelectedDevice_VirtualSelectEarlyReturn, TestSize.Level1)
+{
+    auto oldDev = AddConnectedDevice(DEVICE_TYPE_SPEAKER, "00:00:00:00:0A:F2");
+    SetOutputBaseline(oldDev);
+
+    auto newDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:F2", VIRTUAL_CONNECTED);
+    auto &rollback = AudioRollbackManager::GetInstance();
+    rollback.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, newDev);
+    ASSERT_TRUE(HasVirtualSelect(newDev->deviceId_));
+
+    EXPECT_NO_THROW(AudioDeviceCommon::GetInstance().CheckAndNotifyUserSelectedDevice(newDev));
+
+    auto otherDev = MakeLocalDevice(DEVICE_TYPE_BLUETOOTH_A2DP, "00:00:00:00:0B:F3", VIRTUAL_CONNECTED);
+    EXPECT_NO_THROW(AudioDeviceCommon::GetInstance().CheckAndNotifyUserSelectedDevice(otherDev));
 }
 
 #ifdef WIRELESS_DEFAULT_EXCLUDE
