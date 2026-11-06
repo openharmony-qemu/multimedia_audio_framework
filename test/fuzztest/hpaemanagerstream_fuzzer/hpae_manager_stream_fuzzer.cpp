@@ -24,7 +24,6 @@
 #include <unistd.h>
 #include "audio_errors.h"
 #include "test_case_common.h"
-#include "hpae_audio_service_dump_callback_unit_test.h"
 #include "securec.h"
 
 namespace OHOS {
@@ -270,8 +269,8 @@ void HpaeManagerFuzzTest::StreamSetUp()
 
     std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
-    std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback =
-        std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
+    std::shared_ptr<HpaeAudioServiceDumpCallbackFuzzTest> dumpCallback =
+        std::make_shared<HpaeAudioServiceDumpCallbackFuzzTest>();
     hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
 
     AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
@@ -388,7 +387,28 @@ void HpaeManagerFuzzTest::TearDown()
     hpaeManager_->CloseAudioPort(sinkPortId2_);
     hpaeManager_->CloseAudioPort(sourcePortId_);
     hpaeManager_->CloseAudioPort(sourcePortId2_);
+    // Let the queued closes execute on the top-level worker before DeInit stops it.
+    WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->DeInit();
+    // Safety net (mirrors hpaemanager_fuzzer AtExitCleanup; compiled with
+    // -fno-access-control): OpenAudioPort returns no port id, so the ids closed above
+    // are scraped from the service callback -- on a partial open failure the manager
+    // is already inserted into the map with a live worker while the callback reports
+    // an invalid id, making CloseAudioPort a no-op. DeInit only stops the top-level
+    // worker, so any surviving child worker keeps its manager alive and later races
+    // the static destruction of g_effectSceneToProcessorTypeMap (hpae_node_common.cpp)
+    // at process exit (ASAN heap-use-after-free in TransEffectSceneToSceneType).
+    // DeactivateThread any survivor so the process exits with no live engine worker.
+    for (auto &[name, rendererMgr] : hpaeManager_->rendererManagerMap_) {
+        if (rendererMgr != nullptr) {
+            rendererMgr->DeactivateThread();
+        }
+    }
+    for (auto &[name, capturerMgr] : hpaeManager_->capturerManagerMap_) {
+        if (capturerMgr != nullptr) {
+            capturerMgr->DeactivateThread();
+        }
+    }
 }
 
 void HpaeManagerFuzzTest::DumpFuzzTest()

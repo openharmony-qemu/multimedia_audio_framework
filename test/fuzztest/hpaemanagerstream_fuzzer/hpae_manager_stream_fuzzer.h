@@ -16,6 +16,7 @@
 #define HPAE_MANAGER_STREAM_FUZZER_H
 
 #include "audio_service_hpae_callback.h"
+#include "audio_service_hpae_dump_callback.h"
 #include "audio_info.h"
 #include "hpae_manager.h"
 namespace OHOS {
@@ -44,23 +45,25 @@ public:
         setSinkMuteResult_ = result;
     }
 
-    void OnGetAllSinkInputsCb(int32_t result, std::vector<OHOS::AudioStandard::SinkInput> &sinkInputs) override
+    // Store the result only. These callbacks are registered on a SetUp-scoped
+    // object: copying engine-built vectors into members makes them outlive the
+    // engine call and get destroyed in the fuzzer TU at SetUp return, where any
+    // unrelated in-window heap write detonates in the vector dtor. The vectors
+    // are never read by this fuzzer.
+    void OnGetAllSinkInputsCb(int32_t result, std::vector<OHOS::AudioStandard::SinkInput> &) override
     {
         getAllSinkInputsResult_ = result;
-        sinkInputs_ = sinkInputs;
     }
 
     void OnGetAllSourceOutputsCb(int32_t result,
-        std::vector<OHOS::AudioStandard::SourceOutput> &sourceOutputs) override
-        {
+        std::vector<OHOS::AudioStandard::SourceOutput> &) override
+    {
         getAllSourceOutputsResult_ = result;
-        sourceOutputs_ = sourceOutputs;
     }
 
-    void OnGetAllSinksCb(int32_t result, std::vector<OHOS::AudioStandard::SinkInfo> &sinks) override
+    void OnGetAllSinksCb(int32_t result, std::vector<OHOS::AudioStandard::SinkInfo> &) override
     {
         getAllSinksResult_ = result;
-        sinks_ = sinks;
     }
 
     void OnMoveSinkInputByIndexOrNameCb(int32_t result) override
@@ -170,21 +173,6 @@ public:
         return getCollaborativeUpdateResult_;
     }
 
-    std::vector<OHOS::AudioStandard::SinkInput> GetSinkInputs() const noexcept
-    {
-        return sinkInputs_;
-    }
-
-    std::vector<OHOS::AudioStandard::SourceOutput> GetSourceOutputs() const noexcept
-    {
-        return sourceOutputs_;
-    }
-
-    std::vector<OHOS::AudioStandard::SinkInfo> GetSinks() const noexcept
-    {
-        return sinks_;
-    }
-
 private:
     int32_t portId_ = -1;
     int32_t closeAudioPortResult_ = -1;
@@ -201,9 +189,23 @@ private:
     int32_t updateSpatializationStateResult_ = -1;
     int32_t updatePersonalizedHRTFBinResult_ = -1;
     int32_t updatePersonalizedSpatializationStateResult_ = -1;
-    std::vector<OHOS::AudioStandard::SinkInput> sinkInputs_;
-    std::vector<OHOS::AudioStandard::SourceOutput> sourceOutputs_;
-    std::vector<OHOS::AudioStandard::SinkInfo> sinks_;
+};
+
+// Stores NOTHING. The previous SetUp-scoped dump callback swapped engine-built
+// std::vector<HpaeInputOutputInfo> buffers into its members and destroyed them
+// at StreamSetUp return; an unrelated heap write during the SetUp tail then
+// detonated in the fuzzer TU's vector dtor (fuzz CI SIGSEGV inside free()).
+// The data is never read by this fuzzer, so keep the overrides empty and let
+// the engine-side vectors die inside the engine right after the callback.
+class HpaeAudioServiceDumpCallbackFuzzTest : public AudioServiceHpaeDumpCallback {
+public:
+    ~HpaeAudioServiceDumpCallbackFuzzTest() override = default;
+
+    void OnDumpSinkInfoCb(std::string &, int32_t) override { }
+    void OnDumpSourceInfoCb(std::string &, int32_t) override { }
+    void OnDumpAllAvailableDeviceCb(int32_t, HpaeDeviceInfo &&) override { }
+    void OnDumpSinkInputsInfoCb(std::vector<HpaeInputOutputInfo> &, int32_t) override { }
+    void OnDumpSourceOutputsInfoCb(std::vector<HpaeInputOutputInfo> &, int32_t) override { }
 };
 
 class HpaeManagerFuzzTest {
