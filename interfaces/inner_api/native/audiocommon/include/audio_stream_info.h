@@ -172,10 +172,7 @@ enum AudioSamplingRate {
     SAMPLE_RATE_96000 = 96000,
     SAMPLE_RATE_176400 = 176400,
     SAMPLE_RATE_192000 = 192000,
-    SAMPLE_RATE_384000 = 384000,
-    // 5644800 serves inner-api/plugin consumers (e.g. audiosuite format converter for audio
-    // editing); the framework stream API keeps 384000 as its ceiling and does not accept it.
-    SAMPLE_RATE_5644800 = 5644800
+    SAMPLE_RATE_384000 = 384000
 };
 
 enum AudioEncodingType {

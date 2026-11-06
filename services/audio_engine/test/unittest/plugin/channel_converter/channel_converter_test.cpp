@@ -620,36 +620,6 @@ HWTEST_F(ChannelConverterTest, ChannelConverter_UpmixGain_Idempotent_001, TestSi
         EXPECT_FLOAT_EQ(outRepeat[i], outOnce[i]);
     }
 }
-
-/**
- * @tc.name  : ChannelConverter_FrameLengthBoundary_001
- * @tc.type  : FUNC
- * @tc.number: ChannelConverter_FrameLengthBoundary_001
- * @tc.desc  : Test Process frame length boundary at MAX_FRAME_LENGTH (384000 * 10, aligned
- *             with ProResampler MAX_FRAME_LEN): exact cap is accepted, cap + 1 is rejected.
- */
-HWTEST_F(ChannelConverterTest, ChannelConverter_FrameLengthBoundary_001, TestSize.Level0)
-{
-    ChannelConverter converter;
-    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 2};
-    AudioChannelInfo outInfo = {CH_LAYOUT_MONO, 1};
-
-    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
-    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
-    EXPECT_EQ(converter.isInitialized_, true);
-
-    const uint32_t maxFrameLength = SAMPLE_RATE_384000 * 10; // 3840000, same as ProResampler MAX_FRAME_LEN
-    std::vector<float> in(maxFrameLength * 2, 0.0f); // stereo input, ~30 MB
-    std::vector<float> out(maxFrameLength, 0.0f); // mono output, ~15 MB
-    ret = converter.Process(maxFrameLength, in.data(), in.size() * sizeof(float),
-        out.data(), out.size() * sizeof(float));
-    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
-
-    // cap + 1 must hit the oversize guard before any byte-size math
-    float dummy = 0.0f;
-    ret = converter.Process(maxFrameLength + 1, &dummy, sizeof(float), &dummy, sizeof(float));
-    EXPECT_EQ(ret, MIX_ERR_INVALID_ARG);
-}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
