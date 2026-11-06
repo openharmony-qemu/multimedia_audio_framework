@@ -85,6 +85,8 @@ public:
     bool IsValidNetworkIdForSendEffectParam(const std::string &networkId);
 
     void NotifyUpdatePersonalizedSpatializationStateResult(int32_t ret);
+
+    int32_t GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList);
 private:
     PolicyHandler();
     sptr<IPolicyProviderIpc> iPolicyProvider_ = nullptr;

@@ -128,6 +128,7 @@ const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELL
 const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
 const char* CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 const char* MANAGE_AUDIO_CONFIG_PERMISSION = "ohos.permission.MANAGE_AUDIO_CONFIG";
+const char* GET_AUDIO_ADAPTER_INFO_PERMISSION = "ohos.permission.GET_AUDIO_ADAPTER_INFO";
 const char* CAPTURE_PLAYBACK_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK_DOWNLINK";
 const char* MANAGE_AUDIO_ACCESSORY = "ohos.permission.MANAGE_AUDIO_ACCESSORY";
 static constexpr char WAKEUP_TRACK_FILE_PATCH[] = "/dev/audio_wakeup_track";
@@ -964,10 +965,16 @@ void AudioServer::OnStart()
     AUDIO_INFO_LOG("OnStart uid:%{public}d", getuid());
     RecordBootStateTime(AudioServerBootState::LOAD_LIBXML2, ClockTime::GetCurMilli());
     DlopenUtils::Init();
-    auto info = AudioDeviceEnhanceManager::GetInstance().GetSoundCardInfo();
-    if (!info.IsEmpty()) {
-        cacheSoundCardInfo_ = std::make_shared<SoundCardInfo>(info);
-        AUDIO_INFO_LOG("Cached sound card info: name=%{public}s", info.name.c_str());
+    SoundCardInfo info;
+    int32_t ret = AudioDeviceEnhanceManager::GetInstance().GetSoundCardInfo(info);
+    if (ret == SUCCESS) {
+        if (!info.IsEmpty()) {
+            cachedSoundCardInfo_ = std::make_shared<SoundCardInfo>(info);
+            AUDIO_INFO_LOG("Cached sound card info: name=%{public}s", info.name.c_str());
+        }
+    } else if (ret != ERR_NOT_SUPPORTED) {
+        // Best effort cache warm up, it must not disturb the service startup.
+        AUDIO_WARNING_LOG("Get sound card info at startup failed, ret: %{public}d", ret);
     }
     InitMaxRendererStreamCntPerUid();
     AudioInnerCall::GetInstance()->RegisterAudioServer(this);
@@ -3587,6 +3594,24 @@ int32_t AudioServer::NotifyAudioPolicyReady()
     isAudioPolicyReady_ = true;
     isAudioPolicyReadyCv_.notify_all();
     AUDIO_INFO_LOG("out");
+    return SUCCESS;
+}
+
+int32_t AudioServer::GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList, int32_t &ret)
+{
+    ret = ERROR;
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (!PermissionUtil::VerifyPermission(GET_AUDIO_ADAPTER_INFO_PERMISSION,
+        IPCSkeleton::GetCallingTokenID())) {
+        AUDIO_ERR_LOG("GetUsbSoundCardInfoList refused for %{public}d", callingUid);
+        return SUCCESS;
+    }
+#ifdef USB_ENABLE
+    ret = PolicyHandler::GetInstance().GetUsbSoundCardInfoList(usbSoundCardList);
+#else
+    AUDIO_ERR_LOG("USB audio feature is not supported on this device.");
+    ret = ERR_NOT_SUPPORTED;
+#endif
     return SUCCESS;
 }
 

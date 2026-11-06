@@ -2204,6 +2204,10 @@ ohos_unittest("audio_service_client_effect_unit_test") {
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
+  
+  if (audio_framework_feature_usb_audio) {
+    external_deps += [ "usb_manager:usbsrv_client" ]
+  }
 
   if (audio_framework_feature_inner_capturer) {
     deps +=

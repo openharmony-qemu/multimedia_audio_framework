@@ -276,6 +276,8 @@ public:
 
     int32_t NotifyAudioPolicyReady() override;
 
+    int32_t GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList, int32_t &ret) override;
+
     int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;
     int32_t ReleaseCaptureLimit(int32_t innerCapId) override;
@@ -560,7 +562,7 @@ private:
     static std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> audioParameterKeys;
 
     pthread_t m_paDaemonThread;
-    std::shared_ptr<SoundCardInfo> cacheSoundCardInfo_;
+    std::shared_ptr<SoundCardInfo> cachedSoundCardInfo_;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::string playTaskId_ = "0"; // only use by homemusic
 

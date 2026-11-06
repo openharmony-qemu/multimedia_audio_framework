@@ -57,9 +57,6 @@
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "audio_loud_volume_manager.h"
 #endif
-#ifdef USB_ENABLE
-#include "audio_usb_manager.h"
-#endif
 #include "audio_pipe_selector.h"
 #include "boot_animation_state_info.h"
 #include "audio_loopback_manager.h"
@@ -76,6 +73,9 @@ class AudioPolicyServerHandler;
 class AudioSessionService;
 class BluetoothEventSubscriber;
 class AudioSubProfileObserver;
+#ifdef USB_ENABLE
+class AudioUsbManager;
+#endif
 
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyStub,

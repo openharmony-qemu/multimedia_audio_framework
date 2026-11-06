@@ -54,7 +54,8 @@
           "audio_framework_feature_input_independent_routing_rule",
           "audio_framework_feature_multi_zone_volume",
           "audio_framework_feature_multi_user_zone",
-          "audio_framework_feature_thermal_manager"
+          "audio_framework_feature_thermal_manager",
+          "audio_framework_feature_soundcard_info"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",

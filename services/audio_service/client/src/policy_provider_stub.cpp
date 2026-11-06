@@ -170,5 +170,17 @@ int32_t PolicyProviderWrapper::NotifyUpdatePersonalizedSpatializationStateResult
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->NotifyUpdatePersonalizedSpatializationStateResult(ret);
 }
+
+int32_t PolicyProviderWrapper::GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList, int32_t &ret)
+{
+#ifdef USB_ENABLE
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    ret = policyWorker_->GetUsbSoundCardInfoList(usbSoundCardList);
+    return SUCCESS;
+#else
+    AUDIO_ERR_LOG("USB audio feature is not supported on this device.");
+    return ERR_NOT_SUPPORTED;
+#endif
+}
 } // namespace AudioStandard
 } // namespace OHOS

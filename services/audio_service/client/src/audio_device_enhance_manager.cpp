@@ -22,9 +22,18 @@
 #include "audio_renderer.h"
 #include "audio_device_info.h"
 #include "audio_service_proxy.h"
+#ifdef AUDIO_FRAMEWORK_FEATURE_SOUNDCARD_INFO
+#include "ipc_skeleton.h"
+#include "parameters.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
+#ifdef AUDIO_FRAMEWORK_FEATURE_SOUNDCARD_INFO
+constexpr char GET_AUDIO_ADAPTER_INFO[] = "ohos.permission.GET_AUDIO_ADAPTER_INFO";
+constexpr char ONBOARD_SOUND_CARD_PATH[] = "/proc/asound/card0";
+constexpr char SOUND_CARD_INFO_KEY[] = "sound_card_info";
+#endif
 AudioDeviceEnhanceManager &AudioDeviceEnhanceManager::GetInstance()
 {
     static AudioDeviceEnhanceManager manager;
@@ -155,22 +164,103 @@ SoundCardInfo ParseSoundCardInfo(const std::string &halResponse)
     return info;
 }
 
-SoundCardInfo AudioDeviceEnhanceManager::GetSoundCardInfo() const
+int32_t AudioDeviceEnhanceManager::GetSoundCardInfo(SoundCardInfo &soundCardInfo) const
 {
-    std::string key = "sound_card_info";
+#ifndef AUDIO_FRAMEWORK_FEATURE_SOUNDCARD_INFO
+    AUDIO_ERR_LOG("Sound card info feature is not supported on this device.");
+    return ERR_NOT_SUPPORTED;
+#else
+    if (!OHOS::AudioStandard::PermissionUtil::VerifyIsSystemApp()) {
+        AUDIO_ERR_LOG("Permission denied: Caller is not a system app.");
+        return ERR_PERMISSION_DENIED;
+    }
+    return GetOnboardSoundCardInfo(soundCardInfo);
+#endif
+}
+
+#ifdef AUDIO_FRAMEWORK_FEATURE_SOUNDCARD_INFO
+int32_t AudioDeviceEnhanceManager::GetOnboardSoundCardInfo(SoundCardInfo &onboardInfo) const
+{
+    std::string key = SOUND_CARD_INFO_KEY;
     std::string value = "";
 
     const sptr<IStandardAudioService> gasp = AudioServiceProxy::GetAudioSystemManagerProxy();
     if (gasp == nullptr) {
         AUDIO_ERR_LOG("Audio service proxy unavailable.");
-        return SoundCardInfo();
+        return ERROR;
     }
     int32_t ret = gasp->GetAudioParameter(key, value);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("GetAudioParameter failed, ret: %{public}d", ret);
-        return SoundCardInfo();
+        return ERROR;
     }
-    return ParseSoundCardInfo(value);
+    onboardInfo = ParseSoundCardInfo(value);
+    if (!onboardInfo.IsEmpty()) {
+        onboardInfo.cardId = BuildOnboardCardId(onboardInfo.vendor, ONBOARD_SOUND_CARD_PATH);
+        onboardInfo.cardType = SoundCardType::ONBOARD;
+    }
+    return SUCCESS;
+}
+
+std::string AudioDeviceEnhanceManager::BuildOnboardCardId(const std::string &vendor, const std::string &devPath) const
+{
+    // Card ID format: ONBOARD\VEN_<vendor>&<platform>&<devPath>, see the design doc cardId format table.
+    std::string platform = system::GetParameter("ohos.boot.hardware", "unknown");
+    return "ONBOARD\\VEN_" + vendor + "&" + platform + "&" + devPath;
+}
+
+#ifdef USB_ENABLE
+int32_t AudioDeviceEnhanceManager::GetUsbSoundCardInfo(std::vector<SoundCardInfo> &soundCardList) const
+{
+    const sptr<IStandardAudioService> gasp = AudioServiceProxy::GetAudioSystemManagerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("Audio service proxy unavailable.");
+        return ERROR;
+    }
+    int32_t ret = ERROR;
+    gasp->GetUsbSoundCardInfoList(soundCardList, ret);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("GetUsbSoundCardInfoList failed, ret: %{public}d", ret);
+        return ERROR;
+    }
+    return SUCCESS;
+}
+#endif // USB_ENABLE
+#endif // AUDIO_FRAMEWORK_FEATURE_SOUNDCARD_INFO
+
+int32_t AudioDeviceEnhanceManager::GetSoundCardInfoList(std::vector<SoundCardInfo> &soundCardList) const
+{
+#ifndef AUDIO_FRAMEWORK_FEATURE_SOUNDCARD_INFO
+    AUDIO_ERR_LOG("Sound card info feature is not supported on this device.");
+    return ERR_NOT_SUPPORTED;  // return error code 801
+#else
+    if (!PermissionUtil::VerifyPermission(GET_AUDIO_ADAPTER_INFO, IPCSkeleton::GetCallingTokenID())) {
+        AUDIO_ERR_LOG("Permission denied: Caller does not have GET_AUDIO_ADAPTER_INFO permission.");
+        return ERR_NO_PERMISSION;
+    }
+
+    SoundCardInfo onboardInfo;
+    int32_t onboardRet = GetOnboardSoundCardInfo(onboardInfo);
+    if (onboardRet != SUCCESS) {
+        AUDIO_ERR_LOG("Get onboard sound card info failed, onboardRet: %{public}d", onboardRet);
+        return onboardRet;
+    }
+    if (!onboardInfo.IsEmpty()) {
+        soundCardList.push_back(onboardInfo);
+        AUDIO_INFO_LOG("found onboard sound card, cardId=%{public}s", onboardInfo.cardId.c_str());
+    }
+
+#ifdef USB_ENABLE
+    int32_t usbRet = GetUsbSoundCardInfo(soundCardList);
+    if (usbRet != SUCCESS) {
+        // Keep the onboard sound card info already collected and return SUCCESS.
+        // A USB service failure should not fail the whole enumeration.
+        AUDIO_ERR_LOG("Get USB sound card info failed, usbRet: %{public}d", usbRet);
+    }
+#endif // USB_ENABLE
+    AUDIO_INFO_LOG("total sound cards found: %{public}zu", soundCardList.size());
+    return SUCCESS;
+#endif // AUDIO_FRAMEWORK_FEATURE_SOUNDCARD_INFO
 }
 } // namespace AudioStandard
 } // namespace OHOS

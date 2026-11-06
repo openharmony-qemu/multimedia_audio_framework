@@ -42,6 +42,9 @@
 #include "policy_provider_stub.h"
 #include "audio_device_manager.h"
 #include "audio_device_parser.h"
+#ifdef USB_ENABLE
+#include "audio_device_enhance_manager.h"
+#endif
 #include "audio_state_manager.h"
 #include "audio_pnp_server.h"
 #include "audio_policy_server_handler.h"
@@ -175,6 +178,10 @@ public:
     int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, AudioDeviceDescriptor &deviceInfo);
 
     int32_t GetRealUid(const AudioProcessConfig &config);
+
+#ifdef USB_ENABLE
+    int32_t GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList);
+#endif
 
     int32_t GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName);
 

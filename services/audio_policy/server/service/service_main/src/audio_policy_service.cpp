@@ -47,6 +47,10 @@
 #include "audio_policy_datashare_listener.h"
 #include "audio_zone_service.h"
 #include "audio_policy_manager_listener.h"
+#ifdef USB_ENABLE
+#include "ipc_skeleton.h"
+#include "securec.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1324,5 +1328,108 @@ int32_t AudioPolicyService::NotifyUpdatePersonalizedSpatializationStateResult(in
         .NotifyUpdatePersonalizedSpatializationStateResult(ret);
     return SUCCESS;
 }
+
+#ifdef USB_ENABLE
+namespace {
+constexpr uint32_t USB_CARD_ID_BUFFER_SIZE = 128;
+constexpr size_t MAX_SOUND_CARD_FIELD_LEN = 256;
+ 
+void ClampField(std::string &value, size_t maxLen = MAX_SOUND_CARD_FIELD_LEN)
+{
+    if (value.size() > maxLen) {
+        AUDIO_WARNING_LOG("sound card field truncated, from %{public}zu to %{public}zu", value.size(), maxLen);
+        value.resize(maxLen);
+    }
+}
+
+std::string BuildUsbCardId(uint32_t vendorId, uint32_t productId,
+    const std::string &hubChannel, const std::string &portAddress)
+{
+    char buffer[USB_CARD_ID_BUFFER_SIZE] = {0};
+    // Card ID format: USB\VID_xxxx&PID_xxxx\{bus}&{devAddr}, see the design doc cardId format table
+    int ret = snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1, "USB\\VID_%04X&PID_%04X\\%s&%s",
+        vendorId, productId, hubChannel.c_str(), portAddress.c_str());
+    // snprintf_s returns the number of written characters, or -1 when it fails or truncates.
+    if (ret < 0) {
+        AUDIO_ERR_LOG("USB sound card id build failed");
+        return "";
+    }
+    return std::string(buffer);
+}
+ 
+std::string BuildUsbBusAddress(const std::string &hubChannel, const std::string &portAddress)
+{
+    return hubChannel + "-" + portAddress;
+}
+ 
+USB::UsbDevice *FindUsbAudioDevice(uint8_t busNum, uint8_t devAddr, std::vector<USB::UsbDevice> &usbDeviceList)
+{
+    for (auto &usbDevice : usbDeviceList) {
+        if (usbDevice.GetBusNum() == busNum && usbDevice.GetDevAddr() == devAddr) {
+            if (!AudioUsbManager::IsAudioDevice(usbDevice)) {
+                AUDIO_WARNING_LOG("Not usb audio device");
+                return nullptr;
+            }
+            return &usbDevice;
+        }
+    }
+    return nullptr;
+}
+} // namespace
+
+int32_t AudioPolicyService::GetUsbSoundCardInfoList(std::vector<SoundCardInfo> &usbSoundCardList)
+{
+    bool hdfAudioDeviceTag = false;
+    auto cardMap = AudioUsbManager::GetUsbSoundCardMap(hdfAudioDeviceTag);
+    std::vector<USB::UsbDevice> usbDeviceList;
+    auto usbRet = USB::UsbSrvClient::GetInstance().GetDevices(usbDeviceList);
+    if (usbRet != SUCCESS) {
+        AUDIO_ERR_LOG("GetDevices failed, usbRet: %{public}d", usbRet);
+        return ERROR;
+    }
+ 
+    for (const auto &cardPair : cardMap) {
+        const auto &usbAddr = cardPair.first;
+        const auto &soundCard = cardPair.second;
+        USB::UsbDevice *matchedDevice = FindUsbAudioDevice(usbAddr.busNum_, usbAddr.devAddr_, usbDeviceList);
+        // Skip the sound card when no matching audio device is found
+        if (matchedDevice == nullptr) {
+            // Do not log the bus/device address, it identifies the physical port the user plugged in.
+            AUDIO_WARNING_LOG("No matching USB audio device found for a sound card");
+            continue;
+        }
+ 
+        std::string hubChannel = std::to_string(usbAddr.busNum_);
+        std::string portAddress = std::to_string(usbAddr.devAddr_);
+ 
+        SoundCardInfo usbInfo;
+        usbInfo.cardId = BuildUsbCardId(matchedDevice->GetVendorId(), matchedDevice->GetProductId(),
+            hubChannel, portAddress);
+        if (usbInfo.cardId.empty()) {
+            AUDIO_ERR_LOG("Skip USB sound card with an empty card id");
+            continue;
+        }
+        usbInfo.name = matchedDevice->GetProductName().empty() ?
+            ("USB Audio Device " + std::to_string(soundCard.cardNum_)) : matchedDevice->GetProductName();
+        usbInfo.vendor = matchedDevice->GetManufacturerName().empty() ? "USB" : matchedDevice->GetManufacturerName();
+        usbInfo.model = matchedDevice->GetProductName().empty() ?
+            std::to_string(matchedDevice->GetProductId()) : matchedDevice->GetProductName();
+        usbInfo.busAddress = BuildUsbBusAddress(hubChannel, portAddress);
+        usbInfo.driver = "usbaudio";
+        usbInfo.cardType = SoundCardType::USB;
+        ClampField(usbInfo.name);
+        ClampField(usbInfo.vendor);
+        ClampField(usbInfo.model);
+        ClampField(usbInfo.busAddress);
+        ClampField(usbInfo.driver);
+ 
+        usbSoundCardList.push_back(usbInfo);
+        // cardId and busAddress embed the physical port address, keep them out of the log.
+        AUDIO_DEBUG_LOG("found USB sound card, name=%{public}s, vendor=%{public}s",
+            usbInfo.name.c_str(), usbInfo.vendor.c_str());
+    }
+    return SUCCESS;
+}
+#endif // USB_ENABLE
 } // namespace AudioStandard
 } // namespace OHOS

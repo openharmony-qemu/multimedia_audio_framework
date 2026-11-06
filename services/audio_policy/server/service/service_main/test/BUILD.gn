@@ -122,6 +122,7 @@ ohos_unittest("audio_policy_server_extended_test") {
 
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
   }
 
   if (audio_framework_feature_input) {
@@ -265,6 +266,7 @@ ohos_unittest("audio_policy_server_methods_test") {
 
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
   }
 
   if (audio_framework_feature_input) {
