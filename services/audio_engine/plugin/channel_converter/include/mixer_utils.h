@@ -53,48 +53,8 @@ bool CheckIsHOA(AudioChannelLayout layout);
 } // AudioStandard
 } // OHOS
 
-// C-linkage mixer facade for C++ callers (e.g. chipset SDK consumers): mixes equal-length
-// same-format streams in the float domain with a limiter (anti-overflow), and returns
-// an internally allocated buffer which stays valid until the next call or Destroy.
-// Note: this header is not includable from a pure C translation unit (C++ constructs above);
-// include it at file scope and do not wrap this include in an extern "C" block.
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-// One input stream. sampleCount is frames per channel and must be the same for all
-// streams of one AudioMixerProcess call; volume is a linear gain in [0.0, 1.0]
-// applied to this stream before accumulation.
-// Prefixed AudioPcm* (not AudioMixStream): a bare AudioMixStream would be ambiguous
-// with OHOS::AudioStandard::AudioSuite::AudioMixStream in TUs that include both headers.
-struct AudioPcmMixStream {
-    const void* data;
-    int32_t sampleCount;
-    float volume;
-};
-
-// Mixing result. outData points to an internal buffer owned by the mixer handle.
-struct AudioMixResult {
-    uint8_t* outData;
-    int32_t outSampleCount;
-    int32_t errCode; // AUDIO_PCM_ALGO_* codes from audio_proresampler_process.h
-};
-
-typedef void* AudioMixHandle;
-
-// Create a mixer. channel: 1 = mono, 2 = stereo; the output format equals the input
-// format. Constraints per AudioMixerProcess call: sampleCount > 0 and fixed after the
-// first successful call; sampleCount * channel divisible by 4 and not longer than
-// 60ms; stream count in [1, 1024].
-AudioMixHandle AudioMixerCreate(int32_t sampleRate, int32_t channel, AudioPcmFormat format);
-
-struct AudioMixResult AudioMixerProcess(AudioMixHandle handle, const struct AudioPcmMixStream* streams,
-    int32_t streamCount);
-
-// Destroy the mixer and release the internally allocated buffers.
-void AudioMixerDestroy(AudioMixHandle handle);
-
-#ifdef __cplusplus
-}
-#endif
+// The C-linkage mixer facade used by direct (chipset SDK) consumers now lives in
+// pcm_mixer_c_api.h so it can be included without the audio_stream_info.h closure
+// above; include it here to keep existing TUs that include mixer_utils.h unchanged.
+#include "pcm_mixer_c_api.h"
 #endif

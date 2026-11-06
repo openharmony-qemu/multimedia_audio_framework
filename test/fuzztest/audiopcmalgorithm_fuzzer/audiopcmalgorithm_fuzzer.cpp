@@ -43,7 +43,9 @@ constexpr int64_t MAX_FUZZ_BUFFER_BYTES = 4096 * 1024; // keep fuzz allocations 
 constexpr int32_t FUZZ_BRANCH_MOD = 2; // splits fuzz inputs between two branches
 constexpr int32_t MIXER_MAX_BLOCK_MS = 60; // process contract: block no longer than 60ms
 constexpr int32_t MS_PER_SECOND = 1000;
-constexpr int32_t MIXER_ALIGN_DIVISOR = 4; // process contract: sampleCount*channels divisible by 4
+constexpr int32_t MIXER_ALIGN_DIVISOR = 4; // steers toward the 4-chunk limiter path; other
+                                            // block lengths fall back to 3 / 2 / 1 chunks
+constexpr int32_t MIXER_CHANNEL_STEREO_FUZZ = 2;
 
 template<class T>
 T GetData()
@@ -102,6 +104,19 @@ static void ConvertFuzz(const uint8_t *data, size_t size)
     vector<uint8_t> back(static_cast<size_t>(byteLen), 0);
     (void)ConvertFloatToPcm(format, floats.data(), sampleCount, back.data());
     (void)AudioFormatCalcMemLength(format, channels, sampleCount);
+
+    // mono <-> stereo conversion: exercise the direction matching the source
+    // geometry. pcm holds sampleCount interleaved samples, so the source has only
+    // sampleCount / channels frames available.
+    int32_t frameCount = sampleCount / channels;
+    if (frameCount > 0 && channels == 1) {
+        int32_t outSamples = frameCount * MIXER_CHANNEL_STEREO_FUZZ;
+        vector<uint8_t> converted(static_cast<size_t>(outSamples) * bytesPerSample, 0);
+        (void)AudioPcmUpmixMonoToStereo(format, pcm.data(), frameCount, converted.data());
+    } else if (frameCount > 0 && channels == MIXER_CHANNEL_STEREO_FUZZ) {
+        vector<uint8_t> converted(static_cast<size_t>(frameCount) * bytesPerSample, 0);
+        (void)AudioPcmDownmixStereoToMono(format, pcm.data(), frameCount, converted.data());
+    }
 }
 
 // Prepares fuzz streams and drives AudioMixerProcess; extracted to keep the nesting
