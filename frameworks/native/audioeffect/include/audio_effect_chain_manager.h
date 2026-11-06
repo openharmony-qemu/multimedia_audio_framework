@@ -234,6 +234,7 @@ private:
         uint64_t &channelLayout);
     int32_t UpdateDeviceInfo(int32_t device, const std::string &sinkName);
     std::shared_ptr<AudioEffectChain> CreateAudioEffectChain(const std::string &sceneType, bool isPriorScene);
+    std::shared_ptr<AudioEffectChain> CreateAudioEffectChain(const std::string &sceneType);
     bool CheckIfSpkDsp();
     int32_t CheckAndReleaseCommonEffectChain(const std::string &sceneType);
     int32_t CheckAndReleaseCommonEffectChain(const std::string &sceneType,

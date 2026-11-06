@@ -2936,11 +2936,11 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_001, TestSi
     AudioEffectChainManager::GetInstance()->maxEffectChainCount_ = 0;
 
     auto ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-    EXPECT_EQ(ret, CREATE_DEFAULT_PROCESSCLUSTER);
+    EXPECT_EQ(ret, CREATE_NEW_PROCESSCLUSTER);
 
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
     ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-    EXPECT_EQ(ret, USE_DEFAULT_PROCESSCLUSTER);
+    EXPECT_EQ(ret, CREATE_NEW_PROCESSCLUSTER);
 
     AudioEffectChainManager::GetInstance()->maxEffectChainCount_ = 10;
     ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
@@ -3044,7 +3044,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_005, TestSi
 
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
     auto ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-    EXPECT_EQ(ret, USE_DEFAULT_PROCESSCLUSTER);
+    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
 
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[defaultScene] = nullptr;
     ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
@@ -6050,6 +6050,118 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicInner_Rende
         sceneType, DEVICE_TYPE_SPEAKER, 100);
     EXPECT_EQ(SUCCESS, result);
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultKey], 2);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CreateAudioEffectChainDynamic with renderId - quota exhausted
+* @tc.number : CreateAudioEffectChainDynamic_RenderId_004
+* @tc.desc   : Test CreateAudioEffectChainDynamic creates scene chain when quota is exhausted.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_RenderId_004, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    // Minimum quota: the very first create already exceeds the special chain budget
+    AudioEffectChainManager::GetInstance()->maxEffectChainCount_ = 1;
+    string firstScene = "SCENE_MUSIC";
+    int32_t firstResult = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        firstScene, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, firstResult);
+
+    // The second scene must still get its own chain instead of failing on the
+    // missing default chain key (degrade-to-default no longer applies here)
+    string secondScene = "SCENE_MOVIE";
+    string secondKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        secondScene, DEVICE_TYPE_SPEAKER, 100);
+    int32_t secondResult = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        secondScene, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, secondResult);
+    EXPECT_NE(nullptr, AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[secondKey]);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CreateAudioEffectChainDynamic with renderId - prior scene at capacity
+* @tc.number : CreateAudioEffectChainDynamic_RenderId_005
+* @tc.desc   : Test CreateAudioEffectChainDynamic creates prior scene chain when quota is exhausted.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_RenderId_005, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    AudioEffectChainManager::GetInstance()->maxEffectChainCount_ = 1;
+    AudioEffectChainManager::GetInstance()->priorSceneList_.push_back("SCENE_VOIP");
+    string sceneType = "SCENE_VOIP";
+    int32_t result = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, result);
+
+    // Prior scenes are also tracked in the special set on the no-quota renderId path
+    EXPECT_TRUE(AudioEffectChainManager::GetInstance()->sceneTypeToSpecialEffectSet_.count(sceneType) > 0);
+
+    AudioEffectChainManager::GetInstance()->priorSceneList_.clear();
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CheckProcessClusterInstances with renderId - prior scene at capacity
+* @tc.number : CheckProcessClusterInstances_RenderId_008
+* @tc.desc   : Test CheckProcessClusterInstances returns CREATE_NEW for prior scene at capacity.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_RenderId_008, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    // Capacity exhausted: prior scene keeps its dedicated cluster, normal scene shares default
+    AudioEffectChainManager::GetInstance()->maxEffectChainCount_ = 1;
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->priorSceneList_.push_back("SCENE_VOIP");
+
+    int32_t priorResult = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
+        "SCENE_VOIP", DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(priorResult, CREATE_NEW_PROCESSCLUSTER);
+
+    int32_t normalResult = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
+        "SCENE_MUSIC", DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(normalResult, CREATE_DEFAULT_PROCESSCLUSTER);
+
+    AudioEffectChainManager::GetInstance()->priorSceneList_.clear();
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ReleaseAudioEffectChainDynamic with renderId - quota recovery
+* @tc.number : ReleaseAudioEffectChainDynamic_RenderId_004
+* @tc.desc   : Test ReleaseAudioEffectChainDynamic recovers scene quota for next scene.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_RenderId_004, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    AudioEffectChainManager::GetInstance()->maxEffectChainCount_ = 1;
+    string firstScene = "SCENE_MUSIC";
+    int32_t createResult = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        firstScene, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, createResult);
+
+    AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamic(
+        firstScene, DEVICE_TYPE_SPEAKER, 100);
+    // Releasing the only stream erases the special set entry synchronously
+    EXPECT_TRUE(AudioEffectChainManager::GetInstance()->sceneTypeToSpecialEffectSet_.count(firstScene) == 0);
+
+    // Quota is recovered: a different scene creates its own chain
+    string secondScene = "SCENE_MOVIE";
+    int32_t secondResult = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        secondScene, DEVICE_TYPE_SPEAKER, 100);
+    EXPECT_EQ(SUCCESS, secondResult);
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
