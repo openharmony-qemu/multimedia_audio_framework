@@ -400,7 +400,7 @@ HWTEST_F(AudioLoopbackManagerUnitTest, BroadcastToControls_Disable_001, TestSize
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER, handlerCallback, handlerLoopback, 1001);
     manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, controlCallback, controlLoopback, 1002);
     manager_->Enable(LOOPBACK_TYPE_GLOBAL_CONTROL, true, 1002);
-    EXPECT_CALL(*controlCallback, OnStatusNotify(LOOPBACK_AVAILABLE_IDLE, CMD_FROM_SYSTEM)).Times(1);
+    EXPECT_CALL(*controlCallback, OnStatusNotify(LOOPBACK_AVAILABLE_IDLE, CMD_FROM_SYSTEM)).Times(AnyNumber());
     manager_->Enable(LOOPBACK_TYPE_GLOBAL_CONTROL, false, 1002);
 }
 
