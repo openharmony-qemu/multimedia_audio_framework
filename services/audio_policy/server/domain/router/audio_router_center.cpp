@@ -798,7 +798,7 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectOutputStreamDevices(Rout
     std::vector<StreamDeviceInfo> outputDevices;
     auto pipeManager = AudioPipeManager::GetPipeManager();
     CHECK_AND_RETURN_RET(pipeManager != nullptr, outputDevices);
-    auto allOutputStreams = pipeManager->GetAllOutputStreamDescsIncludingModem();
+    auto allOutputStreams = pipeManager->GetAllOutputStreamDescsIncludingModemCopy();
 
     for (auto &desc : allOutputStreams) {
         CHECK_AND_CONTINUE(desc != nullptr);
