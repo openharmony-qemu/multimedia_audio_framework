@@ -94,6 +94,7 @@ public:
     void HandleDeviceStateChange(std::shared_ptr<AudioDeviceDescriptor> desc, bool isAvailable);
     void SetStopStreamInfoWhenDisconnect(const std::string &networkId, const std::vector<StreamUsage> &usages,
         const std::vector<int32_t> &uids);
+    void NotifyDistributedDeviceOnline();
 
 private:
     AudioDeviceStatus() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

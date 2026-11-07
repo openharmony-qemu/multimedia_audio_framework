@@ -334,6 +334,11 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
     }
 
     AudioSessionManagerCallback();
+
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "audio policy manager proxy is NULL");
+    int32_t ret = gsp->NotifyDistributedDeviceOnline();
+    AUDIO_INFO_LOG("NotifyDistributedDeviceOnline ret: %{public}d", ret);
 }
 
 void AudioPolicyManager::RegisterServerDiedCallBack(AudioServerDiedCallBack func)

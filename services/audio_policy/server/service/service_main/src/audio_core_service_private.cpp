@@ -895,6 +895,21 @@ int32_t AudioCoreService::SetSplitModeReady()
     return SUCCESS;
 }
 
+bool AudioCoreService::IsNeedReloadPipe(const std::string &moduleName, const std::string &splitArgs,
+    const std::string &networkId)
+{
+    AudioIOHandle existingModuleId;
+    bool isPortExist = audioIOHandleMap_.GetModuleIdByKey(moduleName, existingModuleId);
+    CHECK_AND_RETURN_RET_LOG(isPortExist, false, "pipe not exist");
+
+    std::lock_guard<std::mutex> lock(splitModuleArgsMutex_);
+    auto it = splitModuleArgsMap_.find(networkId);
+    CHECK_AND_RETURN_RET_LOG(!(it != splitModuleArgsMap_.end() && it->second == splitArgs), false,
+        "already loaded with same args");
+
+    return true;
+}
+
 int32_t AudioCoreService::SetSupportReload(bool isSupportReload, const std::string &networkId)
 {
     CHECK_AND_RETURN_RET_LOG(!networkId.empty(), ERR_INVALID_PARAM, "cannot find device without valid networkId");
@@ -918,6 +933,7 @@ int32_t AudioCoreService::LoadSplitModule(const std::string &splitArgs, const st
         return ERR_INVALID_PARAM;
     }
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, OUTPUT_DEVICE);
+    CHECK_AND_RETURN_RET_LOG(IsNeedReloadPipe(moduleName, splitArgs, networkId), SUCCESS, "no need to reload pipe");
     std::string currentActivePort = REMOTE_CLASS;
     audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
     AudioIOHandle oldModuleId;
@@ -936,6 +952,9 @@ int32_t AudioCoreService::LoadSplitModule(const std::string &splitArgs, const st
     int32_t openRet = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, moduleInfo);
     if (openRet != 0) {
         AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
+    } else {
+        std::lock_guard<std::mutex> lock(splitModuleArgsMutex_);
+        splitModuleArgsMap_[networkId] = splitArgs;
     }
     // Notify router split mode is ready to ensure device can be selected.
     int32_t setRet = AudioRouterCenter::GetAudioRouterCenter().SetSplitModeReady();

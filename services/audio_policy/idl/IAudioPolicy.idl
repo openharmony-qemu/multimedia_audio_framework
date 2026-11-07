@@ -397,4 +397,5 @@ interface IAudioPolicy {
     void IsUltraFastRecordingSupported([in] AudioStreamInfo streamInfo, [in] int source, [out] boolean supported);
     void IsUltraFastRecordingPlatformSupported([out] boolean supported);
     void StartVoipStreamByUid([in] int appUid);
+    void NotifyDistributedDeviceOnline();
 }

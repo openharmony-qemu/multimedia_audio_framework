@@ -525,6 +525,8 @@ public:
 
     int32_t UnsetAvailableDeviceChangeCallback(int32_t clientId, int32_t usage) override;
 
+    int32_t NotifyDistributedDeviceOnline() override;
+
     int32_t IsSpatializationEnabled(bool &ret) override;
 
     int32_t IsSpatializationEnabled(const std::string &address, bool &ret) override;

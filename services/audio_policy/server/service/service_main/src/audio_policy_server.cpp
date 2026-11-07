@@ -4666,6 +4666,14 @@ int32_t AudioPolicyServer::UnsetAvailableDeviceChangeCallback(int32_t /*clientId
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::NotifyDistributedDeviceOnline()
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    audioDeviceStatus_.NotifyDistributedDeviceOnline();
+    return SUCCESS;
+}
+
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::ConfigDistributedRoutingRole(
     const std::shared_ptr<AudioDeviceDescriptor> &descriptor, int32_t typeIn)

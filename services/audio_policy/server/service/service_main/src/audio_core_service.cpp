@@ -645,6 +645,14 @@ bool AudioCoreService::GetMicRefFeatureEnable()
     return isMicRefFeatureEnable_;
 }
 
+void AudioCoreService::RemoveSplitModuleArgs(const std::string &networkId)
+{
+    std::lock_guard<std::mutex> lock(splitModuleArgsMutex_);
+    splitModuleArgsMap_.erase(networkId);
+    AUDIO_INFO_LOG("networkId [%{public}s], map size %{public}zu", GetEncryptStr(networkId).c_str(),
+        splitModuleArgsMap_.size());
+}
+
 uint64_t AudioCoreService::GetOpenedNormalSourceSessionId()
 {
     return sessionIdUsedToOpenSource_;
