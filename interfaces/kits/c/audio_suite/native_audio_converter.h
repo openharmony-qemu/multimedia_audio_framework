@@ -74,6 +74,95 @@ typedef struct OH_AudioConverter_Format {
 } OH_AudioConverter_Format;
 
 /**
+ * @brief Define the extended audio converter format info structure, used to describe an audio format that supports
+ * arbitrary sampling rates.
+ *
+ * @since 26.1.0
+ */
+typedef struct OH_AudioSuite_ConverterFormatEx {
+    /**
+     * @brief Audio encoding format type.
+     *
+     * @since 26.1.0
+     */
+    OH_Audio_EncodingType encodingType;
+    /**
+     * @brief Audio sampling rate in Hz.
+     * Supported sampling rates are integer multiples of 10 Hz in the range [8000, 5644800], plus 11025 Hz.
+     *
+     * @since 26.1.0
+     */
+    int32_t samplingRate;
+    /**
+     * @brief Audio channel layout.
+     *
+     * @since 26.1.0
+     */
+    OH_AudioChannelLayout channelLayout;
+    /**
+     * @brief Audio sample format.
+     *
+     * @since 26.1.0
+     */
+    OH_Audio_SampleFormat sampleFormat;
+} OH_AudioSuite_ConverterFormatEx;
+
+/**
+ * @brief Define the input data structure of the audio converter.
+ *
+ * @since 26.1.0
+ */
+typedef struct OH_AudioSuite_ConverterInputInfo {
+    /**
+     * @brief Pointer to the input audio data buffer. It points to the raw audio data and is allocated by the caller.
+     * The data type is determined by the sample format {@link OH_Audio_SampleFormat}.
+     * It must remain valid during the {@link OH_AudioSuite_ConverterDirectProcess} call. The caller retains ownership.
+     * It cannot be NULL.
+     *
+     * @since 26.1.0
+     */
+    const void *data;
+    /**
+     * @brief Capacity of the input buffer in bytes. It must be greater than 0.
+     *
+     * @since 26.1.0
+     */
+    uint32_t size;
+} OH_AudioSuite_ConverterInputInfo;
+
+/**
+ * @brief Define the output data structure of the audio converter, used in direct processing mode to receive the
+ * converted audio data.
+ *
+ * @since 26.1.0
+ */
+typedef struct OH_AudioSuite_ConverterOutputInfo {
+    /**
+     * @brief Pointer to the output audio data buffer, allocated by the caller.
+     * The conversion result is written to this buffer.
+     * The data type is determined by the sample format {@link OH_Audio_SampleFormat}.
+     * It must remain valid during the {@link OH_AudioSuite_ConverterDirectProcess} call. The caller retains ownership.
+     * It cannot be NULL.
+     *
+     * @since 26.1.0
+     */
+    void *data;
+    /**
+     * @brief Capacity of the output buffer in bytes. It must be greater than 0.
+     *
+     * @since 26.1.0
+     */
+    uint32_t size;
+    /**
+     * @brief Output parameter that returns the number of bytes actually written to the output buffer.
+     * It does not need to be initialized before the call; it remains unchanged if the call fails.
+     *
+     * @since 26.1.0
+     */
+    uint32_t writeSize;
+} OH_AudioSuite_ConverterOutputInfo;
+
+/**
  * @brief Declare the audio converter.
  * The handle of audio converter is used for audio converter related functions.
  *
@@ -141,6 +230,16 @@ typedef enum {
      * @since 26.0.0
      */
     AUDIOCONVERTER_ERROR_CALLBACK_NOT_SET = 8,
+    /**
+     * @brief Permission verification fails. A non-system application attempts to call a system API.
+     * @since 26.1.0
+     */
+    AUDIOCONVERTER_ERROR_NOT_SYSTEM_APP = 202,
+    /**
+     * @brief This means the operation is unsupported.
+     * @since 26.1.0
+     */
+    AUDIOCONVERTER_ERROR_UNSUPPORTED_OPERATION = 6800104,
 } OH_AudioConverter_Result;
 
 /**
@@ -262,6 +361,8 @@ typedef int32_t (*OH_AudioConverter_RequestDataCallback)(
  *         <li>{@link #AUDIOCONVERTER_ERROR_CALLBACK_INVALID} if callback is invalid,
  *             e.g. invalid callback return, e.t.c.</li>
  *         <li>{@link #AUDIOCONVERTER_ERROR_SYSTEM} if the system has other abnormalities</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_UNSUPPORTED_OPERATION} if the current processing flow does not support
+ *             setting a callback.</li>
  *         </ul>
  * @since 26.0.0
  */
@@ -304,6 +405,169 @@ OH_AudioConverter_Result OH_AudioConverter_Process(
     int32_t outputCapacity,
     int32_t* outputSize
 );
+
+/**
+ * @brief Create an audio converter that supports extended formats.
+ *
+ * Thread-safe; not reentrant; cannot be called in a signal handler; non-blocking.
+ * @systemapi
+ * @param inputFormat [in] Pointer to the input audio format configuration. It cannot be NULL, must remain valid
+ *      during the call, and the caller retains ownership.
+ * @param outputFormat [in] Pointer to the output audio format configuration. It cannot be NULL, must remain valid
+ *      during the call, and the caller retains ownership.
+ * @param outOwnedConverter [out] Pointer that receives the created audio converter instance. It cannot be NULL and
+ *      does not need to be initialized. It is set to NULL if the call fails.
+ * @return <ul>
+ *         <li>{@link #AUDIOCONVERTER_SUCCESS} if the call is successful.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_NOT_SYSTEM_APP} if permission verification fails, that is, a non-system
+ *         application uses a system API.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_INVALID_PARAM} if a parameter is invalid. Possible causes:
+ *         <ol><li>inputFormat is NULL.</li>
+ *         <li>outputFormat is NULL.</li>
+ *         <li>outOwnedConverter is NULL.</li></ol>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT} if the audio format in inputFormat/outputFormat is
+ *         unsupported.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_MEMORY_ALLOC_FAILED} if memory allocation fails.</li>
+ *         </ul>
+ * @release OH_AudioConverter_Destroy {outOwnedConverter}
+ * @since 26.1.0
+ */
+OH_AudioConverter_Result OH_AudioSuite_ConverterCreateEx(
+    const OH_AudioSuite_ConverterFormatEx *inputFormat,
+    const OH_AudioSuite_ConverterFormatEx *outputFormat,
+    OH_AudioConverter **outOwnedConverter);
+
+/**
+ * @brief Calculate the minimum input size in bytes and the corresponding output size in bytes that guarantee the
+ * output contains an integer number of samples.
+ *
+ * The minimum sizes are determined by the input and output formats set when the converter was created, and are related
+ * to the sampling rate, channel count, and bit depth.
+ * Thread-safe; reentrant; cannot be called in a signal handler; non-blocking.
+ * @systemapi
+ * @param converter [in] Converter instance created by {@link OH_AudioSuite_ConverterCreateEx} or
+ *      {@link OH_AudioConverter_Create}. It cannot be NULL, must remain valid during the call, and the caller retains
+ *      ownership.
+ * @param inputMinSize [out] Returns the minimum input size in bytes. It cannot be NULL and does not need to be
+ *      initialized; it remains unchanged if the call fails.
+ * @param outputMinSize [out] Returns the corresponding minimum output size in bytes. It cannot be NULL and does not
+ *      need to be initialized; it remains unchanged if the call fails.
+ * @return <ul>
+ *         <li>{@link #AUDIOCONVERTER_SUCCESS} if the call is successful.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_NOT_SYSTEM_APP} if permission verification fails, that is, a non-system
+ *         application uses a system API.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_INVALID_PARAM} if a parameter is invalid. Possible causes:
+ *         <ol><li>converter is NULL.</li>
+ *         <li>inputMinSize is NULL.</li>
+ *         <li>outputMinSize is NULL.</li></ol>
+ *         </ul>
+ * @since 26.1.0
+ */
+OH_AudioConverter_Result OH_AudioSuite_ConverterGetMinInOutSizes(
+    OH_AudioConverter *converter, uint32_t *inputMinSize, uint32_t *outputMinSize);
+
+/**
+ * @brief Perform audio format conversion with the input data passed directly by the caller.
+ *
+ * This API processes the input data passed directly by the caller. Each call supports up to 1000 ms of audio data.
+ * A single converter instance cannot both have a callback set via {@link OH_AudioConverter_SetInputCallback} and
+ * receive data via this API; only one of the two approaches can be used.
+ * When the input and output sampling rates differ, the first call, and the first call after each
+ * {@link OH_AudioSuite_ConverterFlush} call, prepend silence of a certain length to the output data.
+ * No silence is prepended when the sampling rates are the same.
+ * The number of bytes of the prepended silence can be obtained via {@link OH_AudioSuite_ConverterGetDelaySize}.
+ * Thread-safe; not reentrant; cannot be called in a signal handler; non-blocking;
+ * not recommended to be called on the UI/main thread.
+ * @systemapi
+ * @param converter [in] Converter instance created by {@link OH_AudioSuite_ConverterCreateEx} or
+ *      {@link OH_AudioConverter_Create}. It cannot be NULL, must remain valid during the call, and the caller retains
+ *      ownership.
+ * @param inData [in] Pointer to the input audio data descriptor. It cannot be NULL, must remain valid during the call,
+ *      and the caller retains ownership.
+ *     **inData->size** is the input size in bytes, and must be an integer multiple of the minimum input size returned
+ *     by {@link OH_AudioSuite_ConverterGetMinInOutSizes}.
+ * @param outData [in,out] Pointer to the output audio data descriptor. It cannot be NULL, must remain valid during the
+ *     call, and the caller retains ownership.
+ *     <br>The caller must allocate the output buffer and set **outData->data** and **outData->size**.
+ *     If **inData->size** is k times the minimum input size, **outData->size** must be greater than k times the
+ *     minimum output size, where the minimum input size and minimum output size are obtained from
+ *     {@link OH_AudioSuite_ConverterGetMinInOutSizes}.
+ *     <br>The conversion result is written to **outData->data**, and the number of bytes actually written is returned
+ *     via **outData->writeSize**.
+ *     <br>**outData->writeSize** remains unchanged if the call fails.
+ * @return <ul>
+ *         <li>{@link #AUDIOCONVERTER_SUCCESS} if the call is successful.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_NOT_SYSTEM_APP} if permission verification fails, that is, a non-system
+ *         application uses a system API.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_INVALID_PARAM} if a parameter is invalid. Possible causes:
+ *         <ol><li>converter is NULL.</li>
+ *         <li>inData is NULL.</li>
+ *         <li>**inData->data** is NULL.</li>
+ *         <li>**inData->size** is 0.</li>
+ *         <li>**inData->size** is not an integer multiple of the minimum input size returned by
+ *         {@link OH_AudioSuite_ConverterGetMinInOutSizes}.</li>
+ *         <li>The audio duration corresponding to **inData->size** exceeds 1000 ms.</li>
+ *         <li>outData is NULL.</li>
+ *         <li>**outData->data** is NULL.</li></ol>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_UNSUPPORTED_OPERATION} if a callback has already been set via
+ *         {@link OH_AudioConverter_SetInputCallback}.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_BUFFER_TOO_SMALL} if the output buffer is insufficient.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_SYSTEM} if an internal system error occurs.</li>
+ *         </ul>
+ * @since 26.1.0
+ */
+OH_AudioConverter_Result OH_AudioSuite_ConverterDirectProcess(
+    OH_AudioConverter *converter,
+    const OH_AudioSuite_ConverterInputInfo *inData,
+    OH_AudioSuite_ConverterOutputInfo *outData);
+
+/**
+ * @brief Obtain the number of bytes of silence prepended before the first output data during sampling rate conversion.
+ *
+ * This API must be called after {@link OH_AudioSuite_ConverterDirectProcess} has produced the silence padding.
+ * After {@link OH_AudioSuite_ConverterFlush} is called, the silence padding is produced again.
+ * It returns 0 when the sampling rates are the same.
+ * Thread-safe; not reentrant; cannot be called in a signal handler; non-blocking.
+ * @systemapi
+ * @param converter [in] Converter instance created by {@link OH_AudioSuite_ConverterCreateEx} or
+ *      {@link OH_AudioConverter_Create}. It cannot be NULL, must remain valid during the call, and the caller retains
+ *      ownership.
+ * @param delaySize [out] Returns the number of bytes of silence prepended before the first output data.
+ *      It cannot be NULL and does not need to be initialized; it remains unchanged if the call fails.
+ * @return <ul>
+ *         <li>{@link #AUDIOCONVERTER_SUCCESS} if the call is successful.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_NOT_SYSTEM_APP} if permission verification fails, that is, a non-system
+ *         application uses a system API.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_INVALID_PARAM} if a parameter is invalid. Possible causes:
+ *         <ol><li>converter is NULL.</li>
+ *         <li>delaySize is NULL.</li></ol>
+ *         </ul>
+ * @since 26.1.0
+ */
+OH_AudioConverter_Result OH_AudioSuite_ConverterGetDelaySize(OH_AudioConverter *converter, uint32_t *delaySize);
+
+/**
+ * @brief Clear the internal buffers and processing state of the audio converter.
+ *
+ * When the audio data is discontinuous (for example, in fast-forward or rewind scenarios), or when a new audio stream
+ * is started before the processing of the previous audio stream is finished, call this API to clear the internal
+ * buffers and processing state of the converter, restoring the converter to its initial state.
+ * After this API is called, the converter can continue to receive new audio data for conversion without being
+ * destroyed and recreated.
+ * Thread-safe; not reentrant; cannot be called in a signal handler; non-blocking.
+ * @systemapi
+ * @param converter [in] Converter instance created by {@link OH_AudioSuite_ConverterCreateEx} or
+ *      {@link OH_AudioConverter_Create}. It cannot be NULL, must remain valid during the call, and the caller retains
+ *      ownership.
+ * @return <ul>
+ *         <li>{@link #AUDIOCONVERTER_SUCCESS} if the call is successful.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_NOT_SYSTEM_APP} if permission verification fails, that is, a non-system
+ *         application uses a system API.</li>
+ *         <li>{@link #AUDIOCONVERTER_ERROR_INVALID_PARAM} if a parameter is invalid, that is, converter is NULL.</li>
+ *         </ul>
+ * @since 26.1.0
+ */
+OH_AudioConverter_Result OH_AudioSuite_ConverterFlush(OH_AudioConverter *converter);
 
 #ifdef __cplusplus
 }

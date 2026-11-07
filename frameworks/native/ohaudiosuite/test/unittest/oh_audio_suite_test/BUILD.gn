@@ -51,7 +51,10 @@ if (audio_framework_feature_audiosuite_support) {
     module_out_path = module_output_path
     include_dirs = [ "./include" ]
 
-    defines = [ "AUDIOSUITE_SA_UT" ]
+    defines = [ 
+      "AUDIOSUITE_SA_UT",
+      "AUDIOSUITE_CONVERTER_UT" 
+    ]
 
     configs = [
       ":audio_suite_config",

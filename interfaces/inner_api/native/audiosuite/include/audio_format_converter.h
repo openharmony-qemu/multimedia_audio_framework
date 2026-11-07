@@ -34,12 +34,6 @@ enum class InputDataStatus {
     DATA_FINISHED = 3,      // End of data flow
 };
 
-struct AudioConvertResult {
-    uint8_t* outData = nullptr;       // Output data buffer(Internal allocation and management)
-    uint32_t outByteCount = 0;        // Number of output bytes
-    int32_t errCode = SUCCESS;
-};
-
 // Abstract class for format converter data request callback
 class FormatConverterDataCallback {
 public:
@@ -56,8 +50,11 @@ public:
     virtual ~AudioFormatConverter() = default;
 
     static std::shared_ptr<AudioFormatConverter> Create(
-        const AudioConverterFormat &converterInputFormat, const AudioConverterFormat &converterOutputFormat,
+        const AudioConverterFormat &inputFormat, const AudioConverterFormat &outputFormat,
         const uint32_t resampleQuality = 1, const bool enableDataAlignment = false);
+
+    // Get minimum input/output sizes (bytes) for the converter instance.
+    virtual int32_t GetMinInOutSizes(uint32_t &minInBytes, uint32_t &minOutBytes) = 0;
 
     // Input data is passed using a callback method, the output data and the original data are aligned in position.
     virtual int32_t SetInputCallback(std::shared_ptr<FormatConverterDataCallback> callback) = 0;
@@ -65,6 +62,15 @@ public:
 
     // Input data is transferred through the interface
     virtual size_t GetDelayDataSize() = 0;
+    virtual int32_t GetDelaySize(uint32_t &delaySize) = 0;
+
+    // Direct processing: writes converted data to caller-provided buffer.
+    // inBytes must be a multiple of minInBytes. Output overflow is buffered internally.
+    virtual int32_t DirectProcess(const uint8_t* inData, uint32_t inBytes,
+        void* outData, uint32_t outCapacity, uint32_t &outSize) = 0;
+
+    // Flush all internal buffers. The converter remains usable.
+    virtual int32_t Flush() = 0;
 
     virtual void Destroy() = 0;
 };
