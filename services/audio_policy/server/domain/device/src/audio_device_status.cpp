@@ -283,6 +283,18 @@ void AudioDeviceStatus::TriggerAvailableDeviceChangedCallback(
     audioPolicyServerHandler_->SendAvailableDeviceChange(desc, isConnected, zoneId);
 }
 
+void AudioDeviceStatus::NotifyDistributedDeviceOnline()
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> distributedDevices;
+    for (const auto &desc : audioConnectedDevice_.GetAllOutputDevices()) {
+        CHECK_AND_CONTINUE(desc != nullptr && desc->networkId_ != LOCAL_NETWORK_ID);
+        distributedDevices.push_back(desc);
+    }
+    AUDIO_INFO_LOG("distributed output device count: %{public}zu", distributedDevices.size());
+    CHECK_AND_RETURN_LOG(!distributedDevices.empty(), "no distributed device online, skip trigger");
+    TriggerAvailableDeviceChangedCallback(distributedDevices, true);
+}
+
 void AudioDeviceStatus::TriggerDeviceChangedCallback(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
     bool isConnected, const int32_t zoneId)
 {
@@ -1037,6 +1049,9 @@ void AudioDeviceStatus::HandleDistributedDeviceDisConnected(DStatusInfo &statusI
 {
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
+    if (AudioPolicyUtils::GetInstance().GetDeviceRole(devType) == OUTPUT_DEVICE) {
+        AudioCoreService::GetCoreService()->RemoveSplitModuleArgs(networkId);
+    }
     AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output", networkId);
     AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "multichannel_distributed_output", networkId);
     std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
@@ -1784,6 +1799,9 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
     for (auto deviceDesc : connectedDevices) {
         if (deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID) {
             const std::string networkId = deviceDesc->networkId_;
+            if (AudioPolicyUtils::GetInstance().GetDeviceRole(deviceDesc->deviceType_) == OUTPUT_DEVICE) {
+                AudioCoreService::GetCoreService()->RemoveSplitModuleArgs(networkId);
+            }
             AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output", networkId);
             AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "multichannel_distributed_output",
                 networkId);

@@ -21,6 +21,7 @@
 #include <vector>
 #include "audio_info.h"
 #include "audio_core_config_manager.h"
+#include "securec.h"
 using namespace testing::ext;
 
 namespace OHOS {
@@ -1704,6 +1705,76 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleOfflineDistributedDevice_001, TestSiz
 
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(nullptr);
     GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleOfflineDistributedDevice();
+}
+
+/**
+* @tc.name  : Test HandleOfflineDistributedDevice with input device.
+* @tc.number: HandleOfflineDistributedDevice_002
+* @tc.desc  : Test HandleOfflineDistributedDevice for input device.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, HandleOfflineDistributedDevice_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest HandleOfflineDistributedDevice_002 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+
+    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(nullptr, audioDeviceDescriptor);
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceDescriptor->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    audioDeviceDescriptor->networkId_ = REMOTE_NETWORK_ID;
+    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleOfflineDistributedDevice();
+    EXPECT_TRUE(GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.empty());
+}
+
+/**
+* @tc.name  : Test HandleDistributedDeviceDisConnected with output device.
+* @tc.number: HandleDistributedDeviceDisConnected_001
+* @tc.desc  : Test HandleDistributedDeviceDisConnected for output device.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, HandleDistributedDeviceDisConnected_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest HandleDistributedDeviceDisConnected_001 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+
+    DStatusInfo statusInfo;
+    statusInfo.hdiPin = AUDIO_PIN_OUT_SPEAKER;
+    statusInfo.isConnected = false;
+    std::string testNetworkId = "testNetworkId_dis_out";
+    strncpy_s(statusInfo.networkId, NETWORK_ID_SIZE, testNetworkId.c_str(), testNetworkId.size());
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    AudioDeviceDescriptor deviceDesc;
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleDistributedDeviceDisConnected(
+        statusInfo, descForCb, reason, deviceDesc);
+    EXPECT_EQ(static_cast<int>(reason),
+        static_cast<int>(AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE));
+}
+
+/**
+* @tc.name  : Test HandleDistributedDeviceDisConnected with input device.
+* @tc.number: HandleDistributedDeviceDisConnected_002
+* @tc.desc  : Test HandleDistributedDeviceDisConnected for input device.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, HandleDistributedDeviceDisConnected_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest HandleDistributedDeviceDisConnected_002 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+
+    DStatusInfo statusInfo;
+    statusInfo.hdiPin = AUDIO_PIN_IN_MIC;
+    statusInfo.isConnected = false;
+    std::string testNetworkId = "testNetworkId_dis_in";
+    strncpy_s(statusInfo.networkId, NETWORK_ID_SIZE, testNetworkId.c_str(), testNetworkId.size());
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    AudioDeviceDescriptor deviceDesc;
+    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleDistributedDeviceDisConnected(
+        statusInfo, descForCb, reason, deviceDesc);
+    EXPECT_EQ(static_cast<int>(reason),
+        static_cast<int>(AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE));
 }
 
 /**
