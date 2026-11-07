@@ -87,9 +87,11 @@ public:
     /**
      * @brief Process audio data (single input, single output)
      * @param inputData Input PCM data buffer (interleaved, frame-aligned)
-     * @param inputSize Input data size in bytes (must be a multiple of bytesPerFrame)
+     * @param inputSize Input data size in bytes, must be at least bytesPerFrame
+     *                       (= channels * bytesPerSample) and a multiple of bytesPerFrame
      * @param outputData Output data buffer
-     * @param outputCapacity Output buffer capacity in bytes. Recommended to be as large as
+     * @param outputCapacity Output buffer capacity in bytes, must be at least bytesPerFrame
+     *                       (= channels * bytesPerSample). Recommended to be as large as
      *                       possible, up to 8x inputSize, because the slowest speed is 0.125
      *                       and the maximum output is 8x the input length. If outputCapacity
      *                       is too small, the unreturned data is buffered in the algorithm
@@ -103,7 +105,8 @@ public:
     /**
      * @brief Flush residual frames at end of stream
      * @param outputData Output data buffer for flushed frames
-     * @param outputCapacity Output buffer capacity in bytes
+     * @param outputCapacity Output buffer capacity in bytes, must be at least bytesPerFrame
+     *                            (= channels * bytesPerSample)
      * @param outSize Actual output size in bytes written to outputData
      * @param residualFrames Remaining frames still buffered in the algorithm after this call.
      *                       If non-zero, call Flush again to drain them.

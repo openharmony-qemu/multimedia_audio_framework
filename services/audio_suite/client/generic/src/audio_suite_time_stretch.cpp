@@ -28,6 +28,9 @@
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_time_stretch_impl.h"
+#ifdef FEATURE_HITRACE_METER
+#include "hitrace_meter.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -215,6 +218,7 @@ AudioSuiteTimeStretchImpl::AudioSuiteTimeStretchImpl(uint32_t sampleRate, uint32
     sampleRate_ = sampleRate;
     channels_ = channels;
     format_ = format;
+    maxFramesLimit_ = static_cast<int32_t>(sampleRate_) * static_cast<int32_t>(MAX_PROCESS_SECONDS);
     MapFormat(format);
 }
 
@@ -358,6 +362,9 @@ void AudioSuiteTimeStretchImpl::EnsureBuffers(int32_t inFrames, int32_t maxOutFr
 int32_t AudioSuiteTimeStretchImpl::RunChangeSpeed(const uint8_t *inputData,
     int32_t inFrames, int32_t maxOutFrames, uint8_t *outputData)
 {
+#ifdef FEATURE_HITRACE_METER
+    StartTrace(HITRACE_TAG_ZAUDIO, "AudioTimeStretch::ChangeSpeedFloat");
+#endif
     if (needFormatConvert_) {
         EnsureBuffers(inFrames, maxOutFrames);
         if (inFrames > 0) {
@@ -373,11 +380,18 @@ int32_t AudioSuiteTimeStretchImpl::RunChangeSpeed(const uint8_t *inputData,
             ConvertFromFloat(format_, static_cast<unsigned>(outSamples),
                              floatOutputBuffer_.data(), outputData);
         }
+#ifdef FEATURE_HITRACE_METER
+        FinishTrace(HITRACE_TAG_ZAUDIO);
+#endif
         return outFrames;
     }
-    return algoApi_.changeSpeedFloat(algoHandle_,
+    int32_t outFrames = algoApi_.changeSpeedFloat(algoHandle_,
         reinterpret_cast<const float *>(inputData),
         reinterpret_cast<float *>(outputData), inFrames, maxOutFrames);
+#ifdef FEATURE_HITRACE_METER
+    FinishTrace(HITRACE_TAG_ZAUDIO);
+#endif
+    return outFrames;
 }
 
 int32_t AudioSuiteTimeStretchImpl::SetSpeed(float speed)
@@ -474,10 +488,15 @@ int32_t AudioSuiteTimeStretchImpl::Process(const uint8_t *inputData, int32_t inp
         inputSize, bytesPerFrame);
     int32_t inFrames = inputSize / static_cast<int32_t>(bytesPerFrame);
     int32_t maxOutFrames = outputCapacity / static_cast<int32_t>(bytesPerFrame);
-    int32_t maxFramesLimit = static_cast<int32_t>(sampleRate_) * static_cast<int32_t>(MAX_PROCESS_SECONDS);
-    CHECK_AND_RETURN_RET_LOG(inFrames <= maxFramesLimit, ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(inFrames > 0, ERR_INVALID_PARAM,
+        "Process failed: inputSize %{public}d smaller than one frame bytesPerFrame %{public}u",
+        inputSize, bytesPerFrame);
+    CHECK_AND_RETURN_RET_LOG(maxOutFrames > 0, ERR_INVALID_PARAM,
+        "Process failed: outputCapacity %{public}d smaller than one frame bytesPerFrame %{public}u",
+        outputCapacity, bytesPerFrame);
+    CHECK_AND_RETURN_RET_LOG(inFrames <= maxFramesLimit_, ERR_INVALID_PARAM,
         "Process failed: inFrames %{public}d exceeds limit %{public}d (sampleRate=%{public}u, maxSeconds=%{public}u)",
-        inFrames, maxFramesLimit, sampleRate_, MAX_PROCESS_SECONDS);
+        inFrames, maxFramesLimit_, sampleRate_, MAX_PROCESS_SECONDS);
 
     int32_t expectedOutFrames = static_cast<int32_t>(static_cast<float>(inFrames) / speed_);
     if (maxOutFrames < expectedOutFrames) {
@@ -517,6 +536,9 @@ int32_t AudioSuiteTimeStretchImpl::Flush(uint8_t *outputData, int32_t outputCapa
         "Flush failed: bytesPerFrame is 0");
     int32_t maxOutFrames = outputCapacity / static_cast<int32_t>(bytesPerFrame);
 
+    CHECK_AND_RETURN_RET_LOG(maxOutFrames > 0, ERR_INVALID_PARAM,
+        "Flush failed: outputCapacity %{public}d smaller than one frame bytesPerFrame %{public}u",
+        outputCapacity, bytesPerFrame);
     // Step 1: flush fills internal silence to drain residual frames
     AUDIO_DEBUG_LOG("AudioTimeStretch::Flush start");
     int32_t ret = algoApi_.flush(algoHandle_, nullptr);

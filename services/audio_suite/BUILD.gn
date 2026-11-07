@@ -234,13 +234,19 @@ audio_ohos_library("audio_suite_generic") {
   ]
  
   sources = [ "client/generic/src/audio_suite_time_stretch.cpp" ]
- 
+
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
     "bounds_checking_function:libsec_shared",
   ]
- 
+
+  defines = []
+  if (audio_framework_feature_hitrace_enable) {
+    defines += [ "FEATURE_HITRACE_METER" ]
+    external_deps += [ "hitrace:hitrace_meter" ]
+  }
+
   # innerapi_tags = [ "chipsetsdk" ]
 
   subsystem_name = "multimedia"
