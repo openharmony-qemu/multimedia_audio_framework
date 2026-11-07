@@ -901,20 +901,10 @@ int32_t AudioCoreService::SetSupportReload(bool isSupportReload, const std::stri
 
     AUDIO_INFO_LOG("SetSupportReload: %{public}d, networkId [%{public}s]", isSupportReload,
         GetEncryptStr(networkId).c_str());
-    {
-        std::lock_guard<std::mutex> lock(isSupportReloadMutex_);
-        isSupportReloadMap_[networkId] = isSupportReload;
-    }
-    auto device = audioConnectedDevice_.GetConnectedDeviceByType(networkId, DEVICE_TYPE_MIC, INPUT_DEVICE);
-    if (device != nullptr) {
-        device->isSupportReload_ = isSupportReload;
-        AUDIO_INFO_LOG("set connected device");
-    }
-    auto dmDevice = audioDeviceManager_.GetRemoteDeviceByNetworkId(networkId, DEVICE_TYPE_MIC, INPUT_DEVICE);
-    CHECK_AND_RETURN_RET_LOG(dmDevice != nullptr, ERR_INVALID_PARAM, "device not found for networkId [%{public}s]",
+    bool ret = audioConnectedDevice_.SetSupportReload(networkId, DEVICE_TYPE_MIC, INPUT_DEVICE, isSupportReload) &&
+        audioDeviceManager_.SetSupportReload(networkId, DEVICE_TYPE_MIC, INPUT_DEVICE, isSupportReload);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_PARAM, "device not found for networkId [%{public}s]",
         GetEncryptStr(networkId).c_str());
-    dmDevice->isSupportReload_ = isSupportReload;
-    AUDIO_INFO_LOG("set audio device");
     return SUCCESS;
 }
 

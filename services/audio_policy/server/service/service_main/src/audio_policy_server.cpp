@@ -6050,8 +6050,8 @@ int32_t AudioPolicyServer::SetSupportReload(bool isSupportReload, const std::str
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_UNKNOWN, "eventEntry_ is nullptr!");
-    CHECK_AND_RETURN_RET_LOG(callerUid == UID_CAR_DISTRIBUTED_ENGINE_SA, ERR_PERMISSION_DENIED,
-        "callerUid %{public}d is not allow SetSupportReload", callerUid);
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_CAR_DISTRIBUTED_ENGINE_SA || callerUid == UID_AUDIO,
+        ERR_PERMISSION_DENIED, "callerUid %{public}d is not allow SetSupportReload", callerUid);
     return eventEntry_->SetSupportReload(isSupportReload, networkId);
 }
 

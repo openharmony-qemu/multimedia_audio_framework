@@ -464,6 +464,11 @@ int32_t AudioGeneralManager::RestoreDistributedDeviceInfo()
     return AudioPolicyManager::GetInstance().RestoreDistributedDeviceInfo();
 }
 
+int32_t AudioGeneralManager::SetSupportReload(bool isSupportReload, const std::string &networkId)
+{
+    return AudioPolicyManager::GetInstance().SetSupportReload(isSupportReload, networkId);
+}
+
 int32_t AudioGeneralManager::RegisterPreferredDeviceSetCallback(
     const std::shared_ptr<PreferredDeviceSetCallback> &callback)
 {

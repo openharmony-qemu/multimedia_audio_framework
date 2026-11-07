@@ -126,6 +126,7 @@ public:
     int32_t SetActiveHfpDevice(const std::string &macAddress);
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
     int32_t RestoreDistributedDeviceInfo();
+    int32_t SetSupportReload(bool isSupportReload, const std::string &networkId);
     int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted);

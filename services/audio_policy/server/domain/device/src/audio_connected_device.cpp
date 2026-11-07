@@ -22,6 +22,7 @@
 #include "parameter.h"
 #include "parameters.h"
 #include "audio_policy_log.h"
+#include "audio_utils.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "audio_spatialization_service.h"
@@ -182,6 +183,22 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceB
         return *it;
     }
     return nullptr;
+}
+
+bool AudioConnectedDevice::SetSupportReload(const std::string &networkId, DeviceType deviceType,
+    DeviceRole deviceRole, bool isSupportReload)
+{
+    std::unique_lock<std::shared_mutex> lock(mutex_);
+    auto it = std::find_if(connectedDevices_.begin(), connectedDevices_.end(),
+        [&networkId, &deviceType, &deviceRole] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+            return desc != nullptr && desc->deviceType_ == deviceType && desc->networkId_ == networkId &&
+                desc->deviceRole_ == deviceRole;
+        });
+    CHECK_AND_RETURN_RET(it != connectedDevices_.end(), false);
+    (*it)->isSupportReload_ = isSupportReload;
+    AUDIO_INFO_LOG("set connected device, isSupportReload: %{public}d, networkId [%{public}s]", isSupportReload,
+        GetEncryptStr(networkId).c_str());
+    return true;
 }
 
 void AudioConnectedDevice::GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
