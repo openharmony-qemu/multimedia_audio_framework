@@ -488,6 +488,9 @@ int32_t AudioSuiteTimeStretchImpl::Process(const uint8_t *inputData, int32_t inp
         inputSize, bytesPerFrame);
     int32_t inFrames = inputSize / static_cast<int32_t>(bytesPerFrame);
     int32_t maxOutFrames = outputCapacity / static_cast<int32_t>(bytesPerFrame);
+    CHECK_AND_RETURN_RET_LOG(inFrames > 0, ERR_INVALID_PARAM,
+        "Process failed: inputSize %{public}d smaller than one frame bytesPerFrame %{public}u",
+        inputSize, bytesPerFrame);
     CHECK_AND_RETURN_RET_LOG(maxOutFrames > 0, ERR_INVALID_PARAM,
         "Process failed: outputCapacity %{public}d smaller than one frame bytesPerFrame %{public}u",
         outputCapacity, bytesPerFrame);
