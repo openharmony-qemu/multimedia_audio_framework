@@ -2967,8 +2967,16 @@ bool AudioServer::CheckPlaybackPermission(const AudioProcessConfig &config)
     }
 
     if (streamUsage == STREAM_USAGE_ULTRASONIC && config.callerUid != UID_MSDP_SA) {
+#ifdef MULTI_BUS_ENABLE
+        int32_t effectiveUid = (config.callerUid == UID_MEDIA_SA) ? config.appInfo.appUid : config.callerUid;
+        CHECK_AND_RETURN_RET_LOG(effectiveUid == UID_COCKPIT_SA, false,
+            "not msdp using ultrasonic uid:%{public}d", config.callerUid);
+        AUDIO_INFO_LOG("cockpit sa using ultrasonic, callerUid:%{public}d appUid:%{public}d",
+            config.callerUid, config.appInfo.appUid);
+#else
         AUDIO_ERR_LOG("not msdp using ultrasonic uid:%{public}d", config.callerUid);
         return false;
+#endif
     }
 
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), false,

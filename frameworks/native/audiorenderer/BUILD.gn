@@ -70,6 +70,10 @@ ohos_shared_library("audio_renderer") {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
+  if (audio_framework_feature_multi_bus) {
+    defines += [ "MULTI_BUS_ENABLE" ]
+  }
+
   deps = [
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
