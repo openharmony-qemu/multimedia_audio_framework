@@ -996,7 +996,6 @@ void AudioServerCreateAudioStreamTest()
     remoteObject = audioServerPtr->CreateAudioStream(config, gTestCallingUid[id], pipeinfoGuard);
 
     config.audioMode = static_cast<AudioMode>(-1);
-    audioServerPtr->IsNormalIpcStream(config);
     if (audioParamKey.empty()) {
         return;
     }
@@ -1875,19 +1874,6 @@ void AudioServerInnerCheckCaptureLimitFuzzTest()
 }
 #endif
 
-void AudioServerIsNormalIpcStreamFuzzTest()
-{
-    AudioProcessConfig config;
-    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    CHECK_AND_RETURN(audioServerPtr != nullptr);
-    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    if (g_audioModes.empty()) {
-        return;
-    }
-    config.audioMode = g_audioModes[provider.ConsumeIntegral<uint32_t>() % g_audioModes.size()];
-    audioServerPtr->IsNormalIpcStream(config);
-}
-
 void AudioServerCheckRemoteDeviceStateSwitchCaseFuzzTest()
 {
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -2337,7 +2323,6 @@ vector<TestFuncs> g_testFuncs = {
     AudioServerHandleCheckCaptureLimitFuzzTest,
     AudioServerInnerCheckCaptureLimitFuzzTest,
 #endif
-    AudioServerIsNormalIpcStreamFuzzTest,
     AudioServerCheckRemoteDeviceStateSwitchCaseFuzzTest,
     AudioServerCheckInnerRecorderPermissionSourceTypeFuzzTest,
     AudioServerSetRenderWhitelistFuzzTest,

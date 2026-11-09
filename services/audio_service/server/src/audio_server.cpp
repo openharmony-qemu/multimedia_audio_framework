@@ -2529,28 +2529,25 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     if (callingUid != MEDIA_SERVICE_UID) {
         appUid = callingUid;
     }
-    if (IsNormalIpcStream(config)) {
-        AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", GetFastControlParam());
-        int32_t ret = 0;
-        sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(config, ret);
-        if (ipcStream == nullptr) {
-            if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-                AudioService::GetInstance()->CleanAppUseNumMap(appUid);
-            }
-            HILOG_COMM_ERROR("[CreateAudioStream]GetIpcStream failed.");
-            return nullptr;
+    bool isPlayback = config.audioMode == AUDIO_MODE_PLAYBACK;
+    AUDIO_INFO_LOG("Create%{public}sStream streamId:%{public}u",
+        isPlayback ? "Renderer" : "Capturer", config.originalSessionId);
+    int32_t ret = 0;
+    sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(config, ret);
+    if (ipcStream == nullptr) {
+        if (isPlayback) {
+            AudioService::GetInstance()->CleanAppUseNumMap(appUid);
         }
-        AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
-        if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
-            AudioService::GetInstance()->SetIncMaxLoopbackStreamCnt(config.audioMode);
-        }
-        sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
-        pipeInfoGuard->SetReleaseFlag(false);
-        return remoteObject;
+        HILOG_COMM_ERROR("[CreateAudioStream]GetIpcStream failed.");
+        return nullptr;
     }
-
-    HILOG_COMM_ERROR("[CreateAudioStream]GetAudioProcess failed.");
-    return nullptr;
+    AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
+    if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
+        AudioService::GetInstance()->SetIncMaxLoopbackStreamCnt(config.audioMode);
+    }
+    sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
+    pipeInfoGuard->SetReleaseFlag(false);
+    return remoteObject;
 }
 
 int32_t AudioServer::CheckAndWaitAudioPolicyReady()
@@ -2723,11 +2720,6 @@ int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &co
     return ret;
 }
 #endif
-
-bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
-{
-    return true;
-}
 
 int32_t AudioServer::CheckRemoteDeviceState(const std::string &networkId, int32_t deviceRole, bool isStartDevice)
 {
