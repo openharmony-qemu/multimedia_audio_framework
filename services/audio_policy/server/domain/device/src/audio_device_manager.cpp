@@ -1098,6 +1098,17 @@ void AudioDeviceManager::AddAvailableDevicesByUsageAndPrivacy(AudioDeviceUsage u
     }
 }
 
+void AudioDeviceManager::AddMatchedDevice(const vector<shared_ptr<AudioDeviceDescriptor>> &src,
+    vector<shared_ptr<AudioDeviceDescriptor>> &dst,
+    function<bool(const AudioDeviceDescriptor &desc)> isMatched)
+{
+    for (const auto &desc : src) {
+        if (desc != nullptr && isMatched(*desc)) {
+            dst.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+        }
+    }
+}
+
 void AudioDeviceManager::GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
     vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
@@ -1105,33 +1116,33 @@ void AudioDeviceManager::GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usag
         if (speaker_ != nullptr) {
             audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(speaker_));
         }
-        for (const auto &desc : connectedDevices_) {
-            if (desc->deviceType_ == DEVICE_TYPE_SPEAKER && desc->networkId_ != LOCAL_NETWORK_ID) {
-                audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(*desc));
-            }
-        }
+        AddMatchedDevice(connectedDevices_, audioDeviceDescriptors, [](const AudioDeviceDescriptor &desc) {
+            return desc.deviceType_ == DEVICE_TYPE_SPEAKER && desc.networkId_ != LOCAL_NETWORK_ID;
+        });
     }
 
     if (((usage & MEDIA_INPUT_DEVICES) != 0) || ((usage & CALL_INPUT_DEVICES) != 0)) {
+#ifdef MULTI_BUS_ENABLE
+        AddMatchedDevice(connectedDevices_, audioDeviceDescriptors, [](const AudioDeviceDescriptor &desc) {
+            return desc.deviceType_ == DEVICE_TYPE_MIC && desc.networkId_ == LOCAL_NETWORK_ID;
+        });
+#else
         if (defalutMic_ != nullptr) {
             audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(defalutMic_));
         }
-        for (const auto &desc : connectedDevices_) {
-            if (desc->deviceType_ == DEVICE_TYPE_MIC && desc->networkId_ != LOCAL_NETWORK_ID) {
-                audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(*desc));
-            }
-        }
+#endif
+        AddMatchedDevice(connectedDevices_, audioDeviceDescriptors, [](const AudioDeviceDescriptor &desc) {
+            return desc.deviceType_ == DEVICE_TYPE_MIC && desc.networkId_ != LOCAL_NETWORK_ID;
+        });
     }
 
     if ((usage & CALL_OUTPUT_DEVICES) != 0) {
         if (earpiece_ != nullptr) {
             audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(earpiece_));
         }
-        for (const auto &desc : connectedDevices_) {
-            if (desc->deviceType_ == DEVICE_TYPE_EARPIECE && desc->networkId_ != LOCAL_NETWORK_ID) {
-                audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(*desc));
-            }
-        }
+        AddMatchedDevice(connectedDevices_, audioDeviceDescriptors, [](const AudioDeviceDescriptor &desc) {
+            return desc.deviceType_ == DEVICE_TYPE_EARPIECE && desc.networkId_ != LOCAL_NETWORK_ID;
+        });
     }
 }
 

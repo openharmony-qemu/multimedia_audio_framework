@@ -169,6 +169,9 @@ private:
     void AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
         const DevicePrivacyInfo &deviceInfo, const std::shared_ptr<AudioDeviceDescriptor> &dev,
         std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    static void AddMatchedDevice(const vector<shared_ptr<AudioDeviceDescriptor>> &src,
+        vector<shared_ptr<AudioDeviceDescriptor>> &dst,
+        function<bool(const AudioDeviceDescriptor &desc)> isMatched);
     void GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
         vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     void GetRemoteAvailableDevicesByUsage(AudioDeviceUsage usage,
