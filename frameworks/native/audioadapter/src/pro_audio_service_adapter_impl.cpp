@@ -375,6 +375,10 @@ void ProAudioServiceAdapterImpl::Disconnect()
 int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     AUDIO_INFO_LOG("Enter");
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAudioEffectProperty", HPAE_SERVICE_IMPL_TIMEOUT,
+    [](void *) {
+        AUDIO_ERR_LOG("[xcollie] GetAudioEffectProperty timeout");
+    }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetAudioEffectProperty_ = false;
@@ -392,6 +396,10 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEffectPropertyA
     DeviceType deviceType)
 {
     AUDIO_INFO_LOG("Enter");
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAudioEnhanceProperty", HPAE_SERVICE_IMPL_TIMEOUT,
+    [](void *) {
+        AUDIO_ERR_LOG("[xcollie] GetAudioEnhanceProperty timeout");
+    }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetAudioEnhanceProperty_ = false;
