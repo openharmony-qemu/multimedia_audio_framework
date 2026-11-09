@@ -1466,6 +1466,34 @@ HWTEST_F(AudioRollbackManagerTest, HandleVirtualConnected_SameDeviceIdReturnsTru
 }
 
 /**
+ * @tc.name  : HandleVirtualConnected_NonNearlinkBtOutput_ErasesAndReturnsFalse
+ * @tc.type  : FUNC
+ * @tc.desc  : HandleVirtualConnected returns false and erases the existing virtual select entry
+ *             when the device is VIRTUAL_CONNECTED but not a Nearlink/BT output device (e.g. USB),
+ *             so non-wireless devices never go through the virtual-connect path.
+ */
+HWTEST_F(AudioRollbackManagerTest, HandleVirtualConnected_NonNearlinkBtOutput_ErasesAndReturnsFalse, TestSize.Level1)
+{
+    auto &rb = AudioRollbackManager::GetInstance();
+    constexpr int32_t devId = 8003;
+
+    {
+        std::lock_guard<std::mutex> lg(rb.mutex_);
+        rb.virtualSelectDevices_.clear();
+        rb.rollbackInfo_.reset();
+        rb.virtualSelectDevices_.push_back({SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, devId, INVALID_STREAM_ID});
+    }
+
+    AudioDeviceDescriptor desc(DEVICE_TYPE_USB_HEADSET, OUTPUT_DEVICE);
+    desc.deviceId_ = devId;
+    desc.connectState_ = VIRTUAL_CONNECTED;
+    EXPECT_FALSE(rb.HandleVirtualConnected(SYSTEM_UID, SelectDeviceType::MEDIA_OUTPUT, INVALID_STREAM_ID, desc));
+    EXPECT_EQ(VirtualSelectCount(), 0);
+    EXPECT_FALSE(HasVirtualSelect(devId));
+    EXPECT_FALSE(HasRollbackInfo());
+}
+
+/**
  * @tc.name  : IsVirtualSelectDevice_TrueAndFalse
  * @tc.type  : FUNC
  * @tc.desc  : IsVirtualSelectDevice returns true when the device id is in virtualSelectDevices_
