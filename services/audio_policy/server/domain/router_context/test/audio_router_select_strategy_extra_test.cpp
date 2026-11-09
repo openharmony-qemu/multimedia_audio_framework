@@ -21,6 +21,7 @@
 #include "audio_device_descriptor.h"
 #include "audio_info.h"
 #include "audio_router_infra.h"
+#include "audio_zone_service.h"
 
 using namespace testing::ext;
 
@@ -465,6 +466,98 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_005, Test
     auto result = simpleDesc.GetOnlineDeviceDescriptor();
 
     EXPECT_EQ(result, nullptr);
+}
+
+class AudioDeviceSimpleDescriptorZoneTest : public AudioRouterContextTestBase {
+public:
+    void SetUp() override
+    {
+        AudioRouterContextTestBase::SetUp();
+        savedZones_.swap(AudioZoneService::GetInstance().zoneMaps_);
+    }
+
+    void TearDown() override
+    {
+        auto &zones = AudioZoneService::GetInstance().zoneMaps_;
+        zones.clear();
+        zones.swap(savedZones_);
+        AudioRouterContextTestBase::TearDown();
+    }
+
+    std::shared_ptr<AudioZone> AddZone()
+    {
+        auto zone = std::make_shared<AudioZone>(nullptr, "DescriptorTestZone", AudioZoneContext());
+        AudioZoneService::GetInstance().zoneMaps_[zone->GetId()] = zone;
+        return zone;
+    }
+
+private:
+    std::unordered_map<int32_t, std::shared_ptr<AudioZone>> savedZones_;
+};
+
+HWTEST_F(AudioDeviceSimpleDescriptorZoneTest, GetOnlineDeviceDescriptor_ZoneDevices, TestSize.Level1)
+{
+    auto speaker = CreateDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "zone_speaker");
+    auto mic = CreateDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "zone_mic");
+    AddZone()->devices_.emplace_back(speaker, true);
+    AddZone()->devices_.emplace_back(mic, true);
+
+    for (const auto &device : {speaker, mic}) {
+        ASSERT_EQ(AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(device->deviceId_), nullptr);
+        AudioDeviceSimpleDescriptor simpleDesc(device->deviceType_, device->deviceRole_, -1,
+            device->networkId_, "");
+        auto result = simpleDesc.GetOnlineDeviceDescriptor();
+        ASSERT_NE(result, nullptr);
+        EXPECT_NE(result.get(), device.get());
+        EXPECT_EQ(result->deviceId_, device->deviceId_);
+        EXPECT_EQ(result->deviceRole_, device->deviceRole_);
+        EXPECT_EQ(result->networkId_, device->networkId_);
+        result->deviceName_ = "ChangedCopy";
+        EXPECT_NE(result->deviceName_, device->deviceName_);
+    }
+}
+
+HWTEST_F(AudioDeviceSimpleDescriptorZoneTest, GetOnlineDeviceDescriptor_GlobalFirst, TestSize.Level1)
+{
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "global_speaker");
+    auto zoneSpeaker = std::make_shared<AudioDeviceDescriptor>(*speaker);
+    zoneSpeaker->deviceName_ = "ZoneSpeaker";
+    AddZone()->devices_.emplace_back(zoneSpeaker, true);
+    AudioDeviceSimpleDescriptor simpleDesc(speaker->deviceType_, speaker->deviceRole_, speaker->deviceId_,
+        speaker->networkId_, speaker->macAddress_);
+
+    auto result = simpleDesc.GetOnlineDeviceDescriptor();
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceName_, speaker->deviceName_);
+    EXPECT_NE(result.get(), speaker.get());
+
+    AudioDeviceManager::GetAudioDeviceManager().RemoveNewDevice(speaker);
+    result = simpleDesc.GetOnlineDeviceDescriptor();
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceName_, zoneSpeaker->deviceName_);
+}
+
+HWTEST_F(AudioDeviceSimpleDescriptorZoneTest, GetOnlineDeviceDescriptor_UnavailableZoneDevice, TestSize.Level1)
+{
+    auto speaker = CreateDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "zone_speaker");
+    auto zone = AddZone();
+    zone->devices_.emplace_back(speaker, false);
+    AudioDeviceSimpleDescriptor simpleDesc(speaker->deviceType_, speaker->deviceRole_, speaker->deviceId_,
+        speaker->networkId_, speaker->macAddress_);
+
+    EXPECT_EQ(simpleDesc.GetOnlineDeviceDescriptor(), nullptr);
+    zone->devices_.back().second = true;
+    EXPECT_NE(simpleDesc.GetOnlineDeviceDescriptor(), nullptr);
+    simpleDesc.deviceId_ = -1;
+    EXPECT_NE(simpleDesc.GetOnlineDeviceDescriptor(), nullptr);
+    simpleDesc.networkId_ = "unknown_network";
+    EXPECT_EQ(simpleDesc.GetOnlineDeviceDescriptor(), nullptr);
+    simpleDesc.networkId_ = speaker->networkId_;
+    simpleDesc.deviceType_ = DEVICE_TYPE_MIC;
+    EXPECT_EQ(simpleDesc.GetOnlineDeviceDescriptor(), nullptr);
+    simpleDesc.deviceType_ = speaker->deviceType_;
+    zone->devices_.clear();
+    EXPECT_EQ(simpleDesc.GetOnlineDeviceDescriptor(), nullptr);
 }
 
 }

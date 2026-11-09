@@ -20,6 +20,7 @@
 #include "audio_device_simple_descriptor.h"
 #include "audio_device_manager.h"
 #include "audio_policy_log.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -27,6 +28,9 @@ namespace AudioStandard {
 std::shared_ptr<AudioDeviceDescriptor> AudioDeviceSimpleDescriptor::GetOnlineDeviceDescriptor() const
 {
     auto ret = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(deviceId_);
+    if (ret == nullptr) {
+        ret = AudioZoneService::GetInstance().GetDeviceDescriptor(deviceType_, networkId_);
+    }
     return ret ? make_shared<AudioDeviceDescriptor>(*ret) : nullptr;
 }
 
