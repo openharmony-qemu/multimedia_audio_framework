@@ -140,6 +140,7 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_003, TestSize.Level4)
     AudioAdapterManager::GetInstance().SetAbsVolumeScene(testMac, isEnable, 0);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    CurrentActiveDevice().macAddress_ = testMac;
     audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
     EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_MUSIC);
 
