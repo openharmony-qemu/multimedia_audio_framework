@@ -898,7 +898,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, GetVirtualCall_001, TestSize.Le
     // 再设置另一个值
     manager.SetVirtualCall(false);
     isVirtual = manager.GetVirtualCall();
-    EXPECT_NE(isVirtual, false);
+    EXPECT_EQ(isVirtual, false);
 }
 
 /**
@@ -911,7 +911,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetVirtualCall_001, TestSize.Le
 {
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t ret = manager.SetVirtualCall(true);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
