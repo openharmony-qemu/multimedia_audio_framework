@@ -1165,24 +1165,6 @@ HWTEST_F(AudioServerUnitTest, CreateAudioStream_Loopback_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test IsNormalIpcStream with enableNewRoute
- * @tc.type  : FUNC
- * @tc.number: IsNormalIpcStream_NewRoute_001
- * @tc.desc  : Test IsNormalIpcStream when enableNewRoute is 1.
- */
-HWTEST_F(AudioServerUnitTest, IsNormalIpcStream_NewRoute_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    AudioProcessConfig config;
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    config.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-    SetSysPara("persist.multimedia.audio.enable_new_route", 1);
-    bool ret = audioServer->IsNormalIpcStream(config);
-    EXPECT_TRUE(ret);
-    SetSysPara("persist.multimedia.audio.enable_new_route", 0);
-}
-
-/**
  * @tc.name  : Test SetSinkMuteForSwitchDevice mmap branch
  * @tc.type  : FUNC
  * @tc.number: SetSinkMuteForSwitchDevice_Mmap_001
@@ -1219,8 +1201,6 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_001, TestSize.Level1)
     bool ret = audioServer->IsFastBlocked(1, PLAYER_TYPE_DEFAULT);
     EXPECT_EQ(false, ret);
     config.audioMode = static_cast<AudioMode>(-1);
-    ret = audioServer->IsNormalIpcStream(config);
-    EXPECT_EQ(false, ret);
     AudioParamKey key = NONE;
     audioServer->OnRenderSinkParamChange("", key, "", "");
     audioServer->OnCaptureSourceParamChange("", key, "", "");
@@ -2375,33 +2355,6 @@ HWTEST_F(AudioServerUnitTest, HandleCheckCaptureLimit_001, TestSize.Level1)
     EXPECT_EQ(audioServer->HandleCheckCaptureLimit(resetConfig, filterConfig), false);
 }
 #endif
-
-/**
- * @tc.name  : Test IsNormalIpcStream API
- * @tc.type  : FUNC
- * @tc.number: IsNormalIpcStream_001
- * @tc.desc  : Test IsNormalIpcStream interface.
- */
-HWTEST_F(AudioServerUnitTest, IsNormalIpcStream_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    AudioProcessConfig config;
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    config.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-    EXPECT_TRUE(audioServer->IsNormalIpcStream(config));
-
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    config.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
-    EXPECT_TRUE(audioServer->IsNormalIpcStream(config));
-
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    config.rendererInfo.rendererFlags = AUDIO_FLAG_DIRECT;
-    EXPECT_TRUE(audioServer->IsNormalIpcStream(config));
-
-    config.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
-    config.audioMode = AUDIO_MODE_RECORD;
-    EXPECT_TRUE(audioServer->IsNormalIpcStream(config));
-}
 
 /**
  * @tc.name  : Test OnCapturerState API

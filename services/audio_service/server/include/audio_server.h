@@ -490,7 +490,6 @@ private:
     int32_t SetCockpitDirectExtraParameters(const std::vector<std::pair<std::string, std::string>> &kvpairs);
     int32_t SetCommonExtraParameters(const std::string &key,
         const std::vector<std::pair<std::string, std::string>> &kvpairs);
-    bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
     bool IsFastBlocked(int32_t uid, PlayerType playerType);
