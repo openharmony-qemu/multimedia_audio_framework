@@ -1165,6 +1165,7 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    AudioCoreService::GetCoreService()->OnVolumeChanged(eventContextObj->volumeEvent, eventContextObj->zoneId);
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     if (eventContextObj->volumeEvent.notifyRssWhenAccountsChange) {
         return HandleVolumeKeyEventToRssWhenAccountsChange(eventContextObj);

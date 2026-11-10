@@ -8715,5 +8715,227 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
 }
 
+namespace {
+constexpr uint32_t NOTIF_SILENT_SESSION_ID = 983001;
+constexpr uint32_t NOTIF_SILENT_SESSION_ID_2 = 983002;
+
+std::shared_ptr<AudioStreamDescriptor> MakeNotifSilentStream(uint32_t sessionId,
+    StreamUsage usage, AudioMode mode)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = sessionId;
+    streamDesc->audioMode_ = mode;
+    streamDesc->rendererInfo_.streamUsage = usage;
+    return streamDesc;
+}
+
+std::shared_ptr<AudioPipeManager> MakeNotifSilentPipeManager(
+    const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    auto pipeManager = std::make_shared<AudioPipeManager>();
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->curPipeList_.push_back(pipeInfo);
+    return pipeManager;
+}
+
+VolumeEvent MakeNotifVolumeEvent(int32_t previousVolume, int32_t volume)
+{
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = STREAM_NOTIFICATION;
+    volumeEvent.volume = volume;
+    volumeEvent.volumeDegree = 0;
+    volumeEvent.updateUi = false;
+    volumeEvent.previousVolume = previousVolume;
+    return volumeEvent;
+}
+}
+
+/**
+ * @tc.name  : OnVolumeChanged_001
+ * @tc.number: OnVolumeChanged_001
+ * @tc.desc  : Test OnVolumeChanged with null pipeManager returns early without crash.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, OnVolumeChanged_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->pipeManager_ = nullptr;
+
+    VolumeEvent volumeEvent = MakeNotifVolumeEvent(0, 1);
+    EXPECT_NO_THROW(audioCoreService->OnVolumeChanged(volumeEvent, 0));
+}
+
+/**
+ * @tc.name  : OnVolumeChanged_002
+ * @tc.number: OnVolumeChanged_002
+ * @tc.desc  : Test OnVolumeChanged with non matching events keeps notification silent flag.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, OnVolumeChanged_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto streamDesc = MakeNotifSilentStream(NOTIF_SILENT_SESSION_ID,
+        STREAM_USAGE_NOTIFICATION, AUDIO_MODE_PLAYBACK);
+    auto pipeManager = MakeNotifSilentPipeManager(streamDesc);
+    audioCoreService->pipeManager_ = pipeManager;
+    pipeManager->NotificationVolumeSilentClient(NOTIF_SILENT_SESSION_ID);
+    ASSERT_TRUE(pipeManager->IsStreamSilent(NOTIF_SILENT_SESSION_ID));
+
+    VolumeEvent volumeEvent = MakeNotifVolumeEvent(0, 5);
+    volumeEvent.volumeType = STREAM_MUSIC;
+    EXPECT_NO_THROW(audioCoreService->OnVolumeChanged(volumeEvent, 0));
+
+    volumeEvent.volumeType = STREAM_NOTIFICATION;
+    EXPECT_NO_THROW(audioCoreService->OnVolumeChanged(volumeEvent, 1));
+
+    volumeEvent.previousVolume = 2;
+    volumeEvent.volume = 5;
+    EXPECT_NO_THROW(audioCoreService->OnVolumeChanged(volumeEvent, 0));
+
+    volumeEvent.previousVolume = 0;
+    volumeEvent.volume = 0;
+    EXPECT_NO_THROW(audioCoreService->OnVolumeChanged(volumeEvent, 0));
+
+    EXPECT_TRUE(streamDesc->GetNotificationVolumeSilentState());
+    EXPECT_TRUE(pipeManager->IsStreamSilent(NOTIF_SILENT_SESSION_ID));
+}
+
+/**
+ * @tc.name  : OnVolumeChanged_003
+ * @tc.number: OnVolumeChanged_003
+ * @tc.desc  : Test OnVolumeChanged with mute silent stream clears flag but keeps stream silent.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, OnVolumeChanged_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto streamDesc = MakeNotifSilentStream(NOTIF_SILENT_SESSION_ID,
+        STREAM_USAGE_NOTIFICATION, AUDIO_MODE_PLAYBACK);
+    auto pipeManager = MakeNotifSilentPipeManager(streamDesc);
+    audioCoreService->pipeManager_ = pipeManager;
+    pipeManager->NotificationVolumeSilentClient(NOTIF_SILENT_SESSION_ID);
+    EXPECT_FALSE(pipeManager->SetMuteSilentState(NOTIF_SILENT_SESSION_ID, true));
+    ASSERT_TRUE(pipeManager->IsStreamSilent(NOTIF_SILENT_SESSION_ID));
+
+    VolumeEvent volumeEvent = MakeNotifVolumeEvent(0, 5);
+    EXPECT_NO_THROW(audioCoreService->OnVolumeChanged(volumeEvent, 0));
+
+    EXPECT_FALSE(streamDesc->GetNotificationVolumeSilentState());
+    EXPECT_TRUE(streamDesc->GetMuteSilentState());
+    EXPECT_TRUE(pipeManager->IsStreamSilent(NOTIF_SILENT_SESSION_ID));
+}
+
+/**
+ * @tc.name  : OnVolumeChanged_004
+ * @tc.number: OnVolumeChanged_004
+ * @tc.desc  : Test OnVolumeChanged with matching event clears flag and exits silent.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, OnVolumeChanged_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto streamDesc = MakeNotifSilentStream(NOTIF_SILENT_SESSION_ID,
+        STREAM_USAGE_NOTIFICATION, AUDIO_MODE_PLAYBACK);
+    auto pipeManager = MakeNotifSilentPipeManager(streamDesc);
+    audioCoreService->pipeManager_ = pipeManager;
+    pipeManager->NotificationVolumeSilentClient(NOTIF_SILENT_SESSION_ID);
+    ASSERT_TRUE(pipeManager->IsStreamSilent(NOTIF_SILENT_SESSION_ID));
+
+    // make wireless device restore deterministic: no device holds silent state
+    for (auto &desc : AudioDeviceManager::GetAudioDeviceManager().connectedDevices_) {
+        if (desc != nullptr) {
+            desc->isSilent_ = false;
+        }
+    }
+
+    VolumeEvent volumeEvent = MakeNotifVolumeEvent(0, 5);
+    EXPECT_NO_THROW(audioCoreService->OnVolumeChanged(volumeEvent, 0));
+
+    EXPECT_FALSE(streamDesc->GetNotificationVolumeSilentState());
+    EXPECT_FALSE(pipeManager->IsStreamSilent(NOTIF_SILENT_SESSION_ID));
+}
+
+/**
+ * @tc.name  : CheckNotificationVolumeSilent_001
+ * @tc.number: CheckNotificationVolumeSilent_001
+ * @tc.desc  : Test CheckNotificationVolumeSilent skips non notification playback and record streams.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, CheckNotificationVolumeSilent_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto musicStream = MakeNotifSilentStream(NOTIF_SILENT_SESSION_ID,
+        STREAM_USAGE_MUSIC, AUDIO_MODE_PLAYBACK);
+    auto recordStream = MakeNotifSilentStream(NOTIF_SILENT_SESSION_ID_2,
+        STREAM_USAGE_NOTIFICATION, AUDIO_MODE_RECORD);
+    auto pipeManager = std::make_shared<AudioPipeManager>();
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->streamDescriptors_.push_back(musicStream);
+    pipeInfo->streamDescriptors_.push_back(recordStream);
+    pipeManager->curPipeList_.push_back(pipeInfo);
+    audioCoreService->pipeManager_ = pipeManager;
+
+    EXPECT_NO_THROW(audioCoreService->CheckNotificationVolumeSilent(*musicStream));
+    EXPECT_NO_THROW(audioCoreService->CheckNotificationVolumeSilent(*recordStream));
+
+    EXPECT_FALSE(musicStream->GetNotificationVolumeSilentState());
+    EXPECT_FALSE(recordStream->GetNotificationVolumeSilentState());
+    EXPECT_FALSE(pipeManager->IsStreamSilent(NOTIF_SILENT_SESSION_ID));
+    EXPECT_FALSE(pipeManager->IsStreamSilent(NOTIF_SILENT_SESSION_ID_2));
+}
+
+/**
+ * @tc.name  : CheckNotificationVolumeSilent_002
+ * @tc.number: CheckNotificationVolumeSilent_002
+ * @tc.desc  : Test CheckNotificationVolumeSilent marks notification stream iff volume is zero.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, CheckNotificationVolumeSilent_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto notifStream = MakeNotifSilentStream(NOTIF_SILENT_SESSION_ID,
+        STREAM_USAGE_NOTIFICATION, AUDIO_MODE_PLAYBACK);
+    auto pipeManager = MakeNotifSilentPipeManager(notifStream);
+    audioCoreService->pipeManager_ = pipeManager;
+
+    bool volumeIsZero = (audioCoreService->GetSystemVolumeLevel(STREAM_NOTIFICATION) == 0);
+    EXPECT_NO_THROW(audioCoreService->CheckNotificationVolumeSilent(*notifStream));
+
+    EXPECT_EQ(notifStream->GetNotificationVolumeSilentState(), volumeIsZero);
+    EXPECT_EQ(pipeManager->IsStreamSilent(NOTIF_SILENT_SESSION_ID), volumeIsZero);
+}
+
+/**
+ * @tc.name  : CheckNotificationVolumeSilent_003
+ * @tc.number: CheckNotificationVolumeSilent_003
+ * @tc.desc  : Test CheckNotificationVolumeSilent covers all notification family usages.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, CheckNotificationVolumeSilent_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    bool volumeIsZero = (audioCoreService->GetSystemVolumeLevel(STREAM_NOTIFICATION) == 0);
+
+    const std::vector<StreamUsage> notificationUsages = {
+        STREAM_USAGE_NOTIFICATION,
+        STREAM_USAGE_SYSTEM,
+        STREAM_USAGE_ENFORCED_TONE,
+        STREAM_USAGE_DTMF,
+    };
+    for (size_t i = 0; i < notificationUsages.size(); ++i) {
+        auto streamDesc = MakeNotifSilentStream(NOTIF_SILENT_SESSION_ID + i,
+            notificationUsages[i], AUDIO_MODE_PLAYBACK);
+        auto pipeManager = MakeNotifSilentPipeManager(streamDesc);
+        audioCoreService->pipeManager_ = pipeManager;
+
+        EXPECT_NO_THROW(audioCoreService->CheckNotificationVolumeSilent(*streamDesc));
+        EXPECT_EQ(streamDesc->GetNotificationVolumeSilentState(), volumeIsZero);
+        EXPECT_EQ(pipeManager->IsStreamSilent(NOTIF_SILENT_SESSION_ID + i), volumeIsZero);
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

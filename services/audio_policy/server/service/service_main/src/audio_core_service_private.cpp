@@ -4279,5 +4279,17 @@ void AudioCoreService::MutePrimarySinkByCollaborative(int32_t duration)
 {
     audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, duration, true, true);
 }
+
+void AudioCoreService::CheckNotificationVolumeSilent(const AudioStreamDescriptor &streamDesc)
+{
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc.rendererInfo_.streamUsage);
+    bool isNotification = streamDesc.audioMode_ == AUDIO_MODE_PLAYBACK &&
+        (volumeType == STREAM_SYSTEM || volumeType == STREAM_NOTIFICATION);
+    if (isNotification) {
+        if (GetSystemVolumeLevel(STREAM_NOTIFICATION) == 0) {
+            pipeManager_->NotificationVolumeSilentClient(streamDesc.sessionId_);
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

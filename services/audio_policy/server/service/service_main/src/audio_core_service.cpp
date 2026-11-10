@@ -1658,6 +1658,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg op
     // Force stop interphone streams when VoIP/Cellular stream starts
     ForceStopInterphoneStreamsIfNecessary(streamDesc);
     CheckAndSleepBeforeRingDeviceSet(streamDesc);
+    CheckNotificationVolumeSilent(*streamDesc);
     pipeManager_->StartClient(sessionId);
     if (!pipeManager_->IsStreamSilent(sessionId)) {
         // Update all wireless devices silent state after stream started
@@ -5159,6 +5160,22 @@ int32_t AudioCoreService::ReleaseFastPipeInner(AudioIOHandle id, uint32_t paInde
     isFastInReleaseMap_[pipeName] = false;
     audioPolicyManager_.RemoveAudioPipeVolume(id);
     return SUCCESS;
+}
+
+void AudioCoreService::OnVolumeChanged(const VolumeEvent &volumeEvent, const int32_t zoneId)
+{
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+    bool isNotificationVolumeExitSilent = zoneId == 0 &&
+        (volumeEvent.volumeType == STREAM_NOTIFICATION || volumeEvent.volumeType == STREAM_SYSTEM) &&
+        volumeEvent.previousVolume <= 0 && volumeEvent.volume > 0;
+    if (isNotificationVolumeExitSilent && pipeManager_->ClearNotificationVolumeSilentFlag()) {
+        AUDIO_INFO_LOG("OnVolumeChanged: notification volume exit silent");
+        bool isStatusUpdated = audioDeviceManager_.RestoreWirelessDeviceSilentState();
+        if (isStatusUpdated) {
+            AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE;
+            TriggerFetchDevice(reason);
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
