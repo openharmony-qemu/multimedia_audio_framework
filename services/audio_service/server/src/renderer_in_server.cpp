@@ -2164,7 +2164,7 @@ int32_t RendererInServer::SetRate(int32_t rate)
         CHECK_AND_RETURN_RET(audioRenderRate_ != static_cast<AudioRendererRate>(rate), SUCCESS);
         audioRenderRate_ = static_cast<AudioRendererRate>(rate);
         speed_ = ConvertAudioRenderRateToSpeed(audioRenderRate_);
-        sonicPitch_ = speed_;
+        pitch_ = speed_;
         CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
             "ProcessAndSetStaticBuffer fail!");
     }
@@ -3530,11 +3530,8 @@ int32_t RendererInServer::ProcessAndSetStaticBuffer()
     CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
         ERR_OPERATION_FAILED, "staticBuffer not inited");
     
-    int32_t ret = staticBufferProcessor_->ProcessBufferSpeed(speed_, sonicPitch_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessBufferSpeed fail!");
-    
-    ret = staticBufferProcessor_->ProcessBufferPitch(pitch_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessBufferPitch fail!");
+    int32_t ret = staticBufferProcessor_->ProcessBufferSpeedAndPitch(speed_, pitch_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessBufferSpeedAndPitch fail!");
     
     staticBufferProcessor_->SaveProcessBuffer();
     

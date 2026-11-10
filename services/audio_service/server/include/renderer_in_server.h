@@ -417,7 +417,6 @@ private:
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
 
-    float sonicPitch_ = 1.0f;
     float pitch_ = 1.0f;
     float speed_ = 1.0f;
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;

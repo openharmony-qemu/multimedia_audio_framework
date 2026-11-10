@@ -20,7 +20,6 @@
 #include "oh_audio_buffer.h"
 #include "audio_service_log.h"
 #include "audio_speed.h"
-#include "audio_pitch_processor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,14 +36,12 @@ public:
     AudioStaticBufferProcessor(AudioStreamInfo streamInfo, std::shared_ptr<OHAudioBufferBase> sharedBuffer);
     ~AudioStaticBufferProcessor();
 
-    int32_t ProcessBufferSpeed(float speed, float sonicPitch = PITCH_NORMAL);
-    int32_t ProcessBufferPitch(float pitch);
+    int32_t ProcessBufferSpeedAndPitch(float speed, float pitch);
     int32_t GetProcessedBuffer(uint8_t **bufferBase, size_t &bufferSize);
     void SaveProcessBuffer();
 
 private:
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
-    std::shared_ptr<AudioPitchProcessor> pitchProcessor_ = nullptr;
     std::shared_ptr<OHAudioBufferBase> sharedBuffer_ = nullptr;
     AudioStreamInfo streamInfo_;
     

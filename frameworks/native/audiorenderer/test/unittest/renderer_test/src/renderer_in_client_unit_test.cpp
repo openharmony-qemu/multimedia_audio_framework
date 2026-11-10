@@ -521,12 +521,13 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_008, TestSize.Level1
 
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
 
-    size_t rate = 0;
+    size_t rate = 48000;
     size_t format = SAMPLE_S32LE;
-    size_t channels = 0;
+    size_t channels = 2;
     ptrRendererInClientInner->audioSpeed_ = std::make_unique<AudioSpeed>(rate, format, channels);
     ASSERT_TRUE(ptrRendererInClientInner->audioSpeed_ != nullptr);
 
+    ptrRendererInClientInner->audioSpeed_->Init();
     auto ret = ptrRendererInClientInner->audioSpeed_->LoadChangeSpeedFunc();
 
     EXPECT_EQ(ret, SUCCESS);
@@ -1873,6 +1874,42 @@ HWTEST(RendererInClientInnerUnitTest, SetSpeed_001, TestSize.Level0)
     ptrRendererInClientInner->NotifyRouteUpdate(flagInfo, LOCAL_NETWORK_ID);
     ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     ptrRendererInClientInner->NotifyRouteUpdate(flagInfo, LOCAL_NETWORK_ID);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner dynamic speedBuffer sizing
+ * @tc.type  : FUNC
+ * @tc.number: SetSpeedInner_DynamicBufferSize_001
+ * @tc.desc  : Test SetSpeedInner allocates speedBuffer_ by actual format and speed.
+ */
+HWTEST(RendererInClientInnerUnitTest, SetSpeedInner_DynamicBufferSize_001, TestSize.Level1)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    // 48kHz, 2ch, S16LE: MAX_CBBUF_IN_USEC(100ms) = 100000 * 48000 * 4 / 1000000 = 19200 bytes
+    ptrRendererInClientInner->curStreamParams_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    ptrRendererInClientInner->curStreamParams_.format = AudioSampleFormat::SAMPLE_S16LE;
+    ptrRendererInClientInner->curStreamParams_.channels = AudioChannel::STEREO;
+    int32_t cacheBufferSize = 19200;
+
+    // speed >= 1.0 -> factor 1
+    int32_t ret = ptrRendererInClientInner->SetSpeedInner(2.0f);
+    EXPECT_EQ(ret, SUCCESS);
+    ASSERT_TRUE(ptrRendererInClientInner->audioSpeed_ != nullptr);
+    EXPECT_EQ(ptrRendererInClientInner->audioSpeed_->maxSpeedBufferSize_, cacheBufferSize);
+
+    // speed < 1.0 -> factor = ceil(1/speed) + 1; 0.5 -> 3
+    ret = ptrRendererInClientInner->SetSpeedInner(0.5f);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ptrRendererInClientInner->audioSpeed_->maxSpeedBufferSize_, cacheBufferSize * 3);
+
+    // 0.125 -> factor 9
+    ret = ptrRendererInClientInner->SetSpeedInner(0.125f);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ptrRendererInClientInner->audioSpeed_->maxSpeedBufferSize_, cacheBufferSize * 9);
 }
 
 /**

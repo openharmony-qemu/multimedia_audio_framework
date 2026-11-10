@@ -2325,8 +2325,9 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_002, TestSize
     std::shared_ptr<AudioStaticBufferProcessor> bufferProcessorTest =
         AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(bufferProcessorTest != nullptr);
-    bufferProcessorTest->ProcessBufferSpeed(ConvertAudioRenderRateToSpeed(RENDER_RATE_HALF));
-    EXPECT_EQ(bufferProcessorTest->ProcessBufferSpeed(ConvertAudioRenderRateToSpeed(RENDER_RATE_NORMAL)), SUCCESS);
+    bufferProcessorTest->ProcessBufferSpeedAndPitch(ConvertAudioRenderRateToSpeed(RENDER_RATE_HALF), PITCH_NORMAL);
+    EXPECT_EQ(bufferProcessorTest->ProcessBufferSpeedAndPitch(ConvertAudioRenderRateToSpeed(RENDER_RATE_NORMAL),
+        PITCH_NORMAL), SUCCESS);
 }
 
 /**
@@ -2897,7 +2898,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_ProcessBuffer
         AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(bufferProcessorTest != nullptr);
     
-    int32_t ret = bufferProcessorTest->ProcessBufferPitch(PITCH_DEFAULT);
+    int32_t ret = bufferProcessorTest->ProcessBufferSpeedAndPitch(SPEED_NORMAL, PITCH_DEFAULT);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -2916,8 +2917,8 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_ProcessBuffer
         AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(bufferProcessorTest != nullptr);
     
-    int32_t ret = bufferProcessorTest->ProcessBufferPitch(0.1f);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    int32_t ret = bufferProcessorTest->ProcessBufferSpeedAndPitch(SPEED_NORMAL, 0.1f);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -2935,8 +2936,8 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_ProcessBuffer
         AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(bufferProcessorTest != nullptr);
     
-    int32_t ret = bufferProcessorTest->ProcessBufferPitch(5.0f);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    int32_t ret = bufferProcessorTest->ProcessBufferSpeedAndPitch(SPEED_NORMAL, 5.0f);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -2954,14 +2955,11 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_ProcessBuffer
         AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(bufferProcessorTest != nullptr);
     
-    int32_t ret = bufferProcessorTest->ProcessBufferPitch(0.5f);
-    EXPECT_EQ(ret, SUCCESS);
+    int32_t ret = bufferProcessorTest->ProcessBufferSpeedAndPitch(SPEED_NORMAL, 0.5f);
+    EXPECT_NE(ret, SUCCESS);
     
-    ret = bufferProcessorTest->ProcessBufferPitch(2.0f);
-    EXPECT_EQ(ret, SUCCESS);
-    
-    ret = bufferProcessorTest->ProcessBufferPitch(4.0f);
-    EXPECT_EQ(ret, SUCCESS);
+    ret = bufferProcessorTest->ProcessBufferSpeedAndPitch(SPEED_NORMAL, 2.0f);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

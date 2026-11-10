@@ -2698,7 +2698,7 @@ HWTEST(AudioUtilsUnitTest, GetScaledTime_005, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, LoadChangeSpeedFunc_001, TestSize.Level1)
 {
-    shared_ptr<AudioSpeed> audioSpeed = std::make_shared<AudioSpeed>(1, 1, 1);
+    shared_ptr<AudioSpeed> audioSpeed = std::make_shared<AudioSpeed>(48000, 1, 2);
     audioSpeed->format_ = 0;
     int32_t result = audioSpeed->LoadChangeSpeedFunc();
     EXPECT_EQ(0, result);
@@ -2712,7 +2712,7 @@ HWTEST(AudioUtilsUnitTest, LoadChangeSpeedFunc_001, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, LoadChangeSpeedFunc_002, TestSize.Level1)
 {
-    shared_ptr<AudioSpeed> audioSpeed = std::make_shared<AudioSpeed>(1, 1, 1);
+    shared_ptr<AudioSpeed> audioSpeed = std::make_shared<AudioSpeed>(48000, 1, 2);
     audioSpeed->format_ = 1;
     int32_t result = audioSpeed->LoadChangeSpeedFunc();
     EXPECT_EQ(0, result);
@@ -2726,7 +2726,7 @@ HWTEST(AudioUtilsUnitTest, LoadChangeSpeedFunc_002, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, LoadChangeSpeedFunc_003, TestSize.Level1)
 {
-    shared_ptr<AudioSpeed> audioSpeed = std::make_shared<AudioSpeed>(1, 1, 1);
+    shared_ptr<AudioSpeed> audioSpeed = std::make_shared<AudioSpeed>(48000, 1, 2);
     audioSpeed->format_ = -1;
     int32_t result = audioSpeed->LoadChangeSpeedFunc();
     EXPECT_EQ(0, result);

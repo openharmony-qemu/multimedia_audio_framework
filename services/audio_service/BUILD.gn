@@ -112,6 +112,13 @@ ohos_shared_library("audio_common") {
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_engine:audio_common_algorithm",
   ]
+  if (audio_speed_algo_enable == true) {
+    deps += [ "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite_generic" ]
+    include_dirs += [
+      "../../interfaces/inner_api/native/audio_suite_generic/include",
+      "../audio_suite/client/generic/include",
+    ]
+  }
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
@@ -138,6 +145,9 @@ ohos_shared_library("audio_common") {
   cflags_cc += [ "-std=c++20" ]
 
   defines = []
+  if (audio_speed_algo_enable == true) {
+    defines += [ "AUDIO_SPEED_ALGO_ENABLE" ]
+  }
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }
@@ -202,6 +212,14 @@ config("audio_client_public_config") {
 
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
+  }
+
+  if (audio_speed_algo_enable == true) {
+    cflags += [ "-DAUDIO_SPEED_ALGO_ENABLE" ]
+    include_dirs += [
+      "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audio_suite_generic/include",
+      "//foundation/multimedia/audio_framework/services/audio_suite/client/generic/include",
+    ]
   }
   external_deps = [
     "ipc:ipc_core",
@@ -308,6 +326,9 @@ ohos_shared_library("audio_stream_client") {
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_policy_client",
   ]
+  if (audio_speed_algo_enable == true) {
+    deps += [ "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite_generic" ]
+  }
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
@@ -607,6 +628,14 @@ config("audio_service_config") {
 
   if (audio_framework_feature_3da_direct) {
     cflags += [ "-DSUPPORT_3DA" ]
+  }
+
+  if (audio_speed_algo_enable == true) {
+    cflags += [ "-DAUDIO_SPEED_ALGO_ENABLE" ]
+    include_dirs += [
+      "../../interfaces/inner_api/native/audio_suite_generic/include",
+      "../../services/audio_suite/client/generic/include",
+    ]
   }
 
   cflags_cc = cflags
