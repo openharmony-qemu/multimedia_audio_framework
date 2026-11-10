@@ -849,7 +849,7 @@ HWTEST_F(OHAudioBufferBaseAiut, OHAudioBufferBase_LastWrittenTime, TestSize.Leve
     buffer->SetLastWrittenTime(TEST_WRITTEN_TIME);
     int64_t time = buffer->GetLastWrittenTime();
     AIUT_EXPECT_EQ_INFO_LOG(time, TEST_WRITTEN_TIME,
-        "expected %lld, got time=%lld", TEST_WRITTEN_TIME, time);
+        "[expected %" PRId64 "], got time=%" PRId64, TEST_WRITTEN_TIME, time);
 }
 
 // ==================== Restore / Status Tests ====================

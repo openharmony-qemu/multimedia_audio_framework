@@ -16,6 +16,7 @@
 #include "audio_renderer_unit_test.h"
 
 #include <chrono>
+#include <cinttypes>
 #include <thread>
 
 #include "aiut_log.h"
@@ -629,7 +630,7 @@ HWTEST(AudioRendererUnitTest, AudioRenderer_GetFramesWritten_Valid, TestSize.Lev
     AIUT_ASSERT_NE_INFO_LOG(audioRenderer, nullptr, "audioRenderer is nullptr");
 
     int64_t frames = audioRenderer->GetFramesWritten();
-    AIUT_EXPECT_TRUE_INFO_LOG(frames >= 0, "GetFramesWritten invalid, frames=%lld", frames);
+    AIUT_EXPECT_TRUE_INFO_LOG(frames >= 0, "GetFramesWritten invalid, frames=%" PRId64, frames);
     audioRenderer->Release();
 }
 
