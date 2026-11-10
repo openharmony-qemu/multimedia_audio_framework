@@ -43,8 +43,8 @@ constexpr int BIT_8 = 8;
 constexpr int BIT_16 = 16;
 constexpr int BIT_32 = 32;
 
-const std::string ALGO_SO_PATH = "/system/lib64/libaudio_time_stretch.z.so";
-constexpr const char *PREFIX_SYSTEM_LIB64 = "/system/lib64/";
+const std::string ALGO_SO_PATH = "/system/lib64/chipset-sdk/libaudio_time_stretch.z.so";
+constexpr const char *PREFIX_SYSTEM_LIB64 = "/system/lib64/chipset-sdk/";
 
 constexpr uint32_t MIN_SAMPLE_RATE = 8000;
 constexpr uint32_t MAX_SAMPLE_RATE = 384000;

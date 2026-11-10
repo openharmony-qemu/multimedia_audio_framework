@@ -247,7 +247,7 @@ audio_ohos_library("audio_suite_generic") {
     external_deps += [ "hitrace:hitrace_meter" ]
   }
 
-  # innerapi_tags = [ "chipsetsdk" ]
+  innerapi_tags = [ "chipsetsdk" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

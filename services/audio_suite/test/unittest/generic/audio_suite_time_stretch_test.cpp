@@ -66,7 +66,7 @@ constexpr uint32_t INVALID_CHANNELS_HIGH    = 17;      // MAX_CHANNELS(16) + 1
 // ===== Check if algorithm so is available =====
 static bool IsTimeStretchAlgoAvailable()
 {
-    const char *soPath = "/system/lib64/libaudio_time_stretch.z.so";
+    const char *soPath = "/system/lib64/chipset-sdk/libaudio_time_stretch.z.so";
     void *handle = dlopen(soPath, RTLD_NOW);
     if (handle == nullptr) {
         return false;
