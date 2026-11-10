@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <cinttypes>
+
 #include "linear_pos_time_model.h"
 #include "aiut_log.h"
 #include "audio_service_log.h"
