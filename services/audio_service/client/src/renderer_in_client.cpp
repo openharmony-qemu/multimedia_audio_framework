@@ -891,7 +891,7 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
         bufferSize = static_cast<size_t>(outBufferSize);
         speedCached = true;
     }
-#endif // defined(SONIC_ENABLE) || defined(AUDIO_SPEED_ALGO_ENABLE)
+#endif
     return true;
 }
 
@@ -1418,8 +1418,11 @@ int32_t RendererInClientInner::SetSpeedInner(float speed)
         audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
             curStreamParams_.channels);
         GetBufferSize(bufferSize_);
-        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
+    int32_t speedBufferSize = AudioSpeed::CalculateMaxSpeedBufferSize(curStreamParams_.samplingRate,
+        curStreamParams_.format, curStreamParams_.channels, speed);
+    audioSpeed_->SetMaxSpeedBufferSize(speedBufferSize);
+    speedBuffer_ = std::make_unique<uint8_t[]>(static_cast<size_t>(speedBufferSize));
     audioSpeed_->SetSpeed(speed);
     AudioWriteState state = audioWriteState_.load();
     uint64_t samplesWritten = state.totalBytesWrittenAfterFlush_;

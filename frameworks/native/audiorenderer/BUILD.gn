@@ -36,6 +36,7 @@ config("audio_renderer_config") {
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
   }
+
   if (audio_speed_algo_enable == true) {
     cflags += [ "-DAUDIO_SPEED_ALGO_ENABLE" ]
   }

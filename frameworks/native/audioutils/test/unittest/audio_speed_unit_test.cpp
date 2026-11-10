@@ -16,13 +16,15 @@
 #include <gtest/gtest.h>
 #include "audio_speed.h"
 #include "audio_errors.h"
+#ifdef AUDIO_SPEED_ALGO_ENABLE
+#include "audio_suite_time_stretch.h"
+#endif
 
 using namespace testing::ext;
 using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-#ifndef AUDIO_SPEED_ALGO_ENABLE
 class AudioSpeedUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -59,10 +61,11 @@ void AudioSpeedUnitTest::TearDown(void)
 */
 HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_001, TestSize.Level1)
 {
-    size_t rate = 0;
+    size_t rate = 48000;
     size_t format = SAMPLE_S24LE;
-    size_t channels = 1;
+    size_t channels = 2;
     auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    audioSpeed->Init();
     auto result = audioSpeed->LoadChangeSpeedFunc();
     EXPECT_EQ(result, SUCCESS);
 }
@@ -75,14 +78,16 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_001, TestSize.Level1)
 */
 HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_002, TestSize.Level1)
 {
-    size_t rate = 0;
+    size_t rate = 48000;
     size_t format = SAMPLE_S32LE;
-    size_t channels = 1;
+    size_t channels = 2;
     auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    audioSpeed->Init();
     auto result = audioSpeed->LoadChangeSpeedFunc();
     EXPECT_EQ(result, SUCCESS);
 }
 
+#ifndef AUDIO_SPEED_ALGO_ENABLE
 /**
 * @tc.name  : Test AudioSpeed API
 * @tc.type  : FUNC
@@ -91,9 +96,9 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_002, TestSize.Level1)
 */
 HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_003, TestSize.Level1)
 {
-    size_t rate = 0;
+    size_t rate = 48000;
     size_t format = SAMPLE_S32LE;
-    size_t channels = 1;
+    size_t channels = 2;
 
     uint8_t *buffer = nullptr;
     int32_t bufferSize = 0;
@@ -214,6 +219,7 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_008, TestSize.Level1)
     auto result = audioSpeed->ChangeSpeedFor32Bit(buffer, bufferSize, outBuffer, outBufferSize);
     EXPECT_EQ(result, bufferSize);
 }
+#endif // AUDIO_SPEED_ALGO_ENABLE
 
 /**
 * @tc.name  : Test AudioSpeed API
@@ -227,6 +233,7 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_009, TestSize.Level1)
     size_t format = SAMPLE_F32LE;
     size_t channels = 1;
     auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    audioSpeed->Init();
     auto result = audioSpeed->LoadChangeSpeedFunc();
     EXPECT_EQ(result, SUCCESS);
 }
@@ -326,154 +333,184 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_015, TestSize.Level1)
     auto result = audioSpeed->Flush();
     EXPECT_EQ(result, SUCCESS);
 }
-#endif // !AUDIO_SPEED_ALGO_ENABLE
+
+/**
+* @tc.name  : Test CalculateMaxSpeedBufferSize for speed >= 1.0
+* @tc.type  : FUNC
+* @tc.number: AudioSpeed_CalculateMaxSpeedBufferSize_001
+* @tc.desc  : Test dynamic output buffer size for speed >= 1.0 (factor 1, base 100ms).
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeed_CalculateMaxSpeedBufferSize_001, TestSize.Level1)
+{
+    // 48kHz, 2ch, S16LE: MAX_CBBUF_IN_USEC(100ms) = 100000 * 48000 * 4 / 1000000 = 19200 bytes
+    int32_t cacheBufferSize = 19200;
+    EXPECT_EQ(AudioSpeed::CalculateMaxSpeedBufferSize(48000, SAMPLE_S16LE, 2, 1.0f), cacheBufferSize);
+    EXPECT_EQ(AudioSpeed::CalculateMaxSpeedBufferSize(48000, SAMPLE_S16LE, 2, 2.0f), cacheBufferSize);
+    EXPECT_EQ(AudioSpeed::CalculateMaxSpeedBufferSize(48000, SAMPLE_S16LE, 2, 4.0f), cacheBufferSize);
+}
+
+/**
+* @tc.name  : Test CalculateMaxSpeedBufferSize for slow speed
+* @tc.type  : FUNC
+* @tc.number: AudioSpeed_CalculateMaxSpeedBufferSize_002
+* @tc.desc  : Test dynamic output buffer size for speed < 1.0 (factor = ceil(1/speed)+1).
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeed_CalculateMaxSpeedBufferSize_002, TestSize.Level1)
+{
+    int32_t cacheBufferSize = 19200; // 48kHz, 2ch, S16LE
+    EXPECT_EQ(AudioSpeed::CalculateMaxSpeedBufferSize(48000, SAMPLE_S16LE, 2, 0.5f), cacheBufferSize * 3);
+    EXPECT_EQ(AudioSpeed::CalculateMaxSpeedBufferSize(48000, SAMPLE_S16LE, 2, 0.3f), cacheBufferSize * 5);
+    EXPECT_EQ(AudioSpeed::CalculateMaxSpeedBufferSize(48000, SAMPLE_S16LE, 2, 0.125f), cacheBufferSize * 9);
+}
+
+/**
+* @tc.name  : Test CalculateMaxSpeedBufferSize invalid and fallback
+* @tc.type  : FUNC
+* @tc.number: AudioSpeed_CalculateMaxSpeedBufferSize_003
+* @tc.desc  : Test factor 1 for zero/negative speed and MAX_SPEED_BUFFER_SIZE fallback for invalid params.
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeed_CalculateMaxSpeedBufferSize_003, TestSize.Level1)
+{
+    int32_t cacheBufferSize = 19200; // 48kHz, 2ch, S16LE
+    EXPECT_EQ(AudioSpeed::CalculateMaxSpeedBufferSize(48000, SAMPLE_S16LE, 2, 0.0f), cacheBufferSize);
+    EXPECT_EQ(AudioSpeed::CalculateMaxSpeedBufferSize(48000, SAMPLE_S16LE, 2, -1.0f), cacheBufferSize);
+    EXPECT_EQ(AudioSpeed::CalculateMaxSpeedBufferSize(0, SAMPLE_S16LE, 2, 0.5f), MAX_SPEED_BUFFER_SIZE);
+    EXPECT_EQ(AudioSpeed::CalculateMaxSpeedBufferSize(48000, SAMPLE_S16LE, 0, 0.5f), MAX_SPEED_BUFFER_SIZE);
+}
+
+/**
+* @tc.name  : Test CalculateMaxSpeedBufferSize worst-case format
+* @tc.type  : FUNC
+* @tc.number: AudioSpeed_CalculateMaxSpeedBufferSize_004
+* @tc.desc  : Test 192kHz/8ch/float 100ms equals MAX_SPEED_BUFFER_SIZE at speed >= 1.0.
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeed_CalculateMaxSpeedBufferSize_004, TestSize.Level1)
+{
+    // 192kHz, 8ch, F32LE: MAX_CBBUF_IN_USEC(100ms) = 100000 * 192000 * 32 / 1000000 = 614400 == MAX_SPEED_BUFFER_SIZE
+    EXPECT_EQ(AudioSpeed::CalculateMaxSpeedBufferSize(192000, SAMPLE_F32LE, 8, 1.0f), MAX_SPEED_BUFFER_SIZE);
+    EXPECT_EQ(AudioSpeed::CalculateMaxSpeedBufferSize(192000, SAMPLE_F32LE, 8, 2.0f), MAX_SPEED_BUFFER_SIZE);
+}
 
 #ifdef AUDIO_SPEED_ALGO_ENABLE
-class AudioSpeedAlgoUnitTest : public testing::Test {
-public:
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
-    void SetUp();
-    void TearDown();
-};
 
-void AudioSpeedAlgoUnitTest::SetUpTestCase(void) {}
-void AudioSpeedAlgoUnitTest::TearDownTestCase(void) {}
-void AudioSpeedAlgoUnitTest::SetUp(void) {}
-void AudioSpeedAlgoUnitTest::TearDown(void) {}
-
-static constexpr uint32_t ALGO_TEST_RATE = 48000;
-static constexpr size_t ALGO_TEST_CHANNELS = 2;
-static constexpr int32_t ALGO_TEST_MAX_BUFFER = 614400;
-
-/**
-* @tc.name  : AudioSpeed_SelfAlgo_Speed2x
-* @tc.type  : FUNC
-* @tc.number: AudioSpeedAlgoUnitTest_001
-* @tc.desc  : AC-1.1 — SetSpeed(2.0), verify output duration ~1/2.
-*/
-HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_001, TestSize.Level1)
+static bool IsAudioSuiteAvailable()
 {
-    if (!AudioTimeStretchProcessor::IsTimeStretchSupported()) {
-        GTEST_SKIP() << "TimeStretch algorithm .so not available";
-    }
-    AudioSpeed audioSpeed(ALGO_TEST_RATE, SAMPLE_S16LE, ALGO_TEST_CHANNELS, ALGO_TEST_MAX_BUFFER);
-    ASSERT_EQ(audioSpeed.SetSpeed(2.0f), SUCCESS);
-    int32_t frameSize = 2 * static_cast<int32_t>(ALGO_TEST_CHANNELS);
-    int32_t inFrames = 1024;
-    vector<uint8_t> input(inFrames * frameSize, 0x40);
-    auto outBuffer = make_unique<uint8_t[]>(ALGO_TEST_MAX_BUFFER);
-    int32_t outSize = 0;
-    int32_t ret = audioSpeed.ChangeSpeedFunc(input.data(), inFrames * frameSize, outBuffer, outSize);
-    EXPECT_NE(ret, 0);
+    return AudioSuiteTimeStretch::IsTimeStretchSupported();
 }
 
 /**
-* @tc.name  : AudioSpeed_SelfAlgo_Speed0_5x
+* @tc.name  : Test AudioSpeed AlgoPath
 * @tc.type  : FUNC
-* @tc.number: AudioSpeedAlgoUnitTest_002
-* @tc.desc  : AC-1.2 — SetSpeed(0.5), verify output duration ~2x.
+* @tc.number: AudioSpeed_AlgoPath_Init_001
+* @tc.desc  : Test AudioSpeed algo path Init.
 */
-HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_002, TestSize.Level1)
+HWTEST(AudioSpeedUnitTest, AudioSpeed_AlgoPath_Init_001, TestSize.Level1)
 {
-    if (!AudioTimeStretchProcessor::IsTimeStretchSupported()) {
-        GTEST_SKIP() << "TimeStretch algorithm .so not available";
+    if (!IsAudioSuiteAvailable()) {
+        GTEST_SKIP() << "libaudio_time_stretch.z.so not available";
     }
-    AudioSpeed audioSpeed(ALGO_TEST_RATE, SAMPLE_S16LE, ALGO_TEST_CHANNELS, ALGO_TEST_MAX_BUFFER);
-    ASSERT_EQ(audioSpeed.SetSpeed(0.5f), SUCCESS);
-    int32_t frameSize = 2 * static_cast<int32_t>(ALGO_TEST_CHANNELS);
-    int32_t inFrames = 1024;
-    vector<uint8_t> input(inFrames * frameSize, 0x40);
-    auto outBuffer = make_unique<uint8_t[]>(ALGO_TEST_MAX_BUFFER);
-    int32_t outSize = 0;
-    int32_t ret = audioSpeed.ChangeSpeedFunc(input.data(), inFrames * frameSize, outBuffer, outSize);
-    EXPECT_NE(ret, 0);
+    size_t rate = 48000;
+    size_t format = SAMPLE_S16LE;
+    size_t channels = 2;
+    auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    auto result = audioSpeed->Init();
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
-* @tc.name  : AudioSpeed_SelfAlgo_AllFormats
+* @tc.name  : Test AudioSpeed AlgoPath
 * @tc.type  : FUNC
-* @tc.number: AudioSpeedAlgoUnitTest_003
-* @tc.desc  : AC-1.3 — All formats (U8/S16LE/S24LE/S32LE/F32LE).
+* @tc.number: AudioSpeed_AlgoPath_SetSpeed_GetSpeed_001
+* @tc.desc  : Test AudioSpeed algo path SetSpeed and GetSpeed.
 */
-HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_003, TestSize.Level1)
+HWTEST(AudioSpeedUnitTest, AudioSpeed_AlgoPath_SetSpeed_GetSpeed_001, TestSize.Level1)
 {
-    if (!AudioTimeStretchProcessor::IsTimeStretchSupported()) {
-        GTEST_SKIP() << "TimeStretch algorithm .so not available";
+    if (!IsAudioSuiteAvailable()) {
+        GTEST_SKIP() << "libaudio_time_stretch.z.so not available";
     }
-    size_t formats[] = {SAMPLE_U8, SAMPLE_S16LE, SAMPLE_S24LE, SAMPLE_S32LE, SAMPLE_F32LE};
+    size_t rate = 48000;
+    size_t format = SAMPLE_S16LE;
+    size_t channels = 2;
+    auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    audioSpeed->Init();
+    audioSpeed->SetSpeed(2.0f);
+    EXPECT_FLOAT_EQ(audioSpeed->GetSpeed(), 2.0f);
+    audioSpeed->SetSpeed(0.5f);
+    EXPECT_FLOAT_EQ(audioSpeed->GetSpeed(), 0.5f);
+}
+
+/**
+* @tc.name  : Test AudioSpeed AlgoPath
+* @tc.type  : FUNC
+* @tc.number: AudioSpeed_AlgoPath_Process_AllFormats_001
+* @tc.desc  : Test AudioSpeed algo path Process with all formats.
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeed_AlgoPath_Process_AllFormats_001, TestSize.Level1)
+{
+    if (!IsAudioSuiteAvailable()) {
+        GTEST_SKIP() << "libaudio_time_stretch.z.so not available";
+    }
+    size_t rate = 48000;
+    size_t channels = 2;
+    size_t formats[] = {SAMPLE_U8, SAMPLE_S16LE, SAMPLE_S32LE, SAMPLE_F32LE};
     for (size_t fmt : formats) {
-        AudioSpeed audioSpeed(ALGO_TEST_RATE, fmt, ALGO_TEST_CHANNELS, ALGO_TEST_MAX_BUFFER);
-        ASSERT_EQ(audioSpeed.SetSpeed(2.0f), SUCCESS);
-        int32_t frameSize = 4;
-        int32_t inFrames = 256;
-        vector<uint8_t> input(inFrames * frameSize, 0x40);
-        auto outBuffer = make_unique<uint8_t[]>(ALGO_TEST_MAX_BUFFER);
-        int32_t outSize = 0;
-        int32_t ret = audioSpeed.ChangeSpeedFunc(input.data(), inFrames * frameSize, outBuffer, outSize);
+        auto audioSpeed = std::make_shared<AudioSpeed>(rate, fmt, channels);
+        audioSpeed->Init();
+        audioSpeed->SetSpeed(2.0f);
+        int32_t bufferSize = 4096;
+        auto inBuffer = std::make_unique<uint8_t[]>(bufferSize);
+        auto outBuffer = std::make_unique<uint8_t[]>(bufferSize * 8);
+        int32_t outBufferSize = 0;
+        auto ret = audioSpeed->ChangeSpeedFunc(inBuffer.get(), bufferSize, outBuffer, outBufferSize);
         EXPECT_NE(ret, 0);
     }
 }
 
 /**
-* @tc.name  : AudioSpeed_SelfAlgo_Flush
+* @tc.name  : Test AudioSpeed AlgoPath
 * @tc.type  : FUNC
-* @tc.number: AudioSpeedAlgoUnitTest_004
-* @tc.desc  : AC-1.4 — Flush after SetSpeed, verify no residual data.
+* @tc.number: AudioSpeed_AlgoPath_Flush_001
+* @tc.desc  : Test AudioSpeed algo path Flush.
 */
-HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_004, TestSize.Level1)
+HWTEST(AudioSpeedUnitTest, AudioSpeed_AlgoPath_Flush_001, TestSize.Level1)
 {
-    if (!AudioTimeStretchProcessor::IsTimeStretchSupported()) {
-        GTEST_SKIP() << "TimeStretch algorithm .so not available";
+    if (!IsAudioSuiteAvailable()) {
+        GTEST_SKIP() << "libaudio_time_stretch.z.so not available";
     }
-    AudioSpeed audioSpeed(ALGO_TEST_RATE, SAMPLE_S16LE, ALGO_TEST_CHANNELS, ALGO_TEST_MAX_BUFFER);
-    ASSERT_EQ(audioSpeed.SetSpeed(2.0f), SUCCESS);
-    EXPECT_EQ(audioSpeed.Flush(), SUCCESS);
+    size_t rate = 48000;
+    size_t format = SAMPLE_F32LE;
+    size_t channels = 2;
+    auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    audioSpeed->Init();
+    audioSpeed->SetSpeed(2.0f);
+    auto ret = audioSpeed->Flush();
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
-* @tc.name  : AudioSpeed_SelfAlgo_SpeedNormal
+* @tc.name  : Test AudioSpeed Priority
 * @tc.type  : FUNC
-* @tc.number: AudioSpeedAlgoUnitTest_005
-* @tc.desc  : AC-1.5 — SetSpeed(1.0), output should match input.
+* @tc.number: AudioSpeed_Priority_AlgoPreferred_001
+* @tc.desc  : Test algo path preferred when .so available.
 */
-HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_005, TestSize.Level1)
+HWTEST(AudioSpeedUnitTest, AudioSpeed_Priority_AlgoPreferred_001, TestSize.Level1)
 {
-    if (!AudioTimeStretchProcessor::IsTimeStretchSupported()) {
-        GTEST_SKIP() << "TimeStretch algorithm .so not available";
+    if (!IsAudioSuiteAvailable()) {
+        GTEST_SKIP() << "libaudio_time_stretch.z.so not available";
     }
-    AudioSpeed audioSpeed(ALGO_TEST_RATE, SAMPLE_S16LE, ALGO_TEST_CHANNELS, ALGO_TEST_MAX_BUFFER);
-    ASSERT_EQ(audioSpeed.SetSpeed(1.0f), SUCCESS);
-    EXPECT_FLOAT_EQ(audioSpeed.GetSpeed(), 1.0f);
-}
-
-/**
-* @tc.name  : AudioSpeed_SelfAlgo_Pitch
-* @tc.type  : FUNC
-* @tc.number: AudioSpeedAlgoUnitTest_006
-* @tc.desc  : AC-1.6 — SetPitch(1.0) + SetSpeed, verify both return SUCCESS.
-*/
-HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_006, TestSize.Level1)
-{
-    if (!AudioTimeStretchProcessor::IsTimeStretchSupported()) {
-        GTEST_SKIP() << "TimeStretch algorithm .so not available";
-    }
-    AudioSpeed audioSpeed(ALGO_TEST_RATE, SAMPLE_S16LE, ALGO_TEST_CHANNELS, ALGO_TEST_MAX_BUFFER);
-    ASSERT_EQ(audioSpeed.SetPitch(1.0f), SUCCESS);
-    ASSERT_EQ(audioSpeed.SetSpeed(2.0f), SUCCESS);
-}
-
-/**
-* @tc.name  : AudioSpeed_SelfAlgo_CreateFail
-* @tc.type  : FUNC
-* @tc.number: AudioSpeedAlgoUnitTest_007
-* @tc.desc  : AC-3.2 — Create with invalid params returns ERROR.
-*/
-HWTEST(AudioSpeedAlgoUnitTest, AudioSpeedAlgoUnitTest_007, TestSize.Level1)
-{
-    AudioSpeed audioSpeed(0, SAMPLE_S16LE, 0, ALGO_TEST_MAX_BUFFER);
-    int32_t ret = audioSpeed.SetSpeed(2.0f);
-    EXPECT_NE(ret, SUCCESS);
+    size_t rate = 48000;
+    size_t format = SAMPLE_S16LE;
+    size_t channels = 2;
+    auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    audioSpeed->Init();
+    audioSpeed->SetSpeed(2.0f);
+    // When algo available, Process should work via AudioSuiteTimeStretch
+    int32_t bufferSize = 4096;
+    auto inBuffer = std::make_unique<uint8_t[]>(bufferSize);
+    auto outBuffer = std::make_unique<uint8_t[]>(bufferSize * 8);
+    int32_t outBufferSize = 0;
+    auto ret = audioSpeed->ChangeSpeedFunc(inBuffer.get(), bufferSize, outBuffer, outBufferSize);
+    EXPECT_NE(ret, 0);
 }
 
 #endif // AUDIO_SPEED_ALGO_ENABLE

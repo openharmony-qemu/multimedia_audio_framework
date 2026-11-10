@@ -20,6 +20,14 @@ config("audio_utils_public_config") {
     "-std=c++20",
     "-Os",
   ]
+
+  if (audio_speed_algo_enable == true) {
+    defines = [ "AUDIO_SPEED_ALGO_ENABLE" ]
+    include_dirs += [
+      "../../../interfaces/inner_api/native/audio_suite_generic/include",
+      "../../../services/audio_suite/client/generic/include",
+    ]
+  }
 }
 
 ohos_shared_library("audio_utils") {
@@ -41,10 +49,6 @@ ohos_shared_library("audio_utils") {
     "../../../services/audio_service/client/include",
     "../../../services/audio_service/server/include",
   ]
-
-  if (audio_speed_algo_enable == true) {
-    include_dirs += [ "../../../interfaces/inner_api/native/audio_suite_generic/include" ]
-  }
 
   sources = [
     "./src/async_action_handler.cpp",
@@ -85,16 +89,16 @@ ohos_shared_library("audio_utils") {
     "cJSON:cjson",
   ]
 
-  if (sonic_enable == true) {
+  if (sonic_enable == true && audio_speed_algo_enable == false) {
     external_deps += [ "sonic:sonic" ]
   }
 
+  defines = []
+  deps = []
   if (audio_speed_algo_enable == true) {
-    defines += [ "AUDIO_SPEED_ALGO_ENABLE" ]
-    external_deps += [ "audio_framework:audio_suite_generic" ]
+    deps += [ "../../../services/audio_suite:audio_suite_generic" ]
   }
 
-  defines = []
   if (audio_framework_feature_hitrace_enable) {
     defines += [ "FEATURE_HITRACE_METER" ]
     external_deps += [ "hitrace:hitrace_meter" ]

@@ -26,7 +26,6 @@ namespace {
 
 constexpr size_t TEST_BUFFER_SIZE = 1024;
 constexpr float SPEED_FAST = 1.5f;
-constexpr float TEST_PITCH_NORMAL = 1.0f;
 constexpr AudioSamplingRate DEFAULT_SAMPLE_RATE = AudioSamplingRate::SAMPLE_RATE_48000;
 constexpr AudioChannel DEFAULT_CHANNEL_COUNT = AudioChannel::STEREO;
 constexpr AudioSampleFormat AUDIO_SAMPLE_FORMAT_16BIT = AudioSampleFormat::SAMPLE_S16LE;
@@ -111,32 +110,25 @@ HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessFadeInOut_003, testing::ext:
     EXPECT_NE(ret, SUCCESS);
 }
 
-HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferSpeed_001, testing::ext::TestSize.Level1)
+HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferSpeedAndPitch_001, testing::ext::TestSize.Level1)
 {
     ASSERT_NE(processor_, nullptr);
-    int32_t ret = processor_->ProcessBufferSpeed(SPEED_NORMAL);
+    int32_t ret = processor_->ProcessBufferSpeedAndPitch(SPEED_NORMAL, PITCH_NORMAL);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferSpeed_002, testing::ext::TestSize.Level1)
+HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferSpeedAndPitch_002, testing::ext::TestSize.Level1)
 {
     ASSERT_NE(processor_, nullptr);
-    int32_t ret = processor_->ProcessBufferSpeed(SPEED_FAST);
+    int32_t ret = processor_->ProcessBufferSpeedAndPitch(SPEED_FAST, PITCH_NORMAL);
     EXPECT_NE(ret, SUCCESS);
 }
 
-HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferPitch_001, testing::ext::TestSize.Level1)
+HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferSpeedAndPitch_003, testing::ext::TestSize.Level1)
 {
     ASSERT_NE(processor_, nullptr);
-    int32_t ret = processor_->ProcessBufferPitch(TEST_PITCH_NORMAL);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferPitch_002, testing::ext::TestSize.Level1)
-{
-    ASSERT_NE(processor_, nullptr);
-    int32_t ret = processor_->ProcessBufferPitch(1.2f);
-    EXPECT_EQ(ret, SUCCESS);
+    int32_t ret = processor_->ProcessBufferSpeedAndPitch(SPEED_NORMAL, 1.2f);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 HWTEST_F(AudioStaticBufferProcessorUnitTest, GetProcessedBuffer_001, testing::ext::TestSize.Level1)
@@ -156,56 +148,30 @@ HWTEST_F(AudioStaticBufferProcessorUnitTest, SaveProcessBuffer_001, testing::ext
 }
 
 /**
- * @tc.name  : Test ProcessBufferSpeed factor calculation
- * @tc.number: AudioStaticBufferProcessor_ProcessBufferSpeed_Factor
+ * @tc.name  : Test ProcessBufferSpeedAndPitch factor calculation
+ * @tc.number: AudioStaticBufferProcessor_ProcessBufferSpeedAndPitch_Factor
  * @tc.desc  : Test dynamic speedBufferFactor calculation for various speed values.
  */
-HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferSpeed_Factor, testing::ext::TestSize.Level1)
+HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferSpeedAndPitch_Factor, testing::ext::TestSize.Level1)
 {
     ASSERT_NE(processor_, nullptr);
     int32_t inputSize = static_cast<int32_t>(sharedBuffer_->GetDataSize());
 
-    processor_->ProcessBufferSpeed(0.0f);
+    processor_->ProcessBufferSpeedAndPitch(0.0f, PITCH_NORMAL);
     EXPECT_EQ(processor_->audioSpeed_->maxSpeedBufferSize_, inputSize * 1);
 
-    processor_->ProcessBufferSpeed(2.0f);
+    processor_->ProcessBufferSpeedAndPitch(2.0f, PITCH_NORMAL);
     EXPECT_EQ(processor_->audioSpeed_->maxSpeedBufferSize_, inputSize * 1);
 
-    processor_->ProcessBufferSpeed(0.5f);
+    processor_->ProcessBufferSpeedAndPitch(0.5f, PITCH_NORMAL);
     EXPECT_EQ(processor_->audioSpeed_->maxSpeedBufferSize_, inputSize * 3);
 
-    processor_->ProcessBufferSpeed(0.3f);
+    processor_->ProcessBufferSpeedAndPitch(0.3f, PITCH_NORMAL);
     EXPECT_EQ(processor_->audioSpeed_->maxSpeedBufferSize_, inputSize * 5);
 
     constexpr float SPEED_SLOW_1_8 = 0.125f;
-    processor_->ProcessBufferSpeed(SPEED_SLOW_1_8);
+    processor_->ProcessBufferSpeedAndPitch(SPEED_SLOW_1_8, PITCH_NORMAL);
     EXPECT_EQ(processor_->audioSpeed_->maxSpeedBufferSize_, inputSize * 9);
-}
-
-/**
- * @tc.name  : Test ProcessBufferPitch with invalid pitch (too low)
- * @tc.number: AudioStaticBufferProcessor_ProcessBufferPitch_003
- * @tc.desc  : Test ProcessBufferPitch with pitch < MIN_STREAM_PITCH_LEVEL.
- */
-HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferPitch_003, testing::ext::TestSize.Level1)
-{
-    ASSERT_NE(processor_, nullptr);
-    // Test with pitch < MIN_STREAM_PITCH_LEVEL (assuming MIN is 0.5)
-    int32_t ret = processor_->ProcessBufferPitch(0.1f);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test ProcessBufferPitch with invalid pitch (too high)
- * @tc.number: AudioStaticBufferProcessor_ProcessBufferPitch_004
- * @tc.desc  : Test ProcessBufferPitch with pitch > MAX_STREAM_PITCH_LEVEL.
- */
-HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferPitch_004, testing::ext::TestSize.Level1)
-{
-    ASSERT_NE(processor_, nullptr);
-    // Test with pitch > MAX_STREAM_PITCH_LEVEL (assuming MAX is 2.0)
-    int32_t ret = processor_->ProcessBufferPitch(3.0f);
-    EXPECT_NE(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -218,7 +184,7 @@ HWTEST_F(AudioStaticBufferProcessorUnitTest, GetProcessedBuffer_002, testing::ex
     ASSERT_NE(processor_, nullptr);
 
     // First process speed to set tempBuffer_
-    int32_t ret = processor_->ProcessBufferSpeed(1.5f);
+    int32_t ret = processor_->ProcessBufferSpeedAndPitch(1.5f, PITCH_NORMAL);
     EXPECT_NE(ret, SUCCESS);
 
     // Now GetProcessedBuffer should return tempBuffer_
@@ -240,7 +206,7 @@ HWTEST_F(AudioStaticBufferProcessorUnitTest, GetProcessedBuffer_003, testing::ex
     ASSERT_NE(processor_, nullptr);
 
     // First process speed to set tempBuffer_
-    int32_t ret = processor_->ProcessBufferSpeed(1.5f);
+    int32_t ret = processor_->ProcessBufferSpeedAndPitch(1.5f, PITCH_NORMAL);
     EXPECT_NE(ret, SUCCESS);
 
     // Save process buffer
@@ -265,14 +231,14 @@ HWTEST_F(AudioStaticBufferProcessorUnitTest, SaveProcessBuffer_002, testing::ext
     ASSERT_NE(processor_, nullptr);
 
     // First process speed to set tempBuffer_
-    int32_t ret = processor_->ProcessBufferSpeed(1.5f);
+    int32_t ret = processor_->ProcessBufferSpeedAndPitch(1.5f, PITCH_NORMAL);
     EXPECT_NE(ret, SUCCESS);
 
     // Save process buffer
     processor_->SaveProcessBuffer();
 
     // Process speed again
-    ret = processor_->ProcessBufferSpeed(1.2f);
+    ret = processor_->ProcessBufferSpeedAndPitch(1.2f, PITCH_NORMAL);
     EXPECT_NE(ret, SUCCESS);
 
     // Save again

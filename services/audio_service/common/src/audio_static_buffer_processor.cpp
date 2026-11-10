@@ -56,99 +56,43 @@ AudioStaticBufferProcessor::AudioStaticBufferProcessor(AudioStreamInfo streamInf
         streamInfo.channels, static_cast<int32_t>(sharedBuffer->GetDataSize()));
 }
 
-AudioStaticBufferProcessor::~AudioStaticBufferProcessor()
-{
-    if (pitchProcessor_ != nullptr) {
-        pitchProcessor_->PitchAlgoRelease();
-        pitchProcessor_ = nullptr;
-    }
-}
+AudioStaticBufferProcessor::~AudioStaticBufferProcessor() {}
 
-int32_t AudioStaticBufferProcessor::ProcessBufferSpeed(float speed, float sonicPitch)
+int32_t AudioStaticBufferProcessor::ProcessBufferSpeedAndPitch(float speed, float pitch)
 {
-    if (isEqual(speed, SPEED_NORMAL)) {
+    if (isEqual(speed, SPEED_NORMAL) && isEqual(pitch, PITCH_NORMAL)) {
         return SUCCESS;
     }
-    
+
     uint8_t *inputBuffer = sharedBuffer_->GetDataBase();
     int32_t inputSize = static_cast<int32_t>(sharedBuffer_->GetDataSize());
-    
+
     int32_t speedBufferFactor = 1;
-    if (speed > 0.0f && speed <= 1.0f) {
+    if (speed > 0.0f && speed < SPEED_NORMAL) {
         speedBufferFactor = static_cast<int32_t>(std::ceil(1.0f / speed)) + 1;
     }
     size_t estimatedSize = static_cast<size_t>(inputSize) * static_cast<size_t>(speedBufferFactor);
-    auto newTempBuffer = std::make_unique<uint8_t[]>(estimatedSize);
-    
+    size_t flushReserve = estimatedSize;
+    auto outBuffer = std::make_unique<uint8_t[]>(estimatedSize + flushReserve);
+
     audioSpeed_->SetMaxSpeedBufferSize(static_cast<int32_t>(estimatedSize));
     audioSpeed_->SetSpeed(speed);
-    audioSpeed_->SetPitch(sonicPitch);
-    
+    audioSpeed_->SetPitch(pitch);
+
     int32_t outBufferSize = 0;
     if (audioSpeed_->ChangeSpeedFunc(inputBuffer, inputSize,
-        newTempBuffer, outBufferSize) == 0) {
-        AUDIO_ERR_LOG("process speed error");
+        outBuffer, outBufferSize) == 0) {
+        AUDIO_ERR_LOG("process speed and pitch error");
         return ERR_OPERATION_FAILED;
     }
-    CHECK_AND_RETURN_RET_LOG(outBufferSize != 0, ERR_OPERATION_FAILED, "speed bufferSize is 0");
-    
-    tempBuffer_ = std::move(newTempBuffer);
-    tempBufferSize_ = static_cast<size_t>(outBufferSize);
-    return SUCCESS;
-}
+    CHECK_AND_RETURN_RET_LOG(outBufferSize != 0, ERR_OPERATION_FAILED, "speed and pitch bufferSize is 0");
 
-int32_t AudioStaticBufferProcessor::ProcessBufferPitch(float pitch)
-{
-    if (isEqual(pitch, PITCH_NORMAL)) {
-        return SUCCESS;
-    }
-    
-    CHECK_AND_RETURN_RET_LOG(pitch >= MIN_STREAM_PITCH_LEVEL && pitch <= MAX_STREAM_PITCH_LEVEL,
-        ERR_INVALID_PARAM, "Invalid pitch: %{public}f", pitch);
-    
-    if (pitchProcessor_ == nullptr) {
-        pitchProcessor_ = AudioPitchProcessor::CreateInstance(streamInfo_);
-        CHECK_AND_RETURN_RET_LOG(pitchProcessor_ != nullptr, ERR_OPERATION_FAILED,
-            "Create pitch processor failed");
-        
-        int32_t ret = pitchProcessor_->PitchAlgoInit();
-        if (ret != SUCCESS) {
-            AUDIO_INFO_LOG("PitchAlgoInit failed");
-            pitchProcessor_ = nullptr;
-            return ERR_OPERATION_FAILED;
-        }
-    }
-    
-    int32_t ret = pitchProcessor_->SetPitch(pitch);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "SetPitch failed");
-    
-    int8_t *inputBuffer = nullptr;
-    size_t inputSize = 0;
-    
-    if (tempBuffer_ != nullptr && tempBufferSize_ != 0) {
-        inputBuffer = reinterpret_cast<int8_t*>(tempBuffer_.get());
-        inputSize = tempBufferSize_;
-    } else {
-        inputBuffer = reinterpret_cast<int8_t*>(sharedBuffer_->GetDataBase());
-        inputSize = sharedBuffer_->GetDataSize();
-    }
-    
-    uint32_t totalSamples = static_cast<uint32_t>(inputSize / PcmFormatToBits(streamInfo_.format));
-    uint32_t samplesPerChannel = totalSamples / streamInfo_.channels;
-    uint32_t maxProcessedSamples = samplesPerChannel * MAX_PITCH_BUFFER_FACTOR;
-    size_t estimatedOutputSize = maxProcessedSamples * streamInfo_.channels * PcmFormatToBits(streamInfo_.format);
-    
-    auto newTempBuffer = std::make_unique<uint8_t[]>(estimatedOutputSize);
-    
-    size_t outputSize = 0;
-    ret = pitchProcessor_->ProcessBufferPitch(inputBuffer, inputSize,
-        reinterpret_cast<int8_t*>(newTempBuffer.get()), outputSize);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessBufferPitch failed");
-    
-    tempBuffer_ = std::move(newTempBuffer);
-    tempBufferSize_ = outputSize;
-    
-    AUDIO_INFO_LOG("ProcessBufferPitch done: pitch=%{public}f, outputSize=%{public}zu", pitch, outputSize);
+    int32_t flushSize = 0;
+    audioSpeed_->FlushSpeedBuffer(outBuffer.get() + outBufferSize,
+        static_cast<int32_t>(flushReserve), flushSize);
+
+    tempBuffer_ = std::move(outBuffer);
+    tempBufferSize_ = static_cast<size_t>(outBufferSize) + static_cast<size_t>(flushSize);
     return SUCCESS;
 }
 
