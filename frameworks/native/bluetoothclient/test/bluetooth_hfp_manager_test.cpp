@@ -92,6 +92,7 @@ public:
  */
 HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_001, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetScoState(_))
         .Times(1)
         .WillOnce(Return(AudioScoState::DISCONNECTED));
@@ -114,6 +115,7 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_001, TestSize.Level1)
  */
 HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_002, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), SetActiveDevice(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
@@ -140,6 +142,7 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_002, TestSize.Level1)
  */
 HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_003, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), SetActiveDevice(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
@@ -165,6 +168,7 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_003, TestSize.Level1)
  */
 HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_004, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
@@ -188,6 +192,7 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_004, TestSize.Level1)
  */
 HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_005, TestSize.Level1)
 {
+    BluetoothScoManager::GetInstance().Init();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), OpenVoiceRecognition(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));

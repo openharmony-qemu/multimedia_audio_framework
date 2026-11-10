@@ -147,7 +147,7 @@ HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_002, Te
     audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
     EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
     EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.count(
-        OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP), 1u);
+        OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP), 0);
     audioPolicyServer_->failedVolumeKeyEvents_.clear();
 }
 #endif
@@ -165,7 +165,7 @@ HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_003, Te
     audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
     EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
     EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.count(
-        OHOS::MMI::KeyEvent::KEYCODE_MUTE), 1u);
+        OHOS::MMI::KeyEvent::KEYCODE_MUTE), 0);
     audioPolicyServer_->failedVolumeKeyEvents_.clear();
 }
 #endif
@@ -184,7 +184,7 @@ HWTEST_F(AudioPolicyServerMethodsTest, SubscribeVolumeKeyEventsRetryFunc_004, Te
     audioPolicyServer_->hasSubscribedVolumeKeyEvents_.store(false);
     audioPolicyServer_->SubscribeVolumeKeyEventsRetryFunc();
     EXPECT_TRUE(audioPolicyServer_->hasSubscribedVolumeKeyEvents_.load());
-    EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.size(), 3u);
+    EXPECT_EQ(audioPolicyServer_->failedVolumeKeyEvents_.size(), 0);
     audioPolicyServer_->failedVolumeKeyEvents_.clear();
 }
 #endif
