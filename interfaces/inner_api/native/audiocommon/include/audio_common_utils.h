@@ -28,6 +28,7 @@ public:
 
     static void SetPCVolumeEnable(const bool& isPCVolumeEnable);
     static bool IsPCVolumeEnable();
+    static bool IsPCEnhancedRoutingSupported();
     static void SetNotificationFollowRingtone(const bool notificationFollowRingtone);
     static bool IsNotificationFollowRingtone();
     static void SetVolumeFixEnable(const bool& isPCVolumeEnable);

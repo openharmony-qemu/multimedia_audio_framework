@@ -3752,6 +3752,34 @@ HWTEST(AudioUtilsUnitTest, AudioUtils_IsPlaybackChannelRelatedInfoValid_001, Tes
 }
 
 /**
+ * @tc.name  : Test IsPCEnhancedRoutingSupported with PCVolume disabled
+ * @tc.type  : FUNC
+ * @tc.number: IsPCEnhancedRoutingSupported_001
+ * @tc.desc  : Test IsPCEnhancedRoutingSupported returns false when IsPCVolumeEnable is false.
+ */
+HWTEST(AudioUtilsUnitTest, IsPCEnhancedRoutingSupported_001, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(false);
+    bool result = VolumeUtils::IsPCEnhancedRoutingSupported();
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test IsPCEnhancedRoutingSupported with PCVolume enabled
+ * @tc.type  : FUNC
+ * @tc.number: IsPCEnhancedRoutingSupported_002
+ * @tc.desc  : Test IsPCEnhancedRoutingSupported equals IsEnhancedRoutingSupported when IsPCVolumeEnable is true.
+ */
+HWTEST(AudioUtilsUnitTest, IsPCEnhancedRoutingSupported_002, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    bool result = VolumeUtils::IsPCEnhancedRoutingSupported();
+    bool enhancedRouting = Util::IsEnhancedRoutingSupported();
+    EXPECT_EQ(result, enhancedRouting);
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+
+/**
  * @tc.name  : Test IsRecordChannelRelatedInfoValid
  * @tc.number: AudioUtils_IsRecordChannelRelatedInfoValid_001
  * @tc.desc  : Test IsRecordChannelRelatedInfoValid interface.

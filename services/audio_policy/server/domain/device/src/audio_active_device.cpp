@@ -587,7 +587,7 @@ void AudioActiveDevice::UpdateStreamDeviceMapForInput(std::string source)
 
 void AudioActiveDevice::UpdateUidVolumeDeviceMapForEnhancedRouting()
 {
-    if (!Util::IsEnhancedRoutingSupported()) {
+    if (!VolumeUtils::IsPCEnhancedRoutingSupported()) {
         return;
     }
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
@@ -728,7 +728,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
 {
     CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
 
-    if (Util::IsEnhancedRoutingSupported()) {
+    if (VolumeUtils::IsPCEnhancedRoutingSupported()) {
         return GetDeviceForVolumeEnhanced();
     }
 
@@ -771,7 +771,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Str
 {
     CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
 
-    if (Util::IsEnhancedRoutingSupported()) {
+    if (VolumeUtils::IsPCEnhancedRoutingSupported()) {
         return GetDeviceForVolumeEnhanced();
     }
 
@@ -793,7 +793,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
 {
     CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
 
-    if (Util::IsEnhancedRoutingSupported()) {
+    if (VolumeUtils::IsPCEnhancedRoutingSupported()) {
         return GetDeviceForVolumeEnhanced();
     }
 
@@ -836,7 +836,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
 
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int32_t appUid)
 {
-    if (Util::IsEnhancedRoutingSupported()) {
+    if (VolumeUtils::IsPCEnhancedRoutingSupported()) {
         return GetDeviceForVolumeEnhanced(appUid);
     }
 
@@ -893,7 +893,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioActiveDevice::GetUidVol
 
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetActiveDeviceForVolume(int32_t appUid)
 {
-    if (Util::IsEnhancedRoutingSupported()) {
+    if (VolumeUtils::IsPCEnhancedRoutingSupported()) {
         return GetDeviceForVolumeEnhanced(appUid);
     }
 
