@@ -36,6 +36,7 @@ public:
 private:
     std::weak_ptr<AudioManagerCallback> callback_;
     std::shared_ptr<AudioManagerCallback> cb_;
+    std::mutex cbMutex_;
 };
 
 class AudioInterruptClientManager {
@@ -197,7 +198,6 @@ private:
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
     std::mutex audioFocusInfoCallbackMutex_;
     std::mutex audioInterruptCallbackMutex_;
-    std::mutex cbMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
