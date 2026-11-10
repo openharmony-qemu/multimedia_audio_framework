@@ -68,6 +68,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchMediaOutputDevices(FetchDeviceInfo &info);
 
     bool IsMediaFollowCallStrategy(AudioScene audioScene);
+    bool IsMediaFollowRingStrategy(AudioScene audioScene);
 
 private:
     AudioRouterCenter()
