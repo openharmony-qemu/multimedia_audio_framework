@@ -619,5 +619,323 @@ HWTEST_F(AudioDeviceStatusExtendedTest, IsScoConnected_001, TestSize.Level4)
     deviceManager.connectedDevices_ = saved;
 }
 
+/**
+ * @tc.name  : Test AudioDeviceManager::GetDefaultAvailableDevicesByUsage.
+ * @tc.number: GetDefaultAvailableDevicesByUsage_001
+ * @tc.desc  : Test MEDIA_INPUT_DEVICES with a local mic present in connectedDevices_.
+ *             Under MULTI_BUS_ENABLE the local mic is taken from connectedDevices_;
+ *             otherwise the default mic (defalutMic_) is used.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, GetDefaultAvailableDevicesByUsage_001, TestSize.Level4)
+{
+    auto &deviceManager = audioDeviceStatus_->audioDeviceManager_;
+    auto savedDevices = deviceManager.connectedDevices_;
+    auto savedMic = deviceManager.defalutMic_;
+    deviceManager.connectedDevices_.clear();
+
+    auto localMic = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    localMic->networkId_ = LOCAL_NETWORK_ID;
+    localMic->deviceId_ = 2001;
+    deviceManager.connectedDevices_.push_back(localMic);
+    deviceManager.defalutMic_ = localMic;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    deviceManager.GetDefaultAvailableDevicesByUsage(MEDIA_INPUT_DEVICES, result);
+    EXPECT_EQ(result.size(), 1u);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(result[0]->networkId_, LOCAL_NETWORK_ID);
+
+    deviceManager.connectedDevices_ = savedDevices;
+    deviceManager.defalutMic_ = savedMic;
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager::GetDefaultAvailableDevicesByUsage.
+ * @tc.number: GetDefaultAvailableDevicesByUsage_002
+ * @tc.desc  : Test MEDIA_INPUT_DEVICES with only a remote mic in connectedDevices_.
+ *             The remote mic is added by the remote loop; no local mic is added.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, GetDefaultAvailableDevicesByUsage_002, TestSize.Level4)
+{
+    auto &deviceManager = audioDeviceStatus_->audioDeviceManager_;
+    auto savedDevices = deviceManager.connectedDevices_;
+    auto savedMic = deviceManager.defalutMic_;
+    deviceManager.connectedDevices_.clear();
+    deviceManager.defalutMic_ = nullptr;
+
+    auto remoteMic = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    remoteMic->networkId_ = "remoteNetworkId";
+    remoteMic->deviceId_ = 2002;
+    deviceManager.connectedDevices_.push_back(remoteMic);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    deviceManager.GetDefaultAvailableDevicesByUsage(MEDIA_INPUT_DEVICES, result);
+    EXPECT_EQ(result.size(), 1u);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(result[0]->networkId_, "remoteNetworkId");
+
+    deviceManager.connectedDevices_ = savedDevices;
+    deviceManager.defalutMic_ = savedMic;
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager::GetDefaultAvailableDevicesByUsage.
+ * @tc.number: GetDefaultAvailableDevicesByUsage_003
+ * @tc.desc  : Test MEDIA_INPUT_DEVICES with empty connectedDevices_ and null defalutMic_.
+ *             Result should be empty.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, GetDefaultAvailableDevicesByUsage_003, TestSize.Level4)
+{
+    auto &deviceManager = audioDeviceStatus_->audioDeviceManager_;
+    auto savedDevices = deviceManager.connectedDevices_;
+    auto savedMic = deviceManager.defalutMic_;
+    deviceManager.connectedDevices_.clear();
+    deviceManager.defalutMic_ = nullptr;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    deviceManager.GetDefaultAvailableDevicesByUsage(MEDIA_INPUT_DEVICES, result);
+    EXPECT_TRUE(result.empty());
+
+    deviceManager.connectedDevices_ = savedDevices;
+    deviceManager.defalutMic_ = savedMic;
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager::GetDefaultAvailableDevicesByUsage.
+ * @tc.number: GetDefaultAvailableDevicesByUsage_004
+ * @tc.desc  : Test CALL_INPUT_DEVICES with a local mic present. The local mic is added.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, GetDefaultAvailableDevicesByUsage_004, TestSize.Level4)
+{
+    auto &deviceManager = audioDeviceStatus_->audioDeviceManager_;
+    auto savedDevices = deviceManager.connectedDevices_;
+    auto savedMic = deviceManager.defalutMic_;
+    deviceManager.connectedDevices_.clear();
+
+    auto localMic = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    localMic->networkId_ = LOCAL_NETWORK_ID;
+    localMic->deviceId_ = 2004;
+    deviceManager.connectedDevices_.push_back(localMic);
+    deviceManager.defalutMic_ = localMic;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    deviceManager.GetDefaultAvailableDevicesByUsage(CALL_INPUT_DEVICES, result);
+    EXPECT_EQ(result.size(), 1u);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(result[0]->networkId_, LOCAL_NETWORK_ID);
+
+    deviceManager.connectedDevices_ = savedDevices;
+    deviceManager.defalutMic_ = savedMic;
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager::GetDefaultAvailableDevicesByUsage.
+ * @tc.number: GetDefaultAvailableDevicesByUsage_005
+ * @tc.desc  : Test MEDIA_OUTPUT_DEVICES with a speaker present. The speaker is added.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, GetDefaultAvailableDevicesByUsage_005, TestSize.Level4)
+{
+    auto &deviceManager = audioDeviceStatus_->audioDeviceManager_;
+    auto savedDevices = deviceManager.connectedDevices_;
+    auto savedSpeaker = deviceManager.speaker_;
+    deviceManager.connectedDevices_.clear();
+
+    auto localSpeaker = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    localSpeaker->networkId_ = LOCAL_NETWORK_ID;
+    localSpeaker->deviceId_ = 2005;
+    deviceManager.speaker_ = localSpeaker;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    deviceManager.GetDefaultAvailableDevicesByUsage(MEDIA_OUTPUT_DEVICES, result);
+    EXPECT_EQ(result.size(), 1u);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+
+    deviceManager.connectedDevices_ = savedDevices;
+    deviceManager.speaker_ = savedSpeaker;
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager::GetDefaultAvailableDevicesByUsage.
+ * @tc.number: GetDefaultAvailableDevicesByUsage_006
+ * @tc.desc  : Test MEDIA_INPUT_DEVICES with a non-mic local device and a remote mic.
+ *             The non-mic local device is skipped; only the remote mic is added.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, GetDefaultAvailableDevicesByUsage_006, TestSize.Level4)
+{
+    auto &deviceManager = audioDeviceStatus_->audioDeviceManager_;
+    auto savedDevices = deviceManager.connectedDevices_;
+    auto savedMic = deviceManager.defalutMic_;
+    deviceManager.connectedDevices_.clear();
+    deviceManager.defalutMic_ = nullptr;
+
+    auto localSpeaker = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    localSpeaker->networkId_ = LOCAL_NETWORK_ID;
+    localSpeaker->deviceId_ = 2006;
+    deviceManager.connectedDevices_.push_back(localSpeaker);
+
+    auto remoteMic = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    remoteMic->networkId_ = "remoteNetworkId";
+    remoteMic->deviceId_ = 2007;
+    deviceManager.connectedDevices_.push_back(remoteMic);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    deviceManager.GetDefaultAvailableDevicesByUsage(MEDIA_INPUT_DEVICES, result);
+    EXPECT_EQ(result.size(), 1u);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(result[0]->networkId_, "remoteNetworkId");
+
+    deviceManager.connectedDevices_ = savedDevices;
+    deviceManager.defalutMic_ = savedMic;
+}
+
+#ifdef MULTI_BUS_ENABLE
+/**
+ * @tc.name  : Test AudioDeviceManager::GetDefaultAvailableDevicesByUsage under MULTI_BUS_ENABLE.
+ * @tc.number: GetDefaultAvailableDevicesByUsage_MultiBus_001
+ * @tc.desc  : Test MEDIA_INPUT_DEVICES when defalutMic_ is nullptr but local mics exist in
+ *             connectedDevices_. All local mics must be added from connectedDevices_ (bug fix).
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, GetDefaultAvailableDevicesByUsage_MultiBus_001, TestSize.Level4)
+{
+    auto &deviceManager = audioDeviceStatus_->audioDeviceManager_;
+    auto savedDevices = deviceManager.connectedDevices_;
+    auto savedMic = deviceManager.defalutMic_;
+    deviceManager.connectedDevices_.clear();
+    deviceManager.defalutMic_ = nullptr;
+
+    auto localMic1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    localMic1->networkId_ = LOCAL_NETWORK_ID;
+    localMic1->deviceId_ = 2101;
+    deviceManager.connectedDevices_.push_back(localMic1);
+
+    auto localMic2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    localMic2->networkId_ = LOCAL_NETWORK_ID;
+    localMic2->deviceId_ = 2102;
+    deviceManager.connectedDevices_.push_back(localMic2);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    deviceManager.GetDefaultAvailableDevicesByUsage(MEDIA_INPUT_DEVICES, result);
+    EXPECT_EQ(result.size(), 2u);
+    for (const auto &desc : result) {
+        EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_MIC);
+        EXPECT_EQ(desc->networkId_, LOCAL_NETWORK_ID);
+    }
+
+    deviceManager.connectedDevices_ = savedDevices;
+    deviceManager.defalutMic_ = savedMic;
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager::GetDefaultAvailableDevicesByUsage under MULTI_BUS_ENABLE.
+ * @tc.number: GetDefaultAvailableDevicesByUsage_MultiBus_002
+ * @tc.desc  : Test MEDIA_INPUT_DEVICES with local mics, a remote mic and a local non-mic device.
+ *             Only local mics are added by the local loop; the remote mic by the remote loop.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, GetDefaultAvailableDevicesByUsage_MultiBus_002, TestSize.Level4)
+{
+    auto &deviceManager = audioDeviceStatus_->audioDeviceManager_;
+    auto savedDevices = deviceManager.connectedDevices_;
+    auto savedMic = deviceManager.defalutMic_;
+    deviceManager.connectedDevices_.clear();
+    deviceManager.defalutMic_ = nullptr;
+
+    auto localMic = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    localMic->networkId_ = LOCAL_NETWORK_ID;
+    localMic->deviceId_ = 2111;
+    deviceManager.connectedDevices_.push_back(localMic);
+
+    auto remoteMic = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    remoteMic->networkId_ = "remoteNetworkId";
+    remoteMic->deviceId_ = 2112;
+    deviceManager.connectedDevices_.push_back(remoteMic);
+
+    auto localSpeaker = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    localSpeaker->networkId_ = LOCAL_NETWORK_ID;
+    localSpeaker->deviceId_ = 2113;
+    deviceManager.connectedDevices_.push_back(localSpeaker);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    deviceManager.GetDefaultAvailableDevicesByUsage(MEDIA_INPUT_DEVICES, result);
+    EXPECT_EQ(result.size(), 2u);
+    int32_t localMicCount = 0;
+    int32_t remoteMicCount = 0;
+    for (const auto &desc : result) {
+        if (desc->networkId_ == LOCAL_NETWORK_ID) {
+            EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_MIC);
+            localMicCount++;
+        } else if (desc->networkId_ == "remoteNetworkId") {
+            EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_MIC);
+            remoteMicCount++;
+        }
+    }
+    EXPECT_EQ(localMicCount, 1);
+    EXPECT_EQ(remoteMicCount, 1);
+
+    deviceManager.connectedDevices_ = savedDevices;
+    deviceManager.defalutMic_ = savedMic;
+}
+#endif
+
+#ifndef MULTI_BUS_ENABLE
+/**
+ * @tc.name  : Test AudioDeviceManager::GetDefaultAvailableDevicesByUsage without MULTI_BUS_ENABLE.
+ * @tc.number: GetDefaultAvailableDevicesByUsage_NonMultiBus_001
+ * @tc.desc  : Test MEDIA_INPUT_DEVICES uses defalutMic_ and ignores other local mics in
+ *             connectedDevices_ that are not the default mic.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, GetDefaultAvailableDevicesByUsage_NonMultiBus_001, TestSize.Level4)
+{
+    auto &deviceManager = audioDeviceStatus_->audioDeviceManager_;
+    auto savedDevices = deviceManager.connectedDevices_;
+    auto savedMic = deviceManager.defalutMic_;
+    deviceManager.connectedDevices_.clear();
+
+    auto defaultMic = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    defaultMic->networkId_ = LOCAL_NETWORK_ID;
+    defaultMic->deviceId_ = 2201;
+    deviceManager.defalutMic_ = defaultMic;
+
+    auto otherLocalMic = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    otherLocalMic->networkId_ = LOCAL_NETWORK_ID;
+    otherLocalMic->deviceId_ = 2202;
+    deviceManager.connectedDevices_.push_back(otherLocalMic);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    deviceManager.GetDefaultAvailableDevicesByUsage(MEDIA_INPUT_DEVICES, result);
+    EXPECT_EQ(result.size(), 1u);
+    EXPECT_EQ(result[0]->deviceId_, 2201);
+
+    deviceManager.connectedDevices_ = savedDevices;
+    deviceManager.defalutMic_ = savedMic;
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager::GetDefaultAvailableDevicesByUsage without MULTI_BUS_ENABLE.
+ * @tc.number: GetDefaultAvailableDevicesByUsage_NonMultiBus_002
+ * @tc.desc  : Test MEDIA_INPUT_DEVICES when defalutMic_ is nullptr. No local mic is added even
+ *             if one exists in connectedDevices_ (default path relies on defalutMic_ only).
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, GetDefaultAvailableDevicesByUsage_NonMultiBus_002, TestSize.Level4)
+{
+    auto &deviceManager = audioDeviceStatus_->audioDeviceManager_;
+    auto savedDevices = deviceManager.connectedDevices_;
+    auto savedMic = deviceManager.defalutMic_;
+    deviceManager.connectedDevices_.clear();
+    deviceManager.defalutMic_ = nullptr;
+
+    auto localMic = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    localMic->networkId_ = LOCAL_NETWORK_ID;
+    localMic->deviceId_ = 2211;
+    deviceManager.connectedDevices_.push_back(localMic);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    deviceManager.GetDefaultAvailableDevicesByUsage(MEDIA_INPUT_DEVICES, result);
+    EXPECT_TRUE(result.empty());
+
+    deviceManager.connectedDevices_ = savedDevices;
+    deviceManager.defalutMic_ = savedMic;
+}
+#endif
+
 } // namespace AudioStandard
 } // namespace OHOS
