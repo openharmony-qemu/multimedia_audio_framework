@@ -125,6 +125,10 @@ public:
     bool SetMuteSilentState(uint32_t sessionId, bool isMuteSilent);
     // Set data transfer silent flag, return whether isSilent_ changed
     bool SetDataTransSilentState(uint32_t sessionId, bool isDataTransSilent);
+    // Set notification volume silent flag
+    void NotificationVolumeSilentClient(uint32_t sessionId);
+    // Clear notification volume silent flag, return whether isSilent_ changed
+    bool ClearNotificationVolumeSilentFlag();
     // Check whether stream is silent (isSilent_)
     bool IsStreamSilent(uint32_t sessionId);
     void StopClient(uint32_t sessionId);

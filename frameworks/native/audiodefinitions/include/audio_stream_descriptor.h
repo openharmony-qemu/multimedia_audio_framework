@@ -71,8 +71,10 @@ public:
     std::atomic<bool> isMuteSilent_{false};
     // Data transfer silent flag, true means stream is silent due to no/silent data transfer
     std::atomic<bool> isDataTransSilent_{false};
+    // Notification volume silent flag, true means stream is silent due to notification volume
+    std::atomic<bool> isNotificationVolumeSilent_{false};
     // Stream silent state (computed), true means stream is currently silent
-    // Formula: isSilent_ = isMuteSilent_ || isDataTransSilent_
+    // Formula: isSilent_ = isMuteSilent_ || isDataTransSilent_ || isNotificationVolumeSilent_
     std::atomic<bool> isSilent_{false};
     // Flag to indicate VoIP stream should be excluded from priority comparison during mute callback
     std::atomic<bool> voipPriorityLowered_{false};
@@ -126,6 +128,11 @@ public:
 
     bool GetMuteSilentState() const { return isMuteSilent_.load(); }
     bool GetDataTransSilentState() const { return isDataTransSilent_.load(); }
+    bool GetNotificationVolumeSilentState() const { return isNotificationVolumeSilent_.load(); }
+    void UpdateSilentState()
+    {
+        isSilent_ = isMuteSilent_.load() || isDataTransSilent_.load() || isNotificationVolumeSilent_.load();
+    }
     bool IsSilent() const { return isSilent_.load(); }
 
     bool IsActive(uint32_t inPastMs = 0) const;

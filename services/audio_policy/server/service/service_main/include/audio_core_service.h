@@ -567,6 +567,8 @@ public:
         std::vector<AudioRendererInfo> &rendererInfos);
     void RemoveSplitModuleArgs(const std::string &networkId);
 
+    void OnVolumeChanged(const VolumeEvent &volumeEvent, const int32_t zoneId);
+
 private:
     void UpdateEnhanceEffectState(SourceType source);
     void UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo> &pipeInfo, SourceType sourceType);
@@ -941,6 +943,7 @@ private:
     bool IsUltraFastSupportedForDevice(DeviceType deviceType);
     void MutePrimarySinkByCollaborative(int32_t duration);
     void UpdateLocalSessionIdsFromStreamDesc();
+    void CheckNotificationVolumeSilent(const AudioStreamDescriptor &streamDesc);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;

@@ -6584,6 +6584,7 @@ ohos_unittest("audio_pipe_manager_unit_test") {
     "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_unit_test.cpp",
     "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_extended_test.cpp",
     "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_required_pipe_test.cpp",
+    "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_silent_state_test.cpp",
     "./unittest/audio_pipe_manager_unit_test/src/audio_core_config_manager_aiut.cpp",
   ]
 

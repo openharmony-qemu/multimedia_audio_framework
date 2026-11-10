@@ -2273,5 +2273,55 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleSpatialAudioSourceTypeChange_006,
     handler->clientCallbacksMap_.clear();
 }
 
+/**
+ * @tc.name  : HandleVolumeKeyEvent_NotificationVolumeSilent_001
+ * @tc.number: HandleVolumeKeyEvent_NotificationVolumeSilent_001
+ * @tc.desc  : Test HandleVolumeKeyEvent processes notification exit silent event without crash.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeKeyEvent_NotificationVolumeSilent_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioPolicyServerHandler_, nullptr);
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    ASSERT_NE(eventContextObj, nullptr);
+    eventContextObj->volumeEvent.volumeType = STREAM_NOTIFICATION;
+    eventContextObj->volumeEvent.volume = 5;
+    eventContextObj->volumeEvent.volumeDegree = 5;
+    eventContextObj->volumeEvent.updateUi = true;
+    eventContextObj->volumeEvent.previousVolume = 0;
+    eventContextObj->zoneId = 0;
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::VOLUME_KEY_EVENT, eventContextObj);
+
+    EXPECT_NO_THROW(audioPolicyServerHandler_->HandleVolumeKeyEvent(event));
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : HandleVolumeKeyEvent_NotificationVolumeSilent_002
+ * @tc.number: HandleVolumeKeyEvent_NotificationVolumeSilent_002
+ * @tc.desc  : Test HandleVolumeKeyEvent processes non matching notification event without crash.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeKeyEvent_NotificationVolumeSilent_002, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioPolicyServerHandler_, nullptr);
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    ASSERT_NE(eventContextObj, nullptr);
+    eventContextObj->volumeEvent.volumeType = STREAM_MUSIC;
+    eventContextObj->volumeEvent.volume = 5;
+    eventContextObj->volumeEvent.volumeDegree = 5;
+    eventContextObj->volumeEvent.updateUi = true;
+    eventContextObj->volumeEvent.previousVolume = 0;
+    eventContextObj->zoneId = 0;
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::VOLUME_KEY_EVENT, eventContextObj);
+
+    EXPECT_NO_THROW(audioPolicyServerHandler_->HandleVolumeKeyEvent(event));
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 0);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

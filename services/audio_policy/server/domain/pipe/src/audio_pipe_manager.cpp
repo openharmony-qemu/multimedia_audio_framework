@@ -418,7 +418,7 @@ bool AudioPipeManager::SetMuteSilentState(uint32_t sessionId, bool isMuteSilent)
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "StreamDesc is nullptr");
     bool oldIsSilent = streamDesc->isSilent_.load();
     streamDesc->isMuteSilent_ = isMuteSilent;
-    streamDesc->isSilent_ = streamDesc->isMuteSilent_.load() || streamDesc->isDataTransSilent_.load();
+    streamDesc->UpdateSilentState();
     return (streamDesc->isSilent_.load() != oldIsSilent);
 }
 
@@ -430,8 +430,39 @@ bool AudioPipeManager::SetDataTransSilentState(uint32_t sessionId, bool isDataTr
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "StreamDesc is nullptr");
     bool oldIsSilent = streamDesc->isSilent_.load();
     streamDesc->isDataTransSilent_ = isDataTransSilent;
-    streamDesc->isSilent_ = streamDesc->isMuteSilent_.load() || streamDesc->isDataTransSilent_.load();
+    streamDesc->UpdateSilentState();
     return (streamDesc->isSilent_.load() != oldIsSilent);
+}
+
+void AudioPipeManager::NotificationVolumeSilentClient(uint32_t sessionId)
+{
+    Trace trace("AudioPipeManager::NotificationVolumeSilentClient");
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
+    streamDesc->isNotificationVolumeSilent_ = true;
+    streamDesc->UpdateSilentState();
+}
+
+bool AudioPipeManager::ClearNotificationVolumeSilentFlag()
+{
+    Trace trace("AudioPipeManager::ClearNotificationVolumeSilentFlag");
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    bool exitSilent = false;
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (desc->isNotificationVolumeSilent_) {
+                bool oldIsSilent = desc->isSilent_.load();
+                desc->isNotificationVolumeSilent_ = false;
+                desc->UpdateSilentState();
+                exitSilent = exitSilent || (desc->isSilent_.load() != oldIsSilent);
+            }
+        }
+    }
+
+    return exitSilent;
 }
 
 bool AudioPipeManager::IsStreamSilent(uint32_t sessionId)
