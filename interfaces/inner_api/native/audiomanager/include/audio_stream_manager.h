@@ -210,6 +210,19 @@ public:
     int32_t GetHardwareOutputSamplingRate(std::shared_ptr<AudioDeviceDescriptor> &desc);
 
     /**
+     * @brief Gets the highest-specification stream information of the actual path routed to the specified device.
+     *
+     * @param device Target output device.
+     * @param uid Application UID, or -1 for all applications; prefer running streams, then non-running streams.
+     * @param streamInfo Actual path format, valid when hasStream is true.
+     * @param hasStream Whether a matching playback stream exists.
+     * @return SUCCESS on success; otherwise an error code defined in audio_errors.h. System callers only.
+     * @since 26.2.0
+     */
+    int32_t GetRealStreamInfoByDevice(const std::shared_ptr<AudioDeviceDescriptor> &device, int32_t uid,
+        AudioStreamInfo &streamInfo, bool &hasStream);
+
+    /**
      * @brief Judges whether the playback is supported by the renderer.
      *
      * @param streamInfo AudioStreamInfo

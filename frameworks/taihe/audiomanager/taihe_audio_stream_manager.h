@@ -39,6 +39,8 @@ public:
     array<AudioRendererChangeInfo> GetCurrentAudioRendererInfoArraySync();
     array<AudioCapturerChangeInfo> GetCurrentAudioCapturerInfoArraySync();
     array<AudioEffectMode> GetAudioEffectInfoArraySync(StreamUsage usage);
+    optional<AudioStreamInfo> GetHighestPipeStreamInfo(AudioDeviceDescriptor deviceDescriptor,
+        optional_view<int32_t> uid);
     bool IsActiveSync(AudioVolumeType volumeType);
     bool IsStreamActive(StreamUsage streamUsage);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);

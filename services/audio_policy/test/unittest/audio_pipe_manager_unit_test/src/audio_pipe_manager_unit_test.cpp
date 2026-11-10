@@ -12,6 +12,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#include <utility>
+#include <vector>
+
 #include "audio_policy_utils.h"
 #include "audio_pipe_manager_unit_test.h"
 #include "audio_stream_descriptor.h"
@@ -35,6 +38,218 @@ static std::shared_ptr<AudioStreamDescriptor> MakeCallStreamDesc(StreamUsage usa
     streamDesc->rendererInfo_.streamUsage = usage;
     streamDesc->streamStatus_ = status;
     return streamDesc;
+}
+
+/**
+ * @tc.name: GetRealStreamInfoByDevice_001
+ * @tc.desc: Test pipe format priority by sample rate, channels and format value.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetRealStreamInfoByDevice_001, TestSize.Level1)
+{
+    AudioPipeManager manager;
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_ARM_HEADSET, OUTPUT_DEVICE);
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->callerUid_ = 1000;
+    stream->streamStatus_ = STREAM_STATUS_STARTED;
+    stream->newDeviceDescs_ = {device};
+    stream->streamInfo_.samplingRate = SAMPLE_RATE_8000;
+    auto first = std::make_shared<AudioPipeInfo>();
+    first->streamDescriptors_ = {stream};
+    first->audioStreamInfo_.samplingRate = SAMPLE_RATE_96000;
+    first->audioStreamInfo_.channels = MONO;
+    first->audioStreamInfo_.format = SAMPLE_S16LE;
+    first->moduleInfo_.rate = "48000";
+    first->moduleInfo_.format = "s24le";
+    auto secondStream = std::make_shared<AudioStreamDescriptor>(stream);
+    secondStream->streamInfo_.samplingRate = SAMPLE_RATE_192000;
+    auto second = std::make_shared<AudioPipeInfo>();
+    second->streamDescriptors_ = {secondStream};
+    second->audioStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    second->audioStreamInfo_.channels = CHANNEL_8;
+    second->audioStreamInfo_.format = SAMPLE_S32LE;
+    manager.curPipeList_ = {second, first};
+    AudioStreamInfo info = {};
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 1000, info));
+    EXPECT_TRUE(info == first->audioStreamInfo_);
+    second->audioStreamInfo_.samplingRate = SAMPLE_RATE_96000;
+    std::swap(first->audioStreamInfo_.format, second->audioStreamInfo_.format);
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 1000, info));
+    EXPECT_TRUE(info == second->audioStreamInfo_);
+    first->audioStreamInfo_.channels = CHANNEL_8;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 1000, info));
+    EXPECT_TRUE(info == first->audioStreamInfo_);
+    first->audioStreamInfo_.format = SAMPLE_S24LE;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 1000, info));
+    EXPECT_TRUE(info == first->audioStreamInfo_);
+    first->audioStreamInfo_.format = SAMPLE_U8;
+    second->audioStreamInfo_.format = SAMPLE_S16LE;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 1000, info));
+    EXPECT_TRUE(info == second->audioStreamInfo_);
+    first->audioStreamInfo_.format = SAMPLE_S32LE;
+    second->audioStreamInfo_.format = SAMPLE_F32LE;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 1000, info));
+    EXPECT_TRUE(info == second->audioStreamInfo_);
+    first->audioStreamInfo_.customSampleRate = 100000;
+    first->audioStreamInfo_.format = SAMPLE_S16LE;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 1000, info));
+    EXPECT_TRUE(info == second->audioStreamInfo_);
+}
+
+/**
+ * @tc.name: GetRealStreamInfoByDevice_002
+ * @tc.desc: Test running stream priority and non-running stream fallback.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetRealStreamInfoByDevice_002, TestSize.Level1)
+{
+    AudioPipeManager manager;
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    auto firstStream = std::make_shared<AudioStreamDescriptor>();
+    firstStream->callerUid_ = 1000;
+    firstStream->streamStatus_ = STREAM_STATUS_STARTED;
+    firstStream->newDeviceDescs_ = {device};
+    auto secondStream = std::make_shared<AudioStreamDescriptor>();
+    secondStream->callerUid_ = 1000;
+    secondStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    secondStream->newDeviceDescs_ = {device};
+    auto first = std::make_shared<AudioPipeInfo>();
+    first->streamDescriptors_ = {firstStream};
+    first->audioStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    first->audioStreamInfo_.channels = STEREO;
+    first->audioStreamInfo_.format = SAMPLE_S16LE;
+    auto second = std::make_shared<AudioPipeInfo>();
+    second->streamDescriptors_ = {secondStream};
+    second->audioStreamInfo_ = first->audioStreamInfo_;
+    second->audioStreamInfo_.samplingRate = SAMPLE_RATE_96000;
+    manager.curPipeList_ = {second, first};
+    AudioStreamInfo info = {};
+
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 1000, info));
+    EXPECT_TRUE(info == first->audioStreamInfo_);
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    EXPECT_TRUE(info == first->audioStreamInfo_);
+
+    firstStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 1000, info));
+    EXPECT_TRUE(info == second->audioStreamInfo_);
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    EXPECT_TRUE(info == second->audioStreamInfo_);
+
+    secondStream->callerUid_ = 2000;
+    secondStream->streamStatus_ = STREAM_STATUS_STARTED;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 1000, info));
+    EXPECT_TRUE(info == first->audioStreamInfo_);
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    EXPECT_TRUE(info == second->audioStreamInfo_);
+
+    firstStream->streamStatus_ = STREAM_STATUS_STOPPED;
+    secondStream->streamStatus_ = STREAM_STATUS_RELEASED;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    EXPECT_TRUE(info == second->audioStreamInfo_);
+    firstStream->streamStatus_ = STREAM_STATUS_NEW;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 1000, info));
+    EXPECT_TRUE(info == first->audioStreamInfo_);
+}
+
+/**
+ * @tc.name: GetRealStreamInfoByDevice_003
+ * @tc.desc: Test invalid parameters, pipe filtering and application UID matching.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetRealStreamInfoByDevice_003, TestSize.Level1)
+{
+    AudioPipeManager manager;
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    AudioStreamInfo info = {};
+    info.samplingRate = SAMPLE_RATE_192000;
+    EXPECT_FALSE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    EXPECT_TRUE(info == AudioStreamInfo());
+
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->callerUid_ = 1000;
+    stream->streamStatus_ = STREAM_STATUS_STARTED;
+    stream->newDeviceDescs_ = {device};
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->streamDescriptors_ = {nullptr, stream};
+    pipe->audioStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    pipe->audioStreamInfo_.channels = STEREO;
+    pipe->audioStreamInfo_.format = SAMPLE_S16LE;
+    manager.curPipeList_ = {nullptr, std::make_shared<AudioPipeInfo>(), pipe};
+
+    EXPECT_FALSE(manager.GetRealStreamInfoByDevice(nullptr, INVALID_UID, info));
+    EXPECT_FALSE(manager.GetRealStreamInfoByDevice(device, INVALID_UID - 1, info));
+    device->deviceRole_ = INPUT_DEVICE;
+    EXPECT_FALSE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    device->deviceRole_ = OUTPUT_DEVICE;
+    pipe->pipeRole_ = PIPE_ROLE_INPUT;
+    EXPECT_FALSE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    pipe->pipeRole_ = PIPE_ROLE_OUTPUT;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 1000, info));
+    EXPECT_TRUE(info == pipe->audioStreamInfo_);
+    EXPECT_FALSE(manager.GetRealStreamInfoByDevice(device, 3000, info));
+    EXPECT_TRUE(info == AudioStreamInfo());
+
+    stream->callerUid_ = 1013;
+    stream->appInfo_.appUid = 2000;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, 2000, info));
+    EXPECT_TRUE(info == pipe->audioStreamInfo_);
+    EXPECT_FALSE(manager.GetRealStreamInfoByDevice(device, 1013, info));
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    EXPECT_TRUE(info == pipe->audioStreamInfo_);
+}
+
+/**
+ * @tc.name: GetRealStreamInfoByDevice_004
+ * @tc.desc: Test device matching and route changes.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetRealStreamInfoByDevice_004, TestSize.Level1)
+{
+    AudioPipeManager manager;
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    device->macAddress_ = "test-device-a";
+    auto routedDevice = std::make_shared<AudioDeviceDescriptor>(device);
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->callerUid_ = 1000;
+    stream->streamStatus_ = STREAM_STATUS_STARTED;
+    stream->newDeviceDescs_ = {nullptr, routedDevice};
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->streamDescriptors_ = {stream};
+    pipe->audioStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    pipe->audioStreamInfo_.channels = STEREO;
+    pipe->audioStreamInfo_.format = SAMPLE_S16LE;
+    manager.curPipeList_ = {pipe};
+    AudioStreamInfo info = {};
+
+    routedDevice->macAddress_ = "test-device-b";
+    EXPECT_FALSE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    routedDevice->macAddress_ = device->macAddress_;
+    routedDevice->networkId_ = "test-network";
+    EXPECT_FALSE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    routedDevice->networkId_ = device->networkId_;
+    routedDevice->deviceRole_ = INPUT_DEVICE;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    EXPECT_TRUE(info == pipe->audioStreamInfo_);
+    device->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    routedDevice->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    EXPECT_FALSE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    routedDevice->deviceRole_ = OUTPUT_DEVICE;
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    EXPECT_TRUE(info == pipe->audioStreamInfo_);
+    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    routedDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    EXPECT_FALSE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+
+    stream->newDeviceDescs_ = {nullptr, routedDevice, device};
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    EXPECT_TRUE(info == pipe->audioStreamInfo_);
+    stream->newDeviceDescs_.clear();
+    EXPECT_FALSE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    EXPECT_TRUE(info == AudioStreamInfo());
+    stream->newDeviceDescs_ = {device};
+    EXPECT_TRUE(manager.GetRealStreamInfoByDevice(device, INVALID_UID, info));
+    EXPECT_TRUE(info == pipe->audioStreamInfo_);
 }
 
 /**

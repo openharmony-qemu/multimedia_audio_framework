@@ -99,6 +99,7 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArray", GetEffectInfoArray),
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArraySync", GetEffectInfoArraySync),
         DECLARE_NAPI_FUNCTION("getHardwareOutputSamplingRate", GetHardwareOutputSamplingRate),
+        DECLARE_NAPI_FUNCTION("getHighestPipeStreamInfo", GetHighestPipeStreamInfo),
         DECLARE_NAPI_FUNCTION("isAcousticEchoCancelerSupported", IsAcousticEchoCancelerSupported),
         DECLARE_NAPI_FUNCTION("isRecordingAvailable", IsRecordingAvailable),
         DECLARE_NAPI_FUNCTION("isAudioLoopbackSupported", IsAudioLoopbackSupported),
@@ -517,6 +518,64 @@ napi_value NapiAudioStreamMgr::GetHardwareOutputSamplingRate(napi_env env, napi_
     int32_t rate = napiStreamMgr->audioStreamMngr_->GetHardwareOutputSamplingRate(deviceDescriptor);
     NapiParamUtils::SetValueInt32(env, rate, result);
     return result;
+}
+
+void NapiAudioStreamMgr::ParseHighestPipeStreamInfoArgs(napi_env env, size_t argc, napi_value *argv,
+    const std::shared_ptr<AudioStreamMgrAsyncContext> &context)
+{
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE && argc <= ARGS_TWO,
+        context->SignError(NAPI_ERR_INPUT_INVALID, "Parameter error."),
+        "Parameter error. Incorrect parameter count.Expected: one or two, Actual:%{public}zu", argc);
+    context->deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    bool converted = false;
+    context->status = NapiParamUtils::GetAudioDeviceDescriptor(env, context->deviceDescriptor,
+        converted, argv[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(context->status == napi_ok && converted &&
+        context->deviceDescriptor->deviceRole_ == OUTPUT_DEVICE,
+        context->SignError(NAPI_ERR_INVALID_PARAM, "Parameter verification failed."),
+        "Parameter verification failed. deviceDescriptor parameter value is invalid");
+    napi_valuetype type = napi_undefined;
+    if (argc == ARGS_TWO && napi_typeof(env, argv[PARAM1], &type) == napi_ok && type != napi_undefined) {
+        context->status = NapiParamUtils::GetValueInt32(env, context->uid, argv[PARAM1]);
+        CHECK_AND_RETURN_RET_LOG(context->status == napi_ok && context->uid >= 0,
+            context->SignError(NAPI_ERR_INVALID_PARAM, "Parameter verification failed."),
+            "Parameter verification failed. uid parameter value is invalid");
+    }
+}
+
+napi_value NapiAudioStreamMgr::GetHighestPipeStreamInfo(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, "Permission verification failed.", NAPI_ERR_PERMISSION_DENIED));
+    auto context = std::make_shared<AudioStreamMgrAsyncContext>();
+    context->GetCbInfo(env, info, [env, context](size_t argc, napi_value *argv) {
+        ParseHighestPipeStreamInfoArgs(env, argc, argv, context);
+    }, true);
+    CHECK_AND_RETURN_RET(context->status == napi_ok || context->errCode != NAPI_ERR_INPUT_INVALID,
+        NapiAudioError::ThrowErrorAndReturn(env, context->errMessage.c_str(), context->errCode));
+    auto executor = [context]() {
+        ObjectRefMap<NapiAudioStreamMgr> objectGuard(reinterpret_cast<NapiAudioStreamMgr *>(context->native));
+        auto *manager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_RET(manager != nullptr && manager->audioStreamMngr_ != nullptr,
+            context->SignError(NAPI_ERR_INVALID_PARAM, "Parameter verification failed."));
+        int32_t ret = manager->audioStreamMngr_->GetRealStreamInfoByDevice(context->deviceDescriptor,
+            context->uid, context->audioStreamInfo, context->hasStream);
+        CHECK_AND_RETURN_RET_LOG(ret != ERR_SYSTEM_PERMISSION_DENIED,
+            context->SignError(NAPI_ERR_PERMISSION_DENIED, "Permission verification failed"),
+            "Permission verification failed");
+        CHECK_AND_RETURN_RET_LOG(ret != ERR_OPERATION_FAILED,
+            context->SignError(NAPI_ERR_SYSTEM, "System error"),
+            "System error. An unexpected error occurred while querying stream information.");
+        CHECK_AND_RETURN_RET(ret == SUCCESS,
+            context->SignError(NAPI_ERR_INVALID_PARAM, "Parameter verification failed."));
+    };
+    auto complete = [env, context](napi_value &output) {
+        context->status = context->hasStream ?
+            NapiParamUtils::SetStreamInfo(env, context->audioStreamInfo, output) : napi_ok;
+        CHECK_AND_RETURN_RET(context->status == napi_ok,
+            context->SignError(NAPI_ERR_INVALID_PARAM, "Parameter verification failed."));
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetHighestPipeStreamInfo", executor, complete);
 }
 
 void NapiAudioStreamMgr::RegisterCallback(napi_env env, napi_value jsThis,

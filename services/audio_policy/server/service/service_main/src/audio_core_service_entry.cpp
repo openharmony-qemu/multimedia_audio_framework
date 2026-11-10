@@ -216,6 +216,14 @@ int32_t AudioCoreService::EventEntry::GetAudioDebugInfoBySessionId(uint32_t sess
     return coreService_->GetAudioDebugInfoBySessionId(sessionId, audioDebugInfo);
 }
 
+int32_t AudioCoreService::EventEntry::GetRealStreamInfoByDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &device, int32_t uid, AudioStreamInfo &streamInfo, bool &hasStream)
+{
+    std::shared_lock<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_OPERATION_FAILED, "Core service is null");
+    return coreService_->GetRealStreamInfoByDevice(device, uid, streamInfo, hasStream);
+}
+
 uint32_t AudioCoreService::EventEntry::GenerateSessionId()
 {
     return coreService_->GenerateSessionId();

@@ -482,6 +482,9 @@ public:
 
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
+    int32_t GetRealStreamInfoByDevice(const std::shared_ptr<AudioDeviceDescriptor> &device, int32_t uid,
+        AudioStreamInfo &streamInfo, bool &hasStream);
+
     void RecoverAudioPolicyCallbackClient();
 
     std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionID);

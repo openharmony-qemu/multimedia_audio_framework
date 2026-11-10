@@ -147,6 +147,8 @@ public:
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
             AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess = false) override;
         int32_t GetAudioDebugInfoBySessionId(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
+        int32_t GetRealStreamInfoByDevice(const std::shared_ptr<AudioDeviceDescriptor> &device, int32_t uid,
+            AudioStreamInfo &streamInfo, bool &hasStream);
         uint32_t GenerateSessionId() override;
         int32_t SetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
         int32_t UnsetAudioRouteSelectorCallback();
@@ -301,6 +303,8 @@ public:
     void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
     std::shared_ptr<AsyncActionHandler> GetAsyncActionHandler() const;
     std::shared_ptr<AudioPipeManager> GetPipeManager() const;
+    int32_t GetRealStreamInfoByDevice(const std::shared_ptr<AudioDeviceDescriptor> &device, int32_t uid,
+        AudioStreamInfo &streamInfo, bool &hasStream);
     void SetConfigParserFlag();
     // Pipe capability pass-through interfaces. Synchronization is managed in pipe/domain modules.
     void SetEcEnableState(bool ecEnableState);

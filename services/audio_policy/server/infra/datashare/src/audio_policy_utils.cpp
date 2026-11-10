@@ -1443,6 +1443,17 @@ void AudioPolicyUtils::UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc)
     }
 }
 
+bool AudioPolicyUtils::IsHigherSpecStreamInfo(const AudioStreamInfo &info, const AudioStreamInfo &selectedInfo)
+{
+    if (info.samplingRate != selectedInfo.samplingRate) {
+        return info.samplingRate > selectedInfo.samplingRate;
+    }
+    if (info.channels != selectedInfo.channels) {
+        return info.channels > selectedInfo.channels;
+    }
+    return info.format > selectedInfo.format;
+}
+
 bool AudioPolicyUtils::IsMultiBusDevice(DeviceType deviceType)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||

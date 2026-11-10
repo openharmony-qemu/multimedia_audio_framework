@@ -18,6 +18,7 @@
 
 #include "audio_pipe_manager.h"
 
+#include <algorithm>
 #include <utility>
 
 #include "audio_injector_policy.h"
@@ -746,6 +747,54 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPipeManager::GetProcessDeviceInfoByS
     }
     AUDIO_ERR_LOG("Cannot find session: %{public}u", sessionId);
     return nullptr;
+}
+
+bool AudioPipeManager::CheckStreamDescByDeviceAndUid(const std::shared_ptr<AudioStreamDescriptor> &stream,
+    const std::shared_ptr<AudioDeviceDescriptor> &device, int32_t uid)
+{
+    CHECK_AND_RETURN_RET(stream != nullptr, false);
+    CHECK_AND_RETURN_RET(uid == INVALID_UID || uid == stream->GetRealUid(), false);
+    return std::any_of(stream->newDeviceDescs_.begin(), stream->newDeviceDescs_.end(),
+        [&device](const auto &routedDevice) {
+            return routedDevice != nullptr && routedDevice->IsSameDeviceDesc(*device);
+        });
+}
+
+bool AudioPipeManager::GetRealStreamInfoByDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
+    int32_t uid, AudioStreamInfo &streamInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(device != nullptr && device->deviceRole_ == OUTPUT_DEVICE && uid >= INVALID_UID,
+        false, "Invalid query parameters");
+    AudioStreamInfo runningStreamInfo = {};
+    AudioStreamInfo nonRunningStreamInfo = {};
+    bool hasRunningStream = false;
+    bool hasNonRunningStream = false;
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (const auto &pipe : curPipeList_) {
+        CHECK_AND_CONTINUE(pipe != nullptr && pipe->pipeRole_ == PIPE_ROLE_OUTPUT);
+        // Skip this pipe if its stream specification is lower than the selected running stream.
+        CHECK_AND_CONTINUE(!hasRunningStream ||
+            !AudioPolicyUtils::IsHigherSpecStreamInfo(runningStreamInfo, pipe->audioStreamInfo_));
+        for (const auto &stream : pipe->streamDescriptors_) {
+            CHECK_AND_CONTINUE(CheckStreamDescByDeviceAndUid(stream, device, uid));
+            if (stream->IsRunning()) {
+                CHECK_AND_CONTINUE(!hasRunningStream ||
+                    AudioPolicyUtils::IsHigherSpecStreamInfo(pipe->audioStreamInfo_, runningStreamInfo));
+                runningStreamInfo = pipe->audioStreamInfo_;
+                hasRunningStream = true;
+                break;
+            }
+            CHECK_AND_CONTINUE(!hasNonRunningStream ||
+                AudioPolicyUtils::IsHigherSpecStreamInfo(pipe->audioStreamInfo_, nonRunningStreamInfo));
+            nonRunningStreamInfo = pipe->audioStreamInfo_;
+            hasNonRunningStream = true;
+        }
+    }
+    CHECK_AND_RETURN_RET_LOG(hasRunningStream || hasNonRunningStream, false, "No matching stream");
+    streamInfo = hasRunningStream ? runningStreamInfo : nonRunningStreamInfo;
+    AUDIO_INFO_LOG("Selected stream info: rate %{public}d, channels %{public}d, format %{public}d",
+        streamInfo.samplingRate, streamInfo.channels, streamInfo.format);
+    return true;
 }
 
 std::string AudioPipeManager::Get3daDirectBusAddress()
