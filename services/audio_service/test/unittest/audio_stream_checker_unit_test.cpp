@@ -12,10 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <atomic>
+#include <chrono>
 #include <gtest/gtest.h>
+#include <thread>
 #include "audio_stream_checker.h"
 #include "audio_stream_checker_thread.h"
 #include "audio_errors.h"
+#include "audio_stream_monitor.h"
 #include "audio_utils.h"
 
 using namespace testing::ext;
@@ -24,6 +28,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 const uint64_t DEFAULT_TIME = 3711509424L;
+const int32_t WAIT_DISPATCH_INTERVAL_MS = 10;
+const int32_t WAIT_DISPATCH_TIMEOUT_COUNT = 100;
 
 class AudioStreamCheckerTest : public testing::Test {
 public:
@@ -2214,6 +2220,185 @@ HWTEST(AudioStreamCheckerTest, CheckExplicitStandbyTimeout_006, TestSize.Level1)
     EXPECT_EQ(checker->explicitStandbyStartTime_, 0);
     EXPECT_EQ(checker->explicitStandbyBackgroundStartTime_, 0);
     EXPECT_FALSE(checker->explicitStandbyTimeoutReported_);
+}
+// Mock monitor server: records outbound dispatch and can simulate a slow IPC inside it.
+class CheckerMonitorServerMock : public DataTransferStateChangeCallbackForMonitor {
+public:
+    void OnDataTransferStateChange(const int32_t &pid, const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) override
+    {
+        dataDispatchEntered_.store(true);
+        if (dataCallbackDelayMs_ > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(dataCallbackDelayMs_));
+        }
+        pid_ = pid;
+        callbackId_ = callbackId;
+        lastInfo_ = info;
+        dataCallbackCount_++;
+    }
+
+    void OnMuteStateChange(const int32_t &pid, const int32_t &callbackId, const int32_t &uid,
+        const uint32_t &sessionId, const bool &isMuted) override
+    {
+        muteDispatchEntered_.store(true);
+        if (muteCallbackDelayMs_ > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(muteCallbackDelayMs_));
+        }
+        pid_ = pid;
+        callbackId_ = callbackId;
+        uid_ = uid;
+        sessionId_ = sessionId;
+        isMuted_ = isMuted;
+        muteCallbackCount_++;
+    }
+
+    std::atomic<bool> dataDispatchEntered_ {false};
+    std::atomic<bool> muteDispatchEntered_ {false};
+    int32_t dataCallbackDelayMs_ = 0;
+    int32_t muteCallbackDelayMs_ = 0;
+    int32_t dataCallbackCount_ = 0;
+    int32_t muteCallbackCount_ = 0;
+    int32_t pid_ = 0;
+    int32_t callbackId_ = 0;
+    int32_t uid_ = 0;
+    uint32_t sessionId_ = 0;
+    bool isMuted_ = false;
+    AudioRendererDataTransferStateChangeInfo lastInfo_ {};
+};
+
+/**
+ * @tc.name  : Test MonitorCheckFrame dispatch does not hold checkLock_
+ * @tc.type  : FUNC
+ * @tc.number: MonitorCheckFrame_DispatchNotHoldCheckLock_001
+ */
+HWTEST(AudioStreamCheckerTest, MonitorCheckFrame_DispatchNotHoldCheckLock_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 0;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    checker->RecordMuteFrame();
+    checker->RecordNormalFrame();
+
+    CheckerMonitorServerMock serverMock;
+    serverMock.dataCallbackDelayMs_ = 300; // simulate slow outbound IPC inside dispatch
+    AudioStreamMonitor::GetInstance().SetAudioServerPtr(&serverMock);
+    std::thread dispatcher([&checker]() { checker->MonitorCheckFrame(); });
+    int32_t waitCount = 0;
+    while (!serverMock.dataDispatchEntered_.load() && waitCount < WAIT_DISPATCH_TIMEOUT_COUNT) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_DISPATCH_INTERVAL_MS));
+        waitCount++;
+    }
+    ASSERT_TRUE(serverMock.dataDispatchEntered_.load());
+    // checkLock_ must already be released while dispatching: with the old in-lock
+    // dispatch this call waited for the whole delayed callback on checkLock_.
+    auto startTime = std::chrono::steady_clock::now();
+    checker->RecordNodataFrame();
+    auto costMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - startTime).count();
+    dispatcher.join();
+    AudioStreamMonitor::GetInstance().SetAudioServerPtr(nullptr);
+    EXPECT_LT(costMs, serverMock.dataCallbackDelayMs_);
+}
+
+/**
+ * @tc.name  : Test MonitorCheckFrame dispatch content
+ * @tc.type  : FUNC
+ * @tc.number: MonitorCheckFrame_DispatchContent_001
+ */
+HWTEST(AudioStreamCheckerTest, MonitorCheckFrame_DispatchContent_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 0;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    checker->RecordMuteFrame();
+    checker->RecordNormalFrame();
+
+    CheckerMonitorServerMock serverMock;
+    AudioStreamMonitor::GetInstance().SetAudioServerPtr(&serverMock);
+    checker->MonitorCheckFrame();
+    AudioStreamMonitor::GetInstance().SetAudioServerPtr(nullptr);
+    EXPECT_EQ(serverMock.dataCallbackCount_, 1);
+    EXPECT_EQ(serverMock.pid_, 100000);
+    EXPECT_EQ(serverMock.callbackId_, 100000);
+    EXPECT_EQ(serverMock.lastInfo_.stateChangeType, DATA_TRANS_STOP);
+    EXPECT_EQ(serverMock.lastInfo_.badDataRatio[NO_DATA_TRANS], 0);
+    EXPECT_EQ(serverMock.lastInfo_.badDataRatio[SILENCE_DATA_TRANS], 100);
+}
+
+/**
+ * @tc.name  : Test CheckVolume mute dispatch does not hold checkLock_
+ * @tc.type  : FUNC
+ * @tc.number: CheckVolume_MuteDispatchNotHoldCheckLock_001
+ */
+HWTEST(AudioStreamCheckerTest, CheckVolume_MuteDispatchNotHoldCheckLock_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 0;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100001, 100002);
+
+    CheckerMonitorServerMock serverMock;
+    serverMock.muteCallbackDelayMs_ = 300; // simulate slow outbound IPC inside dispatch
+    AudioStreamMonitor::GetInstance().SetAudioServerPtr(&serverMock);
+    checker->SetVolume(0.0f); // preVolume_ defaults to 1.0f, triggers the mute edge
+    std::thread dispatcher([&checker]() { checker->CheckVolume(); });
+    int32_t waitCount = 0;
+    while (!serverMock.muteDispatchEntered_.load() && waitCount < WAIT_DISPATCH_TIMEOUT_COUNT) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_DISPATCH_INTERVAL_MS));
+        waitCount++;
+    }
+    ASSERT_TRUE(serverMock.muteDispatchEntered_.load());
+    // checkLock_ must already be released while dispatching the mute callback.
+    auto startTime = std::chrono::steady_clock::now();
+    checker->RecordMuteFrame();
+    auto costMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - startTime).count();
+    dispatcher.join();
+    AudioStreamMonitor::GetInstance().SetAudioServerPtr(nullptr);
+    EXPECT_LT(costMs, serverMock.muteCallbackDelayMs_);
+    EXPECT_EQ(serverMock.muteCallbackCount_, 1);
+    EXPECT_EQ(serverMock.pid_, 100001);
+    EXPECT_EQ(serverMock.callbackId_, 100002);
+    EXPECT_TRUE(serverMock.isMuted_);
+}
+
+/**
+ * @tc.name  : Test MonitorOnAllCallback dispatch content
+ * @tc.type  : FUNC
+ * @tc.number: MonitorOnAllCallback_DispatchContent_001
+ */
+HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_DispatchContent_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    // bit map with NO_DATA_TRANS set: isMonitorNoDataFrame is true, so the
+    // standby-resume broadcast must not be filtered out for this subscriber.
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100003, 100004);
+
+    CheckerMonitorServerMock serverMock;
+    AudioStreamMonitor::GetInstance().SetAudioServerPtr(&serverMock);
+    checker->MonitorOnAllCallback(DATA_TRANS_RESUME, true);
+    AudioStreamMonitor::GetInstance().SetAudioServerPtr(nullptr);
+    EXPECT_EQ(serverMock.dataCallbackCount_, 1);
+    EXPECT_EQ(serverMock.pid_, 100003);
+    EXPECT_EQ(serverMock.callbackId_, 100004);
+    EXPECT_EQ(serverMock.lastInfo_.stateChangeType, DATA_TRANS_RESUME);
+    EXPECT_EQ(checker->checkParaVector_[0].lastStatus, DATA_TRANS_RESUME);
 }
 }
 }

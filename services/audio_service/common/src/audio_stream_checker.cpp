@@ -186,28 +186,38 @@ void AudioStreamChecker::OnRemoteAppDied(const int32_t pid)
 
 void AudioStreamChecker::CheckVolume()
 {
+    // Collect mute/unmute callbacks under checkLock_ and dispatch after the lock is
+    // released, same lock-scope rule as MonitorCheckFrame.
     float currentVolume = curVolume_.load();
+    std::vector<PendingMuteCallback> pendingMuteCallbacks;
     if (VolumeTools::IsZeroVolume(currentVolume) && !VolumeTools::IsZeroVolume(preVolume_)) {
         AUDIO_INFO_LOG("sessionId %{public}u change to mute", streamConfig_.originalSessionId);
-        std::unique_lock<std::recursive_mutex> muteCallbackLock(checkLock_);
+        std::lock_guard<std::recursive_mutex> muteCallbackLock(checkLock_);
         for (size_t index = 0; index < checkParaVector_.size(); index++) {
-            AudioStreamMonitor::GetInstance().OnMuteCallback(checkParaVector_[index].pid,
-                checkParaVector_[index].callbackId, streamConfig_.appInfo.appUid,
-                streamConfig_.originalSessionId, true);
+            PendingMuteCallback pendingMuteCallback;
+            pendingMuteCallback.pid = checkParaVector_[index].pid;
+            pendingMuteCallback.callbackId = checkParaVector_[index].callbackId;
+            pendingMuteCallback.isMute = true;
+            pendingMuteCallbacks.push_back(pendingMuteCallback);
         }
-        muteCallbackLock.unlock();
     }
     if (!VolumeTools::IsZeroVolume(currentVolume) && VolumeTools::IsZeroVolume(preVolume_)) {
         AUDIO_INFO_LOG("sessionId %{public}u change to unmute", streamConfig_.originalSessionId);
-        std::unique_lock<std::recursive_mutex> unmuteCallbackLock(checkLock_);
+        std::lock_guard<std::recursive_mutex> unmuteCallbackLock(checkLock_);
         for (size_t index = 0; index < checkParaVector_.size(); index++) {
-            AudioStreamMonitor::GetInstance().OnMuteCallback(checkParaVector_[index].pid,
-                checkParaVector_[index].callbackId, streamConfig_.appInfo.appUid,
-                streamConfig_.originalSessionId, false);
+            PendingMuteCallback pendingMuteCallback;
+            pendingMuteCallback.pid = checkParaVector_[index].pid;
+            pendingMuteCallback.callbackId = checkParaVector_[index].callbackId;
+            pendingMuteCallback.isMute = false;
+            pendingMuteCallbacks.push_back(pendingMuteCallback);
         }
-        unmuteCallbackLock.unlock();
     }
     preVolume_ = currentVolume;
+    for (size_t index = 0; index < pendingMuteCallbacks.size(); index++) {
+        AudioStreamMonitor::GetInstance().OnMuteCallback(pendingMuteCallbacks[index].pid,
+            pendingMuteCallbacks[index].callbackId, streamConfig_.appInfo.appUid,
+            streamConfig_.originalSessionId, pendingMuteCallbacks[index].isMute);
+    }
 }
 
 void AudioStreamChecker::MonitorCheckFrame()
@@ -216,33 +226,44 @@ void AudioStreamChecker::MonitorCheckFrame()
         AUDIO_INFO_LOG("Not register monitor callback");
         return;
     }
-    std::lock_guard<std::recursive_mutex> lock(checkLock_);
-    for (size_t index = 0; index < checkParaVector_.size(); index++) {
-        MonitorCheckFrameSub(checkParaVector_[index]);
+    // Collect outbound callbacks under checkLock_ and dispatch after the lock is released.
+    // OnCallback performs synchronous IPC into the policy service; holding checkLock_
+    // across it can invert against Record*Frame callers on the engine FIFO thread and
+    // deadlock both threads for the adapter timeout window.
+    std::vector<PendingMonitorCallback> pendingCallbacks;
+    {
+        std::lock_guard<std::recursive_mutex> lock(checkLock_);
+        for (size_t index = 0; index < checkParaVector_.size(); index++) {
+            MonitorCheckFrameSub(checkParaVector_[index], &pendingCallbacks);
+        }
+    }
+    for (size_t index = 0; index < pendingCallbacks.size(); index++) {
+        AudioStreamMonitor::GetInstance().OnCallback(pendingCallbacks[index].pid,
+            pendingCallbacks[index].callbackId, pendingCallbacks[index].callbackInfo);
     }
 }
 
 void AudioStreamChecker::MonitorCheckFrameAction(CheckerParam &para, int64_t abnormalFrameNum,
-    float badFrameRatio)
+    float badFrameRatio, std::vector<PendingMonitorCallback> *pendingCallbacks)
 {
     if (abnormalFrameNum >= static_cast<int64_t>(para.sumFrameCount * badFrameRatio)) {
         if (para.lastStatus == DATA_TRANS_STOP) {
             AUDIO_DEBUG_LOG("sessionId = %{public}u, status still in DATA_TRANS_STOP",
                 streamConfig_.originalSessionId);
-            MonitorOnCallback(DATA_TRANS_STOP, false, para);
+            MonitorOnCallback(DATA_TRANS_STOP, false, para, pendingCallbacks);
         } else if (para.lastStatus == AUDIO_STREAM_PAUSE || para.lastStatus == AUDIO_STREAM_STOP) {
             AUDIO_DEBUG_LOG("Last status is %{public}d, no need callback", para.lastStatus);
             CleanRecordData(para);
         } else {
             AUDIO_DEBUG_LOG("sessionId = %{public}u, status change in DATA_TRANS_STOP",
                 streamConfig_.originalSessionId);
-            MonitorOnCallback(DATA_TRANS_STOP, true, para);
+            MonitorOnCallback(DATA_TRANS_STOP, true, para, pendingCallbacks);
         }
     } else {
         if (para.lastStatus == DATA_TRANS_RESUME) {
             AUDIO_DEBUG_LOG("sessionId = %{public}u, status still in DATA_TRANS_RESUME",
                 streamConfig_.originalSessionId);
-            MonitorOnCallback(DATA_TRANS_RESUME, false, para);
+            MonitorOnCallback(DATA_TRANS_RESUME, false, para, pendingCallbacks);
         } else if (para.lastStatus == AUDIO_STREAM_START || para.lastStatus == AUDIO_STREAM_PAUSE) {
             AUDIO_DEBUG_LOG("Last status is %{public}d, no need callback", para.lastStatus);
             para.lastStatus = para.lastStatus == AUDIO_STREAM_START ? DATA_TRANS_RESUME : AUDIO_STREAM_PAUSE;
@@ -250,12 +271,13 @@ void AudioStreamChecker::MonitorCheckFrameAction(CheckerParam &para, int64_t abn
         } else {
             AUDIO_DEBUG_LOG("sessionId = %{public}u, status change in DATA_TRANS_RESUME",
                 streamConfig_.originalSessionId);
-            MonitorOnCallback(DATA_TRANS_RESUME, true, para);
+            MonitorOnCallback(DATA_TRANS_RESUME, true, para, pendingCallbacks);
         }
     }
 }
 
-void AudioStreamChecker::MonitorCheckFrameSub(CheckerParam &para)
+void AudioStreamChecker::MonitorCheckFrameSub(CheckerParam &para,
+    std::vector<PendingMonitorCallback> *pendingCallbacks)
 {
     if (!para.hasInitCheck) {
         AUDIO_ERR_LOG("Check para not init, appuid = %{public}d", para.para.clientUID);
@@ -284,7 +306,7 @@ void AudioStreamChecker::MonitorCheckFrameSub(CheckerParam &para)
     AUDIO_DEBUG_LOG("Check frame sum = %{public}" PRId64", abnormal = %{public}" PRId64", badRatio = %{public}f",
         para.sumFrameCount, abnormalFrameNum, badFrameRatio);
     AUDIO_DEBUG_LOG("Last check status = %{public}d", para.lastStatus);
-    MonitorCheckFrameAction(para, abnormalFrameNum, badFrameRatio);
+    MonitorCheckFrameAction(para, abnormalFrameNum, badFrameRatio, pendingCallbacks);
 }
 
 void AudioStreamChecker::CleanRecordData(CheckerParam &para)
@@ -301,26 +323,33 @@ void AudioStreamChecker::CleanRecordData(CheckerParam &para)
 
 void AudioStreamChecker::MonitorOnAllCallback(DataTransferStateChangeType type, bool isStandby)
 {
-    std::lock_guard<std::recursive_mutex> lock(checkLock_);
-    if (!monitorSwitch_) {
-        AUDIO_ERR_LOG("Not register monitor callback");
-        return;
-    }
-    AudioRendererDataTransferStateChangeInfo callbackInfo;
-    InitCallbackInfo(type, callbackInfo);
-    for (size_t index = 0; index < checkParaVector_.size(); index++) {
-        if (isStandby && type == DATA_TRANS_RESUME && !checkParaVector_[index].isMonitorNoDataFrame) {
-            AUDIO_INFO_LOG("Start during standby and no monitor nodata frame, no need callback");
-            continue;
+    // Same lock-scope rule as MonitorCheckFrame: dispatch collected callbacks outside checkLock_.
+    std::vector<PendingMonitorCallback> pendingCallbacks;
+    {
+        std::lock_guard<std::recursive_mutex> lock(checkLock_);
+        if (!monitorSwitch_) {
+            AUDIO_ERR_LOG("Not register monitor callback");
+            return;
         }
-        checkParaVector_[index].lastStatus = type;
-        AUDIO_INFO_LOG("type = %{public}d", type);
-        checkParaVector_[index].lastUpdateTime = ClockTime::GetCurNano();
-        CleanRecordData(checkParaVector_[index]);
-        AudioRendererDataTransferStateChangeInfo callbackInfo;
-        InitCallbackInfo(type, callbackInfo);
-        AudioStreamMonitor::GetInstance().OnCallback(checkParaVector_[index].pid,
-            checkParaVector_[index].callbackId, callbackInfo);
+        for (size_t index = 0; index < checkParaVector_.size(); index++) {
+            if (isStandby && type == DATA_TRANS_RESUME && !checkParaVector_[index].isMonitorNoDataFrame) {
+                AUDIO_INFO_LOG("Start during standby and no monitor nodata frame, no need callback");
+                continue;
+            }
+            checkParaVector_[index].lastStatus = type;
+            AUDIO_INFO_LOG("type = %{public}d", type);
+            checkParaVector_[index].lastUpdateTime = ClockTime::GetCurNano();
+            CleanRecordData(checkParaVector_[index]);
+            PendingMonitorCallback pendingCallback;
+            pendingCallback.pid = checkParaVector_[index].pid;
+            pendingCallback.callbackId = checkParaVector_[index].callbackId;
+            InitCallbackInfo(type, pendingCallback.callbackInfo);
+            pendingCallbacks.push_back(pendingCallback);
+        }
+    }
+    for (size_t index = 0; index < pendingCallbacks.size(); index++) {
+        AudioStreamMonitor::GetInstance().OnCallback(pendingCallbacks[index].pid,
+            pendingCallbacks[index].callbackId, pendingCallbacks[index].callbackInfo);
     }
 }
 
@@ -366,7 +395,8 @@ void AudioStreamChecker::InitCallbackInfo(DataTransferStateChangeType type,
     }
 }
 
-void AudioStreamChecker::MonitorOnCallback(DataTransferStateChangeType type, bool isNeedCallback, CheckerParam &para)
+void AudioStreamChecker::MonitorOnCallback(DataTransferStateChangeType type, bool isNeedCallback,
+    CheckerParam &para, std::vector<PendingMonitorCallback> *pendingCallbacks)
 {
     para.lastUpdateTime = ClockTime::GetCurNano();
     if (!monitorSwitch_ || !para.hasInitCheck) {
@@ -386,7 +416,17 @@ void AudioStreamChecker::MonitorOnCallback(DataTransferStateChangeType type, boo
     if (isNeedCallback) {
         AUDIO_DEBUG_LOG("Callback stream status, pid = %{public}d, callbackId = %{public}d",
             para.pid, para.callbackId);
-        AudioStreamMonitor::GetInstance().OnCallback(para.pid, para.callbackId, callbackInfo);
+        if (pendingCallbacks == nullptr) {
+            // Direct callers run without checkLock_ held; keep the synchronous dispatch.
+            AudioStreamMonitor::GetInstance().OnCallback(para.pid, para.callbackId, callbackInfo);
+        } else {
+            // Caller holds checkLock_: defer the dispatch to after lock release.
+            PendingMonitorCallback pendingCallback;
+            pendingCallback.pid = para.pid;
+            pendingCallback.callbackId = para.callbackId;
+            pendingCallback.callbackInfo = callbackInfo;
+            pendingCallbacks->push_back(pendingCallback);
+        }
     }
     CleanRecordData(para);
 }
@@ -469,21 +509,31 @@ float AudioStreamChecker::GetVolume()
 
 void AudioStreamChecker::DataResume()
 {
-    std::lock_guard<std::recursive_mutex> lock(checkLock_);
-    for (size_t index = 0; index < checkParaVector_.size(); index++) {
-        auto &para = checkParaVector_[index];
-        CHECK_AND_CONTINUE(para.para.needImmediateResumeNotify);
-        if (para.isMonitorMuteFrame && para.lastStatus != DATA_TRANS_RESUME) {
-            para.lastStatus = DATA_TRANS_RESUME;
-            AudioRendererDataTransferStateChangeInfo callbackInfo;
-            InitCallbackInfo(DATA_TRANS_RESUME, callbackInfo);
-            callbackInfo.badDataRatio[NO_DATA_TRANS] = 0;
-            callbackInfo.badDataRatio[SILENCE_DATA_TRANS] = 0;
-            AUDIO_DEBUG_LOG("Callback stream status, pid = %{public}d, callbackId = %{public}d",
-                para.pid, para.callbackId);
-            AudioStreamMonitor::GetInstance().OnCallback(para.pid, para.callbackId, callbackInfo);
-            CleanRecordData(para);
+    // Collect resume callbacks under checkLock_ and dispatch after the lock is released.
+    std::vector<PendingMonitorCallback> pendingCallbacks;
+    {
+        std::lock_guard<std::recursive_mutex> lock(checkLock_);
+        for (size_t index = 0; index < checkParaVector_.size(); index++) {
+            auto &para = checkParaVector_[index];
+            CHECK_AND_CONTINUE(para.para.needImmediateResumeNotify);
+            if (para.isMonitorMuteFrame && para.lastStatus != DATA_TRANS_RESUME) {
+                para.lastStatus = DATA_TRANS_RESUME;
+                PendingMonitorCallback pendingCallback;
+                pendingCallback.pid = para.pid;
+                pendingCallback.callbackId = para.callbackId;
+                InitCallbackInfo(DATA_TRANS_RESUME, pendingCallback.callbackInfo);
+                pendingCallback.callbackInfo.badDataRatio[NO_DATA_TRANS] = 0;
+                pendingCallback.callbackInfo.badDataRatio[SILENCE_DATA_TRANS] = 0;
+                AUDIO_DEBUG_LOG("Callback stream status, pid = %{public}d, callbackId = %{public}d",
+                    para.pid, para.callbackId);
+                pendingCallbacks.push_back(pendingCallback);
+                CleanRecordData(para);
+            }
         }
+    }
+    for (size_t index = 0; index < pendingCallbacks.size(); index++) {
+        AudioStreamMonitor::GetInstance().OnCallback(pendingCallbacks[index].pid,
+            pendingCallbacks[index].callbackId, pendingCallbacks[index].callbackInfo);
     }
 }
 
