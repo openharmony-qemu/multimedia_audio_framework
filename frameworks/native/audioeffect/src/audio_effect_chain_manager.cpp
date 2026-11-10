@@ -885,10 +885,10 @@ int32_t AudioEffectChainManager::EffectApRotationUpdate(std::shared_ptr<AudioEff
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); it++) {
         auto audioEffectChain = it->second;
         if (audioEffectChain == nullptr) {
-            return ERROR;
+            continue;
         }
         int32_t ret = audioEffectChain->UpdateEffectParam();
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
+        CHECK_AND_CONTINUE_LOG(ret == 0, "set ap rotation failed");
         AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, rotation changed to %{public}u",
             it->first.c_str(), audioEffectChain->GetLatency(), rotationState);
     }
