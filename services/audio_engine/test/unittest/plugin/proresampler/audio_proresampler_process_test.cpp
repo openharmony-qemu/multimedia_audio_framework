@@ -1218,11 +1218,13 @@ HWTEST_F(AudioProResamplerProcessTest, ResampleStereo_1to128_001, TestSize.Level
     EXPECT_EQ(ret, RESAMPLER_ERR_SUCCESS);
     EXPECT_EQ(inLen, inputLen);
     EXPECT_EQ(outLen, outputLen);
-    // DC input passes through with unity gain
-    EXPECT_GT(output[0], 0.4f);
-    EXPECT_LT(output[0], 0.6f);
-    EXPECT_GT(output[outputLen * stereoChannels - 1], 0.4f);
-    EXPECT_LT(output[outputLen * stereoChannels - 1], 0.6f);
+    // DC passes at unity gain; check a steady-state middle sample (filter group delay
+    // zeroes the boundary samples)
+    uint32_t steadyIdx = (outputLen / 2) * stereoChannels;
+    EXPECT_GT(output[steadyIdx], 0.4f);
+    EXPECT_LT(output[steadyIdx], 0.6f);
+    EXPECT_GT(output[steadyIdx + 1], 0.4f);
+    EXPECT_LT(output[steadyIdx + 1], 0.6f);
 
     free(input);
     free(output);
