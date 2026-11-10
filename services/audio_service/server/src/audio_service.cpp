@@ -851,7 +851,7 @@ std::shared_ptr<RendererInServer> AudioService::GetRendererBySessionID(const uin
 
 std::shared_ptr<CapturerInServer> AudioService::GetCapturerBySessionID(const uint32_t &sessionID)
 {
-    std::lock_guard<std::mutex> lock(rendererMapMutex_);
+    std::lock_guard<std::mutex> lock(capturerMapMutex_);
     if (allCapturerMap_.count(sessionID)) {
         return allCapturerMap_[sessionID].lock();
     } else {
