@@ -82,6 +82,41 @@ SessionEffectInfo DEFAULT_INFO = {
     INFOCHANNELLAYOUT,
 };
 
+// ENHANCE-specific Init config for AudioEnhanceChainManagerImpl.
+// InitAudioEnhanceChainManager (audio_enhance_chain_manager_impl.cpp:158-197) fills
+// chainConfigInfoMap_ from sceneTypeToChainNameMap keys, enhanceConfigInfoMap_ from
+// libList-matched enhance names, and enhancePropertyMap_ from effectDefaultProperty.
+// "SCENE_RECORD"/"SCENE_VOIP_UP" are the names of AudioEnhanceScene::SCENE_RECORD(=1)
+// /SCENE_VOIP_UP(=0) in the GetEnhanceSupportedSceneType() whitelist, so the map keys
+// match the fallback lookup in GetEnhanceNamesBySceneCode (impl.cpp:335). Entries carry
+// a null audioEffectLibHandle so no real algorithm library is ever dlopened in fuzz.
+shared_ptr<AudioEffectLibEntry> MakeFakeEnhanceLibEntry(const string &libName,
+    const vector<string> &effectNames)
+{
+    auto entry = make_shared<AudioEffectLibEntry>();
+    entry->libraryName = libName;
+    entry->effectName = effectNames;
+    entry->audioEffectLibHandle = nullptr;
+    return entry;
+}
+
+vector<EffectChain> ENHANCE_EFFECT_CHAINS = {
+    {"ENHANCECHAIN_RECORD", {"enhance_record"}, ""},
+    {"ENHANCECHAIN_VOIP", {"enhance_voip"}, ""},
+};
+vector<shared_ptr<AudioEffectLibEntry>> ENHANCE_LIBRARY_LIST = {
+    MakeFakeEnhanceLibEntry("fake_lib_record", {"enhance_record"}),
+    MakeFakeEnhanceLibEntry("fake_lib_voip", {"enhance_voip"}),
+};
+EffectChainManagerParam ENHANCE_CHAIN_MANAGER_PARAM{
+    MAX_EXTRA_NUM,
+    "SCENE_DEFAULT",
+    {},
+    {{"SCENE_RECORD_&_ENHANCE_DEFAULT", "ENHANCECHAIN_RECORD"},
+        {"SCENE_VOIP_UP_&_ENHANCE_DEFAULT", "ENHANCECHAIN_VOIP"}},
+    {{"enhance_record", "default_prop"}, {"enhance_voip", "voip_prop"}},
+};
+
 #define DEFAULT_NUM_CHANNEL 2
 #define DEFAULT_CHANNELLAYOUT 3
 
@@ -184,9 +219,8 @@ void AudioEffectChainFuzzTest()
 #endif
     audioEffectChain->SetEffectMode("EFFECT_DEFAULT");
     audioEffectChain->SetExtraSceneType(EXTRASCENETYPE);
-    uint32_t currSceneType_int = GetData<uint32_t>();
-    currSceneType_int = (currSceneType_int % AUDIOEFFECTSCENE_LENGTH);
-    AudioEffectScene currSceneType = GetData<AudioEffectScene>();
+    uint32_t currSceneTypeInt = GetData<uint32_t>() % AUDIOEFFECTSCENE_LENGTH;
+    AudioEffectScene currSceneType = static_cast<AudioEffectScene>(currSceneTypeInt);
     audioEffectChain->SetEffectCurrSceneType(currSceneType);
     AudioEffectChainManagerFirst(audioEffectChain);
 }
@@ -287,6 +321,7 @@ void AudioEffectChainGetOutputChannelInfoFuzzTest()
     uint32_t channels = GetData<uint32_t>();
     uint64_t channelLayout = GetData<uint64_t>();
     audioEffectChainManager->GetOutputChannelInfo(sceneType, channels, channelLayout);
+    audioEffectChainManager->ResetInfo();
 }
 
 void AudioEffectChainStreamVolumeUpdateFuzzTest()
@@ -299,6 +334,7 @@ void AudioEffectChainStreamVolumeUpdateFuzzTest()
     const std::string sessionIDString = "12345";
     const float streamVolume = GetData<float>();
     audioEffectChainManager->StreamVolumeUpdate(sessionIDString, streamVolume);
+    audioEffectChainManager->ResetInfo();
 }
 
 void AudioEffectChainUpdateEffectBtOffloadSupportedFuzzTest()
@@ -348,6 +384,7 @@ void AudioEffectChainGetAudioEffectPropertyFuzzTest()
     audioEffectChainManager->InitAudioEffectChainDynamic(sceneType);
     audioEffectChainManager->effectPropertyMap_.insert(std::make_pair("SCENE_MUSIC", "property"));
     audioEffectChainManager->GetAudioEffectProperty(audioEffectPropertyArray);
+    audioEffectChainManager->ResetInfo();
 }
 
 void AudioEffectChainWaitAndReleaseEffectChainFuzzTest()
@@ -393,6 +430,7 @@ void AudioEffectChainInitEffectBufferFuzzTest()
     audioEffectChainManager->sceneTypeToEffectChainMap_.insert({sceneTypeAndDeviceKey, audioEffectChain});
     audioEffectChainManager->SessionInfoMapAdd(sessionID1, DEFAULT_INFO);
     audioEffectChainManager->InitEffectBuffer(sessionID1);
+    audioEffectChainManager->ResetInfo();
 }
 
 void AudioEffectChainCheckProcessClusterInstancesFuzzTest()
@@ -414,6 +452,7 @@ void AudioEffectChainCheckProcessClusterInstancesFuzzTest()
     audioEffectChainManager->maxEffectChainCount_ = GetData<int32_t>();
     audioEffectChainManager->isDefaultEffectChainExisted_ = GetData<bool>();
     audioEffectChainManager->CheckProcessClusterInstances(sceneType);
+    audioEffectChainManager->ResetInfo();
 }
 
 void AudioEffectChainUpdateDeviceInfoFuzzTest()
@@ -433,18 +472,24 @@ void AudioEffectChainUpdateDeviceInfoFuzzTest()
     }
     audioEffectChainManager->isInitialized_ = static_cast<bool>(GetData<uint32_t>() % NUM_2);
     audioEffectChainManager->UpdateDeviceInfo(device, sinkName);
+    audioEffectChainManager->ResetInfo();
 }
 
 void AudioEffectChainInitHdiStateFuzzTest()
 {
-    AudioEffectChainManager audioEffectChainManager;
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
 
     if (g_testDeviceTypes.size() != 0) {
-        audioEffectChainManager.deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+        audioEffectChainManager->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
     }
-    audioEffectChainManager.GetOffloadEnabled();
-    audioEffectChainManager.audioEffectHdiParam_ = nullptr;
-    audioEffectChainManager.InitHdiState();
+    audioEffectChainManager->GetOffloadEnabled();
+    // Never null the shared singleton's audioEffectHdiParam_ (created once in ctor):
+    // with a real param InitHdiState covers the HDI-unavailable backup branch too.
+    audioEffectChainManager->InitHdiState();
+    audioEffectChainManager->ResetInfo();
 }
 
 void AudioEffectChainEffectDspVolumeUpdateFuzzTest()
@@ -466,6 +511,7 @@ void AudioEffectChainEffectDspVolumeUpdateFuzzTest()
     audioEffectChainManager->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = std::make_shared<AudioEffectVolume>();
     audioEffectChainManager->EffectDspVolumeUpdate(audioEffectVolume);
+    audioEffectChainManager->ResetInfo();
 }
 
 void AudioEffectChainEffectApVolumeUpdateFuzzTest()
@@ -681,6 +727,7 @@ void AudioEffectChainUpdateStreamUsageFuzzTest()
     audioEffectChainManager->sceneTypeToEffectChainMap_.insert({sceneTypeAndDeviceKey, audioEffectChain});
     audioEffectChainManager->InitAudioEffectChainDynamic(sceneType);
     audioEffectChainManager->UpdateStreamUsage();
+    audioEffectChainManager->ResetInfo();
 }
 
 void AudioEffectChainCheckSceneTypeMatchFuzzTest()
@@ -700,6 +747,7 @@ void AudioEffectChainCheckSceneTypeMatchFuzzTest()
     audioEffectChainManager->sceneTypeToEffectChainMap_.insert({sceneTypeAndDeviceKey, audioEffectChain});
     audioEffectChainManager->sceneTypeToSpecialEffectSet_.insert(sceneType);
     audioEffectChainManager->CheckSceneTypeMatch(sinkSceneType, sceneType);
+    audioEffectChainManager->ResetInfo();
 }
 
 void AudioEffectChainCheckAndReleaseCommonEffectChainFuzzTest()
@@ -763,17 +811,24 @@ void AudioEffectChainCreateAudioEffectChainDynamicInnerFuzzTest()
     audioEffectChainManager->sceneTypeToEffectChainMap_.insert({sceneTypeAndDeviceKey, audioEffectChain});
     audioEffectChainManager->SessionInfoMapAdd(sessionID1, DEFAULT_INFO);
     audioEffectChainManager->CreateAudioEffectChainDynamicInner(sceneType);
+    audioEffectChainManager->ResetInfo();
 }
 
+// Private methods of AudioEnhanceChainManagerImpl are reached via static_cast down
+// from the singleton pointer (access control is disabled by -fno-access-control in
+// BUILD.gn); constructing a private stack instance would desync from the real
+// singleton state (ChainPool / ThreadHandler are process-global).
 void AudioEnhanceChainSetRelateWithDevicePropForEnhanceFuzzTest()
 {
-    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
-    std::string sceneAndMode = "SCENE_VOIP_UP_&_ENHANCE_DEFAULT";
-    EnhanceChainConfigInfo enhanceChainConfigInfo;
-    enhanceChainConfigInfo.chainName = "ENHANCE_DEFAULT";
-    enhanceChainConfigInfo.chainLabel = "SCENE_VOIP_UP";
-    audioEnhanceChainManagerImpl.chainConfigInfoMap_.insert({sceneAndMode, enhanceChainConfigInfo});
-    audioEnhanceChainManagerImpl.SetRelateWithDevicePropForEnhance();
+    auto *audioEnhanceChainManager = static_cast<AudioEnhanceChainManagerImpl *>(
+        AudioEnhanceChainManager::GetInstance());
+    if (audioEnhanceChainManager == nullptr) {
+        return;
+    }
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(ENHANCE_EFFECT_CHAINS,
+        ENHANCE_CHAIN_MANAGER_PARAM, ENHANCE_LIBRARY_LIST);
+    audioEnhanceChainManager->SetRelateWithDevicePropForEnhance();
+    audioEnhanceChainManager->ResetInfo();
 }
 
 void AudioEnhanceChainUpdateEnhancePropertyMapFromDbFuzzTest()
@@ -782,9 +837,15 @@ void AudioEnhanceChainUpdateEnhancePropertyMapFromDbFuzzTest()
         return;
     }
     DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
-    audioEnhanceChainManagerImpl.enhancePropertyMap_.insert({"SCENE_VOIP_UP_&_DEVICE_TYPE_MIC", "ENHANCE_DEFAULT"});
-    audioEnhanceChainManagerImpl.UpdateEnhancePropertyMapFromDb(deviceType);
+    auto *audioEnhanceChainManager = static_cast<AudioEnhanceChainManagerImpl *>(
+        AudioEnhanceChainManager::GetInstance());
+    if (audioEnhanceChainManager == nullptr) {
+        return;
+    }
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(ENHANCE_EFFECT_CHAINS,
+        ENHANCE_CHAIN_MANAGER_PARAM, ENHANCE_LIBRARY_LIST);
+    audioEnhanceChainManager->UpdateEnhancePropertyMapFromDb(deviceType);
+    audioEnhanceChainManager->ResetInfo();
 }
 
 void AudioEnhanceChainGetThreadHandlerBySceneFuzzTest()
@@ -800,48 +861,78 @@ void AudioEnhanceChainGetThreadHandlerBySceneFuzzTest()
     if (testAudioEnhanceScenes.size() == 0) {
         return;
     }
-    uint32_t sceneIndex = GetData<uint32_t>() % testAudioEnhanceScenes.size();
     AudioEnhanceScene scene = testAudioEnhanceScenes[GetData<uint32_t>() % testAudioEnhanceScenes.size()];
-    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
-    std::shared_ptr<ThreadHandler> threadHandler = ThreadHandler::NewInstance("testThreadHandler");
-    std::pair<std::shared_ptr<ThreadHandler>, uint32_t> threadHandlerPair =
-        std::make_pair(threadHandler, GetData<uint32_t>());
-    audioEnhanceChainManagerImpl.threadHandlerMap_.insert({sceneIndex, threadHandlerPair});
-    audioEnhanceChainManagerImpl.threadHandlerMap_.insert({sceneIndex, threadHandlerPair});
-    audioEnhanceChainManagerImpl.GetThreadHandlerByScene(scene);
+    auto *audioEnhanceChainManager = static_cast<AudioEnhanceChainManagerImpl *>(
+        AudioEnhanceChainManager::GetInstance());
+    if (audioEnhanceChainManager == nullptr) {
+        return;
+    }
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(ENHANCE_EFFECT_CHAINS,
+        ENHANCE_CHAIN_MANAGER_PARAM, ENHANCE_LIBRARY_LIST);
+    // First call takes the create path (real OS_ProCap thread), second takes the
+    // cached-handler path (++useCount on the same threadId).
+    audioEnhanceChainManager->GetThreadHandlerByScene(scene);
+    audioEnhanceChainManager->GetThreadHandlerByScene(scene);
+    audioEnhanceChainManager->ResetInfo();
 }
 
 void AudioEnhanceChainCreateAudioEnhanceChainDynamicFuzzTest()
 {
-    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    if (audioEnhanceChainManager == nullptr) {
+        return;
+    }
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(ENHANCE_EFFECT_CHAINS,
+        ENHANCE_CHAIN_MANAGER_PARAM, ENHANCE_LIBRARY_LIST);
     AudioEnhanceDeviceAttr deviceAttr;
     uint64_t sceneKeyCode = GetData<uint64_t>();
-    audioEnhanceChainManagerImpl.CreateAudioEnhanceChainDynamic(sceneKeyCode, deviceAttr);
+    audioEnhanceChainManager->CreateAudioEnhanceChainDynamic(sceneKeyCode, deviceAttr);
+    audioEnhanceChainManager->ResetInfo();
 }
 
 void AudioEnhanceChainGetEnhanceNamesBySceneCodeFuzzTest()
 {
-    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    auto *audioEnhanceChainManager = static_cast<AudioEnhanceChainManagerImpl *>(
+        AudioEnhanceChainManager::GetInstance());
+    if (audioEnhanceChainManager == nullptr) {
+        return;
+    }
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(ENHANCE_EFFECT_CHAINS,
+        ENHANCE_CHAIN_MANAGER_PARAM, ENHANCE_LIBRARY_LIST);
     uint64_t sceneKeyCode = GetData<uint64_t>();
     bool defaultFlag = GetData<bool>();
-    audioEnhanceChainManagerImpl.GetEnhanceNamesBySceneCode(sceneKeyCode, defaultFlag);
+    audioEnhanceChainManager->GetEnhanceNamesBySceneCode(sceneKeyCode, defaultFlag);
+    audioEnhanceChainManager->ResetInfo();
 }
 
 void AudioEnhanceChainCreateEnhanceChainInnerFuzzTest()
 {
-    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    auto *audioEnhanceChainManager = static_cast<AudioEnhanceChainManagerImpl *>(
+        AudioEnhanceChainManager::GetInstance());
+    if (audioEnhanceChainManager == nullptr) {
+        return;
+    }
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(ENHANCE_EFFECT_CHAINS,
+        ENHANCE_CHAIN_MANAGER_PARAM, ENHANCE_LIBRARY_LIST);
     AudioEnhanceDeviceAttr deviceAttr;
     deviceAttr.ecChannels = GetData<uint32_t>();
     deviceAttr.micRate = GetData<uint64_t>();
     deviceAttr.needEc = GetData<bool>();
     deviceAttr.needMicRef = GetData<bool>();
     uint64_t sceneKeyCode = GetData<uint64_t>();
-    audioEnhanceChainManagerImpl.CreateEnhanceChainInner(sceneKeyCode, deviceAttr);
+    audioEnhanceChainManager->CreateEnhanceChainInner(sceneKeyCode, deviceAttr);
+    audioEnhanceChainManager->ResetInfo();
 }
 
 void AudioEnhanceChainAddAudioEnhanceChainHandlesFuzzTest()
 {
-    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    auto *audioEnhanceChainManager = static_cast<AudioEnhanceChainManagerImpl *>(
+        AudioEnhanceChainManager::GetInstance());
+    if (audioEnhanceChainManager == nullptr) {
+        return;
+    }
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(ENHANCE_EFFECT_CHAINS,
+        ENHANCE_CHAIN_MANAGER_PARAM, ENHANCE_LIBRARY_LIST);
     std::string scene = "scene";
     AudioEnhanceParamAdapter algoParam;
     AudioEnhanceDeviceAttr deviceAttr;
@@ -851,34 +942,41 @@ void AudioEnhanceChainAddAudioEnhanceChainHandlesFuzzTest()
     if (audioEnhanceChain == nullptr) {
         return;
     }
+    // Names must exist in enhanceConfigInfoMap_ (filled by Init) so the lib-resolve
+    // loop body actually runs; the null libHandle keeps the failure branch.
     std::vector<std::string> enhanceNames;
-    enhanceNames.push_back("enhance1");
-    enhanceNames.push_back("enhance2");
-    audioEnhanceChainManagerImpl.AddAudioEnhanceChainHandles(audioEnhanceChain, enhanceNames);
+    enhanceNames.push_back("enhance_record");
+    enhanceNames.push_back("enhance_voip");
+    audioEnhanceChainManager->AddAudioEnhanceChainHandles(audioEnhanceChain, enhanceNames);
+    audioEnhanceChainManager->ResetInfo();
 }
 
 void AudioEnhanceChainSetAudioEnhancePropertyToChainsFuzzTest()
 {
-    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    auto *audioEnhanceChainManager = static_cast<AudioEnhanceChainManagerImpl *>(
+        AudioEnhanceChainManager::GetInstance());
+    if (audioEnhanceChainManager == nullptr) {
+        return;
+    }
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(ENHANCE_EFFECT_CHAINS,
+        ENHANCE_CHAIN_MANAGER_PARAM, ENHANCE_LIBRARY_LIST);
     AudioEffectProperty property;
-    audioEnhanceChainManagerImpl.SetAudioEnhancePropertyToChains(property);
+    audioEnhanceChainManager->SetAudioEnhancePropertyToChains(property);
+    audioEnhanceChainManager->ResetInfo();
 }
 
 void AudioEnhanceChainApplyEnhanceChainByIdFuzzTest()
 {
-    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    if (audioEnhanceChainManager == nullptr) {
+        return;
+    }
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(ENHANCE_EFFECT_CHAINS,
+        ENHANCE_CHAIN_MANAGER_PARAM, ENHANCE_LIBRARY_LIST);
     uint64_t sceneKeyCode = GetData<uint64_t>();
     EnhanceTransBuffer transBuf;
-    audioEnhanceChainManagerImpl.ApplyEnhanceChainById(sceneKeyCode, transBuf);
-}
-
-void AudioEnhanceChainUpdateExtraSceneTypeFuzzTest()
-{
-    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
-    std::string mainkey = "audio_effect";
-    std::string subkey = "update_audio_effect_type";
-    std::string extraSceneType = "SCENE_VOIP_UP";
-    audioEnhanceChainManagerImpl.UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+    audioEnhanceChainManager->ApplyEnhanceChainById(sceneKeyCode, transBuf);
+    audioEnhanceChainManager->ResetInfo();
 }
 
 void SetAbsVolumeStateToEffectFuzzTest()
@@ -896,6 +994,7 @@ void SetAbsVolumeStateToEffectFuzzTest()
     audioEffectChainManager->SetAbsVolumeStateToEffect(absVolumeState);
     audioEffectChainManager->EffectDspAbsVolumeStateUpdate(absVolumeState);
     audioEffectChainManager->EffectApAbsVolumeStateUpdate(absVolumeState);
+    audioEffectChainManager->ResetInfo();
 }
 
 void ReleaseAudioEffectChainDynamicInnerFuzzTest()
@@ -929,6 +1028,7 @@ void QueryEffectChannelInfoInnerFuzzTest()
     uint32_t channels = GetData<uint32_t>();
     uint64_t channelLayout = GetData<uint64_t>();
     audioEffectChainManager->QueryEffectChannelInfoInner(sceneType, channels, channelLayout);
+    audioEffectChainManager->ResetInfo();
 }
 
 void EffectChainManagerExistAudioEffectChainInnerFuzzTest1()
@@ -944,6 +1044,7 @@ void EffectChainManagerExistAudioEffectChainInnerFuzzTest1()
     audioEffectChainManager->ExistAudioEffectChainInner(sceneType, effectMode);
     audioEffectChainManager->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
     audioEffectChainManager->ExistAudioEffectChainInner(sceneType, effectMode);
+    audioEffectChainManager->ResetInfo();
 }
 
 void EffectChainManagerExistAudioEffectChainInnerFuzzTest2()
@@ -969,6 +1070,7 @@ void EffectChainManagerExistAudioEffectChainInnerFuzzTest2()
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + audioEffectChainManager->GetDeviceTypeName();
     audioEffectChainManager->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     audioEffectChainManager->ExistAudioEffectChainInner(sceneType, effectMode);
+    audioEffectChainManager->ResetInfo();
 }
 
 void EffectChainManagerExistAudioEffectChainInnerFuzzTest3()
@@ -990,14 +1092,21 @@ void EffectChainManagerExistAudioEffectChainInnerFuzzTest3()
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + audioEffectChainManager->GetDeviceTypeName();
     audioEffectChainManager->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = nullptr;
     audioEffectChainManager->ExistAudioEffectChainInner(sceneType, effectMode);
+    audioEffectChainManager->ResetInfo();
 }
 
 void EnhanceChainManagerUpdatePropertyAndSendToAlgoFuzzTest()
 {
-    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
-    audioEnhanceChainManagerImpl.enhancePropertyMap_.insert({"SCENE_VOIP_UP_&_DEVICE_TYPE_MIC", "ENHANCE_DEFAULT"});
+    auto *audioEnhanceChainManager = static_cast<AudioEnhanceChainManagerImpl *>(
+        AudioEnhanceChainManager::GetInstance());
+    if (audioEnhanceChainManager == nullptr) {
+        return;
+    }
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(ENHANCE_EFFECT_CHAINS,
+        ENHANCE_CHAIN_MANAGER_PARAM, ENHANCE_LIBRARY_LIST);
     DeviceType deviceType = GetData<DeviceType>();
-    audioEnhanceChainManagerImpl.UpdatePropertyAndSendToAlgo(deviceType);
+    audioEnhanceChainManager->UpdatePropertyAndSendToAlgo(deviceType);
+    audioEnhanceChainManager->ResetInfo();
 }
 
 void EffectChainManagerSetEffectSystemVolumeFuzzTest()
@@ -1011,6 +1120,7 @@ void EffectChainManagerSetEffectSystemVolumeFuzzTest()
     audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     audioEffectChainManager->SetEffectSystemVolume(systemVolumeType, systemVolume);
+    audioEffectChainManager->ResetInfo();
 }
 
 void IsChannelLayoutSupportedForDspEffectFuzzTest()
@@ -1023,6 +1133,7 @@ void IsChannelLayoutSupportedForDspEffectFuzzTest()
     audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     audioEffectChainManager->IsChannelLayoutSupportedForDspEffect(channelLayout);
+    audioEffectChainManager->ResetInfo();
 }
 
 void UpdateEarphoneProductFuzzTest()
@@ -1035,6 +1146,7 @@ void UpdateEarphoneProductFuzzTest()
     audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     audioEffectChainManager->UpdateEarphoneProduct(earphoneProduct);
+    audioEffectChainManager->ResetInfo();
 }
 
 void AudioEffectChainUpdatePersonalizedHRTFBinFuzzTest()
@@ -1141,7 +1253,6 @@ TestFuncs g_testFuncs[] = {
     AudioEnhanceChainAddAudioEnhanceChainHandlesFuzzTest,
     AudioEnhanceChainSetAudioEnhancePropertyToChainsFuzzTest,
     AudioEnhanceChainApplyEnhanceChainByIdFuzzTest,
-    AudioEnhanceChainUpdateExtraSceneTypeFuzzTest,
     SetAbsVolumeStateToEffectFuzzTest,
     ReleaseAudioEffectChainDynamicInnerFuzzTest,
     QueryEffectChannelInfoInnerFuzzTest,
