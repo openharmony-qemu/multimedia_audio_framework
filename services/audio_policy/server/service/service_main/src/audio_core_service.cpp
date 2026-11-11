@@ -528,6 +528,18 @@ std::shared_ptr<AudioPipeManager> AudioCoreService::GetPipeManager() const
     return pipeManager_;
 }
 
+int32_t AudioCoreService::GetRealStreamInfoByDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
+    int32_t uid, AudioStreamInfo &streamInfo, bool &hasStream)
+{
+    auto connectedDevice = audioConnectedDevice_.GetConnectedDeviceByType(device->networkId_, device->deviceType_);
+    connectedDevice = connectedDevice != nullptr ? connectedDevice :
+        AudioZoneService::GetInstance().GetDeviceDescriptor(device->deviceType_, device->networkId_);
+    CHECK_AND_RETURN_RET_LOG(connectedDevice != nullptr, ERR_INVALID_PARAM, "The specified device does not exist");
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_OPERATION_FAILED, "Pipe manager is null");
+    hasStream = pipeManager_->GetRealStreamInfoByDevice(connectedDevice, uid, streamInfo);
+    return SUCCESS;
+}
+
 void AudioCoreService::DumpPipeManager(std::string &dumpString)
 {
     if (pipeManager_ != nullptr) {

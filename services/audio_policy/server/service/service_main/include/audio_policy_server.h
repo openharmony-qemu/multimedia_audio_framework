@@ -496,6 +496,9 @@ public:
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc,
         int32_t &ret) override;
 
+    int32_t GetRealStreamInfoByDevice(const std::shared_ptr<AudioDeviceDescriptor> &device, int32_t uid,
+        AudioStreamInfo &streamInfo, bool &hasStream) override;
+
     int32_t GetAudioCapturerMicrophoneDescriptors(int32_t sessionId,
         std::vector<sptr<MicrophoneDescriptor>> &micDescs) override;
 

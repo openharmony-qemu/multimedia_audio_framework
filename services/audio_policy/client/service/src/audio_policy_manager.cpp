@@ -2079,6 +2079,17 @@ int32_t AudioPolicyManager::GetHardwareOutputSamplingRate(const std::shared_ptr<
     return ret;
 }
 
+int32_t AudioPolicyManager::GetRealStreamInfoByDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
+    int32_t uid, AudioStreamInfo &streamInfo, bool &hasStream)
+{
+    hasStream = false;
+    streamInfo = {};
+    CHECK_AND_RETURN_RET_LOG(device != nullptr && uid >= -1, ERR_INVALID_PARAM, "Invalid query parameters");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Audio policy manager proxy is null");
+    return gsp->GetRealStreamInfoByDevice(device, uid, streamInfo, hasStream);
+}
+
 vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAudioCapturerMicrophoneDescriptors(int32_t sessionID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

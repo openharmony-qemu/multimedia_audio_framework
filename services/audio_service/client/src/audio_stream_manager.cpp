@@ -300,6 +300,12 @@ int32_t AudioStreamManager::GetHardwareOutputSamplingRate(std::shared_ptr<AudioD
     return result;
 }
 
+int32_t AudioStreamManager::GetRealStreamInfoByDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
+    int32_t uid, AudioStreamInfo &streamInfo, bool &hasStream)
+{
+    return AudioPolicyManager::GetInstance().GetRealStreamInfoByDevice(device, uid, streamInfo, hasStream);
+}
+
 DirectPlaybackMode AudioStreamManager::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
     const StreamUsage &streamUsage)
 {

@@ -48,6 +48,7 @@ public:
         static AudioPolicyUtils instance;
         return instance;
     }
+    static bool IsHigherSpecStreamInfo(const AudioStreamInfo &info, const AudioStreamInfo &selectedInfo);
     void WriteServiceStartupError(std::string reason);
     void WriteDeviceChangeExceptionEvent(const AudioStreamDeviceChangeReason reason,
         DeviceType deviceType, DeviceRole deviceRole, int32_t errorMsg, const std::string &errorDesc);

@@ -20,6 +20,7 @@
 #include "taihe_audio_error.h"
 #include "taihe_param_utils.h"
 #include "taihe_audio_enum.h"
+#include "audio_utils.h"
 
 namespace ANI::Audio {
 AudioStreamManagerImpl::AudioStreamManagerImpl() : audioStreamMngr_(nullptr) {}
@@ -105,6 +106,41 @@ array<AudioEffectMode> AudioStreamManagerImpl::GetAudioEffectInfoArraySync(Strea
         return array<AudioEffectMode>(emptyResult);
     }
     return TaiheParamUtils::SetEffectInfo(audioSceneEffectInfo);
+}
+
+optional<AudioStreamInfo> AudioStreamManagerImpl::GetHighestPipeStreamInfo(AudioDeviceDescriptor deviceDescriptor,
+    optional_view<int32_t> uid)
+{
+    optional<AudioStreamInfo> emptyResult(std::nullopt);
+    CHECK_AND_CALL_FUNC_RETURN_RET(OHOS::AudioStandard::PermissionUtil::VerifySelfPermission(), emptyResult,
+        TaiheAudioError::ThrowError(TAIHE_ERR_PERMISSION_DENIED, "Permission verification failed."));
+    auto device = std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>();
+    bool converted = false;
+    int32_t ret = TaiheParamUtils::GetAudioDeviceDescriptor(device, converted, deviceDescriptor);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == AUDIO_OK && converted &&
+        device->deviceRole_ == OHOS::AudioStandard::OUTPUT_DEVICE, emptyResult,
+        TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM, "Parameter verification failed."),
+        "Parameter verification failed. deviceDescriptor parameter value is invalid");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!uid.has_value() || uid.value() >= 0, emptyResult,
+        TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM, "Parameter verification failed."),
+        "Parameter verification failed. uid parameter value is invalid");
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioStreamMngr_ != nullptr, emptyResult,
+        TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM, "Parameter verification failed."));
+    int32_t queryUid = uid.has_value() ? uid.value() : OHOS::AudioStandard::INVALID_UID;
+    OHOS::AudioStandard::AudioStreamInfo streamInfo = {};
+    bool hasStream = false;
+    ret = audioStreamMngr_->GetRealStreamInfoByDevice(device, queryUid, streamInfo, hasStream);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret != OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED, emptyResult,
+        TaiheAudioError::ThrowError(TAIHE_ERR_PERMISSION_DENIED, "Permission verification failed"),
+        "Permission verification failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret != OHOS::AudioStandard::ERR_OPERATION_FAILED, emptyResult,
+        TaiheAudioError::ThrowError(TAIHE_ERR_SYSTEM, "System error"),
+        "System error. An unexpected error occurred while querying stream information.");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == OHOS::AudioStandard::SUCCESS, emptyResult,
+        TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM, "Parameter verification failed."));
+    CHECK_AND_RETURN_RET(hasStream, emptyResult);
+    auto streamInfoPtr = std::make_shared<OHOS::AudioStandard::AudioStreamInfo>(streamInfo);
+    return optional<AudioStreamInfo>(std::in_place_t{}, TaiheParamUtils::ToTaiheAudioStreamInfo(streamInfoPtr));
 }
 
 bool AudioStreamManagerImpl::IsActiveSync(AudioVolumeType volumeType)

@@ -4392,6 +4392,19 @@ int32_t AudioPolicyServer::GetHardwareOutputSamplingRate(const std::shared_ptr<A
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::GetRealStreamInfoByDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
+    int32_t uid, AudioStreamInfo &streamInfo, bool &hasStream)
+{
+    hasStream = false;
+    streamInfo = {};
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    CHECK_AND_RETURN_RET_LOG(device != nullptr && uid >= -1, ERR_INVALID_PARAM, "Invalid query parameters");
+    CHECK_AND_RETURN_RET_LOG(device->deviceRole_ == OUTPUT_DEVICE, ERR_INVALID_PARAM, "Not an output device");
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_OPERATION_FAILED, "Event entry is null");
+    return eventEntry_->GetRealStreamInfoByDevice(device, uid, streamInfo, hasStream);
+}
+
 int32_t AudioPolicyServer::GetAudioCapturerMicrophoneDescriptors(int32_t sessionId,
     vector<sptr<MicrophoneDescriptor>> &micDescs)
 {

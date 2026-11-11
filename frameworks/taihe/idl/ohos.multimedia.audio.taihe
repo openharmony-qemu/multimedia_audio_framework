@@ -512,6 +512,9 @@ interface AudioStreamManager {
   @gen_promise("getAudioEffectInfoArray")
   GetAudioEffectInfoArraySync(usage: StreamUsage): Array<AudioEffectMode>;
 
+  @promise
+  GetHighestPipeStreamInfo(deviceDescriptor: AudioDeviceDescriptor, uid: Optional<i32>): Optional<AudioStreamInfo>;
+
   @gen_async("isActive")
   @gen_promise("isActive")
   IsActiveSync(volumeType: AudioVolumeType): bool;

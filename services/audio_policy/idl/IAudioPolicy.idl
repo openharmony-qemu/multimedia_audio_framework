@@ -386,6 +386,8 @@ interface IAudioPolicy {
     void SetVolumeProtectionInfo([in] VolumeProtectionConfig config);
     void ConfirmVolumeLimitExceeded([in] int volumeType, [in] boolean confirmResult);
     void ClearVolumeProtection();
+    void GetRealStreamInfoByDevice([in] sharedptr<AudioDeviceDescriptor> device, [in] int uid,
+        [out] AudioStreamInfo streamInfo, [out] boolean hasStream);
     void SetUnmuteWhitelist([in] List<int> uids, [in] IRemoteObject callerObj);
     void ClearUnmuteWhitelist();
     void SetAppVolumeMuteAndHideVolumeBar([in] int appUid, [in] boolean muted, [in] IRemoteObject callerObj);

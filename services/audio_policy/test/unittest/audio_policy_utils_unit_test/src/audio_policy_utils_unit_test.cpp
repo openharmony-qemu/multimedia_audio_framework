@@ -28,6 +28,40 @@ void AudioPolicyUtilsUnitTest::SetUp(void) {}
 void AudioPolicyUtilsUnitTest::TearDown(void) {}
 
 /**
+ * @tc.name  : IsHigherSpecStreamInfo_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test sample rate, channel and format priority, including equal specifications.
+ */
+HWTEST(AudioPolicyUtilsUnitTest, IsHigherSpecStreamInfo_001, TestSize.Level1)
+{
+    AudioStreamInfo selectedInfo = {};
+    selectedInfo.samplingRate = SAMPLE_RATE_48000;
+    selectedInfo.channels = STEREO;
+    selectedInfo.format = SAMPLE_S16LE;
+    AudioStreamInfo info = selectedInfo;
+    EXPECT_FALSE(AudioPolicyUtils::IsHigherSpecStreamInfo(info, selectedInfo));
+
+    info.samplingRate = SAMPLE_RATE_96000;
+    info.channels = MONO;
+    info.format = SAMPLE_U8;
+    EXPECT_TRUE(AudioPolicyUtils::IsHigherSpecStreamInfo(info, selectedInfo));
+    EXPECT_FALSE(AudioPolicyUtils::IsHigherSpecStreamInfo(selectedInfo, info));
+
+    info.samplingRate = selectedInfo.samplingRate;
+    info.channels = CHANNEL_8;
+    EXPECT_TRUE(AudioPolicyUtils::IsHigherSpecStreamInfo(info, selectedInfo));
+    EXPECT_FALSE(AudioPolicyUtils::IsHigherSpecStreamInfo(selectedInfo, info));
+
+    info.channels = selectedInfo.channels;
+    info.format = SAMPLE_S32LE;
+    EXPECT_TRUE(AudioPolicyUtils::IsHigherSpecStreamInfo(info, selectedInfo));
+    EXPECT_FALSE(AudioPolicyUtils::IsHigherSpecStreamInfo(selectedInfo, info));
+    selectedInfo.format = SAMPLE_F32LE;
+    EXPECT_FALSE(AudioPolicyUtils::IsHigherSpecStreamInfo(info, selectedInfo));
+    EXPECT_TRUE(AudioPolicyUtils::IsHigherSpecStreamInfo(selectedInfo, info));
+}
+
+/**
  * @tc.name  : Test GetNewSinkPortName API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyUtilsUnitTest_002

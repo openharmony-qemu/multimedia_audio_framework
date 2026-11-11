@@ -113,6 +113,8 @@ public:
     std::string GetClassNameBySessionId(uint32_t sessionId);
     std::shared_ptr<AudioDeviceDescriptor> GetProcessDeviceInfoBySessionId(uint32_t sessionId,
         AudioStreamInfo &streamInfo);
+    bool GetRealStreamInfoByDevice(const std::shared_ptr<AudioDeviceDescriptor> &device, int32_t uid,
+        AudioStreamInfo &streamInfo);
     // Bus address of the 3da direct bus port pipe (module name when busAddress is empty);
     // empty when this device has no 3da pipe.
     std::string Get3daDirectBusAddress();
@@ -246,6 +248,8 @@ private:
     std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);
     AudioStreamInfo DecideStreamInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo,
         const std::shared_ptr<AudioDeviceDescriptor> deviceDesc);
+    bool CheckStreamDescByDeviceAndUid(const std::shared_ptr<AudioStreamDescriptor> &stream,
+        const std::shared_ptr<AudioDeviceDescriptor> &device, int32_t uid);
     void ProcessPipeForVolumeInfo(std::vector<PipeDeviceVolumeGroup>& result,
         std::shared_ptr<AudioPipeInfo> pipeInfo);
     AudioVolumeType GetVolumeTypeFromStreamDesc(

@@ -53,6 +53,9 @@ private:
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
         AudioSceneEffectInfo audioSceneEffectInfo;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor;
+        int32_t uid = -1;
+        bool hasStream;
     };
 
     static napi_value Construct(napi_env env, napi_callback_info info);
@@ -72,6 +75,9 @@ private:
     static napi_value GetEffectInfoArray(napi_env env, napi_callback_info info);
     static napi_value GetEffectInfoArraySync(napi_env env, napi_callback_info info);
     static napi_value GetHardwareOutputSamplingRate(napi_env env, napi_callback_info info);
+    static napi_value GetHighestPipeStreamInfo(napi_env env, napi_callback_info info);
+    static void ParseHighestPipeStreamInfoArgs(napi_env env, size_t argc, napi_value *argv,
+        const std::shared_ptr<AudioStreamMgrAsyncContext> &context);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value IsAcousticEchoCancelerSupported(napi_env env, napi_callback_info info);
