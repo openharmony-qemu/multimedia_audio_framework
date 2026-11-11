@@ -50,6 +50,7 @@ public:
     AudioDeviceEnhanceManager GetDeviceEnhanceManager();
     AudioDebuggingManager GetDebuggingManager();
     AudioRecordingManager GetRecordingManager();
+    AudioSuiteDownloadManager GetSuiteDownloadManager();
     void OnAudioSceneChange(callback_view<void(AudioScene data)> callback);
     void OffAudioSceneChange(optional_view<callback<void(AudioScene data)>> callback);
 
