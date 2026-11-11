@@ -121,6 +121,7 @@ public:
     bool IsStreamRunning(StreamUsage streamUsage);
     void UpdateAppVolume(int32_t appUid, int32_t volume);
     void ReportExceptionForBackgroundMute(uint32_t sessionId, uint32_t usage, int32_t uid);
+    void TryReclaimMemory();
     AudioStreamType GetStreamTypeFromUsageContent(StreamUsage streamUsage,
         ContentType contentType = CONTENT_TYPE_UNKNOWN);
 

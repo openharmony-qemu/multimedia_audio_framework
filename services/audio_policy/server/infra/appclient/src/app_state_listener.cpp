@@ -30,6 +30,7 @@
 #include "iservice_registry.h"
 #include "audio_bundle_manager.h"
 #include "audio_stream_monitor.h"
+#include "audio_stream_collector.h"
 #include "audio_session_service.h"
 #include "audio_usr_select_manager.h"
 #include "audio_router_infra.h"
@@ -83,6 +84,7 @@ void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appPr
 
     OHOS::Singleton<AudioSessionService>::GetInstance().NotifyAppStateChange(appProcessData.pid,
         (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_BACKGROUND));
+    AudioStreamCollector::GetAudioStreamCollector().TryReclaimMemory();
 }
 
 void AppStateListener::HandleAppStateChange(int32_t pid, int32_t uid, int32_t state)

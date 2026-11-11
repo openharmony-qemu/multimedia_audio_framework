@@ -1227,6 +1227,23 @@ void AudioStreamCollector::ReportExceptionForBackgroundMute(uint32_t sessionId, 
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
+void AudioStreamCollector::TryReclaimMemory()
+{
+    CHECK_AND_RETURN(audioPolicyServerHandler_);
+    audioPolicyServerHandler_->PostTask([this]() {
+        const char *reclaimContent = RECLAIM_FILE_STRING;
+        {
+            std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+            if (!activatedReclaimMemory_ &&
+                system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
+                reclaimContent = RECLAIM_CONTENT_4;
+            }
+            CHECK_AND_RETURN(!isActivatedMemReclaiTask_.load() && CheckAudioStateIdle());
+        }
+        ReclaimMem(reclaimContent);
+    });
+}
+
 void AudioStreamCollector::HandleAppStateChange(int32_t uid, int32_t pid, bool mute, bool &notifyMute, bool hasBackTask)
 {
     if (VolumeUtils::IsPCVolumeEnable()) {
