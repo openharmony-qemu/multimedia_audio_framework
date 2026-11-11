@@ -391,7 +391,8 @@
                   "./resample/include/audio_proresampler.h",
                   "./channel_converter/include/mixer_utils.h",
                   "./channel_converter/include/channel_converter.h",
-                  "./channel_converter/include/down_mixer.h"
+                  "./channel_converter/include/down_mixer.h",
+                  "./channel_converter/include/pcm_mixer_c_api.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/services/audio_engine/plugin"
               }
