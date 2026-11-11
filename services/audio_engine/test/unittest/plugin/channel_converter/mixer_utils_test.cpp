@@ -1295,8 +1295,11 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerBoundary_001, TestSize.Level0)
         mixerTestAmplitude);
     struct AudioPcmMixStream overLen = {overBlock.data(), max60MsFramesAt48k + 1, 1.0f};
     EXPECT_EQ(AudioMixerProcess(handle, &overLen, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
-    // 1 stereo frame is processable geometry (2 chunks of 1 sample) but differs from
-    // the locked 960-frame block length, so the lock gate rejects it
+
+    // first successful call locks the block length to 960 frames
+    EXPECT_EQ(AudioMixerProcess(handle, &stream, 1).errCode, AUDIO_PCM_ALGO_SUCCESS);
+
+    // processable geometry, but differs from the locked 960-frame block, rejected by the lock gate
     std::vector<int16_t> misalignBlock = MakeS16Block(1, mixerStereo, mixerTestAmplitude);
     struct AudioPcmMixStream misalign = {misalignBlock.data(), 1, 1.0f};
     EXPECT_EQ(AudioMixerProcess(handle, &misalign, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);

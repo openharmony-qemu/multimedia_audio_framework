@@ -348,26 +348,29 @@ HWTEST_F(HpaePcmBufferTest, edgeLogGateEmptyFullRecovered, TestSize.Level0)
     EXPECT_TRUE(buffer.GetFrameData(out)); // recovery line
     EXPECT_FLOAT_EQ(out[0], 5.0f);
 
-    // vector overload: full gate first hit + sustained, recovery after drain
-    EXPECT_TRUE(buffer.PushFrameData(frame));
+    // vector overload: fill 2-frame buffer to capacity, then hit full gate + recovery
+    EXPECT_TRUE(buffer.PushFrameData(frame)); // 0 -> 1
+    EXPECT_TRUE(buffer.PushFrameData(frame)); // 1 -> 2 (full)
     EXPECT_FALSE(buffer.PushFrameData(frame)); // first hit
     EXPECT_FALSE(buffer.PushFrameData(frame)); // sustained
     EXPECT_TRUE(buffer.GetFrameData(out)); // drain one frame
-    EXPECT_TRUE(buffer.PushFrameData(frame)); // recovery line
+    EXPECT_TRUE(buffer.PushFrameData(frame)); // recovery
 
-    // HpaePcmBuffer overload: empty gate then recovery
-    EXPECT_TRUE(buffer.GetFrameData(singleBuffer)); // drain to empty again
+    // HpaePcmBuffer overload: drain the 2 frames, hit empty gate + recovery
+    EXPECT_TRUE(buffer.GetFrameData(singleBuffer)); // drain
+    EXPECT_TRUE(buffer.GetFrameData(singleBuffer)); // drain to empty
     EXPECT_FALSE(buffer.GetFrameData(singleBuffer)); // first hit
     EXPECT_FALSE(buffer.GetFrameData(singleBuffer)); // sustained
     EXPECT_TRUE(buffer.PushFrameData(frame));
-    EXPECT_TRUE(buffer.GetFrameData(singleBuffer)); // recovery line
+    EXPECT_TRUE(buffer.GetFrameData(singleBuffer)); // recovery
 
-    // HpaePcmBuffer overload: full gate then recovery
-    EXPECT_TRUE(buffer.PushFrameData(frame));
+    // HpaePcmBuffer overload: fill to capacity, then hit full gate + recovery
+    EXPECT_TRUE(buffer.PushFrameData(frame)); // 0 -> 1
+    EXPECT_TRUE(buffer.PushFrameData(frame)); // 1 -> 2 (full)
     EXPECT_FALSE(buffer.PushFrameData(singleBuffer)); // first hit
     EXPECT_FALSE(buffer.PushFrameData(singleBuffer)); // sustained
     EXPECT_TRUE(buffer.GetFrameData(singleBuffer)); // drain
-    EXPECT_TRUE(buffer.PushFrameData(singleBuffer)); // recovery line
+    EXPECT_TRUE(buffer.PushFrameData(singleBuffer)); // recovery
 }
 
 /**

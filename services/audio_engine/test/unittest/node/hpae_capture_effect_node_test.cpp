@@ -584,6 +584,9 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_EdgeLog_001, TestS
     std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
     EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
 
+    PcmBufferInfo pcmBufferInfo(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate);
+    hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+
     std::vector<HpaePcmBuffer *> emptyInputs = {};
     EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(emptyInputs), nullptr); // first gate hit
     EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(emptyInputs), nullptr); // sustained hit
