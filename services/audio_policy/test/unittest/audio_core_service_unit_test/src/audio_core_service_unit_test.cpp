@@ -8729,9 +8729,16 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     coreService->UpdateRecordStreamInfo(stream);
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
     stream->capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
-    stream->appInfo_.appTokenId = 0;
+    GetNonSystemPermission();
+    stream->appInfo_.appTokenId = static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID());
+    EXPECT_FALSE(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION, stream->appInfo_.appTokenId));
     coreService->UpdateRecordStreamInfo(stream);
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
+    SetSelfTokenID(tokenId);
+    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+    stream->appInfo_.appTokenId = static_cast<uint32_t>(tokenId);
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
     config.deviceInfoMap = savedDevices;
     config.adapterInfoMap = savedAdapters;
     SetSelfTokenID(savedToken);
