@@ -500,6 +500,10 @@ void AudioDeviceDescriptor::UpdateDeviceInfoByAudioParameters(const std::string 
     if (it != parameters.end()) {
         ParseChannelValues(it->second, streamInfo);
     }
+    // use STEREO as default for recorder
+    if (!isOutput && !streamInfo.channelLayout.count(CH_LAYOUT_4POINT0)) {
+        streamInfo.channelLayout = { CH_LAYOUT_STEREO };
+    }
     key = isOutput ? "sink_fast" : "source_fast";
     it = parameters.find(key);
     if (it != parameters.end()) {
