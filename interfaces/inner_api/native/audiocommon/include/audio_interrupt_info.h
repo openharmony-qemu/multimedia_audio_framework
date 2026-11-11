@@ -330,6 +330,7 @@ public:
     bool isCallWaitingTone = false;
     bool isCheckMuteStream = false;
     std::string ancoBundleName = "";
+    bool isPrivacyDevice = false;
     // no serialization required
     bool voipCaptureMixWithOthersFlag = false;
 

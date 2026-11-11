@@ -2280,6 +2280,14 @@ int32_t AudioCoreService::SkipDeviceTypes(bool skipped, const std::vector<Device
 void AudioCoreService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     audioDeviceStatus_.OnDeviceInfoUpdated(desc, command);
+    if (interruptService_ != nullptr && command == ENABLE_UPDATE && desc.isEnable_ &&
+        desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        auto interruptService = interruptService_;
+        auto task = [interruptService]() {
+            interruptService->NotifyBtDeviceAvailable();
+        };
+        audioPolicyServerHandler_->PostTask(task, "NotifyBtDeviceAvailable");
+    }
 }
 
 void AudioCoreService::OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable)

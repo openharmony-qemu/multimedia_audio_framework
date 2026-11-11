@@ -106,9 +106,9 @@ public:
         const std::string &deviceTag, bool enable);
 
     AudioInterruptResult ActivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
-        bool isUpdatedAudioStrategy = false);
+        bool isUpdatedAudioStrategy = false, bool isMediaPrivacyDevice = false);
     AudioInterruptResult DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
-        bool isRemoveFocusHis = false);
+        bool isRemoveFocusHis = false, bool isMediaPrivacyDevice = false);
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
@@ -142,8 +142,10 @@ public:
     AudioScene GetAudioSceneFromAllZones();
     AudioInterruptResult ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
         const AudioSessionStrategy &strategy, const bool isStandalone = false,
-        const bool stateChangeCallbackFlag = false, int32_t callerUid = INVALID_UID);
-    int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
+        const bool stateChangeCallbackFlag = false, int32_t callerUid = INVALID_UID,
+        bool isMediaPrivacyDevice = false);
+    int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid,
+        bool isMediaPrivacyDevice = false);
     // interfaces of SessionTimeOutCallback
     void OnSessionTimeout(const int32_t pid) override;
     void UpdateZonePreferDeviceWhenDeviceConnect();
