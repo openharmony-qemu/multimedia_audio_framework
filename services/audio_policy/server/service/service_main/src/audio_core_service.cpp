@@ -1302,6 +1302,7 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
             streamDesc->appInfo_.appTokenId));
         const auto &info = streamDesc->streamInfo_;
         CHECK_AND_RETURN(info.encoding == ENCODING_PCM);
+        CHECK_AND_RETURN_LOG(RecordIsForcedNormal(streamDesc) == false, "Forced normal");
         if (IsStreamSupportMmap(streamDesc)) {
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
         }

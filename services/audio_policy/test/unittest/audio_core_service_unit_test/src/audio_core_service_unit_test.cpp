@@ -8691,6 +8691,29 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
     config.deviceInfoMap[{DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE}] = {device};
     desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    const std::vector<std::pair<std::string, AudioFlag>> halCapabilityCases = {
+        {"source_rate:48000;source_fast:48000;source_ufast:48000", AUDIO_INPUT_FLAG_ULTRA_FAST},
+        {"source_rate:48000;source_fast:48000", AUDIO_INPUT_FLAG_FAST},
+        {"source_rate:48000", AUDIO_INPUT_FLAG_NORMAL},
+        {"source_rate:48000;source_ufast:48000", AUDIO_INPUT_FLAG_NORMAL},
+        {"source_rate:48000;source_fast:48000;source_ufast:0|invalid", AUDIO_INPUT_FLAG_FAST},
+        {"source_rate:48000;source_fast:48000;source_ufast:48000", AUDIO_INPUT_FLAG_ULTRA_FAST},
+    };
+    for (auto flag : {AUDIO_FLAG_ULTRA_FAST, AUDIO_FLAG_MMAP}) {
+        // Retain the original request when reselecting after a fast fallback or device switch.
+        stream->capturerInfo_.capturerFlags = flag;
+        desc->audioStreamInfo_.clear();
+        stream->audioFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+        coreService->UpdateRecordStreamInfo(stream);
+        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
+        for (const auto &[parameters, expected] : halCapabilityCases) {
+            desc->UpdateDeviceInfoByAudioParameters(parameters);
+            coreService->UpdateRecordStreamInfo(stream);
+            EXPECT_EQ(stream->audioFlag_, expected) << parameters;
+            EXPECT_EQ(stream->capturerInfo_.originalFlag, AUDIO_FLAG_ULTRA_FAST);
+        }
+    }
+    stream->capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
     stream->streamInfo_ = AudioStreamInfo(SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, MONO, CH_LAYOUT_MONO);
     coreService->UpdateRecordStreamInfo(stream);
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
