@@ -1300,7 +1300,7 @@ HWTEST_F(AudioMixerFacadeTest, AudioMixerBoundary_001, TestSize.Level0)
     EXPECT_EQ(AudioMixerProcess(handle, &stream, 1).errCode, AUDIO_PCM_ALGO_SUCCESS);
 
     // processable geometry, but differs from the locked 960-frame block, rejected by the lock gate
-    std::vector<int16_t> misalignBlock = MakeS16Block(1, mixerStereo, mixerTestAmplitude);
+    std::vector<int16_t> misalignBlock = MakeS16Block(1, mixerStereo, mixerTestAmplitude); 
     struct AudioPcmMixStream misalign = {misalignBlock.data(), 1, 1.0f};
     EXPECT_EQ(AudioMixerProcess(handle, &misalign, 1).errCode, AUDIO_PCM_ALGO_ERR_INVALID_PARAM);
     AudioMixerDestroy(handle);
