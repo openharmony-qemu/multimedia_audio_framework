@@ -21,6 +21,8 @@
 #include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "parameters.h"
+#include <chrono>
+#include <future>
 #include <thread>
 #include <string>
 #include <memory>
@@ -1268,6 +1270,99 @@ HWTEST_F(AudioStreamCollectorUnitTest, CheckAudioStateIdle_001, TestSize.Level1)
     collector.audioRendererChangeInfos_.push_back(rendererChangeInfo);
     collector.audioCapturerChangeInfos_.push_back(capturerChangeInfo);
     EXPECT_EQ(true, collector.CheckAudioStateIdle());
+}
+
+namespace {
+constexpr int32_t WAIT_HANDLER_TASK_MS = 2000;
+
+void WaitForHandlerTaskDone(const std::shared_ptr<AudioPolicyServerHandler> &handler)
+{
+    if (handler == nullptr) {
+        return;
+    }
+    auto taskDone = std::make_shared<std::promise<void>>();
+    auto future = taskDone->get_future();
+    handler->PostTask([taskDone]() { taskDone->set_value(); });
+    future.wait_for(std::chrono::milliseconds(WAIT_HANDLER_TASK_MS));
+}
+}
+
+/**
+* @tc.name  : Test TryReclaimMemory.
+* @tc.number: TryReclaimMemory_001
+* @tc.desc  : Test TryReclaimMemory when handler is null, delayed reclaim task is pending or audio state is not idle.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, TryReclaimMemory_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    collector.audioRendererChangeInfos_.clear();
+    collector.audioCapturerChangeInfos_.clear();
+
+    // handler is null, return before posting task
+    collector.audioPolicyServerHandler_ = nullptr;
+    EXPECT_NO_THROW(collector.TryReclaimMemory());
+
+    // delayed reclaim task is pending, posted task should be skipped
+    collector.audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    collector.isActivatedMemReclaiTask_ = true;
+    EXPECT_NO_THROW(collector.TryReclaimMemory());
+    WaitForHandlerTaskDone(collector.audioPolicyServerHandler_);
+    EXPECT_EQ(true, collector.isActivatedMemReclaiTask_.load());
+    collector.isActivatedMemReclaiTask_ = false;
+
+    // renderer is running, audio state is not idle, posted task should be skipped
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    EXPECT_NE(rendererChangeInfo, nullptr);
+    rendererChangeInfo->rendererState = RENDERER_RUNNING;
+    collector.audioRendererChangeInfos_.push_back(rendererChangeInfo);
+    EXPECT_NO_THROW(collector.TryReclaimMemory());
+    WaitForHandlerTaskDone(collector.audioPolicyServerHandler_);
+    collector.audioRendererChangeInfos_.clear();
+
+    // capturer is running, audio state is not idle, posted task should be skipped
+    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    EXPECT_NE(capturerChangeInfo, nullptr);
+    capturerChangeInfo->capturerState = CAPTURER_RUNNING;
+    collector.audioCapturerChangeInfos_.push_back(capturerChangeInfo);
+    EXPECT_NO_THROW(collector.TryReclaimMemory());
+    WaitForHandlerTaskDone(collector.audioPolicyServerHandler_);
+    collector.audioCapturerChangeInfos_.clear();
+
+    EXPECT_EQ(false, collector.isActivatedMemReclaiTask_.load());
+}
+
+/**
+* @tc.name  : Test TryReclaimMemory.
+* @tc.number: TryReclaimMemory_002
+* @tc.desc  : Test TryReclaimMemory reclaims with different content when audio state is idle.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, TryReclaimMemory_002, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    collector.audioRendererChangeInfos_.clear();
+    collector.audioCapturerChangeInfos_.clear();
+    collector.audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+
+    // activatedReclaimMemory_ disabled and testmode disabled, reclaim with content "4"
+    collector.activatedReclaimMemory_ = false;
+    EXPECT_NO_THROW(collector.TryReclaimMemory());
+    WaitForHandlerTaskDone(collector.audioPolicyServerHandler_);
+
+    // activatedReclaimMemory_ enabled, reclaim with content "1"
+    collector.activatedReclaimMemory_ = true;
+    EXPECT_NO_THROW(collector.TryReclaimMemory());
+    WaitForHandlerTaskDone(collector.audioPolicyServerHandler_);
+    collector.activatedReclaimMemory_ = false;
+
+    // testmode enabled, reclaim with content "1"
+    std::string retString = system::GetParameter("persist.ace.testmode.enabled", "0");
+    system::SetParameter("persist.ace.testmode.enabled", "1");
+    EXPECT_NO_THROW(collector.TryReclaimMemory());
+    WaitForHandlerTaskDone(collector.audioPolicyServerHandler_);
+    system::SetParameter("persist.ace.testmode.enabled", retString);
+    EXPECT_NE("1", system::GetParameter("persist.ace.testmode.enabled", "0"));
+
+    EXPECT_EQ(false, collector.isActivatedMemReclaiTask_.load());
 }
 } // namespace AudioStandard
 } // namespace OHOS
