@@ -129,32 +129,6 @@ HWTEST_F(AudioSuiteSystemNodeTest, PrepareEffectChain, TestSize.Level0)
     EXPECT_EQ(ret, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteSystemNodeTest, ProcessWithEffectChain, TestSize.Level0)
-{
-    node_->effectChain_ = nullptr;
-    uint8_t buf[64] = {0};
-    int32_t ret = node_->ProcessWithEffectChain(buf, 64, buf, 64);
-    EXPECT_EQ(ret, ERROR);
-
-    AssignMockEffectChain();
-    ret = node_->ProcessWithEffectChain(nullptr, 64, nullptr, 64);
-    EXPECT_EQ(ret, ERROR);
-
-    AssignMockEffectChain();
-    ret = node_->ProcessWithEffectChain(buf, 0, buf, 0);
-    EXPECT_EQ(ret, ERROR);
-
-    AssignMockEffectChain();
-    EXPECT_CALL(*mockChain_, Process(_, _, _, _)).WillOnce(Return(ERR_INVALID_PARAM));
-    ret = node_->ProcessWithEffectChain(buf, 64, buf, 64);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-
-    AssignMockEffectChain();
-    EXPECT_CALL(*mockChain_, Process(_, _, _, _)).WillOnce(Return(SUCCESS));
-    ret = node_->ProcessWithEffectChain(buf, 64, buf, 64);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
 HWTEST_F(AudioSuiteSystemNodeTest, SetSystemParam, TestSize.Level0)
 {
     node_->effectChain_ = nullptr;
@@ -309,7 +283,13 @@ HWTEST_F(AudioSuiteSystemNodeTest, DoProcess_NullChain, TestSize.Level0)
 HWTEST_F(AudioSuiteSystemNodeTest, DoProcess_NoPreNodes, TestSize.Level0)
 {
     AssignMockEffectChain();
+    uint8_t audioBuf[16] = {0};
+    uint8_t metaBuf[16] = {0};
     AudioMetaFrame frame;
+    frame.audioData = audioBuf;
+    frame.audioDataSize = sizeof(audioBuf);
+    frame.metaData = metaBuf;
+    frame.metaDataSize = sizeof(metaBuf);
     int32_t audioSize = 0;
     int32_t metaSize = 0;
     bool finished = false;

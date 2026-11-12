@@ -53,7 +53,6 @@ protected:
     virtual std::string GetEffectChainName() const = 0;
     int32_t ConfigureEffectChain();
     int32_t PrepareEffectChain();
-    int32_t ProcessWithEffectChain(uint8_t *inBuffer, int32_t inSize, uint8_t *outBuffer, int32_t outSize);
 
     std::unique_ptr<OfflineAudioEffectChain> effectChain_;
     uint32_t inBufferSize_ = 0;
@@ -66,6 +65,12 @@ protected:
     AudioFormat outputFormat_;
 
 private:
+    int32_t ValidateDoProcess(AudioMetaFrame &metaFrame,
+        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag);
+    int32_t PullUpstreamData(int32_t &responseInAudioSize, int32_t &responseInMetaSize, bool *finishedFlag);
+    int32_t PackInputBuffer(int32_t audioSize, int32_t metaSize, int32_t &inputDataSize);
+    int32_t UnpackOutputBuffer(AudioMetaFrame &metaFrame, int32_t *responseAudioSize, int32_t *responseMetaSize);
+
     // for effect process
     std::vector<uint8_t> inMetaData_;
     std::vector<uint8_t> inAudioData_;
