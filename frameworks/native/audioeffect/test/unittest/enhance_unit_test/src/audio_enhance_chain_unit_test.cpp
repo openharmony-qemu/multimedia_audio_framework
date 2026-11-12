@@ -403,6 +403,7 @@ HWTEST(AudioEnhanceChainUnitTest, ApplyEnhanceChainSucc, TestSize.Level1)
 
     std::vector<int16_t> output(dataLen);
     EXPECT_EQ(chain->GetOutputDataFromChain(output.data(), output.size() * sizeof(int16_t)), SUCCESS);
+    EXPECT_EQ(chain->GetOutputDataFromChain(output.data(), output.size() * sizeof(int16_t)), SUCCESS);
     EXPECT_THAT(output, ElementsAreArray(targetOut));
     chain->ReleaseAllEnhanceModule();
 }

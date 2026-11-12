@@ -47,7 +47,6 @@ ohos_unittest("audio_enhance_unittest") {
     "../../../../../../services/audio_policy:audio_foundation",
     "../../../../../../services/audio_policy:audio_setting_provider",
     "../../../../../../services/audio_service:audio_common",
-    "../../../../audioschedule:audio_schedule",
     "../../../../audioutils:audio_utils",
   ]
 
