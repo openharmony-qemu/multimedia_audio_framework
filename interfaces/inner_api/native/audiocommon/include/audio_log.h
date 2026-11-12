@@ -21,6 +21,11 @@
 #endif
 
 #include <stdio.h>
+#ifdef __cplusplus
+// uint32_t below is C++-only (guarded like the class): <cstdint> does not exist
+// in C, and this header is included from C sources (audio_proresampler_process.c).
+#include <cstdint>
+#endif
 #include "hilog/log.h"
 
 #undef LOG_DOMAIN
