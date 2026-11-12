@@ -8674,8 +8674,12 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_FAST);
     prop->format_ = SAMPLE_S32LE;
     coreService->UpdateRecordStreamInfo(stream);
+    // Changing the hardware profile does not relax the Primary S16LE client requirement.
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_FAST);
+    stream->streamInfo_.format = SAMPLE_S16LE;
+    coreService->UpdateRecordStreamInfo(stream);
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
-    // XML can declare an ultra-fast profile outside the legacy mmap client specifications.
+    //  A matching XML rate can select ultra-fast independently of legacy mmap rate support.
     stream->streamInfo_.samplingRate = SAMPLE_RATE_16000;
     prop->sampleRate_ = SAMPLE_RATE_16000;
     coreService->UpdateRecordStreamInfo(stream);
@@ -8691,6 +8695,29 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     device->supportPipeMap_[AUDIO_INPUT_FLAG_ULTRA_FAST] = pipe;
     config.deviceInfoMap[{DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE}] = {device};
     desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    const std::vector<std::pair<std::string, AudioFlag>> halCapabilityCases = {
+        {"source_rate:48000;source_fast:48000;source_ufast:48000", AUDIO_INPUT_FLAG_ULTRA_FAST},
+        {"source_rate:48000;source_fast:48000", AUDIO_INPUT_FLAG_FAST},
+        {"source_rate:48000", AUDIO_INPUT_FLAG_NORMAL},
+        {"source_rate:48000;source_ufast:48000", AUDIO_INPUT_FLAG_NORMAL},
+        {"source_rate:48000;source_fast:48000;source_ufast:0|invalid", AUDIO_INPUT_FLAG_FAST},
+        {"source_rate:48000;source_fast:48000;source_ufast:48000", AUDIO_INPUT_FLAG_ULTRA_FAST},
+    };
+    for (auto flag : {AUDIO_FLAG_ULTRA_FAST, AUDIO_FLAG_MMAP}) {
+        // Retain the original request when reselecting after a fast fallback or device switch.
+        stream->capturerInfo_.capturerFlags = flag;
+        desc->audioStreamInfo_.clear();
+        stream->audioFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
+        coreService->UpdateRecordStreamInfo(stream);
+        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
+        for (const auto &[parameters, expected] : halCapabilityCases) {
+            desc->UpdateDeviceInfoByAudioParameters(parameters);
+            coreService->UpdateRecordStreamInfo(stream);
+            EXPECT_EQ(stream->audioFlag_, expected) << parameters;
+            EXPECT_EQ(stream->capturerInfo_.originalFlag, AUDIO_FLAG_ULTRA_FAST);
+        }
+    }
+    stream->capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
     stream->streamInfo_ = AudioStreamInfo(SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, MONO, CH_LAYOUT_MONO);
     coreService->UpdateRecordStreamInfo(stream);
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
@@ -8706,9 +8733,13 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     coreService->UpdateRecordStreamInfo(stream);
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
     stream->capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
-    stream->appInfo_.appTokenId = 0;
     coreService->UpdateRecordStreamInfo(stream);
-    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
+    SetSelfTokenID(tokenId);
+    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+    stream->appInfo_.appTokenId = static_cast<uint32_t>(tokenId);
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
     config.deviceInfoMap = savedDevices;
     config.adapterInfoMap = savedAdapters;
     SetSelfTokenID(savedToken);

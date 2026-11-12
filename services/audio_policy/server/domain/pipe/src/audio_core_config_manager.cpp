@@ -48,6 +48,7 @@ const uint32_t PC_MIC_CHANNEL_NUM = 4;
 const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 
 const uint32_t FRAMES_PER_SEC = 50;
+constexpr uint32_t SUPPORT_FAST_AND_ULTRA_FAST = 1;
 
 // next: configed in xml
 const std::set<AudioSampleFormat> FAST_OUTPUT_SUPPORTED_FORMATS = {
@@ -605,8 +606,8 @@ bool AudioCoreConfigManager::IsUltraFastRecordingDeviceSupported(const AudioStre
             pipe->second->role_ == PIPE_ROLE_INPUT &&
             pipe->second->supportFlags_ == AUDIO_INPUT_FLAG_ULTRA_FAST);
         if (device->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            // ARM USB source parameters are reported by the device and negotiated when opening the pipe.
-            return true;
+            // Require both source_fast and source_ufast, consistent with ARM USB playback.
+            return device->GetDeviceSupportMmap() == SUPPORT_FAST_AND_ULTRA_FAST;
         }
         AudioSampleFormat tempFormat = streamInfo.format;
         CHECK_AND_RETURN_RET(tempFormat == SAMPLE_S16LE, false);
