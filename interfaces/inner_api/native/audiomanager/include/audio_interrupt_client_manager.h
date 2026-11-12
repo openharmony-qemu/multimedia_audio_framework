@@ -36,6 +36,7 @@ public:
 private:
     std::weak_ptr<AudioManagerCallback> callback_;
     std::shared_ptr<AudioManagerCallback> cb_;
+    std::mutex cbMutex_;
 };
 
 class AudioInterruptClientManager {

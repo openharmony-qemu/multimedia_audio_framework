@@ -1281,20 +1281,24 @@ int32_t AudioCapturerPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
         AUDIO_ERR_LOG("GetAudioSessionID failed for INDEPENDENT_MODE");
         return ERR_INVALID_INDEX;
     }
-    audioInterrupt_.streamId = sessionID_;
-    audioInterrupt_.pid = appInfo_.appPid;
-    audioInterrupt_.uid = appInfo_.appUid;
-    audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
-    audioInterrupt_.sessionStrategy = strategy_;
-    audioInterrupt_.mixWithWakeUp = mixWithWakeUp_;
-    audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
-    if (audioInterrupt_.bundleName.empty()) {
-        audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
+    {
+        std::lock_guard<std::mutex> lock(audioInterruptMutex_);
+        audioInterrupt_.streamId = sessionID_;
+        audioInterrupt_.pid = appInfo_.appPid;
+        audioInterrupt_.uid = appInfo_.appUid;
+        audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
+        audioInterrupt_.sessionStrategy = strategy_;
+        audioInterrupt_.mixWithWakeUp = mixWithWakeUp_;
+        audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
+        if (audioInterrupt_.bundleName.empty()) {
+            audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
+        }
+        if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) {
+            isVoiceCallCapturer_ = true;
+            audioInterrupt_.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+        }
     }
-    if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) {
-        isVoiceCallCapturer_ = true;
-        audioInterrupt_.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    }
+    
     if (audioInterruptCallback_ == nullptr) {
         audioInterruptCallback_ = std::make_shared<AudioCapturerInterruptCallbackImpl>(audioStream_);
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioInterruptCallback_ != nullptr, ERROR,
@@ -1851,8 +1855,11 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_RELEASE_ILLEGAL_STATE, "audioStream_ is nullptr", true),
         "audioStream_ is nullptr");
-    audioInterrupt_.state = State::RELEASED;
-    (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+    {
+        std::lock_guard<std::mutex> lock(audioInterruptMutex_);
+        audioInterrupt_.state = State::RELEASED;
+        (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+    }
 
     // Unregister the callback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
@@ -2184,6 +2191,7 @@ int32_t AudioCapturerPrivate::SetInterruptStrategy(InterruptStrategy strategy)
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CONFIG_ILLEGAL_STATE, "incorrect state", true),
         "incorrect state:%{public}d", state);
+    std::lock_guard<std::mutex> lock(audioInterruptMutex_);
     audioInterrupt_.strategy = strategy;
     AUDIO_INFO_LOG("set InterruptStrategy to %{public}d", static_cast<int32_t>(strategy));
     return SUCCESS;
@@ -3378,6 +3386,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GenerateStreamDesc(
 
 void AudioCapturerPrivate::SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
 {
+    std::lock_guard<std::mutex> lock(audioInterruptMutex_);
     audioInterrupt_.callbackType = callbackType;
 }
 
@@ -3487,6 +3496,7 @@ int32_t AudioCapturerPrivate::SetIndependentAudioSessionStrategy(
         audioInterrupt_.behaviorFlags_.voipCaptureMixWithOthers = true;
         AUDIO_INFO_LOG("Capturer id: %{public}d activated VOIP_CAPTURE_MIX_WITH_OTHERS success", sessionID_);
     }
+    std::lock_guard<std::mutex> lock(audioInterruptMutex_);
     audioInterrupt_.independentStrategy = strategy;
     AUDIO_INFO_LOG("Capturer id: %{public}d set independentStrategy: %{public}d",
         sessionID_, static_cast<int32_t>(strategy.concurrencyMode));

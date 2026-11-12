@@ -37,6 +37,7 @@ void AudioManagerInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioMa
 {
     auto wp = callback.lock();
     if (wp != nullptr) {
+        std::unique_lock<std::mutex> lock(cbMutex_);
         callback_ = callback;
     } else {
         AUDIO_ERR_LOG("callback is nullptr");
@@ -45,6 +46,7 @@ void AudioManagerInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioMa
 
 void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
+    std::unique_lock<std::mutex> lock(cbMutex_);
     cb_ = callback_.lock();
     if (cb_ != nullptr) {
         cb_->cbMutex_.lock();
