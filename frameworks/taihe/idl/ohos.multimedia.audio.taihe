@@ -382,6 +382,7 @@ interface AudioManager {
   GetDeviceEnhanceManager(): AudioDeviceEnhanceManager;
   GetDebuggingManager(): AudioDebuggingManager;
   GetRecordingManager(): AudioRecordingManager;
+  GetSuiteDownloadManager(): AudioSuiteDownloadManager;
 
   @gen_promise("disableSafeMediaVolume")
   DisableSafeMediaVolumeSync(): void;
@@ -1680,4 +1681,82 @@ interface AudioDebuggingManager {
   PrintCapturerInfo(capturer: AudioCapturer, fd: i32): void;
   PrintLoopbackInfo(loopback: AudioLoopback, fd: i32): void;
   PrintSessionInfo(session: AudioSessionManager, fd: i32): void;
+}
+
+enum NetworkType: i32 {
+  WIFI = 6,
+  CELLULAR_AND_WIFI = 7,
+}
+
+enum AudioSuiteFeatureType: i32 {
+  AUDIO_DIALOG_ENHANCEMENT = 0,
+  AUDIO_CENTER_VOICE_ENHANCEMENT = 1,
+  AUDIO_VOICE_ENHANCEMENT = 2,
+  AUDIO_MUSIC_ENHANCEMENT = 3,
+  AUDIO_SOURCE_SEPARATION = 4,
+}
+
+enum AudioSuiteFeatureStatus: i32 {
+  INVALID = -1,
+  INITIALIZED = 0,
+  VERSION_CHECKING = 10,
+  VERSION_CHECK_FAILED = 11,
+  VERSION_CHECK_SUCCEEDED = 12,
+  DOWNLOADING = 20,
+  DOWNLOAD_PAUSED = 21,
+  DOWNLOAD_FAILED = 22,
+  DOWNLOAD_SUCCEEDED = 23,
+  INSTALLING = 30,
+  WAITING_FOR_INSTALLATION = 31,
+  INSTALLATION_FAILED = 35,
+  INSTALLATION_SUCCEEDED = 36,
+  UNINSTALLING = 40,
+  WAITING_FOR_UNINSTALLATION = 41,
+  UNINSTALLATION_FAILED = 42,
+  UNINSTALLATION_SUCCEEDED = 43,
+}
+
+struct AudioSuiteFeatureStatusInfo {
+  featureType: AudioSuiteFeatureType;
+  status: AudioSuiteFeatureStatus;
+  installPath: String;
+  progress: i32;
+  errorCode: i32;
+}
+
+struct AudioSuiteFeatureVersionInfo {
+  featureType: AudioSuiteFeatureType;
+  status: AudioSuiteFeatureStatus;
+  version: String;
+  size: i64;
+  errorCode: i32;
+}
+
+interface AudioSuiteDownloadManager {
+  @gen_promise("startDownload")
+  StartDownloadSync(featureTypes: Array<AudioSuiteFeatureType>, networkType: NetworkType): void;
+
+  @gen_promise("pauseDownload")
+  PauseDownloadSync(featureTypes: Array<AudioSuiteFeatureType>): void;
+
+  @gen_promise("cancelDownload")
+  CancelDownloadSync(featureTypes: Array<AudioSuiteFeatureType>): void;
+
+  @gen_promise("startBackgroundDownload")
+  StartBackgroundDownloadSync(featureTypes: Array<AudioSuiteFeatureType>): void;
+
+  @gen_promise("getFeatureStatus")
+  GetFeatureStatusSync(featureTypes: Array<AudioSuiteFeatureType>): Array<AudioSuiteFeatureStatusInfo>;
+
+  @gen_promise("uninstallFeature")
+  UninstallFeatureSync(featureTypes: Array<AudioSuiteFeatureType>): void;
+
+  @gen_promise("isFeatureInstalled")
+  IsFeatureInstalledSync(featureTypes: Array<AudioSuiteFeatureType>): Array<bool>;
+
+  @gen_promise("getNewVersionInfo")
+  GetNewVersionInfoSync(featureTypes: Array<AudioSuiteFeatureType>): Array<AudioSuiteFeatureVersionInfo>;
+
+  OnDownloadStatusChange(callback: (data: Array<AudioSuiteFeatureStatusInfo>) => void): void;
+  OffDownloadStatusChange(callback: Optional<(data: Array<AudioSuiteFeatureStatusInfo>) => void>): void;
 }

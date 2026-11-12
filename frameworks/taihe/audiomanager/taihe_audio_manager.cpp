@@ -29,6 +29,7 @@
 #include "taihe_audio_collaborative_manager.h"
 #include "taihe_audio_device_enhance_manager.h"
 #include "taihe_audio_debugging_manager.h"
+#include "taihe_audio_suite_download_manager.h"
 #include "taihe_audio_scene_callbacks.h"
 #include "taihe_param_utils.h"
 
@@ -202,6 +203,11 @@ AudioDebuggingManager AudioManagerImpl::GetDebuggingManager()
 AudioRecordingManager AudioManagerImpl::GetRecordingManager()
 {
     return AudioRecordingManagerImpl::CreateRecordingManagerWrapper();
+}
+
+AudioSuiteDownloadManager AudioManagerImpl::GetSuiteDownloadManager()
+{
+    return AudioSuiteDownloadManagerImpl::CreateSuiteDownloadManagerWrapper();
 }
 
 AudioScene AudioManagerImpl::GetAudioSceneSync()
