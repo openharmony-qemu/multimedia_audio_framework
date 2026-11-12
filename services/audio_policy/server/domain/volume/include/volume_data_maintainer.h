@@ -197,13 +197,26 @@ private:
     static std::string GetDeviceGroupTypeKey(DeviceType deviceType);
     static std::string GetVolumeValueKey(AudioVolumeType volumeType, VolumeKeyType keyType = VolumeKeyType::LEVEL);
     static DeviceGroupType GetDeviceGroupTypeByDeviceType(DeviceType deviceType);
+    static std::string GetLegacyDeviceGroupTypeKey(DeviceType deviceType);
+    static bool IsPcWiredSplitDevice(DeviceType deviceType);
     std::string GetVolumeValueMapKey(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId = 0);
+    std::string GetLegacyVolumeKey(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioStreamType streamType, VolumeKeyType keyType = VolumeKeyType::LEVEL);
+    std::string GetLegacyMuteKey(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioStreamType streamType);
 
     void LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId);
     void LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId);
     void CheckNotificationVolumeState(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId);
+    void LoadLegacyDeviceVolumeFromDb(std::shared_ptr<AudioDeviceDescriptor> device,
+        std::vector<IntValueInfo> &infos, std::vector<IntValueInfo> &degreeInfos,
+        std::vector<AudioStreamType> &volumeList);
+    void LoadLegacyDeviceMuteFromDb(std::shared_ptr<AudioDeviceDescriptor> device,
+        std::vector<BoolValueInfo> &infos, std::vector<AudioStreamType> &volumeList);
 
     void WriteVolumeDbAccessExceptionEvent(int32_t errorCase, int32_t errorMsg);
+    std::pair<std::string, std::string> GetVolumeDbKeys(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioVolumeType volumeType, int32_t zoneId);
     int32_t SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDescriptor> device,
         AudioStreamType streamType, const VolumeScale &volume, int32_t zoneId);
     void SaveVolumeToMapInner(std::shared_ptr<AudioDeviceDescriptor> device,

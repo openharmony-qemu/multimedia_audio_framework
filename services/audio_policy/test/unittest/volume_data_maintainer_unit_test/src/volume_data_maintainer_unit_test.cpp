@@ -1351,5 +1351,190 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_ClearAppMuteAndHideByO
     EXPECT_FALSE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID_A));
     EXPECT_FALSE(vd->GetAppMuteAndHideVolumeBar(TEST_APP_UID_B));
 }
+
+/* ==================== Legacy device split fallback tests ==================== */
+
+/**
+ * @tc.name  : IsPcWiredSplitDevice_PCMode
+ * @tc.number: IsPcWiredSplitDevice_001
+ * @tc.desc  : Test IsPcWiredSplitDevice in PC mode: wired split devices return true, others false.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, IsPcWiredSplitDevice_001, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    EXPECT_TRUE(VolumeDataMaintainer::IsPcWiredSplitDevice(DEVICE_TYPE_WIRED_HEADSET));
+    EXPECT_TRUE(VolumeDataMaintainer::IsPcWiredSplitDevice(DEVICE_TYPE_WIRED_HEADPHONES));
+    EXPECT_TRUE(VolumeDataMaintainer::IsPcWiredSplitDevice(DEVICE_TYPE_USB_HEADSET));
+    EXPECT_TRUE(VolumeDataMaintainer::IsPcWiredSplitDevice(DEVICE_TYPE_USB_ARM_HEADSET));
+    EXPECT_FALSE(VolumeDataMaintainer::IsPcWiredSplitDevice(DEVICE_TYPE_HDMI));
+    EXPECT_FALSE(VolumeDataMaintainer::IsPcWiredSplitDevice(DEVICE_TYPE_SPEAKER));
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+
+/**
+ * @tc.name  : IsPcWiredSplitDevice_NonPCMode
+ * @tc.number: IsPcWiredSplitDevice_002
+ * @tc.desc  : Test IsPcWiredSplitDevice returns false in non-PC mode.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, IsPcWiredSplitDevice_002, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(false);
+    EXPECT_FALSE(VolumeDataMaintainer::IsPcWiredSplitDevice(DEVICE_TYPE_WIRED_HEADSET));
+}
+
+/**
+ * @tc.name  : GetLegacyDeviceGroupTypeKey_PCMode
+ * @tc.number: GetLegacyDeviceGroupTypeKey_001
+ * @tc.desc  : Test GetLegacyDeviceGroupTypeKey in PC mode: wired -> "_wired", hdmi -> "_dp", speaker -> "".
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetLegacyDeviceGroupTypeKey_001, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    EXPECT_EQ(VolumeDataMaintainer::GetLegacyDeviceGroupTypeKey(DEVICE_TYPE_WIRED_HEADSET), "_wired");
+    EXPECT_EQ(VolumeDataMaintainer::GetLegacyDeviceGroupTypeKey(DEVICE_TYPE_HDMI), "_dp");
+    EXPECT_EQ(VolumeDataMaintainer::GetLegacyDeviceGroupTypeKey(DEVICE_TYPE_SPEAKER), "");
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+
+/**
+ * @tc.name  : GetLegacyDeviceGroupTypeKey_NonPCMode
+ * @tc.number: GetLegacyDeviceGroupTypeKey_002
+ * @tc.desc  : Test GetLegacyDeviceGroupTypeKey returns empty in non-PC mode.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetLegacyDeviceGroupTypeKey_002, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(false);
+    EXPECT_EQ(VolumeDataMaintainer::GetLegacyDeviceGroupTypeKey(DEVICE_TYPE_WIRED_HEADSET), "");
+}
+
+/**
+ * @tc.name  : GetLegacyVolumeKey_ValidKeys
+ * @tc.number: GetLegacyVolumeKey_001
+ * @tc.desc  : Test GetLegacyVolumeKey returns correct keys for wired and hdmi in PC mode.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetLegacyVolumeKey_001, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    auto wiredDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE);
+    EXPECT_EQ(vd->GetLegacyVolumeKey(wiredDesc, STREAM_MUSIC, VolumeKeyType::LEVEL), "music_volume_wired");
+    EXPECT_EQ(vd->GetLegacyVolumeKey(wiredDesc, STREAM_MUSIC, VolumeKeyType::DEGREE), "music_volume_wired_degree");
+    auto hdmiDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_HDMI, OUTPUT_DEVICE);
+    EXPECT_EQ(vd->GetLegacyVolumeKey(hdmiDesc, STREAM_MUSIC, VolumeKeyType::LEVEL), "music_volume_dp");
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+
+/**
+ * @tc.name  : GetLegacyVolumeKey_EdgeCases
+ * @tc.number: GetLegacyVolumeKey_002
+ * @tc.desc  : Test GetLegacyVolumeKey returns empty for null device, non-legacy device, DualTone,
+ * databaseVolumeName, non-PC.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetLegacyVolumeKey_002, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+
+    VolumeUtils::SetPCVolumeEnable(true);
+    EXPECT_EQ(vd->GetLegacyVolumeKey(nullptr, STREAM_MUSIC), "");
+    auto speakerDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    EXPECT_EQ(vd->GetLegacyVolumeKey(speakerDesc, STREAM_MUSIC), "");
+    auto dbDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE);
+    dbDesc->volumeBehavior_.isReady = true;
+    dbDesc->volumeBehavior_.databaseVolumeName = "TestDevice";
+    EXPECT_EQ(vd->GetLegacyVolumeKey(dbDesc, STREAM_MUSIC), "");
+    VolumeUtils::SetPCVolumeEnable(false);
+
+    EXPECT_EQ(vd->GetLegacyVolumeKey(
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE), STREAM_RING), "");
+    EXPECT_EQ(vd->GetLegacyVolumeKey(
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE), STREAM_MUSIC), "");
+}
+
+/**
+ * @tc.name  : GetLegacyMuteKey_ValidKeys
+ * @tc.number: GetLegacyMuteKey_001
+ * @tc.desc  : Test GetLegacyMuteKey returns correct keys for wired and hdmi in PC mode.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetLegacyMuteKey_001, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    auto wiredDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE);
+    EXPECT_EQ(vd->GetLegacyMuteKey(wiredDesc, STREAM_MUSIC), "music_mute_status_wired");
+    auto hdmiDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_HDMI, OUTPUT_DEVICE);
+    EXPECT_EQ(vd->GetLegacyMuteKey(hdmiDesc, STREAM_MUSIC), "music_mute_status_dp");
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+
+/**
+ * @tc.name  : GetLegacyMuteKey_EdgeCases
+ * @tc.number: GetLegacyMuteKey_002
+ * @tc.desc  : Test GetLegacyMuteKey returns empty for null device, DualTone, databaseVolumeName, non-PC.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetLegacyMuteKey_002, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+
+    VolumeUtils::SetPCVolumeEnable(true);
+    EXPECT_EQ(vd->GetLegacyMuteKey(nullptr, STREAM_MUSIC), "");
+    auto dbDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE);
+    dbDesc->volumeBehavior_.isReady = true;
+    dbDesc->volumeBehavior_.databaseVolumeName = "TestDevice";
+    EXPECT_EQ(vd->GetLegacyMuteKey(dbDesc, STREAM_MUSIC), "");
+    VolumeUtils::SetPCVolumeEnable(false);
+
+    EXPECT_EQ(vd->GetLegacyMuteKey(
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE), STREAM_RING), "");
+    EXPECT_EQ(vd->GetLegacyMuteKey(
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE), STREAM_MUSIC), "");
+}
+
+/* ==================== SaveVolumeToDbInner branch tests ==================== */
+
+/**
+ * @tc.name  : SaveVolumeToDbInner_DeviceNull
+ * @tc.number: SaveVolumeToDbInner_001
+ * @tc.desc  : Test SaveVolumeToDbInner with null device returns ERROR.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SaveVolumeToDbInner_DeviceNull, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    VolumeScale volume{0, 0};
+    EXPECT_EQ(vd->SaveVolumeToDbInner(nullptr, STREAM_MUSIC, volume, 0), ERROR);
+}
+
+/**
+ * @tc.name  : SaveVolumeToDbInner_DistributedNotReady
+ * @tc.number: SaveVolumeToDbInner_002
+ * @tc.desc  : Test SaveVolumeToDbInner returns SUCCESS when distributed device volumeBehavior is not ready.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SaveVolumeToDbInner_DistributedNotReady, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
+    ASSERT_NE(desc, nullptr);
+    desc->volumeBehavior_.isReady = false;
+    VolumeScale volume{0, 0};
+    EXPECT_EQ(vd->SaveVolumeToDbInner(desc, STREAM_MUSIC, volume, 0), SUCCESS);
+}
+
+/**
+ * @tc.name  : SaveVolumeToDbInner_DistributedReadyEmptyName
+ * @tc.number: SaveVolumeToDbInner_003
+ * @tc.desc  : Test SaveVolumeToDbInner returns SUCCESS when distributed device is ready but databaseVolumeName empty.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SaveVolumeToDbInner_DistributedReadyEmptyName, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
+    ASSERT_NE(desc, nullptr);
+    desc->volumeBehavior_.isReady = true;
+    desc->volumeBehavior_.databaseVolumeName = "";
+    VolumeScale volume{0, 0};
+    EXPECT_EQ(vd->SaveVolumeToDbInner(desc, STREAM_MUSIC, volume, 0), SUCCESS);
+}
 } // AudioStandardnamespace
 } // OHOSnamespace

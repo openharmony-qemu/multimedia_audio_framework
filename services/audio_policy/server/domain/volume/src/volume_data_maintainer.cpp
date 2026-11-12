@@ -146,6 +146,14 @@ static const std::unordered_map<DeviceType, DeviceGroupType> PC_DEVICE_GROUP_TYP
     {DEVICE_TYPE_LINE_DIGITAL, DeviceGroupType::LINE_DIGITAL},
 };
 
+static const std::unordered_map<DeviceType, DeviceGroupType> PC_LEGACY_DEVICE_GROUP_MAP = {
+    {DEVICE_TYPE_WIRED_HEADSET, DeviceGroupType::WIRED},
+    {DEVICE_TYPE_WIRED_HEADPHONES, DeviceGroupType::WIRED},
+    {DEVICE_TYPE_USB_HEADSET, DeviceGroupType::WIRED},
+    {DEVICE_TYPE_USB_ARM_HEADSET, DeviceGroupType::WIRED},
+    {DEVICE_TYPE_HDMI, DeviceGroupType::DP},
+};
+
 bool VolumeDataMaintainer::CheckOsAccountReady()
 {
     return AudioSettingProvider::CheckOsAccountReady();
@@ -780,6 +788,70 @@ std::string VolumeDataMaintainer::GetDeviceGroupTypeKey(DeviceType deviceType)
     return DEVICE_GROUP_TYPE_KEY_MAP.at(deviceGroupType);
 }
 
+std::string VolumeDataMaintainer::GetLegacyDeviceGroupTypeKey(DeviceType deviceType)
+{
+    if (!VolumeUtils::IsPCVolumeEnable()) {
+        return "";
+    }
+    auto it = PC_LEGACY_DEVICE_GROUP_MAP.find(deviceType);
+    if (it == PC_LEGACY_DEVICE_GROUP_MAP.end()) {
+        return "";
+    }
+    if (DEVICE_GROUP_TYPE_KEY_MAP.count(it->second) == 0) {
+        return "";
+    }
+    return DEVICE_GROUP_TYPE_KEY_MAP.at(it->second);
+}
+
+bool VolumeDataMaintainer::IsPcWiredSplitDevice(DeviceType deviceType)
+{
+    if (!VolumeUtils::IsPCVolumeEnable()) {
+        return false;
+    }
+    auto it = PC_LEGACY_DEVICE_GROUP_MAP.find(deviceType);
+    return it != PC_LEGACY_DEVICE_GROUP_MAP.end() && it->second == DeviceGroupType::WIRED;
+}
+
+std::string VolumeDataMaintainer::GetLegacyVolumeKey(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType, VolumeKeyType keyType)
+{
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, "", "device is null");
+    if (Util::IsDualToneStreamType(streamType)) {
+        return "";
+    }
+    if (device->volumeBehavior_.isReady && device->volumeBehavior_.databaseVolumeName != "") {
+        return "";
+    }
+    std::string volumeValueKey = GetVolumeValueKey(streamType, keyType);
+    std::string legacyDeviceKey = GetLegacyDeviceGroupTypeKey(device->deviceType_);
+    if (volumeValueKey.empty() || legacyDeviceKey.empty()) {
+        return "";
+    }
+    std::string key = volumeValueKey + legacyDeviceKey;
+    if (keyType == VolumeKeyType::DEGREE && !key.empty()) {
+        key += VOLUME_DEGREE_KEY;
+    }
+    return key;
+}
+
+std::string VolumeDataMaintainer::GetLegacyMuteKey(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType)
+{
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, "", "device is null");
+    if (Util::IsDualToneStreamType(streamType)) {
+        return "";
+    }
+    if (device->volumeBehavior_.isReady && device->volumeBehavior_.databaseVolumeName != "") {
+        return "";
+    }
+    std::string muteValueKey = GetVolumeValueKey(streamType, VolumeKeyType::MUTE);
+    std::string legacyDeviceKey = GetLegacyDeviceGroupTypeKey(device->deviceType_);
+    if (muteValueKey.empty() || legacyDeviceKey.empty()) {
+        return "";
+    }
+    return muteValueKey + legacyDeviceKey;
+}
+
 std::string VolumeDataMaintainer::GetVolumeValueKey(AudioVolumeType volumeType, VolumeKeyType keyType)
 {
     if (AUDIO_VOLUME_TYPE_KEY_MAP.count(volumeType) == 0) {
@@ -1009,6 +1081,10 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
         audioSettingProvider.GetIntValues(degreeInfos, "system");
     }
 
+    if (readDb && VolumeUtils::IsPCVolumeEnable()) {
+        LoadLegacyDeviceVolumeFromDb(device, infos, degreeInfos, volumeList);
+    }
+
     bool loadFlag = true;
     for (size_t i = 0; i < volumeList.size(); i++) {
         int32_t validDegree  = VolumeUtils::VolumeDegreeToLevel(degreeInfos[i].value,
@@ -1020,6 +1096,88 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
     SaveLoadFlagToMap(device, VolumeKeyType::LEVEL, loadFlag, zoneId);
 
     CheckNotificationVolumeState(device, zoneId);
+}
+
+void VolumeDataMaintainer::LoadLegacyDeviceVolumeFromDb(std::shared_ptr<AudioDeviceDescriptor> device,
+    std::vector<IntValueInfo> &infos, std::vector<IntValueInfo> &degreeInfos,
+    std::vector<AudioStreamType> &volumeList)
+{
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
+    CHECK_AND_RETURN_LOG(VolumeUtils::IsPCVolumeEnable(), "not PC mode, skip legacy fallback");
+
+    std::vector<std::pair<size_t, std::string>> legacyLevelKeys;
+    std::vector<std::pair<size_t, std::string>> legacyDegreeKeys;
+    for (size_t i = 0; i < volumeList.size(); i++) {
+        if (!infos[i].loadFlag) {
+            std::string legacyKey = GetLegacyVolumeKey(device, volumeList[i], VolumeKeyType::LEVEL);
+            if (!legacyKey.empty()) {
+                legacyLevelKeys.push_back({i, legacyKey});
+            }
+        }
+        if (!degreeInfos[i].loadFlag) {
+            std::string legacyKey = GetLegacyVolumeKey(device, volumeList[i], VolumeKeyType::DEGREE);
+            if (!legacyKey.empty()) {
+                legacyDegreeKeys.push_back({i, legacyKey});
+            }
+        }
+    }
+    if (legacyLevelKeys.empty() && legacyDegreeKeys.empty()) {
+        return;
+    }
+
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    for (auto &[index, key] : legacyLevelKeys) {
+        int32_t value = 0;
+        if (audioSettingProvider.GetIntValue(key, value, "system") == SUCCESS) {
+            infos[index].value = value;
+            infos[index].loadFlag = true;
+            AUDIO_INFO_LOG("device %{public}s stream %{public}d level %{public}d from key %{public}s",
+                device->GetName().c_str(), volumeList[index], value, key.c_str());
+        }
+    }
+    for (auto &[index, key] : legacyDegreeKeys) {
+        int32_t value = 0;
+        if (audioSettingProvider.GetIntValue(key, value, "system") == SUCCESS) {
+            degreeInfos[index].value = value;
+            degreeInfos[index].loadFlag = true;
+            AUDIO_INFO_LOG("device %{public}s stream %{public}d degree %{public}d from key %{public}s",
+                device->GetName().c_str(), volumeList[index], value, key.c_str());
+        }
+    }
+}
+
+void VolumeDataMaintainer::LoadLegacyDeviceMuteFromDb(std::shared_ptr<AudioDeviceDescriptor> device,
+    std::vector<BoolValueInfo> &infos, std::vector<AudioStreamType> &volumeList)
+{
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
+    CHECK_AND_RETURN_LOG(VolumeUtils::IsPCVolumeEnable(), "not PC mode, skip legacy fallback");
+
+    std::vector<std::pair<size_t, std::string>> legacyMuteKeys;
+    for (size_t i = 0; i < volumeList.size(); i++) {
+        if (infos[i].loadFlag) {
+            continue;
+        }
+        std::string legacyKey = GetLegacyMuteKey(device, volumeList[i]);
+        if (!legacyKey.empty()) {
+            legacyMuteKeys.push_back({i, legacyKey});
+        }
+    }
+    if (legacyMuteKeys.empty()) {
+        return;
+    }
+
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    for (auto &[index, key] : legacyMuteKeys) {
+        bool value = false;
+        if (audioSettingProvider.GetBoolValue(key, value, "system") == SUCCESS) {
+            infos[index].value = value;
+            infos[index].loadFlag = true;
+            AUDIO_INFO_LOG("device %{public}s stream %{public}d mute %{public}d from key %{public}s",
+                device->GetName().c_str(), volumeList[index], value, key.c_str());
+        }
+    }
 }
 
 void VolumeDataMaintainer::CheckNotificationVolumeState(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId)
@@ -1086,33 +1244,43 @@ int32_t VolumeDataMaintainer::SaveVolumeToDb(std::shared_ptr<AudioDeviceDescript
     return SaveVolumeToDbInner(device, streamType, volume, zoneId);
 }
 
+// only called by SaveVolumeToDbInner
+std::pair<std::string, std::string> VolumeDataMaintainer::GetVolumeDbKeys(
+    std::shared_ptr<AudioDeviceDescriptor> device, AudioVolumeType volumeType, int32_t zoneId)
+{
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+    std::string zoneSubspace = GetZoneKey(zoneId) + GetSubspaceKey(zoneId);
+    return {GetVolumeKey(device, volumeType) + zoneSubspace,
+        GetVolumeKey(device, volumeType, VolumeKeyType::DEGREE) + zoneSubspace};
+#else
+    return {GetVolumeKey(device, volumeType),
+        GetVolumeKey(device, volumeType, VolumeKeyType::DEGREE)};
+#endif
+}
+
 int32_t VolumeDataMaintainer::SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDescriptor> device,
     AudioStreamType streamType, const VolumeScale &volume, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "SaveVolumeToDb device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (AudioVolumeUtils::GetInstance().IsDistributedDevice(device)) {
-        if (!device->volumeBehavior_.isReady) {
-            return SUCCESS;
-        }
-        if (device->volumeBehavior_.databaseVolumeName == "") {
-            return SUCCESS;
-        }
+    if (AudioVolumeUtils::GetInstance().IsDistributedDevice(device) &&
+        (!device->volumeBehavior_.isReady || device->volumeBehavior_.databaseVolumeName == "")) {
+        return SUCCESS;
     }
-#ifdef FEATURE_AUDIO_ZONE_VOLUME
-    std::string volumeKey = GetVolumeKey(device, volumeType) + GetZoneKey(zoneId) + GetSubspaceKey(zoneId);
-    std::string volumeDegreeKey = GetVolumeKey(device, volumeType, VolumeKeyType::DEGREE)
-        + GetZoneKey(zoneId) + GetSubspaceKey(zoneId);
-#else
-    std::string volumeKey = GetVolumeKey(device, volumeType);
-    std::string volumeDegreeKey = GetVolumeKey(device, volumeType, VolumeKeyType::DEGREE);
-#endif
+    auto [volumeKey, volumeDegreeKey] = GetVolumeDbKeys(device, volumeType, zoneId);
     if (!volumeKey.compare("")) {
         WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_VOLUME_INTERNA_A),
             ERR_READ_FAILED);
         AUDIO_ERR_LOG("[device %{public}s, streamType %{public}d] is not supported for datashare",
             device->GetName().c_str(), streamType);
         return ERROR;
+    }
+
+    std::string legacyVolumeKey;
+    std::string legacyVolumeDegreeKey;
+    if (IsPcWiredSplitDevice(device->deviceType_)) {
+        legacyVolumeKey = GetLegacyVolumeKey(device, volumeType, VolumeKeyType::LEVEL);
+        legacyVolumeDegreeKey = GetLegacyVolumeKey(device, volumeType, VolumeKeyType::DEGREE);
     }
 
     {
@@ -1127,6 +1295,12 @@ int32_t VolumeDataMaintainer::SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDes
                 "ret %{public}d, ret2 %{public}d",
                 device->GetName().c_str(), streamType, ret, ret2);
             return ERROR;
+        }
+        if (!legacyVolumeKey.empty()) {
+            audioSettingProvider.PutIntValue(legacyVolumeKey, volume.VolumeLevel(), "system");
+        }
+        if (!legacyVolumeDegreeKey.empty()) {
+            audioSettingProvider.PutIntValue(legacyVolumeDegreeKey, volume.VolumeDegree(), "system");
         }
         AUDIO_INFO_LOG("[device %{public}s, streamType %{public}d]"\
             "Save volume to datashare success, volumeLevel %{public}d, volumeDegree %{public}d",
@@ -1282,6 +1456,10 @@ void VolumeDataMaintainer::LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDe
         audioSettingProvider.GetBoolValues(infos, "system");
     }
 
+    if (readDb && VolumeUtils::IsPCVolumeEnable()) {
+        LoadLegacyDeviceMuteFromDb(device, infos, volumeList);
+    }
+
     bool loadFlag = true;
     for (size_t i = 0; i < volumeList.size(); i++) {
         SaveMuteToMap(device, volumeList[i], infos[i].value, zoneId);
@@ -1325,9 +1503,17 @@ int32_t VolumeDataMaintainer::SaveMuteToDb(std::shared_ptr<AudioDeviceDescriptor
         return ERROR;
     }
 
+    std::string legacyMuteKey;
+    if (IsPcWiredSplitDevice(device->deviceType_)) {
+        legacyMuteKey = GetLegacyMuteKey(device, volumeType);
+    }
+
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
     AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = audioSettingProvider.PutBoolValue(muteKey, muteStatus, "system");
+    if (!legacyMuteKey.empty()) {
+        audioSettingProvider.PutBoolValue(legacyMuteKey, muteStatus, "system");
+    }
     AUDIO_INFO_LOG("muteKey:%{public}s, muteStatus:%{public}d, res: %{public}d",
         muteKey.c_str(), muteStatus, ret);
     return ret;
