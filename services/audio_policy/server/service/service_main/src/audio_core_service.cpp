@@ -1303,7 +1303,7 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
         const auto &info = streamDesc->streamInfo_;
         CHECK_AND_RETURN(info.encoding == ENCODING_PCM);
         CHECK_AND_RETURN_LOG(RecordIsForcedNormal(streamDesc) == false, "Forced normal");
-        if (IsStreamSupportMmap(streamDesc)) {
+        if (IsRecordStreamSupportMmap(streamDesc)) {
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
         }
         if (AudioCoreConfigManager::GetInstance().IsUltraFastRecordingDeviceSupported(
@@ -1338,7 +1338,8 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
     }
     switch (streamDesc->capturerInfo_.capturerFlags) {
         case AUDIO_FLAG_MMAP:
-            streamDesc->audioFlag_ = IsStreamSupportMmap(streamDesc) ? AUDIO_INPUT_FLAG_FAST : AUDIO_INPUT_FLAG_NORMAL;
+            streamDesc->audioFlag_ =
+                IsRecordStreamSupportMmap(streamDesc) ? AUDIO_INPUT_FLAG_FAST : AUDIO_INPUT_FLAG_NORMAL;
             return;
         case AUDIO_FLAG_VOIP_FAST:
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_VOIP_FAST;

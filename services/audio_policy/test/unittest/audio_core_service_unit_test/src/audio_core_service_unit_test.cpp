@@ -3086,6 +3086,96 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_010, TestSize.Level1)
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
 }
 
+/** @tc.desc: Recording mmap support requires a valid HAL fast capability on ARM USB devices. */
+HWTEST_F(AudioCoreServiceUnitTest, IsRecordStreamSupportMmap_ArmUsbHalCapability, TestSize.Level1)
+{
+    auto coreService = std::make_shared<AudioCoreService>();
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->audioMode_ = AUDIO_MODE_RECORD;
+    stream->streamInfo_ = AudioStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO, CH_LAYOUT_MONO);
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE);
+    stream->newDeviceDescs_ = {device};
+    EXPECT_FALSE(coreService->IsRecordStreamSupportMmap(stream));
+    const std::vector<std::pair<std::string, bool>> cases = {
+        {"source_rate:48000", false},
+        {"source_rate:48000;source_ufast:48000", false},
+        {"source_rate:48000;source_fast:0|invalid;source_ufast:48000", false},
+        {"source_rate:48000;sink_fast:48000;sink_ufast:48000", false},
+        {"source_rate:48000;source_fast:48000", true},
+        {"source_rate:48000;source_fast:48000;source_ufast:0|invalid", true},
+        {"source_rate:48000;source_fast:48000;source_ufast:48000", true},
+        {"source_rate:48000", false},
+    };
+    for (const auto &[parameters, expected] : cases) {
+        device->UpdateDeviceInfoByAudioParameters(parameters);
+        EXPECT_TRUE(coreService->IsStreamSupportMmap(stream));
+        EXPECT_EQ(coreService->IsRecordStreamSupportMmap(stream), expected) << parameters;
+    }
+}
+
+/** @tc.desc: Recording mmap support preserves the common format limits and rejects missing descriptors. */
+HWTEST_F(AudioCoreServiceUnitTest, IsRecordStreamSupportMmap_FormatAndDeviceValidation, TestSize.Level1)
+{
+    auto coreService = std::make_shared<AudioCoreService>();
+    EXPECT_FALSE(coreService->IsRecordStreamSupportMmap(nullptr));
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->audioMode_ = AUDIO_MODE_RECORD;
+    stream->streamInfo_ = AudioStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO, CH_LAYOUT_MONO);
+    EXPECT_FALSE(coreService->IsRecordStreamSupportMmap(stream));
+    stream->newDeviceDescs_ = {nullptr};
+    EXPECT_FALSE(coreService->IsRecordStreamSupportMmap(stream));
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    stream->newDeviceDescs_ = {device};
+    EXPECT_TRUE(coreService->IsRecordStreamSupportMmap(stream));
+    const std::vector<std::pair<AudioStreamInfo, bool>> cases = {
+        {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO, CH_LAYOUT_MONO}, true},
+        {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO, CH_LAYOUT_STEREO}, true},
+        {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, STEREO, CH_LAYOUT_STEREO}, true},
+        {{SAMPLE_RATE_44100, ENCODING_PCM, SAMPLE_S16LE, MONO, CH_LAYOUT_MONO}, false},
+        {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, MONO, CH_LAYOUT_MONO}, false},
+        {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_4, CH_LAYOUT_4POINT0}, false},
+    };
+    for (auto type : {DEVICE_TYPE_MIC, DEVICE_TYPE_USB_ARM_HEADSET}) {
+        device->deviceType_ = type;
+        device->UpdateDeviceInfoByAudioParameters("source_rate:48000;source_fast:48000;source_ufast:48000");
+        for (const auto &[info, expected] : cases) {
+            stream->streamInfo_ = info;
+            EXPECT_EQ(coreService->IsRecordStreamSupportMmap(stream), expected)
+                << "deviceType=" << type << ", rate=" << info.samplingRate << ", format=" << info.format
+                << ", channels=" << info.channels;
+        }
+    }
+}
+
+/** @tc.desc: Ordinary mmap recording selects FAST or NORMAL using ARM USB HAL capabilities. */
+HWTEST_F(AudioCoreServiceUnitTest, UpdateRecordStreamInfo_ArmUsbMmapFallback, TestSize.Level1)
+{
+    auto coreService = std::make_shared<AudioCoreService>();
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->audioMode_ = AUDIO_MODE_RECORD;
+    stream->capturerInfo_.originalFlag = AUDIO_FLAG_MMAP;
+    stream->capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
+    stream->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    stream->streamInfo_ = AudioStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO, CH_LAYOUT_MONO);
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE);
+    stream->newDeviceDescs_ = {device};
+    const std::vector<std::pair<std::string, AudioFlag>> cases = {
+        {"source_rate:48000;source_fast:48000;source_ufast:48000", AUDIO_INPUT_FLAG_FAST},
+        {"source_rate:48000;source_fast:48000", AUDIO_INPUT_FLAG_FAST},
+        {"source_rate:48000", AUDIO_INPUT_FLAG_NORMAL},
+        {"source_rate:48000;source_ufast:48000", AUDIO_INPUT_FLAG_NORMAL},
+        {"source_rate:48000;source_fast:48000", AUDIO_INPUT_FLAG_FAST},
+    };
+    for (const auto &[parameters, expected] : cases) {
+        device->UpdateDeviceInfoByAudioParameters(parameters);
+        coreService->UpdateRecordStreamInfo(stream);
+        EXPECT_EQ(stream->audioFlag_, expected) << parameters;
+    }
+    stream->streamInfo_.samplingRate = SAMPLE_RATE_44100;
+    coreService->UpdateRecordStreamInfo(stream);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
+}
+
 static void PutCurrentOutputDevice(AudioDeviceDescriptor &desc)
 {
     if (desc.deviceId_ < 1) {
@@ -8651,7 +8741,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
         EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_FAST) << source;
         stream->streamInfo_.samplingRate = SAMPLE_RATE_44100;
         coreService->UpdateRecordStreamInfo(stream);
-        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL) << source;
+        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL) << "scenario=unsupported-client-rate, source=" << source;
         stream->streamInfo_.samplingRate = SAMPLE_RATE_48000;
     }
     // A MIC without an ultra-fast XML association falls back; HIFI can restore the request.
@@ -8705,11 +8795,15 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
         desc->audioStreamInfo_.clear();
         stream->audioFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
         coreService->UpdateRecordStreamInfo(stream);
-        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
+        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL)
+            << "scenario=empty-arm-usb-hal-capability, capturerFlags=" << flag
+            << ", mmapSupport=" << desc->GetDeviceSupportMmap();
         for (const auto &[parameters, expected] : halCapabilityCases) {
             desc->UpdateDeviceInfoByAudioParameters(parameters);
             coreService->UpdateRecordStreamInfo(stream);
-            EXPECT_EQ(stream->audioFlag_, expected) << parameters;
+            EXPECT_EQ(stream->audioFlag_, expected)
+                << "scenario=arm-usb-hal-capability, parameters=" << parameters << ", capturerFlags=" << flag
+                << ", mmapSupport=" << desc->GetDeviceSupportMmap();
             EXPECT_EQ(stream->capturerInfo_.originalFlag, AUDIO_FLAG_ULTRA_FAST);
         }
     }
@@ -8723,17 +8817,19 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
     stream->streamInfo_.encoding = ENCODING_AUDIOVIVID;
     coreService->UpdateRecordStreamInfo(stream);
-    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL)
+        << "scenario=non-pcm-input, encoding=" << stream->streamInfo_.encoding;
     stream->streamInfo_.encoding = ENCODING_PCM;
     stream->capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
     coreService->UpdateRecordStreamInfo(stream);
-    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL)
+        << "scenario=forced-normal, capturerFlags=" << stream->capturerInfo_.capturerFlags;
     stream->capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
     GetNonSystemPermission();
     stream->appInfo_.appTokenId = static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID());
     EXPECT_FALSE(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION, stream->appInfo_.appTokenId));
     coreService->UpdateRecordStreamInfo(stream);
-    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL) << "scenario=ultra-fast-permission-denied";
     SetSelfTokenID(tokenId);
     OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
     stream->appInfo_.appTokenId = static_cast<uint32_t>(tokenId);

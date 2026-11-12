@@ -1021,6 +1021,20 @@ bool AudioCoreService::IsStreamSupportMmap(std::shared_ptr<AudioStreamDescriptor
     return true;
 }
 
+bool AudioCoreService::IsRecordStreamSupportMmap(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "stream desc is nullptr");
+    CHECK_AND_RETURN_RET(IsStreamSupportMmap(streamDesc), false);
+    CHECK_AND_RETURN_RET_LOG(!streamDesc->newDeviceDescs_.empty() && streamDesc->newDeviceDescs_.front() != nullptr,
+        false, "input device desc is empty");
+    const auto &deviceDesc = streamDesc->newDeviceDescs_.front();
+    if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
+        // Both fast-only and fast/ultra-fast HAL capabilities allow the FAST fallback.
+        return deviceDesc->GetDeviceSupportMmap() != 0;
+    }
+    return true;
+}
+
 int32_t AudioCoreService::FetchDeviceAndRoute(std::string caller, const AudioStreamDeviceChangeReasonExt reason)
 {
     int32_t ret = FetchOutputDeviceAndRoute(caller, reason);
