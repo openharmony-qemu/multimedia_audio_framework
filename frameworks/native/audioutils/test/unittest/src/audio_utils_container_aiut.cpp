@@ -295,7 +295,7 @@ HWTEST_F(AudioUtilsContainerAiut, AudioSafeBlockQueue_PushPop_001, TestSize.Leve
     queue.Push(TEST_VALUE_2);
 
     AIUT_EXPECT_EQ_INFO_LOG(queue.Size(), static_cast<size_t>(2),
-        "queue size should be 2, got=%zu", queue.Size());
+        "queue size should be 2, got=%zu", static_cast<size_t>(queue.Size()));
     AIUT_EXPECT_FALSE_INFO_LOG(queue.IsEmpty(), "queue should not be empty");
 
     int32_t val = queue.Pop();
