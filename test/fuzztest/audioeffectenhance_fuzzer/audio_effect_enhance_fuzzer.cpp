@@ -213,6 +213,7 @@ void AudioEffectChainManagerEnhanceFuzzTest()
     AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionID] = sessionEffectInfo;
     const std::string scenePairType = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
     AudioEffectChainManager::GetInstance()->FindMaxSessionID(maxSessionID, sceneTypeMax, scenePairType, sessions);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 void AudioEnhanceChainMoreFuzzTest()
@@ -402,6 +403,8 @@ void AudioEnhanceDeviceVolumeFuzzTest()
     uint32_t sessionId = GetData<uint32_t>();
     float streamVol = GetData<float>();
     mgr->SetStreamVolumeInfo(sessionId, streamVol);
+
+    mgr->ResetInfo();
 }
 
 void AudioEnhanceStreamControlFuzzTest()
