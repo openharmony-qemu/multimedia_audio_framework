@@ -29,7 +29,6 @@ config("audio_effect_config") {
     "../../../services/audio_service/test/example",
     "../../../services/audio_policy/server/infra/datashare/include",
     "../../../services/audio_policy/util/include",
-    "../audioschedule/include",
   ]
 
   cflags = [
@@ -85,7 +84,6 @@ audio_ohos_library("audio_effect") {
     "../../../services/audio_policy:audio_foundation",
     "../../../services/audio_policy:audio_setting_provider",
     "../../../services/audio_service:audio_common",
-    "../audioschedule:audio_schedule",
     "../audioutils:audio_utils",
     "../audioutils:audio_xml_utils",
   ]

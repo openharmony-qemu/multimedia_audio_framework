@@ -521,8 +521,13 @@ int32_t AudioEnhanceChain::GetOutputDataFromChain(void *buf, size_t bufSize)
     CHECK_AND_RETURN_RET_LOG(bufSize != 0, ERROR, "bufSize is 0");
 
     std::lock_guard<std::mutex> lock(chainMutex_);
+    if (outputConsumed_) {
+        AUDIO_INFO_LOG("chain output is not ready, use the previous data");
+    }
     auto memcpyRet = memcpy_s(buf, bufSize, outputCache_.data(), outputCache_.size());
     CHECK_AND_RETURN_RET_LOG(memcpyRet == EOK, ERROR, "memcpy chain out data fail");
+    DumpFileUtil::WriteDumpFile(dumpFileOut_, buf, bufSize);
+    outputConsumed_ = true;
 
     return SUCCESS;
 }
@@ -534,6 +539,7 @@ int32_t AudioEnhanceChain::WriteChainOutputData(const void *buf, size_t bufSize)
 
     auto memcpyRet = memcpy_s(outputCache_.data(), outputCache_.size(), buf, bufSize);
     CHECK_AND_RETURN_RET_LOG(memcpyRet == EOK, ERROR, "write chain out data fail");
+    outputConsumed_ = false;
 
     return SUCCESS;
 }
@@ -594,7 +600,6 @@ int32_t AudioEnhanceChain::ProcessApplyEnhanceChain(void)
         CHECK_AND_CONTINUE_LOG(ret == 0, "module: [%{public}s] process fail", module.enhanceName.c_str());
     }
 
-    DumpFileUtil::WriteDumpFile(dumpFileOut_, algoCache_.output.data(), algoCache_.output.size());
     BufferDesc bufferOut = { algoCache_.output.data(), algoCache_.output.size(), algoCache_.output.size() };
     VolumeTools::DfxOperation(bufferOut, dfxStreamInfo_, traceTagOut_, volumeDataCountOut_);
 

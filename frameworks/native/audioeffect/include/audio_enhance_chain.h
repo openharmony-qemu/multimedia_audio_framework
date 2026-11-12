@@ -127,6 +127,7 @@ private:
     bool needMicRefFlag_ { false };
     bool hasTask_ { false };
     bool chainIsReady_ { false };
+    bool outputConsumed_ { false };
     std::vector<EnhanceModule> enhanceModules_;
     std::vector<uint8_t> outputCache_;
     std::shared_ptr<ThreadHandler> threadHandler_ { nullptr };

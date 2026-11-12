@@ -23,7 +23,6 @@
 #include <unistd.h>
 
 #include "audio_effect_log.h"
-#include "audio_schedule.h"
 #include "nocopyable.h"
 #include "thread_pool.h"
 
@@ -58,10 +57,6 @@ ThreadHandlerImpl::ThreadHandlerImpl(const std::string &threadName)
 
 ThreadHandlerImpl::~ThreadHandlerImpl()
 {
-    auto task = []() {
-        UnscheduleThreadInServer(getpid(), gettid());
-    };
-    threadPool_->AddTask(task);
     threadPool_->Stop();
     AUDIO_INFO_LOG("destroy thread handler succ");
 }
@@ -90,11 +85,6 @@ std::shared_ptr<ThreadHandler> ThreadHandler::NewInstance(const std::string &thr
         AUDIO_ERR_LOG("create thread handler impl fail");
         return nullptr;
     }
-
-    auto task = []() {
-        ScheduleThreadInServer(getpid(), gettid());
-    };
-    handler->PostTask(task);
 
     return handler;
 }
