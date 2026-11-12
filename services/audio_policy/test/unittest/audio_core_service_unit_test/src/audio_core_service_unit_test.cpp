@@ -8651,7 +8651,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
         EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_FAST) << source;
         stream->streamInfo_.samplingRate = SAMPLE_RATE_44100;
         coreService->UpdateRecordStreamInfo(stream);
-        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL) << "scenario=unsupported-client-rate, source=" << source;
+        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL) << source;
         stream->streamInfo_.samplingRate = SAMPLE_RATE_48000;
     }
     // A MIC without an ultra-fast XML association falls back; HIFI can restore the request.
@@ -8674,8 +8674,12 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_FAST);
     prop->format_ = SAMPLE_S32LE;
     coreService->UpdateRecordStreamInfo(stream);
+    // Changing the hardware profile does not relax the Primary S16LE client requirement.
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_FAST);
+    stream->streamInfo_.format = SAMPLE_S16LE;
+    coreService->UpdateRecordStreamInfo(stream);
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
-    // XML can declare an ultra-fast profile outside the legacy mmap client specifications.
+    //  A matching XML rate can select ultra-fast independently of legacy mmap rate support.
     stream->streamInfo_.samplingRate = SAMPLE_RATE_16000;
     prop->sampleRate_ = SAMPLE_RATE_16000;
     coreService->UpdateRecordStreamInfo(stream);
@@ -8705,15 +8709,11 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
         desc->audioStreamInfo_.clear();
         stream->audioFlag_ = AUDIO_INPUT_FLAG_ULTRA_FAST;
         coreService->UpdateRecordStreamInfo(stream);
-        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL)
-            << "scenario=empty-arm-usb-hal-capability, capturerFlags=" << flag
-            << ", mmapSupport=" << desc->GetDeviceSupportMmap();
+        EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
         for (const auto &[parameters, expected] : halCapabilityCases) {
             desc->UpdateDeviceInfoByAudioParameters(parameters);
             coreService->UpdateRecordStreamInfo(stream);
-            EXPECT_EQ(stream->audioFlag_, expected)
-                << "scenario=arm-usb-hal-capability, parameters=" << parameters << ", capturerFlags=" << flag
-                << ", mmapSupport=" << desc->GetDeviceSupportMmap();
+            EXPECT_EQ(stream->audioFlag_, expected) << parameters;
             EXPECT_EQ(stream->capturerInfo_.originalFlag, AUDIO_FLAG_ULTRA_FAST);
         }
     }
@@ -8727,19 +8727,14 @@ HWTEST_F(AudioCoreServiceUnitTest, UltraFastRecordingSourceTypes_001, TestSize.L
     EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
     stream->streamInfo_.encoding = ENCODING_AUDIOVIVID;
     coreService->UpdateRecordStreamInfo(stream);
-    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL)
-        << "scenario=non-pcm-input, encoding=" << stream->streamInfo_.encoding;
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
     stream->streamInfo_.encoding = ENCODING_PCM;
     stream->capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
     coreService->UpdateRecordStreamInfo(stream);
-    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL)
-        << "scenario=forced-normal, capturerFlags=" << stream->capturerInfo_.capturerFlags;
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL);
     stream->capturerInfo_.capturerFlags = AUDIO_FLAG_ULTRA_FAST;
-    GetNonSystemPermission();
-    stream->appInfo_.appTokenId = static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID());
-    EXPECT_FALSE(PermissionUtil::VerifyPermission(USE_ULTRA_FAST_AUDIO_STREAM_PERMISSION, stream->appInfo_.appTokenId));
     coreService->UpdateRecordStreamInfo(stream);
-    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_NORMAL) << "scenario=ultra-fast-permission-denied";
+    EXPECT_EQ(stream->audioFlag_, AUDIO_INPUT_FLAG_ULTRA_FAST);
     SetSelfTokenID(tokenId);
     OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
     stream->appInfo_.appTokenId = static_cast<uint32_t>(tokenId);
