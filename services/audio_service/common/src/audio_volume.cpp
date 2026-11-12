@@ -726,6 +726,7 @@ bool AudioVolume::SetAppRingMuted(int32_t appUid, bool isMuted)
     }
 
     AUDIO_INFO_LOG("appUid:%{public}d, isMuted:%{public}d", appUid, isMuted);
+    bool hasMatchedStream = false;
     for (auto &streamVolume : streamVolume_) {
         auto &stream = streamVolume.second;
         AUDIO_INFO_LOG("appUid: %{public}d, streamType: %{public}d", stream->GetAppUid(), stream->GetStreamType());
@@ -739,10 +740,10 @@ bool AudioVolume::SetAppRingMuted(int32_t appUid, bool isMuted)
             factorsLock.unlock();
             stream->totalVolume_.store(newTotal, std::memory_order_release);
             AUDIO_INFO_LOG("stream total volume: %{public}f", stream->GetTotalVolume());
-            return true;
+            hasMatchedStream = true;
         }
     }
-    return false;
+    return hasMatchedStream;
 }
 
 
