@@ -20,6 +20,7 @@
 #define LOG_TAG "AudioFramework"
 #endif
 
+#include <cstdint>
 #include <stdio.h>
 #include "hilog/log.h"
 
