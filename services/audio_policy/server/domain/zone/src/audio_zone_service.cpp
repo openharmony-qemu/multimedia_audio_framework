@@ -1035,6 +1035,13 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZoneService::GetAvailab
 
     int32_t zoneId = FindAudioZoneByUid(clientUid);
     bool isSystemService = PermissionUtil::VerifySystemPermission() && !PermissionUtil::VerifyIsSystemAppWithoutRoot();
+    if (!isSystemService && zoneId == DEFAULT_ZONEID) {
+        // Non-system service in the default zone returns global devices, excluding zone devices.
+        return globalDevices;
+    }
+
+    // System service returns all devices (including zone devices);
+    // Non-system service in the external zone is filtered by zone visibility.
     std::vector<std::pair<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> tempDevices = {};
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> zoneDevices = {};
     {
