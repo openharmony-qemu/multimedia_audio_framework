@@ -360,6 +360,7 @@ ohos_unittest("audio_device_factory_unit_test") {
     "data_share:datashare_consumer",
     "googletest:gmock",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "init:libbegetutil",
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
@@ -369,7 +370,12 @@ ohos_unittest("audio_device_factory_unit_test") {
     "ffrt:libffrt",
   ]
 
-  sources = [ "./unittest/audio_device_factory_unit_test/src/audio_device_factory_unit_test.cpp" ]
+  sources = [
+    "./unittest/audio_device_factory_unit_test/src/audio_device_factory_unit_test.cpp",
+    "${audio_framework_root}/frameworks/native/bluetoothclient/bluetooth_device_utils.cpp",
+    "${audio_framework_root}/frameworks/native/bluetoothclient/bluetooth_hfp_interface.cpp",
+    "${audio_framework_root}/frameworks/native/bluetoothclient/bluetooth_sco_manager.cpp",
+  ]
 
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
