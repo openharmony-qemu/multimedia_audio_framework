@@ -152,7 +152,8 @@ private:
     bool CheckHoaRenderPreNode(uint32_t nodeId);
     bool CheckSystemNodeConnection(uint32_t nodeId);
     void WriteSuiteEngineUtilizationStatsEvent(AudioNodeType nodeType);
-    void WriteSuiteEngineExceptionEvent(uint32_t scene, uint32_t result, const std::string& description);
+    static void ReportSuiteEngineException(uint32_t scene, uint32_t errorCase,
+        int32_t ret, const std::string& description);
     // for ddl
     void StartGroup();
     void StopGroup();

@@ -18,6 +18,8 @@
 
 #include <string>
 #include <atomic>
+#include <map>
+#include <set>
 #include <limits>
 #include <unordered_map>
 #include <cstring>
@@ -79,6 +81,31 @@ static constexpr uint64_t FRAME_DURATION_MS = 20;
 static constexpr uint32_t MAX_PIPELINE_NUM = 10;
 
 static constexpr AudioSuitePipelineCfg PIPELINE_NODE_CFG;
+
+enum ErrorScene : uint32_t {
+    PIPELINE_SCENE = 0,
+    NODE_SCENE = 1,
+};
+
+enum PipelineErrorCase : uint32_t {
+    CREATE_PIPELINE_ERROR = 0,
+    DESTROY_PIPELINE_ERROR = 1,
+    RENDER_PIPELINE_ERROR = 2,
+};
+
+enum NodeErrorCase : uint32_t {
+    CREATE_NODE_ERROR = 0,
+    DESTROY_NODE_ERROR = 1,
+    CONNECT_NODE_ERROR = 2,
+    DISCONNECT_NODE_ERROR = 3,
+};
+
+static const std::map<std::pair<uint32_t, uint32_t>, std::set<int32_t>>
+    EXCEPTION_REPORT_EXCLUSIONS = {
+    {{NODE_SCENE, CONNECT_NODE_ERROR}, {ERR_AUDIO_SUITE_UNSUPPORT_CONNECT}},
+    {{NODE_SCENE, DISCONNECT_NODE_ERROR}, {ERR_NOT_SUPPORTED}},
+    {{PIPELINE_SCENE, RENDER_PIPELINE_ERROR}, {ERR_NOT_SUPPORTED, ERR_ILLEGAL_STATE}},
+};
 }  // namespace
 
 std::mutex AudioSuitePipelineImpl::createMutex_;
@@ -178,6 +205,8 @@ int32_t AudioSuitePipelineImpl::Create(PipelineWorkMode workMode, std::shared_pt
                            ERR_MEMORY_ALLOC_FAILED),
             "create pipeline failed, malloc error.", true);
         AUDIO_ERR_LOG("create pipeline failed, malloc error.");
+        ReportSuiteEngineException(PIPELINE_SCENE, CREATE_PIPELINE_ERROR,
+            ERR_MEMORY_ALLOC_FAILED, "create pipeline failed, malloc error");
         return ERR_MEMORY_ALLOC_FAILED;
     }
 
@@ -402,10 +431,14 @@ int32_t AudioSuitePipelineImpl::CreateNode(AudioNodeBuilder builder, uint32_t &n
                            BusinessScenario::CREATE, ERR_MEMORY_ALLOC_FAILED),
             "create node failed, malloc error.", true);
         AUDIO_ERR_LOG("create node failed, malloc error.");
+        ReportSuiteEngineException(NODE_SCENE, CREATE_NODE_ERROR,
+            ERR_MEMORY_ALLOC_FAILED, "create node failed, malloc error");
         return ERR_MEMORY_ALLOC_FAILED;
     }
     ret = node->Init();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "node Init failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        ReportSuiteEngineException(NODE_SCENE, CREATE_NODE_ERROR, ret, "engine CreateNode failed, node init failed"),
+        "node Init failed, ret = %{public}d", ret);
 
     node->SetAudioNodeWorkMode(pipelineWorkMode_);
 
@@ -525,7 +558,9 @@ int32_t AudioSuitePipelineImpl::DestroyNode(uint32_t nodeId)
     } else {
         ret = DestroyNodeForStop(nodeId, node);
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyNode failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        ReportSuiteEngineException(NODE_SCENE, DESTROY_NODE_ERROR, ret, "engine DestroyNode failed"),
+        "DestroyNode failed, ret = %{public}d", ret);
 
     AUDIO_INFO_LOG("DestroyNode success. nodeId = %{public}d.", nodeId);
     if (nodeCounts_[node->GetNodeType()] > 0) {
@@ -699,8 +734,10 @@ int32_t AudioSuitePipelineImpl::ConnectNodes(uint32_t srcNodeId, uint32_t destNo
     } else {
         ret = ConnectNodesForRun(srcNodeId, destNodeId, srcNode, destNode);
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ConnectNodes failed, srcNodeId=%{public}d, destNodeId=%{public}d",
-        srcNodeId, destNodeId);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        ReportSuiteEngineException(NODE_SCENE, CONNECT_NODE_ERROR, ret, "engine ConnectNodes failed"),
+        "ConnectNodes failed, srcNodeId=%{public}d, destNodeId=%{public}d, ret=%{public}d",
+        srcNodeId, destNodeId, ret);
 
     if (srcNode->GetNodeType() == NODE_TYPE_AUDIO_MIXER) {
         srcNode->SetAudioNodeFormat(destNode->GetAudioNodeFormat());
@@ -797,8 +834,10 @@ int32_t AudioSuitePipelineImpl::DisconnectNodes(uint32_t srcNodeId, uint32_t des
     } else {
         ret = DisconnectNodesForRun(srcNodeId, destNodeId, srcNode, destNode);
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DisconnectNodes failed, srcNodeId=%{public}d, destNodeId=%{public}d",
-        srcNodeId, destNodeId);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        ReportSuiteEngineException(NODE_SCENE, DISCONNECT_NODE_ERROR, ret, "engine DisConnectNodes failed"),
+        "DisconnectNodes failed, srcNodeId=%{public}d, destNodeId=%{public}d, ret=%{public}d",
+        srcNodeId, destNodeId, ret);
 
     ClearNodeConnections(srcNodeId, destNodeId);
     AUDIO_INFO_LOG("DisconnectNodes success.");
@@ -940,7 +979,9 @@ int32_t AudioSuitePipelineImpl::RenderFrame(
     auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
     CheckRenderFrameTime(frameDuration, static_cast<uint64_t>(processDuration));
     StopGroup();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderFrame failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        ReportSuiteEngineException(PIPELINE_SCENE, RENDER_PIPELINE_ERROR, ret, "engine RenderFrame failed"),
+        "RenderFrame failed, ret = %{public}d", ret);
 
     return SUCCESS;
 }
@@ -969,7 +1010,9 @@ int32_t AudioSuitePipelineImpl::MultiRenderFrame(
     auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
     CheckRenderFrameTime(frameDuration, static_cast<uint64_t>(processDuration));
     StopGroup();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "MultiRenderFrame failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
+        ReportSuiteEngineException(PIPELINE_SCENE, RENDER_PIPELINE_ERROR, ret, "engine MultiRenderFrame failed"),
+        "MultiRenderFrame failed, ret = %{public}d", ret);
 
     return SUCCESS;
 }
@@ -1836,16 +1879,20 @@ void AudioSuitePipelineImpl::WriteSuiteEngineUtilizationStatsEvent(AudioNodeType
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-void AudioSuitePipelineImpl::WriteSuiteEngineExceptionEvent(uint32_t scene, uint32_t result,
-    const std::string& description)
+void AudioSuitePipelineImpl::ReportSuiteEngineException(uint32_t scene, uint32_t errorCase,
+    int32_t ret, const std::string& description)
 {
+    auto it = EXCEPTION_REPORT_EXCLUSIONS.find({scene, errorCase});
+    if (it != EXCEPTION_REPORT_EXCLUSIONS.end() && it->second.count(ret)) {
+        return;
+    }
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::SUITE_ENGINE_EXCEPTION,
         Media::MediaMonitor::EventType::FAULT_EVENT);
     bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
     bean->Add("ERROR_SCENE", static_cast<int32_t>(scene));
-    bean->Add("ERROR_CASE", static_cast<int32_t>(result));
-    bean->Add("ERROR_DESCRIPTION", description);
+    bean->Add("ERROR_CASE", static_cast<int32_t>(errorCase));
+    bean->Add("ERROR_DESCRIPTION", description + ", ret = " + std::to_string(ret));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
