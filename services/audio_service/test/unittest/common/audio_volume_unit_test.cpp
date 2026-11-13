@@ -1625,6 +1625,47 @@ HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioVolume
+ * @tc.number: SetAppRingMuted_005
+ * @tc.desc  : Test SetAppRingMuted updates all STREAM_RING streams of the same app.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_005, TestSize.Level1)
+{
+    bool isMuted = true;
+    int32_t appUid = 123;
+    uint32_t firstSessionId = 10001;
+    uint32_t secondSessionId = 10002;
+    int32_t pid = 1;
+    AudioStreamType streamType = STREAM_RING;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+    int32_t mode = 1;
+
+    audioVolumeTest->appVolume_.clear();
+    audioVolumeTest->streamVolume_.clear();
+
+    audioVolumeTest->streamVolume_.emplace(firstSessionId, std::make_shared<StreamVolume>(
+        firstSessionId, streamType, streamUsage, appUid, pid, false, mode, VKB_INVALID));
+    audioVolumeTest->streamVolume_.emplace(secondSessionId, std::make_shared<StreamVolume>(
+        secondSessionId, streamType, streamUsage, appUid, pid, false, mode, VKB_INVALID));
+
+    bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
+    EXPECT_EQ(result, true);
+
+    auto firstStream = audioVolumeTest->streamVolume_.find(firstSessionId);
+    ASSERT_NE(firstStream, audioVolumeTest->streamVolume_.end());
+    EXPECT_EQ(firstStream->second->isAppRingMuted_, true);
+    EXPECT_EQ(firstStream->second->GetTotalVolume(), 0.0f);
+
+    auto secondStream = audioVolumeTest->streamVolume_.find(secondSessionId);
+    ASSERT_NE(secondStream, audioVolumeTest->streamVolume_.end());
+    EXPECT_EQ(secondStream->second->isAppRingMuted_, true);
+    EXPECT_EQ(secondStream->second->GetTotalVolume(), 0.0f);
+
+    audioVolumeTest->appVolume_.clear();
+    audioVolumeTest->streamVolume_.clear();
+}
+
+/**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
  * @tc.number: GetVolume_006
