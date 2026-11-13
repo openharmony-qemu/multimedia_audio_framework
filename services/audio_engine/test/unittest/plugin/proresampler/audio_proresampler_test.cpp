@@ -14,6 +14,8 @@
 */
 #include <vector>
 #include <map>
+#include <type_traits>
+#include <utility>
 #include <gtest/gtest.h>
 #include "audio_engine_log.h"
 #include "audio_proresampler.h"
@@ -39,7 +41,9 @@ const static std::map<uint32_t, uint32_t> TEST_SAMPLE_RATE_COMBINATION = { // {i
 
 constexpr uint32_t INVALID_QUALITY = -1;
 constexpr uint32_t QUALITY_ONE = 1;
+constexpr uint32_t QUALITY_MID = 5;
 constexpr uint32_t QUALITY_BEST = 10;
+constexpr uint32_t QUALITY_OVER_MAX = 11;
 constexpr uint32_t FRAME_LEN_20MS = (20 * SOURCE_PERIOD_SIZE);
 constexpr uint32_t FRAME_LEN_40MS = (40 * SOURCE_PERIOD_SIZE);
 constexpr uint32_t FRAME_LEN_60MS = (60 * SOURCE_PERIOD_SIZE);
@@ -778,6 +782,156 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_007, TestSize.Level0)
     ret = resampler.UpdateRates(SAMPLE_RATE_48000, SAMPLE_RATE_384000);
     EXPECT_EQ(ret, RESAMPLER_ERR_SUCCESS);
     EXPECT_NE(resampler.state_, nullptr);
+}
+
+/*
+ * @tc.name  : Test GetQuality API.
+ * @tc.type  : FUNC
+ * @tc.number: GetQualityTest_001.
+ * @tc.desc  : Test GetQuality returns the quality passed to the constructor and keeps it across UpdateRates.
+ */
+HWTEST_F(AudioProResamplerTest, GetQualityTest_001, TestSize.Level1)
+{
+    ProResampler resamplerFast(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+    EXPECT_NE(resamplerFast.state_, nullptr);
+    EXPECT_EQ(resamplerFast.GetQuality(), QUALITY_ONE);
+
+    ProResampler resamplerMid(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_MID);
+    EXPECT_NE(resamplerMid.state_, nullptr);
+    EXPECT_EQ(resamplerMid.GetQuality(), QUALITY_MID);
+
+    ProResampler resamplerBest(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_BEST);
+    EXPECT_NE(resamplerBest.state_, nullptr);
+    EXPECT_EQ(resamplerBest.GetQuality(), QUALITY_BEST);
+
+    // quality is not a rate-dependent parameter: the ctor value survives UpdateRates
+    resamplerMid.UpdateRates(SAMPLE_RATE_24000, SAMPLE_RATE_48000);
+    EXPECT_NE(resamplerMid.state_, nullptr);
+    EXPECT_EQ(resamplerMid.GetQuality(), QUALITY_MID);
+}
+
+/*
+ * @tc.name  : Test GetQuality API.
+ * @tc.type  : FUNC
+ * @tc.number: GetQualityTest_002.
+ * @tc.desc  : Test GetQuality at quality boundaries: 0 is accepted by the C core ([0, 10]),
+ *             over-max values are rejected by the ctor guard but still reported raw.
+ */
+HWTEST_F(AudioProResamplerTest, GetQualityTest_002, TestSize.Level1)
+{
+    // quality 0 is within [0, 10] accepted by the C core (QUALITY_TABLE has 11 entries)
+    ProResampler resamplerZero(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, 0);
+    EXPECT_NE(resamplerZero.state_, nullptr);
+    EXPECT_EQ(resamplerZero.GetQuality(), 0);
+
+    // quality 11 is over MAX_QUALITY: ctor guard rejects before Init, quality_ keeps the raw value
+    ProResampler resamplerOver(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_OVER_MAX);
+    EXPECT_EQ(resamplerOver.state_, nullptr);
+    EXPECT_EQ(resamplerOver.GetQuality(), QUALITY_OVER_MAX);
+
+    // INVALID_QUALITY (0xFFFFFFFF) hits the same guard
+    ProResampler resamplerInvalid(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, INVALID_QUALITY);
+    EXPECT_EQ(resamplerInvalid.state_, nullptr);
+    EXPECT_EQ(resamplerInvalid.GetQuality(), INVALID_QUALITY);
+}
+
+/*
+ * @tc.name  : Test deleted copy assignment API.
+ * @tc.type  : FUNC
+ * @tc.number: CopyAssignDeletedTest_001.
+ * @tc.desc  : Compile-time contract of the deleted copy interface: deep copy stays disabled
+ *             (malloc'd C state must not be double-freed), move semantics stay available.
+ */
+HWTEST_F(AudioProResamplerTest, CopyAssignDeletedTest_001, TestSize.Level1)
+{
+    static_assert(!std::is_copy_assignable<ProResampler>::value,
+        "ProResampler copy assignment must stay deleted");
+    static_assert(!std::is_copy_constructible<ProResampler>::value,
+        "ProResampler copy construction must stay deleted");
+    static_assert(std::is_move_assignable<ProResampler>::value,
+        "ProResampler move assignment must stay available");
+    static_assert(std::is_move_constructible<ProResampler>::value,
+        "ProResampler move construction must stay available");
+}
+
+/*
+ * @tc.name  : Test move assignment API.
+ * @tc.type  : FUNC
+ * @tc.number: MoveAssignTest_001.
+ * @tc.desc  : Test move assignment transfers the whole state (rates, quality, C state, buffer),
+ *             returns *this, leaves the source released, and the target stays processable.
+ */
+HWTEST_F(AudioProResamplerTest, MoveAssignTest_001, TestSize.Level1)
+{
+    ProResampler src(SAMPLE_RATE_24000, SAMPLE_RATE_48000, STEREO, QUALITY_BEST);
+    ASSERT_NE(src.state_, nullptr);
+    ProResampler dst(SAMPLE_RATE_44100, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    ASSERT_NE(dst.state_, nullptr);
+
+    ProResampler &ret = (dst = std::move(src));
+    EXPECT_EQ(&ret, &dst); // operator= returns *this
+
+    // dst takes over src's parameters and C state
+    EXPECT_EQ(dst.GetInRate(), SAMPLE_RATE_24000);
+    EXPECT_EQ(dst.GetOutRate(), SAMPLE_RATE_48000);
+    EXPECT_EQ(dst.GetQuality(), QUALITY_BEST);
+    EXPECT_NE(dst.state_, nullptr);
+    EXPECT_EQ(dst.tmpOutBuf_.size(), dst.expectedOutFrameLen_ * STEREO);
+
+    // moved-from source no longer owns the C state
+    EXPECT_EQ(src.state_, nullptr);
+
+    // dst is still processable after the takeover
+    uint32_t inFrameLen = SAMPLE_RATE_24000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO, 0.5f);
+    std::vector<float> out(outFrameLen * STEREO, 0.0f);
+    EXPECT_EQ(dst.Process(in.data(), inFrameLen, out.data(), outFrameLen), EOK);
+}
+
+/*
+ * @tc.name  : Test GetInRate / GetOutRate / GetChannels APIs.
+ * @tc.type  : FUNC
+ * @tc.number: GetBasicParamsTest_001.
+ * @tc.desc  : Test the parameter getters return the live values and track UpdateRates / UpdateChannels.
+ */
+HWTEST_F(AudioProResamplerTest, GetBasicParamsTest_001, TestSize.Level1)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, CHANNEL_6, QUALITY_ONE);
+    ASSERT_NE(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.GetInRate(), SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.GetOutRate(), SAMPLE_RATE_96000);
+    EXPECT_EQ(resampler.GetChannels(), CHANNEL_6);
+
+    // rates change via UpdateRates, channels stay
+    resampler.UpdateRates(SAMPLE_RATE_24000, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.GetInRate(), SAMPLE_RATE_24000);
+    EXPECT_EQ(resampler.GetOutRate(), SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.GetChannels(), CHANNEL_6);
+
+    // channels change via UpdateChannels, rates stay
+    resampler.UpdateChannels(STEREO);
+    EXPECT_EQ(resampler.GetInRate(), SAMPLE_RATE_24000);
+    EXPECT_EQ(resampler.GetOutRate(), SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.GetChannels(), STEREO);
+}
+
+/*
+ * @tc.name  : Test Reset API.
+ * @tc.type  : FUNC
+ * @tc.number: ResetTest_001.
+ * @tc.desc  : Test Reset guard branch: Reset on a failed construction (state_ == nullptr)
+ *             is a safe no-op instead of a crash.
+ */
+HWTEST_F(AudioProResamplerTest, ResetTest_001, TestSize.Level1)
+{
+    // inRate == outRate makes the ctor bail out before Init: state_ stays nullptr
+    ProResampler invalid(SAMPLE_RATE_48000, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    ASSERT_EQ(invalid.state_, nullptr);
+
+    invalid.Reset(); // CHECK_AND_RETURN_LOG early return, must not crash
+    EXPECT_EQ(invalid.state_, nullptr);
+    EXPECT_EQ(invalid.GetDelayFrames(), 0);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

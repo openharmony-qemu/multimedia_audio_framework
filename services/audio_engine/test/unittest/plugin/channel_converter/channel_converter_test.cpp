@@ -620,6 +620,201 @@ HWTEST_F(ChannelConverterTest, ChannelConverter_UpmixGain_Idempotent_001, TestSi
         EXPECT_FLOAT_EQ(outRepeat[i], outOnce[i]);
     }
 }
+
+/*
+ * @tc.name  : ChannelConverter_GetMixTable_001
+ * @tc.type  : FUNC
+ * @tc.number: ChannelConverter_GetMixTable_001
+ * @tc.desc  : Test GetMixTable leaves the caller table untouched when SetParam was never called.
+ */
+HWTEST_F(ChannelConverterTest, ChannelConverter_GetMixTable_001, TestSize.Level1)
+{
+    ChannelConverter converter;
+    float table[MAX_CHANNELS][MAX_CHANNELS];
+    std::fill(&table[0][0], &table[0][0] + MAX_CHANNELS * MAX_CHANNELS, -1.0f);
+
+    converter.GetMixTable(table); // isInitialized_ == false: guard returns without writing
+    for (uint32_t i = 0; i < MAX_CHANNELS; i++) {
+        for (uint32_t j = 0; j < MAX_CHANNELS; j++) {
+            EXPECT_EQ(table[i][j], -1.0f);
+        }
+    }
+}
+
+/*
+ * @tc.name  : ChannelConverter_GetMixTable_002
+ * @tc.type  : FUNC
+ * @tc.number: ChannelConverter_GetMixTable_002
+ * @tc.desc  : Test GetMixTable on the downmix path: coefficients land in [0, 1], the inactive
+ *             region stays zero, and the exposed table matches what Process applies
+ *             (impulse on input ch 0 reproduces column table[*][0]).
+ */
+HWTEST_F(ChannelConverterTest, ChannelConverter_GetMixTable_002, TestSize.Level1)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_5POINT1, 6};
+    AudioChannelInfo outInfo = {CH_LAYOUT_STEREO, 2};
+    ASSERT_EQ(converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE), MIX_ERR_SUCCESS);
+
+    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0}};
+    converter.GetMixTable(table);
+
+    // downmix convention is table[out][in]: active region is [0..outCh)[0..inCh)
+    for (uint32_t i = 0; i < MAX_CHANNELS; i++) {
+        for (uint32_t j = 0; j < MAX_CHANNELS; j++) {
+            if (i < outInfo.numChannels && j < inInfo.numChannels) {
+                EXPECT_GE(table[i][j], 0.0f);
+                EXPECT_LE(table[i][j], 1.0f);
+            } else {
+                EXPECT_EQ(table[i][j], 0.0f); // inactive region untouched
+            }
+        }
+    }
+
+    // impulse on input channel 0 (FL): out[i] == table[i][0] as MixProcess applies it
+    std::vector<float> in(inInfo.numChannels, 0.0f);
+    in[0] = 1.0f;
+    std::vector<float> out(outInfo.numChannels, 0.0f);
+    ASSERT_EQ(converter.Process(1, in.data(), in.size() * sizeof(float), out.data(),
+        out.size() * sizeof(float)), MIX_ERR_SUCCESS);
+    for (uint32_t i = 0; i < outInfo.numChannels; i++) {
+        EXPECT_FLOAT_EQ(out[i], table[i][0]);
+    }
+}
+
+/*
+ * @tc.name  : ChannelConverter_GetMixTable_003
+ * @tc.type  : FUNC
+ * @tc.number: ChannelConverter_GetMixTable_003
+ * @tc.desc  : Test GetMixTable on the upmix path: upmix stores the table transposed
+ *             (table[in][out], read back via table[j][i] in MixProcess); an impulse on
+ *             input ch 0 must reproduce row table[0][*] through Process.
+ */
+HWTEST_F(ChannelConverterTest, ChannelConverter_GetMixTable_003, TestSize.Level1)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_6POINT0, 6};
+    ASSERT_EQ(converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE), MIX_ERR_SUCCESS);
+
+    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0}};
+    converter.GetMixTable(table);
+
+    // upmix convention is table[in][out]: active region is [0..inCh)[0..outCh)
+    for (uint32_t i = 0; i < MAX_CHANNELS; i++) {
+        for (uint32_t j = 0; j < MAX_CHANNELS; j++) {
+            if (i < inInfo.numChannels && j < outInfo.numChannels) {
+                EXPECT_GE(table[i][j], 0.0f); // upmix cross coefficients may exceed 1.0
+            } else {
+                EXPECT_EQ(table[i][j], 0.0f); // inactive region untouched
+            }
+        }
+    }
+
+    // impulse on input channel 0 (L): upmix reads the table transposed, out[i] == table[0][i]
+    std::vector<float> in(inInfo.numChannels, 0.0f);
+    in[0] = 1.0f;
+    std::vector<float> out(outInfo.numChannels, 0.0f);
+    ASSERT_EQ(converter.Process(1, in.data(), in.size() * sizeof(float), out.data(),
+        out.size() * sizeof(float)), MIX_ERR_SUCCESS);
+    for (uint32_t i = 0; i < outInfo.numChannels; i++) {
+        EXPECT_FLOAT_EQ(out[i], table[0][i]);
+    }
+}
+
+/*
+ * @tc.name  : ChannelConverter_GetMixTable_004
+ * @tc.type  : FUNC
+ * @tc.number: ChannelConverter_GetMixTable_004
+ * @tc.desc  : Test GetMixTable guard comes back after Reset: the caller table is left untouched.
+ */
+HWTEST_F(ChannelConverterTest, ChannelConverter_GetMixTable_004, TestSize.Level1)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_5POINT1, 6};
+    AudioChannelInfo outInfo = {CH_LAYOUT_STEREO, 2};
+    ASSERT_EQ(converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE), MIX_ERR_SUCCESS);
+    ASSERT_EQ(converter.isInitialized_, true);
+
+    converter.Reset();
+    EXPECT_EQ(converter.isInitialized_, false);
+
+    float table[MAX_CHANNELS][MAX_CHANNELS];
+    std::fill(&table[0][0], &table[0][0] + MAX_CHANNELS * MAX_CHANNELS, -1.0f);
+    converter.GetMixTable(table);
+    for (uint32_t i = 0; i < MAX_CHANNELS; i++) {
+        for (uint32_t j = 0; j < MAX_CHANNELS; j++) {
+            EXPECT_EQ(table[i][j], -1.0f);
+        }
+    }
+}
+
+/*
+ * @tc.name  : ChannelConverter_SetInChannelInfo_001
+ * @tc.type  : FUNC
+ * @tc.number: ChannelConverter_SetInChannelInfo_001
+ * @tc.desc  : Test SetInChannelInfo re-bakes the mix table on the changed side only:
+ *             downmix stays / switches to upmix when in channels drop, output side untouched.
+ */
+HWTEST_F(ChannelConverterTest, ChannelConverter_SetInChannelInfo_001, TestSize.Level1)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_5POINT1, 6};
+    AudioChannelInfo outInfo = {CH_LAYOUT_STEREO, 2};
+    ASSERT_EQ(converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE), MIX_ERR_SUCCESS);
+
+    // 3ch in > 2ch out: stays on the downmix path
+    AudioChannelInfo surroundInfo = {CH_LAYOUT_SURROUND, BitCounts(CH_LAYOUT_SURROUND)};
+    EXPECT_EQ(converter.SetInChannelInfo(surroundInfo), MIX_ERR_SUCCESS);
+    EXPECT_EQ(converter.isInitialized_, true);
+    EXPECT_EQ(converter.GetInChannelInfo().channelLayout, CH_LAYOUT_SURROUND);
+    EXPECT_EQ(converter.GetInChannelInfo().numChannels, BitCounts(CH_LAYOUT_SURROUND));
+    EXPECT_EQ(converter.GetOutChannelInfo().channelLayout, CH_LAYOUT_STEREO);
+    EXPECT_EQ(converter.GetOutChannelInfo().numChannels, STEREO);
+
+    // 1ch in <= 2ch out: switches to the upmix path, still initialized
+    AudioChannelInfo monoInfo = {CH_LAYOUT_MONO, MONO};
+    EXPECT_EQ(converter.SetInChannelInfo(monoInfo), MIX_ERR_SUCCESS);
+    EXPECT_EQ(converter.isInitialized_, true);
+    EXPECT_EQ(converter.GetInChannelInfo().channelLayout, CH_LAYOUT_MONO);
+    EXPECT_EQ(converter.GetInChannelInfo().numChannels, MONO);
+}
+
+/*
+ * @tc.name  : ChannelConverter_SetOutChannelInfo_001
+ * @tc.type  : FUNC
+ * @tc.number: ChannelConverter_SetOutChannelInfo_001
+ * @tc.desc  : Test SetOutChannelInfo re-bakes the mix table on the changed side only:
+ *             upmix stays / switches to downmix when out channels drop; HOA output is rejected.
+ */
+HWTEST_F(ChannelConverterTest, ChannelConverter_SetOutChannelInfo_001, TestSize.Level1)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_5POINT1, 6};
+    ASSERT_EQ(converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE), MIX_ERR_SUCCESS);
+
+    // 2ch in < 4ch out: stays on the upmix path
+    AudioChannelInfo quadInfo = {CH_LAYOUT_QUAD, BitCounts(CH_LAYOUT_QUAD)};
+    EXPECT_EQ(converter.SetOutChannelInfo(quadInfo), MIX_ERR_SUCCESS);
+    EXPECT_EQ(converter.isInitialized_, true);
+    EXPECT_EQ(converter.GetOutChannelInfo().channelLayout, CH_LAYOUT_QUAD);
+    EXPECT_EQ(converter.GetOutChannelInfo().numChannels, BitCounts(CH_LAYOUT_QUAD));
+    EXPECT_EQ(converter.GetInChannelInfo().channelLayout, CH_LAYOUT_STEREO);
+    EXPECT_EQ(converter.GetInChannelInfo().numChannels, STEREO);
+
+    // 2ch in > 1ch out: switches to the downmix path
+    AudioChannelInfo monoInfo = {CH_LAYOUT_MONO, MONO};
+    EXPECT_EQ(converter.SetOutChannelInfo(monoInfo), MIX_ERR_SUCCESS);
+    EXPECT_EQ(converter.isInitialized_, true);
+    EXPECT_EQ(converter.GetOutChannelInfo().channelLayout, CH_LAYOUT_MONO);
+    EXPECT_EQ(converter.GetOutChannelInfo().numChannels, MONO);
+
+    // HOA output is rejected by SetUpGeneralMixingTable: converter falls back to uninitialized
+    AudioChannelInfo hoaInfo = {CH_LAYOUT_HOA_ORDER2_ACN_N3D, BitCounts(CH_LAYOUT_HOA_ORDER2_ACN_N3D)};
+    EXPECT_EQ(converter.SetOutChannelInfo(hoaInfo), MIX_ERR_INVALID_ARG);
+    EXPECT_EQ(converter.isInitialized_, false);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
