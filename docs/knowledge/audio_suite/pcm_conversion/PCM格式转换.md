@@ -21,7 +21,7 @@ PCM 格式转换器独立于引擎和管线，只处理 PCM 数据，用于采�
 - `OH_AudioSuite_ConverterCreateEx()` 支持任意采样率：范围 [8000, 5644800]，必须是 10 Hz 的整数倍，11025 Hz 例外。
 - `OH_AudioSuite_ConverterGetMinInOutSizes()` 返回最小输入字节数和对应输出字节数；`ConverterDirectProcess()` 的 `inData->size` 必须是该最小输入字节数的整数倍，输出容量必须按比例足够。
 - `ConverterDirectProcess()` 每次最多输入 1000 ms 音频；同一转换器不能同时使用回调模式和 DirectProcess 模式。
-- 采样率不同时，首次处理和每次 `ConverterFlush()` 后的首个输出前会填充静音；填充字节数由 `ConverterGetDelaySize()` 查询。
+- 采样率不同时，第一次处理和每次 `ConverterFlush()` 后的第一个输出前会填充静音；填充字节数由 `ConverterGetDelaySize()` 查询。
 - `ConverterFlush()` 用于快速前后跳、新流重开或数据不连续时清空内部缓存和处理状态；清空后可继续复用转换器，无需销毁重建。
 - 扩展接口的错误码增加 202（非系统应用）和 6800104（操作不支持）。
 
