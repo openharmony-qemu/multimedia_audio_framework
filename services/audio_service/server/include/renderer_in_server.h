@@ -224,6 +224,7 @@ public:
     int32_t CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount);
     void ReportExceptionForOffload();
 public:
+    uint64_t onsetRenderer579_ = 0;
     AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
@@ -265,7 +266,7 @@ private:
     int32_t InitDupStreamVolume(uint32_t dupStreamIndex);
     int32_t FlushOhAudioBuffer();
     BufferDesc PrepareOutputBuffer(const RingBufferWrapper& ringBufferDesc);
-    void CopyDataToInputBuffer(int8_t* inputData, size_t requestDataLen,
+    int32_t CopyDataToInputBuffer(int8_t* inputData, size_t requestDataLen,
         const RingBufferWrapper& ringBufferDesc);
     int32_t Write3DAModeData(uint64_t currentReadFrame, uint64_t currentWriteFrame);
     void ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc, uint64_t currentReadFrame,

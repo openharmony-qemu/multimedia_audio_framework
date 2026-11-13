@@ -4028,7 +4028,7 @@ bool AudioServer::AudioParameterValueCheck(const std::string &key, const std::st
 int32_t AudioServer::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice)
 {
     bool ret = VerifyClientPermission(MANAGE_AUDIO_CONFIG_PERMISSION);
-    CHECK_AND_RETURN_RET_LOG(ret, false, "ReportPlaybackCaptureUserChoice failed: no permission.");
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "ReportPlaybackCaptureUserChoice failed: no permission.");
     CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
     return AudioService::GetInstance()->ReportPlaybackCaptureUserChoice(sessionId, choice);
 }

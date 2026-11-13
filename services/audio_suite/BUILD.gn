@@ -20,6 +20,7 @@ group("audio_suite_packages") {
     ":audio_pcm_process",
     ":audio_suite",
     ":audio_suite_capabilities",
+    "qemu_dsp:package",
   ]
 
   if (audio_framework_feature_audiosuite_support) {

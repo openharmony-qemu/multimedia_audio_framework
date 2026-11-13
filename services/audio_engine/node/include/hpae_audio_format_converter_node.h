@@ -53,13 +53,15 @@ private:
     void ProcessResampleLoop();
     bool ExtractOutputFromProcessedBuffer();
     bool RemoveConsumedInputFrames(uint32_t consumedFrames, uint32_t channels);
-    void CompactProcessedBuffer(uint32_t channels);
+    bool CompactProcessedBuffer(uint32_t channels);
+    bool CanAppendProcessedFrames(uint32_t frames, uint32_t channels);
+    bool CanAcceptInputFrames(uint32_t frames, uint32_t channels) const;
     void MoveUnprocessedToProcessed(uint32_t channels);
     bool TryPullOneFrame();
     uint32_t CalculateResamplerInputThreshold() const;
     void InitDualBuffer();
     int32_t ResampleWithChannelConversion(float *srcData, uint32_t inFrameLen,
-        float *dstData, uint32_t outFrameLen, uint32_t resamplerChannels);
+        float *dstData, uint32_t outFrameLen, uint32_t resamplerChannels, ProResampler::ProcessResult &result);
 
     // --- Refactoring helpers (sub-50-line extraction targets) ---
     void ProcessSameRateChannelConversion(uint32_t inCh, uint32_t outCh);
@@ -72,7 +74,7 @@ private:
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer converterOutput_;
     HpaeNodeInfo preNodeInfo_;
-    std::unique_ptr<Resampler> resampler_ = nullptr;
+    std::unique_ptr<ProResampler> resampler_ = nullptr;
     ChannelConverter channelConverter_;
     HpaePcmBuffer tmpOutBuf_; // cache between resample and converter
     // if there is render effect, the effect node decides the output format of converter node
@@ -80,7 +82,11 @@ private:
 
     // Unprocessed input accumulation buffer (interleaved float, input sample rate)
     std::vector<float> unprocessedBuffer_;
+    Onset579::Spans unprocessedOrigins579_;
+    Onset579::Spans processedOrigins579_;
     uint32_t unprocessedFrames_ = 0;
+    bool resamplerFailed_ = false;
+    uint32_t bufferedState_ = PCM_BUFFER_STATE_INVALID;
 
     // Processed output buffer (interleaved float, output sample rate)
     std::vector<float> processedBuffer_;

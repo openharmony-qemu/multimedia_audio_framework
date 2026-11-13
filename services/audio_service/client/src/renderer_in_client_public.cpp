@@ -242,6 +242,31 @@ void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInf
     return;
 }
 
+int32_t RendererInClientInner::RebuildWriteTransforms()
+{
+    std::lock_guard lockSpeed(speedMutex_);
+    if (audioSpeed_ != nullptr) {
+        CHECK_AND_RETURN_RET_LOG(audioSpeed_->Reconfigure(curStreamParams_.samplingRate,
+            curStreamParams_.format, curStreamParams_.channels) == SUCCESS,
+            ERR_OPERATION_FAILED, "speed recreation failed");
+    }
+    std::lock_guard lockPitch(pitchMutex_);
+    if (pitchProcessor_ != nullptr) {
+        AudioStreamInfo info(static_cast<AudioSamplingRate>(curStreamParams_.samplingRate),
+            static_cast<AudioEncodingType>(curStreamParams_.encoding),
+            static_cast<AudioSampleFormat>(curStreamParams_.format),
+            static_cast<AudioChannel>(curStreamParams_.channels),
+            static_cast<AudioChannelLayout>(curStreamParams_.channelLayout));
+        auto replacement = AudioPitchProcessor::CreateInstance(info);
+        CHECK_AND_RETURN_RET_LOG(replacement != nullptr && replacement->PitchAlgoInit() == SUCCESS &&
+            replacement->SetPitch(curPitch_) == SUCCESS, ERR_OPERATION_FAILED, "pitch recreation failed");
+        pitchProcessor_ = std::move(replacement);
+        pitchBuffer_.reset();
+        pitchBufferCapacity_ = 0;
+    }
+    return SUCCESS;
+}
+
 int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj,
     const AudioPlaybackCaptureConfig &config)
@@ -257,6 +282,11 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
+    {
+        std::lock_guard<std::mutex> writeLock(writeMutex_);
+        DropOwnedOutput();
+        outputWriteUnknown_ = true; // prevent output from crossing a format/native-buffer rebuild
+    }
     streamParams_ = curStreamParams_ = info; // keep it for later use
     isHWDecodingType_ = IsHWDecodingType(static_cast<AudioEncodingType>(streamParams_.encoding));
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
@@ -297,7 +327,14 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     int32_t initRet = InitIpcStream();
     CHECK_AND_CALL_FUNC_RETURN_RET(initRet == SUCCESS, initRet,
         HILOG_COMM_ERROR("[SetAudioStreamInfo]Init stream failed: %{public}d", initRet));
-    UpdateStreamState(PREPARED);
+    {
+        std::lock_guard<std::mutex> writeLock(writeMutex_);
+        CHECK_AND_RETURN_RET_LOG(RebuildWriteTransforms() == SUCCESS, ERR_OPERATION_FAILED,
+            "write transform recreation failed");
+        UpdateStreamState(PREPARED);
+        outputWriteUnknown_ = false; // actual new process/buffer/session initialization succeeded
+        lastWriteRetryable_ = false;
+    }
 
     InitDFXOperaiton();
     InitDirectPipeType();
@@ -864,7 +901,8 @@ int32_t RendererInClientInner::SetPitch(float pitch)
         }
         
         GetBufferSize(bufferSize_);
-        pitchBuffer_ = std::make_unique<uint8_t[]>(bufferSize_ * MAX_PITCH_BUFFER_FACTOR);
+        pitchBuffer_.reset();
+        pitchBufferCapacity_ = 0; // sized from the actual input by ProcessPitch under the writer lock
     }
     
     pitchProcessor_->SetPitch(pitch);
@@ -1330,6 +1368,12 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
     preWriteEndTime_ = 0;
+    {
+        std::lock_guard<std::mutex> writeLock(writeMutex_);
+        if (DrainPendingOutput() != SUCCESS) {
+            AUDIO_WARNING_LOG("Resume retains pending output or unknown write state");
+        }
+    }
     return true;
 }
 
@@ -1433,6 +1477,11 @@ bool RendererInClientInner::StopAudioStream()
     if (state_ == STOPPED) {
         AUDIO_INFO_LOG("Renderer in client is already stopped");
         streamFocusState_ = static_cast<StreamFocusState>(STOPPED);
+        if (!lock.owns_lock()) {
+            lock.lock();
+        }
+        DropOwnedOutput();
+        FlushSpeedBuffer();
         return true;
     }
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state_ == RUNNING || state_ == PAUSED, false,
@@ -1465,6 +1514,11 @@ bool RendererInClientInner::StopAudioStream()
 
     waitLock.unlock();
     FutexTool::FutexWake(clientBuffer_->GetFutex());
+    if (!lock.owns_lock()) {
+        lock.lock(); // STOPPED and futex wake precede waiting for an offload writer
+    }
+    DropOwnedOutput();
+    FlushSpeedBuffer();
     statusLock.unlock();
     HandleStopSuccess();
     return true;
@@ -1514,6 +1568,10 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
 
     //clear write callback
     JoinCallbackLoop();
+    {
+        std::lock_guard<std::mutex> writeLock(writeMutex_);
+        DropOwnedOutput();
+    }
     paramsIsSet_ = false;
 
     std::unique_lock<std::mutex> lock(streamCbMutex_);
@@ -1557,6 +1615,7 @@ bool RendererInClientInner::FlushAudioStream()
         "Flush failed. Illegal state:%{public}u", state_.load());
 
     ClearCbBufferQueue();
+    DropOwnedOutput();
     FlushSpeedBuffer();
 
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, false,

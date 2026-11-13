@@ -20,6 +20,7 @@
          The "path" attribute specifies the relative path of the library .so file in /system/lib/.
     -->
     <libraries>
+        <library name="QemuSpatial" path="libaudio_qemu_spatial.z.so"/>
         <library name="BasicEffect" path="libaudio_integration_basic.z.so"/>
         <library name="Voip" path="libaudio_integration_voip.z.so"/>
     </libraries>
@@ -32,6 +33,7 @@
          Some effects may have "effectProperty" attributes, which indicate the property of the specified effects.
     -->
     <effects>
+        <effect name="qemu_hrtf" library="QemuSpatial"/>
         <effect name="eq" library="BasicEffect"/>
         <effect name="drc" library="BasicEffect"/>
         <effect name="voip" library="Voip">
@@ -50,12 +52,10 @@
     -->
     <effectChains>
         <effectChain name="EFFECTCHAIN_SPK_MUSIC">
-            <apply effect="eq"/>
-            <apply effect="drc"/>
+            <apply effect="qemu_hrtf"/>
         </effectChain>
-        <effectChain name="EFFECTCHAIN_BT_MUSIC">
-            <apply effect="eq"/>
-            <apply effect="drc"/>
+        <effectChain name="EFFECTCHAIN_BT_MUSIC" label="SPATIALIZATION_AND_HEADTRACKING">
+            <apply effect="qemu_hrtf"/>
         </effectChain>
         <effectChain name="EFFECTCHAIN_VOIP_3A">
             <apply effect="voip"/>

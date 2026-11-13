@@ -17,6 +17,7 @@
 #endif
 
 #include "renderer_in_server.h"
+#include "audio_onset579.h"
 #include <algorithm>
 #include <chrono>
 #include <cinttypes>
@@ -142,6 +143,8 @@ void NotifySilentStateAction::Exec()
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
     : processConfig_(processConfig)
 {
+    Onset579::Initialize(); // existing non-RT constructor, before any audio callbacks
+    onsetRenderer579_ = Onset579::NewInstance();
     streamListener_ = streamListener;
     managerType_ = PLAYBACK;
     if (processConfig_.callerUid == MEDIA_UID) {
@@ -881,7 +884,7 @@ void RendererInServer::VolumeHandle(BufferDesc &desc)
 
 BufferDesc RendererInServer::PrepareOutputBuffer(const RingBufferWrapper& ringBufferDesc)
 {
-    BufferDesc bufferDesc;
+    BufferDesc bufferDesc {};
     if (ringBufferDesc.basicBufferDescs[0].bufLength >= ringBufferDesc.dataLength) {
         bufferDesc.buffer = ringBufferDesc.basicBufferDescs[0].buffer;
         bufferDesc.bufLength = ringBufferDesc.dataLength;
@@ -892,7 +895,8 @@ BufferDesc RendererInServer::PrepareOutputBuffer(const RingBufferWrapper& ringBu
         tmpWrapper.dataLength = ringBufferDesc.dataLength;
         tmpWrapper.basicBufferDescs[0].buffer = rendererTmpBuffer_.data();
         tmpWrapper.basicBufferDescs[0].bufLength = ringBufferDesc.dataLength;
-        tmpWrapper.CopyInputBufferValueToCurBuffer(ringBufferDesc);
+        int32_t ret = tmpWrapper.CopyInputBufferValueToCurBuffer(ringBufferDesc);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, bufferDesc, "PrepareOutputBuffer copy failed");
 
         bufferDesc.buffer = rendererTmpBuffer_.data();
         bufferDesc.bufLength = ringBufferDesc.dataLength;
@@ -1008,7 +1012,10 @@ int32_t RendererInServer::WriteData()
             }
         }
         BufferDesc bufferDesc = PrepareOutputBuffer(ringBufferDesc);
-        stream_->EnqueueBuffer(bufferDesc);
+        CHECK_AND_RETURN_RET_LOG(bufferDesc.buffer != nullptr &&
+            bufferDesc.dataLength == ringBufferDesc.dataLength, ERR_OPERATION_FAILED, "invalid output buffer");
+        int32_t enqueueRet = stream_->EnqueueBuffer(bufferDesc);
+        CHECK_AND_RETURN_RET_LOG(enqueueRet >= SUCCESS, enqueueRet, "EnqueueBuffer failed");
         if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
             DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
             AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
@@ -1048,7 +1055,7 @@ int32_t RendererInServer::GetAvailableSize(size_t &length)
     return SUCCESS;
 }
 
-void RendererInServer::CopyDataToInputBuffer(int8_t* inputData, size_t requestDataLen,
+int32_t RendererInServer::CopyDataToInputBuffer(int8_t* inputData, size_t requestDataLen,
     const RingBufferWrapper& ringBufferDesc)
 {
     RingBufferWrapper wrapperInputData = {
@@ -1059,8 +1066,7 @@ void RendererInServer::CopyDataToInputBuffer(int8_t* inputData, size_t requestDa
         .dataLength = requestDataLen
     };
 
-    CHECK_AND_RETURN_LOG(wrapperInputData.CopyInputBufferValueToCurBuffer(ringBufferDesc) == 0,
-        "memcpy error");
+    return wrapperInputData.CopyInputBufferValueToCurBuffer(ringBufferDesc);
 }
 
 void RendererInServer::ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc,
@@ -1103,6 +1109,8 @@ void RendererInServer::DetectLatency(uint8_t *inputData, size_t requestDataLen)
 
 int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen, bool wakeFutex)
 {
+    CHECK_AND_RETURN_RET_LOG(inputData != nullptr && byteSizePerFrame_ > 0 &&
+        requestDataLen % byteSizePerFrame_ == 0, ERR_INVALID_PARAM, "invalid input frame size");
     size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
 
     std::lock_guard lock(writeLock_);
@@ -1132,13 +1140,22 @@ int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen, bo
         HILOG_COMM_ERROR("[WriteData]data not enouth"));
 
     ringBufferDesc.dataLength = requestDataLen;
+    // Copy the actual source frames before existing in-place fade/volume/clear.
+    // A failed copy/SetCurReadFrame is never marked as a consumed source cut.
+    const size_t onsetFirst579 = std::min(requestDataLen, ringBufferDesc.basicBufferDescs[0].bufLength);
+    const uint64_t onsetCut579 = Onset579::PrepareRead(onsetRenderer579_, processConfig_.appInfo.appUid,
+        streamIndex_, currentReadFrame, requestDataInFrame, processConfig_.streamInfo.GetEffectiveSampleRate(),
+        processConfig_.streamInfo.channels, processConfig_.streamInfo.format,
+        ringBufferDesc.basicBufferDescs[0].buffer, onsetFirst579,
+        ringBufferDesc.basicBufferDescs[1].buffer, requestDataLen - onsetFirst579);
     ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
-    CopyDataToInputBuffer(inputData, requestDataLen, ringBufferDesc);
+    ret = CopyDataToInputBuffer(inputData, requestDataLen, ringBufferDesc);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "input copy failed");
     ringBufferDesc.SetBuffersValueWithSpecifyDataLen(0); // clear is needed for reuse.
     uint64_t nextReadFrame = currentReadFrame + requestDataInFrame;
-    audioServerBuffer_->SetCurReadFrame(nextReadFrame, wakeFutex);
-
-    return SUCCESS;
+    const int32_t onsetCommit579 = audioServerBuffer_->SetCurReadFrame(nextReadFrame, wakeFutex);
+    Onset579::CommitRead(onsetCut579, onsetCommit579 == SUCCESS);
+    return onsetCommit579;
 }
 
 int32_t RendererInServer::WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen)
@@ -1500,8 +1517,15 @@ int32_t RendererInServer::StartInnerDuringStandby()
             PLAY_START_OPERATION_FAILED, "Policy start client failed", false),
         HILOG_COMM_ERROR("[StartInnerDuringStandby]Policy start client failed, reason: %{public}d", ret));
 
-    ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
-        IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
+    const int32_t audioHapticsSyncId = audioHapticsSyncId_.load();
+    if (audioHapticsSyncId > 0) {
+        ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+            IStreamManager::GetPlaybackManager(managerType_).StartRenderWithSyncId(streamIndex_, audioHapticsSyncId) :
+            stream_->StartWithSyncId(audioHapticsSyncId);
+    } else {
+        ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+            IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
+    }
     RecordStandbyTime(true, false);
     return ret;
 }
@@ -1577,9 +1601,17 @@ int32_t RendererInServer::StartInner(bool hasNoCallback)
         WaitForDataConnection();
     }
 
-    ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK ||
-        managerType_ == AUDIO_VIVID_3DA_DIRECT_PLAYBACK) ?
-        IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
+    const int32_t audioHapticsSyncId = audioHapticsSyncId_.load();
+    if (audioHapticsSyncId > 0) {
+        ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK ||
+            managerType_ == AUDIO_VIVID_3DA_DIRECT_PLAYBACK) ?
+            IStreamManager::GetPlaybackManager(managerType_).StartRenderWithSyncId(streamIndex_, audioHapticsSyncId) :
+            stream_->StartWithSyncId(audioHapticsSyncId);
+    } else {
+        ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK ||
+            managerType_ == AUDIO_VIVID_3DA_DIRECT_PLAYBACK) ?
+            IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
+    }
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(processConfig_.appInfo.appUid),
             PLAY_START_OPERATION_FAILED, "Start stream failed", false),

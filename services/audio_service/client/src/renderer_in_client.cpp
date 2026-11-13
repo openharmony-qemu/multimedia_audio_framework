@@ -333,6 +333,9 @@ int32_t RendererInClientInner::GetBufferWaitTimeoutInMs() const
 int32_t RendererInClientInner::InitIpcStream()
 {
     Trace trace("RendererInClientInner::InitIpcStream");
+    std::lock_guard<std::mutex> writeLock(writeMutex_);
+    DropOwnedOutput();
+    outputWriteUnknown_ = true;
     AudioProcessConfig config = ConstructConfig();
     bool resetSilentMode = (gServerProxy_ == nullptr) ? true : false;
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
@@ -609,7 +612,10 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     }
     if (result < 0) {
         AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
-        RecordDropPosition(bufferDesc.bufLength);
+        std::lock_guard<std::mutex> lock(writeMutex_);
+        if (!lastWriteRetryable_) {
+            RecordDropPosition(bufferDesc.bufLength);
+        }
     }
     return result;
 }
@@ -740,6 +746,21 @@ bool RendererInClientInner::WriteCallbackFunc()
         return true;
     }
     CheckAndProcessPendingSpanSize();
+    int32_t pendingRet = SUCCESS;
+    bool writeUnknown = false;
+    {
+        std::lock_guard<std::mutex> lock(writeMutex_);
+        pendingRet = DrainPendingOutput();
+        writeUnknown = outputWriteUnknown_;
+    }
+    if (writeUnknown) {
+        // Keep this existing loop available for a successful native recreation; do not take another input.
+        usleep(WAIT_FOR_NEXT_CB);
+        return true;
+    }
+    if (pendingRet != SUCCESS) {
+        return true; // DrainOwnedOutput already performed the bounded buffer wait.
+    }
     if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
         HILOG_COMM_WARN("[WriteCallbackFunc]The queue is too long, reducing data through loops");
     }
@@ -753,7 +774,23 @@ bool RendererInClientInner::WriteCallbackFunc()
         }
         traceQueuePop.End();
         // call write here.
+        {
+            std::lock_guard<std::mutex> lock(writeMutex_);
+            lastWriteRetryable_ = false;
+        }
         int32_t result = ProcessWriteInner(temp);
+        {
+            std::lock_guard<std::mutex> lock(writeMutex_);
+            writeUnknown = outputWriteUnknown_;
+            if (!writeUnknown && result <= 0 && lastWriteRetryable_ && curStreamParams_.encoding == ENCODING_PCM) {
+                cbBufferQueue_.Push(temp); // no bytes of this input were published/owned
+                break;
+            }
+        }
+        if (writeUnknown) {
+            usleep(WAIT_FOR_NEXT_CB);
+            return true;
+        }
         // only run in pause scene, do not repush audiovivid buffer cause metadata error
         if (result > 0 && static_cast<size_t>(result) < temp.dataLength &&
             curStreamParams_.encoding == ENCODING_PCM) {
@@ -780,7 +817,7 @@ bool RendererInClientInner::WriteCallbackFunc()
     return true;
 }
 
-bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached)
+int32_t RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached)
 {
     speedCached = false;
 #ifdef SONIC_ENABLE
@@ -789,52 +826,53 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
         Trace trace(traceTag_ + " ProcessSpeed" + std::to_string(speed_));
         if (audioSpeed_ == nullptr) {
             AUDIO_ERR_LOG("audioSpeed_ is nullptr, use speed default 1.0");
-            return true;
+            return 1;
         }
+        CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ > 0 &&
+            bufferSize % sizePerFrameInByte_ == 0 && speedBuffer_ != nullptr, ERR_INVALID_PARAM,
+            "invalid speed input frame or output buffer");
         int32_t outBufferSize = 0;
-        if (audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize) == 0) {
-            bufferSize = 0;
-            HILOG_COMM_ERROR("[ProcessSpeed]process speed error");
-            return false;
-        }
-        if (outBufferSize == 0) {
-            HILOG_COMM_ERROR("[ProcessSpeed]speed buffer is not full");
-            return false;
-        }
+        int32_t ret = audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize);
+        CHECK_AND_RETURN_RET_LOG(ret > 0 && static_cast<size_t>(ret) == bufferSize && outBufferSize >= 0 &&
+            outBufferSize <= MAX_SPEED_BUFFER_SIZE &&
+            static_cast<size_t>(outBufferSize) % sizePerFrameInByte_ == 0, ERR_OPERATION_FAILED,
+            "speed input ownership or output size is unknown");
+        speedCached = true;
         buffer = speedBuffer_.get();
         bufferSize = static_cast<size_t>(outBufferSize);
-        speedCached = true;
+        return outBufferSize == 0 ? 0 : 1;
     }
 #endif
-    return true;
+    return 1;
 }
 
-bool RendererInClientInner::ProcessPitch(uint8_t *&buffer, size_t &bufferSize, bool &pitchCached)
+int32_t RendererInClientInner::ProcessPitch(uint8_t *&buffer, size_t &bufferSize, bool &pitchCached)
 {
     pitchCached = false;
     std::lock_guard lockPitch(pitchMutex_);
-    
     if (isEqual(curPitch_, 1.0f) || pitchProcessor_ == nullptr) {
-        return true;
+        return 1;
     }
+    CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ > 0 && bufferSize < MAX_WRITE_SIZE &&
+        bufferSize % sizePerFrameInByte_ == 0, ERR_INVALID_PARAM, "invalid pitch input frame size");
     Trace trace(traceTag_ + " ProcessPitch" + std::to_string(curPitch_));
-    size_t outputSize = bufferSize * MAX_PITCH_BUFFER_FACTOR;
+    const size_t requiredCapacity = bufferSize * MAX_PITCH_BUFFER_FACTOR;
+    if (pitchBuffer_ == nullptr || pitchBufferCapacity_ < requiredCapacity) {
+        auto replacement = std::unique_ptr<uint8_t[]>(new (std::nothrow) uint8_t[requiredCapacity]);
+        CHECK_AND_RETURN_RET_LOG(replacement != nullptr, ERR_OPERATION_FAILED, "pitch output allocation failed");
+        pitchBuffer_ = std::move(replacement);
+        pitchBufferCapacity_ = requiredCapacity;
+    }
+    size_t outputSize = pitchBufferCapacity_;
     int32_t ret = pitchProcessor_->ProcessBufferPitch(reinterpret_cast<int8_t*>(buffer), bufferSize,
         reinterpret_cast<int8_t*>(pitchBuffer_.get()), outputSize);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("ProcessBufferPitch failed");
-        return false;
-    }
-    
-    if (outputSize == 0) {
-        AUDIO_ERR_LOG("Pitch buffer is empty");
-        return false;
-    }
-    
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && outputSize <= pitchBufferCapacity_ &&
+        outputSize % sizePerFrameInByte_ == 0, ERR_OPERATION_FAILED,
+        "pitch input ownership or output size is unknown");
+    pitchCached = true;
     buffer = pitchBuffer_.get();
     bufferSize = outputSize;
-    pitchCached = true;
-    return true;
+    return outputSize == 0 ? 0 : 1;
 }
 
 void RendererInClientInner::DfxWriteInterval()
@@ -891,13 +929,18 @@ void RendererInClientInner::NotifyStreamSilentChange()
     AUDIO_INFO_LOG("NotifyStreamSilentChange cost %{public}" PRId64 " ns", ClockTime::GetCurNano() - stamp);
 }
 
-int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize, bool bufferCached,
-    size_t oriBufferSize)
+RendererInClientInner::WriteProgress RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize)
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET(sizePerFrameInByte_ > 0, ERROR,
-        HILOG_COMM_ERROR("[WriteCacheData]sizePerFrameInByte :%{public}zu", sizePerFrameInByte_));
+    WriteProgress progress;
+    if (sizePerFrameInByte_ == 0 || buffer == nullptr || clientBuffer_ == nullptr) {
+        progress.error = ERR_INVALID_PARAM;
+        return progress;
+    }
     size_t remainSize = (bufferSize / sizePerFrameInByte_) * sizePerFrameInByte_;
-
+    if (remainSize == 0) {
+        progress.error = ERR_INVALID_PARAM;
+        return progress;
+    }
     RingBufferWrapper inBuffer = {
         .basicBufferDescs = {{
             {.buffer = buffer, .bufLength = remainSize},
@@ -905,49 +948,92 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
         }},
         .dataLength = 0
     };
-
     while (remainSize >= sizePerFrameInByte_) {
-        FutexCode futexRes = FUTEX_OPERATION_FAILED;
         int32_t timeout = GetBufferWaitTimeoutInMs();
-        futexRes = clientBuffer_->WaitFor(static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
+        FutexCode futexRes = clientBuffer_->WaitFor(static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
             [this] () { return (state_ != RUNNING) || CheckBufferNeedWrite(); });
-        CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
-        CHECK_AND_CALL_FUNC_RETURN_RET(futexRes != FUTEX_TIMEOUT, ERROR, HILOG_COMM_ERROR("[WriteCacheData]write data "
-            "time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal")));
-
+        if (state_ != RUNNING || futexRes == FUTEX_TIMEOUT) {
+            progress.error = state_ != RUNNING ? ERR_ILLEGAL_STATE : ERROR;
+            progress.retryable = state_ == RUNNING || state_ == PAUSED;
+            progress.canceled = state_ == STOPPING || state_ == STOPPED || state_ == RELEASED;
+            break;
+        }
         uint64_t writePos = clientBuffer_->GetCurWriteFrame();
         uint64_t readPos = clientBuffer_->GetCurReadFrame();
-        CHECK_AND_CALL_FUNC_RETURN_RET(writePos >= readPos, ERROR, HILOG_COMM_ERROR("[WriteCacheData]writePos: "
-            "%{public}" PRIu64 " readPos: %{public}" PRIu64 "", writePos, readPos));
+        if (writePos < readPos) {
+            progress.error = ERROR;
+            break;
+        }
         RingBufferWrapper ringBuffer;
         int32_t ret = clientBuffer_->GetAllWritableBufferFromPosFrame(writePos, ringBuffer);
-        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS && (ringBuffer.dataLength > 0), ERROR,
-            HILOG_COMM_ERROR("[WriteCacheData]Write failed:%{public}d", ret));
-        auto copySize = std::min(remainSize, ringBuffer.dataLength);
+        auto copySize = (std::min(remainSize, ringBuffer.dataLength) / sizePerFrameInByte_) * sizePerFrameInByte_;
+        if (ret != SUCCESS || copySize == 0) {
+            progress.error = ret == SUCCESS ? ERROR : ret;
+            break;
+        }
         inBuffer.dataLength = copySize;
         ret = ringBuffer.CopyInputBufferValueToCurBuffer(inBuffer);
-        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
-            HILOG_COMM_ERROR("[WriteCacheData]errcode: %{public}d", ret));
-        clientBuffer_->SetCurWriteFrame((writePos + (copySize / sizePerFrameInByte_)), false);
+        if (ret != SUCCESS) {
+            progress.error = ret;
+            break;
+        }
+        ret = clientBuffer_->SetCurWriteFrame(writePos + (copySize / sizePerFrameInByte_), false);
+        if (ret != SUCCESS) {
+            progress.error = ret;
+            break;
+        }
         inBuffer.SeekFromStart(copySize);
         remainSize -= copySize;
+        progress.published += copySize;
     }
-    size_t writtenSize = bufferSize - remainSize;
+    if (progress.published > 0) {
+        preWriteEndTime_ = ClockTime::GetCurNano() / AUDIO_US_PER_SECOND;
+        if (!ProcessVolume()) {
+            AUDIO_ERR_LOG("volume update failed after publishing audio");
+        }
+        VolumeTools::DfxOperation({.buffer = buffer, .bufLength = progress.published, .dataLength = progress.published},
+            clientConfig_.streamInfo, traceTag_, volumeDataCount_);
+        NotifyStreamSilentChange();
+        DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(buffer), progress.published);
+        if (ipcStream_ != nullptr) {
+            ipcStream_->UpdatePosition();
+        } else {
+            AUDIO_ERR_LOG("position notification unavailable after publishing audio");
+        }
+        HandleRendererPositionChanges(progress.published);
+    }
+    return progress;
+}
 
-    preWriteEndTime_ = ClockTime::GetCurNano() / AUDIO_US_PER_SECOND;
+void RendererInClientInner::DropOwnedOutput()
+{
+    ownedOutput_.reset();
+    ownedOutputSize_ = 0;
+    ownedOutputOffset_ = 0;
+}
 
-    CHECK_AND_RETURN_RET(ProcessVolume(), ERR_OPERATION_FAILED);
-    VolumeTools::DfxOperation({.buffer = buffer, .bufLength = writtenSize, .dataLength = writtenSize},
-        clientConfig_.streamInfo, traceTag_, volumeDataCount_);
-    NotifyStreamSilentChange();
-    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(buffer), writtenSize);
-
-    CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, ERR_OPERATION_FAILED,
-        HILOG_COMM_ERROR("[WriteCacheData]WriteCacheData failed, null ipcStream_."));
-    ipcStream_->UpdatePosition(); // notiify server update position
-    HandleRendererPositionChanges(writtenSize);
-
-    return bufferCached ? oriBufferSize : writtenSize;
+int32_t RendererInClientInner::DrainOwnedOutput()
+{
+    CHECK_AND_RETURN_RET_LOG(!outputWriteUnknown_, ERR_OPERATION_FAILED, "output write state is unknown");
+    if (ownedOutputSize_ == 0) {
+        return SUCCESS;
+    }
+    auto progress = WriteCacheData(ownedOutput_.get() + ownedOutputOffset_, ownedOutputSize_ - ownedOutputOffset_);
+    ownedOutputOffset_ += progress.published;
+    lastWriteRetryable_ = progress.retryable;
+    if (progress.canceled) {
+        return progress.error; // Stop/Release owns the explicit discard after the writer exits.
+    }
+    if (progress.error != SUCCESS && !progress.retryable) {
+        outputWriteUnknown_ = true;
+        DropOwnedOutput();
+        return progress.error;
+    }
+    if (ownedOutputOffset_ == ownedOutputSize_) {
+        DropOwnedOutput();
+        return SUCCESS;
+    }
+    return progress.error == SUCCESS ? ERR_OPERATION_FAILED : progress.error;
 }
 
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
@@ -987,38 +1073,132 @@ void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
     }
 }
 
-int32_t RendererInClientInner::ProcessBufferAndWriteCache(uint8_t *buffer, size_t bufferSize, size_t oriBufferSize)
+int32_t RendererInClientInner::CacheConvertedOutput(uint8_t *buffer, size_t bufferSize)
 {
-    bool speedCached = false;
-    bool pitchCached = false;
-    AudioWriteState currentState = audioWriteState_.load();
-    currentState.perPeriodFrame_ += bufferSize / sizePerFrameInByte_;
-    
-    if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
-        audioWriteState_.store(currentState);
-        return bufferSize;
-    }
-    
-    if (!ProcessPitch(buffer, bufferSize, pitchCached)) {
-        audioWriteState_.store(currentState);
-        return bufferSize;
-    }
-    
-    WriteMuteDataSysEvent(buffer, bufferSize);
-    
-    CHECK_AND_RETURN_RET_PRELOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
-        "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
-    
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize > 0 &&
+        bufferSize <= MAX_WRITE_SIZE * MAX_PITCH_BUFFER_FACTOR &&
+        bufferSize % sizePerFrameInByte_ == 0, ERR_INVALID_PARAM, "invalid converted output");
+    auto output = std::unique_ptr<uint8_t[]>(new (std::nothrow) uint8_t[bufferSize]);
+    CHECK_AND_RETURN_RET_LOG(output != nullptr, ERR_OPERATION_FAILED, "output allocation failed");
+    CHECK_AND_RETURN_RET_LOG(memcpy_s(output.get(), bufferSize, buffer, bufferSize) == EOK,
+        ERR_OPERATION_FAILED, "output ownership copy failed");
+    WriteMuteDataSysEvent(output.get(), bufferSize);
     if (isBlendSet_) {
-        audioBlend_.Process(buffer, bufferSize);
+        audioBlend_.Process(output.get(), bufferSize);
     }
-    
+    ownedOutput_ = std::move(output);
+    ownedOutputSize_ = bufferSize;
+    ownedOutputOffset_ = 0;
+    AudioWriteState currentState = audioWriteState_.load();
     currentState.unprocessedFramesBytes_ += currentState.perPeriodFrame_;
     currentState.totalBytesWrittenAfterFlush_ += bufferSize / sizePerFrameInByte_;
     currentState.perPeriodFrame_ = 0;
     audioWriteState_.store(currentState);
-    
-    return WriteCacheData(buffer, bufferSize, speedCached || pitchCached, oriBufferSize);
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::DrainPendingOutput(bool finishSpeed)
+{
+    int32_t ret = DrainOwnedOutput();
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+#ifdef SONIC_ENABLE
+    if (finishSpeed) {
+        std::lock_guard lockSpeed(speedMutex_);
+        if (audioSpeed_ != nullptr && audioSpeed_->Finish() != SUCCESS) {
+            outputWriteUnknown_ = true;
+            return ERR_OPERATION_FAILED;
+        }
+    }
+    while (true) {
+        int32_t outputSize = 0;
+        {
+            std::lock_guard lockSpeed(speedMutex_);
+            if (audioSpeed_ == nullptr) {
+                return SUCCESS;
+            }
+            ret = audioSpeed_->ReadOutput(speedBuffer_, outputSize);
+        }
+        if (ret != SUCCESS || outputSize < 0 || outputSize > MAX_SPEED_BUFFER_SIZE ||
+            static_cast<size_t>(outputSize) % sizePerFrameInByte_ != 0) {
+            outputWriteUnknown_ = true;
+            return ERR_OPERATION_FAILED;
+        }
+        if (outputSize == 0) {
+            return SUCCESS; // Sonic can still own delayed input until Finish or another input.
+        }
+        uint8_t *buffer = speedBuffer_.get();
+        size_t bufferSize = static_cast<size_t>(outputSize);
+        bool pitchCached = false;
+        ret = ProcessPitch(buffer, bufferSize, pitchCached);
+        if (ret > 0) {
+            ret = CacheConvertedOutput(buffer, bufferSize);
+        }
+        if (ret < 0) {
+            outputWriteUnknown_ = true;
+            return ret;
+        }
+        ret = DrainOwnedOutput();
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    }
+#else
+    return SUCCESS;
+#endif
+}
+
+int32_t RendererInClientInner::ProcessBufferAndWriteCache(uint8_t *buffer, size_t bufferSize, size_t oriBufferSize)
+{
+    lastWriteRetryable_ = false;
+    CHECK_AND_RETURN_RET_LOG(!outputWriteUnknown_, ERR_OPERATION_FAILED, "output write state is unknown");
+    CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ > 0, ERR_INVALID_PARAM, "invalid input frame size");
+    int32_t ret = DrainPendingOutput();
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    CHECK_AND_RETURN_RET_PRELOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
+        "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
+    bool speedCached = false;
+    bool pitchCached = false;
+    ret = ProcessSpeed(buffer, bufferSize, speedCached);
+    if (ret > 0) {
+        ret = ProcessPitch(buffer, bufferSize, pitchCached);
+    }
+    if (ret < 0) {
+        if (ret != ERR_INVALID_PARAM || speedCached) {
+            outputWriteUnknown_ = true;
+        }
+        return ret;
+    }
+    if (!speedCached && !pitchCached) {
+        WriteMuteDataSysEvent(buffer, bufferSize);
+        std::unique_ptr<uint8_t[]> blendBuffer;
+        if (isBlendSet_) {
+            blendBuffer = std::unique_ptr<uint8_t[]>(new (std::nothrow) uint8_t[bufferSize]);
+            CHECK_AND_RETURN_RET_LOG(blendBuffer != nullptr &&
+                memcpy_s(blendBuffer.get(), bufferSize, buffer, bufferSize) == EOK,
+                ERR_OPERATION_FAILED, "blend scratch allocation or copy failed");
+            buffer = blendBuffer.get();
+            audioBlend_.Process(buffer, bufferSize);
+        }
+        auto progress = WriteCacheData(buffer, bufferSize);
+        lastWriteRetryable_ = progress.retryable;
+        AudioWriteState currentState = audioWriteState_.load();
+        currentState.unprocessedFramesBytes_ += progress.published / sizePerFrameInByte_;
+        currentState.totalBytesWrittenAfterFlush_ += progress.published / sizePerFrameInByte_;
+        audioWriteState_.store(currentState);
+        return progress.published > 0 ? static_cast<int32_t>(progress.published) : progress.error;
+    }
+    AudioWriteState currentState = audioWriteState_.load();
+    currentState.perPeriodFrame_ += oriBufferSize / sizePerFrameInByte_;
+    audioWriteState_.store(currentState);
+    if (ret == 0) {
+        return static_cast<int32_t>(oriBufferSize); // complete successful input is owned by converter history
+    }
+    ret = CacheConvertedOutput(buffer, bufferSize);
+    if (ret != SUCCESS) {
+        outputWriteUnknown_ = true;
+        return ret;
+    }
+    ret = DrainPendingOutput();
+    CHECK_AND_RETURN_RET_LOG(!outputWriteUnknown_, ret, "converted output write failed");
+    return static_cast<int32_t>(oriBufferSize); // output is fully owned, including a retryable unpublished tail
 }
 
 int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
@@ -1245,6 +1425,7 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
         AUDIO_ERR_LOG("Drain failed. Illegal state:%{public}u", state_.load());
         return false;
     }
+    CHECK_AND_RETURN_RET(DrainPendingOutput(true) == SUCCESS, false);
     if (rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
         return true;
     }

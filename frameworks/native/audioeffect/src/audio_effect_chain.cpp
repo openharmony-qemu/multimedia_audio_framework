@@ -365,6 +365,14 @@ int32_t AudioEffectChain::UpdateEffectParam()
 
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo)
 {
+    bool observed = false;
+    ApplyEffectChainObserved579(bufIn, bufOut, frameLen, procInfo, observed);
+}
+
+void AudioEffectChain::ApplyEffectChainObserved579(float *bufIn, float *bufOut, uint32_t frameLen,
+    AudioEffectProcInfo procInfo, bool &identityCopy)
+{
+    identityCopy = false;
     Trace trace("AudioEffectChain::ApplyEffectChain");
     size_t inTotlen = frameLen * ioBufferConfig_.inputCfg.channels * sizeof(float);
     size_t outTotlen = frameLen * ioBufferConfig_.outputCfg.channels * sizeof(float);
@@ -373,6 +381,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 
     if (IsEmptyEffectHandles()) {
         CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error in apply effect");
+        identityCopy = ioBufferConfig_.inputCfg.channels == ioBufferConfig_.outputCfg.channels;
         DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
         return;
     }

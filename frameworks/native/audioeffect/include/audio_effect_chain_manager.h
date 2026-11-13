@@ -96,6 +96,7 @@ struct EffectBufferAttr {
           outChannelLayout(outChannelLayout)
     {
     }
+    bool identityCopy579 = false;
 };
 
 enum SceneTypeOperation {

@@ -17,6 +17,9 @@
 #define CAPTURER_IN_SERVER_H
 
 #include <mutex>
+#include <atomic>
+#include <chrono>
+#include "refbase.h"
 #include "i_capturer_stream.h"
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
@@ -29,6 +32,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioPrivacyUIExtConnection;
 class CapturerInServer : public IStatusCallback, public IReadCallback, public IHandler,
     public std::enable_shared_from_this<CapturerInServer> {
 public:
@@ -105,7 +109,9 @@ private:
     void ReportNoBgPermissionEvent();
     void ReportOverflowEvent();
     int32_t StartPrivacyConfirmDialog(uint32_t sessionId);
-    void OnPrivacyAuthorityResult(bool isAllowed);
+    int32_t OnPrivacyAuthorityResult(bool isAllowed);
+    void CancelPrivacyAuthority();
+    void ClosePrivacyConnection(const sptr<AudioPrivacyUIExtConnection> &connection, bool closeWindow = true);
     int32_t CheckForReadData(size_t length, uint64_t currentWriteFrame);
     int32_t CheckForOnReadData(size_t requestDataLen, uint64_t currentWriteFrame);
     void RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener);
@@ -165,7 +171,13 @@ private:
     std::atomic<IStatus> lastStatus_ = I_STATUS_IDLE;
     std::atomic<bool> lastOverflowStatus_ = false;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
-    bool hasRequestUserPrivacyAuthority_ = false;
+    std::atomic<bool> hasRequestUserPrivacyAuthority_ = false;
+    std::mutex privacyAuthorityMutex_;
+    bool privacyAuthorityPending_ = false;
+    bool privacyAuthorityCompleting_ = false;
+    bool privacyAuthorityReleased_ = false;
+    std::chrono::steady_clock::time_point privacyAuthorityDeadline_;
+    sptr<AudioPrivacyUIExtConnection> privacyUiConnection_;
 
     std::mutex runnerMutex_;
     std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;

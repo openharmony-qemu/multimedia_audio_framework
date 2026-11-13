@@ -357,6 +357,10 @@ void HpaeSourceInputNode::DoProcess()
             CHECK_AND_RETURN_LOG(CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(sourceBufferType), replyBytes),
                 "micref request != reply");
             DoProcessInner(sourceBufferType, replyBytes);
+        } else if (sourceInputNodeType_ == HPAE_SOURCE_MIC &&
+            (sourceBufferType == HPAE_SOURCE_BUFFER_TYPE_MIC ||
+             sourceBufferType == HPAE_SOURCE_BUFFER_TYPE_DEFAULT)) {
+            ProcessAssembledMic(sourceBufferType);
         } else {
             ReadDataFromSource(sourceBufferType, replyBytes);
             DoProcessMicInner(sourceBufferType, replyBytes);
@@ -366,11 +370,13 @@ void HpaeSourceInputNode::DoProcess()
 
 bool HpaeSourceInputNode::Reset()
 {
+    micFrameAssembler_.Invalidate();
     return true;
 }
 
 bool HpaeSourceInputNode::ResetAll()
 {
+    micFrameAssembler_.Invalidate();
     return true;
 }
 
@@ -505,6 +511,7 @@ int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
 
 int32_t HpaeSourceInputNode::CapturerSourceDeInit()
 {
+    micFrameAssembler_.Invalidate();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
@@ -522,6 +529,7 @@ int32_t HpaeSourceInputNode::CapturerSourceDeInit()
 
 int32_t HpaeSourceInputNode::CapturerSourceFlush(void)
 {
+    micFrameAssembler_.Invalidate();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
@@ -563,6 +571,7 @@ int32_t HpaeSourceInputNode::CapturerSourcePause(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceReset(void)
 {
+    micFrameAssembler_.Invalidate();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
@@ -592,6 +601,7 @@ int32_t HpaeSourceInputNode::CapturerSourceResume(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceStart(void)
 {
+    micFrameAssembler_.Invalidate();
     Trace trace("HpaeSourceInputNode::CapturerSourceStart");
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -617,6 +627,7 @@ int32_t HpaeSourceInputNode::CapturerSourceStart(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceStop(void)
 {
+    micFrameAssembler_.Invalidate();
     Trace trace("HpaeSourceInputNode::CapturerSourceStop");
     SetSourceState(STREAM_MANAGER_SUSPENDED);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID, ERROR,
@@ -727,6 +738,36 @@ void HpaeSourceInputNode::UpdateAppsTokenId(const std::vector<uint32_t> &appsTok
 uint32_t HpaeSourceInputNode::GetCaptureId() const
 {
     return captureId_;
+}
+
+void HpaeSourceInputNode::ProcessAssembledMic(const HpaeSourceBufferType &bufferType)
+{
+    const auto &info = nodeInfoMap_.at(bufferType);
+    const size_t sampleFrameBytes = info.channels * static_cast<size_t>(GetSizeFromFormat(info.format));
+    const size_t outputBytes = info.frameLen * sampleFrameBytes;
+    const size_t capacity = frameByteSizeMap_.at(bufferType);
+    const uint64_t lease = micFrameAssembler_.Begin(outputBytes, sampleFrameBytes, capacity);
+    CHECK_AND_RETURN_LOG(lease != 0, "invalid ordinary MIC frame geometry");
+    std::vector<char> input(capacity);
+    while (!micFrameAssembler_.HasFrame(lease)) {
+        CHECK_AND_RETURN_LOG(micFrameAssembler_.IsCurrent(lease), "discard retired ordinary MIC read lease");
+        uint64_t actualBytes = 0;
+        // Keep this read outside the assembler lock, so a lifecycle transition
+        // can invalidate its lease without waiting for an HDI call to return.
+        int32_t ret = audioCapturerSource_->CaptureFrame(input.data(), capacity, actualBytes);
+        const bool valid = ret == SUCCESS && actualBytes != 0 && actualBytes <= capacity &&
+            actualBytes % sampleFrameBytes == 0;
+        backoffController_.HandleResult(valid);
+        CHECK_AND_RETURN_LOG(valid, "ordinary MIC read incomplete/error ret:%{public}d bytes:%{public}" PRIu64,
+            ret, actualBytes);
+        CHECK_AND_RETURN_LOG(micFrameAssembler_.Append(lease, input.data(), static_cast<size_t>(actualBytes)),
+            "discard retired ordinary MIC read");
+    }
+    micFrameAssembler_.PublishFrame(lease, [this, &info, &bufferType](char *frame) {
+        ConvertToFloat(info.format, info.channels * info.frameLen, frame,
+            inputAudioBufferMap_.at(bufferType).GetPcmDataBuffer());
+        outputStreamMap_.at(bufferType).WriteDataToOutput(&inputAudioBufferMap_.at(bufferType));
+    });
 }
 
 void HpaeSourceInputNode::ReadDataFromSource(const HpaeSourceBufferType &bufferType, uint64_t &replyBytes)

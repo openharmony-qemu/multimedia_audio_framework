@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioProResampler"
 #endif
 #include "audio_proresampler.h"
+#include <limits>
 #include "audio_stream_info.h"
 #include "securec.h"
 #include "audio_engine_log.h"
@@ -39,8 +40,6 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     : inRate_(inRate), outRate_(outRate), channels_(channels), quality_(quality),
     expectedOutFrameLen_(outRate_ * FRAME_LEN_20MS / MS_PER_SECOND)
 {
-    CHECK_AND_RETURN_LOG(inRate != outRate,
-        "input and output rate of ProResampler should be different! Same Rate: %{public}d", inRate);
     
     CHECK_AND_RETURN_LOG((inRate_ >= MIN_SAMPLE_RATE) && (inRate_ <= MAX_SAMPLE_RATE) &&
         (outRate_ >= MIN_SAMPLE_RATE) && (outRate_ <= MAX_SAMPLE_RATE),
@@ -52,6 +51,11 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     
     CHECK_AND_RETURN_LOG(quality <= MAX_QUALITY, "invalid quality level: %{public}d", quality);
 
+    if (inRate_ == outRate_) {
+        configurationValid_ = true;
+        return;
+    }
+
     int32_t errRet = ConfigBufferSizeAndExpectedInFrameLen();
     CHECK_AND_RETURN_LOG(errRet == RESAMPLER_ERR_SUCCESS,
         "ProResampler construct reserve buff error code %{public}s", ErrCodeToString(errRet).c_str());
@@ -60,7 +64,7 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     CHECK_AND_RETURN_LOG(state_, "Init failed! failed with error %{public}s.",
         ErrCodeToString(errRet).c_str());
     
-    SingleStagePolyphaseResamplerSkipHalfTaps(state_);
+    configurationValid_ = errRet == EOK && SingleStagePolyphaseResamplerSkipHalfTaps(state_) == EOK;
     AUDIO_INFO_LOG("Init success inRate: %{public}d, outRate: %{public}d, channels: %{public}d, "
         "quality: %{public}d.", inRate_, outRate_, channels_, quality_);
 }
@@ -68,47 +72,61 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
 int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameLen, float *outBuffer,
     uint32_t outFrameLen)
 {
-    CHECK_AND_RETURN_RET_LOG(outBuffer != nullptr, RESAMPLER_ERR_INVALID_ARG, "out buffer ptr is nullptr");
-    CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "resampler state is invalid");
-    CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr, RESAMPLER_ERR_INVALID_ARG, "in buffer ptr is nullptr");
-    CHECK_AND_RETURN_RET_LOG((inFrameLen <= MAX_FRAME_LEN) && (outFrameLen <= MAX_FRAME_LEN),
-        RESAMPLER_ERR_ALLOC_FAILED,
-        "inFrameLen %{public}d or outFrameLen %{public}d out of valid range",
-        inFrameLen,
-        outFrameLen);
+    ProcessResult result;
+    return ProcessWithCounts(inBuffer, inFrameLen, outBuffer, outFrameLen, result);
+}
 
-    AUDIO_DEBUG_LOG("Process unified: inRate=%{public}u->outRate=%{public}u, channels=%{public}u, "
-        "inFrames=%{public}u, outFrames=%{public}u", inRate_, outRate_, channels_, inFrameLen, outFrameLen);
-
-    uint32_t expectedOutFrameLen = outFrameLen;
-
-    if (tmpOutBuf_.size() < static_cast<size_t>(expectedOutFrameLen) * channels_) {
-        tmpOutBuf_.resize(static_cast<size_t>(expectedOutFrameLen) * channels_, 0.0f);
+int32_t ProResampler::ProcessWithCounts(const float *inBuffer, uint32_t inFrameLen, float *outBuffer,
+    uint32_t outFrameLen, ProcessResult &result)
+{
+    result = {};
+    CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr && outBuffer != nullptr,
+        RESAMPLER_ERR_INVALID_ARG, "invalid input/output buffer");
+    CHECK_AND_RETURN_RET_LOG(configurationValid_ && state_ != nullptr,
+        RESAMPLER_ERR_ALLOC_FAILED, "invalid resampler configuration");
+    CHECK_AND_RETURN_RET_LOG(inFrameLen <= MAX_FRAME_LEN && outFrameLen <= MAX_FRAME_LEN &&
+        channels_ > 0 && channels_ <= MAX_CHANNELS &&
+        inFrameLen <= std::numeric_limits<size_t>::max() / channels_ / sizeof(float) &&
+        outFrameLen <= std::numeric_limits<size_t>::max() / channels_ / sizeof(float),
+        RESAMPLER_ERR_OVERFLOW, "invalid frame/sample count");
+    const uint32_t requestedIn = inFrameLen;
+    const uint32_t requestedOut = outFrameLen;
+    const size_t outputSamples = static_cast<size_t>(outFrameLen) * channels_;
+    CHECK_AND_RETURN_RET_LOG(outputSamples <= tmpOutBuf_.max_size(),
+        RESAMPLER_ERR_OVERFLOW, "output allocation overflow");
+    if (tmpOutBuf_.size() < outputSamples) {
+        tmpOutBuf_.resize(outputSamples, 0.0f);
     }
-
-    int32_t ret =
-        SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameLen, tmpOutBuf_.data(), &outFrameLen);
-    CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "process failed with error %{public}s",
-        ErrCodeToString(ret).c_str());
-
-    uint32_t fillSize = expectedOutFrameLen > outFrameLen ? expectedOutFrameLen - outFrameLen : 0;
-    lastDelayFrames_ = fillSize;
-    ret = memset_s(outBuffer, fillSize * channels_ * sizeof(float), 0, fillSize * channels_ * sizeof(float));
-    CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memset_s failed with error %{public}d", ret);
-
-    ret = memcpy_s(outBuffer + fillSize * channels_, (expectedOutFrameLen - fillSize) * channels_ * sizeof(float),
-        tmpOutBuf_.data(), outFrameLen * channels_ * sizeof(float));
-    CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memcpy_s failed with error %{public}d", ret);
-    return ret;
+    int32_t ret = SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameLen,
+        tmpOutBuf_.data(), &outFrameLen);
+    result.consumedFrames = inFrameLen;
+    result.producedFrames = outFrameLen;
+    CHECK_AND_RETURN_RET_LOG(ret == EOK && inFrameLen <= requestedIn && outFrameLen <= requestedOut,
+        ret == EOK ? RESAMPLER_ERR_OVERFLOW : ret, "invalid/failed actual resampler counts");
+    result.paddingFrames = requestedOut - outFrameLen;
+    lastDelayFrames_ = result.paddingFrames;
+    const size_t paddingSamples = static_cast<size_t>(result.paddingFrames) * channels_;
+    if (paddingSamples != 0) {
+        ret = memset_s(outBuffer, outputSamples * sizeof(float), 0, paddingSamples * sizeof(float));
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "padding copy failed after resampler state advanced");
+    }
+    if (outFrameLen != 0) {
+        ret = memcpy_s(outBuffer + paddingSamples, (outputSamples - paddingSamples) * sizeof(float),
+            tmpOutBuf_.data(), static_cast<size_t>(outFrameLen) * channels_ * sizeof(float));
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "output copy failed after resampler state advanced");
+    }
+    result.outputFrames = requestedOut; // leading padding plus actual produced frames
+    result.valid = true;
+    return EOK;
 }
 
 int32_t ProResampler::CheckRateAndChannelParam()
 {
     // resampler change from valid state to invalid state
     if ((inRate_ < MIN_SAMPLE_RATE) || (inRate_ > MAX_SAMPLE_RATE) || (outRate_ < MIN_SAMPLE_RATE) ||
-        (outRate_ > MAX_SAMPLE_RATE) || (inRate_ == outRate_) || (channels_ <= 0) || (channels_ > MAX_CHANNELS)) {
+        (outRate_ > MAX_SAMPLE_RATE) || (channels_ <= 0) || (channels_ > MAX_CHANNELS)) {
         AUDIO_ERR_LOG("resampler set to invalid state, because inRate %{public}u Hz and outRate %{public}u Hz "
-            "should be within [8000, 384000] and be different, or channel number %{public}u should be within [1, 16]",
+            "should be within [8000, 384000] or channel number %{public}u should be within [1, 16]",
             inRate_, outRate_, channels_);
         CHECK_AND_RETURN_RET(state_ != nullptr, RESAMPLER_ERR_INVALID_ARG);
         SingleStagePolyphaseResamplerFree(state_);
@@ -121,60 +139,66 @@ int32_t ProResampler::CheckRateAndChannelParam()
 
 int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
 {
-    AUDIO_INFO_LOG("ProResampler inRate update: %{public}d -> %{public}d, outRate update: %{public}d -> %{public}d",
-        inRate_, inRate, outRate_, outRate);
+    configurationValid_ = false;
     inRate_ = inRate;
     outRate_ = outRate;
-
     int32_t ret = CheckRateAndChannelParam();
-    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
-        "ProResampler updateRates error code %{public}s", ErrCodeToString(ret).c_str());
-
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "invalid updated rates");
+    if (inRate_ == outRate_) {
+        SingleStagePolyphaseResamplerFree(state_);
+        state_ = nullptr;
+        tmpOutBuf_.clear();
+        lastDelayFrames_ = 0;
+        configurationValid_ = true; // converter's same-rate path does not resample
+        return EOK;
+    }
     expectedOutFrameLen_ = outRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
     ret = ConfigBufferSizeAndExpectedInFrameLen();
-    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
-        "ProResampler updateRates reserve buff error code %{public}s", ErrCodeToString(ret).c_str());
-    if (state_ == nullptr) { // resampler can be updated from an invalid state to valid state
-        int32_t errRet = RESAMPLER_ERR_SUCCESS;
-        state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
-        CHECK_AND_RETURN_RET_LOG(state_ && (errRet == RESAMPLER_ERR_SUCCESS), errRet,
-            "error code %{public}s", ErrCodeToString(errRet).c_str());
-        return SingleStagePolyphaseResamplerSkipHalfTaps(state_);
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "updated buffer configuration failed");
+    if (state_ == nullptr) {
+        state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &ret);
+        CHECK_AND_RETURN_RET_LOG(state_ != nullptr && ret == EOK,
+            ret == EOK ? RESAMPLER_ERR_ALLOC_FAILED : ret, "updated initialization failed");
+        ret = SingleStagePolyphaseResamplerSkipHalfTaps(state_);
+    } else {
+        ret = SingleStagePolyphaseResamplerSetRate(state_, inRate_, outRate_);
     }
-    ret = SingleStagePolyphaseResamplerSetRate(state_, inRate_, outRate_);
-    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "error code %{public}s", ErrCodeToString(ret).c_str());
+    configurationValid_ = (ret == EOK);
     return ret;
 }
 
 int32_t ProResampler::UpdateChannels(uint32_t channels)
 {
-    // if update channel, the only way to update SingleStagePolyphaseResampler is to create a new one
-    AUDIO_INFO_LOG("update work channel %{public}d -> %{public}d", channels_, channels);
+    configurationValid_ = false;
     channels_ = channels;
-
-    int32_t errRet = CheckRateAndChannelParam();
-    CHECK_AND_RETURN_RET(errRet == RESAMPLER_ERR_SUCCESS, errRet,
-        "ProResampler updateChannels error code %{public}s", ErrCodeToString(errRet).c_str());
-
-    if (state_ != nullptr) {
-        SingleStagePolyphaseResamplerFree(state_);
+    int32_t ret = CheckRateAndChannelParam();
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "invalid updated channels");
+    SingleStagePolyphaseResamplerFree(state_);
+    state_ = nullptr;
+    if (inRate_ == outRate_) {
+        tmpOutBuf_.clear();
+        lastDelayFrames_ = 0;
+        configurationValid_ = true;
+        return EOK;
     }
-    state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
-    CHECK_AND_RETURN_RET_LOG(state_ && (errRet == RESAMPLER_ERR_SUCCESS), errRet,
-        "error code %{public}s", ErrCodeToString(errRet).c_str());
-    errRet = ConfigBufferSizeAndExpectedInFrameLen();
-    CHECK_AND_RETURN_RET_LOG(errRet == RESAMPLER_ERR_SUCCESS, errRet,
-        "ProResampler updateChannels reserve buff error code %{public}s", ErrCodeToString(errRet).c_str());
-    return SingleStagePolyphaseResamplerSkipHalfTaps(state_);
+    state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &ret);
+    CHECK_AND_RETURN_RET_LOG(state_ != nullptr && ret == EOK,
+        ret == EOK ? RESAMPLER_ERR_ALLOC_FAILED : ret, "channel initialization failed");
+    ret = ConfigBufferSizeAndExpectedInFrameLen();
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "channel buffer configuration failed");
+    ret = SingleStagePolyphaseResamplerSkipHalfTaps(state_);
+    configurationValid_ = (ret == EOK);
+    return ret;
 }
 
 ProResampler::ProResampler(ProResampler &&other) noexcept
     : inRate_(other.inRate_), outRate_(other.outRate_), channels_(other.channels_),
     quality_(other.quality_), expectedOutFrameLen_(other.expectedOutFrameLen_),
-    expectedInFrameLen_(other.expectedInFrameLen_), state_(other.state_),
+    expectedInFrameLen_(other.expectedInFrameLen_), configurationValid_(other.configurationValid_), state_(other.state_),
     tmpOutBuf_(std::move(other.tmpOutBuf_))
 {
     other.state_ = nullptr;
+    other.configurationValid_ = false;
 }
 
 ProResampler &ProResampler::operator=(ProResampler &&other) noexcept
@@ -186,20 +210,39 @@ ProResampler &ProResampler::operator=(ProResampler &&other) noexcept
         channels_ = other.channels_;
         quality_ = other.quality_;
         state_ = other.state_;
+        configurationValid_ = other.configurationValid_;
         expectedOutFrameLen_ = other.expectedOutFrameLen_;
         expectedInFrameLen_ = other.expectedInFrameLen_;
         tmpOutBuf_ = std::move(other.tmpOutBuf_);
         other.state_ = nullptr;
+    other.configurationValid_ = false;
     }
     return *this;
 }
 
 void ProResampler::Reset()
 {
-    CHECK_AND_RETURN_LOG(state_ != nullptr, "resampler is null");
-    SingleStagePolyphaseResamplerResetMem(state_);
-    SingleStagePolyphaseResamplerSkipHalfTaps(state_);
-    lastDelayFrames_ = 0;
+    (void)ResetWithStatus();
+}
+
+int32_t ProResampler::ResetWithStatus()
+{
+    CHECK_AND_RETURN_RET_LOG(configurationValid_, RESAMPLER_ERR_INVALID_ARG,
+        "cannot reset a failed configuration");
+    if (inRate_ == outRate_) {
+        lastDelayFrames_ = 0;
+        return EOK;
+    }
+    CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "resampler is null");
+    int32_t ret = SingleStagePolyphaseResamplerResetMem(state_);
+    if (ret == EOK) {
+        ret = SingleStagePolyphaseResamplerSkipHalfTaps(state_);
+    }
+    configurationValid_ = (ret == EOK);
+    if (configurationValid_) {
+        lastDelayFrames_ = 0;
+    }
+    return ret;
 }
 
 uint32_t ProResampler::GetInRate() const

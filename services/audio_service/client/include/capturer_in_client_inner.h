@@ -282,6 +282,13 @@ private:
     bool WaitForRunning();
 
     int32_t HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer, bool isBlockingRead);
+    // Normal blocking reads carry an immutable local operation generation across waits.
+    void RetireNormalReadsLocked(); // statusMutex_ held; never waits for readMutex_.
+    bool NormalReadIsCurrent(uint64_t generation) const;
+    int32_t HandleNormalCapturerRead(size_t &readSize, size_t userSize, uint8_t &buffer,
+        bool isBlockingRead, uint64_t generation);
+    bool CommitNormalReadPositionChanges(size_t bytesRead, uint64_t generation,
+        int64_t &markPosition, int64_t &periodSize);
     int32_t RegisterCapturerInClientPolicyServerDiedCb();
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
     void ResetCallbackLoopTid();
@@ -357,6 +364,7 @@ private:
     // using this lock when change status_
     std::mutex statusMutex_;
     std::atomic<State> state_ = INVALID;
+    std::atomic<uint64_t> normalReadGeneration_ {0};
     std::atomic<StreamFocusState> streamFocusState_ = FOCUS_INVALID;
     std::mutex focusStatusMutex_;
     // for status operation wait and notify

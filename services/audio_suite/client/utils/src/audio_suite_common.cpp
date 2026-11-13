@@ -25,7 +25,13 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 static constexpr uint32_t MAX_CACHE = std::numeric_limits<uint32_t>::max() - 1; // Maximum allocation capacity.
+#if defined(__LP64__)
 static const char *const PREFIX = "/system/lib64/";
+static const char *const QEMU_PREFIX = "/usr/system/lib64/";
+#else
+static const char *const PREFIX = "/system/lib/";
+static const char *const QEMU_PREFIX = "/usr/system/lib/";
+#endif
 
 int32_t AudioSuiteRingBuffer::PushData(uint8_t* byteData, uint32_t size)
 {
@@ -116,7 +122,8 @@ bool AudioSuiteLibraryManager::IsValidPath(const char *path)
 {
     CHECK_AND_RETURN_RET_LOG(path != nullptr, false, "Path is null");
     CHECK_AND_RETURN_RET_LOG(
-        strncmp(path, PREFIX, strlen(PREFIX)) == 0, false, "Path is invalid");
+        strncmp(path, PREFIX, strlen(PREFIX)) == 0 ||
+        strncmp(path, QEMU_PREFIX, strlen(QEMU_PREFIX)) == 0, false, "Path is invalid");
     return true;
 }
 

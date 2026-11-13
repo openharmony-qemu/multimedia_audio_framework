@@ -193,6 +193,7 @@ struct RingBufferWrapper {
                 srcBuffer.basicBufferDescs[0].buffer, copySize);
             if (ret != EOK) [[unlikely]] {
                 AUDIO_ERR_LOG("memcpy err :%{public}d", ret);
+                return ERR_OPERATION_FAILED;
             }
             dstBuffer.SeekFromStart(copySize);
             srcBuffer.SeekFromStart(copySize);

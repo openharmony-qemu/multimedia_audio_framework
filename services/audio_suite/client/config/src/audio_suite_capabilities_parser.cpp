@@ -86,6 +86,13 @@ void AudioSuiteCapabilitiesParser::ParserNodeType(
     curNode->GetProp("name", name);
     curNode->GetProp("soName", nodeParameter.soName);
     curNode->GetProp("soPath", nodeParameter.soPath);
+#if !defined(__LP64__)
+    // The shared default XML is also installed on 32-bit products. Keep
+    // custom paths unchanged; LoadLibrary still validates the canonical path.
+    if (nodeParameter.soPath == "/system/lib64/") {
+        nodeParameter.soPath = "/system/lib/";
+    }
+#endif
     curNode->GetProp("general", nodeParameter.general);
     curNode->GetProp("realtimeFactor", realtimeFactorStr);
     curNode->GetProp("frameLen", frameLenStr);

@@ -297,7 +297,19 @@ private:
     int32_t InitSharedBuffer();
     int32_t CopyStaticBufferData();
 
-    int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
+    struct WriteProgress {
+        size_t published = 0;
+        int32_t error = SUCCESS;
+        bool retryable = false;
+        bool canceled = false;
+    };
+    WriteProgress WriteCacheData(uint8_t *buffer, size_t bufferSize);
+    int32_t DrainOwnedOutput(); // caller holds writeMutex_
+    int32_t DrainPendingOutput(bool finishSpeed = false); // owned tail before Sonic output
+    int32_t CacheConvertedOutput(uint8_t *buffer, size_t bufferSize);
+    int32_t RebuildWriteTransforms();
+    void DropOwnedOutput(); // explicit business drop; does not clear unknown
+
 
     void SetCacheSize(uint32_t cacheSizeInFrame);
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
@@ -310,8 +322,8 @@ private:
     bool WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
-    bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
-    bool ProcessPitch(uint8_t *&buffer, size_t &bufferSize, bool &pitchCached);
+    int32_t ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
+    int32_t ProcessPitch(uint8_t *&buffer, size_t &bufferSize, bool &pitchCached);
     int32_t ProcessBufferAndWriteCache(uint8_t *buffer, size_t bufferSize, size_t oriBufferSize);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
@@ -501,6 +513,13 @@ private:
 
     // buffer handle
     std::mutex writeMutex_; // used for prevent multi thread call write
+    // One complete converted output, owned before acknowledging its original input.
+    // These owned-output fields are protected by writeMutex_; Pause preserves them.
+    std::unique_ptr<uint8_t[]> ownedOutput_;
+    size_t ownedOutputSize_ = 0;
+    size_t ownedOutputOffset_ = 0;
+    bool outputWriteUnknown_ = false;
+    bool lastWriteRetryable_ = false;
 
     // Mark reach and period reach callback
     int64_t totalBytesWritten_ = 0;
@@ -535,6 +554,7 @@ private:
 
     std::shared_ptr<AudioPitchProcessor> pitchProcessor_ = nullptr;
     std::unique_ptr<uint8_t[]> pitchBuffer_ {nullptr};
+    size_t pitchBufferCapacity_ = 0; // protected by pitchMutex_
     float curPitch_ = 1.0f;
     std::mutex pitchMutex_;
 

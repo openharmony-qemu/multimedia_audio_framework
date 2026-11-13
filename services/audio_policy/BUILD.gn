@@ -313,6 +313,7 @@ audio_ohos_library("audio_policy_service") {
   ]
 
   defines = []
+  if (audio_framework_qemu_cpu_spatial) { defines += [ "QEMU_CPU_SPATIAL" ] }
   if (!audio_framework_feature_mutesink_enable) {
     defines += [ "MUTE_SINK_DISABLE" ]
   }

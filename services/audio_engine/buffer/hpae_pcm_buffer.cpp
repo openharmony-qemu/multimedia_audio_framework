@@ -38,6 +38,10 @@ HpaePcmBuffer &HpaePcmBuffer::operator=(const HpaePcmBuffer &other)
         int32_t ret = memcpy_s(GetPcmDataBuffer(), bufferByteSize_, other.GetPcmDataBuffer(), bufferByteSize_);
         if (ret != 0) {
             AUDIO_ERR_LOG("memcpy failed when copy PcmBuffer");
+            origins579_.Unknown();
+        } else {
+            origins579_ = other.origins579_;
+            historyOrigins579_ = other.historyOrigins579_;
         }
     }
     return *this;
@@ -51,6 +55,9 @@ HpaePcmBuffer::HpaePcmBuffer(HpaePcmBuffer &&other)
     dataByteSize_ = other.dataByteSize_;
     pcmDataBuffer_ = std::move(other.pcmDataBuffer_);
     pcmProcessVec_ = std::move(other.pcmProcessVec_);
+    origins579_ = other.origins579_;
+    historyOrigins579_ = std::move(other.historyOrigins579_);
+    other.origins579_.Clear();
     other.pcmBufferInfo_.frames = 0;
     other.bufferByteSize_ = 0;
     other.bufferFloatSize_ = 0;
@@ -59,6 +66,8 @@ HpaePcmBuffer::HpaePcmBuffer(HpaePcmBuffer &&other)
 
 void HpaePcmBuffer::InitPcmProcess()
 {
+    origins579_.Clear();
+    historyOrigins579_.assign(GetFrames(), Onset579::Spans{});
     size_t ch = GetChannelCount();
     size_t frameLen = GetFrameLen();
     size_t frames = GetFrames();
@@ -85,6 +94,9 @@ void HpaePcmBuffer::InitPcmProcess()
 
 HpaePcmBuffer &HpaePcmBuffer::operator+=(HpaePcmBuffer &other)
 {
+    if (GetFrameLen() == other.GetFrameLen() && GetSampleRate() == other.GetSampleRate()) {
+        origins579_.Append(other.origins579_);
+    } else { origins579_.Unknown(); }
     for (size_t i = 0; i < pcmProcessVec_.size(); ++i) {
         pcmProcessVec_[i] += other[i];
     }
@@ -93,6 +105,9 @@ HpaePcmBuffer &HpaePcmBuffer::operator+=(HpaePcmBuffer &other)
 
 HpaePcmBuffer &HpaePcmBuffer::operator-=(HpaePcmBuffer &other)
 {
+    if (GetFrameLen() == other.GetFrameLen() && GetSampleRate() == other.GetSampleRate()) {
+        origins579_.Append(other.origins579_);
+    } else { origins579_.Unknown(); }
     for (size_t i = 0; i < pcmProcessVec_.size(); ++i) {
         pcmProcessVec_[i] -= other[i];
     }
@@ -101,6 +116,9 @@ HpaePcmBuffer &HpaePcmBuffer::operator-=(HpaePcmBuffer &other)
 
 HpaePcmBuffer &HpaePcmBuffer::operator*=(HpaePcmBuffer &other)
 {
+    if (GetFrameLen() == other.GetFrameLen() && GetSampleRate() == other.GetSampleRate()) {
+        origins579_.Append(other.origins579_);
+    } else { origins579_.Unknown(); }
     for (size_t i = 0; i < pcmProcessVec_.size(); ++i) {
         pcmProcessVec_[i] *= other[i];
     }
@@ -109,6 +127,8 @@ HpaePcmBuffer &HpaePcmBuffer::operator*=(HpaePcmBuffer &other)
 
 HpaePcmBuffer &HpaePcmBuffer::operator=(const std::vector<std::vector<float>> &other)
 {
+    origins579_.Unknown(); // unlabelled caller-supplied PCM cannot inherit stale lineage
+    for (auto &origin : historyOrigins579_) { origin.Unknown(); }
     for (size_t i = 0; i < other.size() && i < pcmProcessVec_.size(); ++i) {
         if (IsMultiFrames()) {
             if (curFrames_.load() < GetFrames()) {
@@ -127,6 +147,8 @@ HpaePcmBuffer &HpaePcmBuffer::operator=(const std::vector<std::vector<float>> &o
 
 HpaePcmBuffer &HpaePcmBuffer::operator=(const std::vector<float> &other)
 {
+    origins579_.Unknown(); // unlabelled caller-supplied PCM cannot inherit stale lineage
+    for (auto &origin : historyOrigins579_) { origin.Unknown(); }
     if (IsMultiFrames()) {
         if (curFrames_.load() < GetFrames()) {
             pcmProcessVec_[writePos_.load()] = other;
@@ -143,6 +165,8 @@ HpaePcmBuffer &HpaePcmBuffer::operator=(const std::vector<float> &other)
 
 void HpaePcmBuffer::Reset()
 {
+    origins579_.Clear();
+    for (auto &origin : historyOrigins579_) { origin.Clear(); }
     for (HpaePcmProcess &pcmProc : pcmProcessVec_) {
         pcmProc.Reset();
     }
@@ -190,6 +214,7 @@ bool HpaePcmBuffer::GetFrameData(HpaePcmBuffer &frameData)
     if (ret != 0) {
         return false;
     }
+    frameData.origins579_ = historyOrigins579_[readPos_.load()];
     readPos_.store((readPos_.load() + 1) % GetFrames());
     curFrames_.fetch_sub(1);
     return true;
@@ -197,6 +222,7 @@ bool HpaePcmBuffer::GetFrameData(HpaePcmBuffer &frameData)
 
 bool HpaePcmBuffer::PushFrameData(std::vector<float> &frameData)
 {
+    if (GetWritePos() < historyOrigins579_.size()) { historyOrigins579_[GetWritePos()].Unknown(); }
     if (!IsMultiFrames()) {
         return false;
     }
@@ -232,6 +258,7 @@ bool HpaePcmBuffer::PushFrameData(HpaePcmBuffer &frameData)
         AUDIO_ERR_LOG("memcpy failed when PushFrameData");
         return false;
     }
+    historyOrigins579_[writePos_.load()] = frameData.origins579_;
     writePos_.store((writePos_.load() + 1) % GetFrames());
     curFrames_.fetch_add(1);
     return true;
@@ -249,6 +276,7 @@ bool HpaePcmBuffer::StoreFrameData(HpaePcmBuffer &frameData)
         AUDIO_ERR_LOG("memcpy failed when StoreFrameData");
         return false;
     }
+    historyOrigins579_[writePos_.load()] = frameData.origins579_;
     writePos_.store((writePos_.load() + 1) % GetFrames());
     readPos_.store((readPos_.load() + 1) % GetFrames());
     return true;

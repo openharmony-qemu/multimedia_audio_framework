@@ -158,8 +158,9 @@ HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &
             tmpOutput_ += *input;
             bufferState &= input->GetBufferState();
         }
-        limiter_->Process(GetFrameLen() * GetChannelCount(),
-            tmpOutput_.GetPcmDataBuffer(), mixedOutput_.GetPcmDataBuffer());
+        limiter_->ProcessObserved579(GetFrameLen() * GetChannelCount(),
+            tmpOutput_.GetPcmDataBuffer(), mixedOutput_.GetPcmDataBuffer(),
+            tmpOutput_.Origins579(), mixedOutput_.Origins579());
     }
     DumpFileUtil::WriteDumpFile(dumpMix_, static_cast<void *>(mixedOutput_.GetPcmDataBuffer()),
         mixedOutput_.DataSize());

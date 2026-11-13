@@ -72,6 +72,7 @@ enum CallbackHandlerEvent : uint32_t {
 }
 
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
+    : privacyUiConnection_(nullptr)
 {
     processConfig_ = processConfig;
     streamListener_ = streamListener;
@@ -1045,6 +1046,7 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
 {
     AudioXCollie audioXCollie("CapturerInServer::Release", RELEASE_TIMEOUT_IN_SEC,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    CancelPrivacyAuthority();
     AudioService::GetInstance()->RemoveCapturer(streamIndex_, isSwitchStream);
     ReleaseCallbackHandler();
     std::unique_lock<std::mutex> lock(statusLock_);
@@ -1209,32 +1211,36 @@ int32_t CapturerInServer::GetLatency(uint64_t &latency)
 
 int32_t CapturerInServer::RequestUserPrivacyAuthority(uint32_t sessionId)
 {
-    AUDIO_INFO_LOG("RequestUserPrivacyAuthority called");
-
-    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(stateListener != nullptr, ERR_OPERATION_FAILED,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CALLBACK_ILLEGAL_STATE, "IStreamListener is nullptr", false),
-        "IStreamListener is nullptr");
-
+    auto requestListener = streamListener_.lock();
+    CHECK_AND_RETURN_RET_LOG(requestListener != nullptr, ERR_OPERATION_FAILED, "privacy stream listener absent");
+    // Only the actual modern capturer owner can request this stream's dialog.
+    CHECK_AND_RETURN_RET_LOG(IPCSkeleton::GetCallingUid() == processConfig_.appInfo.appUid,
+        ERR_PERMISSION_DENIED, "privacy request UID does not own stream %{public}u", sessionId);
+    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE &&
+        processConfig_.innerCapMode == MODERN_INNER_CAP, ERR_INVALID_OPERATION, "not a modern playback capturer");
+    uint32_t currentSessionId = 0;
+    CHECK_AND_RETURN_RET_LOG(GetSessionId(currentSessionId) == SUCCESS && currentSessionId == sessionId,
+        ERR_INVALID_PARAM, "privacy request session mismatch");
+    {
+        std::lock_guard<std::mutex> lock(privacyAuthorityMutex_);
+        CHECK_AND_RETURN_RET_LOG(!privacyAuthorityPending_ && !privacyAuthorityCompleting_ &&
+            !privacyAuthorityReleased_, ERR_INVALID_OPERATION, "privacy request is pending/completing/released");
+        privacyAuthorityPending_ = true;
+        privacyAuthorityDeadline_ = std::chrono::steady_clock::now() + std::chrono::seconds(60);
+        hasRequestUserPrivacyAuthority_ = false;
+    }
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, tokenId) ||
         PermissionUtil::VerifyPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, tokenId)) {
-        hasRequestUserPrivacyAuthority_ = true;
-        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_SUCCESS);
-        AUDIO_INFO_LOG("Has static permission, granted");
-        return SUCCESS;
+        return OnPrivacyAuthorityResult(true);
     }
-
     int32_t ret = StartPrivacyConfirmDialog(sessionId);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Start privacy window failed, ret=%{public}d", ret);
-        hasRequestUserPrivacyAuthority_ = false;
-        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_NOT_AUTHORIZED);
-        return ERR_OPERATION_FAILED;
+        OnPrivacyAuthorityResult(false);
+        return ret;
     }
-
-    AUDIO_INFO_LOG("Privacy window started, waiting for user choice");
+    AUDIO_INFO_LOG("Privacy pending session=%{public}u uid=%{public}d deadline=60s", sessionId,
+        processConfig_.appInfo.appUid);
     return SUCCESS;
 }
 
@@ -1397,73 +1403,121 @@ void CapturerInServer::NotifyVoIPStart(SourceType sourceType, int32_t uid)
 
 int32_t CapturerInServer::StartPrivacyConfirmDialog(uint32_t sessionId)
 {
-    AAFwk::Want want;
-    std::string bundleName =
+    const std::string bundleName =
         system::GetParameter("const.multimedia.screencapture.dialogconnectionbundlename", "default");
-    std::string abilityName =
+    const std::string abilityName =
         system::GetParameter("const.multimedia.screencapture.dialogconnectionabilityname", "default");
-    if (bundleName == "default" || abilityName == "default") {
-        AUDIO_ERR_LOG("Failed to get want params");
-        return ERR_NOT_SUPPORTED;
-    }
-    AUDIO_INFO_LOG("StartPrivacyConfirmDialog bundleName:%{public}s abilityName:%{public}s",
-        bundleName.c_str(), abilityName.c_str());
-
+    CHECK_AND_RETURN_RET_LOG(bundleName != "default" && abilityName != "default", ERR_NOT_SUPPORTED,
+        "privacy system-dialog parameters absent");
+    AAFwk::Want want;
     want.SetElementName(bundleName, abilityName);
-    auto connectionHolder = std::make_shared<sptr<AudioPrivacyUIExtConnection>>();
-    *connectionHolder = sptr<AudioPrivacyUIExtConnection>(
-        new (std::nothrow) AudioPrivacyUIExtConnection(sessionId, IPCSkeleton::GetCallingUid())
-    );
-
-    if (*connectionHolder == nullptr) {
-        AUDIO_ERR_LOG("Failed to create connection");
-        return ERR_NO_MEMORY;
+    sptr<AudioPrivacyUIExtConnection> connection = new (std::nothrow)
+        AudioPrivacyUIExtConnection(sessionId, processConfig_.appInfo.appUid);
+    CHECK_AND_RETURN_RET_LOG(connection != nullptr, ERR_NO_MEMORY, "privacy connection allocation failed");
+    {
+        std::lock_guard<std::mutex> lock(privacyAuthorityMutex_);
+        CHECK_AND_RETURN_RET_LOG(privacyAuthorityPending_ && !privacyAuthorityReleased_, ERR_INVALID_OPERATION,
+            "privacy request was cancelled before connect");
+        privacyUiConnection_ = connection;
     }
-
-    auto ret = OHOS::AAFwk::ExtensionManagerClient::GetInstance()
-        .ConnectServiceExtensionAbility(want, *connectionHolder, nullptr, -1);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("Connection failed");
-        *connectionHolder = nullptr;
-        return ret;
+    const int32_t ret = AAFwk::ExtensionManagerClient::GetInstance().ConnectServiceExtensionAbility(
+        want, connection, nullptr, -1);
+    bool retain = false;
+    {
+        std::lock_guard<std::mutex> lock(privacyAuthorityMutex_);
+        retain = ret == SUCCESS && privacyAuthorityPending_ && !privacyAuthorityReleased_ &&
+            privacyUiConnection_ == connection;
+        if (!retain && privacyUiConnection_ == connection) { privacyUiConnection_ = nullptr; }
     }
-    return ret;
+    // Release may win while the real Connect call is in flight. Close both a
+    // late callback's UI and the actual AMS connection, never just its pointer.
+    if (!retain) { ClosePrivacyConnection(connection); }
+    AUDIO_INFO_LOG("Privacy connect session=%{public}u uid=%{public}d ret=%{public}d retained=%{public}d",
+        sessionId, processConfig_.appInfo.appUid, ret, retain);
+    return ret == SUCCESS && !retain ? ERR_INVALID_OPERATION : ret;
 }
- 
-void CapturerInServer::OnPrivacyAuthorityResult(bool isAllowed)
+
+void CapturerInServer::ClosePrivacyConnection(const sptr<AudioPrivacyUIExtConnection> &connection, bool closeWindow)
 {
-    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_CALL_FUNC_RETURN_LOG(stateListener != nullptr,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_CALLBACK_ILLEGAL_STATE, "IStreamListener is nullptr", false),
-        "IStreamListener is nullptr");
+    if (connection == nullptr) { return; }
+    if (closeWindow) { connection->Close(); }
+    else { connection->Detach(); }
+    const int32_t ret = AAFwk::ExtensionManagerClient::GetInstance().DisconnectAbility(connection);
+    AUDIO_INFO_LOG("Privacy disconnect stream=%{public}u ret=%{public}d", streamIndex_, ret);
+}
 
-    if (isAllowed) {
-        hasRequestUserPrivacyAuthority_ = true;
-        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_SUCCESS);
-        AUDIO_INFO_LOG("User granted audio privacy authority");
-    } else {
+void CapturerInServer::CancelPrivacyAuthority()
+{
+    sptr<AudioPrivacyUIExtConnection> connection;
+    bool notify = false;
+    {
+        std::lock_guard<std::mutex> lock(privacyAuthorityMutex_);
+        privacyAuthorityReleased_ = true;
+        notify = privacyAuthorityPending_;
+        privacyAuthorityPending_ = false;
         hasRequestUserPrivacyAuthority_ = false;
-        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_NOT_AUTHORIZED);
-        AUDIO_WARNING_LOG("User denied audio privacy authority");
+        connection = privacyUiConnection_;
+        privacyUiConnection_ = nullptr;
+    }
+    ClosePrivacyConnection(connection);
+    if (notify) {
+        auto listener = streamListener_.lock();
+        if (listener != nullptr) { listener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_NOT_AUTHORIZED); }
     }
 }
- 
+
+int32_t CapturerInServer::OnPrivacyAuthorityResult(bool isAllowed)
+{
+    sptr<AudioPrivacyUIExtConnection> connection;
+    bool allowed = false;
+    bool expired = false;
+    {
+        std::lock_guard<std::mutex> lock(privacyAuthorityMutex_);
+        if (!privacyAuthorityPending_ || privacyAuthorityReleased_) { return ERR_INVALID_OPERATION; }
+        expired = std::chrono::steady_clock::now() >= privacyAuthorityDeadline_;
+        allowed = isAllowed && !expired;
+        privacyAuthorityPending_ = false;
+        privacyAuthorityCompleting_ = true;
+        connection = privacyUiConnection_;
+        privacyUiConnection_ = nullptr;
+    }
+    // UI's real report call is synchronous on its own JS thread. Never send
+    // a synchronous close RPC back into that blocked thread. It terminates its
+    // content session after this reply; only the native AMS connection is closed.
+    ClosePrivacyConnection(connection, false);
+    {
+        std::lock_guard<std::mutex> lock(privacyAuthorityMutex_);
+        expired = expired || privacyAuthorityReleased_ ||
+            std::chrono::steady_clock::now() >= privacyAuthorityDeadline_;
+        allowed = allowed && !expired;
+        hasRequestUserPrivacyAuthority_ = allowed;
+    }
+    auto listener = streamListener_.lock();
+    if (listener != nullptr) {
+        listener->OnOperationHandled(USER_PRIVACY_AUTHORITY,
+            allowed ? START_STATE_SUCCESS : START_STATE_NOT_AUTHORIZED);
+    }
+    {
+        std::lock_guard<std::mutex> lock(privacyAuthorityMutex_);
+        privacyAuthorityCompleting_ = false;
+    }
+    AUDIO_INFO_LOG("Privacy decision stream=%{public}u uid=%{public}d allowed=%{public}d", streamIndex_,
+        processConfig_.appInfo.appUid, allowed);
+    if (listener == nullptr) {
+        hasRequestUserPrivacyAuthority_ = false;
+        return ERR_OPERATION_FAILED;
+    }
+    return expired ? ERR_INVALID_OPERATION : SUCCESS;
+}
+
 int32_t CapturerInServer::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice)
 {
-    uint32_t curSessionId = 0;
-    int32_t ret = GetSessionId(curSessionId);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_QUERY_ILLEGAL_STATE, "failed to get current sessionId", false),
-        "failed to get current sessionId");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(curSessionId == sessionId, ERR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_QUERY_INVALID_PARAM, "illegal sessionId", false),
-        "illegal sessionId ");
-    AUDIO_INFO_LOG("ReportPlaybackCaptureUserChoice choice:%{public}d", choice);
-    OnPrivacyAuthorityResult(choice);
-    return SUCCESS;
+    uint32_t currentSessionId = 0;
+    CHECK_AND_RETURN_RET_LOG(GetSessionId(currentSessionId) == SUCCESS && currentSessionId == sessionId,
+        ERR_INVALID_PARAM, "privacy report session mismatch");
+    // Pending is consumed atomically by the helper. Duplicate reports cannot
+    // race a separate precheck and both return success for the same request.
+    return OnPrivacyAuthorityResult(choice);
 }
 
 bool CapturerInServer::CheckVoiceDownlinkPermission()

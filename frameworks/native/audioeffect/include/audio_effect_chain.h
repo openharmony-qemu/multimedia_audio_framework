@@ -56,6 +56,8 @@ public:
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle, AudioEffectScene currSceneType,
         const std::string &effectName, const std::string &property);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
+    void ApplyEffectChainObserved579(float *bufIn, float *bufOut, uint32_t frameLen,
+        AudioEffectProcInfo procInfo, bool &identityCopy);
     void UpdateBufferConfig(uint32_t &channels, uint64_t &channelLayout);
     bool IsEmptyEffectHandles();
     int32_t UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout);

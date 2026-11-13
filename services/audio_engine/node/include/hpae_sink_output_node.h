@@ -71,14 +71,16 @@ private:
     void HandlePaPower(HpaePcmBuffer *pcmBuffer);
     void HandleHapticParam(uint64_t syncTime);
     bool ReadDataAndConvertFormat();
+    void ResetPendingRenderData();
     InputPort<HpaePcmBuffer *> inputStream_;
     std::vector<char, AlignedAllocator<char, 16>> renderFrameData_; // 16 for alignment in byte
+    std::vector<char, AlignedAllocator<char, 16>> renderFrameScratch_;
     
     // only for auxiliarysink
     int32_t GetAuxiliarySink(const std::string &deviceClass);
     int32_t AuxiliarySinkInit();
     int32_t AuxiliarySinkDeInit();
-    void RenderFrameForAuxiliarySink();
+    void RenderFrameForAuxiliarySink(char *data, size_t bytes);
     void UpdateAuxiliarySinkState(StreamChangeType change,
         uint32_t sessionId, StreamUsage usage, RendererState state);
     std::shared_ptr<IAudioRenderSink> auxiliarySink_ = nullptr;
@@ -103,8 +105,13 @@ private:
     uint32_t latency_ = 0;
     uint64_t renderFrameTimes_ = 0;
     size_t outputSize_ = 0;
+    uint64_t onsetOutput579_ = 0;
+    Onset579::Spans queuedOrigins579_;
     size_t currentSize_ = 0;
     size_t renderSize_ = 0;
+    size_t pendingRenderSize_ = 0;
+    bool renderWriteInvalid_ = false;
+    uint64_t renderTimeRemainder_ = 0;
     HighResolutionTimer periodTimer_;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;

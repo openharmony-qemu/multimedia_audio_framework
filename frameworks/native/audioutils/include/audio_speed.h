@@ -40,7 +40,10 @@ public:
     int32_t SetSpeed(float speed);
     int32_t SetPitch(float pitch);
     float GetSpeed();
-    int32_t Flush();
+    int32_t Flush(); // explicit discard of converter history and output
+    int32_t Finish(); // generate final output without discarding it
+    int32_t ReadOutput(std::unique_ptr<uint8_t[]> &outBuffer, int32_t &outBufferSize);
+    int32_t Reconfigure(size_t rate, size_t format, size_t channels);
 
     int32_t ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
         std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
@@ -54,7 +57,8 @@ public:
 
     std::function<int32_t(uint8_t *, int32_t, std::unique_ptr<uint8_t []>&, int32_t&)> ChangeSpeedFunc;
 private:
-    float speed_ = 0.0f;
+    int32_t OutputFrameCapacity() const;
+    float speed_ = SPEED_NORMAL;
     size_t rate_;
     size_t format_;
 
@@ -64,6 +68,7 @@ private:
     size_t formatSize_ = 1;
     size_t channels_ = 2;
     sonicStream sonicStream_ = nullptr;
+    bool finished_ = false; // one successful finish per input epoch
     int32_t maxSpeedBufferSize_;
 };
 } // namespace AudioStandard

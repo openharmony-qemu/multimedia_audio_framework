@@ -18,6 +18,7 @@
 #include <memory>
 #include "hpae_backoff_controller.h"
 #include "hpae_node.h"
+#include "hpae_capture_frame_assembler.h"
 #include "hpae_pcm_buffer.h"
 #include "source/i_audio_capture_source.h"
 #include "common/hdi_adapter_type.h"
@@ -74,6 +75,7 @@ private:
     void SetBufferValid(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
     void DoProcessInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
     void DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
+    void ProcessAssembledMic(const HpaeSourceBufferType &bufferType);
     void ReadDataFromSource(const HpaeSourceBufferType &bufferType, uint64_t &replyBytes);
     void PushDataToBuffer(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
     void UpdateSourceInputMapCancatMicEc();
@@ -105,6 +107,7 @@ private:
     std::unordered_map<HpaeSourceBufferType, std::vector<char>> capturerFrameDataMap_; // input buffer
     std::unordered_map<HpaeSourceBufferType, FrameDesc> fdescMap_; // CaptureframeWithEc argument struct
 
+    HpaeCaptureFrameAssembler micFrameAssembler_;
     bool isInjecting_ = false; // mark injecting state
     HpaeBackoffController backoffController_;
     bool concatMicEcFlag_ = false;

@@ -21,6 +21,7 @@
 #include <algorithm>
 #include "audio_stream_info.h"
 #include "audio_info.h"
+#include "audio_onset579.h"
 #include "hpae_pcm_process.h"
 namespace OHOS {
 namespace AudioStandard {
@@ -202,6 +203,8 @@ public:
     HpaePcmBuffer &operator-=(HpaePcmBuffer &other);
     HpaePcmBuffer &operator*=(HpaePcmBuffer &other);
     void Reset();
+    Onset579::Spans &Origins579() { return origins579_; }
+    const Onset579::Spans &Origins579() const { return origins579_; }
 
     std::vector<HpaePcmProcess>::iterator begin()
     {
@@ -292,6 +295,8 @@ private:
     std::atomic<size_t> readPos_;
     std::atomic<size_t> writePos_;
     std::atomic<size_t> curFrames_;
+    Onset579::Spans origins579_;
+    std::vector<Onset579::Spans> historyOrigins579_;
     std::vector<HpaePcmProcess> pcmProcessVec_;
     PcmBufferInfo pcmBufferInfo_;
     HpaeSourceBufferType sourceBufferType_ = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;

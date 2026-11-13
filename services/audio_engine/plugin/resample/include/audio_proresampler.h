@@ -31,6 +31,17 @@ public:
     ProResampler &operator=(const ProResampler &) = delete;
     ProResampler(ProResampler &&) noexcept;
     ProResampler &operator=(ProResampler &&) noexcept;
+    // Private concrete API: counts are per-channel frames, padding is not source.
+    struct ProcessResult {
+        uint32_t consumedFrames = 0;
+        uint32_t producedFrames = 0;
+        uint32_t paddingFrames = 0;
+        uint32_t outputFrames = 0;
+        bool valid = false;
+    };
+    int32_t ProcessWithCounts(const float *inBuffer, uint32_t inFrames, float *outBuffer,
+        uint32_t outFrames, ProcessResult &result);
+    int32_t ResetWithStatus();
     void Reset() override;
     int32_t Process(const float *inBuffer, uint32_t inFrameSize, float *outBuffer, uint32_t outFrameSize)
         override;
@@ -53,6 +64,7 @@ private:
     uint32_t expectedOutFrameLen_ = 0;
     uint32_t expectedInFrameLen_ = 0;
     uint32_t lastDelayFrames_ = 0;
+    bool configurationValid_ = false;
     SingleStagePolyphaseResamplerState* state_ = nullptr;
     std::vector<float> tmpOutBuf_;
 };

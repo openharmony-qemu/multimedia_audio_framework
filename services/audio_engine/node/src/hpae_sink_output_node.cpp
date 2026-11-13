@@ -21,6 +21,7 @@
 #include "hpae_remote_device_class.h"
 #include "audio_errors.h"
 #include <iostream>
+#include <algorithm>
 #include "hpae_format_convert.h"
 #include "audio_utils.h"
 #include "hpae_node_common.h"
@@ -61,8 +62,11 @@ static inline const std::unordered_set<StreamUsage> INVALID_STREAMUSAGE_AUXILIAR
 HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       renderFrameData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
+      renderFrameScratch_(renderFrameData_.size()),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels)
 {
+    Onset579::Initialize();
+    onsetOutput579_ = Onset579::NewInstance();
     renderSize_ = renderFrameData_.size();
     outputSize_ = renderSize_;
     AUDIO_INFO_LOG("name is %{public}s renderSize = %{public}zu", sinkOutAttr_.adapterName.c_str(),
@@ -111,9 +115,19 @@ void HpaeSinkOutputNode::DoProcess()
         return;
     }
 
+    // An invalid accepted-byte count makes the remaining prefix unknowable.
+    // This node must be destroyed after an unknown transport/count outcome.
+    CHECK_AND_RETURN(!renderWriteInvalid_);
     CHECK_AND_RETURN(ReadDataAndConvertFormat());
+    const size_t frameSize = GetChannelCount() * static_cast<size_t>(GetSizeFromFormat(GetBitWidth()));
+    CHECK_AND_RETURN(frameSize != 0 && GetSampleRate() != 0);
+    CHECK_AND_RETURN(pendingRenderSize_ <= currentSize_ && pendingRenderSize_ <= renderFrameScratch_.size());
+    const size_t requestSize = pendingRenderSize_;
+    // RenderFrame may alter its input in place (mono/balance/device mute).
+    // Keep the queued tail unmodified so retrying never applies those twice.
+    std::copy_n(renderFrameData_.begin(), requestSize, renderFrameScratch_.begin());
     uint64_t writeLen = 0;
-    char *renderFrameData = (char *)renderFrameData_.data();
+    char *renderFrameData = renderFrameScratch_.data();
 
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
@@ -121,10 +135,14 @@ void HpaeSinkOutputNode::DoProcess()
     intervalTimer_.Stop();
 #endif
     HandleHapticParam(renderFrameTimes_);
-    renderFrameTimes_ += FRAME_LEN_20MS;
-    auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
-    if (ret != SUCCESS || writeLen != renderSize_) {
-        AUDIO_ERR_LOG("RenderFrame failed");
+    auto ret = audioRendererSink_->RenderFrame(*renderFrameData, requestSize, writeLen);
+    const bool countValid = ret == SUCCESS && writeLen <= requestSize && writeLen % frameSize == 0;
+    if (!countValid) {
+        renderWriteInvalid_ = true;
+    }
+    if (ret != SUCCESS || !countValid || writeLen != requestSize) {
+        AUDIO_ERR_LOG("RenderFrame failed, ret:%{public}d request:%{public}zu reported:%{public}llu",
+            ret, requestSize, static_cast<unsigned long long>(writeLen));
         if (!IsRemoteDeviceClass(GetDeviceClass())) {
             periodTimer_.Stop();
             uint64_t usedTimeUs = static_cast<uint64_t>(periodTimer_.Elapsed<std::chrono::microseconds>());
@@ -136,12 +154,27 @@ void HpaeSinkOutputNode::DoProcess()
     }
 
     CheckAndSetCollDelayForRenderFrameFailed();
-    RenderFrameForAuxiliarySink();
+    if (countValid && writeLen != 0) {
+        // Record the actual post-RenderFrame PCM returned by this real sink,
+        // including its in-place mute/mono/balance transforms. Retried tails
+        // and zero accepted bytes cannot inherit a false acceptance record.
+        Onset579::Packet(onsetOutput579_, GetSampleRate(), GetChannelCount(), GetBitWidth(),
+            queuedOrigins579_.Slice(0, static_cast<uint32_t>(writeLen / frameSize)),
+            renderFrameData, static_cast<size_t>(writeLen));
+        queuedOrigins579_.Consume(static_cast<uint32_t>(writeLen / frameSize));
+        // Only successful transport makes the returned aligned prefix known.
+        RenderFrameForAuxiliarySink(renderFrameData, static_cast<size_t>(writeLen));
+        std::move(renderFrameData_.begin() + writeLen, renderFrameData_.begin() + currentSize_,
+            renderFrameData_.begin());
+        currentSize_ -= writeLen;
+        pendingRenderSize_ -= writeLen;
+        const uint64_t frames = writeLen / frameSize;
+        const uint64_t scaledFrames = frames * AUDIO_MS_PER_S + renderTimeRemainder_;
+        renderFrameTimes_ += scaledFrames / GetSampleRate();
+        renderTimeRemainder_ = scaledFrames % GetSampleRate();
+    }
     periodTimer_.Start();
     HandleRemoteTiming(); // used to control remote RenderFrame tempo.
-    std::move(renderFrameData_.begin() + renderSize_, renderFrameData_.begin() + currentSize_,
-        renderFrameData_.begin());
-    currentSize_ -= renderSize_;
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t elapsed = timer.Elapsed();
@@ -153,7 +186,7 @@ void HpaeSinkOutputNode::DoProcess()
     return;
 }
 
-void HpaeSinkOutputNode::RenderFrameForAuxiliarySink()
+void HpaeSinkOutputNode::RenderFrameForAuxiliarySink(char *data, size_t bytes)
 {
     AUDIO_DEBUG_LOG("spkName:%{public}s, auxSinkEnable_:%{public}s auxSinkState:%{public}d ",
         sinkOutAttr_.sinkName.c_str(), auxSinkEnable_ ? "true" : "false", auxSinkState_);
@@ -164,8 +197,7 @@ void HpaeSinkOutputNode::RenderFrameForAuxiliarySink()
 
     CHECK_AND_RETURN_LOG(auxiliarySink_ != nullptr, "auxiliarySink_ is null");
     uint64_t writeLen = 0;
-    char *renderFrameData = (char *)renderFrameData_.data();
-    auxiliarySink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
+    auxiliarySink_->RenderFrame(*data, bytes, writeLen);
 }
 
 const char *HpaeSinkOutputNode::GetRenderFrameData(void)
@@ -180,8 +212,19 @@ void HpaeSinkOutputNode::RegisterCurrentDeviceCallback(const std::function<void(
     audioRendererSink_->RegisterCurrentDeviceCallback(callback);
 }
 
+void HpaeSinkOutputNode::ResetPendingRenderData()
+{
+    currentSize_ = 0;
+    queuedOrigins579_.Clear();
+    pendingRenderSize_ = 0;
+    // Keep an unknown acceptance outcome latched for this node's lifetime.
+    renderFrameTimes_ = 0;
+    renderTimeRemainder_ = 0;
+}
+
 bool HpaeSinkOutputNode::Reset()
 {
+    ResetPendingRenderData();
     const auto preOutputMap = inputStream_.GetPreOutputMap();
     for (const auto &preOutput : preOutputMap) {
         OutputPort<HpaePcmBuffer *> *output = preOutput.first;
@@ -192,6 +235,7 @@ bool HpaeSinkOutputNode::Reset()
 
 bool HpaeSinkOutputNode::ResetAll()
 {
+    ResetPendingRenderData();
     const auto preOutputMap = inputStream_.GetPreOutputMap();
     for (const auto &preOutput : preOutputMap) {
         OutputPort<HpaePcmBuffer *> *output = preOutput.first;
@@ -241,6 +285,7 @@ int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass
         HdiAdapterManager::GetInstance().ReleaseId(renderId_);
         return ERROR;
     }
+    ResetPendingRenderData();
     GetAuxiliarySink(deviceClass);
     return SUCCESS;
 }
@@ -351,6 +396,7 @@ int32_t HpaeSinkOutputNode::RenderSinkDeInit(void)
 #endif
     audioRendererSink_->DeInit();
     audioRendererSink_ = nullptr;
+    ResetPendingRenderData();
     HdiAdapterManager::GetInstance().ReleaseId(renderId_);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
@@ -395,7 +441,11 @@ int32_t HpaeSinkOutputNode::AuxiliarySinkDeInit(void)
 int32_t HpaeSinkOutputNode::RenderSinkFlush(void)
 {
     CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
-    return audioRendererSink_->Flush();
+    const int32_t ret = audioRendererSink_->Flush();
+    if (ret == SUCCESS) {
+        ResetPendingRenderData();
+    }
+    return ret;
 }
 
 int32_t HpaeSinkOutputNode::RenderSinkPause(void)
@@ -409,7 +459,11 @@ int32_t HpaeSinkOutputNode::RenderSinkPause(void)
 int32_t HpaeSinkOutputNode::RenderSinkReset(void)
 {
     CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
-    return audioRendererSink_->Reset();
+    const int32_t ret = audioRendererSink_->Reset();
+    if (ret == SUCCESS) {
+        ResetPendingRenderData();
+    }
+    return ret;
 }
 
 int32_t HpaeSinkOutputNode::RenderSinkResume(void)
@@ -425,7 +479,9 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
 {
     CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERROR, "audioRendererSink_ not init");
+    CHECK_AND_RETURN_RET(!renderWriteInvalid_, ERROR);
     renderFrameTimes_ = 0;
+    renderTimeRemainder_ = 0;
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
@@ -467,6 +523,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStop(void)
 #endif
     ret = audioRendererSink_->Stop();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    ResetPendingRenderData();
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
@@ -651,6 +708,10 @@ void HpaeSinkOutputNode::HandleHapticParam(uint64_t syncTime)
 
 bool HpaeSinkOutputNode::ReadDataAndConvertFormat()
 {
+    // Retry the outstanding packet without pulling new upstream audio.
+    if (pendingRenderSize_ != 0) {
+        return pendingRenderSize_ <= currentSize_;
+    }
     while (currentSize_ < renderSize_) {
         std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
         CHECK_AND_RETURN_RET(!outputVec.empty(), false);
@@ -665,18 +726,26 @@ bool HpaeSinkOutputNode::ReadDataAndConvertFormat()
         HandlePaPower(outputData);
         uint32_t frameLen = outputData->GetFrameLen();
         uint32_t channels = outputData->GetChannelCount();
-        uint32_t inDurationMs = frameLen * AUDIO_MS_PER_S / outputData->GetSampleRate();
-        uint32_t outDurationMs = GetFrameLen() * AUDIO_MS_PER_S / GetSampleRate();
-        if (renderFrameData_.size() == renderSize_ && inDurationMs != outDurationMs) {
-            outputSize_ = frameLen * channels * static_cast<size_t>(GetSizeFromFormat(GetBitWidth()));
-            AUDIO_INFO_LOG("Update outputSize to %{public}zu", outputSize_);
-            renderFrameData_.resize(outputSize_ + renderSize_);
+        const size_t sampleSize = GetSizeFromFormat(GetBitWidth());
+        CHECK_AND_RETURN_RET(frameLen != 0 && channels != 0 && sampleSize != 0, false);
+        CHECK_AND_RETURN_RET(channels <= renderFrameData_.max_size() / sampleSize, false);
+        const size_t frameSize = channels * sampleSize;
+        CHECK_AND_RETURN_RET(frameLen <= (renderFrameData_.max_size() - currentSize_) / frameSize, false);
+        outputSize_ = frameLen * frameSize;
+        if (renderFrameData_.size() < currentSize_ + outputSize_) {
+            renderFrameData_.resize(currentSize_ + outputSize_);
         }
         ConvertFromFloat(
             GetBitWidth(), channels * frameLen, outputData->GetPcmDataBuffer(), renderFrameData_.data() + currentSize_);
+        if (currentSize_ % frameSize != 0 || outputData->GetSampleRate() != GetSampleRate()) {
+            queuedOrigins579_.Unknown();
+        } else {
+            queuedOrigins579_.Append(outputData->Origins579(), static_cast<uint32_t>(currentSize_ / frameSize));
+        }
         currentSize_ += outputSize_;
     }
-    return true;
+    pendingRenderSize_ = renderSize_;
+    return pendingRenderSize_ != 0;
 }
 
 int32_t HpaeSinkOutputNode::SetAuxiliarySinkEnable(bool isEnabled)

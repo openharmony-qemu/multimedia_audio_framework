@@ -1472,6 +1472,9 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
     }
     waitLock.unlock();
 
+    if (capturerMode_ == CAPTURE_MODE_NORMAL) {
+        normalReadGeneration_.fetch_add(1);
+    }
     UpdateStreamState(RUNNING); // change state_ to RUNNING, then notify cbThread
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
         if (cbBufferQueue_.IsEmpty()) {
@@ -1505,11 +1508,23 @@ int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
         AUDIO_ERR_LOG("LatencyMeas failed to get AudioServerProxy");
         return ERROR;
     }
-    gasp->RequestUserPrivacyAuthority(sessionId);
+    {
+        std::lock_guard<std::mutex> stateLock(callServerMutex_);
+        notifiedOperation_ = MAX_OPERATION_CODE;
+        notifiedResult_ = ERROR;
+    }
+    const int32_t requestResult = gasp->RequestUserPrivacyAuthority(sessionId);
+    if (requestResult != SUCCESS) {
+        std::lock_guard<std::mutex> callbackLock(playbackCaptureStartCallbackMutex_);
+        if (playbackCaptureStartCallback_ != nullptr) {
+            playbackCaptureStartCallback_->OnPlaybackCaptureStartResult(START_STATE_FAILED);
+        }
+        return requestResult;
+    }
  
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
-    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS * 5), [this] {
-        return notifiedOperation_ == USER_PRIVACY_AUTHORITY; // will be false when got notified.
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::seconds(60), [this] {
+        return notifiedOperation_ == USER_PRIVACY_AUTHORITY || notifiedOperation_ == RELEASE_STREAM;
     });
     Operation operation = notifiedOperation_;
     int64_t result = notifiedResult_;
@@ -1526,7 +1541,7 @@ int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
         return ERROR;
     }
     playbackCaptureStartCallback_->OnPlaybackCaptureStartResult(
-        static_cast<PlaybackCaptureStartState>(notifiedResult_));
+        static_cast<PlaybackCaptureStartState>(result));
     lock.unlock();
  
     return SUCCESS;
@@ -1568,6 +1583,7 @@ bool CapturerInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     waitLock.unlock();
 
     UpdateStreamState(PAUSED);
+    RetireNormalReadsLocked();
     statusLock.unlock();
 
     // waiting for review: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
@@ -1608,6 +1624,9 @@ bool CapturerInClientInner::StopAudioStream()
         return false;
     }
 
+    // An accepted Stop retires normal reads before waiting for its acknowledgement.
+    // Do not expose a new normal-mode state or wait for a reader under statusMutex_.
+    RetireNormalReadsLocked();
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
         UpdateStreamState(STOPPING);
         clientBuffer_->WakeFutex();
@@ -1626,6 +1645,7 @@ bool CapturerInClientInner::StopAudioStream()
         AUDIO_ERR_LOG("Stop failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         UpdateStreamState(INVALID);
+        RetireNormalReadsLocked();
         return false;
     }
     waitLock.unlock();
@@ -1652,6 +1672,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
         return true;
     }
     UpdateStreamState(RELEASED);
+    RetireNormalReadsLocked(); // Wake before remote Release or callback-thread teardown.
     statusLock.unlock();
 
     Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
@@ -1879,6 +1900,78 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
     return readSize;
 }
 
+void CapturerInClientInner::RetireNormalReadsLocked()
+{
+    if (capturerMode_ != CAPTURE_MODE_NORMAL) {
+        return; // Preserve the existing callback-mode queue and wake path.
+    }
+    normalReadGeneration_.fetch_add(1);
+    if (clientBuffer_ != nullptr) {
+        clientBuffer_->WakeFutex();
+    }
+}
+
+bool CapturerInClientInner::NormalReadIsCurrent(uint64_t generation) const
+{
+    return state_ == RUNNING && normalReadGeneration_.load() == generation;
+}
+
+int32_t CapturerInClientInner::HandleNormalCapturerRead(size_t &readSize, size_t userSize, uint8_t &buffer,
+    bool isBlockingRead, uint64_t generation)
+{
+    std::shared_ptr<OHAudioBuffer> audioBuffer;
+    {
+        std::lock_guard<std::mutex> statusLock(statusMutex_);
+        CHECK_AND_RETURN_RET_LOG(NormalReadIsCurrent(generation), ERR_ILLEGAL_STATE, "Normal read retired");
+        audioBuffer = clientBuffer_;
+        CHECK_AND_RETURN_RET_LOG(audioBuffer != nullptr && ringCache_ != nullptr, ERROR, "Read buffer is null");
+    }
+    while (readSize < userSize) {
+        // All bounded buffer mutations are serialized with retirement. In particular,
+        // an old Read queued on readMutex_ cannot consume frames from a later Start.
+        std::unique_lock<std::mutex> statusLock(statusMutex_);
+        CHECK_AND_RETURN_RET_LOG(NormalReadIsCurrent(generation), ERR_ILLEGAL_STATE, "Normal read retired");
+        OptResult result = ringCache_->GetReadableSize();
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "GetReadableSize failed");
+        size_t readableSize = std::min(result.size, userSize - readSize);
+        if (readSize + result.size >= userSize) {
+            result = ringCache_->Dequeue({&buffer + readSize, readableSize});
+            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "DequeueCache failed");
+            readSize += readableSize;
+            return static_cast<int32_t>(readSize);
+        }
+        if (result.size != 0) {
+            result = ringCache_->Dequeue({&buffer + readSize, result.size});
+            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "Dequeue failed");
+            readSize += result.size;
+        }
+        if (audioBuffer->GetCurWriteFrame() > audioBuffer->GetCurReadFrame()) {
+            BufferDesc currentBuffer = {};
+            audioBuffer->GetTimeStampInfo(currentBuffer.position, currentBuffer.timeStampInNs);
+            audioBuffer->GetReadbuffer(audioBuffer->GetCurReadFrame(), currentBuffer);
+            BufferWrap bufferWrap = {currentBuffer.buffer, clientSpanSizeInByte_};
+            result = ringCache_->Enqueue(bufferWrap);
+            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "Enqueue failed");
+            memset_s(static_cast<void *>(bufferWrap.dataPtr), bufferWrap.dataSize, 0, bufferWrap.dataSize);
+            audioBuffer->SetCurReadFrame(audioBuffer->GetCurReadFrame() + spanSizeInFrame_, false);
+            continue;
+        }
+        if (!isBlockingRead) {
+            return static_cast<int32_t>(readSize);
+        }
+        statusLock.unlock(); // Never hold statusMutex_ while sleeping, calling IPC, or waiting for a reader.
+        constexpr auto timeoutInNano = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS * 100)).count();
+        FutexCode futexRet = audioBuffer->WaitFor(timeoutInNano, [this, audioBuffer, generation] {
+            return !NormalReadIsCurrent(generation) ||
+                audioBuffer->GetCurWriteFrame() > audioBuffer->GetCurReadFrame();
+        });
+        CHECK_AND_RETURN_RET_LOG(NormalReadIsCurrent(generation), ERR_ILLEGAL_STATE, "Normal read retired");
+        CHECK_AND_RETURN_RET_LOG(futexRet == FUTEX_SUCCESS, ERROR, "Wait timeout or interrupted");
+    }
+    return static_cast<int32_t>(readSize);
+}
+
 int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
 {
     Trace trace("CapturerInClientInner::Read " + std::to_string(userSize));
@@ -1901,9 +1994,15 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
         readLogTimes_ = 0;
     }
 
+    const bool normalRead = capturerMode_ == CAPTURE_MODE_NORMAL;
+    const uint64_t generation = normalReadGeneration_.load();
     statusLock.unlock();
 
     std::lock_guard<std::mutex> lock(readMutex_);
+    if (normalRead) {
+        std::lock_guard<std::mutex> readStatusLock(statusMutex_);
+        CHECK_AND_RETURN_RET_LOG(NormalReadIsCurrent(generation), ERROR, "Queued normal read retired");
+    }
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR,
@@ -1916,16 +2015,66 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     }
 
     size_t readSize = 0;
-    int32_t res = HandleCapturerRead(readSize, userSize, buffer, isBlockingRead);
+    int32_t res = normalRead ? HandleNormalCapturerRead(readSize, userSize, buffer, isBlockingRead, generation) :
+        HandleCapturerRead(readSize, userSize, buffer, isBlockingRead);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(res >= 0, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_SEND_DATA_OPERATION_FAILED, "HandleCapturerRead err", true),
         "HandleCapturerRead err : %{public}d", res);
+    int64_t markPosition = -1;
+    int64_t periodSize = -1;
+    if (normalRead) {
+        CHECK_AND_RETURN_RET_LOG(CommitNormalReadPositionChanges(readSize, generation, markPosition, periodSize),
+            ERROR, "Completed normal read retired");
+    }
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t *>(&buffer), userSize, userSize};
     VolumeTools::DfxOperation(tmpBuffer, clientConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
     DumpFileUtil::WriteDumpFile(dumpInFd_, static_cast<void *>(&buffer), readSize);
-    HandleCapturerPositionChanges(readSize);
+    if (normalRead) {
+        if (markPosition >= 0) {
+            SendCapturerMarkReachedEvent(markPosition);
+        }
+        if (periodSize >= 0) {
+            SendCapturerPeriodReachedEvent(periodSize);
+        }
+    } else {
+        HandleCapturerPositionChanges(readSize);
+    }
     return readSize;
+}
+
+bool CapturerInClientInner::CommitNormalReadPositionChanges(size_t bytesRead, uint64_t generation,
+    int64_t &markPosition, int64_t &periodSize)
+{
+    uint64_t readFrameNumber = 0;
+    {
+        // Existing position callbacks hold period/mark locks while invoking user
+        // code, which may re-enter Stop. Never acquire either lock under status.
+        std::lock_guard<std::mutex> periodLock(periodReachMutex_);
+        std::lock_guard<std::mutex> statusLock(statusMutex_);
+        CHECK_AND_RETURN_RET_LOG(NormalReadIsCurrent(generation), false, "Completed normal read retired");
+        // Successful Read linearizes here. A later Stop cannot reattribute this
+        // committed stream-wide count to a newer read operation.
+        totalBytesRead_ += bytesRead;
+        if (sizePerFrameInByte_ == 0) {
+            return true;
+        }
+        readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
+        capturerPeriodRead_ += static_cast<int64_t>(bytesRead / sizePerFrameInByte_);
+        if (capturerPeriodRead_ >= capturerPeriodSize_ && capturerPeriodSize_ > 0) {
+            capturerPeriodRead_ %= capturerPeriodSize_;
+            periodSize = capturerPeriodSize_;
+        }
+    }
+    {
+        // No status/period lock is held while waiting for a mark callback.
+        std::lock_guard<std::mutex> markLock(markReachMutex_);
+        if (!capturerMarkReached_ && readFrameNumber >= static_cast<uint64_t>(capturerMarkPosition_)) {
+            markPosition = capturerMarkPosition_;
+            capturerMarkReached_ = true;
+        }
+    }
+    return true;
 }
 
 void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)

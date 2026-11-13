@@ -454,6 +454,13 @@ bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::s
 
 bool AudioSpatializationService::IsSpatializationSupportedForDeviceInner(const std::string address)
 {
+#ifdef QEMU_CPU_SPATIAL
+    // Normal product speaker chain has a real CPU HRTF provider. No device
+    // identity or permission is manufactured by the public caller.
+    if (currentDevice_.deviceType_ == DEVICE_TYPE_SPEAKER && address == currentDevice_.macAddress_) {
+        return isSpatializationSupported_;
+    }
+#endif
     std::string encryptedAddress = GetSha256EncryptAddress(address);
     if (!addressToSpatialDeviceStateMap_.count(encryptedAddress)) {
         AUDIO_INFO_LOG("specified address for spatialization is not in memory");
@@ -475,6 +482,9 @@ bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::str
 
 bool AudioSpatializationService::IsHeadTrackingSupportedForDeviceInner(const std::string address)
 {
+#ifdef QEMU_CPU_SPATIAL
+    if (currentDevice_.deviceType_ == DEVICE_TYPE_SPEAKER && address == currentDevice_.macAddress_) return isHeadTrackingSupported_;
+#endif
     std::string encryptedAddress = GetSha256EncryptAddress(address);
     if (!addressToSpatialDeviceStateMap_.count(encryptedAddress)) {
         AUDIO_INFO_LOG("specified address for head tracking is not in memory");

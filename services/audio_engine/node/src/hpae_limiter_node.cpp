@@ -102,7 +102,8 @@ HpaePcmBuffer *HpaeLimiterNode::SignalProcess(const std::vector<HpaePcmBuffer *>
     }
     uint32_t bufferSize = inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount();
     // Process with limiter
-    limiter_->Process(bufferSize, inputs[0]->GetPcmDataBuffer(), limiterOutput_.GetPcmDataBuffer());
+    limiter_->ProcessObserved579(bufferSize, inputs[0]->GetPcmDataBuffer(), limiterOutput_.GetPcmDataBuffer(),
+        inputs[0]->Origins579(), limiterOutput_.Origins579());
     limiterOutput_.SetBufferState(inputs[0]->GetBufferState());
     return &limiterOutput_;
 }

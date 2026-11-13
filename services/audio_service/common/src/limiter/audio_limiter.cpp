@@ -92,6 +92,7 @@ int32_t AudioLimiter::ValidateConfigParams(int32_t inputFrameBytes, int32_t byte
 
 int32_t AudioLimiter::AllocateHistoryBuffer(int32_t newAlgoFrameLen)
 {
+    history579_.Clear();
     if (bufHis_.capacity() < static_cast<size_t>(newAlgoFrameLen)) {
         bufHis_.assign(newAlgoFrameLen + 1, 0);
     } else {
@@ -377,6 +378,28 @@ void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer)
         }
         bufHis_[algoFrameLen_] = inBuffer[algoFrameLen_ - 1];
     }
+}
+
+int32_t AudioLimiter::ProcessObserved579(int32_t count, float *in, float *out,
+    const Onset579::Spans &origins, Onset579::Spans &output)
+{
+    output.Clear();
+    const int32_t ret = Process(count, in, out);
+    if (ret != SUCCESS || !origins.valid || channels_ == 0 || algoFrameLen_ <= 0 ||
+        algoFrameLen_ % channels_ != 0 || count != algoFrameLen_ * PROC_COUNT) {
+        // The odd sample-realignment branch has no frame-aligned lineage.
+        // Preserve its actual PCM behavior and refuse an anchor on that route.
+        history579_.Unknown(); output.Unknown(); return ret;
+    }
+    const uint32_t frames = static_cast<uint32_t>(algoFrameLen_) / channels_;
+    for (int32_t i = 0; i < PROC_COUNT; ++i) {
+        const uint32_t at = static_cast<uint32_t>(i) * frames;
+        // ProcessAlgo/ApplyGain* actually emitted bufHis_[0..algoFrameLen),
+        // then replaced those very history slots with this input chunk.
+        output.Append(history579_, at);
+        history579_ = origins.Slice(at, frames);
+    }
+    return ret;
 }
 
 uint32_t AudioLimiter::GetLatency()

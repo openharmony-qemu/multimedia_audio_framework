@@ -32,6 +32,7 @@ config("audio_effect_config") {
     "../audioschedule/include",
   ]
 
+  if (audio_framework_qemu_cpu_spatial) { defines = [ "QEMU_CPU_SPATIAL" ] }
   cflags = [
     "-Wall",
     "-Werror",

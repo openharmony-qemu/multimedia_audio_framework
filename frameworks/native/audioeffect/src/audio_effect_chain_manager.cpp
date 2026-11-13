@@ -578,6 +578,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     Trace trace("AudioEffectChainManager::ApplyAudioEffectChain: " + sceneType + " frameLen: " +
         std::to_string(bufferAttr->frameLen) + " numChans: " + std::to_string(bufferAttr->numChans));
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    bufferAttr->identityCopy579 = false;
     size_t totLen = static_cast<size_t>(bufferAttr->frameLen * bufferAttr->numChans * sizeof(float));
     std::lock_guard<std::mutex> lock(dynamicMutex_);
 
@@ -590,7 +591,8 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
 
     auto audioEffectChain = it->second;
     AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
-    audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
+    audioEffectChain->ApplyEffectChainObserved579(bufferAttr->bufIn, bufferAttr->bufOut,
+        bufferAttr->frameLen, procInfo, bufferAttr->identityCopy579);
     audioEffectChain->UpdateBufferConfig(bufferAttr->outChannels, bufferAttr->outChannelLayout);
     return SUCCESS;
 }
@@ -602,6 +604,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
         "_r_" + std::to_string(renderId) + " frameLen: " +
         std::to_string(bufferAttr->frameLen) + " numChans: " + std::to_string(bufferAttr->numChans));
     std::string sceneTypeAndDeviceKey = GenerateEffectChainKey(sceneType, deviceType, renderId);
+    bufferAttr->identityCopy579 = false;
     size_t totLen = static_cast<size_t>(bufferAttr->frameLen * bufferAttr->numChans * sizeof(float));
     std::lock_guard<std::mutex> lock(dynamicMutex_);
 
@@ -614,7 +617,8 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
 
     auto audioEffectChain = it->second;
     AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
-    audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
+    audioEffectChain->ApplyEffectChainObserved579(bufferAttr->bufIn, bufferAttr->bufOut,
+        bufferAttr->frameLen, procInfo, bufferAttr->identityCopy579);
     audioEffectChain->UpdateBufferConfig(bufferAttr->outChannels, bufferAttr->outChannelLayout);
     return SUCCESS;
 }
@@ -1856,6 +1860,13 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
     spatializationEnabled_ = spatializationState.spatializationEnabled;
     AUDIO_INFO_LOG("updateSpatializationEnabled %{public}d", spatializationState.spatializationEnabled);
     bool effectEnabled = IsSpatializationEnabledForChains();
+#ifdef QEMU_CPU_SPATIAL
+    if (deviceType_ == DEVICE_TYPE_SPEAKER) {
+        // A CPU provider must never be routed into the passthrough DSP HDI.
+        spkOffloadEnabled_ = false; btOffloadEnabled_ = false;
+        SetSpatializationEnabledToChains(); return;
+    }
+#endif
 
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     if (effectEnabled) {
@@ -1893,6 +1904,9 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
 // for AISS temporarily
 bool AudioEffectChainManager::CheckIfSpkDsp()
 {
+#ifdef QEMU_CPU_SPATIAL
+    if (deviceType_ == DEVICE_TYPE_SPEAKER) return false;
+#endif
     return deviceType_ == DEVICE_TYPE_SPEAKER;
 }
 
@@ -2840,6 +2854,9 @@ int32_t AudioEffectChainManager::EffectApAbsVolumeStateUpdate(const bool absVolu
 
 bool AudioEffectChainManager::IsDeviceTypeSupportingSpatialization()
 {
+#ifdef QEMU_CPU_SPATIAL
+    if (deviceType_ == DEVICE_TYPE_SPEAKER) return true;
+#endif
     return (deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) || (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (deviceType_ == DEVICE_TYPE_NEARLINK);
 }
@@ -2915,6 +2932,9 @@ void AudioEffectChainManager::UpdateEarphoneProduct(int32_t earphoneProduct)
 
 bool AudioEffectChainManager::IsSpatializationEnabledForChains()
 {
+#ifdef QEMU_CPU_SPATIAL
+    if (deviceType_ == DEVICE_TYPE_SPEAKER) return spatializationEnabled_;
+#endif
     return spatializationEnabled_ && (!bypassSpatializationForStereo_ || !IsDeviceTypeSupportingSpatialization());
 }
 

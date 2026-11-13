@@ -29,6 +29,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "audio_onset579.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,6 +41,8 @@ public:
     int32_t SetConfig(int32_t inputFrameBytes, int32_t bytePerSample, int32_t sampleRate, int32_t channels);
     int32_t Process(int32_t inputSampleCount, float *inBuffer, float *outBuffer);
     uint32_t GetLatency();
+    int32_t ProcessObserved579(int32_t count, float *in, float *out,
+        const Onset579::Spans &origins, Onset579::Spans &output);
 
 private:
     float CalculateEnvelopeEnergy(float *inBuffer);
@@ -65,6 +68,7 @@ private:
     float levelRelease_;
     float gainAttack_;
     float gainRelease_;
+    Onset579::Spans history579_;
     std::vector<float> bufHis_;
     uint32_t sampleRate_;
     uint32_t channels_;

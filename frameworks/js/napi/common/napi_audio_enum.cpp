@@ -742,6 +742,10 @@ napi_status NapiAudioEnum::InitAudioExternEnum(napi_env env, napi_value exports)
 
 napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
 {
+    static const std::map<std::string, int32_t> deviceBlockStatusMap = {
+        {"UNBLOCKED", DEVICE_UNBLOCKED},
+        {"BLOCKED", DEVICE_BLOCKED},
+    };
     napi_property_descriptor static_prop[] = {
         DECLARE_NAPI_PROPERTY("AudioChannel", CreateEnumObject(env, audioChannelMap)),
         DECLARE_NAPI_PROPERTY("AudioSamplingRate", CreateEnumObject(env, samplingRateMap)),
@@ -751,6 +755,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioVolumeMode", CreateEnumObject(env, audioVolumeModeMap)),
         DECLARE_NAPI_PROPERTY("DeviceRole", CreateEnumObject(env, deviceRoleMap)),
         DECLARE_NAPI_PROPERTY("DeviceType", CreateEnumObject(env, deviceTypeMap)),
+        DECLARE_NAPI_PROPERTY("DeviceBlockStatus", CreateEnumObject(env, deviceBlockStatusMap)),
         DECLARE_NAPI_PROPERTY("SourceType", CreateEnumObject(env, sourceTypeMap)),
         DECLARE_NAPI_PROPERTY("VolumeAdjustType", CreateEnumObject(env, volumeAdjustTypeMap)),
         DECLARE_NAPI_PROPERTY("ChannelBlendMode", CreateEnumObject(env, channelBlendModeMap)),

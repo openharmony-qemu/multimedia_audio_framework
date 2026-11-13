@@ -753,9 +753,10 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 
     error = pa_stream_write(paStream_, static_cast<void*>(bufferDesc.buffer), bufferDesc.bufLength, nullptr,
         0LL, PA_SEEK_RELATIVE);
-    if (error < 0) {
+    if (error != 0) {
         AUDIO_ERR_LOG("Write stream failed");
         pa_stream_cancel_write(paStream_);
+        return ERR_OPERATION_FAILED;
     }
     totalBytesWritten_ += bufferDesc.bufLength;
     return SUCCESS;

@@ -110,6 +110,7 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
         ret = ERR_OPERATION_FAILED;
         AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
     } else {
+        Onset579::ClearRead();
         ret = GetDataFromSharedBuffer();
         // if historyBuffer has enough data, write to outputStream
         if (!streamInfo_.needData && historyBuffer_) {
@@ -145,6 +146,10 @@ void HpaeSinkInputNode::DoProcess()
         return;
     }
     
+    inputAudioBuffer_.Origins579().Clear();
+    if (ret == SUCCESS) {
+        inputAudioBuffer_.Origins579() = Onset579::TakeRead(appUid_, GetSessionId(), GetFrameLen());
+    }
     ConvertToFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());

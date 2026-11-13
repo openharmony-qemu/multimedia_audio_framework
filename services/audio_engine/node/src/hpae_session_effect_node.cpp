@@ -841,6 +841,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessInterceptingRaw(HpaePcmBuffer *inpu
         &skipFrames);
     ConsumePendingRawBypassBlocks(skipRequest, skipFrames);
     if (ret > 0) {
+        inputBuf->Origins579().Unknown(); // actual opaque delayed/wet algorithm output
         inputBuf->SetBufferValid(true);
         inputBuf->SetBufferSilence(false);
         ApplyInterceptingFadeIn(inputBuf->GetPcmDataBuffer(), interceptingRawData_.data(), sampleCount);
@@ -986,6 +987,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ReadAlgoOutput(HpaePcmBuffer *inputBuf, si
     int32_t ret = effectInstance_->ReadOutput(
         reinterpret_cast<uint8_t *>(inputBuf->GetPcmDataBuffer()), byteLen);
     if (ret > 0) {
+        inputBuf->Origins579().Unknown(); // actual opaque delayed/wet algorithm output
         inputBuf->SetBufferValid(true);
         inputBuf->SetBufferSilence(false);
         return inputBuf;

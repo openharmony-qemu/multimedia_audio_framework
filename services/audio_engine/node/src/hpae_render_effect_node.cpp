@@ -175,6 +175,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     }
 
     ReconfigOutputBuffer();
+    effectOutput_.Origins579().Unknown();
 
     auto eBufferAttr = std::make_unique<EffectBufferAttr>(
         inputs[0]->GetPcmDataBuffer(),
@@ -199,6 +200,10 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
             "apply audio effect chain fail", false),
         "apply audio effect chain fail, ret: %{public}d", ret);
 
+    if (eBufferAttr->identityCopy579 && effectOutput_.GetFrameLen() == inputs[0]->GetFrameLen() &&
+        effectOutput_.GetSampleRate() == inputs[0]->GetSampleRate()) {
+        effectOutput_.Origins579() = inputs[0]->Origins579();
+    }
     effectOutput_.SetBufferState(inputs[0]->GetBufferState());
     effectOutput_.SetBufferValid(true);
     return &effectOutput_;
