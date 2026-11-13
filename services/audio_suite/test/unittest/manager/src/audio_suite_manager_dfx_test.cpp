@@ -882,4 +882,47 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesTest_004
 
     AudioSuitePipelineImpl::DeInitGlobal();
 }
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, reportSuiteEngineExceptionBranchTest, TestSize.Level0)
+{
+    AudioSuitePipelineImpl::InitGlobal();
+    AudioSuitePipelineImpl pipeline(PIPELINE_EDIT_MODE, 0);
+    AudioFormat format = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_48000};
+
+    pipeline.nodeMap_[1] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    pipeline.pipelineState_ = PIPELINE_RUNNING;
+    pipeline.outputNode_ = nullptr;
+    int32_t ret = pipeline.DestroyNode(1);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+
+    auto inputNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    auto outputNode = std::make_shared<AudioOutputNode>(format);
+    outputNode->audioNodeInfo_.nodeId = 12;
+    pipeline.nodeMap_[10] = inputNode;
+    pipeline.nodeMap_[11] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
+    pipeline.nodeMap_[12] = outputNode;
+    pipeline.outputNode_ = outputNode;
+    pipeline.connections_[10] = 12;
+    pipeline.reverseConnections_[12] = {10};
+    ret = pipeline.ConnectNodes(10, 11);
+    EXPECT_EQ(ret, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+
+    pipeline.nodeMap_[20] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    pipeline.nodeMap_[21] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
+    pipeline.outputNode_ = nullptr;
+    ret = pipeline.ConnectNodes(20, 21);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+
+    pipeline.nodeMap_[30] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    auto outputNode2 = std::make_shared<AudioOutputNode>(format);
+    outputNode2->audioNodeInfo_.nodeId = 32;
+    pipeline.nodeMap_[32] = outputNode2;
+    pipeline.outputNode_ = outputNode2;
+    pipeline.connections_[30] = 32;
+    pipeline.reverseConnections_[32] = {30};
+    ret = pipeline.DisconnectNodes(30, 32);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+
+    AudioSuitePipelineImpl::DeInitGlobal();
+}
 } //namespace
