@@ -372,6 +372,8 @@ ohos_unittest("audio_device_factory_unit_test") {
 
   sources = [
     "./unittest/audio_device_factory_unit_test/src/audio_device_factory_unit_test.cpp",
+    "${audio_framework_root}/frameworks/native/bluetoothclient/bluetooth_device_utils.cpp",
+    "${audio_framework_root}/frameworks/native/bluetoothclient/bluetooth_hfp_interface.cpp",
     "${audio_framework_root}/frameworks/native/bluetoothclient/bluetooth_sco_manager.cpp",
   ]
 
