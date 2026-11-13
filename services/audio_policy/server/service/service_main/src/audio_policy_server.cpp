@@ -2107,6 +2107,18 @@ int32_t AudioPolicyServer::SetMediaOutputDevice(int32_t deviceTypeIn)
     return eventEntry_->SetMediaOutputDeviceByUid(static_cast<DeviceType>(deviceTypeIn), callerUid);
 }
 
+std::shared_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetMediaOutputDeviceWithoutFollowCall()
+{
+    FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "GetMediaOutputDeviceWithoutFollowCall", ROUTER_TYPE_NONE };
+    info.isRunning = true;
+    // FetchMediaOutputDevices directly enters the media render routers and does not go through
+    // FetchMediaOrToneRenderDevice, so the media-follow-call strategy is skipped here.
+    auto descs = audioRouterCenter_.FetchMediaOutputDevices(info);
+    CHECK_AND_RETURN_RET_LOG(!descs.empty() && descs.front() != nullptr &&
+        descs.front()->deviceType_ != DEVICE_TYPE_NONE, nullptr, "no available media output device");
+    return std::make_shared<AudioDeviceDescriptor>(*descs.front());
+}
+
 bool AudioPolicyServer::IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode)
 {
     bool isAppMode = audioDeviceSelectMode == SELECT_STRATEGY_STREAM ||
@@ -3361,8 +3373,16 @@ int32_t AudioPolicyServer::UpdateAudioSceneAfterActivateInterrupt(int32_t zoneId
     bool isUpdatedAudioStrategy)
 {
     std::lock_guard<std::mutex> lock(focusUpdateMutex_);
-    AudioInterruptResult result =
-        AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt, isUpdatedAudioStrategy);
+    bool isMediaPrivacyDevice = false;
+    if (AudioInterruptUtils::IsCallStream(audioInterrupt)) {
+        auto mediaDeviceDesc = GetMediaOutputDeviceWithoutFollowCall();
+        isMediaPrivacyDevice = audioDeviceManager_.IsCurrentMediaDevicePrivacy(mediaDeviceDesc);
+        int32_t mediaDeviceType = mediaDeviceDesc == nullptr ? DEVICE_TYPE_NONE : mediaDeviceDesc->deviceType_;
+        AUDIO_INFO_LOG("media device type %{public}d, privacy %{public}d",
+            mediaDeviceType, static_cast<int32_t>(isMediaPrivacyDevice));
+    }
+    AudioInterruptResult result = AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId,
+        audioInterrupt, isUpdatedAudioStrategy, isMediaPrivacyDevice);
     CHECK_AND_RETURN_RET(result.needSetAudioScene, result.retCode);
     SetAudioSceneInternal(result.targetAudioScene, result.ownerUid, result.ownerPid);
     return result.retCode;
@@ -3422,8 +3442,13 @@ int32_t AudioPolicyServer::UpdateAudioSceneAfterDeactivateInterrupt(int32_t zone
     const AudioInterrupt &audioInterrupt, bool isRemoveFocusHis)
 {
     std::lock_guard<std::mutex> lock(focusUpdateMutex_);
-    AudioInterruptResult result = AudioZoneService::GetInstance().DeactivateAudioInterrupt(zoneId, audioInterrupt,
-        isRemoveFocusHis);
+    auto mediaDeviceDesc = GetMediaOutputDeviceWithoutFollowCall();
+    bool isMediaPrivacyDevice = audioDeviceManager_.IsCurrentMediaDevicePrivacy(mediaDeviceDesc);
+    int32_t mediaDeviceType = mediaDeviceDesc == nullptr ? DEVICE_TYPE_NONE : mediaDeviceDesc->deviceType_;
+    AUDIO_INFO_LOG("media device type %{public}d, privacy %{public}d",
+        mediaDeviceType, static_cast<int32_t>(isMediaPrivacyDevice));
+    AudioInterruptResult result = AudioZoneService::GetInstance().DeactivateAudioInterrupt(zoneId,
+        audioInterrupt, isRemoveFocusHis, isMediaPrivacyDevice);
     CHECK_AND_RETURN_RET(result.needSetAudioScene, result.retCode);
     SetAudioSceneInternal(result.targetAudioScene, result.ownerUid, result.ownerPid);
     return result.retCode;
@@ -5918,8 +5943,13 @@ int32_t AudioPolicyServer::UpdateAudioSceneAfterActivateSession(const int32_t zo
     int32_t callerUid)
 {
     std::lock_guard<std::mutex> lock(focusUpdateMutex_);
-    AudioInterruptResult result = AudioZoneService::GetInstance().ActivateAudioSession(zoneId,
-        callerPid, strategy, isStandalone, stateChangeCallbackFlag, callerUid);
+    auto mediaDeviceDesc = GetMediaOutputDeviceWithoutFollowCall();
+    bool isMediaPrivacyDevice = audioDeviceManager_.IsCurrentMediaDevicePrivacy(mediaDeviceDesc);
+    int32_t mediaDeviceType = mediaDeviceDesc == nullptr ? DEVICE_TYPE_NONE : mediaDeviceDesc->deviceType_;
+    AUDIO_INFO_LOG("media device type %{public}d, privacy %{public}d",
+        mediaDeviceType, static_cast<int32_t>(isMediaPrivacyDevice));
+    AudioInterruptResult result = AudioZoneService::GetInstance().ActivateAudioSession(zoneId, callerPid,
+        strategy, isStandalone, stateChangeCallbackFlag, callerUid, isMediaPrivacyDevice);
     CHECK_AND_RETURN_RET(result.needSetAudioScene, result.retCode);
     SetAudioSceneInternal(result.targetAudioScene, result.ownerUid, result.ownerPid);
     return result.retCode;
@@ -5939,7 +5969,12 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage, OUTPUT_DEVICE);
     AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d, streamUsage:%{public}d",
         callerPid, zoneId, streamUsage);
-    return AudioZoneService::GetInstance().DeactivateAudioSession(zoneId, callerPid);
+    auto mediaDeviceDesc = GetMediaOutputDeviceWithoutFollowCall();
+    bool isMediaPrivacyDevice = audioDeviceManager_.IsCurrentMediaDevicePrivacy(mediaDeviceDesc);
+    int32_t mediaDeviceType = mediaDeviceDesc == nullptr ? DEVICE_TYPE_NONE : mediaDeviceDesc->deviceType_;
+    AUDIO_INFO_LOG("media device type %{public}d, privacy %{public}d",
+        mediaDeviceType, static_cast<int32_t>(isMediaPrivacyDevice));
+    return AudioZoneService::GetInstance().DeactivateAudioSession(zoneId, callerPid, isMediaPrivacyDevice);
 }
 
 int32_t AudioPolicyServer::IsAudioSessionActivated(bool &isActive)

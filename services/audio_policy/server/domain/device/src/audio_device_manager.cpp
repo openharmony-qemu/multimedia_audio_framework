@@ -176,6 +176,16 @@ bool AudioDeviceManager::IsDescMatchedInVector(const shared_ptr<AudioDeviceDescr
     return false;
 }
 
+bool AudioDeviceManager::IsCurrentMediaDevicePrivacy(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "devDesc is nullptr");
+    if (IsDescMatchedInVector(devDesc, privacyDeviceList_)) {
+        AUDIO_INFO_LOG("current media device type %{public}d is privacy device", devDesc->deviceType_);
+        return true;
+    }
+    return false;
+}
+
 AudioDevicePrivacyType AudioDeviceManager::GetDevicePrivacyType(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, AudioDevicePrivacyType::TYPE_NEGATIVE, "devDesc is nullptr");

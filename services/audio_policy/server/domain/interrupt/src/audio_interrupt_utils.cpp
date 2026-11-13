@@ -61,6 +61,16 @@ bool AudioInterruptUtils::IsMediaStream(AudioStreamType audioStreamType)
     return false;
 }
 
+bool AudioInterruptUtils::IsCallStream(const AudioInterrupt &audioInterrupt)
+{
+    return (audioInterrupt.audioFocusType.streamType == STREAM_VOICE_RING ||
+        audioInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL ||
+        audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_CALL ||
+        audioInterrupt.audioFocusType.streamType == STREAM_RING ||
+        audioInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION ||
+        audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
+}
+
 bool AudioInterruptUtils::IsInterPhoneInterrupt(const AudioInterrupt &audioInterrupt)
 {
     return (audioInterrupt.audioFocusType.streamType == STREAM_INTERPHONE ||

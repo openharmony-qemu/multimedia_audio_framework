@@ -1020,6 +1020,7 @@ private:
     AudioStreamType GetCurrentStreamInFocus(int32_t zoneId = 0);
     int32_t UpdateAudioSceneAfterActivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy);
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaOutputDeviceWithoutFollowCall();
     int32_t UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isRemoveFocusHis = false);
     int32_t UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,

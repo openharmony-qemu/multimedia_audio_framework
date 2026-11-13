@@ -821,7 +821,7 @@ int32_t AudioZoneService::EnableAudioZoneInterruptReport(pid_t clientPid, int32_
 }
 
 AudioInterruptResult AudioZoneService::ActivateAudioInterrupt(int32_t zoneId,
-    const AudioInterrupt &audioInterrupt, bool isUpdatedAudioStrategy)
+    const AudioInterrupt &audioInterrupt, bool isUpdatedAudioStrategy, bool isMediaPrivacyDevice)
     
 {
     AudioInterruptResult result;
@@ -853,8 +853,7 @@ AudioInterruptResult AudioZoneService::ActivateAudioInterrupt(int32_t zoneId,
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         tmp, zoneClientManager_,
         AudioZoneInterruptReason::REMOTE_INJECT);
-    result = tmp->ActivateAudioInterrupt(zoneId, audioInterrupt,
-        isUpdatedAudioStrategy);
+    result = tmp->ActivateAudioInterrupt(zoneId, audioInterrupt, isUpdatedAudioStrategy, isMediaPrivacyDevice);
     for (auto &report : reporters) {
         report->ReportInterrupt();
     }
@@ -862,7 +861,7 @@ AudioInterruptResult AudioZoneService::ActivateAudioInterrupt(int32_t zoneId,
 }
 
 AudioInterruptResult AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
-    const AudioInterrupt &audioInterrupt, bool isRemoveFocusHis)
+    const AudioInterrupt &audioInterrupt, bool isRemoveFocusHis, bool isMediaPrivacyDevice)
 {
     AudioInterruptResult result;
     result.retCode = ERROR;
@@ -892,7 +891,7 @@ AudioInterruptResult AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         tmp, zoneClientManager_,
         AudioZoneInterruptReason::REMOTE_INJECT);
-    result = tmp->DeactivateAudioInterrupt(zoneId, audioInterrupt, isRemoveFocusHis);
+    result = tmp->DeactivateAudioInterrupt(zoneId, audioInterrupt, isRemoveFocusHis, isMediaPrivacyDevice);
     for (auto &report : reporters) {
         report->ReportInterrupt();
     }
@@ -1292,7 +1291,7 @@ void AudioZoneService::NotifyStreamSilentChange(int32_t callerPid, uint32_t stre
 
 AudioInterruptResult AudioZoneService::ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
     const AudioSessionStrategy &strategy, const bool isStandalone, const bool stateChangeCallbackFlag,
-    int32_t callerUid)
+    int32_t callerUid, bool isMediaPrivacyDevice)
 {
     AudioInterruptResult result;
     result.retCode = ERROR;
@@ -1319,14 +1318,16 @@ AudioInterruptResult AudioZoneService::ActivateAudioSession(const int32_t zoneId
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         tmp, zoneClientManager_,
         AudioZoneInterruptReason::REMOTE_INJECT);
-    result = tmp->ActivateAudioSession(zoneId, callerPid, strategy, isStandalone, stateChangeCallbackFlag, callerUid);
+    result = tmp->ActivateAudioSession(zoneId, callerPid, strategy, isStandalone, stateChangeCallbackFlag, callerUid,
+        isMediaPrivacyDevice);
     for (auto &report : reporters) {
         report->ReportInterrupt();
     }
     return result;
 }
 
-int32_t AudioZoneService::DeactivateAudioSession(int32_t zoneId, const int32_t callerPid)
+int32_t AudioZoneService::DeactivateAudioSession(int32_t zoneId, const int32_t callerPid,
+    bool isMediaPrivacyDevice)
 {
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
@@ -1356,7 +1357,8 @@ int32_t AudioZoneService::DeactivateAudioSession(int32_t zoneId, const int32_t c
             report->ReportInterrupt();
         }
     };
-    int32_t result = tmp->DeactivateAudioSession(zoneId, callerPid, onFakeInterruptDeactivate);
+    int32_t result = tmp->DeactivateAudioSession(zoneId, callerPid, onFakeInterruptDeactivate,
+        isMediaPrivacyDevice);
     for (auto &report : reporters) {
         report->ReportInterrupt();
     }

@@ -126,6 +126,8 @@ public:
 
     bool HasSpecificDevicesConnected();
     bool HasScoDevicesRealConnected();
+    // Check whether the given media output device is a privacy device or a bluetooth car device
+    bool IsCurrentMediaDevicePrivacy(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
 
 private:
     AudioDeviceManager();
