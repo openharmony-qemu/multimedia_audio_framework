@@ -237,6 +237,7 @@ HWTEST_F(AudioDeviceFactoryUnitTest, ActivateDevice_010, TestSize.Level1)
  */
 HWTEST_F(AudioDeviceFactoryUnitTest, DeactivateDevice_004, TestSize.Level1)
 {
+    Bluetooth::BluetoothScoManager::GetInstance().Init();
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
