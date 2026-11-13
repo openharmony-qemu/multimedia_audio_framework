@@ -239,20 +239,9 @@ int32_t AudioArmDeviceBehavior::ProcessModuleActivation(
     }
 
     if (AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name)) {
-        AudioIOHandle existingHandle = HDI_INVALID_ID;
-        AudioIOHandleMap::GetInstance().GetModuleIdByKey(moduleInfo.name, existingHandle);
-        auto pipeManager = AudioPipeManager::GetPipeManager();
-        auto existingPipe = (pipeManager != nullptr) ? pipeManager->GetPipeinfoById(existingHandle) : nullptr;
-        if (existingPipe != nullptr &&
-            existingPipe->moduleInfo_.rate == moduleInfo.rate &&
-            existingPipe->moduleInfo_.format == moduleInfo.format &&
-            existingPipe->moduleInfo_.channels == moduleInfo.channels) {
-            AUDIO_INFO_LOG("ArmUsb format unchanged, skip reload: rate=%{public}s", moduleInfo.rate.c_str());
-        } else {
-            int32_t result = ReloadArmAudioPort(moduleInfo);
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_INVALID_PARAM,
-                "Reload usb %{public}s failed %{public}d", moduleInfo.role.c_str(), result);
-        }
+        int32_t result = ReloadArmAudioPort(moduleInfo);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_INVALID_PARAM,
+            "Reload usb %{public}s failed %{public}d", moduleInfo.role.c_str(), result);
     } else {
         int32_t result = AudioIOHandleMap::GetInstance()
             .OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
